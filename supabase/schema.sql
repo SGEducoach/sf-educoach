@@ -1,6 +1,24 @@
 -- SG EduCoach - Supabase şema (v1)
 -- Roller: ogrenci, veli, koc
 
+-- ============ RESET (yalnızca geliştirme aşamasında) ============
+-- Bu script'i defalarca çalıştırabilmek için önce önceki sürümün
+-- nesnelerini temizler. Gerçek kullanıcı verisi biriktikten sonra bu
+-- blok kaldırılmalı ve ileri değişiklikler ayrı migration dosyalarıyla
+-- yapılmalıdır.
+drop table if exists public.notifications cascade;
+drop table if exists public.study_sessions cascade;
+drop table if exists public.exams cascade;
+drop table if exists public.parent_students cascade;
+drop table if exists public.coach_students cascade;
+drop table if exists public.students cascade;
+drop table if exists public.profiles cascade;
+drop function if exists public.handle_new_user() cascade;
+drop function if exists public.has_student_access(uuid) cascade;
+drop function if exists public.find_student_by_email(text) cascade;
+drop type if exists public.user_role cascade;
+drop type if exists public.notification_type cascade;
+
 -- 1) profiles: her auth.users kaydına eşlik eden profil + rol
 create type public.user_role as enum ('ogrenci', 'veli', 'koc');
 
