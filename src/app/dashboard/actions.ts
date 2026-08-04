@@ -85,21 +85,22 @@ export async function bildirimEkle(studentId: string, formData: FormData) {
 export async function ogrenciBagla(kind: "coach" | "parent", email: string) {
   const { supabase, user } = await requireUser();
 
-  const { data: bulunan, error: bulmaHatasi } = await supabase
+  const { data: bulmaSonucu, error: bulmaHatasi } = await supabase
     .rpc("find_student_by_email", { p_email: email.trim() })
     .single();
+
+  const bulunan = bulmaSonucu as { id: string; ad: string } | null;
 
   if (bulmaHatasi || !bulunan) {
     return { error: "Bu e-postayla kayıtlı bir öğrenci bulunamadı." };
   }
 
-  const table = kind === "coach" ? "coach_students" : "parent_students";
-  const row =
+  const studentId = bulunan.id;
+  const { error } =
     kind === "coach"
-      ? { coach_id: user.id, student_id: bulunan.id }
-      : { parent_id: user.id, student_id: bulunan.id };
+      ? await supabase.from("coach_students").insert({ coach_id: user.id, student_id: studentId })
+      : await supabase.from("parent_students").insert({ parent_id: user.id, student_id: studentId });
 
-  const { error } = await supabase.from(table).insert(row);
   if (error) {
     if (error.code === "23505") return { error: "Bu öğrenci zaten bağlı." };
     return { error: error.message };
