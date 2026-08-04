@@ -7,6 +7,7 @@ create type public.user_role as enum ('ogrenci', 'veli', 'koc');
 create table public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   ad text not null,
+  email text not null,
   role public.user_role not null,
   created_at timestamptz not null default now()
 );
@@ -78,6 +79,41 @@ create index on public.notifications (student_id, tarih desc);
 create index on public.coach_students (student_id);
 create index on public.parent_students (student_id);
 
+-- ============ Yeni kullanıcı trigger'ı ============
+-- auth.users içinde yeni kullanıcı oluşunca profiles (ve role='ogrenci' ise
+-- students) satırını otomatik oluşturur. Rol/ad/hedef bilgileri, signUp
+-- çağrısındaki `options.data` (raw_user_meta_data) alanından okunur.
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_role public.user_role := coalesce(new.raw_user_meta_data->>'role', 'ogrenci')::public.user_role;
+begin
+  insert into public.profiles (id, ad, email, role)
+  values (new.id, coalesce(new.raw_user_meta_data->>'ad', new.email), new.email, v_role);
+
+  if v_role = 'ogrenci' then
+    insert into public.students (id, hedef_puan, hedef_bolum, sinif, yks_yili)
+    values (
+      new.id,
+      coalesce((new.raw_user_meta_data->>'hedef_puan')::integer, 0),
+      coalesce(new.raw_user_meta_data->>'hedef_bolum', ''),
+      new.raw_user_meta_data->>'sinif',
+      (new.raw_user_meta_data->>'yks_yili')::integer
+    );
+  end if;
+
+  return new;
+end;
+$$;
+
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
+
 -- ============ RLS ============
 alter table public.profiles enable row level security;
 alter table public.students enable row level security;
@@ -118,11 +154,21 @@ create policy "students_update_own" on public.students
 create policy "students_insert_own" on public.students
   for insert with check (id = auth.uid());
 
--- coach_students / parent_students: ilgili taraflar görebilir
+-- coach_students: koç kendi bağlantısını ekleyebilir/görebilir/silebilir; öğrenci de görebilir
 create policy "coach_students_select" on public.coach_students
   for select using (coach_id = auth.uid() or student_id = auth.uid());
+create policy "coach_students_insert" on public.coach_students
+  for insert with check (coach_id = auth.uid());
+create policy "coach_students_delete" on public.coach_students
+  for delete using (coach_id = auth.uid());
+
+-- parent_students: veli kendi bağlantısını ekleyebilir/görebilir/silebilir; öğrenci de görebilir
 create policy "parent_students_select" on public.parent_students
   for select using (parent_id = auth.uid() or student_id = auth.uid());
+create policy "parent_students_insert" on public.parent_students
+  for insert with check (parent_id = auth.uid());
+create policy "parent_students_delete" on public.parent_students
+  for delete using (parent_id = auth.uid());
 
 -- exams: erişimi olanlar görür; sadece öğrenci kendi deneme kaydını ekler
 create policy "exams_select_related" on public.exams
@@ -143,3 +189,22 @@ create policy "notifications_insert_coach" on public.notifications
   for insert with check (
     exists (select 1 from public.coach_students cs where cs.student_id = notifications.student_id and cs.coach_id = auth.uid())
   );
+
+-- ============ Öğrenciyi e-postayla bulma (koç/veli bağlama akışı için) ============
+-- RLS'i bypass eder ama sadece role='ogrenci' olan profillerin id/ad alanlarını
+-- döndürür — e-posta adresini bilen biri sadece o öğrencinin kimliğini bulabilir,
+-- başka hiçbir kullanıcı bilgisine erişemez.
+create or replace function public.find_student_by_email(p_email text)
+returns table (id uuid, ad text)
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select p.id, p.ad
+  from public.profiles p
+  where p.email = p_email and p.role = 'ogrenci';
+$$;
+
+revoke all on function public.find_student_by_email(text) from public;
+grant execute on function public.find_student_by_email(text) to authenticated;
