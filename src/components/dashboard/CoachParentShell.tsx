@@ -20,7 +20,7 @@ export function CoachParentShell({
   const [hata, setHata] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const secili = students.find((s) => s.id === seciliId) ?? null;
+  const secili = students.find((s) => s.id === seciliId) ?? students[0] ?? null;
 
   function baglaGonder(e: React.FormEvent) {
     e.preventDefault();
@@ -65,7 +65,7 @@ export function CoachParentShell({
         )}
 
         {students.length === 0 ? (
-          <p style={{ color: TEXT_MUTED }} className="text-sm py-6 text-center rounded-3xl" style2={{}}>
+          <p style={{ color: TEXT_MUTED }} className="text-sm py-6 text-center rounded-3xl">
             Henüz bağlı öğrenci yok. Yukarıdan öğrencinin e-postasını girerek bağlayabilirsiniz.
           </p>
         ) : (
