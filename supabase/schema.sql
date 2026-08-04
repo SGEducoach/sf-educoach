@@ -1,0 +1,145 @@
+-- SG EduCoach - Supabase şema (v1)
+-- Roller: ogrenci, veli, koc
+
+-- 1) profiles: her auth.users kaydına eşlik eden profil + rol
+create type public.user_role as enum ('ogrenci', 'veli', 'koc');
+
+create table public.profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  ad text not null,
+  role public.user_role not null,
+  created_at timestamptz not null default now()
+);
+
+-- 2) students: öğrenciye özgü ek bilgiler (bir öğrenci = bir profil, role='ogrenci')
+create table public.students (
+  id uuid primary key references public.profiles(id) on delete cascade,
+  hedef_puan integer not null,
+  hedef_bolum text not null,
+  sinif text, -- örn. "11-C"
+  yks_yili integer,
+  created_at timestamptz not null default now()
+);
+
+-- 3) coach_students: koç-öğrenci ilişkisi (bir koç birden çok öğrenciye bakabilir)
+create table public.coach_students (
+  coach_id uuid not null references public.profiles(id) on delete cascade,
+  student_id uuid not null references public.students(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (coach_id, student_id)
+);
+
+-- 4) parent_students: veli-öğrenci ilişkisi
+create table public.parent_students (
+  parent_id uuid not null references public.profiles(id) on delete cascade,
+  student_id uuid not null references public.students(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (parent_id, student_id)
+);
+
+-- 5) exams (denemeler)
+create table public.exams (
+  id uuid primary key default gen_random_uuid(),
+  student_id uuid not null references public.students(id) on delete cascade,
+  tarih date not null,
+  tyt_net numeric(5,2) not null,
+  ayt_net numeric(5,2) not null,
+  puan numeric(6,2) not null,
+  created_at timestamptz not null default now()
+);
+
+-- 6) study_sessions (calismalar)
+create table public.study_sessions (
+  id uuid primary key default gen_random_uuid(),
+  student_id uuid not null references public.students(id) on delete cascade,
+  tarih date not null,
+  ders text not null,
+  dakika integer not null check (dakika > 0),
+  created_at timestamptz not null default now()
+);
+
+-- 7) notifications (bildirimler)
+create type public.notification_type as enum ('basari', 'uyari', 'bilgi');
+
+create table public.notifications (
+  id uuid primary key default gen_random_uuid(),
+  student_id uuid not null references public.students(id) on delete cascade,
+  author_id uuid references public.profiles(id) on delete set null,
+  tarih date not null default current_date,
+  tip public.notification_type not null default 'bilgi',
+  mesaj text not null,
+  created_at timestamptz not null default now()
+);
+
+-- Indexler
+create index on public.exams (student_id, tarih);
+create index on public.study_sessions (student_id, tarih);
+create index on public.notifications (student_id, tarih desc);
+create index on public.coach_students (student_id);
+create index on public.parent_students (student_id);
+
+-- ============ RLS ============
+alter table public.profiles enable row level security;
+alter table public.students enable row level security;
+alter table public.coach_students enable row level security;
+alter table public.parent_students enable row level security;
+alter table public.exams enable row level security;
+alter table public.study_sessions enable row level security;
+alter table public.notifications enable row level security;
+
+-- Yardımcı fonksiyon: verilen öğrenciye erişimi olan kullanıcı mı?
+create or replace function public.has_student_access(target_student_id uuid)
+returns boolean
+language sql
+security definer
+stable
+as $$
+  select
+    target_student_id = auth.uid() -- öğrencinin kendisi
+    or exists (select 1 from public.coach_students cs where cs.student_id = target_student_id and cs.coach_id = auth.uid())
+    or exists (select 1 from public.parent_students ps where ps.student_id = target_student_id and ps.parent_id = auth.uid());
+$$;
+
+-- profiles: herkes kendi profilini görür/günceller; koç/veli bağlı olduğu öğrencilerin profilini görebilir
+create policy "profiles_select_own_or_related" on public.profiles
+  for select using (
+    id = auth.uid() or public.has_student_access(id)
+  );
+create policy "profiles_update_own" on public.profiles
+  for update using (id = auth.uid());
+create policy "profiles_insert_own" on public.profiles
+  for insert with check (id = auth.uid());
+
+-- students: erişimi olan herkes görür; sadece öğrencinin kendisi (veya servis rolü) günceller
+create policy "students_select_related" on public.students
+  for select using (public.has_student_access(id));
+create policy "students_update_own" on public.students
+  for update using (id = auth.uid());
+create policy "students_insert_own" on public.students
+  for insert with check (id = auth.uid());
+
+-- coach_students / parent_students: ilgili taraflar görebilir
+create policy "coach_students_select" on public.coach_students
+  for select using (coach_id = auth.uid() or student_id = auth.uid());
+create policy "parent_students_select" on public.parent_students
+  for select using (parent_id = auth.uid() or student_id = auth.uid());
+
+-- exams: erişimi olanlar görür; sadece öğrenci kendi deneme kaydını ekler
+create policy "exams_select_related" on public.exams
+  for select using (public.has_student_access(student_id));
+create policy "exams_insert_own" on public.exams
+  for insert with check (student_id = auth.uid());
+
+-- study_sessions: erişimi olanlar görür; sadece öğrenci kendi kaydını ekler
+create policy "study_sessions_select_related" on public.study_sessions
+  for select using (public.has_student_access(student_id));
+create policy "study_sessions_insert_own" on public.study_sessions
+  for insert with check (student_id = auth.uid());
+
+-- notifications: erişimi olanlar görür; koç ekleyebilir (öğrenci/veli sadece okur)
+create policy "notifications_select_related" on public.notifications
+  for select using (public.has_student_access(student_id));
+create policy "notifications_insert_coach" on public.notifications
+  for insert with check (
+    exists (select 1 from public.coach_students cs where cs.student_id = notifications.student_id and cs.coach_id = auth.uid())
+  );
