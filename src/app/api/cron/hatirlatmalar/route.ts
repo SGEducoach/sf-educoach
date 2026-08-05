@@ -16,9 +16,29 @@ const SIKLIK_AYARLARI: Record<VeriGirisSikligi, { periyotSaat: number; uyariOnce
 
 const GUNLUK_CRON_TAMPON_SAAT = 24;
 
+function yetkiliMi(authHeader: string | null): boolean {
+  const beklenen = (process.env.CRON_SECRET ?? "").trim();
+  const gelen = (authHeader ?? "").replace(/^Bearer\s+/i, "").trim();
+  return beklenen.length > 0 && gelen === beklenen;
+}
+
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+
+  if (new URL(request.url).searchParams.get("debug") === "1") {
+    const beklenen = process.env.CRON_SECRET ?? "";
+    const gelen = (authHeader ?? "").replace(/^Bearer\s+/i, "");
+    return NextResponse.json({
+      envVarSet: Boolean(process.env.CRON_SECRET),
+      envVarLength: beklenen.length,
+      envVarTrimmedLength: beklenen.trim().length,
+      headerReceivedLength: gelen.length,
+      headerTrimmedLength: gelen.trim().length,
+      match: yetkiliMi(authHeader),
+    });
+  }
+
+  if (!yetkiliMi(authHeader)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
