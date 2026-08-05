@@ -362,16 +362,16 @@ function VeliTalepForm({ supabase }: { supabase: ReturnType<typeof createClient>
     setHata(null);
     setYukleniyor(true);
 
-    const { data: student, error: bulmaHatasi } = await supabase
-      .from("students").select("id").eq("okul_no", okulNo.trim()).single();
+    const { data: studentId, error: bulmaHatasi } = await supabase
+      .rpc("find_student_id_by_okul_no", { p_okul_no: okulNo.trim() });
 
-    if (bulmaHatasi || !student) {
+    if (bulmaHatasi || !studentId) {
       setYukleniyor(false);
       return setHata("Bu okul numarasıyla kayıtlı bir öğrenci bulunamadı.");
     }
 
     const { error } = await supabase.from("veli_link_requests").insert({
-      student_id: student.id, veli_ad: ad, veli_telefon: telefon,
+      student_id: studentId, veli_ad: ad, veli_telefon: telefon,
     });
     setYukleniyor(false);
     if (error) return setHata(error.message);
@@ -399,20 +399,36 @@ function VeliTalepForm({ supabase }: { supabase: ReturnType<typeof createClient>
   );
 }
 
+const KVKK_METNI = `SG EduCoach olarak, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, velisi/vasisi olduğunuz öğrencinin kişisel verilerinin işlenmesi hakkında sizi bilgilendirmek isteriz.
+
+İşlenen veriler: öğrencinin adı-soyadı, okul/sınıf bilgisi, iletişim bilgileri, akademik performans verileri (deneme sonuçları, çalışma kayıtları, soru çözüm istatistikleri, motivasyon durumu).
+
+İşleme amacı: öğrencinin akademik gelişiminin takip edilmesi, öğretmen tarafından değerlendirilmesi, size ve öğrenciye bu veriler hakkında bildirim ve rapor sunulması.
+
+Veri aktarımı: veriler, Platform'un altyapı sağlayıcıları (barındırma ve e-posta hizmetleri) dışında üçüncü kişilerle paylaşılmaz.
+
+Saklama süresi: hesap aktif olduğu sürece saklanır; hesap kapatma talebinde makul süre içinde silinir.
+
+Haklarınız: KVKK madde 11 kapsamında verilerin düzeltilmesi, silinmesi, işlenme amacını öğrenme gibi haklara sahipsiniz.
+
+Onay: Yukarıdaki bilgilendirmeyi okudum; velisi/vasisi olduğum öğrencinin belirtilen kapsamda kişisel verilerinin işlenmesine açık rızamla onay veriyorum.`;
+
 function VeliTamamlaForm({ router }: { router: ReturnType<typeof useRouter>; supabase: ReturnType<typeof createClient> }) {
   const [okulNo, setOkulNo] = useState("");
   const [kod, setKod] = useState("");
+  const [kvkkOnay, setKvkkOnay] = useState(false);
   const [hata, setHata] = useState<string | null>(null);
   const [yukleniyor, setYukleniyor] = useState(false);
 
   async function tamamla(e: React.FormEvent) {
     e.preventDefault();
     setHata(null);
+    if (!kvkkOnay) return setHata("Devam etmek için KVKK aydınlatma metnini onaylamanız gerekiyor.");
     setYukleniyor(true);
     const res = await fetch("/api/veli/tamamla", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ okul_no: okulNo.trim(), kod: kod.trim() }),
+      body: JSON.stringify({ okul_no: okulNo.trim(), kod: kod.trim(), kvkkOnay: true }),
     });
     const body = await res.json();
     setYukleniyor(false);
@@ -425,8 +441,25 @@ function VeliTamamlaForm({ router }: { router: ReturnType<typeof useRouter>; sup
     <form onSubmit={tamamla} className="flex flex-col gap-3">
       <label className="flex flex-col gap-1"><Etiket>Öğrenci Okul No</Etiket><Girdi required value={okulNo} onChange={(e) => setOkulNo(e.target.value)} /></label>
       <label className="flex flex-col gap-1"><Etiket>Kod</Etiket><Girdi required value={kod} onChange={(e) => setKod(e.target.value)} /></label>
+
+      <div className="flex flex-col gap-1.5">
+        <Etiket>KVKK Aydınlatma Metni ve Rıza Beyanı</Etiket>
+        <div className="text-[11px] leading-relaxed whitespace-pre-line rounded-xl p-3 max-h-40 overflow-y-auto"
+          style={{ background: BG0, border: `1px solid ${BORDER_STRONG}`, color: TEXT_MUTED }}>
+          {KVKK_METNI}
+        </div>
+      </div>
+
+      <label className="flex items-start gap-2 cursor-pointer">
+        <input type="checkbox" checked={kvkkOnay} onChange={(e) => setKvkkOnay(e.target.checked)}
+          className="mt-0.5" />
+        <span style={{ color: TEXT }} className="text-xs leading-snug">
+          Yukarıdaki metni okudum, velisi/vasisi olduğum öğrencinin kişisel verilerinin işlenmesine <strong>açık rızam ile onay veriyorum.</strong>
+        </span>
+      </label>
+
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
-      <button type="submit" disabled={yukleniyor} className="sgec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+      <button type="submit" disabled={yukleniyor || !kvkkOnay} className="sgec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
         {yukleniyor ? "Tamamlanıyor..." : "Kaydı tamamla"}
       </button>
     </form>

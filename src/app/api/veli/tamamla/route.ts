@@ -2,11 +2,16 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
+const KVKK_ONAY_VERSIYON = "v1-2026-08-05";
+
 export async function POST(request: Request) {
-  const { okul_no, kod } = await request.json();
+  const { okul_no, kod, kvkkOnay } = await request.json();
 
   if (!okul_no || !kod) {
     return NextResponse.json({ error: "Okul no ve kod gerekli." }, { status: 400 });
+  }
+  if (kvkkOnay !== true) {
+    return NextResponse.json({ error: "Devam etmek için KVKK aydınlatma metnini onaylamanız gerekiyor." }, { status: 400 });
   }
 
   const admin = createAdminClient();
@@ -36,7 +41,7 @@ export async function POST(request: Request) {
 
   const syntheticEmail = `veli+${talep.id}@sgeducoach.internal`;
 
-  const { error: createError } = await admin.auth.admin.createUser({
+  const { data: createdUser, error: createError } = await admin.auth.admin.createUser({
     email: syntheticEmail,
     password: kod,
     email_confirm: true,
@@ -50,6 +55,14 @@ export async function POST(request: Request) {
 
   if (createError) {
     return NextResponse.json({ error: createError.message }, { status: 400 });
+  }
+
+  // KVKK rıza beyanını zaman damgasıyla kaydet (trigger profiles'ı oluşturduktan sonra).
+  if (createdUser.user) {
+    await admin
+      .from("profiles")
+      .update({ kvkk_onay_at: new Date().toISOString(), kvkk_onay_versiyon: KVKK_ONAY_VERSIYON })
+      .eq("id", createdUser.user.id);
   }
 
   // Hesap oluştu (trigger profiles+parent_students'ı kurdu, talebi 'kullanildi' yaptı).

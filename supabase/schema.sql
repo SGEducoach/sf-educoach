@@ -471,3 +471,22 @@ grant execute on function public.ogrenci_giris_sayisi(uuid) to authenticated;
 -- ============ Hatırlatma sistemi ============
 alter table public.students
   add column if not exists son_hatirlatma_deadline timestamptz;
+
+-- ============ Veli rıza beyanı (KVKK) ============
+alter table public.profiles
+  add column if not exists kvkk_onay_at timestamptz,
+  add column if not exists kvkk_onay_versiyon text;
+
+-- ============ Giriş yapmamış veli için öğrenci arama ============
+create or replace function public.find_student_id_by_okul_no(p_okul_no text)
+returns uuid
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select id from public.students where okul_no = p_okul_no limit 1;
+$$;
+
+revoke all on function public.find_student_id_by_okul_no(text) from public;
+grant execute on function public.find_student_id_by_okul_no(text) to anon, authenticated;
