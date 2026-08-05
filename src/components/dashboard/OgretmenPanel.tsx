@@ -132,10 +132,12 @@ export function OgretmenPanel({
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {ogrenciler.map((o) => (
-              <div key={o.id} className="rounded-xl px-3.5 py-2.5 flex items-center justify-between" style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}` }}>
+              <button key={o.id} onClick={() => router.push(`/dashboard?sinif=${gorunecekSinifId}&ogrenci=${o.id}`)}
+                className="sgec-btn rounded-xl px-3.5 py-2.5 flex items-center justify-between text-left"
+                style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}` }}>
                 <span style={{ color: TEXT }} className="text-sm font-semibold">{o.ad}</span>
                 <span style={{ color: TEXT_MUTED }} className="text-xs">#{o.okul_no}</span>
-              </div>
+              </button>
             ))}
           </div>
         )}
