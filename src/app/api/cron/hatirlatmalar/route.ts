@@ -33,17 +33,6 @@ function enSonTarih(mevcut: Map<string, number>, studentId: string, iso: string)
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
 
-  if (new URL(request.url).searchParams.get("debug") === "1") {
-    const beklenen = process.env.CRON_SECRET ?? "";
-    const gelen = (authHeader ?? "").replace(/^Bearer\s+/i, "");
-    return NextResponse.json({
-      envVarSet: Boolean(process.env.CRON_SECRET),
-      envVarLength: beklenen.length,
-      headerReceivedLength: gelen.length,
-      match: yetkiliMi(authHeader),
-    });
-  }
-
   if (!yetkiliMi(authHeader)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
