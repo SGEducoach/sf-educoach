@@ -3,6 +3,9 @@ export type KurumTuru = "okul" | "dershane";
 export type AytAlan = "SAY" | "EA" | "SOZ";
 export type VeriGirisSikligi = "gunluk" | "3gunluk" | "haftalik";
 export type VeliTalepDurum = "bekliyor" | "onaylandi" | "reddedildi" | "kullanildi";
+export type HedefeYakinlik = "yakin" | "belirsiz" | "uzak";
+export type VerimlilikDuzeyi = "cok_dusuk" | "dusuk" | "orta" | "iyi" | "cok_iyi";
+export type DenemeTuru = "TYT" | "AYT";
 
 export interface Profile {
   id: string;
@@ -57,6 +60,78 @@ export interface VeliLinkRequest {
   onaylayan_ogretmen_id: string | null;
   created_at: string;
   onaylanma_at: string | null;
+}
+
+export interface KonuCalisma {
+  id: string;
+  student_id: string;
+  tarih: string;
+  ders: string;
+  konu: string;
+  sure_dakika: number;
+  hedefe_yakinlik: HedefeYakinlik;
+  created_at: string;
+}
+
+export interface SoruCozumu {
+  id: string;
+  student_id: string;
+  tarih: string;
+  ders: string;
+  dogru: number;
+  yanlis: number;
+  sure_dakika: number;
+  hedefe_yakinlik: HedefeYakinlik;
+  created_at: string;
+}
+
+export interface DenemeDersSonucu {
+  ders: string;
+  dogru: number;
+  yanlis: number;
+}
+
+export interface Deneme {
+  id: string;
+  student_id: string;
+  tarih: string;
+  tur: DenemeTuru;
+  sure_dakika: number;
+  hedefe_yakinlik: HedefeYakinlik;
+  kaynak: "ogrenci" | "ogretmen";
+  created_at: string;
+  deneme_ders_sonuclari?: DenemeDersSonucu[];
+}
+
+export interface HaftalikVerimlilik {
+  id: string;
+  student_id: string;
+  duzey: VerimlilikDuzeyi;
+  created_at: string;
+}
+
+export const HEDEFE_YAKINLIK_ETIKET: Record<HedefeYakinlik, string> = {
+  yakin: "Yakın",
+  belirsiz: "Belirsiz",
+  uzak: "Uzak",
+};
+
+export const VERIMLILIK_ETIKET: Record<VerimlilikDuzeyi, string> = {
+  cok_dusuk: "Çok Düşük",
+  dusuk: "Düşük",
+  orta: "Orta",
+  iyi: "İyi",
+  cok_iyi: "Çok İyi",
+};
+
+export const VERI_GIRIS_SIKLIGI_ETIKET: Record<VeriGirisSikligi, string> = {
+  gunluk: "Günlük",
+  "3gunluk": "3 Günde Bir",
+  haftalik: "Haftalık",
+};
+
+export function netHesapla(dogru: number, yanlis: number): number {
+  return Math.round((dogru - yanlis / 4) * 100) / 100;
 }
 
 export const AYT_ALAN_ETIKET: Record<AytAlan, string> = {

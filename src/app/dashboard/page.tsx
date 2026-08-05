@@ -2,8 +2,9 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Header } from "@/components/dashboard/Header";
 import { OgretmenPanel } from "@/components/dashboard/OgretmenPanel";
+import { OgrenciVeriGirisi } from "@/components/dashboard/OgrenciVeriGirisi";
 import { AYT_ALAN_ETIKET } from "@/lib/types";
-import type { AytAlan, UserRole } from "@/lib/types";
+import type { AytAlan, UserRole, VeriGirisSikligi } from "@/lib/types";
 import { BG1, BORDER, TEXT, TEXT_MUTED, MINT } from "@/lib/theme";
 
 export default async function DashboardPage() {
@@ -37,30 +38,37 @@ async function OgrenciIcerik({ userId }: { userId: string }) {
   const supabase = await createClient();
   const { data: student } = await supabase
     .from("students")
-    .select("okul_no, ayt_alan, hedef_bolum, schools(ad), classes(seviye, sube)")
+    .select("okul_no, ayt_alan, hedef_bolum, veri_giris_sikligi, schools(ad), classes(seviye, sube)")
     .eq("id", userId)
     .single();
 
   type Row = {
-    okul_no: string; ayt_alan: AytAlan; hedef_bolum: string;
+    okul_no: string; ayt_alan: AytAlan; hedef_bolum: string; veri_giris_sikligi: VeriGirisSikligi;
     schools: { ad: string } | null; classes: { seviye: string; sube: string } | null;
   };
   const s = student as unknown as Row | null;
 
+  if (!s) {
+    return (
+      <div className="sgec-fade rounded-3xl p-6 text-center" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+        <p style={{ color: TEXT_MUTED }} className="text-sm">Öğrenci profili bulunamadı.</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="sgec-fade rounded-3xl p-6" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
-      <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-bold mb-4">Hoş geldin! 👋</h1>
-      {s && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+    <div className="flex flex-col gap-6">
+      <div className="sgec-fade rounded-3xl p-6" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+        <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-bold mb-4">Hoş geldin! 👋</h1>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <Bilgi etiket="Okul No" deger={s.okul_no} />
           <Bilgi etiket="Okul" deger={s.schools?.ad ?? "—"} />
           <Bilgi etiket="Sınıf" deger={s.classes ? `${s.classes.seviye}-${s.classes.sube}` : "—"} />
           <Bilgi etiket="AYT Alanı" deger={AYT_ALAN_ETIKET[s.ayt_alan]} />
         </div>
-      )}
-      <p style={{ color: TEXT_MUTED }} className="text-sm">
-        Veri girişi (deneme, konu çalışma, soru çözümü vb.) yakında burada olacak.
-      </p>
+      </div>
+
+      <OgrenciVeriGirisi studentId={userId} aytAlan={s.ayt_alan} veriGirisSikligi={s.veri_giris_sikligi} />
     </div>
   );
 }
