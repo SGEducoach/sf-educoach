@@ -39,6 +39,8 @@ export interface StudentPanelData {
   ad: string;
   hedefPuan: number;
   hedefBolum: string;
+  ogrenciNo?: string;
+  baglantiKodu?: string;
   exams: Exam[];
   studySessions: StudySession[];
   notifications: Notification[];
@@ -117,6 +119,19 @@ export function StudentPanel({
 
   return (
     <div>
+      {student.ogrenciNo && student.baglantiKodu && (
+        <div className="sgec-fade rounded-2xl px-4 py-3 mb-6 flex flex-wrap items-center gap-x-5 gap-y-1" style={{ background: SKY_BG, border: `1px solid rgba(143,198,255,0.3)` }}>
+          <span style={{ color: SKY }} className="text-[13px] font-semibold">
+            Öğrenci No: <span style={{ fontFamily: "var(--font-baloo)" }}>{student.ogrenciNo}</span>
+          </span>
+          <span style={{ color: SKY }} className="text-[13px] font-semibold">
+            Bağlantı Kodu: <span style={{ fontFamily: "var(--font-baloo)" }}>{student.baglantiKodu}</span>
+          </span>
+          <span style={{ color: TEXT_MUTED }} className="text-[11px] w-full sm:w-auto">
+            Veliniz veya koçunuz sizi bu ikisiyle hesabına bağlayabilir.
+          </span>
+        </div>
+      )}
       {kacGundur !== null && kacGundur >= 3 && (
         <div className="sgec-fade rounded-2xl px-4 py-3 mb-6 flex items-center gap-2.5" style={{ background: BLUSH_BG, border: `1px solid rgba(255,159,180,0.3)` }}>
           <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style={{ background: "rgba(255,255,255,0.08)" }}>

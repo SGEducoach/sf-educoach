@@ -16,6 +16,8 @@ export interface Student {
   hedef_bolum: string;
   sinif: string | null;
   yks_yili: number | null;
+  ogrenci_no: string;
+  baglanti_kodu: string;
   created_at: string;
 }
 

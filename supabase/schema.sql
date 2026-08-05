@@ -16,6 +16,8 @@ drop table if exists public.profiles cascade;
 drop function if exists public.handle_new_user() cascade;
 drop function if exists public.has_student_access(uuid) cascade;
 drop function if exists public.find_student_by_email(text) cascade;
+drop function if exists public.find_student_by_code(text, text) cascade;
+drop sequence if exists public.ogrenci_no_seq;
 drop type if exists public.user_role cascade;
 drop type if exists public.notification_type cascade;
 
@@ -31,12 +33,18 @@ create table public.profiles (
 );
 
 -- 2) students: öğrenciye özgü ek bilgiler (bir öğrenci = bir profil, role='ogrenci')
+-- ogrenci_no + baglanti_kodu: koç/veli bu ikisini birlikte girerek öğrenciye
+-- bağlanır (e-posta paylaşmaya gerek kalmadan, öğrencinin kendisi paylaşır).
+create sequence public.ogrenci_no_seq;
+
 create table public.students (
   id uuid primary key references public.profiles(id) on delete cascade,
   hedef_puan integer not null,
   hedef_bolum text not null,
   sinif text, -- örn. "11-C"
   yks_yili integer,
+  ogrenci_no text not null unique,
+  baglanti_kodu text not null,
   created_at timestamptz not null default now()
 );
 
@@ -109,19 +117,35 @@ set search_path = public
 as $$
 declare
   v_role public.user_role := coalesce(new.raw_user_meta_data->>'role', 'ogrenci')::public.user_role;
+  v_student_id uuid;
 begin
   insert into public.profiles (id, ad, email, role)
   values (new.id, coalesce(new.raw_user_meta_data->>'ad', new.email), new.email, v_role);
 
   if v_role = 'ogrenci' then
-    insert into public.students (id, hedef_puan, hedef_bolum, sinif, yks_yili)
+    insert into public.students (id, hedef_puan, hedef_bolum, sinif, yks_yili, ogrenci_no, baglanti_kodu)
     values (
       new.id,
       coalesce((new.raw_user_meta_data->>'hedef_puan')::integer, 0),
       coalesce(new.raw_user_meta_data->>'hedef_bolum', ''),
       new.raw_user_meta_data->>'sinif',
-      (new.raw_user_meta_data->>'yks_yili')::integer
+      (new.raw_user_meta_data->>'yks_yili')::integer,
+      'SG' || lpad(nextval('public.ogrenci_no_seq')::text, 5, '0'),
+      upper(substr(md5(random()::text || new.id::text), 1, 6))
     );
+  elsif v_role = 'veli'
+    and new.raw_user_meta_data->>'ogrenci_no' is not null
+    and new.raw_user_meta_data->>'baglanti_kodu' is not null then
+    select s.id into v_student_id
+    from public.students s
+    where s.ogrenci_no = new.raw_user_meta_data->>'ogrenci_no'
+      and s.baglanti_kodu = new.raw_user_meta_data->>'baglanti_kodu';
+
+    if v_student_id is not null then
+      insert into public.parent_students (parent_id, student_id)
+      values (new.id, v_student_id)
+      on conflict do nothing;
+    end if;
   end if;
 
   return new;
@@ -208,11 +232,10 @@ create policy "notifications_insert_coach" on public.notifications
     exists (select 1 from public.coach_students cs where cs.student_id = notifications.student_id and cs.coach_id = auth.uid())
   );
 
--- ============ Öğrenciyi e-postayla bulma (koç/veli bağlama akışı için) ============
--- RLS'i bypass eder ama sadece role='ogrenci' olan profillerin id/ad alanlarını
--- döndürür — e-posta adresini bilen biri sadece o öğrencinin kimliğini bulabilir,
--- başka hiçbir kullanıcı bilgisine erişemez.
-create or replace function public.find_student_by_email(p_email text)
+-- ============ Öğrenciyi no + koduyla bulma (koç/veli bağlama akışı için) ============
+-- RLS'i bypass eder ama sadece hem ogrenci_no hem baglanti_kodu birlikte doğru
+-- girildiğinde eşleşen öğrencinin id/ad alanlarını döndürür.
+create or replace function public.find_student_by_code(p_ogrenci_no text, p_kod text)
 returns table (id uuid, ad text)
 language sql
 security definer
@@ -220,9 +243,10 @@ set search_path = public
 stable
 as $$
   select p.id, p.ad
-  from public.profiles p
-  where p.email = p_email and p.role = 'ogrenci';
+  from public.students s
+  join public.profiles p on p.id = s.id
+  where s.ogrenci_no = p_ogrenci_no and s.baglanti_kodu = p_kod;
 $$;
 
-revoke all on function public.find_student_by_email(text) from public;
-grant execute on function public.find_student_by_email(text) to authenticated;
+revoke all on function public.find_student_by_code(text, text) from public;
+grant execute on function public.find_student_by_code(text, text) to authenticated;

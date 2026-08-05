@@ -27,6 +27,8 @@ export default function SignupForm() {
   const [hedefPuan, setHedefPuan] = useState("");
   const [hedefBolum, setHedefBolum] = useState("");
   const [sinif, setSinif] = useState("");
+  const [ogrenciNo, setOgrenciNo] = useState("");
+  const [baglantiKodu, setBaglantiKodu] = useState("");
   const [hata, setHata] = useState<string | null>(null);
   const [basarili, setBasarili] = useState(false);
   const [yukleniyor, setYukleniyor] = useState(false);
@@ -47,6 +49,10 @@ export default function SignupForm() {
             hedef_puan: hedefPuan ? Number(hedefPuan) : 0,
             hedef_bolum: hedefBolum,
             sinif,
+          }),
+          ...(role === "veli" && {
+            ogrenci_no: ogrenciNo.trim(),
+            baglanti_kodu: baglantiKodu.trim(),
           }),
         },
       },
@@ -143,6 +149,24 @@ export default function SignupForm() {
                 <input placeholder="11-C" value={sinif} onChange={(e) => setSinif(e.target.value)}
                   className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
               </label>
+            </div>
+          )}
+
+          {role === "veli" && (
+            <div className="grid grid-cols-2 gap-2.5 p-3 rounded-2xl" style={{ background: MINT_BG }}>
+              <label className="flex flex-col gap-1">
+                <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Öğrenci numarası</span>
+                <input required placeholder="SG00001" value={ogrenciNo} onChange={(e) => setOgrenciNo(e.target.value)}
+                  className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Bağlantı kodu</span>
+                <input required placeholder="8F3A2C" value={baglantiKodu} onChange={(e) => setBaglantiKodu(e.target.value)}
+                  className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+              </label>
+              <p style={{ color: TEXT_MUTED }} className="text-[11px] col-span-2 leading-snug">
+                Bu bilgileri çocuğunuz kendi hesabından (dashboard'unun üst kısmından) görüp size iletebilir.
+              </p>
             </div>
           )}
 

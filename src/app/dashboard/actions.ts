@@ -82,17 +82,17 @@ export async function bildirimEkle(studentId: string, formData: FormData) {
   return { error: null };
 }
 
-export async function ogrenciBagla(kind: "coach" | "parent", email: string) {
+export async function ogrenciBagla(kind: "coach" | "parent", ogrenciNo: string, baglantiKodu: string) {
   const { supabase, user } = await requireUser();
 
   const { data: bulmaSonucu, error: bulmaHatasi } = await supabase
-    .rpc("find_student_by_email", { p_email: email.trim() })
+    .rpc("find_student_by_code", { p_ogrenci_no: ogrenciNo.trim(), p_kod: baglantiKodu.trim() })
     .single();
 
   const bulunan = bulmaSonucu as { id: string; ad: string } | null;
 
   if (bulmaHatasi || !bulunan) {
-    return { error: "Bu e-postayla kayıtlı bir öğrenci bulunamadı." };
+    return { error: "Öğrenci numarası veya bağlantı kodu hatalı." };
   }
 
   const studentId = bulunan.id;

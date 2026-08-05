@@ -16,7 +16,8 @@ export function CoachParentShell({
 }) {
   const [seciliId, setSeciliId] = useState<string | null>(students[0]?.id ?? null);
   const [formAcik, setFormAcik] = useState(false);
-  const [email, setEmail] = useState("");
+  const [ogrenciNo, setOgrenciNo] = useState("");
+  const [baglantiKodu, setBaglantiKodu] = useState("");
   const [hata, setHata] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -26,10 +27,11 @@ export function CoachParentShell({
     e.preventDefault();
     setHata(null);
     startTransition(async () => {
-      const res = await ogrenciBagla(kind, email);
+      const res = await ogrenciBagla(kind, ogrenciNo, baglantiKodu);
       if (res.error) setHata(res.error);
       else {
-        setEmail("");
+        setOgrenciNo("");
+        setBaglantiKodu("");
         setFormAcik(false);
       }
     });
@@ -53,8 +55,13 @@ export function CoachParentShell({
         {formAcik && (
           <form onSubmit={baglaGonder} className="mb-4 p-3.5 rounded-2xl flex flex-col sm:flex-row gap-2.5 items-start sm:items-end" style={{ background: BG1_ALT, border: `1px solid ${BORDER}` }}>
             <label className="flex flex-col gap-1 flex-1 w-full">
-              <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Öğrencinin e-postası</span>
-              <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+              <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Öğrenci numarası</span>
+              <input required placeholder="SG00001" value={ogrenciNo} onChange={(e) => setOgrenciNo(e.target.value)}
+                className="text-sm px-2.5 py-1.5 rounded-xl outline-none w-full" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG1, color: TEXT }} />
+            </label>
+            <label className="flex flex-col gap-1 flex-1 w-full">
+              <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Bağlantı kodu</span>
+              <input required placeholder="8F3A2C" value={baglantiKodu} onChange={(e) => setBaglantiKodu(e.target.value)}
                 className="text-sm px-2.5 py-1.5 rounded-xl outline-none w-full" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG1, color: TEXT }} />
             </label>
             <button type="submit" disabled={pending} className="sgec-btn text-xs font-bold py-2 px-4 rounded-xl disabled:opacity-60 shrink-0" style={{ background: MINT, color: "#12321F" }}>
@@ -66,7 +73,7 @@ export function CoachParentShell({
 
         {students.length === 0 ? (
           <p style={{ color: TEXT_MUTED }} className="text-sm py-6 text-center rounded-3xl">
-            Henüz bağlı öğrenci yok. Yukarıdan öğrencinin e-postasını girerek bağlayabilirsiniz.
+            Henüz bağlı öğrenci yok. Yukarıdan öğrencinin size verdiği öğrenci numarası ve bağlantı koduyla bağlayabilirsiniz.
           </p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

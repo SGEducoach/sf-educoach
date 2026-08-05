@@ -11,6 +11,8 @@ async function loadStudentPanelData(
   ad: string,
   hedefPuan: number,
   hedefBolum: string,
+  ogrenciNo?: string,
+  baglantiKodu?: string,
 ): Promise<StudentPanelData> {
   const [{ data: exams }, { data: studySessions }, { data: notifications }] = await Promise.all([
     supabase.from("exams").select("*").eq("student_id", studentId).order("tarih", { ascending: true }),
@@ -23,6 +25,8 @@ async function loadStudentPanelData(
     ad,
     hedefPuan,
     hedefBolum,
+    ogrenciNo,
+    baglantiKodu,
     exams: (exams as Exam[]) ?? [],
     studySessions: (studySessions as StudySession[]) ?? [],
     notifications: (notifications as Notification[]) ?? [],
@@ -50,13 +54,14 @@ export default async function DashboardPage() {
   if (role === "ogrenci") {
     const { data: student } = await supabase
       .from("students")
-      .select("hedef_puan, hedef_bolum")
+      .select("hedef_puan, hedef_bolum, ogrenci_no, baglanti_kodu")
       .eq("id", user.id)
       .single();
 
     const panelData = await loadStudentPanelData(
       supabase, user.id, profile.ad,
       student?.hedef_puan ?? 0, student?.hedef_bolum ?? "",
+      student?.ogrenci_no, student?.baglanti_kodu,
     );
 
     return (
