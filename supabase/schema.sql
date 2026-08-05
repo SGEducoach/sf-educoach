@@ -467,3 +467,7 @@ $$;
 
 revoke all on function public.ogrenci_giris_sayisi(uuid) from public;
 grant execute on function public.ogrenci_giris_sayisi(uuid) to authenticated;
+
+-- ============ Hatırlatma sistemi ============
+alter table public.students
+  add column if not exists son_hatirlatma_deadline timestamptz;
