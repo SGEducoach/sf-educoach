@@ -38,6 +38,7 @@ create table public.schools (
   id uuid primary key default gen_random_uuid(),
   ad text not null,
   tur public.kurum_turu not null default 'okul',
+  okul_kodu text unique, -- müdür girişi için (Okul Kodu + Şifre)
   created_at timestamptz not null default now()
 );
 
@@ -52,7 +53,7 @@ create table public.classes (
 );
 
 -- ============ 3) profiles ============
-create type public.user_role as enum ('ogrenci', 'ogretmen', 'veli');
+create type public.user_role as enum ('ogrenci', 'ogretmen', 'veli', 'mudur');
 
 create table public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
@@ -281,6 +282,9 @@ begin
       nullif(new.raw_user_meta_data->>'class_id', '')::uuid,
       coalesce(new.raw_user_meta_data->>'brans', '')
     );
+  elsif v_role = 'mudur' then
+    insert into public.teachers (id, school_id, class_id, brans)
+    values (new.id, (new.raw_user_meta_data->>'school_id')::uuid, null, 'Müdür');
   elsif v_role = 'veli' and new.raw_user_meta_data->>'request_id' is not null then
     select * into v_request
     from public.veli_link_requests
@@ -345,7 +349,7 @@ revoke all on function public.resolve_veli_login(text, text) from public;
 grant execute on function public.resolve_veli_login(text, text) to anon, authenticated;
 
 -- ============ Seed: Elbistan Bist Fen Lisesi + 11-12 A-D şubeleri ============
-insert into public.schools (ad, tur) values ('Elbistan Bist Fen Lisesi', 'okul');
+insert into public.schools (ad, tur, okul_kodu) values ('Elbistan Bist Fen Lisesi', 'okul', '758130');
 
 insert into public.classes (school_id, seviye, sube)
 select s.id, seviye, sube
@@ -490,3 +494,49 @@ $$;
 
 revoke all on function public.find_student_id_by_okul_no(text) from public;
 grant execute on function public.find_student_id_by_okul_no(text) to anon, authenticated;
+
+-- ============ Öğretmen yetki ayrımı ============
+-- Sınıf öğretmeni kendi sınıfında işlem yapabilir (has_student_access +
+-- veli_talep_onayla zaten bunu sağlıyor); herhangi bir öğretmen herhangi
+-- bir sınıfı SADECE görüntüleyebilir.
+-- teachers tablosunda kaydı olan herkes (role='ogretmen' veya 'mudur',
+-- ikisi de bu tabloya satır ekliyor) bu fonksiyondan true alır.
+create or replace function public.is_ogretmen()
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (select 1 from public.teachers where id = auth.uid());
+$$;
+
+revoke all on function public.is_ogretmen() from public;
+grant execute on function public.is_ogretmen() to authenticated;
+
+create policy "profiles_select_any_teacher" on public.profiles for select using (public.is_ogretmen());
+create policy "students_select_any_teacher" on public.students for select using (public.is_ogretmen());
+create policy "konu_calismalar_select_any_teacher" on public.konu_calismalar for select using (public.is_ogretmen());
+create policy "soru_cozumleri_select_any_teacher" on public.soru_cozumleri for select using (public.is_ogretmen());
+create policy "denemeler_select_any_teacher" on public.denemeler for select using (public.is_ogretmen());
+create policy "deneme_ders_sonuclari_select_any_teacher" on public.deneme_ders_sonuclari for select using (public.is_ogretmen());
+create policy "haftalik_verimlilikler_select_any_teacher" on public.haftalik_verimlilikler for select using (public.is_ogretmen());
+
+-- ============ Müdür girişi: Okul Kodu -> e-posta çözümleme ============
+create or replace function public.resolve_mudur_email(p_okul_kodu text)
+returns text
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select p.email
+  from public.schools s
+  join public.teachers t on t.school_id = s.id
+  join public.profiles p on p.id = t.id
+  where s.okul_kodu = p_okul_kodu and p.role = 'mudur'
+  limit 1;
+$$;
+
+revoke all on function public.resolve_mudur_email(text) from public;
+grant execute on function public.resolve_mudur_email(text) to anon, authenticated;

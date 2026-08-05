@@ -21,6 +21,9 @@ const OGRETMEN_EMAIL = "ornek.ogretmen@sgeducoach.test";
 const OGRENCI_EMAIL = "ornek.ogrenci@sgeducoach.test";
 const OGRENCI_OKUL_NO = "1";
 const VELI_KOD = "ORNEK123";
+const MUDUR_EMAIL = "ornek.mudur@sgeducoach.test";
+const MUDUR_OKUL_KODU = "758130";
+const MUDUR_SIFRE = "758130hy";
 
 async function main() {
   const { data: school } = await admin.from("schools").select("id").eq("ad", "Elbistan Bist Fen Lisesi").single();
@@ -84,10 +87,24 @@ async function main() {
     console.log(`• Örnek Veli zaten var: okul no ${OGRENCI_OKUL_NO}, kod ${VELI_KOD}`);
   }
 
+  // --- Müdür (Okul Kodu + Şifre ile giriş) ---
+  let { data: mevcutMudur } = await admin.from("profiles").select("id").eq("email", MUDUR_EMAIL).maybeSingle();
+  if (!mevcutMudur) {
+    const { error } = await admin.auth.admin.createUser({
+      email: MUDUR_EMAIL, password: MUDUR_SIFRE, email_confirm: true,
+      user_metadata: { role: "mudur", ad: "Örnek Müdür", telefon: "5550000004", school_id: school.id },
+    });
+    if (error) throw new Error("Müdür oluşturulamadı: " + error.message);
+    console.log(`✓ Örnek Müdür oluşturuldu: okul kodu ${MUDUR_OKUL_KODU}, şifre ${MUDUR_SIFRE}`);
+  } else {
+    console.log(`• Örnek Müdür zaten var: okul kodu ${MUDUR_OKUL_KODU}, şifre ${MUDUR_SIFRE}`);
+  }
+
   console.log("\n--- Giriş bilgileri ---");
   console.log("Öğretmen: ", OGRETMEN_EMAIL, "/", SIFRE);
   console.log("Öğrenci:  okul no", OGRENCI_OKUL_NO, "/ şifre", SIFRE);
   console.log("Veli:     okul no", OGRENCI_OKUL_NO, "/ kod", VELI_KOD);
+  console.log("Müdür:    okul kodu", MUDUR_OKUL_KODU, "/ şifre", MUDUR_SIFRE);
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });

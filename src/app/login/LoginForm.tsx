@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { GraduationCap, BookOpen, Users } from "lucide-react";
+import { GraduationCap, BookOpen, Users, Building2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { UserRole } from "@/lib/types";
 import { BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
@@ -12,6 +12,7 @@ const rolSecenekleri: { id: UserRole; ad: string; icon: typeof BookOpen }[] = [
   { id: "ogrenci", ad: "Öğrenci", icon: BookOpen },
   { id: "ogretmen", ad: "Öğretmen", icon: GraduationCap },
   { id: "veli", ad: "Veli", icon: Users },
+  { id: "mudur", ad: "Müdür", icon: Building2 },
 ];
 
 export default function LoginForm() {
@@ -49,6 +50,13 @@ export default function LoginForm() {
       }
       girisEmail = cozulenEmail;
       girisSifre = kod.trim();
+    } else if (role === "mudur") {
+      const { data: cozulenEmail } = await supabase.rpc("resolve_mudur_email", { p_okul_kodu: okulNo.trim() });
+      if (!cozulenEmail) {
+        setYukleniyor(false);
+        return setHata("Okul kodu hatalı.");
+      }
+      girisEmail = cozulenEmail;
     }
 
     const { error } = await supabase.auth.signInWithPassword({ email: girisEmail, password: girisSifre });
@@ -103,7 +111,7 @@ export default function LoginForm() {
           ) : (
             <>
               <label className="flex flex-col gap-1">
-                <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Okul No</span>
+                <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">{role === "mudur" ? "Okul Kodu" : "Okul No"}</span>
                 <input required value={okulNo} onChange={(e) => setOkulNo(e.target.value)}
                   className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
               </label>

@@ -7,7 +7,11 @@ import { AYT_ALAN_ETIKET } from "@/lib/types";
 import type { AytAlan, UserRole, VeriGirisSikligi } from "@/lib/types";
 import { BG1, BORDER, TEXT, TEXT_MUTED, MINT } from "@/lib/theme";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ sinif?: string }>;
+}) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
@@ -21,13 +25,14 @@ export default async function DashboardPage() {
   if (!profile) redirect("/login");
 
   const role = profile.role as UserRole;
+  const params = await searchParams;
 
   return (
     <div style={{ minHeight: "100vh", width: "100%" }} className="flex-1 flex flex-col">
       <Header ad={profile.ad} role={role} />
       <div className="max-w-6xl mx-auto px-6 py-7 w-full flex-1">
         {role === "ogrenci" && <OgrenciIcerik userId={user.id} />}
-        {role === "ogretmen" && <OgretmenIcerik userId={user.id} />}
+        {(role === "ogretmen" || role === "mudur") && <OgretmenIcerik userId={user.id} secilenSinifId={params.sinif} />}
         {role === "veli" && <VeliIcerik userId={user.id} />}
       </div>
     </div>
@@ -73,29 +78,40 @@ async function OgrenciIcerik({ userId }: { userId: string }) {
   );
 }
 
-async function OgretmenIcerik({ userId }: { userId: string }) {
+async function OgretmenIcerik({ userId, secilenSinifId }: { userId: string; secilenSinifId?: string }) {
   const supabase = await createClient();
   const { data: teacher } = await supabase
     .from("teachers")
-    .select("class_id, classes(seviye, sube)")
+    .select("school_id, class_id")
     .eq("id", userId)
     .single();
 
-  type TeacherRow = { class_id: string | null; classes: { seviye: string; sube: string } | null };
-  const t = teacher as unknown as TeacherRow | null;
-  const sinifAdi = t?.classes ? `${t.classes.seviye}-${t.classes.sube}` : null;
-
-  if (!t?.class_id) {
+  if (!teacher) {
     return (
       <div className="sgec-fade rounded-3xl p-6 text-center" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
-        <p style={{ color: TEXT_MUTED }} className="text-sm">Henüz bir sınıfa atanmadınız.</p>
+        <p style={{ color: TEXT_MUTED }} className="text-sm">Öğretmen profili bulunamadı.</p>
       </div>
     );
   }
 
+  const { data: siniflar } = await supabase
+    .from("classes")
+    .select("id, seviye, sube")
+    .eq("school_id", teacher.school_id)
+    .order("seviye")
+    .order("sube");
+
+  const sinifListesi = (siniflar ?? []) as { id: string; seviye: string; sube: string }[];
+  const gorunecekSinifId = secilenSinifId || teacher.class_id || sinifListesi[0]?.id || null;
+  const kendiSinifiMi = gorunecekSinifId === teacher.class_id;
+
   const [{ data: ogrenciler }, { data: talepler }] = await Promise.all([
-    supabase.from("students").select("id, okul_no, profiles!students_id_fkey(ad)").eq("class_id", t.class_id),
-    supabase.from("veli_link_requests").select("*, students!inner(class_id, profiles!students_id_fkey(ad))").eq("students.class_id", t.class_id).eq("durum", "bekliyor"),
+    gorunecekSinifId
+      ? supabase.from("students").select("id, okul_no, profiles!students_id_fkey(ad)").eq("class_id", gorunecekSinifId)
+      : Promise.resolve({ data: [] }),
+    teacher.class_id
+      ? supabase.from("veli_link_requests").select("*, students!inner(class_id, profiles!students_id_fkey(ad))").eq("students.class_id", teacher.class_id).eq("durum", "bekliyor")
+      : Promise.resolve({ data: [] }),
   ]);
 
   type OgrenciRow = { id: string; okul_no: string; profiles: { ad: string } | null };
@@ -113,7 +129,20 @@ async function OgretmenIcerik({ userId }: { userId: string }) {
     ...t, ogrenci_ad: t.students?.profiles?.ad ?? "İsimsiz",
   }));
 
-  return <OgretmenPanel bekleyenTalepler={talepListesi} ogrenciler={ogrenciListesi} sinifAdi={sinifAdi} />;
+  const gorunenSinif = sinifListesi.find((s) => s.id === gorunecekSinifId);
+  const sinifAdi = gorunenSinif ? `${gorunenSinif.seviye}-${gorunenSinif.sube}` : null;
+
+  return (
+    <OgretmenPanel
+      bekleyenTalepler={talepListesi}
+      ogrenciler={ogrenciListesi}
+      sinifAdi={sinifAdi}
+      siniflar={sinifListesi}
+      gorunecekSinifId={gorunecekSinifId}
+      kendiSinifId={teacher.class_id}
+      kendiSinifiMi={kendiSinifiMi}
+    />
+  );
 }
 
 async function VeliIcerik({ userId }: { userId: string }) {

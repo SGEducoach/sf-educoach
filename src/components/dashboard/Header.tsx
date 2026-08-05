@@ -7,6 +7,7 @@ const rolEtiket: Record<UserRole, string> = {
   ogrenci: "Öğrenci",
   veli: "Veli",
   ogretmen: "Öğretmen",
+  mudur: "Müdür",
 };
 
 export function Header({ ad, role }: { ad: string; role: UserRole }) {
