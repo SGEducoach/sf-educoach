@@ -17,95 +17,10 @@ export async function signOut() {
   redirect("/login");
 }
 
-export async function denemeEkle(studentId: string, formData: FormData) {
+export async function veliTalepOnayla(requestId: string) {
   const { supabase } = await requireUser();
-  const tarih = String(formData.get("tarih"));
-  const tytNet = Number(formData.get("tytNet"));
-  const aytNet = Number(formData.get("aytNet"));
-  const puan = Number(formData.get("puan"));
-
-  if (!tarih || Number.isNaN(tytNet) || Number.isNaN(aytNet) || Number.isNaN(puan)) {
-    return { error: "Lütfen tüm alanları doldurun." };
-  }
-
-  const { error } = await supabase.from("exams").insert({
-    student_id: studentId,
-    tarih,
-    tyt_net: tytNet,
-    ayt_net: aytNet,
-    puan,
-  });
-
-  if (error) return { error: error.message };
+  const { data, error } = await supabase.rpc("veli_talep_onayla", { p_request_id: requestId });
+  if (error) return { error: error.message, kod: null };
   revalidatePath("/dashboard");
-  return { error: null };
-}
-
-export async function calismaEkle(studentId: string, formData: FormData) {
-  const { supabase } = await requireUser();
-  const tarih = String(formData.get("tarih"));
-  const ders = String(formData.get("ders"));
-  const dakika = Number(formData.get("dakika"));
-
-  if (!tarih || !ders || Number.isNaN(dakika) || dakika <= 0) {
-    return { error: "Lütfen tüm alanları doldurun." };
-  }
-
-  const { error } = await supabase.from("study_sessions").insert({
-    student_id: studentId,
-    tarih,
-    ders,
-    dakika,
-  });
-
-  if (error) return { error: error.message };
-  revalidatePath("/dashboard");
-  return { error: null };
-}
-
-export async function bildirimEkle(studentId: string, formData: FormData) {
-  const { supabase, user } = await requireUser();
-  const mesaj = String(formData.get("mesaj") ?? "").trim();
-  const tip = String(formData.get("tip") ?? "bilgi");
-
-  if (!mesaj) return { error: "Mesaj boş olamaz." };
-
-  const { error } = await supabase.from("notifications").insert({
-    student_id: studentId,
-    author_id: user.id,
-    tip,
-    mesaj,
-  });
-
-  if (error) return { error: error.message };
-  revalidatePath("/dashboard");
-  return { error: null };
-}
-
-export async function ogrenciBagla(kind: "coach" | "parent", ogrenciNo: string, baglantiKodu: string) {
-  const { supabase, user } = await requireUser();
-
-  const { data: bulmaSonucu, error: bulmaHatasi } = await supabase
-    .rpc("find_student_by_code", { p_ogrenci_no: ogrenciNo.trim(), p_kod: baglantiKodu.trim() })
-    .single();
-
-  const bulunan = bulmaSonucu as { id: string; ad: string } | null;
-
-  if (bulmaHatasi || !bulunan) {
-    return { error: "Öğrenci numarası veya bağlantı kodu hatalı." };
-  }
-
-  const studentId = bulunan.id;
-  const { error } =
-    kind === "coach"
-      ? await supabase.from("coach_students").insert({ coach_id: user.id, student_id: studentId })
-      : await supabase.from("parent_students").insert({ parent_id: user.id, student_id: studentId });
-
-  if (error) {
-    if (error.code === "23505") return { error: "Bu öğrenci zaten bağlı." };
-    return { error: error.message };
-  }
-
-  revalidatePath("/dashboard");
-  return { error: null };
+  return { error: null, kod: data as string };
 }

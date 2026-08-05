@@ -6,7 +6,7 @@ import type { UserRole } from "@/lib/types";
 const rolEtiket: Record<UserRole, string> = {
   ogrenci: "Öğrenci",
   veli: "Veli",
-  koc: "Koç",
+  ogretmen: "Öğretmen",
 };
 
 export function Header({ ad, role }: { ad: string; role: UserRole }) {

@@ -1,62 +1,94 @@
--- SG EduCoach - Supabase şema (v1)
--- Roller: ogrenci, veli, koc
+-- SG EduCoach — Şema v2 (Faz A: okul/sınıf/öğretmen/öğrenci/veli akışı)
+-- NOT: Bu, önceki basit prototip şemasının tamamen yerini alır (dev aşamasında
+-- güvenle sıfırlanabilir — henüz gerçek kullanıcı verisi yok).
+-- Faz B'de: konu çalışma, soru çözümü, deneme sonuçları, hedefe yakınlık,
+-- haftalık verimlilik tabloları eklenecek.
 
--- ============ RESET (yalnızca geliştirme aşamasında) ============
--- Bu script'i defalarca çalıştırabilmek için önce önceki sürümün
--- nesnelerini temizler. Gerçek kullanıcı verisi biriktikten sonra bu
--- blok kaldırılmalı ve ileri değişiklikler ayrı migration dosyalarıyla
--- yapılmalıdır.
+-- ============ RESET ============
 drop table if exists public.notifications cascade;
 drop table if exists public.study_sessions cascade;
 drop table if exists public.exams cascade;
+drop table if exists public.veli_link_requests cascade;
 drop table if exists public.parent_students cascade;
 drop table if exists public.coach_students cascade;
+drop table if exists public.teachers cascade;
 drop table if exists public.students cascade;
+drop table if exists public.classes cascade;
+drop table if exists public.schools cascade;
 drop table if exists public.profiles cascade;
+
 drop function if exists public.handle_new_user() cascade;
 drop function if exists public.has_student_access(uuid) cascade;
 drop function if exists public.find_student_by_email(text) cascade;
 drop function if exists public.find_student_by_code(text, text) cascade;
+drop function if exists public.veli_kod_onayla(uuid) cascade;
 drop sequence if exists public.ogrenci_no_seq;
+
 drop type if exists public.user_role cascade;
 drop type if exists public.notification_type cascade;
+drop type if exists public.ayt_alan cascade;
+drop type if exists public.veri_giris_sikligi cascade;
+drop type if exists public.veli_talep_durum cascade;
+drop type if exists public.kurum_turu cascade;
 
--- 1) profiles: her auth.users kaydına eşlik eden profil + rol
-create type public.user_role as enum ('ogrenci', 'veli', 'koc');
+-- ============ 1) schools (okul / dershane) ============
+create type public.kurum_turu as enum ('okul', 'dershane');
+
+create table public.schools (
+  id uuid primary key default gen_random_uuid(),
+  ad text not null,
+  tur public.kurum_turu not null default 'okul',
+  created_at timestamptz not null default now()
+);
+
+-- ============ 2) classes (şube) ============
+create table public.classes (
+  id uuid primary key default gen_random_uuid(),
+  school_id uuid not null references public.schools(id) on delete cascade,
+  seviye text not null check (seviye in ('11', '12')),
+  sube text not null,
+  created_at timestamptz not null default now(),
+  unique (school_id, seviye, sube)
+);
+
+-- ============ 3) profiles ============
+create type public.user_role as enum ('ogrenci', 'ogretmen', 'veli');
 
 create table public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   ad text not null,
-  email text not null,
+  email text,
+  telefon text,
   role public.user_role not null,
   created_at timestamptz not null default now()
 );
 
--- 2) students: öğrenciye özgü ek bilgiler (bir öğrenci = bir profil, role='ogrenci')
--- ogrenci_no + baglanti_kodu: koç/veli bu ikisini birlikte girerek öğrenciye
--- bağlanır (e-posta paylaşmaya gerek kalmadan, öğrencinin kendisi paylaşır).
-create sequence public.ogrenci_no_seq;
+-- ============ 4) students ============
+create type public.ayt_alan as enum ('SAY', 'EA', 'SOZ');
+create type public.veri_giris_sikligi as enum ('gunluk', '3gunluk', 'haftalik');
 
 create table public.students (
   id uuid primary key references public.profiles(id) on delete cascade,
-  hedef_puan integer not null,
+  school_id uuid not null references public.schools(id),
+  class_id uuid not null references public.classes(id),
+  okul_no text not null,
+  ayt_alan public.ayt_alan not null,
   hedef_bolum text not null,
-  sinif text, -- örn. "11-C"
-  yks_yili integer,
-  ogrenci_no text not null unique,
-  baglanti_kodu text not null,
+  veri_giris_sikligi public.veri_giris_sikligi not null default 'haftalik',
+  created_at timestamptz not null default now(),
+  unique (school_id, okul_no)
+);
+
+-- ============ 5) teachers (öğretmen) ============
+create table public.teachers (
+  id uuid primary key references public.profiles(id) on delete cascade,
+  school_id uuid not null references public.schools(id),
+  class_id uuid references public.classes(id), -- sınıf öğretmeni olduğu şube (dershanede boş kalabilir)
+  brans text not null,
   created_at timestamptz not null default now()
 );
 
--- 3) coach_students: koç-öğrenci ilişkisi (bir koç birden çok öğrenciye bakabilir)
-create table public.coach_students (
-  coach_id uuid not null references public.profiles(id) on delete cascade,
-  student_id uuid not null references public.students(id) on delete cascade,
-  created_at timestamptz not null default now(),
-  primary key (coach_id, student_id)
-);
-
--- 4) parent_students: veli-öğrenci ilişkisi
+-- ============ 6) parent_students (onaylı veli-öğrenci bağlantısı) ============
 create table public.parent_students (
   parent_id uuid not null references public.profiles(id) on delete cascade,
   student_id uuid not null references public.students(id) on delete cascade,
@@ -64,51 +96,153 @@ create table public.parent_students (
   primary key (parent_id, student_id)
 );
 
--- 5) exams (denemeler)
-create table public.exams (
+-- ============ 7) veli_link_requests (kod talebi + öğretmen onayı) ============
+create type public.veli_talep_durum as enum ('bekliyor', 'onaylandi', 'reddedildi', 'kullanildi');
+
+create table public.veli_link_requests (
   id uuid primary key default gen_random_uuid(),
   student_id uuid not null references public.students(id) on delete cascade,
-  tarih date not null,
-  tyt_net numeric(5,2) not null,
-  ayt_net numeric(5,2) not null,
-  puan numeric(6,2) not null,
-  created_at timestamptz not null default now()
+  veli_ad text not null,
+  veli_telefon text not null,
+  durum public.veli_talep_durum not null default 'bekliyor',
+  kod text, -- öğretmen onaylayınca üretilir
+  onaylayan_ogretmen_id uuid references public.profiles(id),
+  created_at timestamptz not null default now(),
+  onaylanma_at timestamptz
 );
 
--- 6) study_sessions (calismalar)
-create table public.study_sessions (
-  id uuid primary key default gen_random_uuid(),
-  student_id uuid not null references public.students(id) on delete cascade,
-  tarih date not null,
-  ders text not null,
-  dakika integer not null check (dakika > 0),
-  created_at timestamptz not null default now()
-);
+create index on public.veli_link_requests (student_id);
+create index on public.veli_link_requests (durum);
 
--- 7) notifications (bildirimler)
-create type public.notification_type as enum ('basari', 'uyari', 'bilgi');
+-- ============ Yardımcı: bir kullanıcının bir öğrenciye erişimi var mı? ============
+create or replace function public.has_student_access(target_student_id uuid)
+returns boolean
+language sql
+security definer
+stable
+as $$
+  select
+    target_student_id = auth.uid()
+    or exists (
+      select 1 from public.teachers t
+      join public.students s on s.class_id = t.class_id
+      where s.id = target_student_id and t.id = auth.uid()
+    )
+    or exists (
+      select 1 from public.parent_students ps
+      where ps.student_id = target_student_id and ps.parent_id = auth.uid()
+    );
+$$;
 
-create table public.notifications (
-  id uuid primary key default gen_random_uuid(),
-  student_id uuid not null references public.students(id) on delete cascade,
-  author_id uuid references public.profiles(id) on delete set null,
-  tarih date not null default current_date,
-  tip public.notification_type not null default 'bilgi',
-  mesaj text not null,
-  created_at timestamptz not null default now()
-);
+-- ============ RLS ============
+alter table public.schools enable row level security;
+alter table public.classes enable row level security;
+alter table public.profiles enable row level security;
+alter table public.students enable row level security;
+alter table public.teachers enable row level security;
+alter table public.parent_students enable row level security;
+alter table public.veli_link_requests enable row level security;
 
--- Indexler
-create index on public.exams (student_id, tarih);
-create index on public.study_sessions (student_id, tarih);
-create index on public.notifications (student_id, tarih desc);
-create index on public.coach_students (student_id);
-create index on public.parent_students (student_id);
+-- schools/classes: kayıt formlarında herkes (giriş yapmamış kullanıcı dahil) okuyabilmeli
+create policy "schools_select_all" on public.schools for select using (true);
+create policy "classes_select_all" on public.classes for select using (true);
+
+-- profiles
+create policy "profiles_select_own_or_related" on public.profiles
+  for select using (id = auth.uid() or public.has_student_access(id));
+create policy "profiles_update_own" on public.profiles
+  for update using (id = auth.uid());
+create policy "profiles_insert_own" on public.profiles
+  for insert with check (id = auth.uid());
+
+-- students
+create policy "students_select_related" on public.students
+  for select using (public.has_student_access(id));
+create policy "students_update_own" on public.students
+  for update using (id = auth.uid());
+create policy "students_insert_own" on public.students
+  for insert with check (id = auth.uid());
+
+-- teachers: öğrencisi olan herkes (kendi sınıfındaki) + kendisi görebilir
+create policy "teachers_select_related" on public.teachers
+  for select using (
+    id = auth.uid()
+    or exists (
+      select 1 from public.students s
+      where s.class_id = teachers.class_id and s.id = auth.uid()
+    )
+  );
+create policy "teachers_insert_own" on public.teachers
+  for insert with check (id = auth.uid());
+create policy "teachers_update_own" on public.teachers
+  for update using (id = auth.uid());
+
+-- parent_students
+create policy "parent_students_select" on public.parent_students
+  for select using (parent_id = auth.uid() or student_id = auth.uid());
+
+-- veli_link_requests:
+-- - talep oluşturma: herkese açık (henüz hesabı olmayan veli formu dolduruyor)
+-- - görme: ilgili öğretmen (öğrencisinin sınıfı eşleşen) + öğrencinin kendisi
+-- - onaylama (update): sadece ilgili öğretmen
+create policy "veli_link_requests_insert_public" on public.veli_link_requests
+  for insert with check (true);
+create policy "veli_link_requests_select_teacher" on public.veli_link_requests
+  for select using (
+    exists (
+      select 1 from public.teachers t
+      join public.students s on s.class_id = t.class_id
+      where s.id = veli_link_requests.student_id and t.id = auth.uid()
+    )
+    or student_id = auth.uid()
+  );
+create policy "veli_link_requests_update_teacher" on public.veli_link_requests
+  for update using (
+    exists (
+      select 1 from public.teachers t
+      join public.students s on s.class_id = t.class_id
+      where s.id = veli_link_requests.student_id and t.id = auth.uid()
+    )
+  );
+
+-- ============ Öğretmen onay RPC'si: kod üretir, durumu günceller ============
+create or replace function public.veli_talep_onayla(p_request_id uuid)
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_kod text;
+  v_yetkili boolean;
+begin
+  select exists (
+    select 1 from public.veli_link_requests r
+    join public.teachers t on t.class_id = (select class_id from public.students where id = r.student_id)
+    where r.id = p_request_id and t.id = auth.uid()
+  ) into v_yetkili;
+
+  if not v_yetkili then
+    raise exception 'Bu talebi onaylama yetkiniz yok.';
+  end if;
+
+  v_kod := upper(substr(md5(random()::text || p_request_id::text), 1, 8));
+
+  update public.veli_link_requests
+  set durum = 'onaylandi', kod = v_kod, onaylayan_ogretmen_id = auth.uid(), onaylanma_at = now()
+  where id = p_request_id;
+
+  return v_kod;
+end;
+$$;
+
+revoke all on function public.veli_talep_onayla(uuid) from public;
+grant execute on function public.veli_talep_onayla(uuid) to authenticated;
 
 -- ============ Yeni kullanıcı trigger'ı ============
--- auth.users içinde yeni kullanıcı oluşunca profiles (ve role='ogrenci' ise
--- students) satırını otomatik oluşturur. Rol/ad/hedef bilgileri, signUp
--- çağrısındaki `options.data` (raw_user_meta_data) alanından okunur.
+-- ogrenci/ogretmen: normal signUp akışıyla. veli: admin API ile hesap
+-- oluşunca (raw_user_meta_data.request_id ile) parent_students bağlantısını
+-- otomatik kurar ve talebi 'kullanildi' işaretler.
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -117,34 +251,48 @@ set search_path = public
 as $$
 declare
   v_role public.user_role := coalesce(new.raw_user_meta_data->>'role', 'ogrenci')::public.user_role;
-  v_student_id uuid;
+  v_request record;
 begin
-  insert into public.profiles (id, ad, email, role)
-  values (new.id, coalesce(new.raw_user_meta_data->>'ad', new.email), new.email, v_role);
+  insert into public.profiles (id, ad, email, telefon, role)
+  values (
+    new.id,
+    coalesce(new.raw_user_meta_data->>'ad', new.email),
+    new.email,
+    new.raw_user_meta_data->>'telefon',
+    v_role
+  );
 
   if v_role = 'ogrenci' then
-    insert into public.students (id, hedef_puan, hedef_bolum, sinif, yks_yili, ogrenci_no, baglanti_kodu)
+    insert into public.students (id, school_id, class_id, okul_no, ayt_alan, hedef_bolum, veri_giris_sikligi)
     values (
       new.id,
-      coalesce((new.raw_user_meta_data->>'hedef_puan')::integer, 0),
+      (new.raw_user_meta_data->>'school_id')::uuid,
+      (new.raw_user_meta_data->>'class_id')::uuid,
+      new.raw_user_meta_data->>'okul_no',
+      (new.raw_user_meta_data->>'ayt_alan')::public.ayt_alan,
       coalesce(new.raw_user_meta_data->>'hedef_bolum', ''),
-      new.raw_user_meta_data->>'sinif',
-      (new.raw_user_meta_data->>'yks_yili')::integer,
-      'SG' || lpad(nextval('public.ogrenci_no_seq')::text, 5, '0'),
-      upper(substr(md5(random()::text || new.id::text), 1, 6))
+      coalesce((new.raw_user_meta_data->>'veri_giris_sikligi')::public.veri_giris_sikligi, 'haftalik')
     );
-  elsif v_role = 'veli'
-    and new.raw_user_meta_data->>'ogrenci_no' is not null
-    and new.raw_user_meta_data->>'baglanti_kodu' is not null then
-    select s.id into v_student_id
-    from public.students s
-    where s.ogrenci_no = new.raw_user_meta_data->>'ogrenci_no'
-      and s.baglanti_kodu = new.raw_user_meta_data->>'baglanti_kodu';
+  elsif v_role = 'ogretmen' then
+    insert into public.teachers (id, school_id, class_id, brans)
+    values (
+      new.id,
+      (new.raw_user_meta_data->>'school_id')::uuid,
+      nullif(new.raw_user_meta_data->>'class_id', '')::uuid,
+      coalesce(new.raw_user_meta_data->>'brans', '')
+    );
+  elsif v_role = 'veli' and new.raw_user_meta_data->>'request_id' is not null then
+    select * into v_request
+    from public.veli_link_requests
+    where id = (new.raw_user_meta_data->>'request_id')::uuid
+      and durum = 'onaylandi';
 
-    if v_student_id is not null then
+    if found then
       insert into public.parent_students (parent_id, student_id)
-      values (new.id, v_student_id)
+      values (new.id, v_request.student_id)
       on conflict do nothing;
+
+      update public.veli_link_requests set durum = 'kullanildi' where id = v_request.id;
     end if;
   end if;
 
@@ -156,97 +304,52 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
--- ============ RLS ============
-alter table public.profiles enable row level security;
-alter table public.students enable row level security;
-alter table public.coach_students enable row level security;
-alter table public.parent_students enable row level security;
-alter table public.exams enable row level security;
-alter table public.study_sessions enable row level security;
-alter table public.notifications enable row level security;
-
--- Yardımcı fonksiyon: verilen öğrenciye erişimi olan kullanıcı mı?
-create or replace function public.has_student_access(target_student_id uuid)
-returns boolean
-language sql
-security definer
-stable
-as $$
-  select
-    target_student_id = auth.uid() -- öğrencinin kendisi
-    or exists (select 1 from public.coach_students cs where cs.student_id = target_student_id and cs.coach_id = auth.uid())
-    or exists (select 1 from public.parent_students ps where ps.student_id = target_student_id and ps.parent_id = auth.uid());
-$$;
-
--- profiles: herkes kendi profilini görür/günceller; koç/veli bağlı olduğu öğrencilerin profilini görebilir
-create policy "profiles_select_own_or_related" on public.profiles
-  for select using (
-    id = auth.uid() or public.has_student_access(id)
-  );
-create policy "profiles_update_own" on public.profiles
-  for update using (id = auth.uid());
-create policy "profiles_insert_own" on public.profiles
-  for insert with check (id = auth.uid());
-
--- students: erişimi olan herkes görür; sadece öğrencinin kendisi (veya servis rolü) günceller
-create policy "students_select_related" on public.students
-  for select using (public.has_student_access(id));
-create policy "students_update_own" on public.students
-  for update using (id = auth.uid());
-create policy "students_insert_own" on public.students
-  for insert with check (id = auth.uid());
-
--- coach_students: koç kendi bağlantısını ekleyebilir/görebilir/silebilir; öğrenci de görebilir
-create policy "coach_students_select" on public.coach_students
-  for select using (coach_id = auth.uid() or student_id = auth.uid());
-create policy "coach_students_insert" on public.coach_students
-  for insert with check (coach_id = auth.uid());
-create policy "coach_students_delete" on public.coach_students
-  for delete using (coach_id = auth.uid());
-
--- parent_students: veli kendi bağlantısını ekleyebilir/görebilir/silebilir; öğrenci de görebilir
-create policy "parent_students_select" on public.parent_students
-  for select using (parent_id = auth.uid() or student_id = auth.uid());
-create policy "parent_students_insert" on public.parent_students
-  for insert with check (parent_id = auth.uid());
-create policy "parent_students_delete" on public.parent_students
-  for delete using (parent_id = auth.uid());
-
--- exams: erişimi olanlar görür; sadece öğrenci kendi deneme kaydını ekler
-create policy "exams_select_related" on public.exams
-  for select using (public.has_student_access(student_id));
-create policy "exams_insert_own" on public.exams
-  for insert with check (student_id = auth.uid());
-
--- study_sessions: erişimi olanlar görür; sadece öğrenci kendi kaydını ekler
-create policy "study_sessions_select_related" on public.study_sessions
-  for select using (public.has_student_access(student_id));
-create policy "study_sessions_insert_own" on public.study_sessions
-  for insert with check (student_id = auth.uid());
-
--- notifications: erişimi olanlar görür; koç ekleyebilir (öğrenci/veli sadece okur)
-create policy "notifications_select_related" on public.notifications
-  for select using (public.has_student_access(student_id));
-create policy "notifications_insert_coach" on public.notifications
-  for insert with check (
-    exists (select 1 from public.coach_students cs where cs.student_id = notifications.student_id and cs.coach_id = auth.uid())
-  );
-
--- ============ Öğrenciyi no + koduyla bulma (koç/veli bağlama akışı için) ============
--- RLS'i bypass eder ama sadece hem ogrenci_no hem baglanti_kodu birlikte doğru
--- girildiğinde eşleşen öğrencinin id/ad alanlarını döndürür.
-create or replace function public.find_student_by_code(p_ogrenci_no text, p_kod text)
-returns table (id uuid, ad text)
+-- ============ Giriş çözümleyicileri ============
+-- Öğrenci "okul no" ile giriş yapsın diye: okul no -> gerçek e-posta.
+-- (Şu an tek okul var; çoklu okul eklenince okul seçimi de gerekecek.)
+create or replace function public.resolve_ogrenci_email(p_okul_no text)
+returns text
 language sql
 security definer
 set search_path = public
 stable
 as $$
-  select p.id, p.ad
+  select p.email
   from public.students s
   join public.profiles p on p.id = s.id
-  where s.ogrenci_no = p_ogrenci_no and s.baglanti_kodu = p_kod;
+  where s.okul_no = p_okul_no
+  limit 1;
 $$;
 
-revoke all on function public.find_student_by_code(text, text) from public;
-grant execute on function public.find_student_by_code(text, text) to authenticated;
+revoke all on function public.resolve_ogrenci_email(text) from public;
+grant execute on function public.resolve_ogrenci_email(text) to anon, authenticated;
+
+-- Veli "öğrenci no + kod" ile giriş yapsın diye: sentetik hesap e-postasını bulur.
+create or replace function public.resolve_veli_login(p_okul_no text, p_kod text)
+returns text
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select 'veli+' || r.id::text || '@sgeducoach.internal'
+  from public.veli_link_requests r
+  join public.students s on s.id = r.student_id
+  where s.okul_no = p_okul_no
+    and r.kod = p_kod
+    and r.durum in ('onaylandi', 'kullanildi')
+  limit 1;
+$$;
+
+revoke all on function public.resolve_veli_login(text, text) from public;
+grant execute on function public.resolve_veli_login(text, text) to anon, authenticated;
+
+-- ============ Seed: Elbistan Bist Fen Lisesi + 11-12 A-D şubeleri ============
+insert into public.schools (ad, tur) values ('Elbistan Bist Fen Lisesi', 'okul');
+
+insert into public.classes (school_id, seviye, sube)
+select s.id, seviye, sube
+from public.schools s
+cross join (values ('11'),('12')) as sv(seviye)
+cross join (values ('A'),('B'),('C'),('D')) as sb(sube)
+where s.ad = 'Elbistan Bist Fen Lisesi';
