@@ -1,7 +1,7 @@
 {
   "name": "SG EduCoach",
   "short_name": "SG EduCoach",
-  "description": "Çocuklarımızın geleceği için birlikteyiz",
+  "description": "Her zaman bir adım ötesini düşün",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#15172A",

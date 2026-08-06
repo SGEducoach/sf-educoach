@@ -1,5 +1,6 @@
-import { GraduationCap, LogOut } from "lucide-react";
-import { BG0, BORDER, MINT, MINT_ON, SEAFOAM, TEXT, TEXT_MUTED } from "@/lib/theme";
+import Image from "next/image";
+import { LogOut } from "lucide-react";
+import { BG0, BORDER, SEAFOAM, TEXT, TEXT_MUTED } from "@/lib/theme";
 import { signOut } from "@/app/dashboard/actions";
 import type { UserRole } from "@/lib/types";
 
@@ -22,12 +23,12 @@ export function Header({ ad, role }: { ad: string; role: UserRole }) {
       <div className="max-w-6xl mx-auto px-6 pt-7 pb-6 relative">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-3">
-            <div style={{ background: MINT, boxShadow: "0 4px 16px rgba(124,232,176,0.28)" }} className="w-10 h-10 rounded-2xl flex items-center justify-center">
-              <GraduationCap size={19} color={MINT_ON} />
+            <div className="w-10 h-10 rounded-full overflow-hidden shrink-0" style={{ boxShadow: "0 4px 16px rgba(124,232,176,0.28)" }}>
+              <Image src="/logo.png" alt="SG EduCoach" width={40} height={40} className="w-full h-full object-cover" priority />
             </div>
             <div>
               <div style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="font-bold text-[16px] leading-none tracking-tight">SG EduCoach</div>
-              <div style={{ color: SEAFOAM }} className="text-[12px] italic mt-1.5">Çocuklarımızın geleceği için birlikteyiz</div>
+              <div style={{ color: SEAFOAM }} className="text-[12px] italic mt-1.5">Her zaman bir adım ötesini düşün</div>
             </div>
           </div>
 

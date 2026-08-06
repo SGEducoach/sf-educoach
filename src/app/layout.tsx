@@ -17,7 +17,7 @@ const baloo = Baloo_2({
 
 export const metadata: Metadata = {
   title: "SG EduCoach",
-  description: "Çocuklarımızın geleceği için birlikteyiz",
+  description: "Her zaman bir adım ötesini düşün",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
