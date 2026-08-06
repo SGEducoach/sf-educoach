@@ -6,6 +6,7 @@ import { Header } from "@/components/dashboard/Header";
 import { OgretmenPanel } from "@/components/dashboard/OgretmenPanel";
 import { AdminPanel } from "@/components/dashboard/AdminPanel";
 import { OgrenciVeriGirisi } from "@/components/dashboard/OgrenciVeriGirisi";
+import { ZayifKonular } from "@/components/dashboard/ZayifKonular";
 import { AnalizPaneli } from "@/components/dashboard/AnalizPaneli";
 import { BildirimAyarlari } from "@/components/dashboard/BildirimAyarlari";
 import { analizVerisiGetir } from "@/lib/analiz";
@@ -75,6 +76,28 @@ async function OgrenciIcerik({ userId, ad, donem }: { userId: string; ad: string
 
   const analiz = await analizVerisiGetir(supabase, userId, donem);
 
+  // Zayıf konular: "hedefe yakınlık" alanı "uzak" olarak işaretlenen
+  // konu_calismalar kayıtları — ders+konu bazında tekilleştirip en son
+  // 10 tanesini gösteriyoruz (bkz. ZayifKonular bileşeni, madde 1).
+  const { data: zayifKonularHam } = await supabase
+    .from("konu_calismalar")
+    .select("ders, konu, tarih")
+    .eq("student_id", userId)
+    .eq("hedefe_yakinlik", "uzak")
+    .order("tarih", { ascending: false })
+    .limit(50);
+
+  type ZayifRow = { ders: string; konu: string; tarih: string };
+  const gorulenler = new Set<string>();
+  const zayifKonular: { ders: string; konu: string }[] = [];
+  for (const r of (zayifKonularHam as ZayifRow[]) ?? []) {
+    const anahtar = `${r.ders}|${r.konu}`;
+    if (gorulenler.has(anahtar)) continue;
+    gorulenler.add(anahtar);
+    zayifKonular.push({ ders: r.ders, konu: r.konu });
+    if (zayifKonular.length >= 10) break;
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="sgec-fade rounded-3xl p-6 print:hidden" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
@@ -86,6 +109,8 @@ async function OgrenciIcerik({ userId, ad, donem }: { userId: string; ad: string
           <Bilgi etiket="AYT Alanı" deger={AYT_ALAN_ETIKET[s.ayt_alan]} />
         </div>
       </div>
+
+      <ZayifKonular konular={zayifKonular} />
 
       <div className="print:hidden">
         <OgrenciVeriGirisi studentId={userId} aytAlan={s.ayt_alan} veriGirisSikligi={s.veri_giris_sikligi} />

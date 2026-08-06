@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getAnthropicClient } from "@/lib/anthropic";
 import type { HedefeYakinlik, VeriGirisSikligi, VerimlilikDuzeyi } from "@/lib/types";
 
 async function requireStudent() {
@@ -10,6 +12,63 @@ async function requireStudent() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   return { supabase, user };
+}
+
+// ============ AI destekli konu anlatımı ============
+// Bir ders+konu kombinasyonu için anlatım tek sefer üretilip
+// konu_anlatimlari tablosuna kaydediliyor; sonraki her istek oradan
+// okunuyor — aynı konu için tekrar Claude API çağrısı yapılmıyor.
+const KONU_ANLATIMI_SISTEM_PROMPTU = `Sen YKS (TYT/AYT) öğrencilerine konu anlatan deneyimli, sabırlı bir öğretmensin. Sana verilen ders ve konu için lise seviyesine uygun, açık ve sade bir Türkçeyle bir konu anlatımı yaz.
+
+Kurallar:
+- Düz metin yaz — LaTeX, markdown başlık (#), kalın (**) kullanma; gerekirse sade satır başları ve kısa paragraflarla yapılandır.
+- Konunun mantığını, temel kurallarını ve varsa formüllerini düz metin olarak (örn. "türev = f'(x)") açıkla.
+- En az bir kısa, somut örnek çöz.
+- Sık yapılan hataları veya karıştırılan noktaları kısaca belirt.
+- Uzunluk: yaklaşık 300-500 kelime. Motive edici ama abartısız bir üslup kullan.`;
+
+export async function konuAnlatimiGetir(ders: string, konu: string) {
+  const { supabase } = await requireStudent();
+  const dersT = ders.trim();
+  const konuT = konu.trim();
+  if (!dersT || !konuT) return { icerik: null, error: "Ders/konu bilgisi eksik." };
+
+  const { data: mevcut } = await supabase
+    .from("konu_anlatimlari")
+    .select("icerik")
+    .eq("ders", dersT)
+    .eq("konu", konuT)
+    .maybeSingle();
+
+  if (mevcut) return { icerik: mevcut.icerik as string, error: null };
+
+  let icerik: string;
+  try {
+    const anthropic = getAnthropicClient();
+    const yanit = await anthropic.messages.create({
+      model: "claude-sonnet-5",
+      max_tokens: 2000,
+      system: KONU_ANLATIMI_SISTEM_PROMPTU,
+      messages: [{ role: "user", content: `${dersT} dersinden "${konuT}" konusunu anlat.` }],
+    });
+    const metinBlogu = yanit.content.find((b) => b.type === "text");
+    icerik = metinBlogu && "text" in metinBlogu ? metinBlogu.text.trim() : "";
+    if (!icerik) return { icerik: null, error: "İçerik üretilemedi, lütfen tekrar deneyin." };
+  } catch (e) {
+    console.error("konu anlatımı üretme hatası:", e);
+    return { icerik: null, error: "Konu anlatımı şu anda üretilemedi. Lütfen daha sonra tekrar deneyin." };
+  }
+
+  // Önbelleğe yaz — service-role, RLS'i bypass eder (normal kullanıcılar bu
+  // tabloya yazamaz, sadece okuyabilir). Yazma başarısız olsa bile üretilen
+  // içerik kullanıcıya döner; bir dahaki istekte tekrar üretilir.
+  const admin = createAdminClient();
+  const { error: kayitHatasi } = await admin
+    .from("konu_anlatimlari")
+    .upsert({ ders: dersT, konu: konuT, icerik }, { onConflict: "ders,konu" });
+  if (kayitHatasi) console.error("konu anlatımı kaydedilemedi:", kayitHatasi.message);
+
+  return { icerik, error: null };
 }
 
 async function verimlilikSorulsunMu(
