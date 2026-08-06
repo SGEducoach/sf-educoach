@@ -57,23 +57,41 @@ const SIFRE_IPUCU = "En az 8 karakter, boşluksuz, harf ve rakam içermeli.";
 const TELEFON_IPUCU = "Sadece rakam, 10-11 hane (örn. 5xxxxxxxxx).";
 
 // ============ Kayıt kuralları onayı ============
-// Metin TASLAK — gerçek "Kullanım Kuralları" kullanıcı tarafından iletilip
-// buraya konana kadar yer tutucu olarak duruyor. Onay sadece tarayıcıda
-// (localStorage) tutuluyor; metin değişince KURALLAR_VERSIYON bump'lanmalı,
-// böylece daha önce eski metni kabul edenlere yeni metin tekrar sorulur.
-const KURALLAR_VERSIYON = "v1-taslak";
+// Onay sadece tarayıcıda (localStorage) tutuluyor; metin değişince
+// KURALLAR_VERSIYON bump'lanmalı, böylece daha önce eski metni kabul
+// edenlere yeni metin tekrar sorulur. Bu metin, platformda şu an gerçekten
+// var olan işleyişi (roller, veri toplama, bildirimler) yansıtacak şekilde
+// yazıldı; kapsamlı/hukuki bir sözleşme değildir, ileride genişletilecektir.
+const KURALLAR_VERSIYON = "v1";
 const KURALLAR_STORAGE_KEY = "sgec_kurallar_kabul";
-const KURALLAR_METNI = `[TASLAK — gerçek metin gelene kadar yer tutucudur]
+const KURALLAR_METNI = `SG EduCoach'a hoş geldiniz. Platforma kayıt olarak veya bir öğrencinin verisine veli olarak bağlanarak aşağıdaki kuralları kabul etmiş sayılırsınız.
 
-SG EduCoach'a hoş geldiniz. Platforma kayıt olarak aşağıdaki kuralları kabul etmiş sayılırsınız:
+1. HESAP VE BİLGİ DOĞRULUĞU
+Ad, telefon, okul/sınıf, e-posta gibi bilgileri doğru ve güncel girmekle yükümlüsünüz. Öğrenci hesapları okul numarası + şifre, öğretmen hesapları e-posta + şifre, veli hesapları ise öğretmen onaylı bir kod ile açılır. Hesabınızın ve şifrenizin güvenliğinden siz sorumlusunuz; şifrenizi başkasıyla paylaşmayın.
 
-1. Hesabınızla girdiğiniz bilgilerin (ad, iletişim bilgileri, akademik veriler) doğru olduğunu beyan edersiniz.
-2. Hesabınızın güvenliğinden (şifrenizi kimseyle paylaşmamak dahil) siz sorumlusunuz.
-3. Platform, öğrencinin akademik gelişimini takip etmek amacıyla veri toplar; bu veriler yalnızca ilgili öğretmen, veli ve öğrencinin kendisiyle paylaşılır.
-4. Platformun kötüye kullanımı (başkasının hesabına izinsiz erişim, sahte bilgi girişi vb.) tespit edilirse hesabınız askıya alınabilir.
-5. Kişisel verilerinizin işlenmesine ilişkin ayrıntılar için KVKK Aydınlatma Metni'ne bakınız.
+2. ROLLER VE YETKİLER
+- Öğrenci: yalnızca kendi verisini girer ve görür.
+- Öğretmen: kendi sınıfının öğrencilerine görev/onay verebilir; diğer sınıfları yalnızca görüntüleyebilir (salt okunur).
+- Sınıf öğretmenliği ataması, kayıt sırasında kendiliğinden yapılamaz; yalnızca okul yönetimi (admin) tarafından atanır.
+- Müdür: kendi okulundaki verileri görüntüleyebilir (gözlemci); kontrol yetkileri (sınıf ekleme, sınıf öğretmeni atama) platform yöneticisine (admin) aittir.
+- Veli: onay kodunu aldığı öğrencinin akademik verilerini görüntüleyebilir.
 
-Bu metin son sürüm değildir, yakında güncellenecektir.`;
+3. VELİ ONAYI (18 YAŞ ALTI ÖĞRENCİLER)
+Öğrenci 18 yaşından küçükse, verilerinin veli tarafından görüntülenebilmesi için velinin ayrıca KVKK Aydınlatma Metni'ni onaylaması gerekir.
+
+4. VERİ TOPLAMA VE KULLANIM AMACI
+Platform; konu çalışması, soru çözümü, deneme sonuçları, motivasyon ve haftalık verimlilik gibi akademik verileri, öğrencinin gelişiminin takip edilmesi ve ilgili öğretmen/veli ile paylaşılması amacıyla toplar. Veriler yalnızca öğrencinin kendisi, bağlı olduğu öğretmen(ler), velisi ve okul yönetimiyle paylaşılır; üçüncü taraflarla paylaşılmaz. Ayrıntılar için KVKK Aydınlatma Metni'ne bakınız.
+
+5. BİLDİRİMLER
+Hatırlatma ve bilgilendirme amacıyla e-posta ve (izin verirseniz) anlık bildirim gönderilebilir. Bildirim izinlerini istediğiniz zaman cihaz/tarayıcı ayarlarından kapatabilirsiniz.
+
+6. YASAKLI KULLANIM
+Başkası adına veya başkasının bilgileriyle kayıt olmak, başka bir kullanıcının hesabına izinsiz erişmeye çalışmak, sisteme yanlış/yanıltıcı veri girmek ve platformun işleyişini bozmaya yönelik her türlü davranış yasaktır. Bu kurallara aykırı kullanım tespit edilirse hesabınız uyarılmadan askıya alınabilir.
+
+7. DEĞİŞİKLİKLER
+Bu kurallar ve platformun işleyişi zaman içinde güncellenebilir; önemli değişikliklerde kayıt sırasında tekrar onayınız istenir.
+
+Sorularınız için: sg.educoach@gmail.com`;
 
 function kurallarOnayliMi() {
   if (typeof window === "undefined") return false;
