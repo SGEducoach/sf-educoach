@@ -56,6 +56,69 @@ function sifreGecerliMi(v: string) {
 const SIFRE_IPUCU = "En az 8 karakter, boşluksuz, harf ve rakam içermeli.";
 const TELEFON_IPUCU = "Sadece rakam, 10-11 hane (örn. 5xxxxxxxxx).";
 
+// ============ Kayıt kuralları onayı ============
+// Metin TASLAK — gerçek "Kullanım Kuralları" kullanıcı tarafından iletilip
+// buraya konana kadar yer tutucu olarak duruyor. Onay sadece tarayıcıda
+// (localStorage) tutuluyor; metin değişince KURALLAR_VERSIYON bump'lanmalı,
+// böylece daha önce eski metni kabul edenlere yeni metin tekrar sorulur.
+const KURALLAR_VERSIYON = "v1-taslak";
+const KURALLAR_STORAGE_KEY = "sgec_kurallar_kabul";
+const KURALLAR_METNI = `[TASLAK — gerçek metin gelene kadar yer tutucudur]
+
+SG EduCoach'a hoş geldiniz. Platforma kayıt olarak aşağıdaki kuralları kabul etmiş sayılırsınız:
+
+1. Hesabınızla girdiğiniz bilgilerin (ad, iletişim bilgileri, akademik veriler) doğru olduğunu beyan edersiniz.
+2. Hesabınızın güvenliğinden (şifrenizi kimseyle paylaşmamak dahil) siz sorumlusunuz.
+3. Platform, öğrencinin akademik gelişimini takip etmek amacıyla veri toplar; bu veriler yalnızca ilgili öğretmen, veli ve öğrencinin kendisiyle paylaşılır.
+4. Platformun kötüye kullanımı (başkasının hesabına izinsiz erişim, sahte bilgi girişi vb.) tespit edilirse hesabınız askıya alınabilir.
+5. Kişisel verilerinizin işlenmesine ilişkin ayrıntılar için KVKK Aydınlatma Metni'ne bakınız.
+
+Bu metin son sürüm değildir, yakında güncellenecektir.`;
+
+function kurallarOnayliMi() {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(KURALLAR_STORAGE_KEY) === KURALLAR_VERSIYON;
+  } catch {
+    return false;
+  }
+}
+
+function KurallarModal({ onKabul }: { onKabul: () => void }) {
+  const [okundu, setOkundu] = useState(false);
+
+  function kabulEt() {
+    try {
+      window.localStorage.setItem(KURALLAR_STORAGE_KEY, KURALLAR_VERSIYON);
+    } catch {
+      // localStorage kullanılamıyorsa (ör. gizli sekme) sessizce devam et —
+      // her seferinde tekrar sorulur, işlevi engellemez.
+    }
+    onKabul();
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-8" style={{ background: "rgba(0,0,0,0.65)" }}>
+      <div className="w-full max-w-md rounded-3xl p-6 flex flex-col gap-4" style={{ background: BG1, border: `1px solid ${BORDER}`, maxHeight: "90vh" }}>
+        <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-lg font-bold">Kayıt ve kullanım kuralları</h2>
+        <div className="overflow-y-auto rounded-xl p-3.5 text-xs leading-relaxed whitespace-pre-line"
+          style={{ background: BG0, color: TEXT_MUTED, border: `1px solid ${BORDER_STRONG}`, maxHeight: "45vh" }}>
+          {KURALLAR_METNI}
+        </div>
+        <label className="flex items-start gap-2 cursor-pointer">
+          <input type="checkbox" checked={okundu} onChange={(e) => setOkundu(e.target.checked)} className="mt-0.5" />
+          <span style={{ color: TEXT }} className="text-xs font-semibold">Kuralları okudum, kabul ediyorum.</span>
+        </label>
+        <button type="button" disabled={!okundu} onClick={kabulEt}
+          className="sgec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-50"
+          style={{ background: MINT, color: MINT_ON }}>
+          Devam et
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function SignupForm() {
   const router = useRouter();
   const supabase = createClient();
@@ -63,11 +126,20 @@ export default function SignupForm() {
   const [role, setRole] = useState<UserRole>("ogrenci");
   const [schools, setSchools] = useState<School[]>([]);
   const [classes, setClasses] = useState<SchoolClass[]>([]);
+  const [kurallarKabul, setKurallarKabul] = useState(false);
 
   useEffect(() => {
     supabase.from("schools").select("*").eq("tur", "okul").then(({ data }) => setSchools((data as School[]) ?? []));
     supabase.from("classes").select("*").then(({ data }) => setClasses((data as SchoolClass[]) ?? []));
   }, [supabase]);
+
+  useEffect(() => {
+    setKurallarKabul(kurallarOnayliMi());
+  }, []);
+
+  if (!kurallarKabul) {
+    return <KurallarModal onKabul={() => setKurallarKabul(true)} />;
+  }
 
   return (
     <div style={{ minHeight: "100vh", background: BG0 }} className="flex items-center justify-center px-4 py-10">
