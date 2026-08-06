@@ -570,3 +570,107 @@ alter table public.push_subscriptions enable row level security;
 create policy "push_subscriptions_select_own" on public.push_subscriptions for select using (profile_id = auth.uid());
 create policy "push_subscriptions_insert_own" on public.push_subscriptions for insert with check (profile_id = auth.uid());
 create policy "push_subscriptions_delete_own" on public.push_subscriptions for delete using (profile_id = auth.uid());
+
+-- ============ Format doğrulamaları + sınıf öğretmeni ataması müdürde ============
+alter table public.students
+  add constraint students_okul_no_format check (okul_no ~ '^[0-9]{1,5}$') not valid;
+
+alter table public.profiles
+  add constraint profiles_telefon_format check (telefon is null or telefon ~ '^[0-9]{10,11}$') not valid;
+
+alter table public.veli_link_requests
+  add constraint veli_link_requests_telefon_format check (veli_telefon ~ '^[0-9]{10,11}$') not valid;
+
+create unique index if not exists teachers_class_id_unique on public.teachers (class_id) where class_id is not null;
+
+-- Not: bu policy 0014 tarafından "teachers_update_admin" ile değiştirildi,
+-- aşağıda duruyor çünkü fresh-install script'i sırasıyla yürütülüyor
+-- (önce enum'a 'admin' eklenmeli — bkz. dosyanın sonu).
+create policy "teachers_update_mudur" on public.teachers
+  for update using (
+    exists (
+      select 1 from public.profiles p
+      join public.teachers t on t.id = p.id
+      where p.id = auth.uid() and p.role = 'mudur' and t.school_id = teachers.school_id
+    )
+  );
+
+-- ============ Admin rolü: müdür artık gözlemci, tüm kontrol admin'de ============
+-- ÖNEMLİ (fresh install): 'alter type ... add value' aynı transaction'da
+-- kullanılamadığı için gerçek Supabase ortamında bu iki parça (enum ekleme /
+-- geri kalanı) ayrı çalıştırmalar olarak uygulandı (migration 0013 + 0014).
+-- Tek seferde çalışan fresh-install script'i (psql \i ile, transaction
+-- olmadan) için burada art arda duruyorlar.
+alter type public.user_role add value if not exists 'admin';
+
+create or replace function public.is_admin()
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (select 1 from public.profiles where id = auth.uid() and role = 'admin');
+$$;
+
+revoke all on function public.is_admin() from public;
+grant execute on function public.is_admin() to authenticated;
+
+create or replace function public.is_ogretmen()
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (select 1 from public.teachers where id = auth.uid())
+      or exists (select 1 from public.profiles where id = auth.uid() and role = 'admin');
+$$;
+
+drop policy if exists "classes_insert_mudur" on public.classes;
+create policy "classes_insert_admin" on public.classes
+  for insert with check (public.is_admin());
+
+drop policy if exists "teachers_update_mudur" on public.teachers;
+create policy "teachers_update_admin" on public.teachers
+  for update using (public.is_admin());
+
+create or replace function public.teachers_class_id_guard()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.class_id is distinct from old.class_id and not public.is_admin() then
+    raise exception 'Sınıf öğretmeni ataması sadece yönetici tarafından yapılabilir.';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists teachers_class_id_guard on public.teachers;
+create trigger teachers_class_id_guard
+  before update on public.teachers
+  for each row execute function public.teachers_class_id_guard();
+
+-- ============ Admin işlem kaydı (audit log) ============
+-- "Admin paneli işlem kaydı tutuyor mu?" sorusuna yanıt: evet, admin'in
+-- yaptığı kontrol işlemleri (sınıf ekleme, sınıf öğretmeni atama) kaydedilir.
+create table public.admin_audit_log (
+  id uuid primary key default gen_random_uuid(),
+  actor_id uuid references public.profiles(id) on delete set null,
+  eylem text not null,
+  detay jsonb,
+  created_at timestamptz not null default now()
+);
+
+create index on public.admin_audit_log (created_at desc);
+
+alter table public.admin_audit_log enable row level security;
+
+create policy "admin_audit_log_select_admin" on public.admin_audit_log
+  for select using (public.is_admin());
+
+create policy "admin_audit_log_insert_admin" on public.admin_audit_log
+  for insert with check (actor_id = auth.uid() and public.is_admin());

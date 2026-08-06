@@ -40,6 +40,22 @@ function Secim({ children, ...props }: React.SelectHTMLAttributes<HTMLSelectElem
   );
 }
 
+// ============ Doğrulama yardımcıları ============
+function telefonSanitize(v: string) {
+  return v.replace(/\D/g, "").slice(0, 11);
+}
+function telefonGecerliMi(v: string) {
+  return /^[0-9]{10,11}$/.test(v);
+}
+function okulNoSanitize(v: string) {
+  return v.replace(/\D/g, "").slice(0, 5);
+}
+function sifreGecerliMi(v: string) {
+  return /^[A-Za-z0-9]{8,}$/.test(v) && /[A-Za-z]/.test(v) && /[0-9]/.test(v);
+}
+const SIFRE_IPUCU = "En az 8 karakter, boşluksuz, harf ve rakam içermeli.";
+const TELEFON_IPUCU = "Sadece rakam, 10-11 hane (örn. 5xxxxxxxxx).";
+
 export default function SignupForm() {
   const router = useRouter();
   const supabase = createClient();
@@ -122,13 +138,14 @@ function OgrenciKayit({ schools, classes, router, supabase }: {
       setHata("Lütfen tüm alanları doldurun.");
       return;
     }
+    if (!telefonGecerliMi(telefon)) return setHata("Telefon numarası geçersiz. " + TELEFON_IPUCU);
     setAdim(2);
   }
 
   async function kayitOl(e: React.FormEvent) {
     e.preventDefault();
     setHata(null);
-    if (password.length < 6) return setHata("Şifre en az 6 karakter olmalı.");
+    if (!sifreGecerliMi(password)) return setHata("Şifre geçersiz. " + SIFRE_IPUCU);
     if (password !== password2) return setHata("Şifreler eşleşmiyor.");
 
     setYukleniyor(true);
@@ -162,10 +179,11 @@ function OgrenciKayit({ schools, classes, router, supabase }: {
           Bilgileriniz tamam ✓ — şimdi şifrenizi belirleyin.
         </div>
         <label className="flex flex-col gap-1"><Etiket>Şifre</Etiket>
-          <Girdi type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
+          <Girdi type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
+          <span style={{ color: TEXT_MUTED }} className="text-[10px]">{SIFRE_IPUCU}</span>
         </label>
         <label className="flex flex-col gap-1"><Etiket>Şifre (tekrar)</Etiket>
-          <Girdi type="password" required minLength={6} value={password2} onChange={(e) => setPassword2(e.target.value)} />
+          <Girdi type="password" required minLength={8} value={password2} onChange={(e) => setPassword2(e.target.value)} />
         </label>
         {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
         <div className="flex gap-2">
@@ -183,9 +201,9 @@ function OgrenciKayit({ schools, classes, router, supabase }: {
   return (
     <form onSubmit={ileri} className="rounded-3xl p-6 flex flex-col gap-3" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
       <label className="flex flex-col gap-1"><Etiket>Ad Soyad</Etiket><Girdi required value={ad} onChange={(e) => setAd(e.target.value)} /></label>
-      <label className="flex flex-col gap-1"><Etiket>Okul No</Etiket><Girdi required value={okulNo} onChange={(e) => setOkulNo(e.target.value)} /></label>
+      <label className="flex flex-col gap-1"><Etiket>Okul No</Etiket><Girdi required value={okulNo} inputMode="numeric" maxLength={5} placeholder="örn. 1234" onChange={(e) => setOkulNo(okulNoSanitize(e.target.value))} /></label>
       <label className="flex flex-col gap-1"><Etiket>E-posta</Etiket><Girdi type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></label>
-      <label className="flex flex-col gap-1"><Etiket>Telefon</Etiket><Girdi type="tel" required value={telefon} onChange={(e) => setTelefon(e.target.value)} /></label>
+      <label className="flex flex-col gap-1"><Etiket>Telefon</Etiket><Girdi type="tel" required value={telefon} inputMode="numeric" placeholder="5xxxxxxxxx" onChange={(e) => setTelefon(telefonSanitize(e.target.value))} /></label>
       <label className="flex flex-col gap-1"><Etiket>Okul</Etiket>
         <Secim required value={schoolId} onChange={(e) => { setSchoolId(e.target.value); setClassId(""); }}>
           <option value="">Seçiniz</option>
@@ -214,7 +232,7 @@ function OgrenciKayit({ schools, classes, router, supabase }: {
 }
 
 // ============ ÖĞRETMEN ============
-function OgretmenKayit({ schools, classes, router, supabase }: {
+function OgretmenKayit({ schools, router, supabase }: {
   schools: School[]; classes: SchoolClass[]; router: ReturnType<typeof useRouter>;
   supabase: ReturnType<typeof createClient>;
 }) {
@@ -223,7 +241,6 @@ function OgretmenKayit({ schools, classes, router, supabase }: {
   const [email, setEmail] = useState("");
   const [telefon, setTelefon] = useState("");
   const [schoolId, setSchoolId] = useState("");
-  const [classId, setClassId] = useState("");
   const [brans, setBrans] = useState<string>(BRANS_LISTESI[0]);
   const [password, setPassword] = useState("");
   const [password2, setPassword2] = useState("");
@@ -231,22 +248,20 @@ function OgretmenKayit({ schools, classes, router, supabase }: {
   const [yukleniyor, setYukleniyor] = useState(false);
   const [basarili, setBasarili] = useState(false);
 
-  const secilenOkul = schools.find((s) => s.id === schoolId);
-  const dershaneMi = secilenOkul?.tur === "dershane";
-  const sinifOptions = classes.filter((c) => c.school_id === schoolId);
-  const adim1Tamam = ad && email && telefon && schoolId && brans && (dershaneMi || classId);
+  const adim1Tamam = ad && email && telefon && schoolId && brans;
 
   function ileri(e: React.FormEvent) {
     e.preventDefault();
     setHata(null);
     if (!adim1Tamam) return setHata("Lütfen tüm alanları doldurun.");
+    if (!telefonGecerliMi(telefon)) return setHata("Telefon numarası geçersiz. " + TELEFON_IPUCU);
     setAdim(2);
   }
 
   async function kayitOl(e: React.FormEvent) {
     e.preventDefault();
     setHata(null);
-    if (password.length < 6) return setHata("Şifre en az 6 karakter olmalı.");
+    if (!sifreGecerliMi(password)) return setHata("Şifre geçersiz. " + SIFRE_IPUCU);
     if (password !== password2) return setHata("Şifreler eşleşmiyor.");
 
     setYukleniyor(true);
@@ -254,8 +269,9 @@ function OgretmenKayit({ schools, classes, router, supabase }: {
       email, password,
       options: {
         data: {
-          role: "ogretmen", ad, telefon, school_id: schoolId,
-          class_id: dershaneMi ? "" : classId, brans,
+          // class_id kasıtlı olarak gönderilmiyor — sınıf öğretmenliği artık
+          // sadece müdür tarafından (Yönetim panelinden) atanıyor.
+          role: "ogretmen", ad, telefon, school_id: schoolId, brans,
         },
       },
     });
@@ -280,10 +296,11 @@ function OgretmenKayit({ schools, classes, router, supabase }: {
           Bilgileriniz tamam ✓ — şimdi şifrenizi belirleyin.
         </div>
         <label className="flex flex-col gap-1"><Etiket>Şifre</Etiket>
-          <Girdi type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
+          <Girdi type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
+          <span style={{ color: TEXT_MUTED }} className="text-[10px]">{SIFRE_IPUCU}</span>
         </label>
         <label className="flex flex-col gap-1"><Etiket>Şifre (tekrar)</Etiket>
-          <Girdi type="password" required minLength={6} value={password2} onChange={(e) => setPassword2(e.target.value)} />
+          <Girdi type="password" required minLength={8} value={password2} onChange={(e) => setPassword2(e.target.value)} />
         </label>
         {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
         <div className="flex gap-2">
@@ -302,21 +319,16 @@ function OgretmenKayit({ schools, classes, router, supabase }: {
     <form onSubmit={ileri} className="rounded-3xl p-6 flex flex-col gap-3" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
       <label className="flex flex-col gap-1"><Etiket>Ad Soyad</Etiket><Girdi required value={ad} onChange={(e) => setAd(e.target.value)} /></label>
       <label className="flex flex-col gap-1"><Etiket>E-posta</Etiket><Girdi type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></label>
-      <label className="flex flex-col gap-1"><Etiket>Telefon</Etiket><Girdi type="tel" required value={telefon} onChange={(e) => setTelefon(e.target.value)} /></label>
+      <label className="flex flex-col gap-1"><Etiket>Telefon</Etiket><Girdi type="tel" required value={telefon} inputMode="numeric" placeholder="5xxxxxxxxx" onChange={(e) => setTelefon(telefonSanitize(e.target.value))} /></label>
       <label className="flex flex-col gap-1"><Etiket>Okulu veya Dershanesi</Etiket>
-        <Secim required value={schoolId} onChange={(e) => { setSchoolId(e.target.value); setClassId(""); }}>
+        <Secim required value={schoolId} onChange={(e) => setSchoolId(e.target.value)}>
           <option value="">Seçiniz</option>
           {schools.map((s) => <option key={s.id} value={s.id}>{s.ad}</option>)}
         </Secim>
       </label>
-      {!dershaneMi && schoolId && (
-        <label className="flex flex-col gap-1"><Etiket>Sınıf</Etiket>
-          <Secim required value={classId} onChange={(e) => setClassId(e.target.value)}>
-            <option value="">Seçiniz</option>
-            {sinifOptions.map((c) => <option key={c.id} value={c.id}>{c.seviye}-{c.sube}</option>)}
-          </Secim>
-        </label>
-      )}
+      <div className="rounded-xl px-3 py-2 text-[11px] leading-snug" style={{ background: "rgba(143,198,255,0.14)", color: TEXT_MUTED }}>
+        Sınıf öğretmenliği ataması kayıt sırasında yapılmaz — okul müdürünüz sizi Yönetim panelinden bir sınıfa atayabilir.
+      </div>
       <label className="flex flex-col gap-1"><Etiket>Branş</Etiket>
         <Secim required value={brans} onChange={(e) => setBrans(e.target.value)}>
           {BRANS_LISTESI.map((b) => <option key={b} value={b}>{b}</option>)}
@@ -362,6 +374,7 @@ function VeliTalepForm({ supabase }: { supabase: ReturnType<typeof createClient>
   async function gonder(e: React.FormEvent) {
     e.preventDefault();
     setHata(null);
+    if (!telefonGecerliMi(telefon)) return setHata("Telefon numarası geçersiz. " + TELEFON_IPUCU);
     setYukleniyor(true);
 
     const { data: studentId, error: bulmaHatasi } = await supabase
@@ -391,8 +404,8 @@ function VeliTalepForm({ supabase }: { supabase: ReturnType<typeof createClient>
   return (
     <form onSubmit={gonder} className="flex flex-col gap-3">
       <label className="flex flex-col gap-1"><Etiket>Ad Soyad</Etiket><Girdi required value={ad} onChange={(e) => setAd(e.target.value)} /></label>
-      <label className="flex flex-col gap-1"><Etiket>Telefon</Etiket><Girdi type="tel" required value={telefon} onChange={(e) => setTelefon(e.target.value)} /></label>
-      <label className="flex flex-col gap-1"><Etiket>Öğrenci Okul No</Etiket><Girdi required value={okulNo} onChange={(e) => setOkulNo(e.target.value)} /></label>
+      <label className="flex flex-col gap-1"><Etiket>Telefon</Etiket><Girdi type="tel" required value={telefon} inputMode="numeric" placeholder="5xxxxxxxxx" onChange={(e) => setTelefon(telefonSanitize(e.target.value))} /></label>
+      <label className="flex flex-col gap-1"><Etiket>Öğrenci Okul No</Etiket><Girdi required value={okulNo} inputMode="numeric" maxLength={5} onChange={(e) => setOkulNo(okulNoSanitize(e.target.value))} /></label>
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
       <button type="submit" disabled={yukleniyor} className="sgec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
         {yukleniyor ? "Gönderiliyor..." : "Kod talep et"}

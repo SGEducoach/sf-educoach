@@ -2,8 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { UserPlus, Check, Users, Eye, Shield, Plus } from "lucide-react";
-import { BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, SKY, SKY_BG, LILAC, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
+import { UserPlus, Check, Users, Eye, Plus } from "lucide-react";
+import { BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, SKY, SKY_BG, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 import { veliTalepOnayla, sinifEkle } from "@/app/dashboard/actions";
 import type { VeliLinkRequest } from "@/lib/types";
 
@@ -17,16 +17,9 @@ interface SinifSatiri {
   seviye: string;
   sube: string;
 }
-interface OgretmenSatiri {
-  id: string;
-  ad: string;
-  brans: string;
-  sinifAdi: string | null;
-}
 
 export function OgretmenPanel({
   bekleyenTalepler, ogrenciler, sinifAdi, siniflar, gorunecekSinifId, kendiSinifId, kendiSinifiMi,
-  mudurMu, schoolId, ogretmenListesi,
 }: {
   bekleyenTalepler: (VeliLinkRequest & { ogrenci_ad: string })[];
   ogrenciler: OgrenciSatiri[];
@@ -35,9 +28,6 @@ export function OgretmenPanel({
   gorunecekSinifId: string | null;
   kendiSinifId: string | null;
   kendiSinifiMi: boolean;
-  mudurMu?: boolean;
-  schoolId?: string;
-  ogretmenListesi?: OgretmenSatiri[];
 }) {
   const router = useRouter();
   const [uretilenKodlar, setUretilenKodlar] = useState<Record<string, string>>({});
@@ -153,39 +143,11 @@ export function OgretmenPanel({
         )}
       </div>
 
-      {mudurMu && schoolId && (
-        <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(199,182,255,0.15)" }}>
-              <Shield size={13} color={LILAC} />
-            </div>
-            <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Yönetim</span>
-          </div>
-
-          <SinifEkleFormu schoolId={schoolId} />
-
-          <div className="mt-5">
-            <span style={{ color: TEXT_MUTED }} className="text-[11px] font-semibold uppercase tracking-wide mb-2 block">Öğretmenler ({ogretmenListesi?.length ?? 0})</span>
-            {(!ogretmenListesi || ogretmenListesi.length === 0) ? (
-              <p style={{ color: TEXT_MUTED }} className="text-sm py-3 text-center">Henüz kayıtlı öğretmen yok.</p>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {ogretmenListesi.map((o) => (
-                  <div key={o.id} className="rounded-xl px-3.5 py-2.5" style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}` }}>
-                    <div style={{ color: TEXT }} className="text-sm font-semibold">{o.ad}</div>
-                    <div style={{ color: TEXT_MUTED }} className="text-xs mt-0.5">{o.brans} {o.sinifAdi ? `· ${o.sinifAdi}` : ""}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
 
-function SinifEkleFormu({ schoolId }: { schoolId: string }) {
+export function SinifEkleFormu({ schoolId }: { schoolId: string }) {
   const [seviye, setSeviye] = useState<"11" | "12">("11");
   const [sube, setSube] = useState("");
   const [hata, setHata] = useState<string | null>(null);

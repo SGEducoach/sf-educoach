@@ -1,4 +1,4 @@
-export type UserRole = "ogrenci" | "ogretmen" | "veli" | "mudur";
+export type UserRole = "ogrenci" | "ogretmen" | "veli" | "mudur" | "admin";
 export type KurumTuru = "okul" | "dershane";
 export type AytAlan = "SAY" | "EA" | "SOZ";
 export type VeriGirisSikligi = "gunluk" | "3gunluk" | "haftalik";

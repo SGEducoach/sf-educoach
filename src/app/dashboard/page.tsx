@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Header } from "@/components/dashboard/Header";
 import { OgretmenPanel } from "@/components/dashboard/OgretmenPanel";
+import { AdminPanel } from "@/components/dashboard/AdminPanel";
 import { OgrenciVeriGirisi } from "@/components/dashboard/OgrenciVeriGirisi";
 import { AnalizPaneli } from "@/components/dashboard/AnalizPaneli";
 import { BildirimAyarlari } from "@/components/dashboard/BildirimAyarlari";
@@ -16,7 +17,7 @@ import { BG1, BG1_ALT, BORDER, BORDER_STRONG, TEXT, TEXT_MUTED, MINT } from "@/l
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sinif?: string; ogrenci?: string; donem?: string }>;
+  searchParams: Promise<{ sinif?: string; ogrenci?: string; donem?: string; okul?: string }>;
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -41,9 +42,10 @@ export default async function DashboardPage({
         <BildirimAyarlari />
         {role === "ogrenci" && <OgrenciIcerik userId={user.id} ad={profile.ad} donem={donem} />}
         {(role === "ogretmen" || role === "mudur") && (
-          <OgretmenIcerik userId={user.id} rol={role} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} donem={donem} />
+          <OgretmenIcerik userId={user.id} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} donem={donem} />
         )}
         {role === "veli" && <VeliIcerik userId={user.id} secilenOgrenciId={params.ogrenci} donem={donem} />}
+        {role === "admin" && <AdminIcerik secilenOkulId={params.okul} />}
       </div>
     </div>
   );
@@ -97,8 +99,8 @@ async function OgrenciIcerik({ userId, ad, donem }: { userId: string; ad: string
   );
 }
 
-async function OgretmenIcerik({ userId, rol, secilenSinifId, secilenOgrenciId, donem }: {
-  userId: string; rol: UserRole; secilenSinifId?: string; secilenOgrenciId?: string; donem: RaporDonemi;
+async function OgretmenIcerik({ userId, secilenSinifId, secilenOgrenciId, donem }: {
+  userId: string; secilenSinifId?: string; secilenOgrenciId?: string; donem: RaporDonemi;
 }) {
   const supabase = await createClient();
   const { data: teacher } = await supabase
@@ -180,20 +182,6 @@ async function OgretmenIcerik({ userId, rol, secilenSinifId, secilenOgrenciId, d
   const gorunenSinif = sinifListesi.find((s) => s.id === gorunecekSinifId);
   const sinifAdi = gorunenSinif ? `${gorunenSinif.seviye}-${gorunenSinif.sube}` : null;
 
-  let ogretmenListesi: { id: string; ad: string; brans: string; sinifAdi: string | null }[] = [];
-  if (rol === "mudur") {
-    const { data: ogretmenler } = await supabase
-      .from("teachers")
-      .select("id, brans, class_id, profiles!teachers_id_fkey(ad), classes(seviye, sube)")
-      .eq("school_id", teacher.school_id);
-
-    type OgretmenRow = { id: string; brans: string; profiles: { ad: string } | null; classes: { seviye: string; sube: string } | null };
-    ogretmenListesi = ((ogretmenler as unknown as OgretmenRow[]) ?? []).map((o) => ({
-      id: o.id, ad: o.profiles?.ad ?? "İsimsiz", brans: o.brans,
-      sinifAdi: o.classes ? `${o.classes.seviye}-${o.classes.sube}` : null,
-    }));
-  }
-
   return (
     <OgretmenPanel
       bekleyenTalepler={talepListesi}
@@ -203,9 +191,54 @@ async function OgretmenIcerik({ userId, rol, secilenSinifId, secilenOgrenciId, d
       gorunecekSinifId={gorunecekSinifId}
       kendiSinifId={teacher.class_id}
       kendiSinifiMi={kendiSinifiMi}
-      mudurMu={rol === "mudur"}
-      schoolId={teacher.school_id}
+    />
+  );
+}
+
+// ============ Admin: platformun tek kontrol noktası ============
+// Müdür sadece gözlemci; sınıf ekleme + sınıf öğretmeni atama admin'e ait.
+// Admin herhangi bir okula bağlı değildir (teachers tablosunda satırı yok),
+// bu yüzden kendi ayrı içerik fonksiyonuyla tüm okulları listeler.
+async function AdminIcerik({ secilenOkulId }: { secilenOkulId?: string }) {
+  const supabase = await createClient();
+  const { data: okullar } = await supabase.from("schools").select("id, ad, okul_kodu").order("ad");
+  const okulListesi = (okullar ?? []) as { id: string; ad: string; okul_kodu: string }[];
+  const gorunecekOkulId = secilenOkulId || okulListesi[0]?.id || null;
+
+  const [{ data: siniflar }, { data: ogretmenler }] = await Promise.all([
+    gorunecekOkulId
+      ? supabase.from("classes").select("id, seviye, sube").eq("school_id", gorunecekOkulId).order("seviye").order("sube")
+      : Promise.resolve({ data: [] }),
+    gorunecekOkulId
+      ? supabase.from("teachers").select("id, brans, class_id, profiles!teachers_id_fkey(ad, role), classes(seviye, sube)").eq("school_id", gorunecekOkulId)
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  type OgretmenRow = { id: string; brans: string; class_id: string | null; profiles: { ad: string; role: string } | null; classes: { seviye: string; sube: string } | null };
+  const ogretmenListesi = ((ogretmenler as unknown as OgretmenRow[]) ?? []).map((o) => ({
+    id: o.id, ad: o.profiles?.ad ?? "İsimsiz", brans: o.brans, classId: o.class_id,
+    sinifAdi: o.classes ? `${o.classes.seviye}-${o.classes.sube}` : null,
+    mudurMu: o.profiles?.role === "mudur",
+  }));
+
+  const { data: kayitlar } = await supabase
+    .from("admin_audit_log")
+    .select("id, eylem, detay, created_at, profiles(ad)")
+    .order("created_at", { ascending: false })
+    .limit(15);
+
+  type KayitRow = { id: string; eylem: string; detay: Record<string, unknown> | null; created_at: string; profiles: { ad: string } | null };
+  const kayitListesi = ((kayitlar as unknown as KayitRow[]) ?? []).map((k) => ({
+    id: k.id, eylem: k.eylem, detay: k.detay, createdAt: k.created_at, aktorAdi: k.profiles?.ad ?? "—",
+  }));
+
+  return (
+    <AdminPanel
+      okullar={okulListesi}
+      gorunecekOkulId={gorunecekOkulId}
+      siniflar={(siniflar ?? []) as { id: string; seviye: string; sube: string }[]}
       ogretmenListesi={ogretmenListesi}
+      islemKayitlari={kayitListesi}
     />
   );
 }
