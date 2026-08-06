@@ -56,3 +56,21 @@ select option {
     box-shadow 0.2s ease,
     transform 0.2s ease;
 }
+
+/* Rapor yazdırma: koyu temayı yazıcı için açık zemine çevir. */
+@media print {
+  body {
+    background: #fff !important;
+    color: #111 !important;
+  }
+  #rapor-icerigi,
+  #rapor-icerigi * {
+    background: #fff !important;
+    color: #111 !important;
+    border-color: #ddd !important;
+    box-shadow: none !important;
+  }
+  #rapor-icerigi {
+    padding: 0 !important;
+  }
+}

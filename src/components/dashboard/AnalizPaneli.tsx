@@ -1,15 +1,17 @@
 "use client";
 
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip,
   ResponsiveContainer, BarChart, Bar, Legend,
 } from "recharts";
-import { Sparkles, Clock, Target, TrendingUp } from "lucide-react";
-import type { AnalizVerisi } from "@/lib/analiz";
+import { Sparkles, Clock, Target, TrendingUp, Printer } from "lucide-react";
+import type { AnalizVerisi, RaporDonemi } from "@/lib/analiz";
+import { RAPOR_DONEMI_ETIKET } from "@/lib/analiz";
 import { HEDEFE_YAKINLIK_ETIKET, VERIMLILIK_ETIKET } from "@/lib/types";
 import type { HedefeYakinlik } from "@/lib/types";
 import {
-  BG1, BG1_ALT, BORDER, BORDER_STRONG, TEXT, TEXT_MUTED, MINT, MINT_BG,
+  BG1, BG1_ALT, BORDER, BORDER_STRONG, TEXT, TEXT_MUTED, MINT, MINT_BG, MINT_ON,
   SKY, SKY_BG, BUTTER, BUTTER_BG, BLUSH, LILAC,
 } from "@/lib/theme";
 
@@ -37,15 +39,47 @@ function IstatKart({ icon: Icon, etiket, deger, altYazi, renk, bg }: {
 
 const HEDEF_RENK: Record<HedefeYakinlik, string> = { yakin: MINT, belirsiz: BUTTER, uzak: BLUSH };
 
-export function AnalizPaneli({ veri }: { veri: AnalizVerisi }) {
+export function AnalizPaneli({ veri, ogrenciAdi }: { veri: AnalizVerisi; ogrenciAdi?: string }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const denemeChartData = veri.denemeTrend.map((d) => ({ tarih: tarihFormat(d.tarih), [d.tur]: d.net }));
   const calismaChartData = veri.calismaGunluk.map((c) => ({ gun: tarihFormat(c.tarih), dakika: c.dakika }));
   const verimlilikChartData = veri.haftalikVerimlilik.map((v) => ({ tarih: tarihFormat(v.tarih), puan: v.puan, duzey: VERIMLILIK_ETIKET[v.duzey] }));
 
   const hedefToplam = veri.hedefeYakinlikDagilimi.yakin + veri.hedefeYakinlikDagilimi.belirsiz + veri.hedefeYakinlikDagilimi.uzak;
 
+  function donemDegistir(donem: RaporDonemi) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("donem", donem);
+    router.push(`/dashboard?${params.toString()}`);
+  }
+
+  const raporTarihi = new Date().toLocaleDateString("tr-TR", { day: "2-digit", month: "long", year: "numeric" });
+
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6" id="rapor-icerigi">
+      <div className="hidden print:block mb-2">
+        <div style={{ color: "#111" }} className="text-lg font-bold">{ogrenciAdi ?? "Öğrenci"} — {RAPOR_DONEMI_ETIKET[veri.donem]} Rapor</div>
+        <div style={{ color: "#555" }} className="text-xs">Oluşturulma tarihi: {raporTarihi}{veri.donemBaslangic ? ` · Başlangıç: ${tarihFormat(veri.donemBaslangic)}` : ""}</div>
+      </div>
+
+      <div className="flex items-center justify-between flex-wrap gap-3 print:hidden">
+        <div className="flex gap-1 p-1 rounded-full" style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${BORDER}` }}>
+          {(Object.entries(RAPOR_DONEMI_ETIKET) as [RaporDonemi, string][]).map(([k, v]) => (
+            <button key={k} type="button" onClick={() => donemDegistir(k)}
+              className="sgec-btn text-[11px] font-bold px-3 py-1.5 rounded-full"
+              style={{ background: veri.donem === k ? MINT : "transparent", color: veri.donem === k ? MINT_ON : TEXT_MUTED }}>
+              {v}
+            </button>
+          ))}
+        </div>
+        <button type="button" onClick={() => window.print()}
+          className="sgec-btn flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-full"
+          style={{ background: BG1_ALT, color: TEXT, border: `1px solid ${BORDER_STRONG}` }}>
+          <Printer size={13} /> Yazdır / PDF olarak kaydet
+        </button>
+      </div>
+
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <IstatKart icon={TrendingUp} etiket="Son deneme neti" deger={veri.sonDenemeNet ?? "—"} renk={MINT} bg={MINT_BG} />
         <IstatKart icon={Clock} etiket="Bu hafta" deger={`${Math.floor(veri.buHaftaDakika / 60)}s ${veri.buHaftaDakika % 60}dk`} renk={BUTTER} bg={BUTTER_BG} />

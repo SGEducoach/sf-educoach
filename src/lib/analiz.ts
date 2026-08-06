@@ -2,6 +2,14 @@ import type { createClient } from "@/lib/supabase/server";
 import { netHesapla } from "@/lib/types";
 import type { HedefeYakinlik, VerimlilikDuzeyi } from "@/lib/types";
 
+export type RaporDonemi = "haftalik" | "aylik" | "tum";
+
+export const RAPOR_DONEMI_ETIKET: Record<RaporDonemi, string> = {
+  haftalik: "Haftalık",
+  aylik: "Aylık",
+  tum: "Tüm Zamanlar",
+};
+
 export interface AnalizVerisi {
   denemeTrend: { tarih: string; net: number; tur: "TYT" | "AYT" }[];
   calismaGunluk: { tarih: string; dakika: number }[];
@@ -10,27 +18,48 @@ export interface AnalizVerisi {
   haftalikVerimlilik: { tarih: string; puan: number; duzey: VerimlilikDuzeyi }[];
   sonDenemeNet: number | null;
   buHaftaDakika: number;
+  toplamDakika: number;
+  donem: RaporDonemi;
+  donemBaslangic: string | null;
 }
 
 const VERIMLILIK_PUAN: Record<VerimlilikDuzeyi, number> = {
   cok_dusuk: 1, dusuk: 2, orta: 3, iyi: 4, cok_iyi: 5,
 };
 
+function donemBaslangicHesapla(donem: RaporDonemi): string | null {
+  if (donem === "tum") return null;
+  const gunSayisi = donem === "haftalik" ? 7 : 30;
+  const d = new Date();
+  d.setDate(d.getDate() - gunSayisi);
+  return d.toISOString().slice(0, 10);
+}
+
 export async function analizVerisiGetir(
   supabase: Awaited<ReturnType<typeof createClient>>,
   studentId: string,
+  donem: RaporDonemi = "tum",
 ): Promise<AnalizVerisi> {
+  const baslangic = donemBaslangicHesapla(donem);
+
+  let denemeQuery = supabase.from("denemeler").select("id, tarih, tur, hedefe_yakinlik, deneme_ders_sonuclari(dogru, yanlis)").eq("student_id", studentId).order("tarih");
+  let konuQuery = supabase.from("konu_calismalar").select("tarih, sure_dakika, hedefe_yakinlik").eq("student_id", studentId);
+  let soruQuery = supabase.from("soru_cozumleri").select("tarih, sure_dakika, ders, dogru, yanlis, hedefe_yakinlik").eq("student_id", studentId);
+  let verimlilikQuery = supabase.from("haftalik_verimlilikler").select("created_at, duzey").eq("student_id", studentId).order("created_at");
+
+  if (baslangic) {
+    denemeQuery = denemeQuery.gte("tarih", baslangic);
+    konuQuery = konuQuery.gte("tarih", baslangic);
+    soruQuery = soruQuery.gte("tarih", baslangic);
+    verimlilikQuery = verimlilikQuery.gte("created_at", baslangic);
+  }
+
   const [
     { data: denemeler },
     { data: konular },
     { data: sorular },
     { data: verimlilikler },
-  ] = await Promise.all([
-    supabase.from("denemeler").select("id, tarih, tur, hedefe_yakinlik, deneme_ders_sonuclari(dogru, yanlis)").eq("student_id", studentId).order("tarih"),
-    supabase.from("konu_calismalar").select("tarih, sure_dakika, hedefe_yakinlik").eq("student_id", studentId),
-    supabase.from("soru_cozumleri").select("tarih, sure_dakika, ders, dogru, yanlis, hedefe_yakinlik").eq("student_id", studentId),
-    supabase.from("haftalik_verimlilikler").select("created_at, duzey").eq("student_id", studentId).order("created_at"),
-  ]);
+  ] = await Promise.all([denemeQuery, konuQuery, soruQuery, verimlilikQuery]);
 
   type DenemeRow = { id: string; tarih: string; tur: "TYT" | "AYT"; hedefe_yakinlik: HedefeYakinlik; deneme_ders_sonuclari: { dogru: number; yanlis: number }[] };
   type KonuRow = { tarih: string; sure_dakika: number; hedefe_yakinlik: HedefeYakinlik };
@@ -84,6 +113,8 @@ export async function analizVerisiGetir(
     .filter((c) => new Date(c.tarih) >= buHaftaBaslangic)
     .reduce((t, c) => t + c.dakika, 0);
 
+  const toplamDakika = calismaGunluk.reduce((t, c) => t + c.dakika, 0);
+
   return {
     denemeTrend,
     calismaGunluk,
@@ -92,5 +123,8 @@ export async function analizVerisiGetir(
     haftalikVerimlilik,
     sonDenemeNet: denemeTrend.length > 0 ? denemeTrend[denemeTrend.length - 1].net : null,
     buHaftaDakika,
+    toplamDakika,
+    donem,
+    donemBaslangic: baslangic,
   };
 }

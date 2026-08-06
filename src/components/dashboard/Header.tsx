@@ -12,7 +12,7 @@ const rolEtiket: Record<UserRole, string> = {
 
 export function Header({ ad, role }: { ad: string; role: UserRole }) {
   return (
-    <div style={{
+    <div className="print:hidden" style={{
       background: `radial-gradient(circle at 12% -30%, #262B4E 0%, ${BG0} 55%)`,
       position: "relative", overflow: "hidden", borderBottom: `1px solid ${BORDER}`,
     }}>

@@ -7,6 +7,7 @@ import { OgretmenPanel } from "@/components/dashboard/OgretmenPanel";
 import { OgrenciVeriGirisi } from "@/components/dashboard/OgrenciVeriGirisi";
 import { AnalizPaneli } from "@/components/dashboard/AnalizPaneli";
 import { analizVerisiGetir } from "@/lib/analiz";
+import type { RaporDonemi } from "@/lib/analiz";
 import { AYT_ALAN_ETIKET } from "@/lib/types";
 import type { AytAlan, UserRole, VeriGirisSikligi } from "@/lib/types";
 import { BG1, BG1_ALT, BORDER, BORDER_STRONG, TEXT, TEXT_MUTED, MINT } from "@/lib/theme";
@@ -14,7 +15,7 @@ import { BG1, BG1_ALT, BORDER, BORDER_STRONG, TEXT, TEXT_MUTED, MINT } from "@/l
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sinif?: string; ogrenci?: string }>;
+  searchParams: Promise<{ sinif?: string; ogrenci?: string; donem?: string }>;
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -30,22 +31,23 @@ export default async function DashboardPage({
 
   const role = profile.role as UserRole;
   const params = await searchParams;
+  const donem = (["haftalik", "aylik", "tum"].includes(params.donem ?? "") ? params.donem : "tum") as RaporDonemi;
 
   return (
     <div style={{ minHeight: "100vh", width: "100%" }} className="flex-1 flex flex-col">
       <Header ad={profile.ad} role={role} />
       <div className="max-w-6xl mx-auto px-6 py-7 w-full flex-1">
-        {role === "ogrenci" && <OgrenciIcerik userId={user.id} />}
+        {role === "ogrenci" && <OgrenciIcerik userId={user.id} ad={profile.ad} donem={donem} />}
         {(role === "ogretmen" || role === "mudur") && (
-          <OgretmenIcerik userId={user.id} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} />
+          <OgretmenIcerik userId={user.id} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} donem={donem} />
         )}
-        {role === "veli" && <VeliIcerik userId={user.id} secilenOgrenciId={params.ogrenci} />}
+        {role === "veli" && <VeliIcerik userId={user.id} secilenOgrenciId={params.ogrenci} donem={donem} />}
       </div>
     </div>
   );
 }
 
-async function OgrenciIcerik({ userId }: { userId: string }) {
+async function OgrenciIcerik({ userId, ad, donem }: { userId: string; ad: string; donem: RaporDonemi }) {
   const supabase = await createClient();
   const { data: student } = await supabase
     .from("students")
@@ -67,11 +69,11 @@ async function OgrenciIcerik({ userId }: { userId: string }) {
     );
   }
 
-  const analiz = await analizVerisiGetir(supabase, userId);
+  const analiz = await analizVerisiGetir(supabase, userId, donem);
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="sgec-fade rounded-3xl p-6" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+      <div className="sgec-fade rounded-3xl p-6 print:hidden" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
         <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-bold mb-4">Hoş geldin! 👋</h1>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <Bilgi etiket="Okul No" deger={s.okul_no} />
@@ -81,18 +83,20 @@ async function OgrenciIcerik({ userId }: { userId: string }) {
         </div>
       </div>
 
-      <OgrenciVeriGirisi studentId={userId} aytAlan={s.ayt_alan} veriGirisSikligi={s.veri_giris_sikligi} />
+      <div className="print:hidden">
+        <OgrenciVeriGirisi studentId={userId} aytAlan={s.ayt_alan} veriGirisSikligi={s.veri_giris_sikligi} />
+      </div>
 
       <div>
-        <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-lg font-bold mb-3">Analiz</h2>
-        <AnalizPaneli veri={analiz} />
+        <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-lg font-bold mb-3 print:hidden">Analiz / Rapor</h2>
+        <AnalizPaneli veri={analiz} ogrenciAdi={ad} />
       </div>
     </div>
   );
 }
 
-async function OgretmenIcerik({ userId, secilenSinifId, secilenOgrenciId }: {
-  userId: string; secilenSinifId?: string; secilenOgrenciId?: string;
+async function OgretmenIcerik({ userId, secilenSinifId, secilenOgrenciId, donem }: {
+  userId: string; secilenSinifId?: string; secilenOgrenciId?: string; donem: RaporDonemi;
 }) {
   const supabase = await createClient();
   const { data: teacher } = await supabase
@@ -120,16 +124,17 @@ async function OgretmenIcerik({ userId, secilenSinifId, secilenOgrenciId }: {
     const o = ogrenci as unknown as OgrenciRow | null;
 
     if (o) {
-      const analiz = await analizVerisiGetir(supabase, secilenOgrenciId);
+      const analiz = await analizVerisiGetir(supabase, secilenOgrenciId, donem);
+      const ogrenciAdi = o.profiles?.ad ?? "İsimsiz";
       return (
         <div className="flex flex-col gap-4">
           <Link href={secilenSinifId ? `/dashboard?sinif=${secilenSinifId}` : "/dashboard"}
-            className="sgec-btn inline-flex items-center gap-1 text-xs font-bold w-fit px-3 py-1.5 rounded-full"
+            className="sgec-btn inline-flex items-center gap-1 text-xs font-bold w-fit px-3 py-1.5 rounded-full print:hidden"
             style={{ background: BG1_ALT, color: TEXT_MUTED, border: `1px solid ${BORDER_STRONG}` }}>
             <ChevronLeft size={14} /> Listeye dön
           </Link>
-          <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-bold">{o.profiles?.ad ?? "İsimsiz"}</h1>
-          <AnalizPaneli veri={analiz} />
+          <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-bold print:hidden">{ogrenciAdi}</h1>
+          <AnalizPaneli veri={analiz} ogrenciAdi={ogrenciAdi} />
         </div>
       );
     }
@@ -186,7 +191,7 @@ async function OgretmenIcerik({ userId, secilenSinifId, secilenOgrenciId }: {
   );
 }
 
-async function VeliIcerik({ userId, secilenOgrenciId }: { userId: string; secilenOgrenciId?: string }) {
+async function VeliIcerik({ userId, secilenOgrenciId, donem }: { userId: string; secilenOgrenciId?: string; donem: RaporDonemi }) {
   const supabase = await createClient();
   const { data: links } = await supabase
     .from("parent_students")
@@ -201,7 +206,7 @@ async function VeliIcerik({ userId, secilenOgrenciId }: { userId: string; secile
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="sgec-fade rounded-3xl p-6" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+      <div className="sgec-fade rounded-3xl p-6 print:hidden" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
         <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-bold mb-4">Hoş geldiniz! 👋</h1>
         {cocuklar.length === 0 ? (
           <p style={{ color: TEXT_MUTED }} className="text-sm">Henüz bağlı bir öğrenci yok.</p>
@@ -222,7 +227,7 @@ async function VeliIcerik({ userId, secilenOgrenciId }: { userId: string; secile
       </div>
 
       {seciliCocuk?.students && (
-        <AnalizPaneli veri={await analizVerisiGetir(supabase, seciliCocuk.students.id)} />
+        <AnalizPaneli veri={await analizVerisiGetir(supabase, seciliCocuk.students.id, donem)} ogrenciAdi={seciliCocuk.students.profiles?.ad} />
       )}
     </div>
   );
