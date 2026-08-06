@@ -6,6 +6,7 @@ import { Header } from "@/components/dashboard/Header";
 import { OgretmenPanel } from "@/components/dashboard/OgretmenPanel";
 import { OgrenciVeriGirisi } from "@/components/dashboard/OgrenciVeriGirisi";
 import { AnalizPaneli } from "@/components/dashboard/AnalizPaneli";
+import { BildirimAyarlari } from "@/components/dashboard/BildirimAyarlari";
 import { analizVerisiGetir } from "@/lib/analiz";
 import type { RaporDonemi } from "@/lib/analiz";
 import { AYT_ALAN_ETIKET } from "@/lib/types";
@@ -36,7 +37,8 @@ export default async function DashboardPage({
   return (
     <div style={{ minHeight: "100vh", width: "100%" }} className="flex-1 flex flex-col">
       <Header ad={profile.ad} role={role} />
-      <div className="max-w-6xl mx-auto px-6 py-7 w-full flex-1">
+      <div className="max-w-6xl mx-auto px-6 py-7 w-full flex-1 flex flex-col gap-6">
+        <BildirimAyarlari />
         {role === "ogrenci" && <OgrenciIcerik userId={user.id} ad={profile.ad} donem={donem} />}
         {(role === "ogretmen" || role === "mudur") && (
           <OgretmenIcerik userId={user.id} rol={role} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} donem={donem} />

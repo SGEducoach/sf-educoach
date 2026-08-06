@@ -18,6 +18,19 @@ const baloo = Baloo_2({
 export const metadata: Metadata = {
   title: "SG EduCoach",
   description: "Çocuklarımızın geleceği için birlikteyiz",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "SG EduCoach",
+  },
+  icons: {
+    apple: "/apple-touch-icon.png",
+  },
+};
+
+export const viewport = {
+  themeColor: "#15172A",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
