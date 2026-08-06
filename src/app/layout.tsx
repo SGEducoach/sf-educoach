@@ -1,18 +1,21 @@
 import type { Metadata } from "next";
-import { Baloo_2, Nunito } from "next/font/google";
+import { Montserrat } from "next/font/google";
 import "./globals.css";
 
-const nunito = Nunito({
+// Not: değişken isimleri (--font-nunito, --font-baloo) kod tabanında onlarca
+// yerde referans veriliyor; tekrar adlandırmak yerine ikisini de Montserrat'a
+// bağlayıp (gövde: 400-600, başlık: 700-800) tek bir aile altında birleştiriyoruz.
+const montserratGovde = Montserrat({
   variable: "--font-nunito",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   style: ["normal", "italic"],
 });
 
-const baloo = Baloo_2({
+const montserratBaslik = Montserrat({
   variable: "--font-baloo",
   subsets: ["latin"],
-  weight: ["500", "600", "700", "800"],
+  weight: ["600", "700", "800", "900"],
 });
 
 export const metadata: Metadata = {
@@ -37,7 +40,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="tr"
-      className={`${nunito.variable} ${baloo.variable} h-full antialiased`}
+      className={`${montserratGovde.variable} ${montserratBaslik.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans">{children}</body>
     </html>
