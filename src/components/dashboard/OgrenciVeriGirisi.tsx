@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { BookOpen, PenLine, ClipboardList, Sparkles } from "lucide-react";
+import { BookOpen, PenLine, ClipboardList, Sparkles, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import type { AytAlan, DenemeTuru, HedefeYakinlik, VerimlilikDuzeyi, VeriGirisSikligi } from "@/lib/types";
 import {
   TYT_DERSLERI, AYT_DERSLERI, HEDEFE_YAKINLIK_ETIKET, VERIMLILIK_ETIKET, VERI_GIRIS_SIKLIGI_ETIKET, netHesapla,
@@ -10,7 +10,7 @@ import {
   BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, SKY, SKY_BG, TEXT, TEXT_MUTED, BLUSH,
 } from "@/lib/theme";
 import {
-  konuCalismaEkle, soruCozumuEkle, denemeEkle, haftalikVerimlilikEkle, veriGirisSikligiGuncelle,
+  konuCalismaEkle, soruCozumuEkle, denemeEkle, haftalikVerimlilikEkle, veriGirisSikligiGuncelle, konuAnlatimiGetir,
 } from "@/app/dashboard/veri-actions";
 
 type Sekme = "konu" | "soru" | "deneme";
@@ -42,8 +42,9 @@ function HedefeYakinlikSecici({ value, onChange }: { value: HedefeYakinlik; onCh
   );
 }
 
-export function OgrenciVeriGirisi({ studentId, aytAlan, veriGirisSikligi }: {
+export function OgrenciVeriGirisi({ studentId, aytAlan, veriGirisSikligi, konuOnerileri }: {
   studentId: string; aytAlan: AytAlan; veriGirisSikligi: VeriGirisSikligi;
+  konuOnerileri: { ders: string; konu: string }[];
 }) {
   const [sekme, setSekme] = useState<Sekme>("konu");
   const [verimlilikSor, setVerimlilikSor] = useState(false);
@@ -86,7 +87,7 @@ export function OgrenciVeriGirisi({ studentId, aytAlan, veriGirisSikligi }: {
           })}
         </div>
 
-        {sekme === "konu" && <KonuCalismaForm dersListesi={dersListesi} onBasari={basariGoster} />}
+        {sekme === "konu" && <KonuCalismaForm dersListesi={dersListesi} konuOnerileri={konuOnerileri} onBasari={basariGoster} />}
         {sekme === "soru" && <SoruCozumuForm dersListesi={dersListesi} onBasari={basariGoster} />}
         {sekme === "deneme" && <DenemeForm aytAlan={aytAlan} onBasari={basariGoster} />}
       </div>
@@ -119,37 +120,88 @@ function SiklikAyari({ studentId, mevcut }: { studentId: string; mevcut: VeriGir
   );
 }
 
-function KonuCalismaForm({ dersListesi, onBasari }: { dersListesi: string[]; onBasari: (m: string, s: boolean) => void }) {
+// Akış: önce ders+konu seçilir (eksik olduğun konuyu SEN bulursun), "Konuyu
+// oku" ile o an AI anlatımı gösterilir; süre ve hedefe yakınlığı — yani
+// konuyu ne kadar anladığın — bunu OKUDUKTAN/çalıştıktan SONRA girilir.
+function KonuCalismaForm({ dersListesi, konuOnerileri, onBasari }: {
+  dersListesi: string[]; konuOnerileri: { ders: string; konu: string }[]; onBasari: (m: string, s: boolean) => void;
+}) {
+  const [ders, setDers] = useState("");
+  const [konu, setKonu] = useState("");
   const [hedefeYakinlik, setHedefeYakinlik] = useState<HedefeYakinlik>("belirsiz");
   const [hata, setHata] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
+  const [anlatimAcik, setAnlatimAcik] = useState(false);
+  const [anlatim, setAnlatim] = useState<string | null>(null);
+  const [anlatimYukleniyor, setAnlatimYukleniyor] = useState(false);
+  const [anlatimHata, setAnlatimHata] = useState<string | null>(null);
+
+  const oneriler = konuOnerileri.filter((o) => o.ders === ders);
+
+  function konuyuOku() {
+    if (!ders || !konu.trim()) return setAnlatimHata("Önce ders ve konu girin.");
+    setAnlatimAcik((a) => !a);
+    if (anlatim || anlatimYukleniyor) return;
+    setAnlatimYukleniyor(true);
+    setAnlatimHata(null);
+    startTransition(async () => {
+      const res = await konuAnlatimiGetir(ders, konu);
+      setAnlatimYukleniyor(false);
+      if (res.error) setAnlatimHata(res.error);
+      else setAnlatim(res.icerik);
+    });
+  }
+
   function submit(formData: FormData) {
     setHata(null);
+    formData.set("ders", ders);
+    formData.set("konu", konu);
     formData.set("hedefeYakinlik", hedefeYakinlik);
     startTransition(async () => {
       const res = await konuCalismaEkle(formData);
-      if (res.error) setHata(res.error);
-      else onBasari("Konu çalışması kaydedildi.", res.verimlilikSorulsunMu);
+      if (res.error) return setHata(res.error);
+      onBasari("Konu çalışması kaydedildi.", res.verimlilikSorulsunMu);
+      setKonu(""); setAnlatim(null); setAnlatimAcik(false); setHedefeYakinlik("belirsiz");
     });
   }
 
   return (
     <form action={submit} className="flex flex-col gap-3">
-      <div className="grid grid-cols-2 gap-3">
-        <label className="flex flex-col gap-1"><Etiket>Ders</Etiket>
-          <Secim name="ders" required defaultValue="">
-            <option value="" disabled>Seçiniz</option>
-            {dersListesi.map((d) => <option key={d} value={d}>{d}</option>)}
-          </Secim>
-        </label>
-        <label className="flex flex-col gap-1"><Etiket>Süre (dakika)</Etiket>
-          <Girdi name="sureDakika" type="number" min={1} required />
-        </label>
-      </div>
-      <label className="flex flex-col gap-1"><Etiket>Konunun ismi</Etiket>
-        <Girdi name="konu" required placeholder="örn. Türev - Zincir Kuralı" />
+      <label className="flex flex-col gap-1"><Etiket>Ders</Etiket>
+        <Secim value={ders} onChange={(e) => { setDers(e.target.value); setKonu(""); setAnlatim(null); setAnlatimAcik(false); }} required>
+          <option value="" disabled>Seçiniz</option>
+          {dersListesi.map((d) => <option key={d} value={d}>{d}</option>)}
+        </Secim>
       </label>
+
+      <label className="flex flex-col gap-1"><Etiket>Eksik olduğun konu</Etiket>
+        <div className="flex gap-2">
+          <Girdi list="konu-oneri-listesi" required placeholder="örn. Türev - Zincir Kuralı" value={konu}
+            onChange={(e) => { setKonu(e.target.value); setAnlatim(null); }} disabled={!ders} />
+          <button type="button" onClick={konuyuOku} disabled={!ders || !konu.trim()}
+            className="sgec-btn shrink-0 flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"
+            style={{ background: SKY_BG, color: SKY, border: `1px solid rgba(143,198,255,0.3)` }}>
+            {anlatimYukleniyor ? <Loader2 size={13} className="animate-spin" /> : anlatimAcik ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+            Konuyu oku
+          </button>
+        </div>
+        <datalist id="konu-oneri-listesi">
+          {oneriler.map((o) => <option key={o.konu} value={o.konu} />)}
+        </datalist>
+      </label>
+
+      {anlatimAcik && (
+        <div className="rounded-2xl p-3.5" style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}` }}>
+          {anlatimHata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{anlatimHata}</div>}
+          {anlatim && <div style={{ color: TEXT_MUTED }} className="text-sm leading-relaxed whitespace-pre-line">{anlatim}</div>}
+        </div>
+      )}
+
+      <label className="flex flex-col gap-1"><Etiket>Süre (dakika)</Etiket>
+        <Girdi name="sureDakika" type="number" min={1} required />
+      </label>
+      <p style={{ color: TEXT_MUTED }} className="text-[11px] -mt-1">Konuyu okuduktan/çalıştıktan sonra ne kadar anladığını aşağıdan işaretle:</p>
       <HedefeYakinlikSecici value={hedefeYakinlik} onChange={setHedefeYakinlik} />
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
       <button type="submit" disabled={pending} className="sgec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>

@@ -98,6 +98,15 @@ async function OgrenciIcerik({ userId, ad, donem }: { userId: string; ad: string
     if (zayifKonular.length >= 10) break;
   }
 
+  // Daha önce üretilmiş konu anlatımlarının ders+konu listesi — konu girişi
+  // sırasında öneri (datalist) olarak sunulup zamanla konu isimlerinin
+  // standartlaşmasını (ve önbelleğin daha çok isabet almasını) sağlıyor.
+  const { data: konuOnerileriHam } = await supabase
+    .from("konu_anlatimlari")
+    .select("ders, konu")
+    .order("konu");
+  const konuOnerileri = (konuOnerileriHam as { ders: string; konu: string }[]) ?? [];
+
   return (
     <div className="flex flex-col gap-6">
       <div className="sgec-fade rounded-3xl p-6 print:hidden" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
@@ -113,7 +122,7 @@ async function OgrenciIcerik({ userId, ad, donem }: { userId: string; ad: string
       <ZayifKonular konular={zayifKonular} />
 
       <div className="print:hidden">
-        <OgrenciVeriGirisi studentId={userId} aytAlan={s.ayt_alan} veriGirisSikligi={s.veri_giris_sikligi} />
+        <OgrenciVeriGirisi studentId={userId} aytAlan={s.ayt_alan} veriGirisSikligi={s.veri_giris_sikligi} konuOnerileri={konuOnerileri} />
       </div>
 
       <div>
