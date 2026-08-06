@@ -540,3 +540,15 @@ $$;
 
 revoke all on function public.resolve_mudur_email(text) from public;
 grant execute on function public.resolve_mudur_email(text) to anon, authenticated;
+
+-- ============ Admin paneli (müdür: sınıf ekleme + öğretmen listesi) ============
+create policy "teachers_select_any_teacher" on public.teachers for select using (public.is_ogretmen());
+
+create policy "classes_insert_mudur" on public.classes
+  for insert with check (
+    exists (
+      select 1 from public.profiles p
+      join public.teachers t on t.id = p.id
+      where p.id = auth.uid() and p.role = 'mudur' and t.school_id = classes.school_id
+    )
+  );

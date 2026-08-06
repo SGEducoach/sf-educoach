@@ -2,9 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { UserPlus, Check, Users, Eye } from "lucide-react";
-import { BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, SKY, SKY_BG, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
-import { veliTalepOnayla } from "@/app/dashboard/actions";
+import { UserPlus, Check, Users, Eye, Shield, Plus } from "lucide-react";
+import { BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, SKY, SKY_BG, LILAC, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
+import { veliTalepOnayla, sinifEkle } from "@/app/dashboard/actions";
 import type { VeliLinkRequest } from "@/lib/types";
 
 interface OgrenciSatiri {
@@ -17,9 +17,16 @@ interface SinifSatiri {
   seviye: string;
   sube: string;
 }
+interface OgretmenSatiri {
+  id: string;
+  ad: string;
+  brans: string;
+  sinifAdi: string | null;
+}
 
 export function OgretmenPanel({
   bekleyenTalepler, ogrenciler, sinifAdi, siniflar, gorunecekSinifId, kendiSinifId, kendiSinifiMi,
+  mudurMu, schoolId, ogretmenListesi,
 }: {
   bekleyenTalepler: (VeliLinkRequest & { ogrenci_ad: string })[];
   ogrenciler: OgrenciSatiri[];
@@ -28,6 +35,9 @@ export function OgretmenPanel({
   gorunecekSinifId: string | null;
   kendiSinifId: string | null;
   kendiSinifiMi: boolean;
+  mudurMu?: boolean;
+  schoolId?: string;
+  ogretmenListesi?: OgretmenSatiri[];
 }) {
   const router = useRouter();
   const [uretilenKodlar, setUretilenKodlar] = useState<Record<string, string>>({});
@@ -142,6 +152,83 @@ export function OgretmenPanel({
           </div>
         )}
       </div>
+
+      {mudurMu && schoolId && (
+        <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(199,182,255,0.15)" }}>
+              <Shield size={13} color={LILAC} />
+            </div>
+            <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Yönetim</span>
+          </div>
+
+          <SinifEkleFormu schoolId={schoolId} />
+
+          <div className="mt-5">
+            <span style={{ color: TEXT_MUTED }} className="text-[11px] font-semibold uppercase tracking-wide mb-2 block">Öğretmenler ({ogretmenListesi?.length ?? 0})</span>
+            {(!ogretmenListesi || ogretmenListesi.length === 0) ? (
+              <p style={{ color: TEXT_MUTED }} className="text-sm py-3 text-center">Henüz kayıtlı öğretmen yok.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {ogretmenListesi.map((o) => (
+                  <div key={o.id} className="rounded-xl px-3.5 py-2.5" style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}` }}>
+                    <div style={{ color: TEXT }} className="text-sm font-semibold">{o.ad}</div>
+                    <div style={{ color: TEXT_MUTED }} className="text-xs mt-0.5">{o.brans} {o.sinifAdi ? `· ${o.sinifAdi}` : ""}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+function SinifEkleFormu({ schoolId }: { schoolId: string }) {
+  const [seviye, setSeviye] = useState<"11" | "12">("11");
+  const [sube, setSube] = useState("");
+  const [hata, setHata] = useState<string | null>(null);
+  const [basari, setBasari] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  function ekle(e: React.FormEvent) {
+    e.preventDefault();
+    setHata(null);
+    setBasari(null);
+    if (!sube.trim()) return setHata("Şube adı girin (örn. E).");
+    startTransition(async () => {
+      const res = await sinifEkle(schoolId, seviye, sube);
+      if (res.error) setHata(res.error);
+      else {
+        setBasari(`${seviye}-${sube.trim().toUpperCase()} eklendi.`);
+        setSube("");
+      }
+    });
+  }
+
+  return (
+    <form onSubmit={ekle} className="flex flex-wrap items-end gap-2.5">
+      <label className="flex flex-col gap-1">
+        <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Seviye</span>
+        <select value={seviye} onChange={(e) => setSeviye(e.target.value as "11" | "12")}
+          className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
+          <option value="11">11</option>
+          <option value="12">12</option>
+        </select>
+      </label>
+      <label className="flex flex-col gap-1">
+        <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Şube</span>
+        <input value={sube} onChange={(e) => setSube(e.target.value)} placeholder="örn. E" maxLength={2}
+          className="text-sm px-2.5 py-1.5 rounded-xl outline-none w-20" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }} />
+      </label>
+      <button type="submit" disabled={pending}
+        className="sgec-btn flex items-center gap-1 text-xs font-bold px-3.5 py-1.5 rounded-full disabled:opacity-60"
+        style={{ background: MINT, color: MINT_ON }}>
+        <Plus size={13} /> {pending ? "Ekleniyor..." : "Sınıf ekle"}
+      </button>
+      {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
+      {basari && <div style={{ color: MINT }} className="text-xs font-semibold">{basari}</div>}
+    </form>
   );
 }

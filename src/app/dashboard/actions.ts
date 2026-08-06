@@ -24,3 +24,16 @@ export async function veliTalepOnayla(requestId: string) {
   revalidatePath("/dashboard");
   return { error: null, kod: data as string };
 }
+
+export async function sinifEkle(schoolId: string, seviye: "11" | "12", sube: string) {
+  const { supabase } = await requireUser();
+  const { error } = await supabase.from("classes").insert({
+    school_id: schoolId, seviye, sube: sube.trim().toUpperCase(),
+  });
+  if (error) {
+    if (error.code === "23505") return { error: "Bu sınıf/şube zaten var." };
+    return { error: error.message };
+  }
+  revalidatePath("/dashboard");
+  return { error: null };
+}

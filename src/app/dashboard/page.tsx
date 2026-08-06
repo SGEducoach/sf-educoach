@@ -39,7 +39,7 @@ export default async function DashboardPage({
       <div className="max-w-6xl mx-auto px-6 py-7 w-full flex-1">
         {role === "ogrenci" && <OgrenciIcerik userId={user.id} ad={profile.ad} donem={donem} />}
         {(role === "ogretmen" || role === "mudur") && (
-          <OgretmenIcerik userId={user.id} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} donem={donem} />
+          <OgretmenIcerik userId={user.id} rol={role} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} donem={donem} />
         )}
         {role === "veli" && <VeliIcerik userId={user.id} secilenOgrenciId={params.ogrenci} donem={donem} />}
       </div>
@@ -95,8 +95,8 @@ async function OgrenciIcerik({ userId, ad, donem }: { userId: string; ad: string
   );
 }
 
-async function OgretmenIcerik({ userId, secilenSinifId, secilenOgrenciId, donem }: {
-  userId: string; secilenSinifId?: string; secilenOgrenciId?: string; donem: RaporDonemi;
+async function OgretmenIcerik({ userId, rol, secilenSinifId, secilenOgrenciId, donem }: {
+  userId: string; rol: UserRole; secilenSinifId?: string; secilenOgrenciId?: string; donem: RaporDonemi;
 }) {
   const supabase = await createClient();
   const { data: teacher } = await supabase
@@ -178,6 +178,20 @@ async function OgretmenIcerik({ userId, secilenSinifId, secilenOgrenciId, donem 
   const gorunenSinif = sinifListesi.find((s) => s.id === gorunecekSinifId);
   const sinifAdi = gorunenSinif ? `${gorunenSinif.seviye}-${gorunenSinif.sube}` : null;
 
+  let ogretmenListesi: { id: string; ad: string; brans: string; sinifAdi: string | null }[] = [];
+  if (rol === "mudur") {
+    const { data: ogretmenler } = await supabase
+      .from("teachers")
+      .select("id, brans, class_id, profiles!teachers_id_fkey(ad), classes(seviye, sube)")
+      .eq("school_id", teacher.school_id);
+
+    type OgretmenRow = { id: string; brans: string; profiles: { ad: string } | null; classes: { seviye: string; sube: string } | null };
+    ogretmenListesi = ((ogretmenler as unknown as OgretmenRow[]) ?? []).map((o) => ({
+      id: o.id, ad: o.profiles?.ad ?? "İsimsiz", brans: o.brans,
+      sinifAdi: o.classes ? `${o.classes.seviye}-${o.classes.sube}` : null,
+    }));
+  }
+
   return (
     <OgretmenPanel
       bekleyenTalepler={talepListesi}
@@ -187,6 +201,9 @@ async function OgretmenIcerik({ userId, secilenSinifId, secilenOgrenciId, donem 
       gorunecekSinifId={gorunecekSinifId}
       kendiSinifId={teacher.class_id}
       kendiSinifiMi={kendiSinifiMi}
+      mudurMu={rol === "mudur"}
+      schoolId={teacher.school_id}
+      ogretmenListesi={ogretmenListesi}
     />
   );
 }
