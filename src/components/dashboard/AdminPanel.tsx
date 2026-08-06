@@ -2,10 +2,13 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Shield, Building2, ScrollText } from "lucide-react";
-import { BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, TEXT, TEXT_MUTED, BLUSH, LILAC } from "@/lib/theme";
-import { sinifOgretmeniAta } from "@/app/dashboard/actions";
+import { Shield, Building2, ScrollText, UserPlus, Copy, Check } from "lucide-react";
+import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH, LILAC } from "@/lib/theme";
+import { sinifOgretmeniAta, ogretmenEkleManuel, ogrenciEkleManuel } from "@/app/dashboard/actions";
 import { SinifEkleFormu } from "@/components/dashboard/OgretmenPanel";
+import { AYT_ALAN_ETIKET, BRANS_LISTESI } from "@/lib/types";
+import type { AytAlan } from "@/lib/types";
+import { telefonSanitize, okulNoSanitize, TELEFON_IPUCU } from "@/lib/validators";
 
 interface OkulSatiri {
   id: string;
@@ -98,6 +101,11 @@ export function AdminPanel({
                 </div>
               )}
             </div>
+
+            <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <OgretmenEkleFormu schoolId={gorunenOkul.id} />
+              <OgrenciEkleFormu schoolId={gorunenOkul.id} siniflar={siniflar} />
+            </div>
           </>
         )}
       </div>
@@ -159,6 +167,144 @@ function OgretmenSatir({ ogretmen, siniflar }: { ogretmen: OgretmenSatiri; sinif
           {siniflar.map((s) => <option key={s.id} value={s.id}>{s.seviye}-{s.sube}</option>)}
         </select>
       </div>
+    </div>
+  );
+}
+
+// Yeni oluşturulan hesabın e-posta+geçici şifresini bir kerelik gösterip
+// panoya kopyalamayı kolaylaştırır — admin bunu ilgili kişiye iletecek.
+function OlusturulanHesap({ email, sifre }: { email: string; sifre: string }) {
+  const [kopyalandi, setKopyalandi] = useState(false);
+
+  function kopyala() {
+    navigator.clipboard?.writeText(`E-posta: ${email}\nŞifre: ${sifre}`).then(() => {
+      setKopyalandi(true);
+      setTimeout(() => setKopyalandi(false), 2000);
+    });
+  }
+
+  return (
+    <div className="rounded-xl p-3 flex items-center justify-between gap-2 flex-wrap" style={{ background: MINT_BG, border: `1px solid ${MINT}` }}>
+      <div className="text-xs" style={{ color: TEXT }}>
+        Hesap oluşturuldu — <strong>{email}</strong> / <strong>{sifre}</strong>
+        <div style={{ color: TEXT_MUTED }} className="mt-0.5">Bu şifreyi ilgili kişiye iletin, tekrar gösterilmeyecek.</div>
+      </div>
+      <button type="button" onClick={kopyala}
+        className="sgec-btn shrink-0 flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full"
+        style={{ background: MINT, color: MINT_ON }}>
+        {kopyalandi ? <><Check size={12} /> Kopyalandı</> : <><Copy size={12} /> Kopyala</>}
+      </button>
+    </div>
+  );
+}
+
+function OgretmenEkleFormu({ schoolId }: { schoolId: string }) {
+  const [ad, setAd] = useState("");
+  const [email, setEmail] = useState("");
+  const [telefon, setTelefon] = useState("");
+  const [brans, setBrans] = useState<string>(BRANS_LISTESI[0]);
+  const [hata, setHata] = useState<string | null>(null);
+  const [sonuc, setSonuc] = useState<{ email: string; sifre: string } | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  function ekle(e: React.FormEvent) {
+    e.preventDefault();
+    setHata(null);
+    startTransition(async () => {
+      const res = await ogretmenEkleManuel({ ad, email, telefon, schoolId, brans });
+      if (res.error) return setHata(res.error);
+      setSonuc({ email: email.trim().toLowerCase(), sifre: res.sifre! });
+      setAd(""); setEmail(""); setTelefon("");
+    });
+  }
+
+  return (
+    <div className="rounded-2xl p-4 flex flex-col gap-2.5" style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}` }}>
+      <div className="flex items-center gap-1.5">
+        <UserPlus size={13} color={MINT} />
+        <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[13px] font-bold">Öğretmen ekle</span>
+      </div>
+      {sonuc && <OlusturulanHesap email={sonuc.email} sifre={sonuc.sifre} />}
+      <form onSubmit={ekle} className="flex flex-col gap-2">
+        <input value={ad} onChange={(e) => setAd(e.target.value)} placeholder="Ad Soyad" required
+          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+        <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="E-posta" required
+          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+        <input value={telefon} onChange={(e) => setTelefon(telefonSanitize(e.target.value))} type="tel" inputMode="numeric" placeholder={TELEFON_IPUCU} required
+          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+        <select value={brans} onChange={(e) => setBrans(e.target.value)}
+          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+          {BRANS_LISTESI.map((b) => <option key={b} value={b}>{b}</option>)}
+        </select>
+        {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
+        <button type="submit" disabled={pending}
+          className="sgec-btn text-xs font-bold py-2 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+          {pending ? "Ekleniyor..." : "Öğretmen ekle"}
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function OgrenciEkleFormu({ schoolId, siniflar }: { schoolId: string; siniflar: SinifSatiri[] }) {
+  const [ad, setAd] = useState("");
+  const [email, setEmail] = useState("");
+  const [okulNo, setOkulNo] = useState("");
+  const [telefon, setTelefon] = useState("");
+  const [classId, setClassId] = useState("");
+  const [aytAlan, setAytAlan] = useState<AytAlan>("SAY");
+  const [hedefBolum, setHedefBolum] = useState("");
+  const [hata, setHata] = useState<string | null>(null);
+  const [sonuc, setSonuc] = useState<{ email: string; sifre: string } | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  function ekle(e: React.FormEvent) {
+    e.preventDefault();
+    setHata(null);
+    if (!classId) return setHata("Sınıf seçin.");
+    startTransition(async () => {
+      const res = await ogrenciEkleManuel({ ad, email, okulNo, telefon, schoolId, classId, aytAlan, hedefBolum });
+      if (res.error) return setHata(res.error);
+      setSonuc({ email: email.trim().toLowerCase(), sifre: res.sifre! });
+      setAd(""); setEmail(""); setOkulNo(""); setTelefon(""); setHedefBolum("");
+    });
+  }
+
+  return (
+    <div className="rounded-2xl p-4 flex flex-col gap-2.5" style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}` }}>
+      <div className="flex items-center gap-1.5">
+        <UserPlus size={13} color={MINT} />
+        <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[13px] font-bold">Öğrenci ekle</span>
+      </div>
+      {sonuc && <OlusturulanHesap email={sonuc.email} sifre={sonuc.sifre} />}
+      <form onSubmit={ekle} className="flex flex-col gap-2">
+        <input value={ad} onChange={(e) => setAd(e.target.value)} placeholder="Ad Soyad" required
+          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+        <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="E-posta" required
+          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+        <div className="flex gap-2">
+          <input value={okulNo} onChange={(e) => setOkulNo(okulNoSanitize(e.target.value))} inputMode="numeric" maxLength={5} placeholder="Okul No" required
+            className="text-sm px-3 py-1.5 rounded-xl outline-none w-1/2" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+          <input value={telefon} onChange={(e) => setTelefon(telefonSanitize(e.target.value))} type="tel" inputMode="numeric" placeholder="Telefon (ops.)"
+            className="text-sm px-3 py-1.5 rounded-xl outline-none w-1/2" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+        </div>
+        <select value={classId} onChange={(e) => setClassId(e.target.value)} required
+          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+          <option value="">Sınıf seçin</option>
+          {siniflar.map((s) => <option key={s.id} value={s.id}>{s.seviye}-{s.sube}</option>)}
+        </select>
+        <select value={aytAlan} onChange={(e) => setAytAlan(e.target.value as AytAlan)}
+          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+          {(Object.keys(AYT_ALAN_ETIKET) as AytAlan[]).map((a) => <option key={a} value={a}>{AYT_ALAN_ETIKET[a]}</option>)}
+        </select>
+        <input value={hedefBolum} onChange={(e) => setHedefBolum(e.target.value)} placeholder="Hedef bölüm (ops.)"
+          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+        {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
+        <button type="submit" disabled={pending}
+          className="sgec-btn text-xs font-bold py-2 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+          {pending ? "Ekleniyor..." : "Öğrenci ekle"}
+        </button>
+      </form>
     </div>
   );
 }

@@ -3,12 +3,25 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { telefonGecerliMi, okulNoGecerliMi, rastgeleSifre } from "@/lib/validators";
 
 async function requireUser() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   return { supabase, user };
+}
+
+// Admin'e özel (service-role gerektiren) işlemler için: RLS'e güvenmek yerine
+// burada da açıkça doğruluyoruz — service-role client RLS'i bypass ettiğinden
+// bu kontrol olmadan herhangi bir oturum açmış kullanıcı admin API'sini
+// tetikleyebilirdi.
+async function requireAdmin() {
+  const { supabase, user } = await requireUser();
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  if (profile?.role !== "admin") return { supabase, user, admin: null };
+  return { supabase, user, admin: createAdminClient() };
 }
 
 export async function signOut() {
@@ -66,4 +79,74 @@ export async function sinifOgretmeniAta(ogretmenId: string, classId: string | nu
   await auditLogYaz(supabase, user.id, classId ? "sinif_ogretmeni_ata" : "sinif_ogretmenliginden_cikar", { ogretmen_id: ogretmenId, class_id: classId });
   revalidatePath("/dashboard");
   return { error: null };
+}
+
+// ============ Admin: manuel öğretmen/öğrenci ekleme ============
+// Admin API (service-role) ile hesap oluşturur; email_confirm: true olduğu
+// için onay e-postası GÖNDERİLMEZ (bounce riski yok) — geçici şifre burada
+// üretilip admin'e bir kerelik gösterilir, admin bunu ilgili kişiye iletir.
+
+function manuelEklemeHatasi(mesaj: string): string {
+  if (mesaj.includes("already been registered") || mesaj.includes("already registered")) {
+    return "Bu e-posta zaten kayıtlı.";
+  }
+  if (mesaj.includes("okul_no")) return "Bu okul numarası zaten kullanılıyor.";
+  return mesaj;
+}
+
+export async function ogretmenEkleManuel(input: {
+  ad: string; email: string; telefon: string; schoolId: string; brans: string;
+}) {
+  const { supabase, user, admin } = await requireAdmin();
+  if (!admin) return { error: "Bu işlem için yönetici yetkisi gerekiyor.", sifre: null };
+
+  const ad = input.ad.trim();
+  const email = input.email.trim().toLowerCase();
+  if (!ad) return { error: "Ad Soyad gerekli.", sifre: null };
+  if (!email) return { error: "E-posta gerekli.", sifre: null };
+  if (!telefonGecerliMi(input.telefon)) return { error: "Telefon numarası geçersiz.", sifre: null };
+  if (!input.schoolId) return { error: "Okul seçin.", sifre: null };
+  if (!input.brans) return { error: "Branş seçin.", sifre: null };
+
+  const sifre = rastgeleSifre();
+  const { data: created, error } = await admin.auth.admin.createUser({
+    email, password: sifre, email_confirm: true,
+    user_metadata: { role: "ogretmen", ad, telefon: input.telefon, school_id: input.schoolId, brans: input.brans },
+  });
+  if (error) return { error: manuelEklemeHatasi(error.message), sifre: null };
+
+  await auditLogYaz(supabase, user.id, "ogretmen_ekle_manuel", { ogretmen_id: created.user?.id, email, school_id: input.schoolId });
+  revalidatePath("/dashboard");
+  return { error: null, sifre };
+}
+
+export async function ogrenciEkleManuel(input: {
+  ad: string; email: string; okulNo: string; telefon: string; schoolId: string; classId: string;
+  aytAlan: "SAY" | "EA" | "SOZ"; hedefBolum: string;
+}) {
+  const { supabase, user, admin } = await requireAdmin();
+  if (!admin) return { error: "Bu işlem için yönetici yetkisi gerekiyor.", sifre: null };
+
+  const ad = input.ad.trim();
+  const email = input.email.trim().toLowerCase();
+  if (!ad) return { error: "Ad Soyad gerekli.", sifre: null };
+  if (!email) return { error: "E-posta gerekli.", sifre: null };
+  if (!okulNoGecerliMi(input.okulNo)) return { error: "Okul no geçersiz (sadece rakam, en fazla 5 hane).", sifre: null };
+  if (input.telefon && !telefonGecerliMi(input.telefon)) return { error: "Telefon numarası geçersiz.", sifre: null };
+  if (!input.schoolId) return { error: "Okul seçin.", sifre: null };
+  if (!input.classId) return { error: "Sınıf seçin.", sifre: null };
+
+  const sifre = rastgeleSifre();
+  const { data: created, error } = await admin.auth.admin.createUser({
+    email, password: sifre, email_confirm: true,
+    user_metadata: {
+      role: "ogrenci", ad, telefon: input.telefon || null, school_id: input.schoolId, class_id: input.classId,
+      okul_no: input.okulNo, ayt_alan: input.aytAlan, hedef_bolum: input.hedefBolum,
+    },
+  });
+  if (error) return { error: manuelEklemeHatasi(error.message), sifre: null };
+
+  await auditLogYaz(supabase, user.id, "ogrenci_ekle_manuel", { ogrenci_id: created.user?.id, okul_no: input.okulNo, school_id: input.schoolId, class_id: input.classId });
+  revalidatePath("/dashboard");
+  return { error: null, sifre };
 }

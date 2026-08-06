@@ -11,6 +11,9 @@ import { AYT_ALAN_ETIKET, BRANS_LISTESI } from "@/lib/types";
 import {
   BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH,
 } from "@/lib/theme";
+import {
+  telefonSanitize, telefonGecerliMi, okulNoSanitize, sifreGecerliMi, SIFRE_IPUCU, TELEFON_IPUCU,
+} from "@/lib/validators";
 
 const rolSecenekleri: { id: UserRole; ad: string; icon: typeof BookOpen }[] = [
   { id: "ogrenci", ad: "Öğrenci", icon: BookOpen },
@@ -39,22 +42,6 @@ function Secim({ children, ...props }: React.SelectHTMLAttributes<HTMLSelectElem
     </select>
   );
 }
-
-// ============ Doğrulama yardımcıları ============
-function telefonSanitize(v: string) {
-  return v.replace(/\D/g, "").slice(0, 11);
-}
-function telefonGecerliMi(v: string) {
-  return /^[0-9]{10,11}$/.test(v);
-}
-function okulNoSanitize(v: string) {
-  return v.replace(/\D/g, "").slice(0, 5);
-}
-function sifreGecerliMi(v: string) {
-  return /^[A-Za-z0-9]{8,}$/.test(v) && /[A-Za-z]/.test(v) && /[0-9]/.test(v);
-}
-const SIFRE_IPUCU = "En az 8 karakter, boşluksuz, harf ve rakam içermeli.";
-const TELEFON_IPUCU = "Sadece rakam, 10-11 hane (örn. 5xxxxxxxxx).";
 
 // ============ Kayıt kuralları onayı ============
 // Onay sadece tarayıcıda (localStorage) tutuluyor; metin değişince
