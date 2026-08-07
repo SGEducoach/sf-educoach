@@ -216,12 +216,12 @@ function KonuCalismaForm({ dersListesi, konuOnerileri, onBasari }: {
   );
   const seciliKonuSeviyesi = konuOnerileri.find((o) => o.ders === ders && o.konu === konu)?.seviye;
 
-  // Konu seçilince arama kutusu temizlenir (yeni aramaya hazır) — seçilen
-  // konu, kutunun altında rozet olarak gösterilir; "Konuyu oku" ve kayıt
-  // işlemleri hâlâ bu seçili konu üzerinden çalışır.
+  // Konu seçilince kutuya yazılır ve üstte rozet gösterilir; "Konuyu oku"ya
+  // basılınca kutu temizlenir (okuma o an açık), oku kapatılınca ise seçili
+  // konu (ve rozet) tamamen sıfırlanır — yeni bir arama için hazır olunur.
   function konuSec(secilenKonu: string) {
     setKonu(secilenKonu);
-    setAramaMetni("");
+    setAramaMetni(secilenKonu);
     setOneriAcik(false);
     setAnlatim(null);
     setAnlatimSeviye(null);
@@ -229,7 +229,20 @@ function KonuCalismaForm({ dersListesi, konuOnerileri, onBasari }: {
 
   function konuyuOku() {
     if (!ders || !konu.trim()) return setAnlatimHata("Önce ders ve konu girin.");
-    setAnlatimAcik((a) => !a);
+    const aciliyor = !anlatimAcik;
+    setAnlatimAcik(aciliyor);
+
+    if (!aciliyor) {
+      // Kapatılıyor: seçili konuyu (ve rozeti) sıfırla, arama kutusu boş kalsın.
+      setKonu("");
+      setAramaMetni("");
+      setAnlatim(null);
+      setAnlatimSeviye(null);
+      setAnlatimHata(null);
+      return;
+    }
+
+    setAramaMetni("");
     if (anlatim || anlatimYukleniyor) return;
     setAnlatimYukleniyor(true);
     setAnlatimHata(null);
