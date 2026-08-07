@@ -40,9 +40,10 @@ export function HosgeldinPopuplari({ role, ad }: { role: UserRole; ad: string })
   if (!asama) return null;
 
   const selamlama = role === "veli" ? "Sayın Veli," : "Sevgili Öğrencim,";
-  const mesaj = role === "veli"
-    ? "öğrencilerim için yoğun mesai ve emek harcadığım uygulamayı ücretsiz olarak sunuyorum. Faydalı olması dileğiyle..."
-    : "sizler için yoğun mesai ve emek harcadığım uygulamayı ücretsiz olarak sunuyorum. Faydalı olması dileğiyle...";
+  const cumle1 = role === "veli"
+    ? "Öğrencilerim için yoğun mesai ve emek harcadığım uygulamayı ücretsiz olarak sunuyorum."
+    : "Sizler için yoğun mesai ve emek harcadığım uygulamayı ücretsiz olarak sunuyorum.";
+  const cumle2 = "Faydalı olması dileğiyle...";
 
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center px-4" style={{ background: "rgba(0,0,0,0.55)" }}>
@@ -58,8 +59,9 @@ export function HosgeldinPopuplari({ role, ad }: { role: UserRole; ad: string })
               <Heart size={18} color="#FF9FB4" />
             </div>
             <p style={{ color: TEXT }} className="text-sm leading-relaxed mb-1">{selamlama}</p>
-            <p style={{ color: TEXT }} className="text-sm leading-relaxed mb-4">{mesaj}</p>
-            <p style={{ color: TEXT_MUTED }} className="text-xs text-right mb-4 italic">— S. Güler</p>
+            <p style={{ color: TEXT }} className="text-sm leading-relaxed mb-1">{cumle1}</p>
+            <p style={{ color: TEXT }} className="text-sm leading-relaxed mb-4">{cumle2}</p>
+            <p style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base text-right mb-4 font-bold">S. Güler</p>
           </>
         ) : (
           <>
