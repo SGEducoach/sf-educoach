@@ -1,17 +1,25 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { telefonGecerliMi, adNormalize } from "@/lib/validators";
 
 const KVKK_ONAY_VERSIYON = "v1-2026-08-05";
 
 export async function POST(request: Request) {
-  const { school_id, okul_no, kod, kvkkOnay } = await request.json();
+  const { school_id, okul_no, kod, kvkkOnay, veli_ad, veli_telefon } = await request.json();
 
   if (!school_id || !okul_no || !kod) {
     return NextResponse.json({ error: "Okul, okul no ve kod gerekli." }, { status: 400 });
   }
   if (kvkkOnay !== true) {
     return NextResponse.json({ error: "Devam etmek için KVKK aydınlatma metnini onaylamanız gerekiyor." }, { status: 400 });
+  }
+  const veliAdTemiz = (veli_ad ?? "").toString().trim();
+  if (!veliAdTemiz) {
+    return NextResponse.json({ error: "Adınız Soyadınız gerekli." }, { status: 400 });
+  }
+  if (!telefonGecerliMi((veli_telefon ?? "").toString())) {
+    return NextResponse.json({ error: "Telefon numarası geçersiz." }, { status: 400 });
   }
 
   const admin = createAdminClient();
@@ -44,6 +52,7 @@ export async function POST(request: Request) {
   }
 
   const syntheticEmail = `veli+${talep.id}@sgeducoach.internal`;
+  const veliAdNormalize = adNormalize(veliAdTemiz);
 
   const { data: createdUser, error: createError } = await admin.auth.admin.createUser({
     email: syntheticEmail,
@@ -51,8 +60,8 @@ export async function POST(request: Request) {
     email_confirm: true,
     user_metadata: {
       role: "veli",
-      ad: talep.veli_ad,
-      telefon: talep.veli_telefon,
+      ad: veliAdNormalize,
+      telefon: veli_telefon,
       request_id: talep.id,
     },
   });
@@ -60,6 +69,10 @@ export async function POST(request: Request) {
   if (createError) {
     return NextResponse.json({ error: createError.message }, { status: 400 });
   }
+
+  // Talep kaydını da güncel (gerçek) veli bilgisiyle senkron tutalım —
+  // admin panelindeki "Veli talepleri" listesi buradan okuyor.
+  await admin.from("veli_link_requests").update({ veli_ad: veliAdNormalize, veli_telefon }).eq("id", talep.id);
 
   // KVKK rıza beyanını zaman damgasıyla kaydet (trigger profiles'ı oluşturduktan sonra).
   if (createdUser.user) {

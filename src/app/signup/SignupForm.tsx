@@ -498,6 +498,8 @@ function VeliTamamlaForm({ schools, router }: { schools: School[]; router: Retur
   const [schoolId, setSchoolId] = useState("");
   const [okulNo, setOkulNo] = useState("");
   const [kod, setKod] = useState("");
+  const [veliAd, setVeliAd] = useState("");
+  const [veliTelefon, setVeliTelefon] = useState("");
   const [kvkkOnay, setKvkkOnay] = useState(false);
   const [hata, setHata] = useState<string | null>(null);
   const [yukleniyor, setYukleniyor] = useState(false);
@@ -506,12 +508,17 @@ function VeliTamamlaForm({ schools, router }: { schools: School[]; router: Retur
     e.preventDefault();
     setHata(null);
     if (!schoolId) return setHata("Okul seçin.");
+    if (!veliAd.trim()) return setHata("Adınız Soyadınız gerekli.");
+    if (!telefonGecerliMi(veliTelefon)) return setHata("Telefon numarası geçersiz. " + TELEFON_IPUCU);
     if (!kvkkOnay) return setHata("Devam etmek için KVKK aydınlatma metnini onaylamanız gerekiyor.");
     setYukleniyor(true);
     const res = await fetch("/api/veli/tamamla", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ school_id: schoolId, okul_no: okulNo.trim(), kod: kod.trim(), kvkkOnay: true }),
+      body: JSON.stringify({
+        school_id: schoolId, okul_no: okulNo.trim(), kod: kod.trim(), kvkkOnay: true,
+        veli_ad: adNormalize(veliAd), veli_telefon: veliTelefon,
+      }),
     });
     const body = await res.json();
     setYukleniyor(false);
@@ -531,6 +538,8 @@ function VeliTamamlaForm({ schools, router }: { schools: School[]; router: Retur
       </label>
       <label className="flex flex-col gap-1"><Etiket>Öğrenci Okul No</Etiket><Girdi required value={okulNo} onChange={(e) => setOkulNo(e.target.value)} /></label>
       <label className="flex flex-col gap-1"><Etiket>Kod</Etiket><Girdi required value={kod} onChange={(e) => setKod(e.target.value)} /></label>
+      <label className="flex flex-col gap-1"><Etiket>Adınız Soyadınız</Etiket><Girdi required value={veliAd} onChange={(e) => setVeliAd(e.target.value)} /></label>
+      <label className="flex flex-col gap-1"><Etiket>Telefon</Etiket><Girdi type="tel" required value={veliTelefon} inputMode="numeric" placeholder="5xxxxxxxxx" onChange={(e) => setVeliTelefon(telefonSanitize(e.target.value))} /></label>
 
       <div className="flex flex-col gap-1.5">
         <Etiket>KVKK Aydınlatma Metni ve Rıza Beyanı</Etiket>
