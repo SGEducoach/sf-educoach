@@ -1,0 +1,952 @@
+[
+ {
+  "ders": "Matematik",
+  "konu": "Doğrusal İlişkiler ve Problemler",
+  "seviye": "Hazırlık"
+ },
+ {
+  "ders": "Matematik",
+  "konu": "Mantıksal Çıkarım Gerektiren Problemler",
+  "seviye": "Hazırlık"
+ },
+ {
+  "ders": "Matematik",
+  "konu": "Sayı Örüntüleri ve Şifreleme",
+  "seviye": "Hazırlık"
+ },
+ {
+  "ders": "Matematik",
+  "konu": "Geometrik İnşa, Fraktallar, Süsleme ve Kaplamalar",
+  "seviye": "Hazırlık"
+ },
+ {
+  "ders": "Matematik",
+  "konu": "İstatistiksel Veri Değerlendirme (Tek Değişken)",
+  "seviye": "Hazırlık"
+ },
+ {
+  "ders": "Matematik",
+  "konu": "Üslü-Köklü Sayılar, Sayı Kümeleri, Özdeşlikler",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Matematik",
+  "konu": "Doğrusal Fonksiyonlar ve Mutlak Değer Fonksiyonu",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Matematik",
+  "konu": "Algoritma, Mantık Bağlaçları ve Niceleyiciler",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Matematik",
+  "konu": "Üçgende Açı-Kenar Özellikleri",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Matematik",
+  "konu": "Geometrik Dönüşümler, Üçgende Eşlik ve Benzerlik",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Matematik",
+  "konu": "İstatistiksel Problem Kurma ve Analiz (Tek Değişken)",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Matematik",
+  "konu": "Olasılık (Deneysel ve Teorik)",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Matematik",
+  "konu": "Bölünebilme, OBEB-OKEK, Asal Çarpanlar",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Matematik",
+  "konu": "Karesel, Karekök ve Rasyonel Fonksiyonlar",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Matematik",
+  "konu": "Sayma Stratejileri ve Algoritmik Cebir",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Matematik",
+  "konu": "Trigonometri (Dik Üçgen, Alan, Sinüs-Kosinüs Teoremi)",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Matematik",
+  "konu": "Analitik Geometri (Nokta ve Doğru)",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Matematik",
+  "konu": "İstatistik (İki Kategorik Değişken)",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Matematik",
+  "konu": "Koşullu Olasılık ve Bayes Teoremi",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Matematik",
+  "konu": "Trigonometrik Fonksiyonlar",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Matematik",
+  "konu": "Üstel ve Logaritmik Fonksiyonlar",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Matematik",
+  "konu": "Fonksiyonlarda İşlemler ve Bileşke",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Matematik",
+  "konu": "Dörtgenler ve Çokgenler",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Matematik",
+  "konu": "İstatistik (İki Nicel Değişken)",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Matematik",
+  "konu": "Diziler (Aritmetik ve Geometrik)",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Matematik",
+  "konu": "Polinomlar",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Matematik",
+  "konu": "Limit ve Süreklilik",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Matematik",
+  "konu": "Türev",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Matematik",
+  "konu": "Türev Uygulamaları",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Matematik",
+  "konu": "Çemberde Açı ve Uzunluk",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Matematik",
+  "konu": "Katı Cisimler (Prizma, Silindir, Piramit, Koni, Küre)",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Matematik",
+  "konu": "İstatistiksel Problemler (Betimleme-Karşılaştırma-İlişki)",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Fizik",
+  "konu": "Fizik Bilimi ve Kariyer Keşfi",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Fizik",
+  "konu": "Temel-Türetilmiş Nicelikler, Vektörler, Hareket",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Fizik",
+  "konu": "Akışkanlar (Basınç, Kaldırma Kuvveti)",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Fizik",
+  "konu": "Isı, Sıcaklık ve Hâl Değişimi",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Fizik",
+  "konu": "Sabit Hızlı ve Sabit İvmeli Hareket",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Fizik",
+  "konu": "İş, Enerji ve Güç",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Fizik",
+  "konu": "Basit Elektrik Devreleri (Ohm Yasası)",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Fizik",
+  "konu": "Dalgalar (Temel Kavramlar, Periyodik Hareket, Rezonans)",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Fizik",
+  "konu": "Newton Hareket Yasaları, Sürtünme, Çembersel Hareket",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Fizik",
+  "konu": "Elektrik Alan, Manyetik Alan ve İndüksiyon",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Fizik",
+  "konu": "Yarı İletkenlik ve Süper İletkenlik",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Fizik",
+  "konu": "Optik (Aynalar, Kırılma, Mercekler)",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Fizik",
+  "konu": "Tork, Denge, Momentum",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Fizik",
+  "konu": "Basit Harmonik Hareket (Yay)",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Fizik",
+  "konu": "Kırınım-Girişim, Elektromanyetik Dalgalar",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Fizik",
+  "konu": "Modern Fizik (Fotoelektrik Olay, Siyah Cisim Işıması)",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Kimya",
+  "konu": "Kimya Bilimine Giriş, Atom Teorileri ve Periyodik Sistem",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Kimya",
+  "konu": "Kimyasal Türler Arası Etkileşimler",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Kimya",
+  "konu": "Nanoparçacıklar ve Ekolojik Sürdürülebilirlik",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Kimya",
+  "konu": "Kimyasal Tepkimeler ve Mol Kavramı, Gazlar",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Kimya",
+  "konu": "Çözeltiler",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Kimya",
+  "konu": "Yeşil Kimya ve Çevresel Sürdürülebilirlik",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Kimya",
+  "konu": "Kimyasal Tepkimelerde Enerji (Entalpi) ve Hız",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Kimya",
+  "konu": "Kimyasal Denge, Asit-Baz Dengesi",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Kimya",
+  "konu": "Nanoteknoloji ve Sürdürülebilirlik",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Kimya",
+  "konu": "İndirgenme-Yükseltgenme (Redoks) Tepkimeleri ve Elektrokimya",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Kimya",
+  "konu": "Organik Kimyaya Giriş ve Hidrokarbonlar, Fonksiyonel Gruplar",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Kimya",
+  "konu": "Nanobilim ve Yeşil Kimya Uygulamaları",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Biyoloji",
+  "konu": "Yaşam Bilimi Biyoloji",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Biyoloji",
+  "konu": "Hücrenin Temel Bileşenleri",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Biyoloji",
+  "konu": "Sınıflandırma ve Biyoçeşitlilik",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Biyoloji",
+  "konu": "Fotosentez ve Hücresel Solunum",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Biyoloji",
+  "konu": "Ekosistemler ve Madde Döngüleri",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Biyoloji",
+  "konu": "Canlılarda Tepki (Sinir Sistemi ve Hareket)",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Biyoloji",
+  "konu": "Homeostazi ve Endokrin Sistem",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Biyoloji",
+  "konu": "Üreme ve Hücre Bölünmeleri (Mitoz-Mayoz), Üreme ve Gelişme",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Biyoloji",
+  "konu": "Nükleik Asitler ve Gen İfadesi",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Biyoloji",
+  "konu": "Kalıtım",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Biyoloji",
+  "konu": "Biyoteknoloji ve Gen Mühendisliği",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Coğrafya",
+  "konu": "Coğrafyanın Doğası",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Coğrafya",
+  "konu": "Mekânsal Bilgi Teknolojileri — Harita Bilgisi",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Coğrafya",
+  "konu": "İklim Sistemi ve Türleri",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Coğrafya",
+  "konu": "Nüfus (Dağılış, Hareketler, Piramitler)",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Coğrafya",
+  "konu": "Ekonomik Faaliyetleri Etkileyen Coğrafi Faktörler",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Coğrafya",
+  "konu": "Afet Türleri ve Bütüncül Afet Yönetimi",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Coğrafya",
+  "konu": "Bölge ve Bölge Sınırı",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Coğrafya",
+  "konu": "Coğrafi Bakış, CBS ve Uzaktan Algılama",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Coğrafya",
+  "konu": "Yer Şekilleri Oluşumu (Tektonik, Aşınım-Birikim Süreçleri)",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Coğrafya",
+  "konu": "Yerleşmelerin Kuruluşu ve Fonksiyonları",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Coğrafya",
+  "konu": "Türkiye Ekonomisinin Sektörel Dağılımı",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Coğrafya",
+  "konu": "Mekânsal Sorunlar Karşısında Coğrafya Bilimi, Web Tabanlı CBS",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Coğrafya",
+  "konu": "Su Kaynakları ve Sürdürülebilir Kullanımı",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Coğrafya",
+  "konu": "Yerleşmelerin Mekânsal Organizasyonu ve Etki Alanları",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Coğrafya",
+  "konu": "Tarım, Madencilik, Enerji Kaynakları, Sanayileşme",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Coğrafya",
+  "konu": "Küresel İklim Değişikliği",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Coğrafya",
+  "konu": "Geleceğin Dünyasında Coğrafya Bilimi, CBS ve Tematik Haritalar",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Coğrafya",
+  "konu": "Toprak Oluşumu ve Bitki Örtüsü",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Coğrafya",
+  "konu": "Kültür-Mekân Etkileşimi",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Coğrafya",
+  "konu": "Ulaşım Sistemleri, Küresel Ticaret, Turizm",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Coğrafya",
+  "konu": "Çevre Sorunları ve Sürdürülebilirlik Politikaları",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Tarih",
+  "konu": "Tarih Bilimine Giriş",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Tarih",
+  "konu": "İlk Uygarlıklar ve Tarım Devrimi",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Tarih",
+  "konu": "Orta Çağ'da Dünya (Göçler, Devletler, Ticaret Yolları)",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Tarih",
+  "konu": "Türklerin İslamiyeti Kabulü ve İlk Türk-İslam Devletleri",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Tarih",
+  "konu": "Beylikten Devlete Osmanlı (Kuruluş Dönemi)",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Tarih",
+  "konu": "Dünya Gücü Osmanlı (1453-1683)",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Tarih",
+  "konu": "Değişen Dünya Dengeleri Karşısında Osmanlı (1683-1789)",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Tarih",
+  "konu": "Devrimler Çağında Osmanlı (1789-1908)",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Tarih",
+  "konu": "XX. Yüzyıl Başlarında Osmanlı ve I. Dünya Savaşı (1908-1918)",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Tarih",
+  "konu": "Mustafa Kemal'in Yetiştiği Ortam ve Millî Mücadele'nin Hazırlık Süreci",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Tarih",
+  "konu": "Millî Mücadele Muharebeleri ve Diplomatik Zaferler",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Tarih",
+  "konu": "Atatürk Dönemi İç ve Dış Siyasi Gelişmeler",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Tarih",
+  "konu": "Atatürk Dönemi Siyasi İnkılaplar",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Tarih",
+  "konu": "Atatürk Dönemi Toplumsal, Hukuk ve Sağlık Alanı İnkılapları",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Tarih",
+  "konu": "Atatürk Dönemi Ekonomi Alanında İnkılaplar",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Tarih",
+  "konu": "Atatürk Dönemi Eğitim, Bilim ve Kültür Alanında İnkılaplar",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Tarih",
+  "konu": "Atatürk İlkeleri",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Tarih",
+  "konu": "II. Dünya Savaşı'nın Nedenleri ve Sonuçları, Türkiye'nin Tutumu",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Tarih",
+  "konu": "Soğuk Savaş Döneminde Türkiye'nin Dış Politikası",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Tarih",
+  "konu": "Soğuk Savaş Döneminde Türkiye'de Demokratikleşme Süreci",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Tarih",
+  "konu": "Soğuk Savaş Döneminde Türkiye'nin Sosyal ve Ekonomik Gelişmeleri",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Tarih",
+  "konu": "Soğuk Savaş Döneminde Türkiye'de Bilim, Teknoloji, Kültür, Eğitim ve Spor",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Felsefe",
+  "konu": "Felsefenin Anlamı ve Doğuşu",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Felsefe",
+  "konu": "Mantık ve Argümantasyon",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Felsefe",
+  "konu": "Varlık Felsefesi",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Felsefe",
+  "konu": "Bilgi Felsefesi",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Felsefe",
+  "konu": "Ahlak Felsefesi",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Felsefe",
+  "konu": "Estetik ve Sanat Felsefesi",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Felsefe",
+  "konu": "Siyaset Felsefesi",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Felsefe",
+  "konu": "Din Felsefesi",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Felsefe",
+  "konu": "Bilim Felsefesi",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Felsefe",
+  "konu": "Çevre Felsefesi ve Etik",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Felsefe",
+  "konu": "Teknoloji Felsefesi",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Felsefe",
+  "konu": "Akıl-İnanç İlişkisi",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Felsefe",
+  "konu": "Dil, Edebiyat ve Felsefe İlişkisi",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Felsefe",
+  "konu": "Mutluluk, Varoluş ve Kendi Olma",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Felsefe",
+  "konu": "Hukuk Felsefesi",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Din Kültürü",
+  "konu": "İnsan ve İnsanın Yaratılışı",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Din Kültürü",
+  "konu": "İman Esasları",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Din Kültürü",
+  "konu": "İslam'da İbadetler",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Din Kültürü",
+  "konu": "İslam'da Ahlak İlkeleri",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Din Kültürü",
+  "konu": "Hz. Muhammed'in Hayatı ve Örnekliği",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Din Kültürü",
+  "konu": "İslam Düşüncesinde Bilgi ve Varlık",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Din Kültürü",
+  "konu": "Allah İnancı ve Sıfatları",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Din Kültürü",
+  "konu": "Tevhit, Adalet ve Barış",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Din Kültürü",
+  "konu": "Çevre, Teknoloji ve Ahlak",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Din Kültürü",
+  "konu": "İslam Düşüncesinde Yorum Farklılıkları (Mezhepler)",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Din Kültürü",
+  "konu": "Kader ve İnsan Sorumluluğu",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Din Kültürü",
+  "konu": "Din, Felsefe, Bilim ve Sanat İlişkisi",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Din Kültürü",
+  "konu": "İslam Medeniyeti",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Din Kültürü",
+  "konu": "Kötülük Problemi ve Dinî-Felsefi Yaklaşımlar",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Din Kültürü",
+  "konu": "Diğer Dinler: Yahudilik ve Hristiyanlık",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Din Kültürü",
+  "konu": "Kur'an-ı Kerim Bilgisi",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Din Kültürü",
+  "konu": "İslam'da Aile",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Din Kültürü",
+  "konu": "Güncel Dinî Meseleler",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Din Kültürü",
+  "konu": "Tasavvuf, Alevilik-Bektaşilik",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Din Kültürü",
+  "konu": "Diğer Dinler: Hint ve Çin Kaynaklı Dinler",
+  "seviye": "12. Sınıf"
+ },
+ {
+  "ders": "Türkçe",
+  "konu": "Sözcükte Anlam",
+  "seviye": "TYT"
+ },
+ {
+  "ders": "Türkçe",
+  "konu": "Cümlede Anlam",
+  "seviye": "TYT"
+ },
+ {
+  "ders": "Türkçe",
+  "konu": "Paragrafta Anlam (Ana Düşünce, Yardımcı Düşünce)",
+  "seviye": "TYT"
+ },
+ {
+  "ders": "Türkçe",
+  "konu": "Paragrafta Yapı (Paragraf Tamamlama, Giriş-Gelişme-Sonuç)",
+  "seviye": "TYT"
+ },
+ {
+  "ders": "Türkçe",
+  "konu": "Ses Bilgisi",
+  "seviye": "TYT"
+ },
+ {
+  "ders": "Türkçe",
+  "konu": "Yazım Kuralları",
+  "seviye": "TYT"
+ },
+ {
+  "ders": "Türkçe",
+  "konu": "Noktalama İşaretleri",
+  "seviye": "TYT"
+ },
+ {
+  "ders": "Türkçe",
+  "konu": "Sözcükte Yapı (Kök ve Ekler)",
+  "seviye": "TYT"
+ },
+ {
+  "ders": "Türkçe",
+  "konu": "İsim (Ad)",
+  "seviye": "TYT"
+ },
+ {
+  "ders": "Türkçe",
+  "konu": "Sıfat",
+  "seviye": "TYT"
+ },
+ {
+  "ders": "Türkçe",
+  "konu": "Zamir (Adıl)",
+  "seviye": "TYT"
+ },
+ {
+  "ders": "Türkçe",
+  "konu": "Zarf (Belirteç)",
+  "seviye": "TYT"
+ },
+ {
+  "ders": "Türkçe",
+  "konu": "Edat-Bağlaç-Ünlem",
+  "seviye": "TYT"
+ },
+ {
+  "ders": "Türkçe",
+  "konu": "Fiil (Eylem) — Kip ve Kişi",
+  "seviye": "TYT"
+ },
+ {
+  "ders": "Türkçe",
+  "konu": "Ek Fiil",
+  "seviye": "TYT"
+ },
+ {
+  "ders": "Türkçe",
+  "konu": "Fiilde Çatı",
+  "seviye": "TYT"
+ },
+ {
+  "ders": "Türkçe",
+  "konu": "Fiilimsi",
+  "seviye": "TYT"
+ },
+ {
+  "ders": "Türkçe",
+  "konu": "Cümlenin Öğeleri",
+  "seviye": "TYT"
+ },
+ {
+  "ders": "Türkçe",
+  "konu": "Cümle Türleri",
+  "seviye": "TYT"
+ },
+ {
+  "ders": "Türkçe",
+  "konu": "Anlatım Bozukluğu",
+  "seviye": "TYT"
+ },
+ {
+  "ders": "Edebiyat",
+  "konu": "Güzel Sanatlar ve Edebiyat",
+  "seviye": "AYT"
+ },
+ {
+  "ders": "Edebiyat",
+  "konu": "Şiir Bilgisi (Nazım Birimi, Ölçü, Uyak-Redif)",
+  "seviye": "AYT"
+ },
+ {
+  "ders": "Edebiyat",
+  "konu": "Edebi Sanatlar (Söz Sanatları)",
+  "seviye": "AYT"
+ },
+ {
+  "ders": "Edebiyat",
+  "konu": "Anlatım Teknikleri ve Düşünceyi Geliştirme Yolları",
+  "seviye": "AYT"
+ },
+ {
+  "ders": "Edebiyat",
+  "konu": "Metin Türleri (Öğretici / Coşku-Heyecana Bağlı)",
+  "seviye": "AYT"
+ },
+ {
+  "ders": "Edebiyat",
+  "konu": "İslamiyet Öncesi Türk Edebiyatı",
+  "seviye": "AYT"
+ },
+ {
+  "ders": "Edebiyat",
+  "konu": "Geçiş Dönemi Eserleri",
+  "seviye": "AYT"
+ },
+ {
+  "ders": "Edebiyat",
+  "konu": "Halk Edebiyatı — Aşık Tarzı",
+  "seviye": "AYT"
+ },
+ {
+  "ders": "Edebiyat",
+  "konu": "Halk Edebiyatı — Dini-Tasavvufi",
+  "seviye": "AYT"
+ },
+ {
+  "ders": "Edebiyat",
+  "konu": "Halk Edebiyatı — Anonim",
+  "seviye": "AYT"
+ },
+ {
+  "ders": "Edebiyat",
+  "konu": "Divan Edebiyatı — Nazım",
+  "seviye": "AYT"
+ },
+ {
+  "ders": "Edebiyat",
+  "konu": "Divan Edebiyatı — Nesir",
+  "seviye": "AYT"
+ },
+ {
+  "ders": "Edebiyat",
+  "konu": "Tanzimat Edebiyatı I. Dönem",
+  "seviye": "AYT"
+ },
+ {
+  "ders": "Edebiyat",
+  "konu": "Tanzimat Edebiyatı II. Dönem",
+  "seviye": "AYT"
+ },
+ {
+  "ders": "Edebiyat",
+  "konu": "Servet-i Fünun Edebiyatı",
+  "seviye": "AYT"
+ },
+ {
+  "ders": "Edebiyat",
+  "konu": "Fecr-i Ati Edebiyatı",
+  "seviye": "AYT"
+ },
+ {
+  "ders": "Edebiyat",
+  "konu": "Millî Edebiyat",
+  "seviye": "AYT"
+ },
+ {
+  "ders": "Edebiyat",
+  "konu": "Cumhuriyet Dönemi Şiiri",
+  "seviye": "AYT"
+ },
+ {
+  "ders": "Edebiyat",
+  "konu": "Cumhuriyet Dönemi Roman ve Hikâye",
+  "seviye": "AYT"
+ },
+ {
+  "ders": "Edebiyat",
+  "konu": "Cumhuriyet Dönemi Tiyatro",
+  "seviye": "AYT"
+ },
+ {
+  "ders": "Edebiyat",
+  "konu": "Dünya Edebiyatı Akımları (Klasisizm, Romantizm, Realizm, Natüralizm, Sembolizm, Sürrealizm)",
+  "seviye": "AYT"
+ }
+]

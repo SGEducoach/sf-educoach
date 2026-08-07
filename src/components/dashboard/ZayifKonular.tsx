@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { BookOpen, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
-import { BG1, BG1_ALT, BORDER, BORDER_STRONG, PEACH, PEACH_BG, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
+import { BG1, BG1_ALT, BORDER, BORDER_STRONG, PEACH, PEACH_BG, SKY, SKY_BG, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 import { konuAnlatimiGetir } from "@/app/dashboard/veri-actions";
 
 interface ZayifKonu {
   ders: string;
   konu: string;
+  seviye?: string | null;
 }
 
 export function ZayifKonular({ konular }: { konular: ZayifKonu[] }) {
@@ -34,6 +35,7 @@ export function ZayifKonular({ konular }: { konular: ZayifKonu[] }) {
 function KonuSatiri({ konu }: { konu: ZayifKonu }) {
   const [acik, setAcik] = useState(false);
   const [icerik, setIcerik] = useState<string | null>(null);
+  const [seviye, setSeviye] = useState<string | null>(konu.seviye ?? null);
   const [yukleniyor, setYukleniyor] = useState(false);
   const [hata, setHata] = useState<string | null>(null);
 
@@ -45,7 +47,7 @@ function KonuSatiri({ konu }: { konu: ZayifKonu }) {
     const res = await konuAnlatimiGetir(konu.ders, konu.konu);
     setYukleniyor(false);
     if (res.error) setHata(res.error);
-    else setIcerik(res.icerik);
+    else { setIcerik(res.icerik); if (res.seviye) setSeviye(res.seviye); }
   }
 
   return (
@@ -53,7 +55,12 @@ function KonuSatiri({ konu }: { konu: ZayifKonu }) {
       <button type="button" onClick={ac}
         className="sgec-btn w-full flex items-center justify-between px-4 py-3 text-left">
         <div>
-          <div style={{ color: TEXT }} className="text-sm font-semibold">{konu.konu}</div>
+          <div className="flex items-center gap-1.5">
+            <span style={{ color: TEXT }} className="text-sm font-semibold">{konu.konu}</span>
+            {seviye && (
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: SKY_BG, color: SKY }}>{seviye}</span>
+            )}
+          </div>
           <div style={{ color: TEXT_MUTED }} className="text-xs mt-0.5">{konu.ders}</div>
         </div>
         {yukleniyor ? <Loader2 size={16} color={TEXT_MUTED} className="animate-spin" /> : acik ? <ChevronUp size={16} color={TEXT_MUTED} /> : <ChevronDown size={16} color={TEXT_MUTED} />}

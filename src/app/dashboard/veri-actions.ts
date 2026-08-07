@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAnthropicClient } from "@/lib/anthropic";
+import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
 import type { HedefeYakinlik, VeriGirisSikligi, VerimlilikDuzeyi } from "@/lib/types";
 
 async function requireStudent() {
@@ -31,16 +32,21 @@ export async function konuAnlatimiGetir(ders: string, konu: string) {
   const { supabase } = await requireStudent();
   const dersT = ders.trim();
   const konuT = konu.trim();
-  if (!dersT || !konuT) return { icerik: null, error: "Ders/konu bilgisi eksik." };
+  if (!dersT || !konuT) return { icerik: null, seviye: null, error: "Ders/konu bilgisi eksik." };
 
   const { data: mevcut } = await supabase
     .from("konu_anlatimlari")
-    .select("icerik")
+    .select("icerik, seviye")
     .eq("ders", dersT)
     .eq("konu", konuT)
     .maybeSingle();
 
-  if (mevcut) return { icerik: mevcut.icerik as string, error: null };
+  if (mevcut) return { icerik: mevcut.icerik as string, seviye: mevcut.seviye as string | null, error: null };
+
+  // Öğrencinin yazdığı konu, resmî müfredat listesindeki bir konuyla birebir
+  // eşleşiyorsa (aynı ders+konu) sınıf/seviye etiketini oradan alıyoruz.
+  const resmiEslesme = MUFREDAT_KONULARI.find((k) => k.ders === dersT && k.konu === konuT);
+  const seviye = resmiEslesme?.seviye ?? null;
 
   let icerik: string;
   try {
@@ -53,10 +59,10 @@ export async function konuAnlatimiGetir(ders: string, konu: string) {
     });
     const metinBlogu = yanit.content.find((b) => b.type === "text");
     icerik = metinBlogu && "text" in metinBlogu ? metinBlogu.text.trim() : "";
-    if (!icerik) return { icerik: null, error: "İçerik üretilemedi, lütfen tekrar deneyin." };
+    if (!icerik) return { icerik: null, seviye: null, error: "İçerik üretilemedi, lütfen tekrar deneyin." };
   } catch (e) {
     console.error("konu anlatımı üretme hatası:", e);
-    return { icerik: null, error: "Konu anlatımı şu anda üretilemedi. Lütfen daha sonra tekrar deneyin." };
+    return { icerik: null, seviye: null, error: "Konu anlatımı şu anda üretilemedi. Lütfen daha sonra tekrar deneyin." };
   }
 
   // Önbelleğe yaz — service-role, RLS'i bypass eder (normal kullanıcılar bu
@@ -65,10 +71,10 @@ export async function konuAnlatimiGetir(ders: string, konu: string) {
   const admin = createAdminClient();
   const { error: kayitHatasi } = await admin
     .from("konu_anlatimlari")
-    .upsert({ ders: dersT, konu: konuT, icerik }, { onConflict: "ders,konu" });
+    .upsert({ ders: dersT, konu: konuT, icerik, seviye }, { onConflict: "ders,konu" });
   if (kayitHatasi) console.error("konu anlatımı kaydedilemedi:", kayitHatasi.message);
 
-  return { icerik, error: null };
+  return { icerik, seviye, error: null };
 }
 
 async function verimlilikSorulsunMu(

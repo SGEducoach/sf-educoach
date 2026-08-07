@@ -12,6 +12,7 @@ import { BildirimAyarlari } from "@/components/dashboard/BildirimAyarlari";
 import { analizVerisiGetir } from "@/lib/analiz";
 import type { RaporDonemi } from "@/lib/analiz";
 import { AYT_ALAN_ETIKET } from "@/lib/types";
+import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
 import type { AytAlan, UserRole, VeriGirisSikligi } from "@/lib/types";
 import { BG1, BG1_ALT, BORDER, BORDER_STRONG, TEXT, TEXT_MUTED, MINT } from "@/lib/theme";
 
@@ -89,23 +90,29 @@ async function OgrenciIcerik({ userId, ad, donem }: { userId: string; ad: string
 
   type ZayifRow = { ders: string; konu: string; tarih: string };
   const gorulenler = new Set<string>();
-  const zayifKonular: { ders: string; konu: string }[] = [];
+  const zayifKonular: { ders: string; konu: string; seviye: string | null }[] = [];
   for (const r of (zayifKonularHam as ZayifRow[]) ?? []) {
     const anahtar = `${r.ders}|${r.konu}`;
     if (gorulenler.has(anahtar)) continue;
     gorulenler.add(anahtar);
-    zayifKonular.push({ ders: r.ders, konu: r.konu });
+    const resmiEslesme = MUFREDAT_KONULARI.find((k) => k.ders === r.ders && k.konu === r.konu);
+    zayifKonular.push({ ders: r.ders, konu: r.konu, seviye: resmiEslesme?.seviye ?? null });
     if (zayifKonular.length >= 10) break;
   }
 
-  // Daha önce üretilmiş konu anlatımlarının ders+konu listesi — konu girişi
-  // sırasında öneri (datalist) olarak sunulup zamanla konu isimlerinin
-  // standartlaşmasını (ve önbelleğin daha çok isabet almasını) sağlıyor.
+  // Konu girişi sırasında öneri (datalist): resmî müfredat listesi (188 konu,
+  // sınıf etiketli) + öğrencilerin serbest girip daha önce ürettirdiği ek
+  // konular — böylece hem baştan kapsamlı hem zamanla organik olarak büyüyor.
   const { data: konuOnerileriHam } = await supabase
     .from("konu_anlatimlari")
-    .select("ders, konu")
+    .select("ders, konu, seviye")
     .order("konu");
-  const konuOnerileri = (konuOnerileriHam as { ders: string; konu: string }[]) ?? [];
+  const uretilenKonular = (konuOnerileriHam as { ders: string; konu: string; seviye: string | null }[]) ?? [];
+  const konuOneriAnahtarlari = new Set(MUFREDAT_KONULARI.map((k) => `${k.ders}|${k.konu}`));
+  const konuOnerileri = [
+    ...MUFREDAT_KONULARI,
+    ...uretilenKonular.filter((k) => !konuOneriAnahtarlari.has(`${k.ders}|${k.konu}`)),
+  ];
 
   return (
     <div className="flex flex-col gap-6">

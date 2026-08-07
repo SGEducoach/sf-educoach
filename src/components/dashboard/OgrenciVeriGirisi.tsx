@@ -44,7 +44,7 @@ function HedefeYakinlikSecici({ value, onChange }: { value: HedefeYakinlik; onCh
 
 export function OgrenciVeriGirisi({ studentId, aytAlan, veriGirisSikligi, konuOnerileri }: {
   studentId: string; aytAlan: AytAlan; veriGirisSikligi: VeriGirisSikligi;
-  konuOnerileri: { ders: string; konu: string }[];
+  konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
 }) {
   const [sekme, setSekme] = useState<Sekme>("konu");
   const [verimlilikSor, setVerimlilikSor] = useState(false);
@@ -124,7 +124,7 @@ function SiklikAyari({ studentId, mevcut }: { studentId: string; mevcut: VeriGir
 // oku" ile o an AI anlatımı gösterilir; süre ve hedefe yakınlığı — yani
 // konuyu ne kadar anladığın — bunu OKUDUKTAN/çalıştıktan SONRA girilir.
 function KonuCalismaForm({ dersListesi, konuOnerileri, onBasari }: {
-  dersListesi: string[]; konuOnerileri: { ders: string; konu: string }[]; onBasari: (m: string, s: boolean) => void;
+  dersListesi: string[]; konuOnerileri: { ders: string; konu: string; seviye?: string | null }[]; onBasari: (m: string, s: boolean) => void;
 }) {
   const [ders, setDers] = useState("");
   const [konu, setKonu] = useState("");
@@ -134,10 +134,12 @@ function KonuCalismaForm({ dersListesi, konuOnerileri, onBasari }: {
 
   const [anlatimAcik, setAnlatimAcik] = useState(false);
   const [anlatim, setAnlatim] = useState<string | null>(null);
+  const [anlatimSeviye, setAnlatimSeviye] = useState<string | null>(null);
   const [anlatimYukleniyor, setAnlatimYukleniyor] = useState(false);
   const [anlatimHata, setAnlatimHata] = useState<string | null>(null);
 
   const oneriler = konuOnerileri.filter((o) => o.ders === ders);
+  const seciliKonuSeviyesi = oneriler.find((o) => o.konu === konu)?.seviye;
 
   function konuyuOku() {
     if (!ders || !konu.trim()) return setAnlatimHata("Önce ders ve konu girin.");
@@ -149,7 +151,7 @@ function KonuCalismaForm({ dersListesi, konuOnerileri, onBasari }: {
       const res = await konuAnlatimiGetir(ders, konu);
       setAnlatimYukleniyor(false);
       if (res.error) setAnlatimHata(res.error);
-      else setAnlatim(res.icerik);
+      else { setAnlatim(res.icerik); setAnlatimSeviye(res.seviye); }
     });
   }
 
@@ -162,7 +164,7 @@ function KonuCalismaForm({ dersListesi, konuOnerileri, onBasari }: {
       const res = await konuCalismaEkle(formData);
       if (res.error) return setHata(res.error);
       onBasari("Konu çalışması kaydedildi.", res.verimlilikSorulsunMu);
-      setKonu(""); setAnlatim(null); setAnlatimAcik(false); setHedefeYakinlik("belirsiz");
+      setKonu(""); setAnlatim(null); setAnlatimSeviye(null); setAnlatimAcik(false); setHedefeYakinlik("belirsiz");
     });
   }
 
@@ -175,10 +177,16 @@ function KonuCalismaForm({ dersListesi, konuOnerileri, onBasari }: {
         </Secim>
       </label>
 
-      <label className="flex flex-col gap-1"><Etiket>Eksik olduğun konu</Etiket>
+      <label className="flex flex-col gap-1">
+        <div className="flex items-center gap-1.5">
+          <Etiket>Eksik olduğun konu</Etiket>
+          {seciliKonuSeviyesi && (
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: SKY_BG, color: SKY }}>{seciliKonuSeviyesi}</span>
+          )}
+        </div>
         <div className="flex gap-2">
           <Girdi list="konu-oneri-listesi" required placeholder="örn. Türev - Zincir Kuralı" value={konu}
-            onChange={(e) => { setKonu(e.target.value); setAnlatim(null); }} disabled={!ders} />
+            onChange={(e) => { setKonu(e.target.value); setAnlatim(null); setAnlatimSeviye(null); }} disabled={!ders} />
           <button type="button" onClick={konuyuOku} disabled={!ders || !konu.trim()}
             className="sgec-btn shrink-0 flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"
             style={{ background: SKY_BG, color: SKY, border: `1px solid rgba(143,198,255,0.3)` }}>
@@ -187,14 +195,21 @@ function KonuCalismaForm({ dersListesi, konuOnerileri, onBasari }: {
           </button>
         </div>
         <datalist id="konu-oneri-listesi">
-          {oneriler.map((o) => <option key={o.konu} value={o.konu} />)}
+          {oneriler.map((o) => <option key={o.konu} value={o.konu} label={o.seviye ?? undefined} />)}
         </datalist>
       </label>
 
       {anlatimAcik && (
         <div className="rounded-2xl p-3.5" style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}` }}>
           {anlatimHata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{anlatimHata}</div>}
-          {anlatim && <div style={{ color: TEXT_MUTED }} className="text-sm leading-relaxed whitespace-pre-line">{anlatim}</div>}
+          {anlatim && (
+            <>
+              {anlatimSeviye && (
+                <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full mb-2" style={{ background: SKY_BG, color: SKY }}>{anlatimSeviye}</span>
+              )}
+              <div style={{ color: TEXT_MUTED }} className="text-sm leading-relaxed whitespace-pre-line">{anlatim}</div>
+            </>
+          )}
         </div>
       )}
 

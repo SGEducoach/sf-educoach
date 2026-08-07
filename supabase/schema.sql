@@ -691,3 +691,6 @@ alter table public.konu_anlatimlari enable row level security;
 
 create policy "konu_anlatimlari_select_all" on public.konu_anlatimlari
   for select using (true);
+
+-- Konu anlatımına sınıf/seviye etiketi (bkz. migration 0017)
+alter table public.konu_anlatimlari add column if not exists seviye text;
