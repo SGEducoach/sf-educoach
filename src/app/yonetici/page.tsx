@@ -26,8 +26,8 @@ export default async function YoneticiPage({
 
   const params = await searchParams;
 
-  const { data: okullar } = await supabase.from("schools").select("id, ad, okul_kodu").order("ad");
-  const okulListesi = (okullar ?? []) as { id: string; ad: string; okul_kodu: string }[];
+  const { data: okullar } = await supabase.from("schools").select("id, ad, okul_kodu, tur, aktif").order("ad");
+  const okulListesi = (okullar ?? []) as { id: string; ad: string; okul_kodu: string; tur: "okul" | "dershane"; aktif: boolean }[];
   const gorunecekOkulId = params.okul || okulListesi[0]?.id || null;
 
   const [{ data: siniflar }, { data: ogretmenler }] = await Promise.all([

@@ -65,6 +65,54 @@ export async function sinifEkle(schoolId: string, seviye: "11" | "12", sube: str
   return { error: null };
 }
 
+// ============ Admin: okul CRUD ============
+// Ekleme/düzenleme RLS'te (schools_insert_admin / schools_update_admin,
+// bkz. migration 0020) is_admin()'e bağlı — buradaki kontrol sadece daha
+// anlaşılır bir hata mesajı göstermek için.
+export async function okulEkle(input: { ad: string; tur: "okul" | "dershane"; okulKodu: string }) {
+  const { supabase, user } = await requireUser();
+  const ad = input.ad.trim();
+  const okulKodu = input.okulKodu.trim();
+  if (!ad) return { error: "Okul adı gerekli." };
+  if (!okulKodu) return { error: "Okul kodu gerekli." };
+
+  const { data, error } = await supabase.from("schools").insert({ ad, tur: input.tur, okul_kodu: okulKodu }).select("id").single();
+  if (error) {
+    if (error.code === "23505") return { error: "Bu okul kodu zaten kullanılıyor." };
+    if (error.message?.includes("row-level security")) return { error: "Bu işlem için yönetici yetkisi gerekiyor." };
+    return { error: error.message };
+  }
+  await auditLogYaz(supabase, user.id, "okul_ekle", { school_id: data.id, ad, okul_kodu: okulKodu });
+  revalidatePath("/yonetici");
+  return { error: null };
+}
+
+export async function okulDuzenle(id: string, input: { ad: string; okulKodu: string }) {
+  const { supabase, user } = await requireUser();
+  const ad = input.ad.trim();
+  const okulKodu = input.okulKodu.trim();
+  if (!ad) return { error: "Okul adı gerekli." };
+  if (!okulKodu) return { error: "Okul kodu gerekli." };
+
+  const { error } = await supabase.from("schools").update({ ad, okul_kodu: okulKodu }).eq("id", id);
+  if (error) {
+    if (error.code === "23505") return { error: "Bu okul kodu zaten kullanılıyor." };
+    return { error: "Bu işlem için yönetici yetkisi gerekiyor." };
+  }
+  await auditLogYaz(supabase, user.id, "okul_duzenle", { school_id: id, ad, okul_kodu: okulKodu });
+  revalidatePath("/yonetici");
+  return { error: null };
+}
+
+export async function okulAktiflikDegistir(id: string, aktif: boolean) {
+  const { supabase, user } = await requireUser();
+  const { error } = await supabase.from("schools").update({ aktif }).eq("id", id);
+  if (error) return { error: "Bu işlem için yönetici yetkisi gerekiyor." };
+  await auditLogYaz(supabase, user.id, aktif ? "okul_aktiflestir" : "okul_pasiflestir", { school_id: id });
+  revalidatePath("/yonetici");
+  return { error: null };
+}
+
 // Sınıf öğretmeni ataması — sadece admin çalıştırabilir, yetki kontrolü
 // veritabanı tarafında (RLS + trigger, bkz. migration 0014) uygulanıyor.
 // Buradaki kontrol yalnızca kullanıcıya daha anlaşılır bir hata göstermek için.

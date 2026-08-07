@@ -701,3 +701,14 @@ alter table public.denemeler add column if not exists zorluk public.deneme_zorlu
 
 -- ============ Veri giriş sıklığı: bir kez seçilip kilitlensin ============
 alter table public.students add column if not exists veri_giris_sikligi_kilitli boolean not null default false;
+
+-- ============ Okul CRUD admin panelinden (bkz. migration 0020) ============
+alter table public.schools add column if not exists aktif boolean not null default true;
+
+drop policy if exists "schools_insert_admin" on public.schools;
+create policy "schools_insert_admin" on public.schools
+  for insert with check (public.is_admin());
+
+drop policy if exists "schools_update_admin" on public.schools;
+create policy "schools_update_admin" on public.schools
+  for update using (public.is_admin());

@@ -2,9 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Shield, Building2, ScrollText, UserPlus, Copy, Check } from "lucide-react";
+import { Shield, Building2, ScrollText, UserPlus, Copy, Check, Plus, Pencil, EyeOff, Eye } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH, LILAC } from "@/lib/theme";
-import { sinifOgretmeniAta, ogretmenEkleManuel, ogrenciEkleManuel } from "@/app/dashboard/actions";
+import { sinifOgretmeniAta, ogretmenEkleManuel, ogrenciEkleManuel, okulEkle, okulDuzenle, okulAktiflikDegistir } from "@/app/dashboard/actions";
 import { SinifEkleFormu } from "@/components/dashboard/OgretmenPanel";
 import { AYT_ALAN_ETIKET, BRANS_LISTESI } from "@/lib/types";
 import type { AytAlan } from "@/lib/types";
@@ -14,6 +14,8 @@ interface OkulSatiri {
   id: string;
   ad: string;
   okul_kodu: string;
+  tur: "okul" | "dershane";
+  aktif: boolean;
 }
 interface SinifSatiri {
   id: string;
@@ -40,6 +42,10 @@ const EYLEM_ETIKET: Record<string, string> = {
   sinif_ekle: "Sınıf eklendi",
   sinif_ogretmeni_ata: "Sınıf öğretmeni atandı",
   sinif_ogretmenliginden_cikar: "Sınıf öğretmenliğinden çıkarıldı",
+  okul_ekle: "Okul eklendi",
+  okul_duzenle: "Okul düzenlendi",
+  okul_aktiflestir: "Okul aktifleştirildi",
+  okul_pasiflestir: "Okul pasifleştirildi",
 };
 
 export function AdminPanel({
@@ -53,6 +59,8 @@ export function AdminPanel({
 }) {
   const router = useRouter();
   const gorunenOkul = okullar.find((o) => o.id === gorunecekOkulId);
+  const [okulEkleAcik, setOkulEkleAcik] = useState(false);
+  const [okulDuzenleAcik, setOkulDuzenleAcik] = useState(false);
 
   return (
     <div className="flex flex-col gap-6">
@@ -65,21 +73,40 @@ export function AdminPanel({
             <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Yönetim</span>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(199,182,255,0.15)", color: LILAC }}>admin</span>
           </div>
-          {okullar.length > 0 && (
-            <div className="flex items-center gap-2">
-              <Building2 size={14} color={TEXT_MUTED} />
-              <select
-                value={gorunecekOkulId ?? ""}
-                onChange={(e) => router.push(`/yonetici?okul=${e.target.value}`)}
-                className="text-xs font-bold px-3 py-1.5 rounded-full outline-none"
-                style={{ background: BG1_ALT, color: TEXT, border: `1px solid ${BORDER_STRONG}` }}>
-                {okullar.map((o) => (
-                  <option key={o.id} value={o.id}>{o.ad}</option>
-                ))}
-              </select>
-            </div>
-          )}
+          <div className="flex items-center gap-2 flex-wrap">
+            {okullar.length > 0 && (
+              <div className="flex items-center gap-2">
+                <Building2 size={14} color={TEXT_MUTED} />
+                <select
+                  value={gorunecekOkulId ?? ""}
+                  onChange={(e) => router.push(`/yonetici?okul=${e.target.value}`)}
+                  className="text-xs font-bold px-3 py-1.5 rounded-full outline-none"
+                  style={{ background: BG1_ALT, color: TEXT, border: `1px solid ${BORDER_STRONG}` }}>
+                  {okullar.map((o) => (
+                    <option key={o.id} value={o.id}>{o.ad}{!o.aktif ? " (Pasif)" : ""}</option>
+                  ))}
+                </select>
+                {gorunenOkul && (
+                  <button type="button" onClick={() => setOkulDuzenleAcik((v) => !v)} title="Okulu düzenle"
+                    className="sgec-btn w-7 h-7 rounded-full flex items-center justify-center shrink-0"
+                    style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${BORDER_STRONG}` }}>
+                    <Pencil size={11} color={TEXT_MUTED} />
+                  </button>
+                )}
+              </div>
+            )}
+            <button type="button" onClick={() => setOkulEkleAcik((v) => !v)}
+              className="sgec-btn flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full"
+              style={{ background: okulEkleAcik ? MINT : "rgba(255,255,255,0.06)", color: okulEkleAcik ? MINT_ON : TEXT_MUTED, border: `1px solid ${BORDER_STRONG}` }}>
+              <Plus size={12} /> Okul ekle
+            </button>
+          </div>
         </div>
+
+        {okulEkleAcik && <OkulEkleFormu onDone={() => setOkulEkleAcik(false)} />}
+        {gorunenOkul && okulDuzenleAcik && (
+          <OkulDuzenleFormu okul={gorunenOkul} onDone={() => setOkulDuzenleAcik(false)} />
+        )}
 
         {!gorunenOkul ? (
           <p style={{ color: TEXT_MUTED }} className="text-sm py-4 text-center">Henüz kayıtlı okul yok.</p>
@@ -131,6 +158,97 @@ export function AdminPanel({
         )}
       </div>
     </div>
+  );
+}
+
+function OkulEkleFormu({ onDone }: { onDone: () => void }) {
+  const [ad, setAd] = useState("");
+  const [tur, setTur] = useState<"okul" | "dershane">("okul");
+  const [okulKodu, setOkulKodu] = useState("");
+  const [hata, setHata] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  function ekle(e: React.FormEvent) {
+    e.preventDefault();
+    setHata(null);
+    startTransition(async () => {
+      const res = await okulEkle({ ad, tur, okulKodu });
+      if (res.error) return setHata(res.error);
+      setAd(""); setOkulKodu("");
+      onDone();
+    });
+  }
+
+  return (
+    <form onSubmit={ekle} className="rounded-2xl p-4 mb-4 flex flex-col gap-2.5" style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}` }}>
+      <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[13px] font-bold">Yeni okul</span>
+      <div className="flex gap-2 flex-wrap">
+        <input value={ad} onChange={(e) => setAd(e.target.value)} placeholder="Okul adı" required
+          className="text-sm px-3 py-1.5 rounded-xl outline-none flex-1 min-w-[140px]" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+        <select value={tur} onChange={(e) => setTur(e.target.value as "okul" | "dershane")}
+          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+          <option value="okul">Okul</option>
+          <option value="dershane">Dershane</option>
+        </select>
+        <input value={okulKodu} onChange={(e) => setOkulKodu(e.target.value)} placeholder="Okul kodu" required
+          className="text-sm px-3 py-1.5 rounded-xl outline-none w-32" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+      </div>
+      {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
+      <button type="submit" disabled={pending}
+        className="sgec-btn self-start text-xs font-bold px-4 py-2 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+        {pending ? "Ekleniyor..." : "Okulu ekle"}
+      </button>
+    </form>
+  );
+}
+
+function OkulDuzenleFormu({ okul, onDone }: { okul: OkulSatiri; onDone: () => void }) {
+  const [ad, setAd] = useState(okul.ad);
+  const [okulKodu, setOkulKodu] = useState(okul.okul_kodu);
+  const [hata, setHata] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+  const [aktiflikPending, startAktiflikTransition] = useTransition();
+
+  function kaydet(e: React.FormEvent) {
+    e.preventDefault();
+    setHata(null);
+    startTransition(async () => {
+      const res = await okulDuzenle(okul.id, { ad, okulKodu });
+      if (res.error) return setHata(res.error);
+      onDone();
+    });
+  }
+
+  function aktiflikDegistir() {
+    setHata(null);
+    startAktiflikTransition(async () => {
+      const res = await okulAktiflikDegistir(okul.id, !okul.aktif);
+      if (res.error) setHata(res.error);
+    });
+  }
+
+  return (
+    <form onSubmit={kaydet} className="rounded-2xl p-4 mb-4 flex flex-col gap-2.5" style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}` }}>
+      <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[13px] font-bold">Okulu düzenle</span>
+      <div className="flex gap-2 flex-wrap">
+        <input value={ad} onChange={(e) => setAd(e.target.value)} placeholder="Okul adı" required
+          className="text-sm px-3 py-1.5 rounded-xl outline-none flex-1 min-w-[140px]" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+        <input value={okulKodu} onChange={(e) => setOkulKodu(e.target.value)} placeholder="Okul kodu" required
+          className="text-sm px-3 py-1.5 rounded-xl outline-none w-32" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+      </div>
+      {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
+      <div className="flex items-center gap-2">
+        <button type="submit" disabled={pending}
+          className="sgec-btn text-xs font-bold px-4 py-2 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+          {pending ? "Kaydediliyor..." : "Kaydet"}
+        </button>
+        <button type="button" onClick={aktiflikDegistir} disabled={aktiflikPending}
+          className="sgec-btn flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-xl disabled:opacity-60"
+          style={{ background: "rgba(255,255,255,0.06)", color: okul.aktif ? BLUSH : MINT, border: `1px solid ${BORDER_STRONG}` }}>
+          {okul.aktif ? <><EyeOff size={12} /> Pasifleştir</> : <><Eye size={12} /> Aktifleştir</>}
+        </button>
+      </div>
+    </form>
   );
 }
 
