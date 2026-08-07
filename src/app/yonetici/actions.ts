@@ -177,3 +177,70 @@ export async function ogretmenBransDegistir(teacherId: string, brans: string): P
   revalidatePath("/yonetici");
   return { error: null };
 }
+
+// ============ Veli talepleri (admin görünürlüğü) ============
+// veli_link_requests RLS'i sadece ilgili öğretmene/öğrenciye açık (bkz.
+// schema.sql); admin'in okul/sınıf sınırı olmadan tüm talepleri görebilmesi
+// için service-role client kullanılıyor — yeni bir RLS policy gerekmedi.
+
+export interface VeliTalebiSonuc {
+  id: string;
+  veliAd: string;
+  veliTelefon: string;
+  durum: "bekliyor" | "onaylandi" | "reddedildi" | "kullanildi";
+  kod: string | null;
+  createdAt: string;
+  ogrenciAd: string;
+  okulAdi: string | null;
+  sinifAdi: string | null;
+}
+
+export async function veliTalepleriGetir(): Promise<{ error: string | null; talepler: VeliTalebiSonuc[] }> {
+  const { admin } = await requireAdmin();
+  const { data, error } = await admin
+    .from("veli_link_requests")
+    .select("id, veli_ad, veli_telefon, durum, kod, created_at, students(profiles!students_id_fkey(ad), schools(ad), classes(seviye, sube))")
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (error) return { error: error.message, talepler: [] };
+
+  type Row = {
+    id: string; veli_ad: string; veli_telefon: string; durum: VeliTalebiSonuc["durum"]; kod: string | null; created_at: string;
+    students: { profiles: { ad: string } | null; schools: { ad: string } | null; classes: { seviye: string; sube: string } | null } | null;
+  };
+  const talepler = ((data as unknown as Row[]) ?? []).map((r) => ({
+    id: r.id, veliAd: r.veli_ad, veliTelefon: r.veli_telefon, durum: r.durum, kod: r.kod, createdAt: r.created_at,
+    ogrenciAd: r.students?.profiles?.ad ?? "—",
+    okulAdi: r.students?.schools?.ad ?? null,
+    sinifAdi: r.students?.classes ? `${r.students.classes.seviye}-${r.students.classes.sube}` : null,
+  }));
+  return { error: null, talepler };
+}
+
+// Öğretmen onay RPC'si (veli_talep_onayla) auth.uid()'in ilgili sınıfın
+// öğretmeni olmasını şart koşuyor — admin'in bu şartı sağlaması beklenmez,
+// bu yüzden aynı işlemi service-role client ile burada tekrarlıyoruz.
+export async function veliTalebiAdminOnayla(requestId: string): Promise<{ error: string | null; kod: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const kod = crypto.randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase();
+
+  const { error } = await admin
+    .from("veli_link_requests")
+    .update({ durum: "onaylandi", kod, onaylayan_ogretmen_id: user.id, onaylanma_at: new Date().toISOString() })
+    .eq("id", requestId)
+    .eq("durum", "bekliyor");
+  if (error) return { error: error.message, kod: null };
+
+  await auditLogYaz(supabase, user.id, "veli_talebi_admin_onayla", { request_id: requestId });
+  revalidatePath("/yonetici");
+  return { error: null, kod };
+}
+
+export async function veliTalebiReddet(requestId: string): Promise<{ error: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const { error } = await admin.from("veli_link_requests").update({ durum: "reddedildi" }).eq("id", requestId).eq("durum", "bekliyor");
+  if (error) return { error: error.message };
+  await auditLogYaz(supabase, user.id, "veli_talebi_reddet", { request_id: requestId });
+  revalidatePath("/yonetici");
+  return { error: null };
+}

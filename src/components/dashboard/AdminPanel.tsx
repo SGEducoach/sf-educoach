@@ -53,6 +53,8 @@ const EYLEM_ETIKET: Record<string, string> = {
   sinif_sil: "Sınıf silindi",
   ogrenci_sinif_tasi: "Öğrenci sınıf değiştirdi",
   ogretmen_brans_degistir: "Öğretmen branşı değiştirildi",
+  veli_talebi_admin_onayla: "Veli talebi onaylandı (admin)",
+  veli_talebi_reddet: "Veli talebi reddedildi",
 };
 
 export function AdminPanel({
