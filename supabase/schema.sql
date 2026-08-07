@@ -712,3 +712,6 @@ create policy "schools_insert_admin" on public.schools
 drop policy if exists "schools_update_admin" on public.schools;
 create policy "schools_update_admin" on public.schools
   for update using (public.is_admin());
+
+-- ============ Hesap pasifleştirme (bkz. migration 0021) ============
+alter table public.profiles add column if not exists aktif boolean not null default true;

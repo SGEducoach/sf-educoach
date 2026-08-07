@@ -46,6 +46,9 @@ const EYLEM_ETIKET: Record<string, string> = {
   okul_duzenle: "Okul düzenlendi",
   okul_aktiflestir: "Okul aktifleştirildi",
   okul_pasiflestir: "Okul pasifleştirildi",
+  sifre_sifirla: "Şifre sıfırlandı",
+  hesap_aktiflestir: "Hesap aktifleştirildi",
+  hesap_pasiflestir: "Hesap pasifleştirildi",
 };
 
 export function AdminPanel({

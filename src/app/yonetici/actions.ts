@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { rastgeleSifre } from "@/lib/validators";
 import type { UserRole } from "@/lib/types";
 
 // /yonetici'ye özel (admin-only) server action'lar. dashboard/actions.ts'teki
@@ -34,6 +35,7 @@ export interface KullaniciSonuc {
   email: string | null;
   telefon: string | null;
   role: UserRole;
+  aktif: boolean;
   okulAdi: string | null;
   sinifAdi: string | null;
   okulNo: string | null;
@@ -51,7 +53,7 @@ export async function kullaniciAra(sorgu: string, rolFiltre: UserRole | "hepsi")
 
   let query = supabase
     .from("profiles")
-    .select("id, ad, email, telefon, role")
+    .select("id, ad, email, telefon, role, aktif")
     .neq("role", "admin")
     .or(`ad.ilike.%${q}%,email.ilike.%${q}%`)
     .order("ad")
@@ -61,7 +63,7 @@ export async function kullaniciAra(sorgu: string, rolFiltre: UserRole | "hepsi")
   const { data: profiller, error } = await query;
   if (error) return { error: error.message, sonuclar: [] };
 
-  const satirlar = (profiller ?? []) as { id: string; ad: string; email: string | null; telefon: string | null; role: UserRole }[];
+  const satirlar = (profiller ?? []) as { id: string; ad: string; email: string | null; telefon: string | null; role: UserRole; aktif: boolean }[];
   const ogrenciIdleri = satirlar.filter((s) => s.role === "ogrenci").map((s) => s.id);
   const ogretmenIdleri = satirlar.filter((s) => s.role === "ogretmen" || s.role === "mudur").map((s) => s.id);
 
@@ -83,7 +85,7 @@ export async function kullaniciAra(sorgu: string, rolFiltre: UserRole | "hepsi")
     const o = ogrenciMap.get(s.id);
     const t = ogretmenMap.get(s.id);
     return {
-      id: s.id, ad: s.ad, email: s.email, telefon: s.telefon, role: s.role,
+      id: s.id, ad: s.ad, email: s.email, telefon: s.telefon, role: s.role, aktif: s.aktif,
       okulAdi: o?.schools?.ad ?? t?.schools?.ad ?? null,
       sinifAdi: o?.classes ? `${o.classes.seviye}-${o.classes.sube}` : null,
       okulNo: o?.okul_no ?? null,
@@ -92,4 +94,37 @@ export async function kullaniciAra(sorgu: string, rolFiltre: UserRole | "hepsi")
   });
 
   return { error: null, sonuclar };
+}
+
+// ============ Şifre sıfırlama ============
+// Herhangi bir hesabın şifresini tek tuşla resetleyip yeni geçici şifre
+// üretir — "şifremi unuttum" destek talepleri için (öğrenci/veli/öğretmen
+// şifresini kendi başına sıfırlayamıyor, bu akış admin üzerinden çözülüyor).
+export async function sifreSifirla(userId: string): Promise<{ error: string | null; sifre: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const sifre = rastgeleSifre();
+  const { error } = await admin.auth.admin.updateUserById(userId, { password: sifre });
+  if (error) return { error: error.message, sifre: null };
+  await auditLogYaz(supabase, user.id, "sifre_sifirla", { hedef_id: userId });
+  return { error: null, sifre };
+}
+
+// ============ Hesap pasifleştirme/aktifleştirme (soft-delete) ============
+// Hard-delete değil: profiles.aktif bayrağı sadece görüntüleme/filtreleme
+// için, gerçek giriş engeli Supabase Auth'un ban_duration'ı ile uygulanıyor
+// — böylece pasifleştirilen kullanıcı giriş yapamaz ama veri kaybı olmaz,
+// istenirse tekrar aktifleştirilebilir.
+export async function hesapAktiflikDegistir(userId: string, aktif: boolean): Promise<{ error: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+
+  const { error: banError } = await admin.auth.admin.updateUserById(userId, {
+    ban_duration: aktif ? "none" : "87600h",
+  });
+  if (banError) return { error: banError.message };
+
+  const { error: profileError } = await admin.from("profiles").update({ aktif }).eq("id", userId);
+  if (profileError) return { error: profileError.message };
+
+  await auditLogYaz(supabase, user.id, aktif ? "hesap_aktiflestir" : "hesap_pasiflestir", { hedef_id: userId });
+  return { error: null };
 }

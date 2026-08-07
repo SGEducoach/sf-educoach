@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Search, Users } from "lucide-react";
-import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, TEXT, TEXT_MUTED, BLUSH, LILAC } from "@/lib/theme";
-import { kullaniciAra, type KullaniciSonuc } from "@/app/yonetici/actions";
+import { Search, Users, KeyRound, EyeOff, Eye, Copy, Check } from "lucide-react";
+import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH, LILAC } from "@/lib/theme";
+import { kullaniciAra, sifreSifirla, hesapAktiflikDegistir, type KullaniciSonuc } from "@/app/yonetici/actions";
 import type { UserRole } from "@/lib/types";
 
 const ROL_SEKME: { id: UserRole | "hepsi"; ad: string }[] = [
@@ -84,20 +84,91 @@ export function KullaniciArama() {
         <p style={{ color: TEXT_MUTED }} className="text-sm py-3 text-center">Sonuç bulunamadı.</p>
       ) : sonuclar.length > 0 ? (
         <div className="flex flex-col gap-2">
-          {sonuclar.map((k) => (
-            <div key={k.id} className="rounded-xl px-3.5 py-2.5 flex items-center justify-between flex-wrap gap-2" style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}` }}>
-              <div>
-                <div style={{ color: TEXT }} className="text-sm font-semibold">
-                  {k.ad} <span style={{ color: LILAC }} className="text-[10px] font-bold ml-1">{ROL_ETIKET[k.role]}</span>
-                </div>
-                <div style={{ color: TEXT_MUTED }} className="text-xs mt-0.5">
-                  {[k.email, k.okulAdi, k.sinifAdi, k.okulNo && `#${k.okulNo}`, k.brans].filter(Boolean).join(" · ")}
-                </div>
-              </div>
-            </div>
-          ))}
+          {sonuclar.map((k) => <KullaniciSatiri key={k.id} kullanici={k} />)}
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
+  const [aktif, setAktif] = useState(kullanici.aktif);
+  const [yeniSifre, setYeniSifre] = useState<string | null>(null);
+  const [kopyalandi, setKopyalandi] = useState(false);
+  const [hata, setHata] = useState<string | null>(null);
+  const [sifrePending, startSifreTransition] = useTransition();
+  const [aktiflikPending, startAktiflikTransition] = useTransition();
+
+  function sifreSifirlaTikla() {
+    if (!window.confirm(`${kullanici.ad} için yeni bir şifre oluşturulsun mu? Eski şifre geçersiz olacak.`)) return;
+    setHata(null);
+    startSifreTransition(async () => {
+      const res = await sifreSifirla(kullanici.id);
+      if (res.error) return setHata(res.error);
+      setYeniSifre(res.sifre);
+    });
+  }
+
+  function aktiflikTikla() {
+    const hedefAktif = !aktif;
+    if (!hedefAktif && !window.confirm(`${kullanici.ad} pasifleştirilsin mi? Giriş yapamayacak.`)) return;
+    setHata(null);
+    startAktiflikTransition(async () => {
+      const res = await hesapAktiflikDegistir(kullanici.id, hedefAktif);
+      if (res.error) return setHata(res.error);
+      setAktif(hedefAktif);
+    });
+  }
+
+  function sifreKopyala() {
+    if (!yeniSifre) return;
+    navigator.clipboard?.writeText(yeniSifre).then(() => {
+      setKopyalandi(true);
+      setTimeout(() => setKopyalandi(false), 2000);
+    });
+  }
+
+  return (
+    <div className="rounded-xl px-3.5 py-2.5 flex flex-col gap-2" style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}`, opacity: aktif ? 1 : 0.6 }}>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div>
+          <div style={{ color: TEXT }} className="text-sm font-semibold">
+            {kullanici.ad} <span style={{ color: LILAC }} className="text-[10px] font-bold ml-1">{ROL_ETIKET[kullanici.role]}</span>
+            {!aktif && <span style={{ color: BLUSH }} className="text-[10px] font-bold ml-1">PASİF</span>}
+          </div>
+          <div style={{ color: TEXT_MUTED }} className="text-xs mt-0.5">
+            {[kullanici.email, kullanici.okulAdi, kullanici.sinifAdi, kullanici.okulNo && `#${kullanici.okulNo}`, kullanici.brans].filter(Boolean).join(" · ")}
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button type="button" onClick={sifreSifirlaTikla} disabled={sifrePending} title="Şifre sıfırla"
+            className="sgec-btn flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full disabled:opacity-60"
+            style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `1px solid ${BORDER_STRONG}` }}>
+            <KeyRound size={11} /> Şifre sıfırla
+          </button>
+          <button type="button" onClick={aktiflikTikla} disabled={aktiflikPending} title={aktif ? "Pasifleştir" : "Aktifleştir"}
+            className="sgec-btn flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full disabled:opacity-60"
+            style={{ background: "rgba(255,255,255,0.06)", color: aktif ? BLUSH : MINT, border: `1px solid ${BORDER_STRONG}` }}>
+            {aktif ? <><EyeOff size={11} /> Pasifleştir</> : <><Eye size={11} /> Aktifleştir</>}
+          </button>
+        </div>
+      </div>
+
+      {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
+
+      {yeniSifre && (
+        <div className="rounded-xl p-2.5 flex items-center justify-between gap-2 flex-wrap" style={{ background: MINT_BG, border: `1px solid ${MINT}` }}>
+          <div className="text-xs" style={{ color: TEXT }}>
+            Yeni şifre: <strong>{yeniSifre}</strong>
+            <div style={{ color: TEXT_MUTED }} className="mt-0.5">Bu şifreyi ilgili kişiye iletin, tekrar gösterilmeyecek.</div>
+          </div>
+          <button type="button" onClick={sifreKopyala}
+            className="sgec-btn shrink-0 flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full"
+            style={{ background: MINT, color: MINT_ON }}>
+            {kopyalandi ? <><Check size={12} /> Kopyalandı</> : <><Copy size={12} /> Kopyala</>}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
