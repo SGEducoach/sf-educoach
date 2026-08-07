@@ -450,12 +450,8 @@ function VeliTalepForm({ schools, supabase }: { schools: School[]; supabase: Ret
     setGonderildi(true);
   }
 
-  if (gonderildi) {
-    return (
-      <p style={{ color: TEXT_MUTED }} className="text-sm leading-relaxed">
-        Talebiniz alındı. <strong style={{ color: TEXT }}>Öğrencinin sınıf öğretmeninden veya dershaneden kodu almanız</strong> gerekiyor — talebiniz onların paneline düştü. Kodu aldıktan sonra yukarıdan <strong style={{ color: MINT }}>&quot;Kodum var, tamamla&quot;</strong>ya geçin.
-      </p>
-    );
+  function yeniTalep() {
+    setAd(""); setTelefon(""); setSchoolId(""); setOkulNo(""); setGonderildi(false);
   }
 
   return (
@@ -476,6 +472,20 @@ function VeliTalepForm({ schools, supabase }: { schools: School[]; supabase: Ret
         </button>
       </form>
       <YukleniyorOverlay visible={yukleniyor} mesaj="Gönderiliyor..." />
+
+      {gonderildi && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }}>
+          <div className="sgec-fade rounded-3xl p-6 max-w-sm w-full text-center" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+            <p style={{ color: TEXT }} className="text-sm leading-relaxed mb-5">
+              Kod talebiniz alındı. <strong>SG.EDUCOACH ekibi veya öğrencinizin sınıf öğretmeni tarafından bilgilendirileceksiniz.</strong>
+            </p>
+            <button type="button" onClick={yeniTalep}
+              className="sgec-btn text-sm font-bold py-2.5 px-8 rounded-xl" style={{ background: MINT, color: MINT_ON }}>
+              Tamam
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }
