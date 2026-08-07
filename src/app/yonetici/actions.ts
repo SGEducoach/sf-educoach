@@ -37,7 +37,9 @@ export interface KullaniciSonuc {
   role: UserRole;
   aktif: boolean;
   okulAdi: string | null;
+  okulId: string | null;
   sinifAdi: string | null;
+  sinifId: string | null;
   okulNo: string | null;
   brans: string | null;
 }
@@ -69,15 +71,15 @@ export async function kullaniciAra(sorgu: string, rolFiltre: UserRole | "hepsi")
 
   const [ogrenciDetay, ogretmenDetay] = await Promise.all([
     ogrenciIdleri.length
-      ? supabase.from("students").select("id, okul_no, schools(ad), classes(seviye, sube)").in("id", ogrenciIdleri)
+      ? supabase.from("students").select("id, okul_no, school_id, class_id, schools(ad), classes(seviye, sube)").in("id", ogrenciIdleri)
       : Promise.resolve({ data: [] }),
     ogretmenIdleri.length
-      ? supabase.from("teachers").select("id, brans, schools(ad)").in("id", ogretmenIdleri)
+      ? supabase.from("teachers").select("id, brans, school_id, schools(ad)").in("id", ogretmenIdleri)
       : Promise.resolve({ data: [] }),
   ]);
 
-  type OgrenciRow = { id: string; okul_no: string; schools: { ad: string } | null; classes: { seviye: string; sube: string } | null };
-  type OgretmenRow = { id: string; brans: string; schools: { ad: string } | null };
+  type OgrenciRow = { id: string; okul_no: string; school_id: string; class_id: string; schools: { ad: string } | null; classes: { seviye: string; sube: string } | null };
+  type OgretmenRow = { id: string; brans: string; school_id: string; schools: { ad: string } | null };
   const ogrenciMap = new Map(((ogrenciDetay.data as unknown as OgrenciRow[]) ?? []).map((o) => [o.id, o]));
   const ogretmenMap = new Map(((ogretmenDetay.data as unknown as OgretmenRow[]) ?? []).map((o) => [o.id, o]));
 
@@ -87,7 +89,9 @@ export async function kullaniciAra(sorgu: string, rolFiltre: UserRole | "hepsi")
     return {
       id: s.id, ad: s.ad, email: s.email, telefon: s.telefon, role: s.role, aktif: s.aktif,
       okulAdi: o?.schools?.ad ?? t?.schools?.ad ?? null,
+      okulId: o?.school_id ?? t?.school_id ?? null,
       sinifAdi: o?.classes ? `${o.classes.seviye}-${o.classes.sube}` : null,
+      sinifId: o?.class_id ?? null,
       okulNo: o?.okul_no ?? null,
       brans: t?.brans ?? null,
     };
@@ -126,5 +130,50 @@ export async function hesapAktiflikDegistir(userId: string, aktif: boolean): Pro
   if (profileError) return { error: profileError.message };
 
   await auditLogYaz(supabase, user.id, aktif ? "hesap_aktiflestir" : "hesap_pasiflestir", { hedef_id: userId });
+  return { error: null };
+}
+
+// ============ Sınıf/öğretmen/öğrenci düzenleme ============
+
+// classes_select_all RLS policy'si zaten herkese açık (using (true)) —
+// service-role client'a gerek yok.
+export async function okulSiniflari(schoolId: string): Promise<{ error: string | null; siniflar: { id: string; seviye: string; sube: string }[] }> {
+  const { supabase } = await requireAdmin();
+  const { data, error } = await supabase.from("classes").select("id, seviye, sube").eq("school_id", schoolId).order("seviye").order("sube");
+  if (error) return { error: error.message, siniflar: [] };
+  return { error: null, siniflar: data ?? [] };
+}
+
+// FK kısıtı (students.class_id / teachers.class_id "not null references",
+// ON DELETE belirtilmemiş → RESTRICT) sınıfta öğrenci/öğretmen varken
+// silinmesini zaten engelliyor — burada sadece daha anlaşılır bir hata
+// mesajına çeviriyoruz.
+export async function sinifSil(classId: string): Promise<{ error: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const { error } = await admin.from("classes").delete().eq("id", classId);
+  if (error) {
+    if (error.code === "23503") return { error: "Bu sınıfta öğrenci veya öğretmen var, önce onları başka sınıfa taşıyın." };
+    return { error: error.message };
+  }
+  await auditLogYaz(supabase, user.id, "sinif_sil", { class_id: classId });
+  revalidatePath("/yonetici");
+  return { error: null };
+}
+
+export async function ogrenciSinifTasi(studentId: string, classId: string): Promise<{ error: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const { error } = await admin.from("students").update({ class_id: classId }).eq("id", studentId);
+  if (error) return { error: error.message };
+  await auditLogYaz(supabase, user.id, "ogrenci_sinif_tasi", { student_id: studentId, class_id: classId });
+  revalidatePath("/yonetici");
+  return { error: null };
+}
+
+export async function ogretmenBransDegistir(teacherId: string, brans: string): Promise<{ error: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const { error } = await admin.from("teachers").update({ brans }).eq("id", teacherId);
+  if (error) return { error: error.message };
+  await auditLogYaz(supabase, user.id, "ogretmen_brans_degistir", { teacher_id: teacherId, brans });
+  revalidatePath("/yonetici");
   return { error: null };
 }

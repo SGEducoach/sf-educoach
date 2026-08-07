@@ -2,9 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Shield, Building2, ScrollText, UserPlus, Copy, Check, Plus, Pencil, EyeOff, Eye } from "lucide-react";
+import { Shield, Building2, ScrollText, UserPlus, Copy, Check, Plus, Pencil, EyeOff, Eye, X } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH, LILAC } from "@/lib/theme";
 import { sinifOgretmeniAta, ogretmenEkleManuel, ogrenciEkleManuel, okulEkle, okulDuzenle, okulAktiflikDegistir } from "@/app/dashboard/actions";
+import { sinifSil } from "@/app/yonetici/actions";
 import { SinifEkleFormu } from "@/components/dashboard/OgretmenPanel";
 import { AYT_ALAN_ETIKET, BRANS_LISTESI } from "@/lib/types";
 import type { AytAlan } from "@/lib/types";
@@ -49,6 +50,9 @@ const EYLEM_ETIKET: Record<string, string> = {
   sifre_sifirla: "Şifre sıfırlandı",
   hesap_aktiflestir: "Hesap aktifleştirildi",
   hesap_pasiflestir: "Hesap pasifleştirildi",
+  sinif_sil: "Sınıf silindi",
+  ogrenci_sinif_tasi: "Öğrenci sınıf değiştirdi",
+  ogretmen_brans_degistir: "Öğretmen branşı değiştirildi",
 };
 
 export function AdminPanel({
@@ -116,6 +120,17 @@ export function AdminPanel({
         ) : (
           <>
             <SinifEkleFormu schoolId={gorunenOkul.id} />
+
+            {siniflar.length > 0 && (
+              <div className="mt-4">
+                <span style={{ color: TEXT_MUTED }} className="text-[11px] font-semibold uppercase tracking-wide mb-2 block">
+                  Sınıflar ({siniflar.length})
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {siniflar.map((s) => <SinifRozeti key={s.id} sinif={s} />)}
+                </div>
+              </div>
+            )}
 
             <div className="mt-5">
               <span style={{ color: TEXT_MUTED }} className="text-[11px] font-semibold uppercase tracking-wide mb-2 block">
@@ -426,6 +441,39 @@ function OgrenciEkleFormu({ schoolId, siniflar }: { schoolId: string; siniflar: 
           {pending ? "Ekleniyor..." : "Öğrenci ekle"}
         </button>
       </form>
+    </div>
+  );
+}
+
+// Silme FK kısıtı yüzünden (öğrenci/öğretmen varken) engellenir — hata mesajı
+// bunu anlaşılır şekilde açıklıyor, boş sınıflar sorunsuz silinebilir.
+function SinifRozeti({ sinif }: { sinif: SinifSatiri }) {
+  const [hata, setHata] = useState<string | null>(null);
+  const [silindi, setSilindi] = useState(false);
+  const [pending, startTransition] = useTransition();
+
+  function sil() {
+    if (!window.confirm(`${sinif.seviye}-${sinif.sube} sınıfı silinsin mi?`)) return;
+    setHata(null);
+    startTransition(async () => {
+      const res = await sinifSil(sinif.id);
+      if (res.error) return setHata(res.error);
+      setSilindi(true);
+    });
+  }
+
+  if (silindi) return null;
+
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-1.5 rounded-full pl-3 pr-1.5 py-1" style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}` }}>
+        <span style={{ color: TEXT }} className="text-xs font-bold">{sinif.seviye}-{sinif.sube}</span>
+        <button type="button" onClick={sil} disabled={pending} title="Sınıfı sil"
+          className="sgec-btn w-5 h-5 rounded-full flex items-center justify-center disabled:opacity-60" style={{ background: "rgba(255,255,255,0.06)" }}>
+          <X size={10} color={BLUSH} />
+        </button>
+      </div>
+      {hata && <span style={{ color: BLUSH }} className="text-[10px] font-semibold">{hata}</span>}
     </div>
   );
 }

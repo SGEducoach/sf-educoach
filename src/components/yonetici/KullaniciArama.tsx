@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { Search, Users, KeyRound, EyeOff, Eye, Copy, Check } from "lucide-react";
+import { useState, useEffect, useTransition } from "react";
+import { Search, Users, KeyRound, EyeOff, Eye, Copy, Check, ArrowRightLeft } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH, LILAC } from "@/lib/theme";
-import { kullaniciAra, sifreSifirla, hesapAktiflikDegistir, type KullaniciSonuc } from "@/app/yonetici/actions";
+import { kullaniciAra, sifreSifirla, hesapAktiflikDegistir, okulSiniflari, ogrenciSinifTasi, ogretmenBransDegistir, type KullaniciSonuc } from "@/app/yonetici/actions";
+import { BRANS_LISTESI } from "@/lib/types";
 import type { UserRole } from "@/lib/types";
 
 const ROL_SEKME: { id: UserRole | "hepsi"; ad: string }[] = [
@@ -98,6 +99,7 @@ function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
   const [hata, setHata] = useState<string | null>(null);
   const [sifrePending, startSifreTransition] = useTransition();
   const [aktiflikPending, startAktiflikTransition] = useTransition();
+  const [duzenleAcik, setDuzenleAcik] = useState(false);
 
   function sifreSifirlaTikla() {
     if (!window.confirm(`${kullanici.ad} için yeni bir şifre oluşturulsun mu? Eski şifre geçersiz olacak.`)) return;
@@ -151,10 +153,24 @@ function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
             style={{ background: "rgba(255,255,255,0.06)", color: aktif ? BLUSH : MINT, border: `1px solid ${BORDER_STRONG}` }}>
             {aktif ? <><EyeOff size={11} /> Pasifleştir</> : <><Eye size={11} /> Aktifleştir</>}
           </button>
+          {(kullanici.role === "ogrenci" || kullanici.role === "ogretmen" || kullanici.role === "mudur") && (
+            <button type="button" onClick={() => setDuzenleAcik((v) => !v)} title={kullanici.role === "ogrenci" ? "Sınıf taşı" : "Branş değiştir"}
+              className="sgec-btn flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full"
+              style={{ background: duzenleAcik ? MINT : "rgba(255,255,255,0.06)", color: duzenleAcik ? MINT_ON : TEXT_MUTED, border: `1px solid ${BORDER_STRONG}` }}>
+              <ArrowRightLeft size={11} /> {kullanici.role === "ogrenci" ? "Sınıf taşı" : "Branş"}
+            </button>
+          )}
         </div>
       </div>
 
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
+
+      {duzenleAcik && kullanici.role === "ogrenci" && (
+        <OgrenciSinifTasiFormu studentId={kullanici.id} okulId={kullanici.okulId} suankiSinifId={kullanici.sinifId} onDone={() => setDuzenleAcik(false)} />
+      )}
+      {duzenleAcik && (kullanici.role === "ogretmen" || kullanici.role === "mudur") && (
+        <OgretmenBransFormu teacherId={kullanici.id} suankiBrans={kullanici.brans} onDone={() => setDuzenleAcik(false)} />
+      )}
 
       {yeniSifre && (
         <div className="rounded-xl p-2.5 flex items-center justify-between gap-2 flex-wrap" style={{ background: MINT_BG, border: `1px solid ${MINT}` }}>
@@ -169,6 +185,83 @@ function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+function OgrenciSinifTasiFormu({ studentId, okulId, suankiSinifId, onDone }: { studentId: string; okulId: string | null; suankiSinifId: string | null; onDone: () => void }) {
+  const [siniflar, setSiniflar] = useState<{ id: string; seviye: string; sube: string }[] | null>(null);
+  const [seciliSinifId, setSeciliSinifId] = useState(suankiSinifId ?? "");
+  const [hata, setHata] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (!okulId) return;
+    okulSiniflari(okulId).then((res) => {
+      if (res.error) return setHata(res.error);
+      setSiniflar(res.siniflar);
+    });
+  }, [okulId]);
+
+  function tasi() {
+    if (!seciliSinifId || seciliSinifId === suankiSinifId) return;
+    setHata(null);
+    startTransition(async () => {
+      const res = await ogrenciSinifTasi(studentId, seciliSinifId);
+      if (res.error) return setHata(res.error);
+      onDone();
+    });
+  }
+
+  return (
+    <div className="rounded-xl p-2.5 flex items-center gap-2 flex-wrap" style={{ background: BG0, border: `1px solid ${BORDER_STRONG}` }}>
+      {siniflar === null ? (
+        <span style={{ color: TEXT_MUTED }} className="text-xs">Sınıflar yükleniyor...</span>
+      ) : siniflar.length === 0 ? (
+        <span style={{ color: TEXT_MUTED }} className="text-xs">Bu okulda kayıtlı sınıf yok.</span>
+      ) : (
+        <>
+          <select value={seciliSinifId} onChange={(e) => setSeciliSinifId(e.target.value)}
+            className="text-xs font-bold px-2.5 py-1.5 rounded-full outline-none" style={{ background: BG1_ALT, color: TEXT, border: `1px solid ${BORDER_STRONG}` }}>
+            {siniflar.map((s) => <option key={s.id} value={s.id}>{s.seviye}-{s.sube}</option>)}
+          </select>
+          <button type="button" onClick={tasi} disabled={pending || !seciliSinifId || seciliSinifId === suankiSinifId}
+            className="sgec-btn text-[11px] font-bold px-3 py-1.5 rounded-full disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+            {pending ? "Taşınıyor..." : "Taşı"}
+          </button>
+        </>
+      )}
+      {hata && <span style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</span>}
+    </div>
+  );
+}
+
+function OgretmenBransFormu({ teacherId, suankiBrans, onDone }: { teacherId: string; suankiBrans: string | null; onDone: () => void }) {
+  const [brans, setBrans] = useState(suankiBrans ?? BRANS_LISTESI[0]);
+  const [hata, setHata] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  function kaydet() {
+    if (brans === suankiBrans) return;
+    setHata(null);
+    startTransition(async () => {
+      const res = await ogretmenBransDegistir(teacherId, brans);
+      if (res.error) return setHata(res.error);
+      onDone();
+    });
+  }
+
+  return (
+    <div className="rounded-xl p-2.5 flex items-center gap-2 flex-wrap" style={{ background: BG0, border: `1px solid ${BORDER_STRONG}` }}>
+      <select value={brans} onChange={(e) => setBrans(e.target.value)}
+        className="text-xs font-bold px-2.5 py-1.5 rounded-full outline-none" style={{ background: BG1_ALT, color: TEXT, border: `1px solid ${BORDER_STRONG}` }}>
+        {BRANS_LISTESI.map((b) => <option key={b} value={b}>{b}</option>)}
+      </select>
+      <button type="button" onClick={kaydet} disabled={pending || brans === suankiBrans}
+        className="sgec-btn text-[11px] font-bold px-3 py-1.5 rounded-full disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+        {pending ? "Kaydediliyor..." : "Kaydet"}
+      </button>
+      {hata && <span style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</span>}
     </div>
   );
 }
