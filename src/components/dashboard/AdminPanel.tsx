@@ -70,7 +70,7 @@ export function AdminPanel({
               <Building2 size={14} color={TEXT_MUTED} />
               <select
                 value={gorunecekOkulId ?? ""}
-                onChange={(e) => router.push(`/dashboard?okul=${e.target.value}`)}
+                onChange={(e) => router.push(`/yonetici?okul=${e.target.value}`)}
                 className="text-xs font-bold px-3 py-1.5 rounded-full outline-none"
                 style={{ background: BG1_ALT, color: TEXT, border: `1px solid ${BORDER_STRONG}` }}>
                 {okullar.map((o) => (

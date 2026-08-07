@@ -61,7 +61,7 @@ export async function sinifEkle(schoolId: string, seviye: "11" | "12", sube: str
     return { error: error.message };
   }
   await auditLogYaz(supabase, user.id, "sinif_ekle", { school_id: schoolId, seviye, sube: subeBuyuk });
-  revalidatePath("/dashboard");
+  revalidatePath("/yonetici");
   return { error: null };
 }
 
@@ -77,7 +77,7 @@ export async function sinifOgretmeniAta(ogretmenId: string, classId: string | nu
     return { error: "Bu işlem için yönetici yetkisi gerekiyor." };
   }
   await auditLogYaz(supabase, user.id, classId ? "sinif_ogretmeni_ata" : "sinif_ogretmenliginden_cikar", { ogretmen_id: ogretmenId, class_id: classId });
-  revalidatePath("/dashboard");
+  revalidatePath("/yonetici");
   return { error: null };
 }
 
@@ -116,7 +116,7 @@ export async function ogretmenEkleManuel(input: {
   if (error) return { error: manuelEklemeHatasi(error.message), sifre: null };
 
   await auditLogYaz(supabase, user.id, "ogretmen_ekle_manuel", { ogretmen_id: created.user?.id, email, school_id: input.schoolId });
-  revalidatePath("/dashboard");
+  revalidatePath("/yonetici");
   return { error: null, sifre };
 }
 
@@ -147,6 +147,6 @@ export async function ogrenciEkleManuel(input: {
   if (error) return { error: manuelEklemeHatasi(error.message), sifre: null };
 
   await auditLogYaz(supabase, user.id, "ogrenci_ekle_manuel", { ogrenci_id: created.user?.id, okul_no: input.okulNo, school_id: input.schoolId, class_id: input.classId });
-  revalidatePath("/dashboard");
+  revalidatePath("/yonetici");
   return { error: null, sifre };
 }

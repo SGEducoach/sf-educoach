@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Header } from "@/components/dashboard/Header";
 import { OgretmenPanel } from "@/components/dashboard/OgretmenPanel";
-import { AdminPanel } from "@/components/dashboard/AdminPanel";
 import { OgrenciVeriGirisi } from "@/components/dashboard/OgrenciVeriGirisi";
 import { ZayifKonular } from "@/components/dashboard/ZayifKonular";
 import { AnalizPaneli } from "@/components/dashboard/AnalizPaneli";
@@ -35,6 +34,8 @@ export default async function DashboardPage({
   if (!profile) redirect("/login");
 
   const role = profile.role as UserRole;
+  // Admin artık normal akışta hiç görünmez — tek kontrol noktası /yonetici'dir.
+  if (role === "admin") redirect("/yonetici");
   const params = await searchParams;
   const donem = (["haftalik", "aylik", "tum"].includes(params.donem ?? "") ? params.donem : "tum") as RaporDonemi;
 
@@ -49,7 +50,6 @@ export default async function DashboardPage({
           <OgretmenIcerik userId={user.id} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} donem={donem} />
         )}
         {role === "veli" && <VeliIcerik userId={user.id} secilenOgrenciId={params.ogrenci} donem={donem} />}
-        {role === "admin" && <AdminIcerik secilenOkulId={params.okul} />}
       </div>
     </div>
   );
@@ -235,54 +235,6 @@ async function OgretmenIcerik({ userId, secilenSinifId, secilenOgrenciId, donem 
       gorunecekSinifId={gorunecekSinifId}
       kendiSinifId={teacher.class_id}
       kendiSinifiMi={kendiSinifiMi}
-    />
-  );
-}
-
-// ============ Admin: platformun tek kontrol noktası ============
-// Müdür sadece gözlemci; sınıf ekleme + sınıf öğretmeni atama admin'e ait.
-// Admin herhangi bir okula bağlı değildir (teachers tablosunda satırı yok),
-// bu yüzden kendi ayrı içerik fonksiyonuyla tüm okulları listeler.
-async function AdminIcerik({ secilenOkulId }: { secilenOkulId?: string }) {
-  const supabase = await createClient();
-  const { data: okullar } = await supabase.from("schools").select("id, ad, okul_kodu").order("ad");
-  const okulListesi = (okullar ?? []) as { id: string; ad: string; okul_kodu: string }[];
-  const gorunecekOkulId = secilenOkulId || okulListesi[0]?.id || null;
-
-  const [{ data: siniflar }, { data: ogretmenler }] = await Promise.all([
-    gorunecekOkulId
-      ? supabase.from("classes").select("id, seviye, sube").eq("school_id", gorunecekOkulId).order("seviye").order("sube")
-      : Promise.resolve({ data: [] }),
-    gorunecekOkulId
-      ? supabase.from("teachers").select("id, brans, class_id, profiles!teachers_id_fkey(ad, role), classes(seviye, sube)").eq("school_id", gorunecekOkulId)
-      : Promise.resolve({ data: [] }),
-  ]);
-
-  type OgretmenRow = { id: string; brans: string; class_id: string | null; profiles: { ad: string; role: string } | null; classes: { seviye: string; sube: string } | null };
-  const ogretmenListesi = ((ogretmenler as unknown as OgretmenRow[]) ?? []).map((o) => ({
-    id: o.id, ad: o.profiles?.ad ?? "İsimsiz", brans: o.brans, classId: o.class_id,
-    sinifAdi: o.classes ? `${o.classes.seviye}-${o.classes.sube}` : null,
-    mudurMu: o.profiles?.role === "mudur",
-  }));
-
-  const { data: kayitlar } = await supabase
-    .from("admin_audit_log")
-    .select("id, eylem, detay, created_at, profiles(ad)")
-    .order("created_at", { ascending: false })
-    .limit(15);
-
-  type KayitRow = { id: string; eylem: string; detay: Record<string, unknown> | null; created_at: string; profiles: { ad: string } | null };
-  const kayitListesi = ((kayitlar as unknown as KayitRow[]) ?? []).map((k) => ({
-    id: k.id, eylem: k.eylem, detay: k.detay, createdAt: k.created_at, aktorAdi: k.profiles?.ad ?? "—",
-  }));
-
-  return (
-    <AdminPanel
-      okullar={okulListesi}
-      gorunecekOkulId={gorunecekOkulId}
-      siniflar={(siniflar ?? []) as { id: string; seviye: string; sube: string }[]}
-      ogretmenListesi={ogretmenListesi}
-      islemKayitlari={kayitListesi}
     />
   );
 }
