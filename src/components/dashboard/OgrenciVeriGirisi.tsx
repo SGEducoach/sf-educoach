@@ -1,20 +1,57 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { BookOpen, PenLine, ClipboardList, Sparkles, Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import { BookOpen, PenLine, ClipboardList, Sparkles, Loader2, ChevronDown, ChevronUp, CalendarClock } from "lucide-react";
 import type {
-  AytAlan, DenemeTuru, DenemeZorlugu, HedefeYakinlik, VerimlilikDuzeyi, VeriGirisSikligi,
+  AytAlan, DenemeTuru, DenemeZorlugu, HedefeYakinlik, VerimlilikDuzeyi,
 } from "@/lib/types";
 import {
-  TYT_DERSLERI, AYT_DERSLERI, VERIMLILIK_ETIKET, VERI_GIRIS_SIKLIGI_ETIKET, netHesapla, dersSoruSayisi,
+  TYT_DERSLERI, AYT_DERSLERI, VERIMLILIK_ETIKET, netHesapla, dersSoruSayisi,
+  SURE_UST_SINIR, DENEME_SURE_UST_SINIR,
 } from "@/lib/types";
 import {
   BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, SKY, SKY_BG, TEXT, TEXT_MUTED, BLUSH,
 } from "@/lib/theme";
 import {
-  konuCalismaEkle, soruCozumuEkle, denemeEkle, haftalikVerimlilikEkle, veriGirisSikligiGuncelle, konuAnlatimiGetir,
+  konuCalismaEkle, soruCozumuEkle, denemeEkle, haftalikVerimlilikEkle, konuAnlatimiGetir,
 } from "@/app/dashboard/veri-actions";
 import { YukleniyorOverlay } from "@/components/YukleniyorOverlay";
+
+function bugununTarihi(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+// Varsayılan: anlık giriş bugünün tarihiyle kaydedilir. Öğrenci geçmiş bir
+// gün için giriş yapmak isterse bu buton bir tarih seçici açar (gelecek bir
+// tarih seçilemez). Veri giriş sıklığı (günlük/haftalık) sistemi bu yüzden
+// kaldırıldı — artık her gün ayrı ayrı, istenildiği zaman girilebiliyor.
+function GecmisTarihSecici({ tarih, setTarih }: { tarih: string; setTarih: (v: string) => void }) {
+  const [acik, setAcik] = useState(tarih !== bugununTarihi());
+
+  if (!acik) {
+    return (
+      <button type="button" onClick={() => setAcik(true)}
+        className="sgec-btn self-start flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1.5 rounded-full"
+        style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `1px solid ${BORDER_STRONG}` }}>
+        <CalendarClock size={12} /> Geçmiş tarih için gir
+      </button>
+    );
+  }
+
+  return (
+    <label className="flex flex-col gap-1">
+      <Etiket>Tarih</Etiket>
+      <div className="flex gap-2">
+        <Girdi type="date" max={bugununTarihi()} value={tarih} onChange={(e) => setTarih(e.target.value)} required />
+        <button type="button" onClick={() => { setAcik(false); setTarih(bugununTarihi()); }}
+          className="sgec-btn shrink-0 text-[11px] font-bold px-3 py-1.5 rounded-xl"
+          style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `1px solid ${BORDER_STRONG}` }}>
+          Bugüne dön
+        </button>
+      </div>
+    </label>
+  );
+}
 
 type Sekme = "konu" | "soru" | "deneme";
 
@@ -49,8 +86,8 @@ function SecenekSecici<T extends string>({ baslik, secenekler, value, onChange }
   );
 }
 
-export function OgrenciVeriGirisi({ studentId, aytAlan, veriGirisSikligi, veriGirisSikligiKilitli, konuOnerileri }: {
-  studentId: string; aytAlan: AytAlan; veriGirisSikligi: VeriGirisSikligi; veriGirisSikligiKilitli: boolean;
+export function OgrenciVeriGirisi({ aytAlan, konuOnerileri }: {
+  aytAlan: AytAlan;
   konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
 }) {
   const [sekme, setSekme] = useState<Sekme>("konu");
@@ -67,8 +104,6 @@ export function OgrenciVeriGirisi({ studentId, aytAlan, veriGirisSikligi, veriGi
 
   return (
     <div className="flex flex-col gap-4">
-      <SiklikAyari studentId={studentId} mevcut={veriGirisSikligi} kilitli={veriGirisSikligiKilitli} />
-
       {basari && (
         <div className="sgec-fade rounded-2xl px-4 py-2.5 text-[13px] font-semibold" style={{ background: MINT_BG, color: MINT }}>
           ✓ {basari}
@@ -101,70 +136,6 @@ export function OgrenciVeriGirisi({ studentId, aytAlan, veriGirisSikligi, veriGi
 
       {verimlilikSor && <HaftalikVerimlilikModal onKapat={() => setVerimlilikSor(false)} />}
     </div>
-  );
-}
-
-function SiklikAyari({ studentId, mevcut, kilitli }: { studentId: string; mevcut: VeriGirisSikligi; kilitli: boolean }) {
-  const [pending, startTransition] = useTransition();
-  const [deger, setDeger] = useState(mevcut);
-  const [secilecek, setSecilecek] = useState<VeriGirisSikligi | null>(null);
-  const [kilitliMi, setKilitliMi] = useState(kilitli);
-  const [hata, setHata] = useState<string | null>(null);
-  void studentId;
-
-  function onayla() {
-    if (!secilecek) return;
-    startTransition(async () => {
-      const res = await veriGirisSikligiGuncelle(secilecek);
-      if (res.error) { setHata(res.error); setSecilecek(null); return; }
-      setDeger(secilecek);
-      setKilitliMi(true);
-      setSecilecek(null);
-    });
-  }
-
-  return (
-    <>
-      <div className="sgec-fade rounded-2xl px-4 py-3 flex items-center justify-between flex-wrap gap-2" style={{ background: SKY_BG, border: `1px solid rgba(143,198,255,0.3)` }}>
-        <span style={{ color: SKY }} className="text-[12px] font-semibold">Veri giriş sıklığınız {kilitliMi && <span style={{ color: TEXT_MUTED }} className="font-normal">(kilitli)</span>}</span>
-        {kilitliMi ? (
-          <span className="text-xs font-bold px-3 py-1.5 rounded-full" style={{ background: BG1, color: SKY, border: `1px solid ${SKY}` }}>
-            {VERI_GIRIS_SIKLIGI_ETIKET[deger]}
-          </span>
-        ) : (
-          <select value={deger} disabled={pending}
-            onChange={(e) => setSecilecek(e.target.value as VeriGirisSikligi)}
-            className="text-xs font-bold px-3 py-1.5 rounded-full outline-none" style={{ background: BG1, color: SKY, border: `1px solid ${SKY}` }}>
-            {(Object.entries(VERI_GIRIS_SIKLIGI_ETIKET) as [VeriGirisSikligi, string][]).map(([k, v]) => (
-              <option key={k} value={k}>{v}</option>
-            ))}
-          </select>
-        )}
-      </div>
-      {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold px-1">{hata}</div>}
-
-      {secilecek && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: "rgba(0,0,0,0.5)" }}>
-          <div className="sgec-fade rounded-3xl p-6 max-w-sm w-full" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
-            <h3 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold mb-2">Emin misin?</h3>
-            <p style={{ color: TEXT_MUTED }} className="text-sm mb-4">
-              Veri giriş sıklığını <strong style={{ color: SKY }}>{VERI_GIRIS_SIKLIGI_ETIKET[secilecek]}</strong> olarak seçmek üzeresin. Bu seçim <strong>bir daha değiştirilemez</strong>.
-            </p>
-            <div className="flex gap-2">
-              <button type="button" onClick={() => setSecilecek(null)} disabled={pending}
-                className="sgec-btn flex-1 text-sm font-bold py-2.5 rounded-xl" style={{ background: BG1_ALT, color: TEXT_MUTED, border: `1px solid ${BORDER_STRONG}` }}>
-                Vazgeç
-              </button>
-              <button type="button" onClick={onayla} disabled={pending}
-                className="sgec-btn flex-1 text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
-                {pending ? "Kaydediliyor..." : "Onayla"}
-              </button>
-            </div>
-          </div>
-          <YukleniyorOverlay visible={pending} mesaj="Kaydediliyor..." />
-        </div>
-      )}
-    </>
   );
 }
 
@@ -201,6 +172,7 @@ function KonuCalismaForm({ dersListesi, konuOnerileri, onBasari }: {
   const [aramaMetni, setAramaMetni] = useState("");
   const [oneriAcik, setOneriAcik] = useState(false);
   const [hedefeYakinlik, setHedefeYakinlik] = useState<HedefeYakinlik>("belirsiz");
+  const [tarih, setTarih] = useState(bugununTarihi());
   const [hata, setHata] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -260,16 +232,18 @@ function KonuCalismaForm({ dersListesi, konuOnerileri, onBasari }: {
     formData.set("ders", ders);
     formData.set("konu", konu);
     formData.set("hedefeYakinlik", hedefeYakinlik);
+    formData.set("tarih", tarih);
     startTransition(async () => {
       const res = await konuCalismaEkle(formData);
       if (res.error) return setHata(res.error);
       onBasari("Konu çalışması kaydedildi.", res.verimlilikSorulsunMu);
-      setKonu(""); setAramaMetni(""); setAnlatim(null); setAnlatimSeviye(null); setAnlatimAcik(false); setHedefeYakinlik("belirsiz");
+      setKonu(""); setAramaMetni(""); setAnlatim(null); setAnlatimSeviye(null); setAnlatimAcik(false); setHedefeYakinlik("belirsiz"); setTarih(bugununTarihi());
     });
   }
 
   return (
     <form action={submit} className="flex flex-col gap-3">
+      <GecmisTarihSecici tarih={tarih} setTarih={setTarih} />
       <label className="flex flex-col gap-1"><Etiket>Ders</Etiket>
         <Secim value={ders} onChange={(e) => { setDers(e.target.value); setKonu(""); setAramaMetni(""); setAnlatim(null); setAnlatimAcik(false); }} required>
           <option value="" disabled>Seçiniz</option>
@@ -318,8 +292,9 @@ function KonuCalismaForm({ dersListesi, konuOnerileri, onBasari }: {
       )}
 
       <label className="flex flex-col gap-1"><Etiket>Süre (dakika)</Etiket>
-        <Girdi name="sureDakika" type="number" min={1} required />
+        <Girdi name="sureDakika" type="number" min={1} max={SURE_UST_SINIR} required />
       </label>
+      <p style={{ color: TEXT_MUTED }} className="text-[11px] -mt-1">Bu, şu an bitirdiğin <strong>tek oturumun</strong> süresi — haftalık/günlük toplam değil. Birden fazla çalışman varsa her birini ayrı ayrı gir.</p>
       <p style={{ color: TEXT_MUTED }} className="text-[11px] -mt-1">Konuyu okuduktan/çalıştıktan sonra ne kadar hakim olduğunu aşağıdan işaretle:</p>
       <SecenekSecici baslik="Konuya hakimiyet" value={hedefeYakinlik} onChange={setHedefeYakinlik}
         secenekler={[["uzak", "Yetersiz"], ["belirsiz", "Orta"], ["yakin", "Yeterli"]]} />
@@ -336,6 +311,7 @@ function SoruCozumuForm({ dersListesi, onBasari }: { dersListesi: string[]; onBa
   const [dogru, setDogru] = useState("");
   const [yanlis, setYanlis] = useState("");
   const [hedefeYakinlik, setHedefeYakinlik] = useState<HedefeYakinlik>("belirsiz");
+  const [tarih, setTarih] = useState(bugununTarihi());
   const [hata, setHata] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -344,15 +320,17 @@ function SoruCozumuForm({ dersListesi, onBasari }: { dersListesi: string[]; onBa
   function submit(formData: FormData) {
     setHata(null);
     formData.set("hedefeYakinlik", hedefeYakinlik);
+    formData.set("tarih", tarih);
     startTransition(async () => {
       const res = await soruCozumuEkle(formData);
       if (res.error) setHata(res.error);
-      else onBasari(`Soru çözümü kaydedildi (net: ${net}).`, res.verimlilikSorulsunMu);
+      else { onBasari(`Soru çözümü kaydedildi (net: ${net}).`, res.verimlilikSorulsunMu); setTarih(bugununTarihi()); }
     });
   }
 
   return (
     <form action={submit} className="flex flex-col gap-3">
+      <GecmisTarihSecici tarih={tarih} setTarih={setTarih} />
       <label className="flex flex-col gap-1"><Etiket>Ders</Etiket>
         <Secim name="ders" required defaultValue="">
           <option value="" disabled>Seçiniz</option>
@@ -367,9 +345,10 @@ function SoruCozumuForm({ dersListesi, onBasari }: { dersListesi: string[]; onBa
           <Girdi name="yanlis" type="number" min={0} required value={yanlis} onChange={(e) => setYanlis(e.target.value)} />
         </label>
         <label className="flex flex-col gap-1"><Etiket>Süre (dk)</Etiket>
-          <Girdi name="sureDakika" type="number" min={1} required />
+          <Girdi name="sureDakika" type="number" min={1} max={SURE_UST_SINIR} required />
         </label>
       </div>
+      <p style={{ color: TEXT_MUTED }} className="text-[11px] -mt-1">Süre, şu an bitirdiğin <strong>tek oturumun</strong> süresi — haftalık/günlük toplam değil.</p>
       {net !== null && (
         <div style={{ color: MINT }} className="text-xs font-bold">Net: {net}</div>
       )}
@@ -390,6 +369,7 @@ function DenemeForm({ aytAlan, onBasari }: { aytAlan: AytAlan; onBasari: (m: str
   const [sureDakika, setSureDakika] = useState("");
   const [hedefeYakinlik, setHedefeYakinlik] = useState<HedefeYakinlik>("belirsiz");
   const [zorluk, setZorluk] = useState<DenemeZorlugu>("orta");
+  const [tarih, setTarih] = useState(bugununTarihi());
   const [hata, setHata] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -419,24 +399,27 @@ function DenemeForm({ aytAlan, onBasari }: { aytAlan: AytAlan; onBasari: (m: str
     e.preventDefault();
     setHata(null);
     if (!sureDakika || Number(sureDakika) <= 0) return setHata("Süreyi girin.");
+    if (Number(sureDakika) > DENEME_SURE_UST_SINIR) return setHata(`Süre en fazla ${DENEME_SURE_UST_SINIR} dakika olabilir.`);
     const dersSonuclari = dersler.map((d) => ({
       ders: d,
       dogru: Number(sonuclar[d]?.dogru ?? 0),
       yanlis: Number(sonuclar[d]?.yanlis ?? 0),
     }));
     startTransition(async () => {
-      const res = await denemeEkle(tur, Number(sureDakika), hedefeYakinlik, zorluk, dersSonuclari);
+      const res = await denemeEkle(tur, Number(sureDakika), hedefeYakinlik, zorluk, dersSonuclari, tarih);
       if (res.error) setHata(res.error);
       else {
         onBasari(`${tur} denemesi kaydedildi.`, res.verimlilikSorulsunMu);
         setSonuclar({});
         setSureDakika("");
+        setTarih(bugununTarihi());
       }
     });
   }
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
+      <GecmisTarihSecici tarih={tarih} setTarih={setTarih} />
       <div className="grid grid-cols-2 gap-3">
         <label className="flex flex-col gap-1"><Etiket>Deneme türü</Etiket>
           <Secim value={tur} onChange={(e) => { setTur(e.target.value as DenemeTuru); setSonuclar({}); }}>
@@ -445,7 +428,7 @@ function DenemeForm({ aytAlan, onBasari }: { aytAlan: AytAlan; onBasari: (m: str
           </Secim>
         </label>
         <label className="flex flex-col gap-1"><Etiket>Süre (dakika)</Etiket>
-          <Girdi type="number" min={1} required value={sureDakika} onChange={(e) => setSureDakika(e.target.value)} />
+          <Girdi type="number" min={1} max={DENEME_SURE_UST_SINIR} required value={sureDakika} onChange={(e) => setSureDakika(e.target.value)} />
         </label>
       </div>
 

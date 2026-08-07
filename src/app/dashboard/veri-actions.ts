@@ -7,13 +7,27 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getAnthropicClient } from "@/lib/anthropic";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
 import { KONU_ANLATIMI_SISTEM_PROMPTU, icerikTemizle } from "@/lib/konu-anlatimi";
-import type { DenemeZorlugu, HedefeYakinlik, VeriGirisSikligi, VerimlilikDuzeyi } from "@/lib/types";
+import { SURE_UST_SINIR, DENEME_SURE_UST_SINIR } from "@/lib/types";
+import type { DenemeZorlugu, HedefeYakinlik, VerimlilikDuzeyi } from "@/lib/types";
 
 async function requireStudent() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   return { supabase, user };
+}
+
+// Öğrenci "geçmiş tarih için gir" ile bir tarih seçebiliyor — bugünden ileri
+// bir tarih ya da bozuk bir değer olmasın diye doğrulanıyor. Boşsa bugün
+// kullanılır (varsayılan, DB'nin kendi default'una da güvenebilirdik ama
+// açıkça göndermek gelecekteki bir saat dilimi farkını da netleştiriyor).
+function tarihDogrula(ham: FormDataEntryValue | string | null): { tarih: string; error: string | null } {
+  const bugun = new Date().toISOString().slice(0, 10);
+  const deger = (ham ?? "").toString().trim();
+  if (!deger) return { tarih: bugun, error: null };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(deger)) return { tarih: bugun, error: "Tarih geçersiz." };
+  if (deger > bugun) return { tarih: bugun, error: "İleri bir tarih girilemez." };
+  return { tarih: deger, error: null };
 }
 
 // ============ AI destekli konu anlatımı ============
@@ -72,20 +86,16 @@ export async function konuAnlatimiGetir(ders: string, konu: string) {
   return { icerik, seviye, error: null };
 }
 
+// Veri giriş sıklığı sistemi kaldırıldı (öğrenciler artık geçmiş tarih için
+// de girebiliyor) — haftalık verimlilik anketi artık herkes için aynı, sabit
+// bir kurala göre soruluyor: her 3 girişte bir.
 async function verimlilikSorulsunMu(
   supabase: Awaited<ReturnType<typeof createClient>>,
   studentId: string,
 ): Promise<boolean> {
-  const [{ data: sayi }, { data: student }] = await Promise.all([
-    supabase.rpc("ogrenci_giris_sayisi", { p_student_id: studentId }),
-    supabase.from("students").select("veri_giris_sikligi").eq("id", studentId).single(),
-  ]);
+  const { data: sayi } = await supabase.rpc("ogrenci_giris_sayisi", { p_student_id: studentId });
   const count = (sayi as number) ?? 0;
-  const siklik = (student?.veri_giris_sikligi as VeriGirisSikligi) ?? "haftalik";
-  if (count === 0) return false;
-  if (siklik === "gunluk") return count % 7 === 0;
-  if (siklik === "3gunluk") return count % 3 === 0;
-  return true; // haftalik: her girişte
+  return count > 0 && count % 3 === 0;
 }
 
 export async function konuCalismaEkle(formData: FormData) {
@@ -94,13 +104,18 @@ export async function konuCalismaEkle(formData: FormData) {
   const konu = String(formData.get("konu") ?? "").trim();
   const sureDakika = Number(formData.get("sureDakika"));
   const hedefeYakinlik = String(formData.get("hedefeYakinlik")) as HedefeYakinlik;
+  const { tarih, error: tarihHatasi } = tarihDogrula(formData.get("tarih"));
 
   if (!ders || !konu || !sureDakika || sureDakika <= 0 || !hedefeYakinlik) {
     return { error: "Lütfen tüm alanları doldurun.", verimlilikSorulsunMu: false };
   }
+  if (tarihHatasi) return { error: tarihHatasi, verimlilikSorulsunMu: false };
+  if (sureDakika > SURE_UST_SINIR) {
+    return { error: `Süre en fazla ${SURE_UST_SINIR} dakika olabilir (tek oturum için) — haftalık/günlük toplamı buraya girme.`, verimlilikSorulsunMu: false };
+  }
 
   const { error } = await supabase.from("konu_calismalar").insert({
-    student_id: user.id, ders, konu, sure_dakika: sureDakika, hedefe_yakinlik: hedefeYakinlik,
+    student_id: user.id, ders, konu, sure_dakika: sureDakika, hedefe_yakinlik: hedefeYakinlik, tarih,
   });
   if (error) return { error: error.message, verimlilikSorulsunMu: false };
 
@@ -116,13 +131,18 @@ export async function soruCozumuEkle(formData: FormData) {
   const yanlis = Number(formData.get("yanlis"));
   const sureDakika = Number(formData.get("sureDakika"));
   const hedefeYakinlik = String(formData.get("hedefeYakinlik")) as HedefeYakinlik;
+  const { tarih, error: tarihHatasi } = tarihDogrula(formData.get("tarih"));
 
   if (!ders || Number.isNaN(dogru) || Number.isNaN(yanlis) || !sureDakika || sureDakika <= 0 || !hedefeYakinlik) {
     return { error: "Lütfen tüm alanları doldurun.", verimlilikSorulsunMu: false };
   }
+  if (tarihHatasi) return { error: tarihHatasi, verimlilikSorulsunMu: false };
+  if (sureDakika > SURE_UST_SINIR) {
+    return { error: `Süre en fazla ${SURE_UST_SINIR} dakika olabilir (tek oturum için) — haftalık/günlük toplamı buraya girme.`, verimlilikSorulsunMu: false };
+  }
 
   const { error } = await supabase.from("soru_cozumleri").insert({
-    student_id: user.id, ders, dogru, yanlis, sure_dakika: sureDakika, hedefe_yakinlik: hedefeYakinlik,
+    student_id: user.id, ders, dogru, yanlis, sure_dakika: sureDakika, hedefe_yakinlik: hedefeYakinlik, tarih,
   });
   if (error) return { error: error.message, verimlilikSorulsunMu: false };
 
@@ -137,16 +157,22 @@ export async function denemeEkle(
   hedefeYakinlik: HedefeYakinlik,
   zorluk: DenemeZorlugu,
   dersSonuclari: { ders: string; dogru: number; yanlis: number }[],
+  tarihGirdisi?: string,
 ) {
   const { supabase, user } = await requireStudent();
+  const { tarih, error: tarihHatasi } = tarihDogrula(tarihGirdisi ?? null);
 
   if (!sureDakika || sureDakika <= 0 || !hedefeYakinlik || !zorluk || dersSonuclari.length === 0) {
     return { error: "Lütfen tüm alanları doldurun.", verimlilikSorulsunMu: false };
   }
+  if (tarihHatasi) return { error: tarihHatasi, verimlilikSorulsunMu: false };
+  if (sureDakika > DENEME_SURE_UST_SINIR) {
+    return { error: `Süre en fazla ${DENEME_SURE_UST_SINIR} dakika olabilir.`, verimlilikSorulsunMu: false };
+  }
 
   const { data: deneme, error } = await supabase
     .from("denemeler")
-    .insert({ student_id: user.id, tur, sure_dakika: sureDakika, hedefe_yakinlik: hedefeYakinlik, zorluk, kaynak: "ogrenci" })
+    .insert({ student_id: user.id, tur, sure_dakika: sureDakika, hedefe_yakinlik: hedefeYakinlik, zorluk, kaynak: "ogrenci", tarih })
     .select("id")
     .single();
 
@@ -170,26 +196,3 @@ export async function haftalikVerimlilikEkle(duzey: VerimlilikDuzeyi) {
   return { error: null };
 }
 
-// Veri giriş sıklığı sadece BİR KEZ seçilebilir — bir daha değiştirilemez.
-// Önce kilit durumunu kontrol ediyoruz; zaten kilitliyse işlemi reddediyoruz
-// (öğrenci konsoldan doğrudan action'ı çağırsa bile bu kontrol devrede).
-export async function veriGirisSikligiGuncelle(siklik: VeriGirisSikligi) {
-  const { supabase, user } = await requireStudent();
-
-  const { data: mevcut } = await supabase
-    .from("students")
-    .select("veri_giris_sikligi_kilitli")
-    .eq("id", user.id)
-    .single();
-  if (mevcut?.veri_giris_sikligi_kilitli) {
-    return { error: "Veri giriş sıklığı zaten seçildi, bir daha değiştirilemez." };
-  }
-
-  const { error } = await supabase
-    .from("students")
-    .update({ veri_giris_sikligi: siklik, veri_giris_sikligi_kilitli: true })
-    .eq("id", user.id);
-  if (error) return { error: error.message };
-  revalidatePath("/dashboard");
-  return { error: null };
-}

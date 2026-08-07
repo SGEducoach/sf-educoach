@@ -13,7 +13,7 @@ import { analizVerisiGetir } from "@/lib/analiz";
 import type { RaporDonemi } from "@/lib/analiz";
 import { AYT_ALAN_ETIKET } from "@/lib/types";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
-import type { AytAlan, UserRole, VeriGirisSikligi } from "@/lib/types";
+import type { AytAlan, UserRole } from "@/lib/types";
 import { BG1, BG1_ALT, BORDER, BORDER_STRONG, TEXT, TEXT_MUTED, MINT } from "@/lib/theme";
 
 export default async function DashboardPage({
@@ -59,13 +59,12 @@ async function OgrenciIcerik({ userId, ad, donem }: { userId: string; ad: string
   const supabase = await createClient();
   const { data: student } = await supabase
     .from("students")
-    .select("okul_no, ayt_alan, hedef_bolum, veri_giris_sikligi, veri_giris_sikligi_kilitli, schools(ad), classes(seviye, sube)")
+    .select("okul_no, ayt_alan, hedef_bolum, schools(ad), classes(seviye, sube)")
     .eq("id", userId)
     .single();
 
   type Row = {
-    okul_no: string; ayt_alan: AytAlan; hedef_bolum: string; veri_giris_sikligi: VeriGirisSikligi;
-    veri_giris_sikligi_kilitli: boolean;
+    okul_no: string; ayt_alan: AytAlan; hedef_bolum: string;
     schools: { ad: string } | null; classes: { seviye: string; sube: string } | null;
   };
   const s = student as unknown as Row | null;
@@ -132,7 +131,7 @@ async function OgrenciIcerik({ userId, ad, donem }: { userId: string; ad: string
       <ZayifKonular konular={zayifKonular} />
 
       <div className="print:hidden">
-        <OgrenciVeriGirisi studentId={userId} aytAlan={s.ayt_alan} veriGirisSikligi={s.veri_giris_sikligi} veriGirisSikligiKilitli={s.veri_giris_sikligi_kilitli} konuOnerileri={konuOnerileri} />
+        <OgrenciVeriGirisi aytAlan={s.ayt_alan} konuOnerileri={konuOnerileri} />
       </div>
 
       <div>

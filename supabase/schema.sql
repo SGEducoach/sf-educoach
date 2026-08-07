@@ -815,3 +815,13 @@ $$;
 
 revoke all on function public.find_student_id_by_okul_no(uuid, text) from public;
 grant execute on function public.find_student_id_by_okul_no(uuid, text) to anon, authenticated;
+
+-- ============ Süre alanına üst sınır (bkz. migration 0024) ============
+alter table public.konu_calismalar
+  add constraint konu_calismalar_sure_ust_sinir check (sure_dakika <= 480) not valid;
+
+alter table public.soru_cozumleri
+  add constraint soru_cozumleri_sure_ust_sinir check (sure_dakika <= 480) not valid;
+
+alter table public.denemeler
+  add constraint denemeler_sure_ust_sinir check (sure_dakika <= 300) not valid;

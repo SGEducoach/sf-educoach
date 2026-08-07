@@ -126,17 +126,19 @@ export const VERIMLILIK_ETIKET: Record<VerimlilikDuzeyi, string> = {
   cok_iyi: "Çok İyi",
 };
 
-export const VERI_GIRIS_SIKLIGI_ETIKET: Record<VeriGirisSikligi, string> = {
-  gunluk: "Günlük",
-  "3gunluk": "3 Günde Bir",
-  haftalik: "Haftalık",
-};
-
 export const DENEME_ZORLUGU_ETIKET: Record<DenemeZorlugu, string> = {
   kolay: "Kolay",
   orta: "Orta",
   zor: "Zor",
 };
+
+// Tek bir çalışma/soru çözümü oturumu için makul üst sınır (dakika) — bir
+// öğrencinin yanlışlıkla haftalık/günlük TOPLAM süreyi tek bir alana girip
+// (ör. "4000 dakika") istatistikleri bozmasını engellemek için. 480 dk = 8
+// saat, tek oturum için zaten cömert bir üst sınır.
+export const SURE_UST_SINIR = 480;
+// Deneme için gerçek sınav süreleri (TYT 165, AYT 180 dk) + bolca pay.
+export const DENEME_SURE_UST_SINIR = 300;
 
 // Ders bazında ÖSYM'nin resmi TYT/AYT soru sayıları (2026). Deneme
 // girerken doğru+yanlış toplamının bunu aşmaması için kullanılıyor.

@@ -2,22 +2,16 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import webpush from "web-push";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { VeriGirisSikligi } from "@/lib/types";
 
 export const maxDuration = 60;
 
 // Vercel Cron bu route'u çağırır (vercel.json'daki schedule'a göre).
-// Hobby planda cron günde 1 kez çalışabiliyor — bu yüzden pencereleri
-// (uyariOncesiMs'e +24s tampon ekleyerek) günlük çalıştırmayı da
-// yakalayacak şekilde genişlettik. Pro plana geçilirse daha sık
-// (örn. saatlik) çalıştırılıp pencereler daraltılabilir.
-const SIKLIK_AYARLARI: Record<VeriGirisSikligi, { periyotSaat: number; uyariOncesiSaat: number }> = {
-  gunluk: { periyotSaat: 24, uyariOncesiSaat: 6 },
-  "3gunluk": { periyotSaat: 72, uyariOncesiSaat: 12 },
-  haftalik: { periyotSaat: 168, uyariOncesiSaat: 24 },
-};
-
-const GUNLUK_CRON_TAMPON_SAAT = 24;
+// Veri giriş sıklığı (günlük/3günlük/haftalık) sistemi kaldırıldı — artık
+// herkes için tek, sabit bir kural var: 3 gündür hiç veri girişi
+// yapılmadıysa hatırlat. son_hatirlatma_deadline, bir sonraki hatırlatmanın
+// gönderilebileceği en erken zamanı tutuyor (aynı öğrenciye art arda her
+// gün göndermemek için).
+const UC_GUN_MS = 3 * 24 * 3600 * 1000;
 
 if (process.env.VAPID_PRIVATE_KEY && process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
   webpush.setVapidDetails(
@@ -61,7 +55,7 @@ export async function GET(request: Request) {
       { data: veliBaglantilari },
       { data: pushAbonelikleri },
     ] = await Promise.all([
-      admin.from("students").select("id, veri_giris_sikligi, son_hatirlatma_deadline, created_at, profiles!students_id_fkey(ad, email)"),
+      admin.from("students").select("id, son_hatirlatma_deadline, created_at, profiles!students_id_fkey(ad, email)"),
       admin.from("konu_calismalar").select("student_id, created_at"),
       admin.from("soru_cozumleri").select("student_id, created_at"),
       admin.from("denemeler").select("student_id, created_at").eq("kaynak", "ogrenci"),
@@ -120,15 +114,12 @@ export async function GET(request: Request) {
 
       const sonGirisMs = sonGirisMap.get(s.id) ?? new Date(s.created_at).getTime();
       const sonGiris = new Date(sonGirisMs);
+      const gecenSure = now.getTime() - sonGirisMs;
 
-      const ayar = SIKLIK_AYARLARI[s.veri_giris_sikligi as VeriGirisSikligi] ?? SIKLIK_AYARLARI.haftalik;
-      const deadline = new Date(sonGirisMs + ayar.periyotSaat * 3600 * 1000);
-      const uyariBaslangic = new Date(deadline.getTime() - (ayar.uyariOncesiSaat + GUNLUK_CRON_TAMPON_SAAT) * 3600 * 1000);
+      const tekrarGonderilebilirMi =
+        !s.son_hatirlatma_deadline || now.getTime() >= new Date(s.son_hatirlatma_deadline).getTime();
 
-      const ayniDeadlineIcinGonderildi =
-        s.son_hatirlatma_deadline && new Date(s.son_hatirlatma_deadline).getTime() === deadline.getTime();
-
-      if (now >= uyariBaslangic && now < deadline && !ayniDeadlineIcinGonderildi) {
+      if (gecenSure >= UC_GUN_MS && tekrarGonderilebilirMi) {
         const veliler = veliMap.get(s.id) ?? [];
         const aliciler = [profile.email, ...veliler.map((v) => v.email).filter((e): e is string => Boolean(e))];
 
@@ -151,7 +142,7 @@ export async function GET(request: Request) {
         for (const veli of veliler) await pushGonder(veli.id, baslik, govde);
 
         gonderilen++;
-        await admin.from("students").update({ son_hatirlatma_deadline: deadline.toISOString() }).eq("id", s.id);
+        await admin.from("students").update({ son_hatirlatma_deadline: new Date(now.getTime() + UC_GUN_MS).toISOString() }).eq("id", s.id);
       }
     }
 
