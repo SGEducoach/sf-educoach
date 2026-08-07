@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { rastgeleSifre } from "@/lib/validators";
+import { rastgeleSifre, adNormalize } from "@/lib/validators";
 import { getAnthropicClient } from "@/lib/anthropic";
 import { KONU_ANLATIMI_SISTEM_PROMPTU, icerikTemizle } from "@/lib/konu-anlatimi";
 import type { AytAlan, DenemeTuru, DenemeZorlugu, UserRole } from "@/lib/types";
@@ -557,4 +557,49 @@ export async function ogrenciListesiDisaAktar(schoolId: string): Promise<{ error
     aytAlan: r.ayt_alan, hedefBolum: r.hedef_bolum, email: r.profiles?.email ?? null, telefon: r.profiles?.telefon ?? null,
   }));
   return { error: null, satirlar };
+}
+
+// ============ İzinli öğrenci listesi ============
+// Bir okul için bu liste yüklendiyse, self-signup'ta girilen ad bu listede
+// olmayan öğrenci hesabı açamaz (bkz. migration 0026, handle_new_user
+// trigger'ı). Admin'in manuel/toplu eklediği hesaplar her zaman muaf.
+
+export async function izinliOgrencileriYukle(schoolId: string, isimler: string[]): Promise<{ error: string | null; eklenen: number }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const normalizeler = [...new Set(isimler.map(adNormalize).filter(Boolean))];
+  if (normalizeler.length === 0) return { error: "En az bir isim girin.", eklenen: 0 };
+  if (normalizeler.length > 1000) return { error: "Tek seferde en fazla 1000 isim yüklenebilir.", eklenen: 0 };
+
+  const satirlar = normalizeler.map((ad_soyad) => ({ school_id: schoolId, ad_soyad }));
+  const { error } = await admin.from("izinli_ogrenciler").upsert(satirlar, { onConflict: "school_id,ad_soyad", ignoreDuplicates: true });
+  if (error) return { error: error.message, eklenen: 0 };
+
+  await auditLogYaz(supabase, user.id, "izinli_ogrenci_listesi_yukle", { school_id: schoolId, satir_sayisi: normalizeler.length });
+  revalidatePath("/yonetici");
+  return { error: null, eklenen: normalizeler.length };
+}
+
+export async function izinliOgrencileriGetir(schoolId: string): Promise<{ error: string | null; isimler: string[] }> {
+  const { admin } = await requireAdmin();
+  const { data, error } = await admin.from("izinli_ogrenciler").select("ad_soyad").eq("school_id", schoolId).order("ad_soyad");
+  if (error) return { error: error.message, isimler: [] };
+  return { error: null, isimler: (data ?? []).map((r) => r.ad_soyad as string) };
+}
+
+export async function izinliOgrenciSil(schoolId: string, adSoyad: string): Promise<{ error: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const { error } = await admin.from("izinli_ogrenciler").delete().eq("school_id", schoolId).eq("ad_soyad", adSoyad);
+  if (error) return { error: error.message };
+  await auditLogYaz(supabase, user.id, "izinli_ogrenci_sil", { school_id: schoolId, ad_soyad: adSoyad });
+  revalidatePath("/yonetici");
+  return { error: null };
+}
+
+export async function izinliOgrencileriTemizle(schoolId: string): Promise<{ error: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const { error } = await admin.from("izinli_ogrenciler").delete().eq("school_id", schoolId);
+  if (error) return { error: error.message };
+  await auditLogYaz(supabase, user.id, "izinli_ogrenci_listesi_temizle", { school_id: schoolId });
+  revalidatePath("/yonetici");
+  return { error: null };
 }

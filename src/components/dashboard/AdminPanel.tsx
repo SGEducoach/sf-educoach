@@ -13,6 +13,7 @@ import {
   type SinifOgrencisi,
 } from "@/app/yonetici/actions";
 import { SinifEkleFormu } from "@/components/dashboard/OgretmenPanel";
+import { IzinliOgrenciListesi } from "@/components/yonetici/IzinliOgrenciListesi";
 import { AYT_ALAN_ETIKET, BRANS_LISTESI, TYT_DERSLERI, AYT_DERSLERI, DENEME_ZORLUGU_ETIKET, dersSoruSayisi } from "@/lib/types";
 import type { AytAlan, DenemeTuru, DenemeZorlugu } from "@/lib/types";
 import { telefonSanitize, okulNoSanitize, TELEFON_IPUCU } from "@/lib/validators";
@@ -68,6 +69,9 @@ const EYLEM_ETIKET: Record<string, string> = {
   konu_anlatimi_duzenle: "Konu anlatımı düzenlendi",
   konu_anlatimi_yeniden_uret: "Konu anlatımı yeniden üretildi",
   kurallar_metni_guncelle: "Kayıt kuralları metni güncellendi",
+  izinli_ogrenci_listesi_yukle: "İzinli öğrenci listesi güncellendi",
+  izinli_ogrenci_sil: "İzinli öğrenci listesinden silindi",
+  izinli_ogrenci_listesi_temizle: "İzinli öğrenci listesi temizlendi",
 };
 
 export function AdminPanel({
@@ -171,6 +175,7 @@ export function AdminPanel({
             <div className="mt-3 flex flex-col gap-3">
               <OgrenciTopluEkleFormu schoolId={gorunenOkul.id} siniflar={siniflar} />
               <DenemeTopluGirisFormu siniflar={siniflar} />
+              <IzinliOgrenciListesi schoolId={gorunenOkul.id} />
             </div>
           </>
         )}

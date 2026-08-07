@@ -190,6 +190,7 @@ export async function ogrenciEkleManuel(input: {
     user_metadata: {
       role: "ogrenci", ad, telefon: input.telefon || null, school_id: input.schoolId, class_id: input.classId,
       okul_no: input.okulNo, ayt_alan: input.aytAlan, hedef_bolum: input.hedefBolum,
+      admin_ekledi: true, // izinli öğrenci listesi kontrolünden muaf (bkz. migration 0026)
     },
   });
   if (error) return { error: manuelEklemeHatasi(error.message), sifre: null };
@@ -244,6 +245,7 @@ export async function ogrencileriTopluEkle(input: {
       user_metadata: {
         role: "ogrenci", ad, telefon: null, school_id: input.schoolId, class_id: input.classId,
         okul_no: okulNo, ayt_alan: input.aytAlan, hedef_bolum: "",
+        admin_ekledi: true, // izinli öğrenci listesi kontrolünden muaf (bkz. migration 0026)
       },
     });
     if (error) {
