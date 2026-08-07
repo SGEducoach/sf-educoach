@@ -4,8 +4,14 @@
 -- olunca (artık admin panelinden çoklu okul ekleniyor) aynı okul no'ya sahip
 -- iki farklı okuldaki öğrenci birbirine karışabiliyor / giriş yapamıyordu.
 -- Üç RPC de artık p_school_id parametresi alıyor ve ona göre filtreliyor.
+--
+-- NOT: eski (tek parametreli) fonksiyonlar DROP edilmiyor — canlı projede
+-- bu fonksiyonların sahibi SQL Editor oturumundan farklı bir role
+-- olabiliyor ("must be owner of function" hatası). Yeni fonksiyonlar farklı
+-- parametre listesiyle (dolayısıyla farklı bir "overload" olarak) ayrıca
+-- oluşturuluyor; eskileri artık hiçbir kod çağırmadığı için zararsız,
+-- kullanılmayan halde kalıyorlar.
 
-drop function if exists public.resolve_ogrenci_email(text);
 create function public.resolve_ogrenci_email(p_school_id uuid, p_okul_no text)
 returns text
 language sql
@@ -23,7 +29,6 @@ $$;
 revoke all on function public.resolve_ogrenci_email(uuid, text) from public;
 grant execute on function public.resolve_ogrenci_email(uuid, text) to anon, authenticated;
 
-drop function if exists public.resolve_veli_login(text, text);
 create function public.resolve_veli_login(p_school_id uuid, p_okul_no text, p_kod text)
 returns text
 language sql
@@ -44,7 +49,6 @@ $$;
 revoke all on function public.resolve_veli_login(uuid, text, text) from public;
 grant execute on function public.resolve_veli_login(uuid, text, text) to anon, authenticated;
 
-drop function if exists public.find_student_id_by_okul_no(text);
 create function public.find_student_id_by_okul_no(p_school_id uuid, p_okul_no text)
 returns uuid
 language sql
