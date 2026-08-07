@@ -8,10 +8,10 @@ import {
   sinifOgretmeniAta, ogretmenEkleManuel, ogrenciEkleManuel, okulEkle, okulDuzenle, okulAktiflikDegistir,
   ogrencileriTopluEkle, type TopluOgrenciSonuc,
 } from "@/app/dashboard/actions";
-import { sinifSil } from "@/app/yonetici/actions";
+import { sinifSil, sinifOgrencileriGetir, denemeSonucuTopluGir, type SinifOgrencisi } from "@/app/yonetici/actions";
 import { SinifEkleFormu } from "@/components/dashboard/OgretmenPanel";
-import { AYT_ALAN_ETIKET, BRANS_LISTESI } from "@/lib/types";
-import type { AytAlan } from "@/lib/types";
+import { AYT_ALAN_ETIKET, BRANS_LISTESI, TYT_DERSLERI, AYT_DERSLERI, DENEME_ZORLUGU_ETIKET, dersSoruSayisi } from "@/lib/types";
+import type { AytAlan, DenemeTuru, DenemeZorlugu } from "@/lib/types";
 import { telefonSanitize, okulNoSanitize, TELEFON_IPUCU } from "@/lib/validators";
 
 interface OkulSatiri {
@@ -47,6 +47,7 @@ const EYLEM_ETIKET: Record<string, string> = {
   ogretmen_ekle_manuel: "Öğretmen eklendi",
   ogrenci_ekle_manuel: "Öğrenci eklendi",
   ogrenci_toplu_ekle: "Öğrenciler toplu eklendi",
+  deneme_toplu_gir: "Deneme sonuçları toplu girildi",
   sinif_ogretmeni_ata: "Sınıf öğretmeni atandı",
   sinif_ogretmenliginden_cikar: "Sınıf öğretmenliğinden çıkarıldı",
   okul_ekle: "Okul eklendi",
@@ -163,8 +164,9 @@ export function AdminPanel({
               <OgrenciEkleFormu schoolId={gorunenOkul.id} siniflar={siniflar} />
             </div>
 
-            <div className="mt-3">
+            <div className="mt-3 flex flex-col gap-3">
               <OgrenciTopluEkleFormu schoolId={gorunenOkul.id} siniflar={siniflar} />
+              <DenemeTopluGirisFormu siniflar={siniflar} />
             </div>
           </>
         )}
@@ -598,6 +600,176 @@ function OgrenciTopluEkleFormu({ schoolId, siniflar }: { schoolId: string; sinif
             ))}
           </div>
           <p style={{ color: TEXT_MUTED }} className="text-[10px] mt-1">Şifreler bir kerelik gösterildi, kaydedin — tekrar gösterilmeyecek.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function bugununTarihi(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+// Ders bazlı toplu giriş: bir sınıfın tamamı için TEK bir dersin doğru/yanlış
+// sayılarını girip kaydeder (optik okuma sonrası tipik kullanım — ders ders
+// işlenir). Aynı öğrenci+tarih+tür için "ogretmen" kaynaklı deneme zaten
+// varsa (başka bir ders için önceden girilmişse) sonuç ona eklenir.
+function DenemeTopluGirisFormu({ siniflar }: { siniflar: SinifSatiri[] }) {
+  const [acik, setAcik] = useState(false);
+  const [classId, setClassId] = useState("");
+  const [tarih, setTarih] = useState(bugununTarihi());
+  const [tur, setTur] = useState<DenemeTuru>("TYT");
+  const [zorluk, setZorluk] = useState<DenemeZorlugu>("orta");
+  const [aytAlan, setAytAlan] = useState<AytAlan>("SAY");
+  const [ogrenciler, setOgrenciler] = useState<SinifOgrencisi[] | null>(null);
+  const [girisler, setGirisler] = useState<Record<string, { dogru: string; yanlis: string }>>({});
+  const [hata, setHata] = useState<string | null>(null);
+  const [sonuclar, setSonuclar] = useState<{ ad: string; hata: string | null }[] | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  const dersListesi = tur === "TYT" ? TYT_DERSLERI : AYT_DERSLERI[aytAlan];
+  const [ders, setDers] = useState<string>(dersListesi[0]);
+  const dersListesiKey = dersListesi.join("|");
+
+  function classIdSec(id: string) {
+    setClassId(id);
+    setOgrenciler(null);
+    setGirisler({});
+    setSonuclar(null);
+    if (!id) return;
+    sinifOgrencileriGetir(id).then((res) => {
+      if (res.error) return setHata(res.error);
+      setOgrenciler(res.ogrenciler);
+    });
+  }
+
+  function turDegistir(yeniTur: DenemeTuru) {
+    setTur(yeniTur);
+    const yeniListe = yeniTur === "TYT" ? TYT_DERSLERI : AYT_DERSLERI[aytAlan];
+    setDers(yeniListe[0]);
+  }
+
+  function alanDegistir(yeniAlan: AytAlan) {
+    setAytAlan(yeniAlan);
+    if (tur === "AYT") setDers(AYT_DERSLERI[yeniAlan][0]);
+  }
+
+  const filtrelenmisOgrenciler = (ogrenciler ?? []).filter((o) => tur === "TYT" || o.aytAlan === aytAlan);
+  const maxSoru = dersSoruSayisi(tur, ders);
+
+  function alanGuncelle(studentId: string, alan: "dogru" | "yanlis", deger: string) {
+    setGirisler((g) => ({ ...g, [studentId]: { ...(g[studentId] ?? { dogru: "", yanlis: "" }), [alan]: deger } }));
+  }
+
+  function kaydet() {
+    const girilenler = filtrelenmisOgrenciler
+      .map((o) => ({ studentId: o.id, g: girisler[o.id] }))
+      .filter(({ g }) => g && (g.dogru.trim() !== "" || g.yanlis.trim() !== ""))
+      .map(({ studentId, g }) => ({ studentId, dogru: Number(g!.dogru) || 0, yanlis: Number(g!.yanlis) || 0 }));
+
+    if (girilenler.length === 0) return setHata("En az bir öğrenci için sonuç girin.");
+    setHata(null);
+    startTransition(async () => {
+      const res = await denemeSonucuTopluGir({ tarih, tur, zorluk, ders, sonuclar: girilenler });
+      if (res.error) return setHata(res.error);
+      const adMap = new Map(filtrelenmisOgrenciler.map((o) => [o.id, o.ad]));
+      setSonuclar(res.sonuclar.map((s) => ({ ad: adMap.get(s.studentId) ?? "—", hata: s.hata })));
+      setGirisler({});
+    });
+  }
+
+  if (!acik) {
+    return (
+      <button type="button" onClick={() => setAcik(true)}
+        className="sgec-btn flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl"
+        style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `1px solid ${BORDER_STRONG}` }}>
+        <ClipboardList size={13} /> Toplu deneme sonucu gir
+      </button>
+    );
+  }
+
+  return (
+    <div className="rounded-2xl p-4 flex flex-col gap-2.5" style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}` }}>
+      <div className="flex items-center gap-1.5">
+        <ClipboardList size={13} color={MINT} />
+        <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[13px] font-bold">Toplu deneme sonucu gir</span>
+      </div>
+      <p style={{ color: TEXT_MUTED }} className="text-[11px]">Bir sınıfın tamamı için tek bir dersin sonuçlarını girin; farklı ders için tekrar açıp aynı tarih/türü seçerseniz aynı denemeye eklenir.</p>
+
+      <div className="flex gap-2 flex-wrap">
+        <select value={classId} onChange={(e) => classIdSec(e.target.value)}
+          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+          <option value="">Sınıf seçin</option>
+          {siniflar.map((s) => <option key={s.id} value={s.id}>{s.seviye}-{s.sube}</option>)}
+        </select>
+        <input type="date" value={tarih} onChange={(e) => setTarih(e.target.value)}
+          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+        <select value={tur} onChange={(e) => turDegistir(e.target.value as DenemeTuru)}
+          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+          <option value="TYT">TYT</option>
+          <option value="AYT">AYT</option>
+        </select>
+        {tur === "AYT" && (
+          <select value={aytAlan} onChange={(e) => alanDegistir(e.target.value as AytAlan)}
+            className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+            {(Object.keys(AYT_ALAN_ETIKET) as AytAlan[]).map((a) => <option key={a} value={a}>{AYT_ALAN_ETIKET[a]}</option>)}
+          </select>
+        )}
+        <select value={ders} onChange={(e) => setDers(e.target.value)} key={dersListesiKey}
+          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+          {dersListesi.map((d) => <option key={d} value={d}>{d}</option>)}
+        </select>
+        <select value={zorluk} onChange={(e) => setZorluk(e.target.value as DenemeZorlugu)}
+          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+          {(Object.keys(DENEME_ZORLUGU_ETIKET) as DenemeZorlugu[]).map((z) => <option key={z} value={z}>{DENEME_ZORLUGU_ETIKET[z]}</option>)}
+        </select>
+      </div>
+
+      {classId && ogrenciler === null && <p style={{ color: TEXT_MUTED }} className="text-xs py-2 text-center">Öğrenciler yükleniyor...</p>}
+      {classId && ogrenciler !== null && filtrelenmisOgrenciler.length === 0 && (
+        <p style={{ color: TEXT_MUTED }} className="text-xs py-2 text-center">Bu sınıfta/alanda öğrenci yok.</p>
+      )}
+
+      {filtrelenmisOgrenciler.length > 0 && (
+        <div className="flex flex-col gap-1.5 max-h-72 overflow-y-auto">
+          <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wide px-1" style={{ color: TEXT_MUTED }}>
+            <span className="flex-1">Öğrenci</span>
+            <span className="w-16 text-center">Doğru</span>
+            <span className="w-16 text-center">Yanlış</span>
+          </div>
+          {filtrelenmisOgrenciler.map((o) => (
+            <div key={o.id} className="flex items-center gap-2 rounded-xl px-2.5 py-1.5" style={{ background: BG0, border: `1px solid ${BORDER_STRONG}` }}>
+              <span style={{ color: TEXT }} className="text-xs font-semibold flex-1">{o.ad} <span style={{ color: TEXT_MUTED }} className="font-normal">#{o.okulNo}</span></span>
+              <input type="number" min={0} max={maxSoru} value={girisler[o.id]?.dogru ?? ""} onChange={(e) => alanGuncelle(o.id, "dogru", e.target.value)}
+                className="w-16 text-xs px-2 py-1 rounded-lg outline-none text-center" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }} />
+              <input type="number" min={0} max={maxSoru} value={girisler[o.id]?.yanlis ?? ""} onChange={(e) => alanGuncelle(o.id, "yanlis", e.target.value)}
+                className="w-16 text-xs px-2 py-1 rounded-lg outline-none text-center" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }} />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
+
+      <div className="flex items-center gap-2">
+        <button type="button" onClick={kaydet} disabled={pending || filtrelenmisOgrenciler.length === 0}
+          className="sgec-btn text-xs font-bold px-4 py-2 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+          {pending ? "Kaydediliyor..." : "Sonuçları kaydet"}
+        </button>
+        <button type="button" onClick={() => { setAcik(false); setSonuclar(null); }}
+          className="sgec-btn text-xs font-bold px-3 py-2 rounded-xl" style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED }}>
+          Kapat
+        </button>
+      </div>
+
+      {sonuclar && (
+        <div className="rounded-xl p-3 flex flex-col gap-1 mt-1" style={{ background: BG0, border: `1px solid ${BORDER_STRONG}` }}>
+          <div style={{ color: TEXT }} className="text-xs font-bold mb-1">
+            {sonuclar.filter((s) => !s.hata).length}/{sonuclar.length} kaydedildi
+          </div>
+          {sonuclar.filter((s) => s.hata).map((s, i) => (
+            <div key={i} style={{ color: BLUSH }} className="text-[11px]">{s.ad}: {s.hata}</div>
+          ))}
         </div>
       )}
     </div>

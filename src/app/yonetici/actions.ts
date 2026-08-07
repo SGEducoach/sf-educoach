@@ -7,7 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { rastgeleSifre } from "@/lib/validators";
 import { getAnthropicClient } from "@/lib/anthropic";
 import { KONU_ANLATIMI_SISTEM_PROMPTU, icerikTemizle } from "@/lib/konu-anlatimi";
-import type { UserRole } from "@/lib/types";
+import type { AytAlan, DenemeTuru, DenemeZorlugu, UserRole } from "@/lib/types";
 
 // /yonetici'ye özel (admin-only) server action'lar. dashboard/actions.ts'teki
 // requireAdmin ile aynı desen: service-role client'a güvenmeden önce burada
@@ -416,4 +416,111 @@ export async function kurallarGuncelle(yeniMetin: string): Promise<{ error: stri
   revalidatePath("/yonetici");
   revalidatePath("/signup");
   return { error: null, versiyon: yeniVersiyon };
+}
+
+// ============ Toplu deneme sonucu girişi ============
+// Bir sınıfın/okulun tamamı için, tek bir ders üzerinden (ör. optik okuma
+// sonrası "şimdi tüm sınıfın Türkçe sonucunu gir") toplu giriş. Aynı
+// öğrenci+tarih+tür için "ogretmen" kaynaklı bir deneme zaten varsa (başka
+// bir ders için önceden oluşturulmuşsa) onun üzerine ders sonucu eklenir;
+// yoksa önce deneme kaydı (varsayılan süre + 'belirsiz' hedefe yakınlık ile)
+// oluşturulur.
+
+export interface SinifOgrencisi {
+  id: string;
+  ad: string;
+  okulNo: string;
+  aytAlan: AytAlan;
+}
+
+export async function sinifOgrencileriGetir(classId: string): Promise<{ error: string | null; ogrenciler: SinifOgrencisi[] }> {
+  const { supabase } = await requireAdmin();
+  const { data, error } = await supabase
+    .from("students")
+    .select("id, okul_no, ayt_alan, profiles!students_id_fkey(ad)")
+    .eq("class_id", classId)
+    .order("okul_no");
+  if (error) return { error: error.message, ogrenciler: [] };
+
+  type Row = { id: string; okul_no: string; ayt_alan: AytAlan; profiles: { ad: string } | null };
+  const ogrenciler = ((data as unknown as Row[]) ?? []).map((r) => ({
+    id: r.id, ad: r.profiles?.ad ?? "İsimsiz", okulNo: r.okul_no, aytAlan: r.ayt_alan,
+  }));
+  return { error: null, ogrenciler };
+}
+
+export interface DenemeTopluSonuc {
+  studentId: string;
+  hata: string | null;
+}
+
+export async function denemeSonucuTopluGir(input: {
+  tarih: string; tur: DenemeTuru; zorluk: DenemeZorlugu; ders: string;
+  sonuclar: { studentId: string; dogru: number; yanlis: number }[];
+}): Promise<{ error: string | null; sonuclar: DenemeTopluSonuc[] }> {
+  const { supabase, user, admin } = await requireAdmin();
+  if (!input.tarih) return { error: "Tarih gerekli.", sonuclar: [] };
+  if (!input.ders) return { error: "Ders seçin.", sonuclar: [] };
+  if (input.sonuclar.length === 0) return { error: "Girilecek öğrenci bulunamadı.", sonuclar: [] };
+
+  const sonuclar: DenemeTopluSonuc[] = [];
+  let basariliSayisi = 0;
+
+  for (const s of input.sonuclar) {
+    if (s.dogru < 0 || s.yanlis < 0) {
+      sonuclar.push({ studentId: s.studentId, hata: "Doğru/yanlış negatif olamaz." });
+      continue;
+    }
+
+    const { data: mevcutDeneme, error: aramaHatasi } = await admin
+      .from("denemeler")
+      .select("id")
+      .eq("student_id", s.studentId)
+      .eq("tarih", input.tarih)
+      .eq("tur", input.tur)
+      .eq("kaynak", "ogretmen")
+      .maybeSingle();
+    if (aramaHatasi) {
+      sonuclar.push({ studentId: s.studentId, hata: aramaHatasi.message });
+      continue;
+    }
+
+    let denemeId = mevcutDeneme?.id as string | undefined;
+    if (!denemeId) {
+      const { data: yeniDeneme, error: olusturmaHatasi } = await admin
+        .from("denemeler")
+        .insert({
+          student_id: s.studentId, tarih: input.tarih, tur: input.tur,
+          sure_dakika: input.tur === "TYT" ? 165 : 180,
+          hedefe_yakinlik: "belirsiz", zorluk: input.zorluk, kaynak: "ogretmen",
+        })
+        .select("id")
+        .single();
+      if (olusturmaHatasi || !yeniDeneme) {
+        sonuclar.push({ studentId: s.studentId, hata: olusturmaHatasi?.message ?? "Deneme oluşturulamadı." });
+        continue;
+      }
+      denemeId = yeniDeneme.id as string;
+    }
+
+    const { error: sonucHatasi } = await admin
+      .from("deneme_ders_sonuclari")
+      .upsert({ deneme_id: denemeId, ders: input.ders, dogru: s.dogru, yanlis: s.yanlis }, { onConflict: "deneme_id,ders" });
+    if (sonucHatasi) {
+      sonuclar.push({ studentId: s.studentId, hata: sonucHatasi.message });
+      continue;
+    }
+
+    sonuclar.push({ studentId: s.studentId, hata: null });
+    basariliSayisi++;
+  }
+
+  if (basariliSayisi > 0) {
+    await auditLogYaz(supabase, user.id, "deneme_toplu_gir", {
+      tarih: input.tarih, tur: input.tur, ders: input.ders, basarili: basariliSayisi, toplam: input.sonuclar.length,
+    });
+    revalidatePath("/dashboard");
+  }
+
+  return { error: null, sonuclar };
 }
