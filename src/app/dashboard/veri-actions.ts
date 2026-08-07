@@ -23,10 +23,20 @@ const KONU_ANLATIMI_SISTEM_PROMPTU = `Sen YKS (TYT/AYT) öğrencilerine konu anl
 
 Kurallar:
 - Düz metin yaz — LaTeX, markdown başlık (#), kalın (**) kullanma; gerekirse sade satır başları ve kısa paragraflarla yapılandır.
+- Metni DOĞRUDAN konuyla başlat — en başa konu adını tekrar eden bir "# Başlık" satırı EKLEME, uygulama bunu zaten ayrıca gösteriyor.
 - Konunun mantığını, temel kurallarını ve varsa formüllerini düz metin olarak (örn. "türev = f'(x)") açıkla.
 - En az bir kısa, somut örnek çöz.
 - Sık yapılan hataları veya karıştırılan noktaları kısaca belirt.
 - Uzunluk: yaklaşık 300-500 kelime. Motive edici ama abartısız bir üslup kullan.`;
+
+// Model talimata uymayıp yine de markdown başlık/kalın işareti eklerse
+// (gözlemlendi) burada temizliyoruz — prompt uyumuna güvenmek yerine.
+function icerikTemizle(text: string): string {
+  return text
+    .replace(/^#{1,6}\s+.*\n+/, "")
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .trim();
+}
 
 export async function konuAnlatimiGetir(ders: string, konu: string) {
   const { supabase } = await requireStudent();
@@ -58,7 +68,7 @@ export async function konuAnlatimiGetir(ders: string, konu: string) {
       messages: [{ role: "user", content: `${dersT} dersinden "${konuT}" konusunu anlat.` }],
     });
     const metinBlogu = yanit.content.find((b) => b.type === "text");
-    icerik = metinBlogu && "text" in metinBlogu ? metinBlogu.text.trim() : "";
+    icerik = metinBlogu && "text" in metinBlogu ? icerikTemizle(metinBlogu.text) : "";
     if (!icerik) return { icerik: null, seviye: null, error: "İçerik üretilemedi, lütfen tekrar deneyin." };
   } catch (e) {
     console.error("konu anlatımı üretme hatası:", e);

@@ -33,6 +33,7 @@ const SISTEM_PROMPTU = `Sen YKS (TYT/AYT) öğrencilerine konu anlatan deneyimli
 
 Kurallar:
 - Düz metin yaz — LaTeX, markdown başlık (#), kalın (**) kullanma; gerekirse sade satır başları ve kısa paragraflarla yapılandır.
+- Metni DOĞRUDAN konuyla başlat — en başa konu adını tekrar eden bir "# Başlık" satırı EKLEME, uygulama bunu zaten ayrıca gösteriyor.
 - Konunun mantığını, temel kurallarını ve varsa formüllerini düz metin olarak (örn. "türev = f'(x)") açıkla.
 - En az bir kısa, somut örnek çöz.
 - Sık yapılan hataları veya karıştırılan noktaları kısaca belirt.
@@ -40,6 +41,16 @@ Kurallar:
 
 function bekle(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Model talimata uymayıp yine de markdown başlık/kalın işareti eklerse
+// (gözlemlendi — 190 konudan 173'ünde baştan "# Başlık" çıktı) burada
+// temizliyoruz, prompt uyumuna güvenmek yerine.
+function icerikTemizle(text) {
+  return text
+    .replace(/^#{1,6}\s+.*\n+/, "")
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .trim();
 }
 
 // ============ Kalite/tutarlılık kontrolü (otomatik, kaba sezgisel) ============
@@ -95,7 +106,7 @@ async function main() {
         messages: [{ role: "user", content: `${ders} dersinden "${konu}" konusunu anlat.` }],
       });
       const metinBlogu = yanit.content.find((b) => b.type === "text");
-      const icerik = metinBlogu?.text?.trim();
+      const icerik = metinBlogu?.text ? icerikTemizle(metinBlogu.text) : "";
       if (!icerik) throw new Error("boş içerik döndü");
 
       const { error: yazmaHatasi } = await admin
