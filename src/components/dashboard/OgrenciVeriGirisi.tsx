@@ -198,6 +198,7 @@ function KonuCalismaForm({ dersListesi, konuOnerileri, onBasari }: {
 }) {
   const [ders, setDers] = useState("");
   const [konu, setKonu] = useState("");
+  const [aramaMetni, setAramaMetni] = useState("");
   const [oneriAcik, setOneriAcik] = useState(false);
   const [hedefeYakinlik, setHedefeYakinlik] = useState<HedefeYakinlik>("belirsiz");
   const [hata, setHata] = useState<string | null>(null);
@@ -210,13 +211,17 @@ function KonuCalismaForm({ dersListesi, konuOnerileri, onBasari }: {
   const [anlatimHata, setAnlatimHata] = useState<string | null>(null);
 
   const oneriler = useMemo(
-    () => konuOnerileri.filter((o) => o.ders === ders && (!konu.trim() || o.konu.toLowerCase().includes(konu.trim().toLowerCase()))),
-    [konuOnerileri, ders, konu],
+    () => konuOnerileri.filter((o) => o.ders === ders && (!aramaMetni.trim() || o.konu.toLowerCase().includes(aramaMetni.trim().toLowerCase()))),
+    [konuOnerileri, ders, aramaMetni],
   );
   const seciliKonuSeviyesi = konuOnerileri.find((o) => o.ders === ders && o.konu === konu)?.seviye;
 
+  // Konu seçilince arama kutusu temizlenir (yeni aramaya hazır) — seçilen
+  // konu, kutunun altında rozet olarak gösterilir; "Konuyu oku" ve kayıt
+  // işlemleri hâlâ bu seçili konu üzerinden çalışır.
   function konuSec(secilenKonu: string) {
     setKonu(secilenKonu);
+    setAramaMetni("");
     setOneriAcik(false);
     setAnlatim(null);
     setAnlatimSeviye(null);
@@ -238,6 +243,7 @@ function KonuCalismaForm({ dersListesi, konuOnerileri, onBasari }: {
 
   function submit(formData: FormData) {
     setHata(null);
+    if (!konu.trim()) return setHata("Konu seçin veya yazın.");
     formData.set("ders", ders);
     formData.set("konu", konu);
     formData.set("hedefeYakinlik", hedefeYakinlik);
@@ -245,31 +251,34 @@ function KonuCalismaForm({ dersListesi, konuOnerileri, onBasari }: {
       const res = await konuCalismaEkle(formData);
       if (res.error) return setHata(res.error);
       onBasari("Konu çalışması kaydedildi.", res.verimlilikSorulsunMu);
-      setKonu(""); setAnlatim(null); setAnlatimSeviye(null); setAnlatimAcik(false); setHedefeYakinlik("belirsiz");
+      setKonu(""); setAramaMetni(""); setAnlatim(null); setAnlatimSeviye(null); setAnlatimAcik(false); setHedefeYakinlik("belirsiz");
     });
   }
 
   return (
     <form action={submit} className="flex flex-col gap-3">
       <label className="flex flex-col gap-1"><Etiket>Ders</Etiket>
-        <Secim value={ders} onChange={(e) => { setDers(e.target.value); setKonu(""); setAnlatim(null); setAnlatimAcik(false); }} required>
+        <Secim value={ders} onChange={(e) => { setDers(e.target.value); setKonu(""); setAramaMetni(""); setAnlatim(null); setAnlatimAcik(false); }} required>
           <option value="" disabled>Seçiniz</option>
           {dersListesi.map((d) => <option key={d} value={d}>{d}</option>)}
         </Secim>
       </label>
 
       <label className="flex flex-col gap-1 relative">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 flex-wrap">
           <Etiket>Eksik olduğun konu</Etiket>
           {seciliKonuSeviyesi && (
             <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: SKY_BG, color: SKY }}>{seciliKonuSeviyesi}</span>
           )}
+          {konu && (
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: MINT_BG, color: MINT }}>{konu}</span>
+          )}
         </div>
         <div className="flex gap-2">
-          <Girdi required placeholder="örn. Türev - Zincir Kuralı" value={konu} autoComplete="off"
+          <Girdi placeholder="örn. Türev - Zincir Kuralı" value={aramaMetni} autoComplete="off"
             onFocus={() => setOneriAcik(true)}
             onBlur={() => setTimeout(() => setOneriAcik(false), 120)}
-            onChange={(e) => { setKonu(e.target.value); setOneriAcik(true); setAnlatim(null); setAnlatimSeviye(null); }}
+            onChange={(e) => { setAramaMetni(e.target.value); setKonu(e.target.value); setOneriAcik(true); setAnlatim(null); setAnlatimSeviye(null); }}
             disabled={!ders} />
           <button type="button" onClick={konuyuOku} disabled={!ders || !konu.trim()}
             className="sgec-btn shrink-0 flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"
