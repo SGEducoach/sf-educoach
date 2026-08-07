@@ -20,9 +20,11 @@ const admin = createClient(url, serviceKey, { auth: { autoRefreshToken: false, p
 function rastgeleSifre() {
   const harfler = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ";
   const rakamlar = "23456789";
+  const ozelKarakterler = "!@#$%*.,";
   let s = "";
-  for (let i = 0; i < 6; i++) s += harfler[Math.floor(Math.random() * harfler.length)];
+  for (let i = 0; i < 5; i++) s += harfler[Math.floor(Math.random() * harfler.length)];
   for (let i = 0; i < 4; i++) s += rakamlar[Math.floor(Math.random() * rakamlar.length)];
+  s += ozelKarakterler[Math.floor(Math.random() * ozelKarakterler.length)];
   return s.split("").sort(() => Math.random() - 0.5).join("");
 }
 
