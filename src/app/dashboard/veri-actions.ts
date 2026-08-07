@@ -7,8 +7,40 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getAnthropicClient } from "@/lib/anthropic";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
 import { KONU_ANLATIMI_SISTEM_PROMPTU, icerikTemizle } from "@/lib/konu-anlatimi";
+import { pushGonderProfile } from "@/lib/push-send";
 import { SURE_UST_SINIR, DENEME_SURE_UST_SINIR } from "@/lib/types";
 import type { DenemeZorlugu, HedefeYakinlik, VerimlilikDuzeyi } from "@/lib/types";
+
+const BADGE_ETIKET: Record<string, string> = { bronz: "Bronz 🥉", gumus: "Gümüş 🥈", altin: "Altın 🥇" };
+
+// Her başarılı veri girişinden sonra çağrılır: son 30 günün aktif gün
+// sayısını kontrol edip yeni bir rozet kazanıldıysa bağlı veli(ler)e push
+// bildirimi gönderir. rozet_kontrol_et RPC'si eşiği server-side (security
+// definer) doğruluyor — öğrenci kendine sahte rozet yazamaz.
+async function rozetKontrolVeBildir(supabase: Awaited<ReturnType<typeof createClient>>, studentId: string) {
+  try {
+    const { data: yeniRozetler } = await supabase.rpc("rozet_kontrol_et", { p_student_id: studentId });
+    const rozetler = (yeniRozetler as string[] | null) ?? [];
+    if (rozetler.length === 0) return;
+
+    const [{ data: profile }, { data: veliler }] = await Promise.all([
+      supabase.from("profiles").select("ad").eq("id", studentId).single(),
+      supabase.from("parent_students").select("parent_id").eq("student_id", studentId),
+    ]);
+    const ad = profile?.ad ?? "Öğrenciniz";
+    if (!veliler || veliler.length === 0) return;
+
+    const admin = createAdminClient();
+    for (const rozet of rozetler) {
+      const etiket = BADGE_ETIKET[rozet] ?? rozet;
+      const baslik = `${etiket} Rozeti Kazanıldı!`;
+      const govde = `${ad}, son 30 günde düzenli çalışarak ${etiket} rozetine ulaştı.`;
+      for (const v of veliler) await pushGonderProfile(admin, v.parent_id, baslik, govde);
+    }
+  } catch (e) {
+    console.error("rozet kontrolü başarısız:", e);
+  }
+}
 
 async function requireStudent() {
   const supabase = await createClient();
@@ -119,6 +151,7 @@ export async function konuCalismaEkle(formData: FormData) {
   });
   if (error) return { error: error.message, verimlilikSorulsunMu: false };
 
+  await rozetKontrolVeBildir(supabase, user.id);
   const sorulsunMu = await verimlilikSorulsunMu(supabase, user.id);
   revalidatePath("/dashboard");
   return { error: null, verimlilikSorulsunMu: sorulsunMu };
@@ -146,6 +179,7 @@ export async function soruCozumuEkle(formData: FormData) {
   });
   if (error) return { error: error.message, verimlilikSorulsunMu: false };
 
+  await rozetKontrolVeBildir(supabase, user.id);
   const sorulsunMu = await verimlilikSorulsunMu(supabase, user.id);
   revalidatePath("/dashboard");
   return { error: null, verimlilikSorulsunMu: sorulsunMu };
@@ -183,6 +217,7 @@ export async function denemeEkle(
   );
   if (sonucError) return { error: sonucError.message, verimlilikSorulsunMu: false };
 
+  await rozetKontrolVeBildir(supabase, user.id);
   const sorulsunMu = await verimlilikSorulsunMu(supabase, user.id);
   revalidatePath("/dashboard");
   return { error: null, verimlilikSorulsunMu: sorulsunMu };

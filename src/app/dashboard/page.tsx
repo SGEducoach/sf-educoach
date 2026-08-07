@@ -6,6 +6,7 @@ import { Header } from "@/components/dashboard/Header";
 import { OgretmenPanel } from "@/components/dashboard/OgretmenPanel";
 import { OgrenciVeriGirisi } from "@/components/dashboard/OgrenciVeriGirisi";
 import { ZayifKonular } from "@/components/dashboard/ZayifKonular";
+import { Rozetlerim } from "@/components/dashboard/Rozetlerim";
 import { AnalizPaneli } from "@/components/dashboard/AnalizPaneli";
 import { BildirimAyarlari } from "@/components/dashboard/BildirimAyarlari";
 import { HosgeldinPopuplari } from "@/components/dashboard/HosgeldinPopuplari";
@@ -116,6 +117,13 @@ async function OgrenciIcerik({ userId, ad, donem }: { userId: string; ad: string
     ...uretilenKonular.filter((k) => !konuOneriAnahtarlari.has(`${k.ders}|${k.konu}`)),
   ];
 
+  const [{ data: rozetlerHam }, { data: aktifGunHam }] = await Promise.all([
+    supabase.from("student_badges").select("badge_id").eq("student_id", userId),
+    supabase.rpc("ogrenci_aktif_gun_sayisi_pencere", { p_student_id: userId, p_gun_sayisi: 30 }),
+  ]);
+  const kazanilanRozetler = ((rozetlerHam as { badge_id: string }[]) ?? []).map((r) => r.badge_id);
+  const aktifGun = (aktifGunHam as number) ?? 0;
+
   return (
     <div className="flex flex-col gap-6">
       <div className="sgec-fade rounded-3xl p-6 print:hidden" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
@@ -127,6 +135,8 @@ async function OgrenciIcerik({ userId, ad, donem }: { userId: string; ad: string
           <Bilgi etiket="AYT Alanı" deger={AYT_ALAN_ETIKET[s.ayt_alan]} />
         </div>
       </div>
+
+      <Rozetlerim kazanilanlar={kazanilanRozetler} aktifGun={aktifGun} />
 
       <ZayifKonular konular={zayifKonular} />
 
