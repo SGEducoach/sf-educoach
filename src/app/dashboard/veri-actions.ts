@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAnthropicClient } from "@/lib/anthropic";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
+import { KONU_ANLATIMI_SISTEM_PROMPTU, icerikTemizle } from "@/lib/konu-anlatimi";
 import type { DenemeZorlugu, HedefeYakinlik, VeriGirisSikligi, VerimlilikDuzeyi } from "@/lib/types";
 
 async function requireStudent() {
@@ -19,24 +20,8 @@ async function requireStudent() {
 // Bir ders+konu kombinasyonu için anlatım tek sefer üretilip
 // konu_anlatimlari tablosuna kaydediliyor; sonraki her istek oradan
 // okunuyor — aynı konu için tekrar Claude API çağrısı yapılmıyor.
-const KONU_ANLATIMI_SISTEM_PROMPTU = `Sen YKS (TYT/AYT) öğrencilerine konu anlatan deneyimli, sabırlı bir öğretmensin. Sana verilen ders ve konu için lise seviyesine uygun, açık ve sade bir Türkçeyle bir konu anlatımı yaz.
-
-Kurallar:
-- Düz metin yaz — LaTeX, markdown başlık (#), kalın (**) kullanma; gerekirse sade satır başları ve kısa paragraflarla yapılandır.
-- Metni DOĞRUDAN konuyla başlat — en başa konu adını tekrar eden bir "# Başlık" satırı EKLEME, uygulama bunu zaten ayrıca gösteriyor.
-- Konunun mantığını, temel kurallarını ve varsa formüllerini düz metin olarak (örn. "türev = f'(x)") açıkla.
-- En az bir kısa, somut örnek çöz.
-- Sık yapılan hataları veya karıştırılan noktaları kısaca belirt.
-- Uzunluk: yaklaşık 300-500 kelime. Motive edici ama abartısız bir üslup kullan.`;
-
-// Model talimata uymayıp yine de markdown başlık/kalın işareti eklerse
-// (gözlemlendi) burada temizliyoruz — prompt uyumuna güvenmek yerine.
-function icerikTemizle(text: string): string {
-  return text
-    .replace(/^#{1,6}\s+.*\n+/, "")
-    .replace(/\*\*(.+?)\*\*/g, "$1")
-    .trim();
-}
+// Prompt/temizleme mantığı @/lib/konu-anlatimi'de — admin panelindeki
+// "yeniden üret" akışıyla ortak.
 
 export async function konuAnlatimiGetir(ders: string, konu: string) {
   const { supabase } = await requireStudent();

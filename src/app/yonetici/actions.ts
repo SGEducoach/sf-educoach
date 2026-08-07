@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { rastgeleSifre } from "@/lib/validators";
+import { getAnthropicClient } from "@/lib/anthropic";
+import { KONU_ANLATIMI_SISTEM_PROMPTU, icerikTemizle } from "@/lib/konu-anlatimi";
 import type { UserRole } from "@/lib/types";
 
 // /yonetici'ye özel (admin-only) server action'lar. dashboard/actions.ts'teki
@@ -298,4 +300,84 @@ export async function platformIstatistikleriGetir(): Promise<{ error: string | n
       son7GunAktifOgrenci: aktifSet.size,
     },
   };
+}
+
+// ============ Konu anlatımı içerik yönetimi ============
+// konu_anlatimlari_select_all RLS'i herkese açık (using (true)), yazma ise
+// sadece service-role — düzenleme/yeniden üretme admin client kullanıyor.
+
+export interface KonuAnlatimiSatiri {
+  id: string;
+  ders: string;
+  konu: string;
+  seviye: string | null;
+  createdAt: string;
+}
+
+export async function konuAnlatimlariAra(sorgu: string): Promise<{ error: string | null; satirlar: KonuAnlatimiSatiri[] }> {
+  const { supabase } = await requireAdmin();
+  const q = sorgu.trim();
+  if (q.length < 2) return { error: null, satirlar: [] };
+
+  const { data, error } = await supabase
+    .from("konu_anlatimlari")
+    .select("id, ders, konu, seviye, created_at")
+    .or(`konu.ilike.%${q}%,ders.ilike.%${q}%`)
+    .order("ders")
+    .order("konu")
+    .limit(30);
+  if (error) return { error: error.message, satirlar: [] };
+
+  const satirlar = ((data ?? []) as { id: string; ders: string; konu: string; seviye: string | null; created_at: string }[]).map((r) => ({
+    id: r.id, ders: r.ders, konu: r.konu, seviye: r.seviye, createdAt: r.created_at,
+  }));
+  return { error: null, satirlar };
+}
+
+export async function konuAnlatimiDetay(id: string): Promise<{ error: string | null; icerik: string | null }> {
+  const { supabase } = await requireAdmin();
+  const { data, error } = await supabase.from("konu_anlatimlari").select("icerik").eq("id", id).single();
+  if (error) return { error: error.message, icerik: null };
+  return { error: null, icerik: data.icerik as string };
+}
+
+export async function konuAnlatimiGuncelle(id: string, icerik: string): Promise<{ error: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const temizIcerik = icerik.trim();
+  if (!temizIcerik) return { error: "İçerik boş olamaz." };
+  const { error } = await admin.from("konu_anlatimlari").update({ icerik: temizIcerik }).eq("id", id);
+  if (error) return { error: error.message };
+  await auditLogYaz(supabase, user.id, "konu_anlatimi_duzenle", { konu_anlatimi_id: id });
+  revalidatePath("/yonetici");
+  return { error: null };
+}
+
+export async function konuAnlatimiYenidenUret(id: string): Promise<{ error: string | null; icerik: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const { data: satir, error: bulmaHatasi } = await supabase.from("konu_anlatimlari").select("ders, konu").eq("id", id).single();
+  if (bulmaHatasi || !satir) return { error: "Konu bulunamadı.", icerik: null };
+
+  let icerik: string;
+  try {
+    const anthropic = getAnthropicClient();
+    const yanit = await anthropic.messages.create({
+      model: "claude-sonnet-5",
+      max_tokens: 2000,
+      system: KONU_ANLATIMI_SISTEM_PROMPTU,
+      messages: [{ role: "user", content: `${satir.ders} dersinden "${satir.konu}" konusunu anlat.` }],
+    });
+    const metinBlogu = yanit.content.find((b) => b.type === "text");
+    icerik = metinBlogu && "text" in metinBlogu ? icerikTemizle(metinBlogu.text) : "";
+    if (!icerik) return { error: "İçerik üretilemedi, lütfen tekrar deneyin.", icerik: null };
+  } catch (e) {
+    console.error("konu anlatımı yeniden üretme hatası:", e);
+    return { error: "Konu anlatımı şu anda üretilemedi. Lütfen daha sonra tekrar deneyin.", icerik: null };
+  }
+
+  const { error: kayitHatasi } = await admin.from("konu_anlatimlari").update({ icerik }).eq("id", id);
+  if (kayitHatasi) return { error: kayitHatasi.message, icerik };
+
+  await auditLogYaz(supabase, user.id, "konu_anlatimi_yeniden_uret", { konu_anlatimi_id: id });
+  revalidatePath("/yonetici");
+  return { error: null, icerik };
 }

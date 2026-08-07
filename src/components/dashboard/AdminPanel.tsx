@@ -55,6 +55,8 @@ const EYLEM_ETIKET: Record<string, string> = {
   ogretmen_brans_degistir: "Öğretmen branşı değiştirildi",
   veli_talebi_admin_onayla: "Veli talebi onaylandı (admin)",
   veli_talebi_reddet: "Veli talebi reddedildi",
+  konu_anlatimi_duzenle: "Konu anlatımı düzenlendi",
+  konu_anlatimi_yeniden_uret: "Konu anlatımı yeniden üretildi",
 };
 
 export function AdminPanel({
