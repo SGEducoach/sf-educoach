@@ -42,6 +42,36 @@ function bekle(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// ============ Kalite/tutarlılık kontrolü (otomatik, kaba sezgisel) ============
+// 190 metni tek tek okumak pratik değil — bu, bariz sorunları (çok kısa/uzun,
+// "ben bir yapay zekayım" gibi meta konuşma, markdown/LaTeX artığı, konu
+// adının hiç geçmemesi) otomatik yakalar. Kesin doğruluk garantisi vermez —
+// asıl amaç, hangi ~10-20 konunun elle gözden geçirilmeye değer olduğunu
+// daraltmak. Ayrıca bkz. scripts/export-konu-anlatimlari.mjs (tüm içeriği
+// tek dosyada okunabilir hâlde çıkarır, hızlı göz gezdirmek için).
+const SUPHELI_KALIPLAR = [
+  /yapay zeka(sı|yım)?/i, /dil modeli/i, /büyük dil modeli/i, /as an ai/i,
+  /i cannot/i, /i'm sorry/i, /üzgünüm,? (ama|ancak)/i, /asistan(ım)? olarak/i,
+];
+
+function supheliMi(icerik, konu) {
+  const sebepler = [];
+  const kelimeSayisi = icerik.trim().split(/\s+/).length;
+  if (kelimeSayisi < 120) sebepler.push(`çok kısa (${kelimeSayisi} kelime)`);
+  if (kelimeSayisi > 800) sebepler.push(`çok uzun (${kelimeSayisi} kelime)`);
+  if (/[#*`]{2,}|^#{1,6}\s/m.test(icerik)) sebepler.push("markdown artığı olabilir");
+  if (/\\[a-zA-Z]+\{|\$\$/.test(icerik)) sebepler.push("LaTeX artığı olabilir");
+  for (const kalip of SUPHELI_KALIPLAR) {
+    if (kalip.test(icerik)) { sebepler.push("meta konuşma / öz-referans içeriyor olabilir"); break; }
+  }
+  // Konu adının en azından ilk anlamlı kelimesi metinde hiç geçmiyorsa şüpheli.
+  const ilkKelime = konu.split(/[\s(),-]+/).find((w) => w.length > 3);
+  if (ilkKelime && !icerik.toLowerCase().includes(ilkKelime.toLowerCase())) {
+    sebepler.push(`"${ilkKelime}" kelimesi metinde geçmiyor`);
+  }
+  return sebepler;
+}
+
 async function main() {
   const { data: mevcutlar, error: okumaHatasi } = await admin.from("konu_anlatimlari").select("ders, konu");
   if (okumaHatasi) throw new Error("Mevcut konular okunamadı: " + okumaHatasi.message);
@@ -52,6 +82,7 @@ async function main() {
 
   let basarili = 0;
   let basarisiz = 0;
+  const supheliListe = [];
 
   for (let i = 0; i < eksikler.length; i++) {
     const { ders, konu, seviye } = eksikler[i];
@@ -72,7 +103,13 @@ async function main() {
         .upsert({ ders, konu, icerik, seviye }, { onConflict: "ders,konu" });
       if (yazmaHatasi) throw new Error(yazmaHatasi.message);
 
-      console.log("✓");
+      const sebepler = supheliMi(icerik, konu);
+      if (sebepler.length > 0) {
+        supheliListe.push({ ders, konu, sebepler });
+        console.log(`✓ (⚠ gözden geçir: ${sebepler.join("; ")})`);
+      } else {
+        console.log("✓");
+      }
       basarili++;
     } catch (e) {
       console.log("✗ HATA: " + (e?.message ?? e));
@@ -84,6 +121,15 @@ async function main() {
 
   console.log(`\nBitti. Başarılı: ${basarili}, hatalı: ${basarisiz}, zaten mevcut: ${mevcutSet.size}.`);
   if (basarisiz > 0) console.log("Hatalı olanlar için script'i tekrar çalıştırmanız yeterli (sadece eksikler denenir).");
+
+  if (supheliListe.length > 0) {
+    console.log(`\n⚠ Otomatik kontrolden geçemeyen ${supheliListe.length} konu (elle gözden geçirin):`);
+    for (const s of supheliListe) console.log(`  - ${s.ders} — ${s.konu}: ${s.sebepler.join("; ")}`);
+    console.log("\nBir konuyu yeniden ürettirmek için: Supabase'de o satırı silin, script'i tekrar çalıştırın.");
+  } else if (basarili > 0) {
+    console.log("\nOtomatik kontrolden geçemeyen konu yok. Yine de birkaçını elle göz gezdirmenizi öneririm —");
+    console.log("bkz. scripts/export-konu-anlatimlari.mjs (tüm içeriği tek dosyada okunabilir hâle getirir).");
+  }
 }
 
 main().catch((e) => {
