@@ -1,0 +1,95 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import type { UserRole } from "@/lib/types";
+
+// /yonetici'ye özel (admin-only) server action'lar. dashboard/actions.ts'teki
+// requireAdmin ile aynı desen: service-role client'a güvenmeden önce burada
+// da açıkça role==='admin' doğrulanıyor.
+async function requireAdmin() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/yonetici");
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  if (profile?.role !== "admin") redirect("/");
+  return { supabase, user, admin: createAdminClient() };
+}
+
+async function auditLogYaz(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  actorId: string,
+  eylem: string,
+  detay: Record<string, unknown>,
+) {
+  const { error } = await supabase.from("admin_audit_log").insert({ actor_id: actorId, eylem, detay });
+  if (error) console.error("audit log yazılamadı:", error.message);
+}
+
+export interface KullaniciSonuc {
+  id: string;
+  ad: string;
+  email: string | null;
+  telefon: string | null;
+  role: UserRole;
+  okulAdi: string | null;
+  sinifAdi: string | null;
+  okulNo: string | null;
+  brans: string | null;
+}
+
+// Okul/sınıf sınırı olmadan tüm öğrenci/öğretmen/veli/müdür hesaplarında
+// ad veya e-posta üzerinden arama. Admin dışındaki roller RLS'te zaten
+// is_ogretmen() üzerinden admin'e tam okuma izni veriyor (bkz. migration
+// 0014); burada ekstra bir RLS gerekmiyor.
+export async function kullaniciAra(sorgu: string, rolFiltre: UserRole | "hepsi"): Promise<{ error: string | null; sonuclar: KullaniciSonuc[] }> {
+  const { supabase } = await requireAdmin();
+  const q = sorgu.trim();
+  if (q.length < 2) return { error: null, sonuclar: [] };
+
+  let query = supabase
+    .from("profiles")
+    .select("id, ad, email, telefon, role")
+    .neq("role", "admin")
+    .or(`ad.ilike.%${q}%,email.ilike.%${q}%`)
+    .order("ad")
+    .limit(40);
+  if (rolFiltre !== "hepsi") query = query.eq("role", rolFiltre);
+
+  const { data: profiller, error } = await query;
+  if (error) return { error: error.message, sonuclar: [] };
+
+  const satirlar = (profiller ?? []) as { id: string; ad: string; email: string | null; telefon: string | null; role: UserRole }[];
+  const ogrenciIdleri = satirlar.filter((s) => s.role === "ogrenci").map((s) => s.id);
+  const ogretmenIdleri = satirlar.filter((s) => s.role === "ogretmen" || s.role === "mudur").map((s) => s.id);
+
+  const [ogrenciDetay, ogretmenDetay] = await Promise.all([
+    ogrenciIdleri.length
+      ? supabase.from("students").select("id, okul_no, schools(ad), classes(seviye, sube)").in("id", ogrenciIdleri)
+      : Promise.resolve({ data: [] }),
+    ogretmenIdleri.length
+      ? supabase.from("teachers").select("id, brans, schools(ad)").in("id", ogretmenIdleri)
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  type OgrenciRow = { id: string; okul_no: string; schools: { ad: string } | null; classes: { seviye: string; sube: string } | null };
+  type OgretmenRow = { id: string; brans: string; schools: { ad: string } | null };
+  const ogrenciMap = new Map(((ogrenciDetay.data as unknown as OgrenciRow[]) ?? []).map((o) => [o.id, o]));
+  const ogretmenMap = new Map(((ogretmenDetay.data as unknown as OgretmenRow[]) ?? []).map((o) => [o.id, o]));
+
+  const sonuclar: KullaniciSonuc[] = satirlar.map((s) => {
+    const o = ogrenciMap.get(s.id);
+    const t = ogretmenMap.get(s.id);
+    return {
+      id: s.id, ad: s.ad, email: s.email, telefon: s.telefon, role: s.role,
+      okulAdi: o?.schools?.ad ?? t?.schools?.ad ?? null,
+      sinifAdi: o?.classes ? `${o.classes.seviye}-${o.classes.sube}` : null,
+      okulNo: o?.okul_no ?? null,
+      brans: t?.brans ?? null,
+    };
+  });
+
+  return { error: null, sonuclar };
+}
