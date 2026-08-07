@@ -244,3 +244,58 @@ export async function veliTalebiReddet(requestId: string): Promise<{ error: stri
   revalidatePath("/yonetici");
   return { error: null };
 }
+
+// ============ Platform istatistikleri ============
+// Sayımlar normal (RLS'e tabi) client ile yapılıyor — is_ogretmen() zaten
+// admin'e profiles/konu_calismalar/soru_cozumleri/denemeler/
+// haftalik_verimlilikler üzerinde tam okuma izni veriyor. Sadece
+// veli_link_requests admin'e RLS'te açık olmadığı için orada service-role
+// kullanılıyor.
+export interface PlatformIstatistikleri {
+  okulSayisi: number;
+  aktifOkulSayisi: number;
+  ogrenciSayisi: number;
+  ogretmenSayisi: number;
+  veliSayisi: number;
+  bekleyenVeliTalebi: number;
+  son7GunAktifOgrenci: number;
+}
+
+export async function platformIstatistikleriGetir(): Promise<{ error: string | null; istatistik: PlatformIstatistikleri | null }> {
+  const { supabase, admin } = await requireAdmin();
+  const yediGunOnce = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  const [
+    okulToplam, okulAktif, ogrenciToplam, ogretmenToplam, veliToplam, bekleyenTalep,
+    konuAktif, soruAktif, denemeAktif, verimlilikAktif,
+  ] = await Promise.all([
+    supabase.from("schools").select("id", { count: "exact", head: true }),
+    supabase.from("schools").select("id", { count: "exact", head: true }).eq("aktif", true),
+    supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "ogrenci"),
+    supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "ogretmen"),
+    supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "veli"),
+    admin.from("veli_link_requests").select("id", { count: "exact", head: true }).eq("durum", "bekliyor"),
+    supabase.from("konu_calismalar").select("student_id").gte("created_at", yediGunOnce),
+    supabase.from("soru_cozumleri").select("student_id").gte("created_at", yediGunOnce),
+    supabase.from("denemeler").select("student_id").gte("created_at", yediGunOnce),
+    supabase.from("haftalik_verimlilikler").select("student_id").gte("created_at", yediGunOnce),
+  ]);
+
+  const aktifSet = new Set<string>();
+  for (const r of [konuAktif, soruAktif, denemeAktif, verimlilikAktif]) {
+    for (const row of (r.data ?? []) as { student_id: string }[]) aktifSet.add(row.student_id);
+  }
+
+  return {
+    error: null,
+    istatistik: {
+      okulSayisi: okulToplam.count ?? 0,
+      aktifOkulSayisi: okulAktif.count ?? 0,
+      ogrenciSayisi: ogrenciToplam.count ?? 0,
+      ogretmenSayisi: ogretmenToplam.count ?? 0,
+      veliSayisi: veliToplam.count ?? 0,
+      bekleyenVeliTalebi: bekleyenTalep.count ?? 0,
+      son7GunAktifOgrenci: aktifSet.size,
+    },
+  };
+}

@@ -4,6 +4,7 @@ import { Header } from "@/components/dashboard/Header";
 import { AdminPanel } from "@/components/dashboard/AdminPanel";
 import { KullaniciArama } from "@/components/yonetici/KullaniciArama";
 import { VeliTalepleri } from "@/components/yonetici/VeliTalepleri";
+import { PlatformIstatistikleri } from "@/components/yonetici/PlatformIstatistikleri";
 import { YoneticiGirisForm } from "@/components/yonetici/YoneticiGirisForm";
 
 // SG EduCoach'un tek kontrol noktası — bilerek /dashboard'dan ayrı, kendi
@@ -63,6 +64,7 @@ export default async function YoneticiPage({
     <div style={{ minHeight: "100vh", width: "100%" }} className="flex-1 flex flex-col">
       <Header ad={profile.ad} role="admin" />
       <div className="max-w-6xl mx-auto px-6 py-7 w-full flex-1 flex flex-col gap-6">
+        <PlatformIstatistikleri />
         <KullaniciArama />
         <VeliTalepleri />
         <AdminPanel
