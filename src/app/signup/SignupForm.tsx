@@ -146,7 +146,7 @@ export default function SignupForm({ kurallarMetni, kurallarVersiyon }: { kurall
 
         {role === "ogrenci" && <OgrenciKayit schools={schools} classes={classes} router={router} supabase={supabase} />}
         {role === "ogretmen" && <OgretmenKayit schools={schools} classes={classes} router={router} supabase={supabase} />}
-        {role === "veli" && <VeliKayit router={router} supabase={supabase} />}
+        {role === "veli" && <VeliKayit schools={schools} router={router} supabase={supabase} />}
 
         <p style={{ color: TEXT_MUTED }} className="text-xs text-center mt-5">
           Zaten hesabınız var mı?{" "}
@@ -396,7 +396,7 @@ function OgretmenKayit({ schools, router, supabase }: {
 }
 
 // ============ VELİ ============
-function VeliKayit({ router, supabase }: { router: ReturnType<typeof useRouter>; supabase: ReturnType<typeof createClient> }) {
+function VeliKayit({ schools, router, supabase }: { schools: School[]; router: ReturnType<typeof useRouter>; supabase: ReturnType<typeof createClient> }) {
   const [mod, setMod] = useState<"talep" | "tamamla">("talep");
 
   return (
@@ -413,14 +413,15 @@ function VeliKayit({ router, supabase }: { router: ReturnType<typeof useRouter>;
           Kodum var, tamamla
         </button>
       </div>
-      {mod === "talep" ? <VeliTalepForm supabase={supabase} /> : <VeliTamamlaForm router={router} supabase={supabase} />}
+      {mod === "talep" ? <VeliTalepForm schools={schools} supabase={supabase} /> : <VeliTamamlaForm schools={schools} router={router} supabase={supabase} />}
     </div>
   );
 }
 
-function VeliTalepForm({ supabase }: { supabase: ReturnType<typeof createClient> }) {
+function VeliTalepForm({ schools, supabase }: { schools: School[]; supabase: ReturnType<typeof createClient> }) {
   const [ad, setAd] = useState("");
   const [telefon, setTelefon] = useState("");
+  const [schoolId, setSchoolId] = useState("");
   const [okulNo, setOkulNo] = useState("");
   const [hata, setHata] = useState<string | null>(null);
   const [yukleniyor, setYukleniyor] = useState(false);
@@ -430,10 +431,11 @@ function VeliTalepForm({ supabase }: { supabase: ReturnType<typeof createClient>
     e.preventDefault();
     setHata(null);
     if (!telefonGecerliMi(telefon)) return setHata("Telefon numarası geçersiz. " + TELEFON_IPUCU);
+    if (!schoolId) return setHata("Okul seçin.");
     setYukleniyor(true);
 
     const { data: studentId, error: bulmaHatasi } = await supabase
-      .rpc("find_student_id_by_okul_no", { p_okul_no: okulNo.trim() });
+      .rpc("find_student_id_by_okul_no", { p_school_id: schoolId, p_okul_no: okulNo.trim() });
 
     if (bulmaHatasi || !studentId) {
       setYukleniyor(false);
@@ -461,6 +463,12 @@ function VeliTalepForm({ supabase }: { supabase: ReturnType<typeof createClient>
       <form onSubmit={gonder} className="flex flex-col gap-3">
         <label className="flex flex-col gap-1"><Etiket>Ad Soyad</Etiket><Girdi required value={ad} onChange={(e) => setAd(e.target.value)} /></label>
         <label className="flex flex-col gap-1"><Etiket>Telefon</Etiket><Girdi type="tel" required value={telefon} inputMode="numeric" placeholder="5xxxxxxxxx" onChange={(e) => setTelefon(telefonSanitize(e.target.value))} /></label>
+        <label className="flex flex-col gap-1"><Etiket>Öğrencinin Okulu</Etiket>
+          <Secim required value={schoolId} onChange={(e) => setSchoolId(e.target.value)}>
+            <option value="">Seçiniz</option>
+            {schools.map((s) => <option key={s.id} value={s.id}>{s.ad}</option>)}
+          </Secim>
+        </label>
         <label className="flex flex-col gap-1"><Etiket>Öğrenci Okul No</Etiket><Girdi required value={okulNo} inputMode="numeric" maxLength={5} onChange={(e) => setOkulNo(okulNoSanitize(e.target.value))} /></label>
         {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
         <button type="submit" disabled={yukleniyor} className="sgec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
@@ -486,7 +494,8 @@ Haklarınız: KVKK madde 11 kapsamında verilerin düzeltilmesi, silinmesi, işl
 
 Onay: Yukarıdaki bilgilendirmeyi okudum; velisi/vasisi olduğum öğrencinin belirtilen kapsamda kişisel verilerinin işlenmesine açık rızamla onay veriyorum.`;
 
-function VeliTamamlaForm({ router }: { router: ReturnType<typeof useRouter>; supabase: ReturnType<typeof createClient> }) {
+function VeliTamamlaForm({ schools, router }: { schools: School[]; router: ReturnType<typeof useRouter>; supabase: ReturnType<typeof createClient> }) {
+  const [schoolId, setSchoolId] = useState("");
   const [okulNo, setOkulNo] = useState("");
   const [kod, setKod] = useState("");
   const [kvkkOnay, setKvkkOnay] = useState(false);
@@ -496,12 +505,13 @@ function VeliTamamlaForm({ router }: { router: ReturnType<typeof useRouter>; sup
   async function tamamla(e: React.FormEvent) {
     e.preventDefault();
     setHata(null);
+    if (!schoolId) return setHata("Okul seçin.");
     if (!kvkkOnay) return setHata("Devam etmek için KVKK aydınlatma metnini onaylamanız gerekiyor.");
     setYukleniyor(true);
     const res = await fetch("/api/veli/tamamla", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ okul_no: okulNo.trim(), kod: kod.trim(), kvkkOnay: true }),
+      body: JSON.stringify({ school_id: schoolId, okul_no: okulNo.trim(), kod: kod.trim(), kvkkOnay: true }),
     });
     const body = await res.json();
     setYukleniyor(false);
@@ -513,6 +523,12 @@ function VeliTamamlaForm({ router }: { router: ReturnType<typeof useRouter>; sup
   return (
     <>
     <form onSubmit={tamamla} className="flex flex-col gap-3">
+      <label className="flex flex-col gap-1"><Etiket>Öğrencinin Okulu</Etiket>
+        <Secim required value={schoolId} onChange={(e) => setSchoolId(e.target.value)}>
+          <option value="">Seçiniz</option>
+          {schools.map((s) => <option key={s.id} value={s.id}>{s.ad}</option>)}
+        </Secim>
+      </label>
       <label className="flex flex-col gap-1"><Etiket>Öğrenci Okul No</Etiket><Girdi required value={okulNo} onChange={(e) => setOkulNo(e.target.value)} /></label>
       <label className="flex flex-col gap-1"><Etiket>Kod</Etiket><Girdi required value={kod} onChange={(e) => setKod(e.target.value)} /></label>
 

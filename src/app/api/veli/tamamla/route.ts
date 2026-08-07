@@ -5,10 +5,10 @@ import { createClient } from "@/lib/supabase/server";
 const KVKK_ONAY_VERSIYON = "v1-2026-08-05";
 
 export async function POST(request: Request) {
-  const { okul_no, kod, kvkkOnay } = await request.json();
+  const { school_id, okul_no, kod, kvkkOnay } = await request.json();
 
-  if (!okul_no || !kod) {
-    return NextResponse.json({ error: "Okul no ve kod gerekli." }, { status: 400 });
+  if (!school_id || !okul_no || !kod) {
+    return NextResponse.json({ error: "Okul, okul no ve kod gerekli." }, { status: 400 });
   }
   if (kvkkOnay !== true) {
     return NextResponse.json({ error: "Devam etmek için KVKK aydınlatma metnini onaylamanız gerekiyor." }, { status: 400 });
@@ -17,9 +17,13 @@ export async function POST(request: Request) {
   const admin = createAdminClient();
 
   // İsteği bul: durum='onaylandi', kod eşleşiyor, öğrenci okul_no eşleşiyor.
+  // okul_no sadece okul içinde benzersiz olduğu için school_id ile birlikte
+  // filtreleniyor (bkz. migration 0023) — yoksa başka bir okuldaki aynı
+  // numaralı öğrenciyle karışabilir.
   const { data: student } = await admin
     .from("students")
     .select("id")
+    .eq("school_id", school_id)
     .eq("okul_no", okul_no)
     .single();
 

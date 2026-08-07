@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { GraduationCap, BookOpen, Users, Building2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import type { UserRole } from "@/lib/types";
+import type { School, UserRole } from "@/lib/types";
 import { BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 import { YukleniyorOverlay } from "@/components/YukleniyorOverlay";
 
@@ -22,6 +22,8 @@ export default function LoginForm() {
   const supabase = createClient();
   const [role, setRole] = useState<UserRole>("ogrenci");
 
+  const [schools, setSchools] = useState<School[]>([]);
+  const [schoolId, setSchoolId] = useState("");
   const [okulNo, setOkulNo] = useState("");
   const [kod, setKod] = useState("");
   const [email, setEmail] = useState("");
@@ -29,23 +31,34 @@ export default function LoginForm() {
   const [hata, setHata] = useState<string | null>(null);
   const [yukleniyor, setYukleniyor] = useState(false);
 
+  useEffect(() => {
+    supabase.from("schools").select("*").eq("tur", "okul").then(({ data }) => setSchools((data as School[]) ?? []));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function girisYap(e: React.FormEvent) {
     e.preventDefault();
     setHata(null);
+
+    // okul_no sadece okul içinde benzersiz olduğu için öğrenci/veli
+    // girişinde okul seçimi zorunlu (bkz. migration 0023).
+    if ((role === "ogrenci" || role === "veli") && !schoolId) {
+      return setHata("Okul seçin.");
+    }
     setYukleniyor(true);
 
     let girisEmail = email;
     let girisSifre = password;
 
     if (role === "ogrenci") {
-      const { data: cozulenEmail } = await supabase.rpc("resolve_ogrenci_email", { p_okul_no: okulNo.trim() });
+      const { data: cozulenEmail } = await supabase.rpc("resolve_ogrenci_email", { p_school_id: schoolId, p_okul_no: okulNo.trim() });
       if (!cozulenEmail) {
         setYukleniyor(false);
         return setHata("Bu okul numarasıyla kayıtlı bir öğrenci bulunamadı.");
       }
       girisEmail = cozulenEmail;
     } else if (role === "veli") {
-      const { data: cozulenEmail } = await supabase.rpc("resolve_veli_login", { p_okul_no: okulNo.trim(), p_kod: kod.trim() });
+      const { data: cozulenEmail } = await supabase.rpc("resolve_veli_login", { p_school_id: schoolId, p_okul_no: okulNo.trim(), p_kod: kod.trim() });
       if (!cozulenEmail) {
         setYukleniyor(false);
         return setHata("Okul no veya kod hatalı.");
@@ -112,6 +125,16 @@ export default function LoginForm() {
             </>
           ) : (
             <>
+              {(role === "ogrenci" || role === "veli") && (
+                <label className="flex flex-col gap-1">
+                  <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Okul</span>
+                  <select required value={schoolId} onChange={(e) => setSchoolId(e.target.value)}
+                    className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+                    <option value="">Seçiniz</option>
+                    {schools.map((s) => <option key={s.id} value={s.id}>{s.ad}</option>)}
+                  </select>
+                </label>
+              )}
               <label className="flex flex-col gap-1">
                 <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">{role === "mudur" ? "Okul Kodu" : "Okul No"}</span>
                 <input required value={okulNo} onChange={(e) => setOkulNo(e.target.value)}
