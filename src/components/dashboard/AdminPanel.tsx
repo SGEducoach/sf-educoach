@@ -41,6 +41,8 @@ interface IslemKaydi {
 
 const EYLEM_ETIKET: Record<string, string> = {
   sinif_ekle: "Sınıf eklendi",
+  ogretmen_ekle_manuel: "Öğretmen eklendi",
+  ogrenci_ekle_manuel: "Öğrenci eklendi",
   sinif_ogretmeni_ata: "Sınıf öğretmeni atandı",
   sinif_ogretmenliginden_cikar: "Sınıf öğretmenliğinden çıkarıldı",
   okul_ekle: "Okul eklendi",

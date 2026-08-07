@@ -55,7 +55,7 @@ export default async function YoneticiPage({
     .from("admin_audit_log")
     .select("id, eylem, detay, created_at, profiles(ad)")
     .order("created_at", { ascending: false })
-    .limit(15);
+    .limit(30);
 
   type KayitRow = { id: string; eylem: string; detay: Record<string, unknown> | null; created_at: string; profiles: { ad: string } | null };
   const kayitListesi = ((kayitlar as unknown as KayitRow[]) ?? []).map((k) => ({
