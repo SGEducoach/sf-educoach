@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { KeyRound, Check, ChevronUp } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH, LILAC } from "@/lib/theme";
+import { BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH, LILAC } from "@/lib/theme";
 import { sifreGecerliMi, SIFRE_IPUCU } from "@/lib/validators";
 
 // Admin kendi şifresini burada değiştirir — supabase.auth.updateUser

@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SG EduCoach
 
-## Getting Started
+YKS (TYT/AYT) hazırlık öğrencileri için koçluk platformu — öğrenci, öğretmen, veli, müdür ve admin rolleriyle çalışan bir Next.js + Supabase uygulaması.
 
-First, run the development server:
+Canlı: https://sg-educoach.vercel.app
+Gizli yönetim paneli: `/yonetici` (sadece admin hesabı, ayrı giriş formu)
+
+## Teknoloji
+
+- **Next.js 16** (App Router, TypeScript, Tailwind CSS v4)
+- **Supabase** (Postgres + Auth + Row Level Security + RPC fonksiyonları)
+- **Claude API** (`@anthropic-ai/sdk`) — AI destekli konu anlatımı üretimi
+- **Resend** — e-posta hatırlatmaları
+- **Web Push** — PWA bildirimleri
+
+## Kurulum
 
 ```bash
+npm install
+cp .env.local.example .env.local   # değerleri doldurun
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Gerekli ortam değişkenleri (`.env.local`)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Değişken | Açıklama |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase proje URL'i |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon (public) key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service-role key — **sadece sunucu tarafında**, asla client'a sızdırılmamalı |
+| `ANTHROPIC_API_KEY` | Konu anlatımı üretimi için Claude API anahtarı |
+| `RESEND_API_KEY` | Hatırlatma e-postaları için |
+| `CRON_SECRET` | `/api/cron/hatirlatmalar` route'unu korumak için (Vercel Cron header'ı bununla eşleşmeli) |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | Web Push bildirimleri için VAPID anahtar çifti |
+| `VAPID_SUBJECT` | Web Push için `mailto:` iletişim adresi (opsiyonel, varsayılan var) |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Veritabanı
 
-## Learn More
+`supabase/schema.sql` — sıfırdan kurulum için tek dosyalık, kümülatif şema (Supabase SQL Editor'de tamamı çalıştırılabilir).
 
-To learn more about Next.js, take a look at the following resources:
+`supabase/migrations/` — var olan bir veritabanına sırayla uygulanan artımlı değişiklikler. Yeni bir migration eklerken **hem** ilgili `NNNN_isim.sql` dosyasını oluşturun **hem de** aynı SQL'i `schema.sql`'in sonuna ekleyin (iki dosya birbirinden bağımsız kaynaklar değil — schema.sql her zaman "fresh install sonucu tüm migration'lar uygulanmış hali" ile aynı olmalı).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Admin/yönetim script'leri (`scripts/`)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Tek seferlik veya nadir kullanılan bakım işleri için `SUPABASE_SERVICE_ROLE_KEY` kullanan Node script'leri:
 
-## Deploy on Vercel
+- `seed-demo-users.mjs` — test amaçlı örnek öğrenci/öğretmen/veli/müdür hesapları oluşturur
+- `set-admin-email.mjs eski@mail.com yeni@mail.com` — bir hesabın auth e-postasını güvenli şekilde değiştirir
+- `set-user-password.mjs kullanici@mail.com [yeni-sifre]` — bir hesaba doğrudan yeni şifre atar (şifre verilmezse rastgele üretilir)
+- `preload-konu-anlatimlari.mjs` / `export-konu-anlatimlari.mjs` — konu anlatımı içeriğini toplu üretme/dışa aktarma
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Çalıştırma: `node scripts/<dosya>.mjs` (proje kökünden, `.env.local` otomatik okunur).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Mimari notları
+
+- **`/yonetici`** platformun tek kontrol noktası — `/dashboard`'dan tamamen ayrı, kendi bağımsız girişi olan, hiçbir yerden link verilmeyen bir adres. Sadece `role='admin'` olan hesaplar erişebilir; başka biri gelirse panelin var olduğunu hissettirmeden anasayfaya yönlendirilir.
+- **Müdür** rolü salt-okunur gözlemci; sınıf/öğretmen atama gibi kontrol yetkileri admin'e ait.
+- Şifre politikası (`src/lib/validators.ts: sifreGecerliMi`) tüm hesap türleri için ortak: en az 8 karakter, harf + rakam + özel işaret.

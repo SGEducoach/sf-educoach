@@ -11,7 +11,7 @@ const HATIRLATMA_ANAHTAR = "sgec_hatirlatma_kapatildi_v1";
 // Veli ve öğrenciye, dashboard'a her girişte (kalıcı olarak kapatmadıkları
 // sürece) sırayla iki pop-up gösterir: önce hoşgeldin/tanıtım mesajı, o
 // kapatılınca ana ekrana ekleme/bildirim hatırlatması.
-export function HosgeldinPopuplari({ role, ad }: { role: UserRole; ad: string }) {
+export function HosgeldinPopuplari({ role }: { role: UserRole }) {
   const [asama, setAsama] = useState<"hosgeldin" | "hatirlatma" | null>(null);
 
   useEffect(() => {

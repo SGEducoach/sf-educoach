@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { FileText, Save } from "lucide-react";
-import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH, LILAC } from "@/lib/theme";
+import { BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH, LILAC } from "@/lib/theme";
 import { kurallarGetir, kurallarGuncelle } from "@/app/yonetici/actions";
 
 // Kayıt sayfasındaki "Kayıt ve kullanım kuralları" metni artık kodda sabit

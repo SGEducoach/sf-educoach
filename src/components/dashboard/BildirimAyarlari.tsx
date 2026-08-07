@@ -117,7 +117,7 @@ export function BildirimAyarlari() {
             {durum === "acik" && "Bildirimler açık"}
           </div>
           {durum === "anaEkranaEklenmeli" && (
-            <div style={{ color: TEXT_MUTED }} className="text-[11px] mt-0.5">Safari'de Paylaş → &quot;Ana Ekrana Ekle&quot;yi kullanın.</div>
+            <div style={{ color: TEXT_MUTED }} className="text-[11px] mt-0.5">Safari&apos;de Paylaş → &quot;Ana Ekrana Ekle&quot;yi kullanın.</div>
           )}
           {durum === "reddedildi" && (
             <div style={{ color: TEXT_MUTED }} className="text-[11px] mt-0.5">Tarayıcı site ayarlarından bildirim iznini açabilirsiniz.</div>
