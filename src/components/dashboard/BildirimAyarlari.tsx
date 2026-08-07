@@ -3,16 +3,10 @@
 import { useEffect, useState } from "react";
 import { Bell, BellOff, BellRing } from "lucide-react";
 import { BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
-import { pushAbonelikKaydet, pushAbonelikSil } from "@/app/dashboard/push-actions";
+import { pushAbonelikSil } from "@/app/dashboard/push-actions";
+import { pushAbonelikAc } from "@/lib/push-subscribe";
 
 type Durum = "kontrolEdiliyor" | "desteklenmiyor" | "anaEkranaEklenmeli" | "kapali" | "reddedildi" | "acik";
-
-function urlBase64ToUint8Array(base64String: string) {
-  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const rawData = window.atob(base64);
-  return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
-}
 
 export function BildirimAyarlari() {
   const [durum, setDurum] = useState<Durum>("kontrolEdiliyor");
@@ -56,34 +50,14 @@ export function BildirimAyarlari() {
   async function ac() {
     setHata(null);
     setYukleniyor(true);
-    try {
-      const izin = await Notification.requestPermission();
-      if (izin !== "granted") {
-        setDurum("reddedildi");
-        setYukleniyor(false);
-        return;
-      }
-      const reg = await navigator.serviceWorker.ready;
-      const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-      if (!publicKey) throw new Error("VAPID anahtarı tanımlı değil.");
-
-      const sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicKey),
-      });
-
-      const json = sub.toJSON();
-      const res = await pushAbonelikKaydet({
-        endpoint: json.endpoint!,
-        keys: { p256dh: json.keys!.p256dh!, auth: json.keys!.auth! },
-      });
-      if (res.error) throw new Error(res.error);
-      setDurum("acik");
-    } catch (e) {
-      setHata(e instanceof Error ? e.message : "Bildirimler açılamadı.");
-    } finally {
-      setYukleniyor(false);
+    const res = await pushAbonelikAc();
+    setYukleniyor(false);
+    if (res.error) {
+      if (Notification.permission === "denied") setDurum("reddedildi");
+      setHata(res.error);
+      return;
     }
+    setDurum("acik");
   }
 
   async function kapat() {

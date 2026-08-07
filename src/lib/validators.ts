@@ -14,6 +14,14 @@ export function okulNoSanitize(v: string) {
 export function okulNoGecerliMi(v: string) {
   return /^[0-9]{1,5}$/.test(v);
 }
+
+// Türkçe'ye özel büyük harf dönüşümü (i → İ, ı → I) — düz .toUpperCase()
+// bunu yanlış yapar (i → I). Ad/soyad kayıtlarını normalize etmek ve
+// izinli isim listesiyle karşılaştırmak için kullanılıyor. Fazla boşlukları
+// da tek boşluğa indirip baş/son boşlukları kırpıyor.
+export function adNormalize(v: string) {
+  return v.trim().replace(/\s+/g, " ").toLocaleUpperCase("tr-TR");
+}
 const OZEL_KARAKTER_REGEX = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?~`]/;
 
 export function sifreGecerliMi(v: string) {

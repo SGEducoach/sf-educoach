@@ -12,7 +12,7 @@ import {
   BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH,
 } from "@/lib/theme";
 import {
-  telefonSanitize, telefonGecerliMi, okulNoSanitize, sifreGecerliMi, SIFRE_IPUCU, TELEFON_IPUCU,
+  telefonSanitize, telefonGecerliMi, okulNoSanitize, sifreGecerliMi, SIFRE_IPUCU, TELEFON_IPUCU, adNormalize,
 } from "@/lib/validators";
 import { YukleniyorOverlay } from "@/components/YukleniyorOverlay";
 
@@ -202,7 +202,7 @@ function OgrenciKayit({ schools, classes, router, supabase }: {
       email, password,
       options: {
         data: {
-          role: "ogrenci", ad, telefon, okul_no: okulNo,
+          role: "ogrenci", ad: adNormalize(ad), telefon, okul_no: okulNo,
           school_id: schoolId, class_id: classId, ayt_alan: aytAlan, hedef_bolum: hedefBolum,
         },
       },
@@ -323,7 +323,7 @@ function OgretmenKayit({ schools, router, supabase }: {
         data: {
           // class_id kasıtlı olarak gönderilmiyor — sınıf öğretmenliği artık
           // sadece müdür tarafından (Yönetim panelinden) atanıyor.
-          role: "ogretmen", ad, telefon, school_id: schoolId, brans,
+          role: "ogretmen", ad: adNormalize(ad), telefon, school_id: schoolId, brans,
         },
       },
     });

@@ -121,25 +121,43 @@ export async function GET(request: Request) {
 
       if (gecenSure >= UC_GUN_MS && tekrarGonderilebilirMi) {
         const veliler = veliMap.get(s.id) ?? [];
-        const aliciler = [profile.email, ...veliler.map((v) => v.email).filter((e): e is string => Boolean(e))];
+        const gecenGun = Math.floor(gecenSure / (24 * 3600 * 1000));
+        const sonGirisStr = sonGiris.toLocaleDateString("tr-TR");
 
-        const baslik = `${profile.ad} için veri girişi hatırlatması`;
-        const govde = `Son giriş: ${sonGiris.toLocaleDateString("tr-TR")}. Lütfen SG EduCoach'a girip güncel verileri ekleyin.`;
+        // Öğrenciye ve veliye ayrı tonda mesaj: öğrenciye kendine yönelik bir
+        // hatırlatma, veliye ise çocuğu hakkında bilgilendirme.
+        const ogrenciBaslik = "Veri girişi hatırlatması";
+        const ogrenciGovde = `${gecenGun} gündür veri girişi yapmadın. SG EduCoach'a girip güncel verilerini ekle.`;
+        const veliBaslik = `Öğrenciniz ${gecenGun} gündür veri girmiyor!`;
+        const veliGovde = `${profile.ad} adlı öğrenciniz ${gecenGun} gündür veri girişi yapmadı (son giriş: ${sonGirisStr}). Bir hatırlatmak ister misiniz?`;
 
         try {
           await resend.emails.send({
             from: "SG EduCoach <onboarding@resend.dev>",
-            to: aliciler,
-            subject: baslik,
-            html: `<p>Merhaba,</p><p><strong>${profile.ad}</strong> için veri girişi zamanı yaklaşıyor. Son giriş: ${sonGiris.toLocaleDateString("tr-TR")}.</p><p>Lütfen SG EduCoach'a girip güncel verileri ekleyin.</p>`,
+            to: profile.email,
+            subject: ogrenciBaslik,
+            html: `<p>Merhaba ${profile.ad},</p><p>${ogrenciGovde}</p>`,
           });
-          detaylar.push(`${profile.ad}: e-posta ${aliciler.length} alıcıya gönderildi`);
         } catch (e) {
-          detaylar.push(`${profile.ad}: e-posta HATASI - ${e instanceof Error ? e.message : String(e)}`);
+          detaylar.push(`${profile.ad}: öğrenci e-posta HATASI - ${e instanceof Error ? e.message : String(e)}`);
         }
+        const veliEmailler = veliler.map((v) => v.email).filter((e): e is string => Boolean(e));
+        if (veliEmailler.length > 0) {
+          try {
+            await resend.emails.send({
+              from: "SG EduCoach <onboarding@resend.dev>",
+              to: veliEmailler,
+              subject: veliBaslik,
+              html: `<p>Merhaba,</p><p>${veliGovde}</p>`,
+            });
+          } catch (e) {
+            detaylar.push(`${profile.ad}: veli e-posta HATASI - ${e instanceof Error ? e.message : String(e)}`);
+          }
+        }
+        detaylar.push(`${profile.ad}: hatırlatma gönderildi (${gecenGun} gün, ${veliler.length} veli)`);
 
-        await pushGonder(s.id, baslik, govde);
-        for (const veli of veliler) await pushGonder(veli.id, baslik, govde);
+        await pushGonder(s.id, ogrenciBaslik, ogrenciGovde);
+        for (const veli of veliler) await pushGonder(veli.id, veliBaslik, veliGovde);
 
         gonderilen++;
         await admin.from("students").update({ son_hatirlatma_deadline: new Date(now.getTime() + UC_GUN_MS).toISOString() }).eq("id", s.id);

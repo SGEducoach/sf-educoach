@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { telefonGecerliMi, okulNoGecerliMi, rastgeleSifre } from "@/lib/validators";
+import { telefonGecerliMi, okulNoGecerliMi, rastgeleSifre, adNormalize } from "@/lib/validators";
 
 async function requireUser() {
   const supabase = await createClient();
@@ -148,7 +148,7 @@ export async function ogretmenEkleManuel(input: {
   const { supabase, user, admin } = await requireAdmin();
   if (!admin) return { error: "Bu işlem için yönetici yetkisi gerekiyor.", sifre: null };
 
-  const ad = input.ad.trim();
+  const ad = adNormalize(input.ad);
   const email = input.email.trim().toLowerCase();
   if (!ad) return { error: "Ad Soyad gerekli.", sifre: null };
   if (!email) return { error: "E-posta gerekli.", sifre: null };
@@ -175,7 +175,7 @@ export async function ogrenciEkleManuel(input: {
   const { supabase, user, admin } = await requireAdmin();
   if (!admin) return { error: "Bu işlem için yönetici yetkisi gerekiyor.", sifre: null };
 
-  const ad = input.ad.trim();
+  const ad = adNormalize(input.ad);
   const email = input.email.trim().toLowerCase();
   if (!ad) return { error: "Ad Soyad gerekli.", sifre: null };
   if (!email) return { error: "E-posta gerekli.", sifre: null };
@@ -230,7 +230,7 @@ export async function ogrencileriTopluEkle(input: {
   // satırlar sırayla (paralel değil) işleniyor — sınıf boyutu (~20-35)
   // için birkaç saniye sürer, kabul edilebilir.
   for (const satir of input.satirlar) {
-    const ad = satir.ad.trim();
+    const ad = adNormalize(satir.ad);
     const okulNo = satir.okulNo.trim();
     if (!ad || !okulNoGecerliMi(okulNo)) {
       sonuclar.push({ ad, okulNo, sifre: null, hata: "Ad/okul no geçersiz." });
