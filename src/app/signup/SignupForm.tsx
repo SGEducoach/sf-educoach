@@ -45,57 +45,28 @@ function Secim({ children, ...props }: React.SelectHTMLAttributes<HTMLSelectElem
 }
 
 // ============ Kayıt kuralları onayı ============
-// Onay sadece tarayıcıda (localStorage) tutuluyor; metin değişince
-// KURALLAR_VERSIYON bump'lanmalı, böylece daha önce eski metni kabul
-// edenlere yeni metin tekrar sorulur. Bu metin, platformda şu an gerçekten
-// var olan işleyişi (roller, veri toplama, bildirimler) yansıtacak şekilde
-// yazıldı; kapsamlı/hukuki bir sözleşme değildir, ileride genişletilecektir.
-const KURALLAR_VERSIYON = "v1";
+// Onay sadece tarayıcıda (localStorage) tutuluyor; metin ve versiyonu artık
+// admin panelinden düzenlenip app_ayarlari tablosundan geliyor (bkz.
+// src/app/signup/page.tsx, src/lib/app-ayarlari.ts). Admin metni her
+// güncellediğinde versiyon otomatik bump'lanır, böylece daha önce eski
+// metni kabul etmiş kullanıcılara yeni metin tekrar sorulur.
 const KURALLAR_STORAGE_KEY = "sgec_kurallar_kabul";
-const KURALLAR_METNI = `SG EduCoach'a hoş geldiniz. Platforma kayıt olarak veya bir öğrencinin verisine veli olarak bağlanarak aşağıdaki kuralları kabul etmiş sayılırsınız.
 
-1. HESAP VE BİLGİ DOĞRULUĞU
-Ad, telefon, okul/sınıf, e-posta gibi bilgileri doğru ve güncel girmekle yükümlüsünüz. Öğrenci hesapları okul numarası + şifre, öğretmen hesapları e-posta + şifre, veli hesapları ise öğretmen onaylı bir kod ile açılır. Hesabınızın ve şifrenizin güvenliğinden siz sorumlusunuz; şifrenizi başkasıyla paylaşmayın.
-
-2. ROLLER VE YETKİLER
-- Öğrenci: yalnızca kendi verisini girer ve görür.
-- Öğretmen: kendi sınıfının öğrencilerine görev/onay verebilir; diğer sınıfları yalnızca görüntüleyebilir (salt okunur).
-- Sınıf öğretmenliği ataması, kayıt sırasında kendiliğinden yapılamaz; yalnızca okul yönetimi (admin) tarafından atanır.
-- Müdür: kendi okulundaki verileri görüntüleyebilir (gözlemci); kontrol yetkileri (sınıf ekleme, sınıf öğretmeni atama) platform yöneticisine (admin) aittir.
-- Veli: onay kodunu aldığı öğrencinin akademik verilerini görüntüleyebilir.
-
-3. VELİ ONAYI (18 YAŞ ALTI ÖĞRENCİLER)
-Öğrenci 18 yaşından küçükse, verilerinin veli tarafından görüntülenebilmesi için velinin ayrıca KVKK Aydınlatma Metni'ni onaylaması gerekir.
-
-4. VERİ TOPLAMA VE KULLANIM AMACI
-Platform; konu çalışması, soru çözümü, deneme sonuçları, motivasyon ve haftalık verimlilik gibi akademik verileri, öğrencinin gelişiminin takip edilmesi ve ilgili öğretmen/veli ile paylaşılması amacıyla toplar. Veriler yalnızca öğrencinin kendisi, bağlı olduğu öğretmen(ler), velisi ve okul yönetimiyle paylaşılır; üçüncü taraflarla paylaşılmaz. Ayrıntılar için KVKK Aydınlatma Metni'ne bakınız.
-
-5. BİLDİRİMLER
-Hatırlatma ve bilgilendirme amacıyla e-posta ve (izin verirseniz) anlık bildirim gönderilebilir. Bildirim izinlerini istediğiniz zaman cihaz/tarayıcı ayarlarından kapatabilirsiniz.
-
-6. YASAKLI KULLANIM
-Başkası adına veya başkasının bilgileriyle kayıt olmak, başka bir kullanıcının hesabına izinsiz erişmeye çalışmak, sisteme yanlış/yanıltıcı veri girmek ve platformun işleyişini bozmaya yönelik her türlü davranış yasaktır. Bu kurallara aykırı kullanım tespit edilirse hesabınız uyarılmadan askıya alınabilir.
-
-7. DEĞİŞİKLİKLER
-Bu kurallar ve platformun işleyişi zaman içinde güncellenebilir; önemli değişikliklerde kayıt sırasında tekrar onayınız istenir.
-
-Sorularınız için: sg.educoach@gmail.com`;
-
-function kurallarOnayliMi() {
+function kurallarOnayliMi(versiyon: string) {
   if (typeof window === "undefined") return false;
   try {
-    return window.localStorage.getItem(KURALLAR_STORAGE_KEY) === KURALLAR_VERSIYON;
+    return window.localStorage.getItem(KURALLAR_STORAGE_KEY) === versiyon;
   } catch {
     return false;
   }
 }
 
-function KurallarModal({ onKabul }: { onKabul: () => void }) {
+function KurallarModal({ metin, versiyon, onKabul }: { metin: string; versiyon: string; onKabul: () => void }) {
   const [okundu, setOkundu] = useState(false);
 
   function kabulEt() {
     try {
-      window.localStorage.setItem(KURALLAR_STORAGE_KEY, KURALLAR_VERSIYON);
+      window.localStorage.setItem(KURALLAR_STORAGE_KEY, versiyon);
     } catch {
       // localStorage kullanılamıyorsa (ör. gizli sekme) sessizce devam et —
       // her seferinde tekrar sorulur, işlevi engellemez.
@@ -109,7 +80,7 @@ function KurallarModal({ onKabul }: { onKabul: () => void }) {
         <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-lg font-bold">Kayıt ve kullanım kuralları</h2>
         <div className="overflow-y-auto rounded-xl p-3.5 text-xs leading-relaxed whitespace-pre-line"
           style={{ background: BG0, color: TEXT_MUTED, border: `1px solid ${BORDER_STRONG}`, maxHeight: "45vh" }}>
-          {KURALLAR_METNI}
+          {metin}
         </div>
         <label className="flex items-start gap-2 cursor-pointer">
           <input type="checkbox" checked={okundu} onChange={(e) => setOkundu(e.target.checked)} className="mt-0.5" />
@@ -125,7 +96,7 @@ function KurallarModal({ onKabul }: { onKabul: () => void }) {
   );
 }
 
-export default function SignupForm() {
+export default function SignupForm({ kurallarMetni, kurallarVersiyon }: { kurallarMetni: string; kurallarVersiyon: string }) {
   const router = useRouter();
   const supabase = createClient();
 
@@ -140,11 +111,11 @@ export default function SignupForm() {
   }, [supabase]);
 
   useEffect(() => {
-    setKurallarKabul(kurallarOnayliMi());
-  }, []);
+    setKurallarKabul(kurallarOnayliMi(kurallarVersiyon));
+  }, [kurallarVersiyon]);
 
   if (!kurallarKabul) {
-    return <KurallarModal onKabul={() => setKurallarKabul(true)} />;
+    return <KurallarModal metin={kurallarMetni} versiyon={kurallarVersiyon} onKabul={() => setKurallarKabul(true)} />;
   }
 
   return (

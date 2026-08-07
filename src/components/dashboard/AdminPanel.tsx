@@ -57,6 +57,7 @@ const EYLEM_ETIKET: Record<string, string> = {
   veli_talebi_reddet: "Veli talebi reddedildi",
   konu_anlatimi_duzenle: "Konu anlatımı düzenlendi",
   konu_anlatimi_yeniden_uret: "Konu anlatımı yeniden üretildi",
+  kurallar_metni_guncelle: "Kayıt kuralları metni güncellendi",
 };
 
 export function AdminPanel({

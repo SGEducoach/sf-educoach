@@ -381,3 +381,39 @@ export async function konuAnlatimiYenidenUret(id: string): Promise<{ error: stri
   revalidatePath("/yonetici");
   return { error: null, icerik };
 }
+
+// ============ Kayıt ve kullanım kuralları metni ============
+// app_ayarlari(anahtar='kurallar_metni'/'kurallar_versiyon') — signup
+// sayfası bunu appAyariGetir ile (RLS: select herkese açık) okuyor. Metin
+// her güncellendiğinde versiyon otomatik bump'lanır (timestamp bazlı),
+// böylece daha önce eski metni kabul etmiş kullanıcılara tekrar sorulur.
+
+export async function kurallarGetir(): Promise<{ error: string | null; metin: string | null; versiyon: string | null }> {
+  const { supabase } = await requireAdmin();
+  const { data, error } = await supabase.from("app_ayarlari").select("anahtar, deger").in("anahtar", ["kurallar_metni", "kurallar_versiyon"]);
+  if (error) return { error: error.message, metin: null, versiyon: null };
+  const harita = new Map((data ?? []).map((r) => [r.anahtar as string, r.deger as string]));
+  return { error: null, metin: harita.get("kurallar_metni") ?? null, versiyon: harita.get("kurallar_versiyon") ?? null };
+}
+
+export async function kurallarGuncelle(yeniMetin: string): Promise<{ error: string | null; versiyon: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const metin = yeniMetin.trim();
+  if (!metin) return { error: "Metin boş olamaz.", versiyon: null };
+  const yeniVersiyon = `v${Date.now()}`;
+  const simdi = new Date().toISOString();
+
+  const { error } = await admin.from("app_ayarlari").upsert(
+    [
+      { anahtar: "kurallar_metni", deger: metin, guncelleyen_id: user.id, updated_at: simdi },
+      { anahtar: "kurallar_versiyon", deger: yeniVersiyon, guncelleyen_id: user.id, updated_at: simdi },
+    ],
+    { onConflict: "anahtar" },
+  );
+  if (error) return { error: error.message, versiyon: null };
+
+  await auditLogYaz(supabase, user.id, "kurallar_metni_guncelle", { versiyon: yeniVersiyon });
+  revalidatePath("/yonetici");
+  revalidatePath("/signup");
+  return { error: null, versiyon: yeniVersiyon };
+}

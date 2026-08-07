@@ -6,6 +6,7 @@ import { KullaniciArama } from "@/components/yonetici/KullaniciArama";
 import { VeliTalepleri } from "@/components/yonetici/VeliTalepleri";
 import { PlatformIstatistikleri } from "@/components/yonetici/PlatformIstatistikleri";
 import { KonuAnlatimYonetimi } from "@/components/yonetici/KonuAnlatimYonetimi";
+import { KurallarYonetimi } from "@/components/yonetici/KurallarYonetimi";
 import { YoneticiGirisForm } from "@/components/yonetici/YoneticiGirisForm";
 
 // SG EduCoach'un tek kontrol noktası — bilerek /dashboard'dan ayrı, kendi
@@ -76,6 +77,7 @@ export default async function YoneticiPage({
           islemKayitlari={kayitListesi}
         />
         <KonuAnlatimYonetimi />
+        <KurallarYonetimi />
       </div>
     </div>
   );
