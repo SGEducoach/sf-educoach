@@ -524,3 +524,37 @@ export async function denemeSonucuTopluGir(input: {
 
   return { error: null, sonuclar };
 }
+
+// ============ CSV dışa aktarma ============
+// Dosya oluşturma/indirme tarayıcıda yapılıyor (Blob) — burada sadece veri
+// hazırlanıyor, admin bunu okul bazında indirip Excel'de açabiliyor.
+export interface OgrenciDisaAktarSatiri {
+  ad: string;
+  okulNo: string;
+  sinifAdi: string | null;
+  aytAlan: AytAlan;
+  hedefBolum: string;
+  email: string | null;
+  telefon: string | null;
+}
+
+export async function ogrenciListesiDisaAktar(schoolId: string): Promise<{ error: string | null; satirlar: OgrenciDisaAktarSatiri[] }> {
+  const { supabase } = await requireAdmin();
+  const { data, error } = await supabase
+    .from("students")
+    .select("okul_no, ayt_alan, hedef_bolum, profiles!students_id_fkey(ad, email, telefon), classes(seviye, sube)")
+    .eq("school_id", schoolId)
+    .order("okul_no");
+  if (error) return { error: error.message, satirlar: [] };
+
+  type Row = {
+    okul_no: string; ayt_alan: AytAlan; hedef_bolum: string;
+    profiles: { ad: string; email: string | null; telefon: string | null } | null;
+    classes: { seviye: string; sube: string } | null;
+  };
+  const satirlar = ((data as unknown as Row[]) ?? []).map((r) => ({
+    ad: r.profiles?.ad ?? "—", okulNo: r.okul_no, sinifAdi: r.classes ? `${r.classes.seviye}-${r.classes.sube}` : null,
+    aytAlan: r.ayt_alan, hedefBolum: r.hedef_bolum, email: r.profiles?.email ?? null, telefon: r.profiles?.telefon ?? null,
+  }));
+  return { error: null, satirlar };
+}

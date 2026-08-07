@@ -2,13 +2,16 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Shield, Building2, ScrollText, UserPlus, Copy, Check, Plus, Pencil, EyeOff, Eye, X, ClipboardList } from "lucide-react";
+import { Shield, Building2, ScrollText, UserPlus, Copy, Check, Plus, Pencil, EyeOff, Eye, X, ClipboardList, Download } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH, LILAC } from "@/lib/theme";
 import {
   sinifOgretmeniAta, ogretmenEkleManuel, ogrenciEkleManuel, okulEkle, okulDuzenle, okulAktiflikDegistir,
   ogrencileriTopluEkle, type TopluOgrenciSonuc,
 } from "@/app/dashboard/actions";
-import { sinifSil, sinifOgrencileriGetir, denemeSonucuTopluGir, type SinifOgrencisi } from "@/app/yonetici/actions";
+import {
+  sinifSil, sinifOgrencileriGetir, denemeSonucuTopluGir, ogrenciListesiDisaAktar,
+  type SinifOgrencisi,
+} from "@/app/yonetici/actions";
 import { SinifEkleFormu } from "@/components/dashboard/OgretmenPanel";
 import { AYT_ALAN_ETIKET, BRANS_LISTESI, TYT_DERSLERI, AYT_DERSLERI, DENEME_ZORLUGU_ETIKET, dersSoruSayisi } from "@/lib/types";
 import type { AytAlan, DenemeTuru, DenemeZorlugu } from "@/lib/types";
@@ -112,6 +115,7 @@ export function AdminPanel({
                     <Pencil size={11} color={TEXT_MUTED} />
                   </button>
                 )}
+                {gorunenOkul && <OgrenciCsvIndirButonu okul={gorunenOkul} />}
               </div>
             )}
             <button type="button" onClick={() => setOkulEkleAcik((v) => !v)}
@@ -772,6 +776,54 @@ function DenemeTopluGirisFormu({ siniflar }: { siniflar: SinifSatiri[] }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function csvKacir(v: string): string {
+  return `"${v.replace(/"/g, '""')}"`;
+}
+
+// UTF-8 BOM ekleniyor ki Excel Türkçe karakterleri (ı,ş,ğ...) doğru göstersin.
+function csvIndir(dosyaAdi: string, basliklar: string[], satirlar: string[][]) {
+  const icerik = [basliklar, ...satirlar].map((satir) => satir.map(csvKacir).join(",")).join("\r\n");
+  const blob = new Blob(["﻿" + icerik], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = dosyaAdi;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function OgrenciCsvIndirButonu({ okul }: { okul: OkulSatiri }) {
+  const [pending, startTransition] = useTransition();
+  const [hata, setHata] = useState<string | null>(null);
+
+  function indir() {
+    setHata(null);
+    startTransition(async () => {
+      const res = await ogrenciListesiDisaAktar(okul.id);
+      if (res.error) return setHata(res.error);
+      if (res.satirlar.length === 0) return setHata("Bu okulda kayıtlı öğrenci yok.");
+      csvIndir(
+        `${okul.ad.replace(/[^\w]+/g, "_")}_ogrenciler.csv`,
+        ["Ad Soyad", "Okul No", "Sınıf", "AYT Alanı", "Hedef Bölüm", "E-posta", "Telefon"],
+        res.satirlar.map((s) => [s.ad, s.okulNo, s.sinifAdi ?? "", s.aytAlan, s.hedefBolum, s.email ?? "", s.telefon ?? ""]),
+      );
+    });
+  }
+
+  return (
+    <div className="flex flex-col items-end">
+      <button type="button" onClick={indir} disabled={pending} title="Öğrenci listesini CSV indir"
+        className="sgec-btn w-7 h-7 rounded-full flex items-center justify-center shrink-0 disabled:opacity-60"
+        style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${BORDER_STRONG}` }}>
+        <Download size={11} color={TEXT_MUTED} />
+      </button>
+      {hata && <span style={{ color: BLUSH }} className="text-[10px] font-semibold mt-1">{hata}</span>}
     </div>
   );
 }
