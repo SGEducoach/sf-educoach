@@ -2,9 +2,12 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Shield, Building2, ScrollText, UserPlus, Copy, Check, Plus, Pencil, EyeOff, Eye, X } from "lucide-react";
+import { Shield, Building2, ScrollText, UserPlus, Copy, Check, Plus, Pencil, EyeOff, Eye, X, ClipboardList } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH, LILAC } from "@/lib/theme";
-import { sinifOgretmeniAta, ogretmenEkleManuel, ogrenciEkleManuel, okulEkle, okulDuzenle, okulAktiflikDegistir } from "@/app/dashboard/actions";
+import {
+  sinifOgretmeniAta, ogretmenEkleManuel, ogrenciEkleManuel, okulEkle, okulDuzenle, okulAktiflikDegistir,
+  ogrencileriTopluEkle, type TopluOgrenciSonuc,
+} from "@/app/dashboard/actions";
 import { sinifSil } from "@/app/yonetici/actions";
 import { SinifEkleFormu } from "@/components/dashboard/OgretmenPanel";
 import { AYT_ALAN_ETIKET, BRANS_LISTESI } from "@/lib/types";
@@ -43,6 +46,7 @@ const EYLEM_ETIKET: Record<string, string> = {
   sinif_ekle: "Sınıf eklendi",
   ogretmen_ekle_manuel: "Öğretmen eklendi",
   ogrenci_ekle_manuel: "Öğrenci eklendi",
+  ogrenci_toplu_ekle: "Öğrenciler toplu eklendi",
   sinif_ogretmeni_ata: "Sınıf öğretmeni atandı",
   sinif_ogretmenliginden_cikar: "Sınıf öğretmenliğinden çıkarıldı",
   okul_ekle: "Okul eklendi",
@@ -157,6 +161,10 @@ export function AdminPanel({
             <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
               <OgretmenEkleFormu schoolId={gorunenOkul.id} />
               <OgrenciEkleFormu schoolId={gorunenOkul.id} siniflar={siniflar} />
+            </div>
+
+            <div className="mt-3">
+              <OgrenciTopluEkleFormu schoolId={gorunenOkul.id} siniflar={siniflar} />
             </div>
           </>
         )}
@@ -481,6 +489,117 @@ function SinifRozeti({ sinif }: { sinif: SinifSatiri }) {
         </button>
       </div>
       {hata && <span style={{ color: BLUSH }} className="text-[10px] font-semibold">{hata}</span>}
+    </div>
+  );
+}
+
+// Satır formatı esnek: "Ad Soyad, Okul No", "Ad Soyad<TAB>Okul No" veya
+// sondaki rakam grubu okul no sayılarak "Ad Soyad Okul No" da kabul edilir.
+function satirAyristir(satir: string): { ad: string; okulNo: string } | null {
+  const virgullu = satir.split(/\t|,/).map((p) => p.trim()).filter(Boolean);
+  if (virgullu.length >= 2) return { ad: virgullu[0], okulNo: virgullu[1] };
+
+  const kelimeler = satir.trim().split(/\s+/).filter(Boolean);
+  if (kelimeler.length >= 2) {
+    const son = kelimeler[kelimeler.length - 1];
+    if (/^\d+$/.test(son)) return { ad: kelimeler.slice(0, -1).join(" "), okulNo: son };
+  }
+  return null;
+}
+
+function OgrenciTopluEkleFormu({ schoolId, siniflar }: { schoolId: string; siniflar: SinifSatiri[] }) {
+  const [acik, setAcik] = useState(false);
+  const [classId, setClassId] = useState("");
+  const [aytAlan, setAytAlan] = useState<AytAlan>("SAY");
+  const [metin, setMetin] = useState("");
+  const [hata, setHata] = useState<string | null>(null);
+  const [sonuclar, setSonuclar] = useState<TopluOgrenciSonuc[] | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  const satirlar = metin.split("\n").map((s) => s.trim()).filter(Boolean).map(satirAyristir);
+  const gecerliSatirlar = satirlar.filter((s): s is { ad: string; okulNo: string } => s !== null);
+  const hatalıSayisi = satirlar.length - gecerliSatirlar.length;
+
+  function ekle() {
+    setHata(null);
+    if (!classId) return setHata("Sınıf seçin.");
+    if (gecerliSatirlar.length === 0) return setHata("Ayrıştırılabilir satır bulunamadı.");
+    startTransition(async () => {
+      const res = await ogrencileriTopluEkle({ schoolId, classId, aytAlan, satirlar: gecerliSatirlar });
+      if (res.error) return setHata(res.error);
+      setSonuclar(res.sonuclar);
+      setMetin("");
+    });
+  }
+
+  if (!acik) {
+    return (
+      <button type="button" onClick={() => setAcik(true)}
+        className="sgec-btn flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl"
+        style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `1px solid ${BORDER_STRONG}` }}>
+        <ClipboardList size={13} /> Toplu öğrenci ekle
+      </button>
+    );
+  }
+
+  return (
+    <div className="rounded-2xl p-4 flex flex-col gap-2.5" style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}` }}>
+      <div className="flex items-center gap-1.5">
+        <ClipboardList size={13} color={MINT} />
+        <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[13px] font-bold">Toplu öğrenci ekle</span>
+      </div>
+      <p style={{ color: TEXT_MUTED }} className="text-[11px]">Her satıra bir öğrenci: &quot;Ad Soyad, Okul No&quot; (Excel&apos;den yapıştırınca da çalışır).</p>
+
+      <div className="flex gap-2 flex-wrap">
+        <select value={classId} onChange={(e) => setClassId(e.target.value)}
+          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+          <option value="">Sınıf seçin</option>
+          {siniflar.map((s) => <option key={s.id} value={s.id}>{s.seviye}-{s.sube}</option>)}
+        </select>
+        <select value={aytAlan} onChange={(e) => setAytAlan(e.target.value as AytAlan)}
+          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+          {(Object.keys(AYT_ALAN_ETIKET) as AytAlan[]).map((a) => <option key={a} value={a}>{AYT_ALAN_ETIKET[a]}</option>)}
+        </select>
+      </div>
+
+      <textarea value={metin} onChange={(e) => setMetin(e.target.value)} rows={6} placeholder={"Ahmet Yılmaz, 1234\nAyşe Kaya, 1235"}
+        className="text-xs px-3 py-2.5 rounded-xl outline-none resize-y font-mono" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+
+      {metin.trim() && (
+        <span style={{ color: TEXT_MUTED }} className="text-[11px]">
+          {gecerliSatirlar.length} satır ayrıştırıldı{hatalıSayisi > 0 && <span style={{ color: BLUSH }}> · {hatalıSayisi} satır anlaşılamadı</span>}
+        </span>
+      )}
+
+      {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
+
+      <div className="flex items-center gap-2">
+        <button type="button" onClick={ekle} disabled={pending}
+          className="sgec-btn text-xs font-bold px-4 py-2 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+          {pending ? "Ekleniyor..." : `${gecerliSatirlar.length || ""} öğrenciyi ekle`}
+        </button>
+        <button type="button" onClick={() => { setAcik(false); setSonuclar(null); }}
+          className="sgec-btn text-xs font-bold px-3 py-2 rounded-xl" style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED }}>
+          Kapat
+        </button>
+      </div>
+
+      {sonuclar && (
+        <div className="rounded-xl p-3 flex flex-col gap-1.5 mt-1" style={{ background: BG0, border: `1px solid ${BORDER_STRONG}` }}>
+          <div style={{ color: TEXT }} className="text-xs font-bold mb-1">
+            {sonuclar.filter((s) => !s.hata).length}/{sonuclar.length} eklendi
+          </div>
+          <div className="max-h-48 overflow-y-auto flex flex-col gap-1">
+            {sonuclar.map((s, i) => (
+              <div key={i} className="text-[11px] flex items-center justify-between gap-2" style={{ color: s.hata ? BLUSH : TEXT_MUTED }}>
+                <span>{s.ad} · #{s.okulNo}</span>
+                <span className="font-mono">{s.hata ?? s.sifre}</span>
+              </div>
+            ))}
+          </div>
+          <p style={{ color: TEXT_MUTED }} className="text-[10px] mt-1">Şifreler bir kerelik gösterildi, kaydedin — tekrar gösterilmeyecek.</p>
+        </div>
+      )}
     </div>
   );
 }

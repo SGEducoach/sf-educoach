@@ -198,3 +198,69 @@ export async function ogrenciEkleManuel(input: {
   revalidatePath("/yonetici");
   return { error: null, sifre };
 }
+
+// ============ Admin: toplu öğrenci ekleme ============
+// Bir sınıfın tüm listesini tek tek "Öğrenci ekle" formuyla girmek yerine
+// satır satır (Ad Soyad, Okul No) yapıştırıp tek seferde hesap açar.
+// E-posta öğrenciye hiç gösterilmiyor/kullanılmıyor (giriş okul no+şifre
+// iledir) — sadece Auth hesabı için benzersiz bir değer gerektiğinden
+// otomatik üretiliyor.
+export interface TopluOgrenciSonuc {
+  ad: string;
+  okulNo: string;
+  sifre: string | null;
+  hata: string | null;
+}
+
+export async function ogrencileriTopluEkle(input: {
+  schoolId: string; classId: string; aytAlan: "SAY" | "EA" | "SOZ";
+  satirlar: { ad: string; okulNo: string }[];
+}): Promise<{ error: string | null; sonuclar: TopluOgrenciSonuc[] }> {
+  const { supabase, user, admin } = await requireAdmin();
+  if (!admin) return { error: "Bu işlem için yönetici yetkisi gerekiyor.", sonuclar: [] };
+  if (!input.schoolId) return { error: "Okul seçin.", sonuclar: [] };
+  if (!input.classId) return { error: "Sınıf seçin.", sonuclar: [] };
+  if (input.satirlar.length === 0) return { error: "Eklenecek satır bulunamadı.", sonuclar: [] };
+  if (input.satirlar.length > 60) return { error: "Tek seferde en fazla 60 öğrenci eklenebilir.", sonuclar: [] };
+
+  const sonuclar: TopluOgrenciSonuc[] = [];
+  let basariliSayisi = 0;
+
+  // Auth admin API'sinin eşzamanlı isteklerde oran sınırına takılmaması için
+  // satırlar sırayla (paralel değil) işleniyor — sınıf boyutu (~20-35)
+  // için birkaç saniye sürer, kabul edilebilir.
+  for (const satir of input.satirlar) {
+    const ad = satir.ad.trim();
+    const okulNo = satir.okulNo.trim();
+    if (!ad || !okulNoGecerliMi(okulNo)) {
+      sonuclar.push({ ad, okulNo, sifre: null, hata: "Ad/okul no geçersiz." });
+      continue;
+    }
+
+    const sifre = rastgeleSifre();
+    const email = `${crypto.randomUUID()}@ogrenci.sgeducoach.internal`;
+    const { data: created, error } = await admin.auth.admin.createUser({
+      email, password: sifre, email_confirm: true,
+      user_metadata: {
+        role: "ogrenci", ad, telefon: null, school_id: input.schoolId, class_id: input.classId,
+        okul_no: okulNo, ayt_alan: input.aytAlan, hedef_bolum: "",
+      },
+    });
+    if (error) {
+      sonuclar.push({ ad, okulNo, sifre: null, hata: manuelEklemeHatasi(error.message) });
+      continue;
+    }
+    void created;
+    sonuclar.push({ ad, okulNo, sifre, hata: null });
+    basariliSayisi++;
+  }
+
+  if (basariliSayisi > 0) {
+    await auditLogYaz(supabase, user.id, "ogrenci_toplu_ekle", {
+      school_id: input.schoolId, class_id: input.classId, basarili: basariliSayisi, toplam: input.satirlar.length,
+    });
+    revalidatePath("/yonetici");
+  }
+
+  return { error: null, sonuclar };
+}
