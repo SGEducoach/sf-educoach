@@ -694,3 +694,10 @@ create policy "konu_anlatimlari_select_all" on public.konu_anlatimlari
 
 -- Konu anlatımına sınıf/seviye etiketi (bkz. migration 0017)
 alter table public.konu_anlatimlari add column if not exists seviye text;
+
+-- ============ Deneme seviyesi (Kolay/Orta/Zor) — hedefe_yakinlik'ten ayrı ============
+create type public.deneme_zorlugu as enum ('kolay', 'orta', 'zor');
+alter table public.denemeler add column if not exists zorluk public.deneme_zorlugu;
+
+-- ============ Veri giriş sıklığı: bir kez seçilip kilitlensin ============
+alter table public.students add column if not exists veri_giris_sikligi_kilitli boolean not null default false;

@@ -8,6 +8,7 @@ import { GraduationCap, BookOpen, Users, Building2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { UserRole } from "@/lib/types";
 import { BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
+import { YukleniyorOverlay } from "@/components/YukleniyorOverlay";
 
 const rolSecenekleri: { id: UserRole; ad: string; icon: typeof BookOpen }[] = [
   { id: "ogrenci", ad: "Öğrenci", icon: BookOpen },
@@ -140,6 +141,7 @@ export default function LoginForm() {
           <Link href="/signup" style={{ color: MINT }} className="font-semibold">Kayıt olun</Link>
         </p>
       </div>
+      <YukleniyorOverlay visible={yukleniyor} mesaj="Giriş yapılıyor..." />
     </div>
   );
 }

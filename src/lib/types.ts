@@ -6,6 +6,7 @@ export type VeliTalepDurum = "bekliyor" | "onaylandi" | "reddedildi" | "kullanil
 export type HedefeYakinlik = "yakin" | "belirsiz" | "uzak";
 export type VerimlilikDuzeyi = "cok_dusuk" | "dusuk" | "orta" | "iyi" | "cok_iyi";
 export type DenemeTuru = "TYT" | "AYT";
+export type DenemeZorlugu = "kolay" | "orta" | "zor";
 
 export interface Profile {
   id: string;
@@ -98,6 +99,7 @@ export interface Deneme {
   tur: DenemeTuru;
   sure_dakika: number;
   hedefe_yakinlik: HedefeYakinlik;
+  zorluk: DenemeZorlugu | null;
   kaynak: "ogrenci" | "ogretmen";
   created_at: string;
   deneme_ders_sonuclari?: DenemeDersSonucu[];
@@ -129,6 +131,31 @@ export const VERI_GIRIS_SIKLIGI_ETIKET: Record<VeriGirisSikligi, string> = {
   "3gunluk": "3 Günde Bir",
   haftalik: "Haftalık",
 };
+
+export const DENEME_ZORLUGU_ETIKET: Record<DenemeZorlugu, string> = {
+  kolay: "Kolay",
+  orta: "Orta",
+  zor: "Zor",
+};
+
+// Ders bazında ÖSYM'nin resmi TYT/AYT soru sayıları (2026). Deneme
+// girerken doğru+yanlış toplamının bunu aşmaması için kullanılıyor.
+// Kaynak: ÖSYM TYT-AYT soru dağılım tablosu.
+const TYT_SORU_SAYISI: Record<string, number> = {
+  "Türkçe": 40, "Matematik": 40, "Fizik": 7, "Kimya": 7, "Biyoloji": 6,
+  "Tarih": 5, "Coğrafya": 5, "Felsefe": 5, "Din Kültürü": 5,
+};
+
+const AYT_SORU_SAYISI: Record<string, number> = {
+  "Matematik": 40, "Fizik": 14, "Kimya": 13, "Biyoloji": 13,
+  "Edebiyat": 24, "Tarih": 10, "Coğrafya": 6,
+  "Tarih-1": 10, "Coğrafya-1": 6, "Tarih-2": 11, "Coğrafya-2": 11,
+  "Felsefe Grubu": 12, "Din Kültürü": 6,
+};
+
+export function dersSoruSayisi(tur: DenemeTuru, ders: string): number | undefined {
+  return (tur === "TYT" ? TYT_SORU_SAYISI : AYT_SORU_SAYISI)[ders];
+}
 
 export function netHesapla(dogru: number, yanlis: number): number {
   return Math.round((dogru - yanlis / 4) * 100) / 100;

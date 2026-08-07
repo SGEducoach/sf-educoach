@@ -14,6 +14,7 @@ import {
 import {
   telefonSanitize, telefonGecerliMi, okulNoSanitize, sifreGecerliMi, SIFRE_IPUCU, TELEFON_IPUCU,
 } from "@/lib/validators";
+import { YukleniyorOverlay } from "@/components/YukleniyorOverlay";
 
 const rolSecenekleri: { id: UserRole; ad: string; icon: typeof BookOpen }[] = [
   { id: "ogrenci", ad: "Öğrenci", icon: BookOpen },
@@ -251,27 +252,30 @@ function OgrenciKayit({ schools, classes, router, supabase }: {
 
   if (adim === 2) {
     return (
-      <form onSubmit={kayitOl} className="rounded-3xl p-6 flex flex-col gap-4" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
-        <div className="rounded-xl px-3 py-2 text-[12px] font-semibold" style={{ background: MINT_BG, color: MINT }}>
-          Bilgileriniz tamam ✓ — şimdi şifrenizi belirleyin.
-        </div>
-        <label className="flex flex-col gap-1"><Etiket>Şifre</Etiket>
-          <Girdi type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
-          <span style={{ color: TEXT_MUTED }} className="text-[10px]">{SIFRE_IPUCU}</span>
-        </label>
-        <label className="flex flex-col gap-1"><Etiket>Şifre (tekrar)</Etiket>
-          <Girdi type="password" required minLength={8} value={password2} onChange={(e) => setPassword2(e.target.value)} />
-        </label>
-        {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
-        <div className="flex gap-2">
-          <button type="button" onClick={() => setAdim(1)} className="sgec-btn shrink-0 w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: BG0, border: `1px solid ${BORDER_STRONG}` }}>
-            <ChevronLeft size={16} color={TEXT_MUTED} />
-          </button>
-          <button type="submit" disabled={yukleniyor} className="sgec-btn flex-1 text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
-            {yukleniyor ? "Kaydediliyor..." : "Kayıt ol"}
-          </button>
-        </div>
-      </form>
+      <>
+        <form onSubmit={kayitOl} className="rounded-3xl p-6 flex flex-col gap-4" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+          <div className="rounded-xl px-3 py-2 text-[12px] font-semibold" style={{ background: MINT_BG, color: MINT }}>
+            Bilgileriniz tamam ✓ — şimdi şifrenizi belirleyin.
+          </div>
+          <label className="flex flex-col gap-1"><Etiket>Şifre</Etiket>
+            <Girdi type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
+            <span style={{ color: TEXT_MUTED }} className="text-[10px]">{SIFRE_IPUCU}</span>
+          </label>
+          <label className="flex flex-col gap-1"><Etiket>Şifre (tekrar)</Etiket>
+            <Girdi type="password" required minLength={8} value={password2} onChange={(e) => setPassword2(e.target.value)} />
+          </label>
+          {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
+          <div className="flex gap-2">
+            <button type="button" onClick={() => setAdim(1)} className="sgec-btn shrink-0 w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: BG0, border: `1px solid ${BORDER_STRONG}` }}>
+              <ChevronLeft size={16} color={TEXT_MUTED} />
+            </button>
+            <button type="submit" disabled={yukleniyor} className="sgec-btn flex-1 text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+              {yukleniyor ? "Kaydediliyor..." : "Kayıt ol"}
+            </button>
+          </div>
+        </form>
+        <YukleniyorOverlay visible={yukleniyor} mesaj="Kaydediliyor..." />
+      </>
     );
   }
 
@@ -368,27 +372,30 @@ function OgretmenKayit({ schools, router, supabase }: {
 
   if (adim === 2) {
     return (
-      <form onSubmit={kayitOl} className="rounded-3xl p-6 flex flex-col gap-4" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
-        <div className="rounded-xl px-3 py-2 text-[12px] font-semibold" style={{ background: MINT_BG, color: MINT }}>
-          Bilgileriniz tamam ✓ — şimdi şifrenizi belirleyin.
-        </div>
-        <label className="flex flex-col gap-1"><Etiket>Şifre</Etiket>
-          <Girdi type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
-          <span style={{ color: TEXT_MUTED }} className="text-[10px]">{SIFRE_IPUCU}</span>
-        </label>
-        <label className="flex flex-col gap-1"><Etiket>Şifre (tekrar)</Etiket>
-          <Girdi type="password" required minLength={8} value={password2} onChange={(e) => setPassword2(e.target.value)} />
-        </label>
-        {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
-        <div className="flex gap-2">
-          <button type="button" onClick={() => setAdim(1)} className="sgec-btn shrink-0 w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: BG0, border: `1px solid ${BORDER_STRONG}` }}>
-            <ChevronLeft size={16} color={TEXT_MUTED} />
-          </button>
-          <button type="submit" disabled={yukleniyor} className="sgec-btn flex-1 text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
-            {yukleniyor ? "Kaydediliyor..." : "Kayıt ol"}
-          </button>
-        </div>
-      </form>
+      <>
+        <form onSubmit={kayitOl} className="rounded-3xl p-6 flex flex-col gap-4" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+          <div className="rounded-xl px-3 py-2 text-[12px] font-semibold" style={{ background: MINT_BG, color: MINT }}>
+            Bilgileriniz tamam ✓ — şimdi şifrenizi belirleyin.
+          </div>
+          <label className="flex flex-col gap-1"><Etiket>Şifre</Etiket>
+            <Girdi type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
+            <span style={{ color: TEXT_MUTED }} className="text-[10px]">{SIFRE_IPUCU}</span>
+          </label>
+          <label className="flex flex-col gap-1"><Etiket>Şifre (tekrar)</Etiket>
+            <Girdi type="password" required minLength={8} value={password2} onChange={(e) => setPassword2(e.target.value)} />
+          </label>
+          {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
+          <div className="flex gap-2">
+            <button type="button" onClick={() => setAdim(1)} className="sgec-btn shrink-0 w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: BG0, border: `1px solid ${BORDER_STRONG}` }}>
+              <ChevronLeft size={16} color={TEXT_MUTED} />
+            </button>
+            <button type="submit" disabled={yukleniyor} className="sgec-btn flex-1 text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+              {yukleniyor ? "Kaydediliyor..." : "Kayıt ol"}
+            </button>
+          </div>
+        </form>
+        <YukleniyorOverlay visible={yukleniyor} mesaj="Kaydediliyor..." />
+      </>
     );
   }
 
@@ -479,15 +486,18 @@ function VeliTalepForm({ supabase }: { supabase: ReturnType<typeof createClient>
   }
 
   return (
-    <form onSubmit={gonder} className="flex flex-col gap-3">
-      <label className="flex flex-col gap-1"><Etiket>Ad Soyad</Etiket><Girdi required value={ad} onChange={(e) => setAd(e.target.value)} /></label>
-      <label className="flex flex-col gap-1"><Etiket>Telefon</Etiket><Girdi type="tel" required value={telefon} inputMode="numeric" placeholder="5xxxxxxxxx" onChange={(e) => setTelefon(telefonSanitize(e.target.value))} /></label>
-      <label className="flex flex-col gap-1"><Etiket>Öğrenci Okul No</Etiket><Girdi required value={okulNo} inputMode="numeric" maxLength={5} onChange={(e) => setOkulNo(okulNoSanitize(e.target.value))} /></label>
-      {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
-      <button type="submit" disabled={yukleniyor} className="sgec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
-        {yukleniyor ? "Gönderiliyor..." : "Kod talep et"}
-      </button>
-    </form>
+    <>
+      <form onSubmit={gonder} className="flex flex-col gap-3">
+        <label className="flex flex-col gap-1"><Etiket>Ad Soyad</Etiket><Girdi required value={ad} onChange={(e) => setAd(e.target.value)} /></label>
+        <label className="flex flex-col gap-1"><Etiket>Telefon</Etiket><Girdi type="tel" required value={telefon} inputMode="numeric" placeholder="5xxxxxxxxx" onChange={(e) => setTelefon(telefonSanitize(e.target.value))} /></label>
+        <label className="flex flex-col gap-1"><Etiket>Öğrenci Okul No</Etiket><Girdi required value={okulNo} inputMode="numeric" maxLength={5} onChange={(e) => setOkulNo(okulNoSanitize(e.target.value))} /></label>
+        {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
+        <button type="submit" disabled={yukleniyor} className="sgec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+          {yukleniyor ? "Gönderiliyor..." : "Kod talep et"}
+        </button>
+      </form>
+      <YukleniyorOverlay visible={yukleniyor} mesaj="Gönderiliyor..." />
+    </>
   );
 }
 
@@ -530,6 +540,7 @@ function VeliTamamlaForm({ router }: { router: ReturnType<typeof useRouter>; sup
   }
 
   return (
+    <>
     <form onSubmit={tamamla} className="flex flex-col gap-3">
       <label className="flex flex-col gap-1"><Etiket>Öğrenci Okul No</Etiket><Girdi required value={okulNo} onChange={(e) => setOkulNo(e.target.value)} /></label>
       <label className="flex flex-col gap-1"><Etiket>Kod</Etiket><Girdi required value={kod} onChange={(e) => setKod(e.target.value)} /></label>
@@ -555,6 +566,8 @@ function VeliTamamlaForm({ router }: { router: ReturnType<typeof useRouter>; sup
         {yukleniyor ? "Tamamlanıyor..." : "Kaydı tamamla"}
       </button>
     </form>
+    <YukleniyorOverlay visible={yukleniyor} mesaj="Tamamlanıyor..." />
+    </>
   );
 }
 

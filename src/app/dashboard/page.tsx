@@ -9,6 +9,7 @@ import { OgrenciVeriGirisi } from "@/components/dashboard/OgrenciVeriGirisi";
 import { ZayifKonular } from "@/components/dashboard/ZayifKonular";
 import { AnalizPaneli } from "@/components/dashboard/AnalizPaneli";
 import { BildirimAyarlari } from "@/components/dashboard/BildirimAyarlari";
+import { HosgeldinPopuplari } from "@/components/dashboard/HosgeldinPopuplari";
 import { analizVerisiGetir } from "@/lib/analiz";
 import type { RaporDonemi } from "@/lib/analiz";
 import { AYT_ALAN_ETIKET } from "@/lib/types";
@@ -40,6 +41,7 @@ export default async function DashboardPage({
   return (
     <div style={{ minHeight: "100vh", width: "100%" }} className="flex-1 flex flex-col">
       <Header ad={profile.ad} role={role} />
+      <HosgeldinPopuplari role={role} ad={profile.ad} />
       <div className="max-w-6xl mx-auto px-6 py-7 w-full flex-1 flex flex-col gap-6">
         <BildirimAyarlari />
         {role === "ogrenci" && <OgrenciIcerik userId={user.id} ad={profile.ad} donem={donem} />}
@@ -57,12 +59,13 @@ async function OgrenciIcerik({ userId, ad, donem }: { userId: string; ad: string
   const supabase = await createClient();
   const { data: student } = await supabase
     .from("students")
-    .select("okul_no, ayt_alan, hedef_bolum, veri_giris_sikligi, schools(ad), classes(seviye, sube)")
+    .select("okul_no, ayt_alan, hedef_bolum, veri_giris_sikligi, veri_giris_sikligi_kilitli, schools(ad), classes(seviye, sube)")
     .eq("id", userId)
     .single();
 
   type Row = {
     okul_no: string; ayt_alan: AytAlan; hedef_bolum: string; veri_giris_sikligi: VeriGirisSikligi;
+    veri_giris_sikligi_kilitli: boolean;
     schools: { ad: string } | null; classes: { seviye: string; sube: string } | null;
   };
   const s = student as unknown as Row | null;
@@ -129,7 +132,7 @@ async function OgrenciIcerik({ userId, ad, donem }: { userId: string; ad: string
       <ZayifKonular konular={zayifKonular} />
 
       <div className="print:hidden">
-        <OgrenciVeriGirisi studentId={userId} aytAlan={s.ayt_alan} veriGirisSikligi={s.veri_giris_sikligi} konuOnerileri={konuOnerileri} />
+        <OgrenciVeriGirisi studentId={userId} aytAlan={s.ayt_alan} veriGirisSikligi={s.veri_giris_sikligi} veriGirisSikligiKilitli={s.veri_giris_sikligi_kilitli} konuOnerileri={konuOnerileri} />
       </div>
 
       <div>

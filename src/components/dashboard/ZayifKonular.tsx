@@ -20,7 +20,7 @@ export function ZayifKonular({ konular }: { konular: ZayifKonu[] }) {
         <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: PEACH_BG }}>
           <BookOpen size={13} color={PEACH} />
         </div>
-        <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Zayıf konularınız</span>
+        <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Konuları biliyor muyum?</span>
       </div>
       <p style={{ color: TEXT_MUTED }} className="text-xs mb-4">
         &quot;Hedefe uzak&quot; işaretlediğiniz konular — üzerine tıklayıp yapay zeka destekli konu anlatımını okuyabilirsiniz.

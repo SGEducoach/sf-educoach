@@ -1,17 +1,20 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { BookOpen, PenLine, ClipboardList, Sparkles, Loader2, ChevronDown, ChevronUp } from "lucide-react";
-import type { AytAlan, DenemeTuru, HedefeYakinlik, VerimlilikDuzeyi, VeriGirisSikligi } from "@/lib/types";
-import {
-  TYT_DERSLERI, AYT_DERSLERI, HEDEFE_YAKINLIK_ETIKET, VERIMLILIK_ETIKET, VERI_GIRIS_SIKLIGI_ETIKET, netHesapla,
+import type {
+  AytAlan, DenemeTuru, DenemeZorlugu, HedefeYakinlik, VerimlilikDuzeyi, VeriGirisSikligi,
 } from "@/lib/types";
 import {
-  BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, SKY, SKY_BG, TEXT, TEXT_MUTED, BLUSH,
+  TYT_DERSLERI, AYT_DERSLERI, VERIMLILIK_ETIKET, VERI_GIRIS_SIKLIGI_ETIKET, netHesapla, dersSoruSayisi,
+} from "@/lib/types";
+import {
+  BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, SKY, SKY_BG, TEXT, TEXT_MUTED, BLUSH,
 } from "@/lib/theme";
 import {
   konuCalismaEkle, soruCozumuEkle, denemeEkle, haftalikVerimlilikEkle, veriGirisSikligiGuncelle, konuAnlatimiGetir,
 } from "@/app/dashboard/veri-actions";
+import { YukleniyorOverlay } from "@/components/YukleniyorOverlay";
 
 type Sekme = "konu" | "soru" | "deneme";
 
@@ -25,12 +28,16 @@ function Secim({ children, ...props }: React.SelectHTMLAttributes<HTMLSelectElem
   return <select {...props} className="text-sm px-2.5 py-1.5 rounded-xl outline-none w-full" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>{children}</select>;
 }
 
-function HedefeYakinlikSecici({ value, onChange }: { value: HedefeYakinlik; onChange: (v: HedefeYakinlik) => void }) {
+// Genel 3-seçenekli buton grubu — Konu Çalışma/Soru Çözümü/Deneme'de aynı
+// hedefe_yakinlik (ya da zorluk) alanı farklı başlık/etiketlerle gösteriliyor.
+function SecenekSecici<T extends string>({ baslik, secenekler, value, onChange }: {
+  baslik: string; secenekler: [T, string][]; value: T; onChange: (v: T) => void;
+}) {
   return (
     <div className="flex flex-col gap-1">
-      <Etiket>Hedefe yakınlık</Etiket>
+      <Etiket>{baslik}</Etiket>
       <div className="flex gap-1.5">
-        {(Object.entries(HEDEFE_YAKINLIK_ETIKET) as [HedefeYakinlik, string][]).map(([k, v]) => (
+        {secenekler.map(([k, v]) => (
           <button type="button" key={k} onClick={() => onChange(k)}
             className="sgec-btn flex-1 text-[11px] font-bold py-1.5 rounded-full"
             style={{ background: value === k ? MINT : "transparent", color: value === k ? MINT_ON : TEXT_MUTED, border: `1px solid ${value === k ? MINT : BORDER_STRONG}` }}>
@@ -42,8 +49,8 @@ function HedefeYakinlikSecici({ value, onChange }: { value: HedefeYakinlik; onCh
   );
 }
 
-export function OgrenciVeriGirisi({ studentId, aytAlan, veriGirisSikligi, konuOnerileri }: {
-  studentId: string; aytAlan: AytAlan; veriGirisSikligi: VeriGirisSikligi;
+export function OgrenciVeriGirisi({ studentId, aytAlan, veriGirisSikligi, veriGirisSikligiKilitli, konuOnerileri }: {
+  studentId: string; aytAlan: AytAlan; veriGirisSikligi: VeriGirisSikligi; veriGirisSikligiKilitli: boolean;
   konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
 }) {
   const [sekme, setSekme] = useState<Sekme>("konu");
@@ -60,7 +67,7 @@ export function OgrenciVeriGirisi({ studentId, aytAlan, veriGirisSikligi, konuOn
 
   return (
     <div className="flex flex-col gap-4">
-      <SiklikAyari studentId={studentId} mevcut={veriGirisSikligi} />
+      <SiklikAyari studentId={studentId} mevcut={veriGirisSikligi} kilitli={veriGirisSikligiKilitli} />
 
       {basari && (
         <div className="sgec-fade rounded-2xl px-4 py-2.5 text-[13px] font-semibold" style={{ background: MINT_BG, color: MINT }}>
@@ -97,37 +104,101 @@ export function OgrenciVeriGirisi({ studentId, aytAlan, veriGirisSikligi, konuOn
   );
 }
 
-function SiklikAyari({ studentId, mevcut }: { studentId: string; mevcut: VeriGirisSikligi }) {
+function SiklikAyari({ studentId, mevcut, kilitli }: { studentId: string; mevcut: VeriGirisSikligi; kilitli: boolean }) {
   const [pending, startTransition] = useTransition();
   const [deger, setDeger] = useState(mevcut);
+  const [secilecek, setSecilecek] = useState<VeriGirisSikligi | null>(null);
+  const [kilitliMi, setKilitliMi] = useState(kilitli);
+  const [hata, setHata] = useState<string | null>(null);
   void studentId;
 
+  function onayla() {
+    if (!secilecek) return;
+    startTransition(async () => {
+      const res = await veriGirisSikligiGuncelle(secilecek);
+      if (res.error) { setHata(res.error); setSecilecek(null); return; }
+      setDeger(secilecek);
+      setKilitliMi(true);
+      setSecilecek(null);
+    });
+  }
+
   return (
-    <div className="sgec-fade rounded-2xl px-4 py-3 flex items-center justify-between flex-wrap gap-2" style={{ background: SKY_BG, border: `1px solid rgba(143,198,255,0.3)` }}>
-      <span style={{ color: SKY }} className="text-[12px] font-semibold">Veri giriş sıklığınız</span>
-      <select value={deger} disabled={pending}
-        onChange={(e) => {
-          const v = e.target.value as VeriGirisSikligi;
-          setDeger(v);
-          startTransition(() => { void veriGirisSikligiGuncelle(v); });
-        }}
-        className="text-xs font-bold px-3 py-1.5 rounded-full outline-none" style={{ background: BG1, color: SKY, border: `1px solid ${SKY}` }}>
-        {(Object.entries(VERI_GIRIS_SIKLIGI_ETIKET) as [VeriGirisSikligi, string][]).map(([k, v]) => (
-          <option key={k} value={k}>{v}</option>
-        ))}
-      </select>
+    <>
+      <div className="sgec-fade rounded-2xl px-4 py-3 flex items-center justify-between flex-wrap gap-2" style={{ background: SKY_BG, border: `1px solid rgba(143,198,255,0.3)` }}>
+        <span style={{ color: SKY }} className="text-[12px] font-semibold">Veri giriş sıklığınız {kilitliMi && <span style={{ color: TEXT_MUTED }} className="font-normal">(kilitli)</span>}</span>
+        {kilitliMi ? (
+          <span className="text-xs font-bold px-3 py-1.5 rounded-full" style={{ background: BG1, color: SKY, border: `1px solid ${SKY}` }}>
+            {VERI_GIRIS_SIKLIGI_ETIKET[deger]}
+          </span>
+        ) : (
+          <select value={deger} disabled={pending}
+            onChange={(e) => setSecilecek(e.target.value as VeriGirisSikligi)}
+            className="text-xs font-bold px-3 py-1.5 rounded-full outline-none" style={{ background: BG1, color: SKY, border: `1px solid ${SKY}` }}>
+            {(Object.entries(VERI_GIRIS_SIKLIGI_ETIKET) as [VeriGirisSikligi, string][]).map(([k, v]) => (
+              <option key={k} value={k}>{v}</option>
+            ))}
+          </select>
+        )}
+      </div>
+      {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold px-1">{hata}</div>}
+
+      {secilecek && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: "rgba(0,0,0,0.5)" }}>
+          <div className="sgec-fade rounded-3xl p-6 max-w-sm w-full" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+            <h3 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold mb-2">Emin misin?</h3>
+            <p style={{ color: TEXT_MUTED }} className="text-sm mb-4">
+              Veri giriş sıklığını <strong style={{ color: SKY }}>{VERI_GIRIS_SIKLIGI_ETIKET[secilecek]}</strong> olarak seçmek üzeresin. Bu seçim <strong>bir daha değiştirilemez</strong>.
+            </p>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setSecilecek(null)} disabled={pending}
+                className="sgec-btn flex-1 text-sm font-bold py-2.5 rounded-xl" style={{ background: BG1_ALT, color: TEXT_MUTED, border: `1px solid ${BORDER_STRONG}` }}>
+                Vazgeç
+              </button>
+              <button type="button" onClick={onayla} disabled={pending}
+                className="sgec-btn flex-1 text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+                {pending ? "Kaydediliyor..." : "Onayla"}
+              </button>
+            </div>
+          </div>
+          <YukleniyorOverlay visible={pending} mesaj="Kaydediliyor..." />
+        </div>
+      )}
+    </>
+  );
+}
+
+// Konu adı yazılırken input'un hemen altında açılan, seçilince kapanan
+// (ve input'u temizleyip yeni aramaya hazır bırakan) özel öneri listesi —
+// native <datalist>'in yerine (konumu/davranışı kontrol edilemiyordu).
+function KonuOneriDropdown({ oneriler, aktif, onSec }: {
+  oneriler: { konu: string; seviye?: string | null }[]; aktif: boolean; onSec: (konu: string) => void;
+}) {
+  if (!aktif || oneriler.length === 0) return null;
+  return (
+    <div className="absolute left-0 right-0 top-full mt-1 z-20 max-h-56 overflow-y-auto rounded-xl sgec-fade"
+      style={{ background: BG0, border: `1px solid ${BORDER_STRONG}`, boxShadow: "0 8px 20px rgba(0,0,0,0.35)" }}>
+      {oneriler.map((o) => (
+        <button key={o.konu} type="button" onMouseDown={(e) => { e.preventDefault(); onSec(o.konu); }}
+          className="sgec-btn w-full flex items-center justify-between gap-2 text-left px-3 py-2 text-xs font-semibold"
+          style={{ color: TEXT }}>
+          <span>{o.konu}</span>
+          {o.seviye && <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: SKY_BG, color: SKY }}>{o.seviye}</span>}
+        </button>
+      ))}
     </div>
   );
 }
 
 // Akış: önce ders+konu seçilir (eksik olduğun konuyu SEN bulursun), "Konuyu
-// oku" ile o an AI anlatımı gösterilir; süre ve hedefe yakınlığı — yani
+// oku" ile o an AI anlatımı gösterilir; süre ve konuya hakimiyet — yani
 // konuyu ne kadar anladığın — bunu OKUDUKTAN/çalıştıktan SONRA girilir.
 function KonuCalismaForm({ dersListesi, konuOnerileri, onBasari }: {
   dersListesi: string[]; konuOnerileri: { ders: string; konu: string; seviye?: string | null }[]; onBasari: (m: string, s: boolean) => void;
 }) {
   const [ders, setDers] = useState("");
   const [konu, setKonu] = useState("");
+  const [oneriAcik, setOneriAcik] = useState(false);
   const [hedefeYakinlik, setHedefeYakinlik] = useState<HedefeYakinlik>("belirsiz");
   const [hata, setHata] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -138,8 +209,18 @@ function KonuCalismaForm({ dersListesi, konuOnerileri, onBasari }: {
   const [anlatimYukleniyor, setAnlatimYukleniyor] = useState(false);
   const [anlatimHata, setAnlatimHata] = useState<string | null>(null);
 
-  const oneriler = konuOnerileri.filter((o) => o.ders === ders);
-  const seciliKonuSeviyesi = oneriler.find((o) => o.konu === konu)?.seviye;
+  const oneriler = useMemo(
+    () => konuOnerileri.filter((o) => o.ders === ders && (!konu.trim() || o.konu.toLowerCase().includes(konu.trim().toLowerCase()))),
+    [konuOnerileri, ders, konu],
+  );
+  const seciliKonuSeviyesi = konuOnerileri.find((o) => o.ders === ders && o.konu === konu)?.seviye;
+
+  function konuSec(secilenKonu: string) {
+    setKonu(secilenKonu);
+    setOneriAcik(false);
+    setAnlatim(null);
+    setAnlatimSeviye(null);
+  }
 
   function konuyuOku() {
     if (!ders || !konu.trim()) return setAnlatimHata("Önce ders ve konu girin.");
@@ -177,7 +258,7 @@ function KonuCalismaForm({ dersListesi, konuOnerileri, onBasari }: {
         </Secim>
       </label>
 
-      <label className="flex flex-col gap-1">
+      <label className="flex flex-col gap-1 relative">
         <div className="flex items-center gap-1.5">
           <Etiket>Eksik olduğun konu</Etiket>
           {seciliKonuSeviyesi && (
@@ -185,8 +266,11 @@ function KonuCalismaForm({ dersListesi, konuOnerileri, onBasari }: {
           )}
         </div>
         <div className="flex gap-2">
-          <Girdi list="konu-oneri-listesi" required placeholder="örn. Türev - Zincir Kuralı" value={konu}
-            onChange={(e) => { setKonu(e.target.value); setAnlatim(null); setAnlatimSeviye(null); }} disabled={!ders} />
+          <Girdi required placeholder="örn. Türev - Zincir Kuralı" value={konu} autoComplete="off"
+            onFocus={() => setOneriAcik(true)}
+            onBlur={() => setTimeout(() => setOneriAcik(false), 120)}
+            onChange={(e) => { setKonu(e.target.value); setOneriAcik(true); setAnlatim(null); setAnlatimSeviye(null); }}
+            disabled={!ders} />
           <button type="button" onClick={konuyuOku} disabled={!ders || !konu.trim()}
             className="sgec-btn shrink-0 flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"
             style={{ background: SKY_BG, color: SKY, border: `1px solid rgba(143,198,255,0.3)` }}>
@@ -194,9 +278,7 @@ function KonuCalismaForm({ dersListesi, konuOnerileri, onBasari }: {
             Konuyu oku
           </button>
         </div>
-        <datalist id="konu-oneri-listesi">
-          {oneriler.map((o) => <option key={o.konu} value={o.konu} label={o.seviye ?? undefined} />)}
-        </datalist>
+        <KonuOneriDropdown oneriler={oneriler} aktif={oneriAcik && !!ders} onSec={konuSec} />
       </label>
 
       {anlatimAcik && (
@@ -216,12 +298,14 @@ function KonuCalismaForm({ dersListesi, konuOnerileri, onBasari }: {
       <label className="flex flex-col gap-1"><Etiket>Süre (dakika)</Etiket>
         <Girdi name="sureDakika" type="number" min={1} required />
       </label>
-      <p style={{ color: TEXT_MUTED }} className="text-[11px] -mt-1">Konuyu okuduktan/çalıştıktan sonra ne kadar anladığını aşağıdan işaretle:</p>
-      <HedefeYakinlikSecici value={hedefeYakinlik} onChange={setHedefeYakinlik} />
+      <p style={{ color: TEXT_MUTED }} className="text-[11px] -mt-1">Konuyu okuduktan/çalıştıktan sonra ne kadar hakim olduğunu aşağıdan işaretle:</p>
+      <SecenekSecici baslik="Konuya hakimiyet" value={hedefeYakinlik} onChange={setHedefeYakinlik}
+        secenekler={[["uzak", "Yetersiz"], ["belirsiz", "Orta"], ["yakin", "Yeterli"]]} />
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
       <button type="submit" disabled={pending} className="sgec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
         {pending ? "Kaydediliyor..." : "Kaydet"}
       </button>
+      <YukleniyorOverlay visible={pending} mesaj={anlatimYukleniyor ? undefined : "Kaydediliyor..."} />
     </form>
   );
 }
@@ -267,11 +351,13 @@ function SoruCozumuForm({ dersListesi, onBasari }: { dersListesi: string[]; onBa
       {net !== null && (
         <div style={{ color: MINT }} className="text-xs font-bold">Net: {net}</div>
       )}
-      <HedefeYakinlikSecici value={hedefeYakinlik} onChange={setHedefeYakinlik} />
+      <SecenekSecici baslik="Soru çözüm sayım" value={hedefeYakinlik} onChange={setHedefeYakinlik}
+        secenekler={[["uzak", "Az"], ["belirsiz", "Orta"], ["yakin", "Çok"]]} />
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
       <button type="submit" disabled={pending} className="sgec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
         {pending ? "Kaydediliyor..." : "Kaydet"}
       </button>
+      <YukleniyorOverlay visible={pending} mesaj="Kaydediliyor..." />
     </form>
   );
 }
@@ -281,13 +367,30 @@ function DenemeForm({ aytAlan, onBasari }: { aytAlan: AytAlan; onBasari: (m: str
   const [sonuclar, setSonuclar] = useState<Record<string, { dogru: string; yanlis: string }>>({});
   const [sureDakika, setSureDakika] = useState("");
   const [hedefeYakinlik, setHedefeYakinlik] = useState<HedefeYakinlik>("belirsiz");
+  const [zorluk, setZorluk] = useState<DenemeZorlugu>("orta");
   const [hata, setHata] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   const dersler = tur === "TYT" ? TYT_DERSLERI : AYT_DERSLERI[aytAlan];
 
+  // Doğru+yanlış toplamı, dersin sınavdaki resmi soru sayısını aşamaz —
+  // eksik girilirse kalanı cevaplanmamış (boş) sayılır, bu zaten net
+  // hesabını etkilemiyor.
   function alanGuncelle(ders: string, alan: "dogru" | "yanlis", deger: string) {
-    setSonuclar((s) => ({ ...s, [ders]: { ...s[ders], [alan]: deger, [alan === "dogru" ? "yanlis" : "dogru"]: s[ders]?.[alan === "dogru" ? "yanlis" : "dogru"] ?? "0" } }));
+    const maks = dersSoruSayisi(tur, ders);
+    setSonuclar((s) => {
+      const mevcutDiger = Number(s[ders]?.[alan === "dogru" ? "yanlis" : "dogru"] ?? "0");
+      let sayi = deger === "" ? 0 : Number(deger);
+      if (maks !== undefined && sayi + mevcutDiger > maks) sayi = Math.max(0, maks - mevcutDiger);
+      return {
+        ...s,
+        [ders]: {
+          ...s[ders],
+          [alan]: deger === "" ? "" : String(sayi),
+          [alan === "dogru" ? "yanlis" : "dogru"]: s[ders]?.[alan === "dogru" ? "yanlis" : "dogru"] ?? "0",
+        },
+      };
+    });
   }
 
   function submit(e: React.FormEvent) {
@@ -300,7 +403,7 @@ function DenemeForm({ aytAlan, onBasari }: { aytAlan: AytAlan; onBasari: (m: str
       yanlis: Number(sonuclar[d]?.yanlis ?? 0),
     }));
     startTransition(async () => {
-      const res = await denemeEkle(tur, Number(sureDakika), hedefeYakinlik, dersSonuclari);
+      const res = await denemeEkle(tur, Number(sureDakika), hedefeYakinlik, zorluk, dersSonuclari);
       if (res.error) setHata(res.error);
       else {
         onBasari(`${tur} denemesi kaydedildi.`, res.verimlilikSorulsunMu);
@@ -326,20 +429,27 @@ function DenemeForm({ aytAlan, onBasari }: { aytAlan: AytAlan; onBasari: (m: str
 
       <div className="rounded-2xl p-3 flex flex-col gap-2" style={{ background: BG1_ALT, border: `1px solid ${BORDER}` }}>
         <Etiket>Ders bazlı sonuçlar</Etiket>
-        {dersler.map((d) => (
-          <div key={d} className="grid grid-cols-[1fr_auto_auto] gap-2 items-center">
-            <span style={{ color: TEXT }} className="text-xs font-semibold">{d}</span>
-            <Girdi type="number" min={0} placeholder="D" value={sonuclar[d]?.dogru ?? ""} onChange={(e) => alanGuncelle(d, "dogru", e.target.value)} />
-            <Girdi type="number" min={0} placeholder="Y" value={sonuclar[d]?.yanlis ?? ""} onChange={(e) => alanGuncelle(d, "yanlis", e.target.value)} />
-          </div>
-        ))}
+        {dersler.map((d) => {
+          const maks = dersSoruSayisi(tur, d);
+          return (
+            <div key={d} className="grid grid-cols-[1fr_auto_auto] gap-2 items-center">
+              <span style={{ color: TEXT }} className="text-xs font-semibold">{d} {maks !== undefined && <span style={{ color: TEXT_MUTED }} className="font-normal">(max {maks})</span>}</span>
+              <Girdi type="number" min={0} max={maks} placeholder="D" value={sonuclar[d]?.dogru ?? ""} onChange={(e) => alanGuncelle(d, "dogru", e.target.value)} />
+              <Girdi type="number" min={0} max={maks} placeholder="Y" value={sonuclar[d]?.yanlis ?? ""} onChange={(e) => alanGuncelle(d, "yanlis", e.target.value)} />
+            </div>
+          );
+        })}
       </div>
 
-      <HedefeYakinlikSecici value={hedefeYakinlik} onChange={setHedefeYakinlik} />
+      <SecenekSecici baslik="Deneme seviyesi" value={zorluk} onChange={setZorluk}
+        secenekler={[["kolay", "Kolay"], ["orta", "Orta"], ["zor", "Zor"]]} />
+      <SecenekSecici baslik="Deneme net hedefim" value={hedefeYakinlik} onChange={setHedefeYakinlik}
+        secenekler={[["uzak", "Uzak"], ["belirsiz", "Ortalama"], ["yakin", "Ulaştım"]]} />
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
       <button type="submit" disabled={pending} className="sgec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
         {pending ? "Kaydediliyor..." : "Kaydet"}
       </button>
+      <YukleniyorOverlay visible={pending} mesaj="Kaydediliyor..." />
     </form>
   );
 }
@@ -371,6 +481,7 @@ function HaftalikVerimlilikModal({ onKapat }: { onKapat: () => void }) {
           ))}
         </div>
       </div>
+      <YukleniyorOverlay visible={pending} mesaj="Kaydediliyor..." />
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAnthropicClient } from "@/lib/anthropic";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
-import type { HedefeYakinlik, VeriGirisSikligi, VerimlilikDuzeyi } from "@/lib/types";
+import type { DenemeZorlugu, HedefeYakinlik, VeriGirisSikligi, VerimlilikDuzeyi } from "@/lib/types";
 
 async function requireStudent() {
   const supabase = await createClient();
@@ -150,17 +150,18 @@ export async function denemeEkle(
   tur: "TYT" | "AYT",
   sureDakika: number,
   hedefeYakinlik: HedefeYakinlik,
+  zorluk: DenemeZorlugu,
   dersSonuclari: { ders: string; dogru: number; yanlis: number }[],
 ) {
   const { supabase, user } = await requireStudent();
 
-  if (!sureDakika || sureDakika <= 0 || !hedefeYakinlik || dersSonuclari.length === 0) {
+  if (!sureDakika || sureDakika <= 0 || !hedefeYakinlik || !zorluk || dersSonuclari.length === 0) {
     return { error: "Lütfen tüm alanları doldurun.", verimlilikSorulsunMu: false };
   }
 
   const { data: deneme, error } = await supabase
     .from("denemeler")
-    .insert({ student_id: user.id, tur, sure_dakika: sureDakika, hedefe_yakinlik: hedefeYakinlik, kaynak: "ogrenci" })
+    .insert({ student_id: user.id, tur, sure_dakika: sureDakika, hedefe_yakinlik: hedefeYakinlik, zorluk, kaynak: "ogrenci" })
     .select("id")
     .single();
 
@@ -184,9 +185,25 @@ export async function haftalikVerimlilikEkle(duzey: VerimlilikDuzeyi) {
   return { error: null };
 }
 
+// Veri giriş sıklığı sadece BİR KEZ seçilebilir — bir daha değiştirilemez.
+// Önce kilit durumunu kontrol ediyoruz; zaten kilitliyse işlemi reddediyoruz
+// (öğrenci konsoldan doğrudan action'ı çağırsa bile bu kontrol devrede).
 export async function veriGirisSikligiGuncelle(siklik: VeriGirisSikligi) {
   const { supabase, user } = await requireStudent();
-  const { error } = await supabase.from("students").update({ veri_giris_sikligi: siklik }).eq("id", user.id);
+
+  const { data: mevcut } = await supabase
+    .from("students")
+    .select("veri_giris_sikligi_kilitli")
+    .eq("id", user.id)
+    .single();
+  if (mevcut?.veri_giris_sikligi_kilitli) {
+    return { error: "Veri giriş sıklığı zaten seçildi, bir daha değiştirilemez." };
+  }
+
+  const { error } = await supabase
+    .from("students")
+    .update({ veri_giris_sikligi: siklik, veri_giris_sikligi_kilitli: true })
+    .eq("id", user.id);
   if (error) return { error: error.message };
   revalidatePath("/dashboard");
   return { error: null };
