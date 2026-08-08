@@ -8,20 +8,22 @@ import { getAnthropicClient } from "@/lib/anthropic";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
 import { KONU_ANLATIMI_SISTEM_PROMPTU, icerikTemizle } from "@/lib/konu-anlatimi";
 import { pushGonderProfile } from "@/lib/push-send";
-import { SURE_UST_SINIR, DENEME_SURE_UST_SINIR } from "@/lib/types";
+import { SURE_UST_SINIR, DENEME_SURE_UST_SINIR, KATEGORI_GERIYE_DONUK_SINIR } from "@/lib/types";
 import type { DenemeZorlugu, HedefeYakinlik, VerimlilikDuzeyi } from "@/lib/types";
 
-const BADGE_ETIKET: Record<string, string> = { bronz: "Bronz 🥉", gumus: "Gümüş 🥈", altin: "Altın 🥇" };
+const SEVIYE_ETIKET: Record<string, string> = { bronz: "Bronz 🥉", gumus: "Gümüş 🥈", altin: "Altın 🥇" };
+const KATEGORI_ETIKET: Record<string, string> = { konu: "Konu Çalışma", soru: "Soru Çözümü", deneme: "Deneme" };
 
-// Her başarılı veri girişinden sonra çağrılır: son 30 günün aktif gün
-// sayısını kontrol edip yeni bir rozet kazanıldıysa bağlı veli(ler)e push
-// bildirimi gönderir. rozet_kontrol_et RPC'si eşiği server-side (security
-// definer) doğruluyor — öğrenci kendine sahte rozet yazamaz.
+// Her başarılı veri girişinden sonra çağrılır: rozet_kontrol_et RPC'si
+// (security definer) 4 kategorinin (konu/soru/deneme/genel) güncel
+// seviyesini hesaplayıp önceki bilinen seviyeyle karşılaştırıyor, sadece
+// YÜKSELENLERİ "kategori:seviye" formatında döndürüyor — biz burada bunu
+// parse edip bağlı veli(ler)e kategoriye özel push bildirimi gönderiyoruz.
 async function rozetKontrolVeBildir(supabase: Awaited<ReturnType<typeof createClient>>, studentId: string) {
   try {
-    const { data: yeniRozetler } = await supabase.rpc("rozet_kontrol_et", { p_student_id: studentId });
-    const rozetler = (yeniRozetler as string[] | null) ?? [];
-    if (rozetler.length === 0) return;
+    const { data: yukselenlerHam } = await supabase.rpc("rozet_kontrol_et", { p_student_id: studentId });
+    const yukselenler = (yukselenlerHam as string[] | null) ?? [];
+    if (yukselenler.length === 0) return;
 
     const [{ data: profile }, { data: veliler }] = await Promise.all([
       supabase.from("profiles").select("ad").eq("id", studentId).single(),
@@ -31,10 +33,15 @@ async function rozetKontrolVeBildir(supabase: Awaited<ReturnType<typeof createCl
     if (!veliler || veliler.length === 0) return;
 
     const admin = createAdminClient();
-    for (const rozet of rozetler) {
-      const etiket = BADGE_ETIKET[rozet] ?? rozet;
-      const baslik = `${etiket} Rozeti Kazanıldı!`;
-      const govde = `${ad}, son 30 günde düzenli çalışarak ${etiket} rozetine ulaştı.`;
+    for (const token of yukselenler) {
+      const [kategori, seviye] = token.split(":");
+      const seviyeEtiket = SEVIYE_ETIKET[seviye] ?? seviye;
+      const baslik = kategori === "genel"
+        ? `SG EDUCOACH ${seviyeEtiket} Rozeti Kazanıldı!`
+        : `${KATEGORI_ETIKET[kategori] ?? kategori} — ${seviyeEtiket} Rozeti Kazanıldı!`;
+      const govde = kategori === "genel"
+        ? `${ad}, üç kategorinin de gerektirdiği seviyeye ulaşarak SG EDUCOACH ${seviyeEtiket} rozetini kazandı.`
+        : `${ad}, ${KATEGORI_ETIKET[kategori] ?? kategori} kategorisinde ${seviyeEtiket} rozetine ulaştı.`;
       for (const v of veliler) await pushGonderProfile(admin, v.parent_id, baslik, govde);
     }
   } catch (e) {
@@ -51,14 +58,24 @@ async function requireStudent() {
 
 // Öğrenci "geçmiş tarih için gir" ile bir tarih seçebiliyor — bugünden ileri
 // bir tarih ya da bozuk bir değer olmasın diye doğrulanıyor. Boşsa bugün
-// kullanılır (varsayılan, DB'nin kendi default'una da güvenebilirdik ama
-// açıkça göndermek gelecekteki bir saat dilimi farkını da netleştiriyor).
-function tarihDogrula(ham: FormDataEntryValue | string | null): { tarih: string; error: string | null } {
+// kullanılır. geriyeMaksGun, rozet sistemi v2 ile birlikte eklendi: her
+// kategorinin kendi geriye dönük sınırı var (bkz. KATEGORI_GERIYE_DONUK_SINIR)
+// — sınırsız backdating, rozet/seri sayımını manipüle etmeye açık kapı
+// bırakıyordu. DB'de de aynı sınır check constraint olarak duruyor
+// (migration 0029) — bu, savunma katmanı.
+function tarihDogrula(
+  ham: FormDataEntryValue | string | null,
+  geriyeMaksGun: number,
+): { tarih: string; error: string | null } {
   const bugun = new Date().toISOString().slice(0, 10);
   const deger = (ham ?? "").toString().trim();
   if (!deger) return { tarih: bugun, error: null };
   if (!/^\d{4}-\d{2}-\d{2}$/.test(deger)) return { tarih: bugun, error: "Tarih geçersiz." };
   if (deger > bugun) return { tarih: bugun, error: "İleri bir tarih girilemez." };
+  const enEskiTarih = new Date(Date.now() - geriyeMaksGun * 24 * 3600 * 1000).toISOString().slice(0, 10);
+  if (deger < enEskiTarih) {
+    return { tarih: bugun, error: `En fazla ${geriyeMaksGun} gün geriye dönük giriş yapabilirsin.` };
+  }
   return { tarih: deger, error: null };
 }
 
@@ -136,7 +153,7 @@ export async function konuCalismaEkle(formData: FormData) {
   const konu = String(formData.get("konu") ?? "").trim();
   const sureDakika = Number(formData.get("sureDakika"));
   const hedefeYakinlik = String(formData.get("hedefeYakinlik")) as HedefeYakinlik;
-  const { tarih, error: tarihHatasi } = tarihDogrula(formData.get("tarih"));
+  const { tarih, error: tarihHatasi } = tarihDogrula(formData.get("tarih"), KATEGORI_GERIYE_DONUK_SINIR.konu);
 
   if (!ders || !konu || !sureDakika || sureDakika <= 0 || !hedefeYakinlik) {
     return { error: "Lütfen tüm alanları doldurun.", verimlilikSorulsunMu: false };
@@ -164,7 +181,7 @@ export async function soruCozumuEkle(formData: FormData) {
   const yanlis = Number(formData.get("yanlis"));
   const sureDakika = Number(formData.get("sureDakika"));
   const hedefeYakinlik = String(formData.get("hedefeYakinlik")) as HedefeYakinlik;
-  const { tarih, error: tarihHatasi } = tarihDogrula(formData.get("tarih"));
+  const { tarih, error: tarihHatasi } = tarihDogrula(formData.get("tarih"), KATEGORI_GERIYE_DONUK_SINIR.soru);
 
   if (!ders || Number.isNaN(dogru) || Number.isNaN(yanlis) || !sureDakika || sureDakika <= 0 || !hedefeYakinlik) {
     return { error: "Lütfen tüm alanları doldurun.", verimlilikSorulsunMu: false };
@@ -198,7 +215,7 @@ export async function denemeEkle(
   tarihGirdisi?: string,
 ) {
   const { supabase, user } = await requireStudent();
-  const { tarih, error: tarihHatasi } = tarihDogrula(tarihGirdisi ?? null);
+  const { tarih, error: tarihHatasi } = tarihDogrula(tarihGirdisi ?? null, KATEGORI_GERIYE_DONUK_SINIR.deneme);
 
   if (!sureDakika || sureDakika <= 0 || !hedefeYakinlik || !zorluk || dersSonuclari.length === 0) {
     return { error: "Lütfen tüm alanları doldurun.", verimlilikSorulsunMu: false };

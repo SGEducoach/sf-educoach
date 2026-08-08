@@ -7,7 +7,7 @@ import type {
 } from "@/lib/types";
 import {
   TYT_DERSLERI, AYT_DERSLERI, VERIMLILIK_ETIKET, netHesapla, dersSoruSayisi,
-  SURE_UST_SINIR, DENEME_SURE_UST_SINIR,
+  SURE_UST_SINIR, DENEME_SURE_UST_SINIR, KATEGORI_GERIYE_DONUK_SINIR,
 } from "@/lib/types";
 import {
   BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, SKY, SKY_BG, TEXT, TEXT_MUTED, BLUSH,
@@ -21,11 +21,17 @@ function bugununTarihi(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+function enEskiTarih(geriyeMaksGun: number): string {
+  return new Date(Date.now() - geriyeMaksGun * 24 * 3600 * 1000).toISOString().slice(0, 10);
+}
+
 // Varsayılan: anlık giriş bugünün tarihiyle kaydedilir. Öğrenci geçmiş bir
 // gün için giriş yapmak isterse bu buton bir tarih seçici açar (gelecek bir
-// tarih seçilemez). Veri giriş sıklığı (günlük/haftalık) sistemi bu yüzden
-// kaldırıldı — artık her gün ayrı ayrı, istenildiği zaman girilebiliyor.
-function GecmisTarihSecici({ tarih, setTarih }: { tarih: string; setTarih: (v: string) => void }) {
+// tarih seçilemez). geriyeMaksGun, rozet sistemi v2 ile eklendi: kategoriye
+// göre (konu/soru 3 gün, deneme 7 gün) geriye dönük giriş sınırlı — sınırsız
+// backdating rozet/seri sayımını manipüle etmeye açık kapıydı (bkz.
+// KATEGORI_GERIYE_DONUK_SINIR, migration 0029).
+function GecmisTarihSecici({ tarih, setTarih, geriyeMaksGun }: { tarih: string; setTarih: (v: string) => void; geriyeMaksGun: number }) {
   const [acik, setAcik] = useState(tarih !== bugununTarihi());
 
   if (!acik) {
@@ -42,13 +48,14 @@ function GecmisTarihSecici({ tarih, setTarih }: { tarih: string; setTarih: (v: s
     <label className="flex flex-col gap-1">
       <Etiket>Tarih</Etiket>
       <div className="flex gap-2">
-        <Girdi type="date" max={bugununTarihi()} value={tarih} onChange={(e) => setTarih(e.target.value)} required />
+        <Girdi type="date" max={bugununTarihi()} min={enEskiTarih(geriyeMaksGun)} value={tarih} onChange={(e) => setTarih(e.target.value)} required />
         <button type="button" onClick={() => { setAcik(false); setTarih(bugununTarihi()); }}
           className="sgec-btn shrink-0 text-[11px] font-bold px-3 py-1.5 rounded-xl"
           style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `1px solid ${BORDER_STRONG}` }}>
           Bugüne dön
         </button>
       </div>
+      <span style={{ color: TEXT_MUTED }} className="text-[10px]">En fazla {geriyeMaksGun} gün geriye gidebilirsin.</span>
     </label>
   );
 }
@@ -243,7 +250,7 @@ function KonuCalismaForm({ dersListesi, konuOnerileri, onBasari }: {
 
   return (
     <form action={submit} className="flex flex-col gap-3">
-      <GecmisTarihSecici tarih={tarih} setTarih={setTarih} />
+      <GecmisTarihSecici tarih={tarih} setTarih={setTarih} geriyeMaksGun={KATEGORI_GERIYE_DONUK_SINIR.konu} />
       <label className="flex flex-col gap-1"><Etiket>Ders</Etiket>
         <Secim value={ders} onChange={(e) => { setDers(e.target.value); setKonu(""); setAramaMetni(""); setAnlatim(null); setAnlatimAcik(false); }} required>
           <option value="" disabled>Seçiniz</option>
@@ -335,7 +342,7 @@ function SoruCozumuForm({ dersListesi, onBasari }: { dersListesi: string[]; onBa
 
   return (
     <form action={submit} className="flex flex-col gap-3">
-      <GecmisTarihSecici tarih={tarih} setTarih={setTarih} />
+      <GecmisTarihSecici tarih={tarih} setTarih={setTarih} geriyeMaksGun={KATEGORI_GERIYE_DONUK_SINIR.soru} />
       <label className="flex flex-col gap-1"><Etiket>Ders</Etiket>
         <Secim name="ders" required defaultValue="">
           <option value="" disabled>Seçiniz</option>
@@ -426,7 +433,7 @@ function DenemeForm({ aytAlan, onBasari }: { aytAlan: AytAlan; onBasari: (m: str
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
-      <GecmisTarihSecici tarih={tarih} setTarih={setTarih} />
+      <GecmisTarihSecici tarih={tarih} setTarih={setTarih} geriyeMaksGun={KATEGORI_GERIYE_DONUK_SINIR.deneme} />
       <div className="grid grid-cols-2 gap-3">
         <label className="flex flex-col gap-1"><Etiket>Deneme türü</Etiket>
           <Secim value={tur} onChange={(e) => { setTur(e.target.value as DenemeTuru); setSonuclar({}); }}>

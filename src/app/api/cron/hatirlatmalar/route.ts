@@ -2,16 +2,52 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import webpush from "web-push";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { KATEGORI_GERIYE_DONUK_SINIR } from "@/lib/types";
 
 export const maxDuration = 60;
 
 // Vercel Cron bu route'u çağırır (vercel.json'daki schedule'a göre).
-// Veri giriş sıklığı (günlük/3günlük/haftalık) sistemi kaldırıldı — artık
-// herkes için tek, sabit bir kural var: 3 gündür hiç veri girişi
-// yapılmadıysa hatırlat. son_hatirlatma_deadline, bir sonraki hatırlatmanın
-// gönderilebileceği en erken zamanı tutuyor (aynı öğrenciye art arda her
-// gün göndermemek için).
-const UC_GUN_MS = 3 * 24 * 3600 * 1000;
+// Rozet sistemi v2 ile birlikte hatırlatma da KATEGORİ BAZLI oldu: tek bir
+// "3 gündür veri girmiyor" kuralı yerine, her kategorinin kendi eşiği var —
+// konu/soru 3 gün, deneme 7 gün (KATEGORI_GERIYE_DONUK_SINIR ile birebir
+// aynı, çünkü backdating penceresi kapandığında telafi de imkânsızlaşıyor).
+// Bir öğrenci aynı anda birden fazla kategoride geride kalmışsa, her biri
+// için AYRI bildirim gidiyor.
+type KategoriAnahtar = "konu" | "soru" | "deneme";
+
+const KATEGORI_TANIM: Record<KategoriAnahtar, {
+  tablo: "konu_calismalar" | "soru_cozumleri" | "denemeler";
+  deadlineKolonu: "son_hatirlatma_konu_deadline" | "son_hatirlatma_soru_deadline" | "son_hatirlatma_deneme_deadline";
+  ad: string;
+  ogrenciGovde: (gun: number) => string;
+  veliBaslik: (gun: number) => string;
+  veliGovde: (ad: string, gun: number) => string;
+}> = {
+  konu: {
+    tablo: "konu_calismalar",
+    deadlineKolonu: "son_hatirlatma_konu_deadline",
+    ad: "Konu Çalışma",
+    ogrenciGovde: (gun) => `${gun} gündür konu çalışması girmedin. SG EduCoach'a girip güncel verilerini ekle.`,
+    veliBaslik: () => "Öğrenciniz konu verisi girmiyor!",
+    veliGovde: (ad, gun) => `${ad} adlı öğrenciniz ${gun} gündür konu çalışması verisi girmedi.`,
+  },
+  soru: {
+    tablo: "soru_cozumleri",
+    deadlineKolonu: "son_hatirlatma_soru_deadline",
+    ad: "Soru Çözümü",
+    ogrenciGovde: (gun) => `${gun} gündür soru çözümü girmedin. SG EduCoach'a girip güncel verilerini ekle.`,
+    veliBaslik: () => "Öğrenciniz soru çözümü girmiyor!",
+    veliGovde: (ad, gun) => `${ad} adlı öğrenciniz ${gun} gündür soru çözümü verisi girmedi.`,
+  },
+  deneme: {
+    tablo: "denemeler",
+    deadlineKolonu: "son_hatirlatma_deneme_deadline",
+    ad: "Deneme",
+    ogrenciGovde: () => `Bu hafta deneme girişi yapmadın. SG EduCoach'a girip güncel verilerini ekle.`,
+    veliBaslik: () => "Öğrenciniz bu hafta deneme girişi yapmadı!",
+    veliGovde: (ad) => `${ad} adlı öğrenciniz bu hafta deneme sınavı girmedi.`,
+  },
+};
 
 if (process.env.VAPID_PRIVATE_KEY && process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
   webpush.setVapidDetails(
@@ -55,7 +91,9 @@ export async function GET(request: Request) {
       { data: veliBaglantilari },
       { data: pushAbonelikleri },
     ] = await Promise.all([
-      admin.from("students").select("id, son_hatirlatma_deadline, created_at, profiles!students_id_fkey(ad, email)"),
+      admin.from("students").select(
+        "id, created_at, son_hatirlatma_konu_deadline, son_hatirlatma_soru_deadline, son_hatirlatma_deneme_deadline, profiles!students_id_fkey(ad, email)",
+      ),
       admin.from("konu_calismalar").select("student_id, created_at"),
       admin.from("soru_cozumleri").select("student_id, created_at"),
       admin.from("denemeler").select("student_id, created_at").eq("kaynak", "ogrenci"),
@@ -67,11 +105,13 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: studentsError.message }, { status: 500 });
     }
 
-    // student_id -> en son giriş zamanı (ms)
-    const sonGirisMap = new Map<string, number>();
-    for (const row of konular ?? []) enSonTarih(sonGirisMap, row.student_id, row.created_at);
-    for (const row of sorular ?? []) enSonTarih(sonGirisMap, row.student_id, row.created_at);
-    for (const row of denemeler ?? []) enSonTarih(sonGirisMap, row.student_id, row.created_at);
+    // Her kategori için ayrı "student_id -> en son giriş zamanı (ms)" haritası.
+    const sonGirisMap: Record<KategoriAnahtar, Map<string, number>> = {
+      konu: new Map(), soru: new Map(), deneme: new Map(),
+    };
+    for (const row of konular ?? []) enSonTarih(sonGirisMap.konu, row.student_id, row.created_at);
+    for (const row of sorular ?? []) enSonTarih(sonGirisMap.soru, row.student_id, row.created_at);
+    for (const row of denemeler ?? []) enSonTarih(sonGirisMap.deneme, row.student_id, row.created_at);
 
     // student_id -> [{parent_id, email}]
     type VeliBaglanti = { student_id: string; parent_id: string; profiles: { email: string | null } | null };
@@ -111,25 +151,26 @@ export async function GET(request: Request) {
     for (const s of students ?? []) {
       const profile = (s as unknown as { profiles: { ad: string; email: string | null } | null }).profiles;
       if (!profile?.email) continue;
+      const veliler = veliMap.get(s.id) ?? [];
+      const veliEmailler = veliler.map((v) => v.email).filter((e): e is string => Boolean(e));
 
-      const sonGirisMs = sonGirisMap.get(s.id) ?? new Date(s.created_at).getTime();
-      const sonGiris = new Date(sonGirisMs);
-      const gecenSure = now.getTime() - sonGirisMs;
+      for (const kategoriKey of Object.keys(KATEGORI_TANIM) as KategoriAnahtar[]) {
+        const tanim = KATEGORI_TANIM[kategoriKey];
+        const esikMs = KATEGORI_GERIYE_DONUK_SINIR[kategoriKey] * 24 * 3600 * 1000;
 
-      const tekrarGonderilebilirMi =
-        !s.son_hatirlatma_deadline || now.getTime() >= new Date(s.son_hatirlatma_deadline).getTime();
+        const sonGirisMs = sonGirisMap[kategoriKey].get(s.id) ?? new Date(s.created_at).getTime();
+        const gecenSure = now.getTime() - sonGirisMs;
 
-      if (gecenSure >= UC_GUN_MS && tekrarGonderilebilirMi) {
-        const veliler = veliMap.get(s.id) ?? [];
+        const deadlineHam = (s as unknown as Record<string, string | null>)[tanim.deadlineKolonu];
+        const tekrarGonderilebilirMi = !deadlineHam || now.getTime() >= new Date(deadlineHam).getTime();
+
+        if (gecenSure < esikMs || !tekrarGonderilebilirMi) continue;
+
         const gecenGun = Math.floor(gecenSure / (24 * 3600 * 1000));
-        const sonGirisStr = sonGiris.toLocaleDateString("tr-TR");
-
-        // Öğrenciye ve veliye ayrı tonda mesaj: öğrenciye kendine yönelik bir
-        // hatırlatma, veliye ise çocuğu hakkında bilgilendirme.
-        const ogrenciBaslik = "Veri girişi hatırlatması";
-        const ogrenciGovde = `${gecenGun} gündür veri girişi yapmadın. SG EduCoach'a girip güncel verilerini ekle.`;
-        const veliBaslik = `Öğrenciniz ${gecenGun} gündür veri girmiyor!`;
-        const veliGovde = `${profile.ad} adlı öğrenciniz ${gecenGun} gündür veri girişi yapmadı (son giriş: ${sonGirisStr}). Bir hatırlatmak ister misiniz?`;
+        const ogrenciBaslik = `${tanim.ad} hatırlatması`;
+        const ogrenciGovde = tanim.ogrenciGovde(gecenGun);
+        const veliBaslik = tanim.veliBaslik(gecenGun);
+        const veliGovde = tanim.veliGovde(profile.ad, gecenGun);
 
         try {
           await resend.emails.send({
@@ -139,9 +180,8 @@ export async function GET(request: Request) {
             html: `<p>Merhaba ${profile.ad},</p><p>${ogrenciGovde}</p>`,
           });
         } catch (e) {
-          detaylar.push(`${profile.ad}: öğrenci e-posta HATASI - ${e instanceof Error ? e.message : String(e)}`);
+          detaylar.push(`${profile.ad} (${kategoriKey}): öğrenci e-posta HATASI - ${e instanceof Error ? e.message : String(e)}`);
         }
-        const veliEmailler = veliler.map((v) => v.email).filter((e): e is string => Boolean(e));
         if (veliEmailler.length > 0) {
           try {
             await resend.emails.send({
@@ -151,16 +191,16 @@ export async function GET(request: Request) {
               html: `<p>Merhaba,</p><p>${veliGovde}</p>`,
             });
           } catch (e) {
-            detaylar.push(`${profile.ad}: veli e-posta HATASI - ${e instanceof Error ? e.message : String(e)}`);
+            detaylar.push(`${profile.ad} (${kategoriKey}): veli e-posta HATASI - ${e instanceof Error ? e.message : String(e)}`);
           }
         }
-        detaylar.push(`${profile.ad}: hatırlatma gönderildi (${gecenGun} gün, ${veliler.length} veli)`);
+        detaylar.push(`${profile.ad} (${kategoriKey}): hatırlatma gönderildi (${gecenGun} gün, ${veliler.length} veli)`);
 
         await pushGonder(s.id, ogrenciBaslik, ogrenciGovde);
         for (const veli of veliler) await pushGonder(veli.id, veliBaslik, veliGovde);
 
         gonderilen++;
-        await admin.from("students").update({ son_hatirlatma_deadline: new Date(now.getTime() + UC_GUN_MS).toISOString() }).eq("id", s.id);
+        await admin.from("students").update({ [tanim.deadlineKolonu]: new Date(now.getTime() + esikMs).toISOString() }).eq("id", s.id);
       }
     }
 
