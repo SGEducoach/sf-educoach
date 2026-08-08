@@ -55,18 +55,22 @@ export interface KullaniciSonuc {
 // 0014); burada ekstra bir RLS gerekmiyor.
 export async function kullaniciAra(sorgu: string, rolFiltre: UserRole | "hepsi"): Promise<{ error: string | null; sonuclar: KullaniciSonuc[] }> {
   const { supabase } = await requireAdmin();
-  const q = sorgu.trim();
-  if (q.length < 2) return { error: null, sonuclar: [] };
+    const q = sorgu.trim();
 
-  let query = supabase
-    .from("profiles")
-    .select("id, ad, email, telefon, role, aktif")
-    .neq("role", "admin")
-    .or(`ad.ilike.%${q}%,email.ilike.%${q}%`)
-    .order("ad")
-    .limit(40);
-  if (rolFiltre !== "hepsi") query = query.eq("role", rolFiltre);
+let query = supabase
+  .from("profiles")
+  .select("id, ad, email, telefon, role, aktif")
+  .neq("role", "admin")
+  .order("ad")
+  .limit(40);
 
+if (q.length >= 2) {
+  query = query.or(`ad.ilike.%${q}%,email.ilike.%${q}%`);
+}
+
+if (rolFiltre !== "hepsi") {
+  query = query.eq("role", rolFiltre);
+}
   const { data: profiller, error } = await query;
   if (error) return { error: error.message, sonuclar: [] };
 

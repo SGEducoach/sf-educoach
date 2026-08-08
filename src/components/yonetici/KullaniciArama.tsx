@@ -31,15 +31,20 @@ export function KullaniciArama() {
   const [pending, startTransition] = useTransition();
 
   function ara(q: string, r: UserRole | "hepsi") {
-    setHata(null);
-    if (q.trim().length < 2) { setSonuclar([]); setAramaYapildi(false); return; }
-    startTransition(async () => {
-      const res = await kullaniciAra(q, r);
-      if (res.error) return setHata(res.error);
-      setSonuclar(res.sonuclar);
-      setAramaYapildi(true);
-    });
-  }
+  setHata(null);
+
+  // 0 veya 1 karakterde filtreleme yapma.
+  // Bunun yerine seçili role ait tüm kullanıcıları getir.
+  const aranacakMetin = q.trim().length >= 2 ? q : "";
+
+  startTransition(async () => {
+    const res = await kullaniciAra(aranacakMetin, r);
+    if (res.error) return setHata(res.error);
+
+    setSonuclar(res.sonuclar);
+    setAramaYapildi(true);
+  });
+}
 
   return (
     <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
