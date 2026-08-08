@@ -7,7 +7,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { rastgeleSifre, adNormalize } from "@/lib/validators";
 import { getAnthropicClient } from "@/lib/anthropic";
 import { KONU_ANLATIMI_SISTEM_PROMPTU, icerikTemizle } from "@/lib/konu-anlatimi";
+import { duyuruGonder } from "@/lib/push-send";
 import type { AytAlan, DenemeTuru, DenemeZorlugu, UserRole } from "@/lib/types";
+
+const DUYURU_MAKS_UZUNLUK = 500;
 
 // /yonetici'ye özel (admin-only) server action'lar. dashboard/actions.ts'teki
 // requireAdmin ile aynı desen: service-role client'a güvenmeden önce burada
@@ -602,4 +605,25 @@ export async function izinliOgrencileriTemizle(schoolId: string): Promise<{ erro
   await auditLogYaz(supabase, user.id, "izinli_ogrenci_listesi_temizle", { school_id: schoolId });
   revalidatePath("/yonetici");
   return { error: null };
+}
+
+// Admin duyurusu — TÜM okullardaki tüm öğrencilere ve bağlı velilere gider.
+// Öğretmen/müdür sürümü (kendi sınıfı/okulu ile sınırlı) dashboard/
+// actions.ts'te ogretmenDuyuruGonder.
+export async function adminDuyuruGonder(mesaj: string): Promise<{ error: string | null; ogrenciSayisi: number; veliSayisi: number }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const bosSonuc = { ogrenciSayisi: 0, veliSayisi: 0 };
+
+  const mesajTemiz = mesaj.trim();
+  if (!mesajTemiz) return { error: "Mesaj boş olamaz.", ...bosSonuc };
+  if (mesajTemiz.length > DUYURU_MAKS_UZUNLUK) {
+    return { error: `Mesaj en fazla ${DUYURU_MAKS_UZUNLUK} karakter olabilir.`, ...bosSonuc };
+  }
+
+  const { data: ogrenciler } = await admin.from("students").select("id");
+  const ogrenciIdleri = (ogrenciler ?? []).map((o) => o.id);
+
+  const sonuc = await duyuruGonder(admin, ogrenciIdleri, "SG EDUCOACH duyurusu", mesajTemiz);
+  await auditLogYaz(supabase, user.id, "admin_duyuru_gonder", { ogrenci_sayisi: sonuc.ogrenciSayisi, veli_sayisi: sonuc.veliSayisi, mesaj: mesajTemiz });
+  return { error: null, ...sonuc };
 }

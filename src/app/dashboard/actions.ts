@@ -5,6 +5,9 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { telefonGecerliMi, okulNoGecerliMi, rastgeleSifre, adNormalize } from "@/lib/validators";
+import { duyuruGonder as duyuruGonderTemel } from "@/lib/push-send";
+
+const DUYURU_MAKS_UZUNLUK = 500;
 
 async function requireUser() {
   const supabase = await createClient();
@@ -268,4 +271,45 @@ export async function ogrencileriTopluEkle(input: {
   }
 
   return { error: null, sonuclar };
+}
+
+// Öğretmen (kendi sınıfına) veya müdür (kendi okuluna) duyuru gönderir —
+// hem öğrencilere hem bağlı velilere aynı mesaj push bildirimi olarak gider.
+// Kapsam server-side belirleniyor (client'tan gelmiyor) — bir öğretmenin
+// class_id'sini/school_id'sini kendisi seçemesin diye.
+export async function ogretmenDuyuruGonder(mesaj: string): Promise<{ error: string | null; ogrenciSayisi: number; veliSayisi: number }> {
+  const { supabase, user } = await requireUser();
+  const bosSonuc = { ogrenciSayisi: 0, veliSayisi: 0 };
+
+  const mesajTemiz = mesaj.trim();
+  if (!mesajTemiz) return { error: "Mesaj boş olamaz.", ...bosSonuc };
+  if (mesajTemiz.length > DUYURU_MAKS_UZUNLUK) {
+    return { error: `Mesaj en fazla ${DUYURU_MAKS_UZUNLUK} karakter olabilir.`, ...bosSonuc };
+  }
+
+  const [{ data: profile }, { data: teacher }] = await Promise.all([
+    supabase.from("profiles").select("role").eq("id", user.id).single(),
+    supabase.from("teachers").select("school_id, class_id").eq("id", user.id).single(),
+  ]);
+  if (!teacher || (profile?.role !== "ogretmen" && profile?.role !== "mudur")) {
+    return { error: "Bu işlem için öğretmen veya müdür yetkisi gerekiyor.", ...bosSonuc };
+  }
+
+  const admin = createAdminClient();
+  let ogrenciIdleri: string[];
+  let baslik: string;
+
+  if (profile.role === "mudur") {
+    const { data: ogrenciler } = await admin.from("students").select("id").eq("school_id", teacher.school_id);
+    ogrenciIdleri = (ogrenciler ?? []).map((o) => o.id);
+    baslik = "Okul yönetiminden duyuru";
+  } else {
+    if (!teacher.class_id) return { error: "Sınıf öğretmeni olmadığınız için duyuru gönderemezsiniz.", ...bosSonuc };
+    const { data: ogrenciler } = await admin.from("students").select("id").eq("class_id", teacher.class_id);
+    ogrenciIdleri = (ogrenciler ?? []).map((o) => o.id);
+    baslik = "Öğretmeninizden duyuru";
+  }
+
+  const sonuc = await duyuruGonderTemel(admin, ogrenciIdleri, baslik, mesajTemiz);
+  return { error: null, ...sonuc };
 }

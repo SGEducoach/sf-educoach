@@ -51,7 +51,7 @@ export default async function DashboardPage({
         <BildirimAyarlari />
         {role === "ogrenci" && <OgrenciIcerik userId={user.id} ad={profile.ad} donem={donem} />}
         {(role === "ogretmen" || role === "mudur") && (
-          <OgretmenIcerik userId={user.id} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} donem={donem} />
+          <OgretmenIcerik userId={user.id} role={role} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} donem={donem} />
         )}
         {role === "veli" && <VeliIcerik userId={user.id} secilenOgrenciId={params.ogrenci} donem={donem} />}
       </div>
@@ -153,8 +153,8 @@ async function OgrenciIcerik({ userId, ad, donem }: { userId: string; ad: string
   );
 }
 
-async function OgretmenIcerik({ userId, secilenSinifId, secilenOgrenciId, donem }: {
-  userId: string; secilenSinifId?: string; secilenOgrenciId?: string; donem: RaporDonemi;
+async function OgretmenIcerik({ userId, role, secilenSinifId, secilenOgrenciId, donem }: {
+  userId: string; role: "ogretmen" | "mudur"; secilenSinifId?: string; secilenOgrenciId?: string; donem: RaporDonemi;
 }) {
   const supabase = await createClient();
   const { data: teacher } = await supabase
@@ -238,6 +238,7 @@ async function OgretmenIcerik({ userId, secilenSinifId, secilenOgrenciId, donem 
 
   return (
     <OgretmenPanel
+      role={role}
       bekleyenTalepler={talepListesi}
       ogrenciler={ogrenciListesi}
       sinifAdi={sinifAdi}

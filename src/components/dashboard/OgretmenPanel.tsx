@@ -4,7 +4,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { UserPlus, Check, Users, Eye, Plus } from "lucide-react";
 import { BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, SKY, SKY_BG, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
-import { veliTalepOnayla, sinifEkle } from "@/app/dashboard/actions";
+import { veliTalepOnayla, sinifEkle, ogretmenDuyuruGonder } from "@/app/dashboard/actions";
+import { DuyuruFormu } from "@/components/dashboard/DuyuruFormu";
 import type { VeliLinkRequest } from "@/lib/types";
 
 interface OgrenciSatiri {
@@ -19,8 +20,9 @@ interface SinifSatiri {
 }
 
 export function OgretmenPanel({
-  bekleyenTalepler, ogrenciler, sinifAdi, siniflar, gorunecekSinifId, kendiSinifId, kendiSinifiMi,
+  role, bekleyenTalepler, ogrenciler, sinifAdi, siniflar, gorunecekSinifId, kendiSinifId, kendiSinifiMi,
 }: {
+  role: "ogretmen" | "mudur";
   bekleyenTalepler: (VeliLinkRequest & { ogrenci_ad: string })[];
   ogrenciler: OgrenciSatiri[];
   sinifAdi: string | null;
@@ -52,8 +54,20 @@ export function OgretmenPanel({
   const onaylananIdSeti = new Set(oturumdaOnaylanan.map((t) => t.id));
   const gosterilecekBekleyenler = bekleyenTalepler.filter((t) => !onaylananIdSeti.has(t.id));
 
+  const duyuruMumkunMu = role === "mudur" || !!kendiSinifId;
+
   return (
     <div className="flex flex-col gap-6">
+      {duyuruMumkunMu && (
+        <DuyuruFormu
+          baslik={role === "mudur" ? "Okula duyuru gönder" : "Sınıfınıza duyuru gönder"}
+          aciklama={role === "mudur"
+            ? "Okuldaki tüm öğrencilere ve bağlı velilere push bildirimi olarak gider."
+            : "Sadece sınıf öğretmeni olduğunuz sınıftaki öğrencilere ve bağlı velilere push bildirimi olarak gider."}
+          gonder={ogretmenDuyuruGonder}
+        />
+      )}
+
       {kendiSinifId && (
         <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
           <div className="flex items-center gap-2 mb-4">

@@ -47,3 +47,27 @@ export async function pushGonderProfile(
     }
   }
 }
+
+// Serbest metin duyuru: verilen öğrenci id listesine VE onların bağlı
+// veli(ler)ine aynı mesajı gönderir. Admin (herkese), müdür (kendi okulu)
+// ve öğretmen (kendi sınıfı) duyuru araçları bunu paylaşıyor — kapsamı
+// çağıran server action belirliyor, burası sadece gönderiyor.
+export async function duyuruGonder(
+  admin: SupabaseClient,
+  ogrenciIdleri: string[],
+  baslik: string,
+  govde: string,
+): Promise<{ ogrenciSayisi: number; veliSayisi: number }> {
+  if (ogrenciIdleri.length === 0) return { ogrenciSayisi: 0, veliSayisi: 0 };
+
+  const { data: veliBaglantilari } = await admin
+    .from("parent_students")
+    .select("parent_id")
+    .in("student_id", ogrenciIdleri);
+  const veliIdSeti = new Set((veliBaglantilari ?? []).map((v) => v.parent_id as string));
+
+  for (const ogrenciId of ogrenciIdleri) await pushGonderProfile(admin, ogrenciId, baslik, govde);
+  for (const veliId of veliIdSeti) await pushGonderProfile(admin, veliId, baslik, govde);
+
+  return { ogrenciSayisi: ogrenciIdleri.length, veliSayisi: veliIdSeti.size };
+}

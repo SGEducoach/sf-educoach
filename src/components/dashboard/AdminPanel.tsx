@@ -9,10 +9,11 @@ import {
   ogrencileriTopluEkle, type TopluOgrenciSonuc,
 } from "@/app/dashboard/actions";
 import {
-  sinifSil, sinifOgrencileriGetir, denemeSonucuTopluGir, ogrenciListesiDisaAktar,
+  sinifSil, sinifOgrencileriGetir, denemeSonucuTopluGir, ogrenciListesiDisaAktar, adminDuyuruGonder,
   type SinifOgrencisi,
 } from "@/app/yonetici/actions";
 import { SinifEkleFormu } from "@/components/dashboard/OgretmenPanel";
+import { DuyuruFormu } from "@/components/dashboard/DuyuruFormu";
 import { IzinliOgrenciListesi } from "@/components/yonetici/IzinliOgrenciListesi";
 import { AYT_ALAN_ETIKET, BRANS_LISTESI, TYT_DERSLERI, AYT_DERSLERI, DENEME_ZORLUGU_ETIKET, dersSoruSayisi } from "@/lib/types";
 import type { AytAlan, DenemeTuru, DenemeZorlugu } from "@/lib/types";
@@ -50,6 +51,7 @@ const EYLEM_ETIKET: Record<string, string> = {
   sinif_ekle: "Sınıf eklendi",
   ogretmen_ekle_manuel: "Öğretmen eklendi",
   mudur_ekle_manuel: "Müdür eklendi",
+  admin_duyuru_gonder: "Duyuru gönderildi",
   ogrenci_ekle_manuel: "Öğrenci eklendi",
   ogrenci_toplu_ekle: "Öğrenciler toplu eklendi",
   deneme_toplu_gir: "Deneme sonuçları toplu girildi",
@@ -91,6 +93,12 @@ export function AdminPanel({
 
   return (
     <div className="flex flex-col gap-6">
+      <DuyuruFormu
+        baslik="Tüm platforma duyuru gönder"
+        aciklama="Bütün okullardaki tüm öğrencilere ve bağlı velilere push bildirimi olarak gider."
+        gonder={adminDuyuruGonder}
+      />
+
       <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div className="flex items-center gap-2">
