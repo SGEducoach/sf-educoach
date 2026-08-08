@@ -12,7 +12,7 @@ import {
   BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH,
 } from "@/lib/theme";
 import {
-  telefonSanitize, telefonGecerliMi, okulNoSanitize, sifreGecerliMi, SIFRE_IPUCU, TELEFON_IPUCU, adNormalize,
+  telefonSanitize, telefonGecerliMi, okulNoSanitize, sifreGecerliMi, SIFRE_IPUCU, TELEFON_IPUCU, adNormalize, rastgeleSifre,
 } from "@/lib/validators";
 import { YukleniyorOverlay } from "@/components/YukleniyorOverlay";
 
@@ -171,11 +171,11 @@ function OgrenciKayit({ schools, classes, router, supabase }: {
   const [classId, setClassId] = useState("");
   const [aytAlan, setAytAlan] = useState<AytAlan>("SAY");
   const [hedefBolum, setHedefBolum] = useState("");
-  const [password, setPassword] = useState("");
-  const [password2, setPassword2] = useState("");
   const [hata, setHata] = useState<string | null>(null);
   const [yukleniyor, setYukleniyor] = useState(false);
   const [basarili, setBasarili] = useState(false);
+  const [geciciSifre, setGeciciSifre] = useState("");
+  const [oturumVar, setOturumVar] = useState(false);
 
   const sinifOptions = classes.filter((c) => c.school_id === schoolId);
   const adim1Tamam = ad && okulNo && email && telefon && schoolId && classId && hedefBolum;
@@ -194,16 +194,16 @@ function OgrenciKayit({ schools, classes, router, supabase }: {
   async function kayitOl(e: React.FormEvent) {
     e.preventDefault();
     setHata(null);
-    if (!sifreGecerliMi(password)) return setHata("Şifre geçersiz. " + SIFRE_IPUCU);
-    if (password !== password2) return setHata("Şifreler eşleşmiyor.");
 
+    const sifre = rastgeleSifre();
     setYukleniyor(true);
     const { error } = await supabase.auth.signUp({
-      email, password,
+      email, password: sifre,
       options: {
         data: {
           role: "ogrenci", ad: adNormalize(ad), telefon, okul_no: okulNo,
           school_id: schoolId, class_id: classId, ayt_alan: aytAlan, hedef_bolum: hedefBolum,
+          gecici_sifre: true,
         },
       },
     });
@@ -211,30 +211,47 @@ function OgrenciKayit({ schools, classes, router, supabase }: {
     if (error) return setHata(error.message);
 
     const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      router.push("/dashboard");
-      router.refresh();
-      return;
-    }
+    setGeciciSifre(sifre);
+    setOturumVar(!!session);
     setBasarili(true);
   }
 
-  if (basarili) return <KayitTamamMesaji email={email} />;
+  if (basarili) {
+    return (
+      <div className="text-center rounded-3xl p-6 flex flex-col gap-4" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+        <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-lg font-bold">Kaydınız tamamlandı 🎉</h2>
+        <p style={{ color: TEXT_MUTED }} className="text-sm leading-relaxed">
+          Aşağıdaki geçici şifrenizi not alın. İlk girişten sonra kendi şifrenizi belirlemeniz istenecek.
+        </p>
+        <div className="rounded-2xl px-4 py-3" style={{ background: MINT_BG, border: `1px solid ${BORDER_STRONG}` }}>
+          <div style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide mb-1">Geçici şifreniz</div>
+          <div style={{ color: MINT, fontFamily: "monospace" }} className="text-2xl font-bold tracking-widest">{geciciSifre}</div>
+        </div>
+        {oturumVar ? (
+          <button type="button" onClick={() => { router.push("/dashboard"); router.refresh(); }}
+            className="sgec-btn text-sm font-bold py-2.5 rounded-xl" style={{ background: MINT, color: MINT_ON }}>
+            Panele git
+          </button>
+        ) : (
+          <>
+            <p style={{ color: TEXT_MUTED }} className="text-xs">Giriş yapmak için bu şifreyi kullanın.</p>
+            <Link href="/login" style={{ color: MINT }} className="text-sm font-semibold">Girişe git</Link>
+          </>
+        )}
+      </div>
+    );
+  }
 
   if (adim === 2) {
     return (
       <>
         <form onSubmit={kayitOl} className="rounded-3xl p-6 flex flex-col gap-4" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
           <div className="rounded-xl px-3 py-2 text-[12px] font-semibold" style={{ background: MINT_BG, color: MINT }}>
-            Bilgileriniz tamam ✓ — şimdi şifrenizi belirleyin.
+            Bilgileriniz tamam ✓ — kaydınızı tamamlayabilirsiniz.
           </div>
-          <label className="flex flex-col gap-1"><Etiket>Şifre</Etiket>
-            <Girdi type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
-            <span style={{ color: TEXT_MUTED }} className="text-[10px]">{SIFRE_IPUCU}</span>
-          </label>
-          <label className="flex flex-col gap-1"><Etiket>Şifre (tekrar)</Etiket>
-            <Girdi type="password" required minLength={8} value={password2} onChange={(e) => setPassword2(e.target.value)} />
-          </label>
+          <p style={{ color: TEXT_MUTED }} className="text-xs leading-relaxed">
+            Şifrenizi sistem sizin için oluşturacak ve kayıt tamamlandığında ekranda gösterecek. İlk girişten sonra kendi şifrenizi belirleyebileceksiniz.
+          </p>
           {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
           <div className="flex gap-2">
             <button type="button" onClick={() => setAdim(1)} className="sgec-btn shrink-0 w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: BG0, border: `1px solid ${BORDER_STRONG}` }}>

@@ -14,6 +14,7 @@ export interface Profile {
   email: string | null;
   telefon: string | null;
   role: UserRole;
+  gecici_sifre: boolean;
   created_at: string;
 }
 

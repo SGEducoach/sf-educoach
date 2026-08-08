@@ -10,6 +10,7 @@ import { Rozetlerim } from "@/components/dashboard/Rozetlerim";
 import { AnalizPaneli } from "@/components/dashboard/AnalizPaneli";
 import { BildirimAyarlari } from "@/components/dashboard/BildirimAyarlari";
 import { HosgeldinPopuplari } from "@/components/dashboard/HosgeldinPopuplari";
+import { ZorunluSifreDegisikligiKapisi } from "@/components/dashboard/ZorunluSifreDegisikligiKapisi";
 import { analizVerisiGetir } from "@/lib/analiz";
 import type { RaporDonemi } from "@/lib/analiz";
 import { AYT_ALAN_ETIKET } from "@/lib/types";
@@ -28,7 +29,7 @@ export default async function DashboardPage({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("ad, role")
+    .select("ad, role, gecici_sifre")
     .eq("id", user.id)
     .single();
 
@@ -43,6 +44,7 @@ export default async function DashboardPage({
   return (
     <div style={{ minHeight: "100vh", width: "100%" }} className="flex-1 flex flex-col">
       <Header ad={profile.ad} role={role} />
+      <ZorunluSifreDegisikligiKapisi gecici={profile.gecici_sifre} />
       <HosgeldinPopuplari role={role} />
       <div className="max-w-6xl mx-auto px-6 py-7 w-full flex-1 flex flex-col gap-6">
         <BildirimAyarlari />
