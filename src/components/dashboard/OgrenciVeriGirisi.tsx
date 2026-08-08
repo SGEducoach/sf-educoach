@@ -316,6 +316,11 @@ function SoruCozumuForm({ dersListesi, onBasari }: { dersListesi: string[]; onBa
   const [pending, startTransition] = useTransition();
 
   const net = dogru !== "" && yanlis !== "" ? netHesapla(Number(dogru), Number(yanlis)) : null;
+  // Süre, toplam soru sayısının iki katını geçemez (bkz. soruCozumuEkle) —
+  // hem art niyeti caydırmak hem de "günlük toplamı tek oturuma girme"
+  // hatasını erkenden yakalamak için form tarafında da uygulanıyor.
+  const toplamSoru = (Number(dogru) || 0) + (Number(yanlis) || 0);
+  const sureUstSiniri = toplamSoru * 2;
 
   function submit(formData: FormData) {
     setHata(null);
@@ -345,10 +350,12 @@ function SoruCozumuForm({ dersListesi, onBasari }: { dersListesi: string[]; onBa
           <Girdi name="yanlis" type="number" min={0} required value={yanlis} onChange={(e) => setYanlis(e.target.value)} />
         </label>
         <label className="flex flex-col gap-1"><Etiket>Süre (dk)</Etiket>
-          <Girdi name="sureDakika" type="number" min={1} max={SURE_UST_SINIR} required />
+          <Girdi name="sureDakika" type="number" min={1} max={toplamSoru > 0 ? sureUstSiniri : undefined} required />
         </label>
       </div>
-      <p style={{ color: TEXT_MUTED }} className="text-[11px] -mt-1">Süre, şu an bitirdiğin <strong>tek oturumun</strong> süresi — haftalık/günlük toplam değil.</p>
+      <p style={{ color: TEXT_MUTED }} className="text-[11px] -mt-1">Süre, şu an bitirdiğin <strong>tek oturumun</strong> süresi — haftalık/günlük toplam değil.
+        {toplamSoru > 0 && <> En fazla <strong>{sureUstSiniri} dakika</strong> (soru başına ~2 dk).</>}
+      </p>
       {net !== null && (
         <div style={{ color: MINT }} className="text-xs font-bold">Net: {net}</div>
       )}

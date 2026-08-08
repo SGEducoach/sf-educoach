@@ -170,8 +170,12 @@ export async function soruCozumuEkle(formData: FormData) {
     return { error: "Lütfen tüm alanları doldurun.", verimlilikSorulsunMu: false };
   }
   if (tarihHatasi) return { error: tarihHatasi, verimlilikSorulsunMu: false };
-  if (sureDakika > SURE_UST_SINIR) {
-    return { error: `Süre en fazla ${SURE_UST_SINIR} dakika olabilir (tek oturum için) — haftalık/günlük toplamı buraya girme.`, verimlilikSorulsunMu: false };
+  // Süre, toplam soru sayısının (doğru+yanlış) iki katını geçemez — soru
+  // başına makul bir üst sınır koyup "günlük toplamı tek oturuma girme"
+  // hatasını (bkz. SURE_UST_SINIR yorumu) burada da yakalıyor.
+  const toplamSoru = dogru + yanlis;
+  if (sureDakika > toplamSoru * 2) {
+    return { error: `Süre, toplam soru sayısının (${toplamSoru}) iki katı olan ${toplamSoru * 2} dakikayı geçemez.`, verimlilikSorulsunMu: false };
   }
 
   const { error } = await supabase.from("soru_cozumleri").insert({
