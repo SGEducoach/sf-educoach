@@ -6,18 +6,26 @@ import { BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUT
 
 const MAKS_UZUNLUK = 500;
 
+export interface KapsamSecenegi {
+  deger: string;
+  etiket: string;
+}
+
 // Öğrenci + bağlı veliye push bildirimi olarak giden serbest metin duyuru.
-// Kapsam (kime gideceği) tamamen server-side belirleniyor — bu bileşen
-// sadece mesajı alıp verilen `gonder` action'ına iletiyor, admin/müdür/
-// öğretmen sürümleri arasındaki tek fark hangi action'ın bağlandığı.
+// Kapsam (kime gideceği) tamamen server-side belirleniyor/doğrulanıyor —
+// bu bileşen sadece mesajı (ve seçiliyse bir kapsam değerini) alıp verilen
+// `gonder` action'ına iletiyor. kapsamSecenekleri verilmezse (öğretmen,
+// admin) kapsam seçici hiç gösterilmiyor — o rollerde kapsam zaten sabit.
 export function DuyuruFormu({
-  baslik, aciklama, gonder,
+  baslik, aciklama, gonder, kapsamSecenekleri,
 }: {
   baslik: string;
   aciklama: string;
-  gonder: (mesaj: string) => Promise<{ error: string | null; ogrenciSayisi: number; veliSayisi: number }>;
+  gonder: (mesaj: string, kapsam?: string) => Promise<{ error: string | null; ogrenciSayisi: number; veliSayisi: number }>;
+  kapsamSecenekleri?: KapsamSecenegi[];
 }) {
   const [mesaj, setMesaj] = useState("");
+  const [kapsam, setKapsam] = useState(kapsamSecenekleri?.[0]?.deger ?? "");
   const [hata, setHata] = useState<string | null>(null);
   const [basari, setBasari] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -29,7 +37,7 @@ export function DuyuruFormu({
     const temiz = mesaj.trim();
     if (!temiz) return setHata("Mesaj boş olamaz.");
     startTransition(async () => {
-      const res = await gonder(temiz);
+      const res = await gonder(temiz, kapsamSecenekleri ? kapsam : undefined);
       if (res.error) return setHata(res.error);
       setBasari(`Gönderildi — ${res.ogrenciSayisi} öğrenci, ${res.veliSayisi} veliye ulaştı.`);
       setMesaj("");
@@ -46,6 +54,15 @@ export function DuyuruFormu({
       </div>
       <p style={{ color: TEXT_MUTED }} className="text-[11px] mb-3">{aciklama}</p>
       <form onSubmit={gonderTikla} className="flex flex-col gap-2">
+        {kapsamSecenekleri && kapsamSecenekleri.length > 0 && (
+          <label className="flex flex-col gap-1">
+            <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Kime gitsin</span>
+            <select value={kapsam} onChange={(e) => setKapsam(e.target.value)}
+              className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+              {kapsamSecenekleri.map((k) => <option key={k.deger} value={k.deger}>{k.etiket}</option>)}
+            </select>
+          </label>
+        )}
         <textarea
           value={mesaj}
           onChange={(e) => setMesaj(e.target.value.slice(0, MAKS_UZUNLUK))}

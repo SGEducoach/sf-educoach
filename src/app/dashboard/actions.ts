@@ -275,9 +275,13 @@ export async function ogrencileriTopluEkle(input: {
 
 // Öğretmen (kendi sınıfına) veya müdür (kendi okuluna) duyuru gönderir —
 // hem öğrencilere hem bağlı velilere aynı mesaj push bildirimi olarak gider.
-// Kapsam server-side belirleniyor (client'tan gelmiyor) — bir öğretmenin
-// class_id'sini/school_id'sini kendisi seçemesin diye.
-export async function ogretmenDuyuruGonder(mesaj: string): Promise<{ error: string | null; ogrenciSayisi: number; veliSayisi: number }> {
+// Kapsam server-side belirleniyor/doğrulanıyor (client'tan gelen `kapsam`
+// sadece müdür için anlamlı, bir seçim ipucu — hangi okula/sınıfa ait
+// olduğu burada tekrar kontrol ediliyor, öğretmen için tamamen yok sayılıyor
+// çünkü onun kapsamı zaten sabit: kendi sınıfı).
+// kapsam değerleri (müdür): "okul" (tüm okul, varsayılan) | "11" | "12"
+// (seviye) | <classId> (belirli bir şube).
+export async function ogretmenDuyuruGonder(mesaj: string, kapsam?: string): Promise<{ error: string | null; ogrenciSayisi: number; veliSayisi: number }> {
   const { supabase, user } = await requireUser();
   const bosSonuc = { ogrenciSayisi: 0, veliSayisi: 0 };
 
@@ -300,9 +304,26 @@ export async function ogretmenDuyuruGonder(mesaj: string): Promise<{ error: stri
   let baslik: string;
 
   if (profile.role === "mudur") {
-    const { data: ogrenciler } = await admin.from("students").select("id").eq("school_id", teacher.school_id);
-    ogrenciIdleri = (ogrenciler ?? []).map((o) => o.id);
-    baslik = "Okul yönetiminden duyuru";
+    if (kapsam === "11" || kapsam === "12") {
+      const { data: ogrenciler } = await admin
+        .from("students").select("id, classes!inner(seviye)")
+        .eq("school_id", teacher.school_id).eq("classes.seviye", kapsam);
+      ogrenciIdleri = (ogrenciler ?? []).map((o) => o.id);
+      baslik = `Okul yönetiminden duyuru (${kapsam}. sınıflar)`;
+    } else if (kapsam && kapsam !== "okul") {
+      // Belirli bir şube seçildi — o sınıfın gerçekten bu müdürün okuluna
+      // ait olduğunu doğrulamadan öğrenci çekmiyoruz (başka okulun class_id'si
+      // gönderilirse sessizce reddedilir, boş sonuç döner).
+      const { data: sinif } = await admin.from("classes").select("id, seviye, sube").eq("id", kapsam).eq("school_id", teacher.school_id).maybeSingle();
+      if (!sinif) return { error: "Seçilen sınıf bu okula ait değil.", ...bosSonuc };
+      const { data: ogrenciler } = await admin.from("students").select("id").eq("class_id", sinif.id);
+      ogrenciIdleri = (ogrenciler ?? []).map((o) => o.id);
+      baslik = `Okul yönetiminden duyuru (${sinif.seviye}-${sinif.sube})`;
+    } else {
+      const { data: ogrenciler } = await admin.from("students").select("id").eq("school_id", teacher.school_id);
+      ogrenciIdleri = (ogrenciler ?? []).map((o) => o.id);
+      baslik = "Okul yönetiminden duyuru";
+    }
   } else {
     if (!teacher.class_id) return { error: "Sınıf öğretmeni olmadığınız için duyuru gönderemezsiniz.", ...bosSonuc };
     const { data: ogrenciler } = await admin.from("students").select("id").eq("class_id", teacher.class_id);

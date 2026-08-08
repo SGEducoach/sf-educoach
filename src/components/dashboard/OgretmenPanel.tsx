@@ -55,6 +55,16 @@ export function OgretmenPanel({
   const gosterilecekBekleyenler = bekleyenTalepler.filter((t) => !onaylananIdSeti.has(t.id));
 
   const duyuruMumkunMu = role === "mudur" || !!kendiSinifId;
+  // Müdür kapsamı seçebiliyor: tüm okul / seviye / belirli şube. Öğretmende
+  // kapsam sabit (kendi sınıfı) olduğu için seçici hiç gösterilmiyor.
+  const duyuruKapsamSecenekleri = role === "mudur"
+    ? [
+        { deger: "okul", etiket: "Tüm okul" },
+        { deger: "11", etiket: "11. Sınıflar" },
+        { deger: "12", etiket: "12. Sınıflar" },
+        ...siniflar.map((s) => ({ deger: s.id, etiket: `Sadece ${s.seviye}-${s.sube}` })),
+      ]
+    : undefined;
 
   return (
     <div className="flex flex-col gap-6">
@@ -62,9 +72,10 @@ export function OgretmenPanel({
         <DuyuruFormu
           baslik={role === "mudur" ? "Okula duyuru gönder" : "Sınıfınıza duyuru gönder"}
           aciklama={role === "mudur"
-            ? "Okuldaki tüm öğrencilere ve bağlı velilere push bildirimi olarak gider."
+            ? "Seçtiğiniz kapsamdaki öğrencilere ve bağlı velilere push bildirimi olarak gider."
             : "Sadece sınıf öğretmeni olduğunuz sınıftaki öğrencilere ve bağlı velilere push bildirimi olarak gider."}
           gonder={ogretmenDuyuruGonder}
+          kapsamSecenekleri={duyuruKapsamSecenekleri}
         />
       )}
 
