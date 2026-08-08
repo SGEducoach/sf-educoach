@@ -49,6 +49,7 @@ interface IslemKaydi {
 const EYLEM_ETIKET: Record<string, string> = {
   sinif_ekle: "Sınıf eklendi",
   ogretmen_ekle_manuel: "Öğretmen eklendi",
+  mudur_ekle_manuel: "Müdür eklendi",
   ogrenci_ekle_manuel: "Öğrenci eklendi",
   ogrenci_toplu_ekle: "Öğrenciler toplu eklendi",
   deneme_toplu_gir: "Deneme sonuçları toplu girildi",
@@ -365,6 +366,7 @@ function OgretmenEkleFormu({ schoolId }: { schoolId: string }) {
   const [email, setEmail] = useState("");
   const [telefon, setTelefon] = useState("");
   const [brans, setBrans] = useState<string>(BRANS_LISTESI[0]);
+  const [mudur, setMudur] = useState(false);
   const [hata, setHata] = useState<string | null>(null);
   const [sonuc, setSonuc] = useState<{ email: string; sifre: string } | null>(null);
   const [pending, startTransition] = useTransition();
@@ -373,7 +375,7 @@ function OgretmenEkleFormu({ schoolId }: { schoolId: string }) {
     e.preventDefault();
     setHata(null);
     startTransition(async () => {
-      const res = await ogretmenEkleManuel({ ad, email, telefon, schoolId, brans });
+      const res = await ogretmenEkleManuel({ ad, email, telefon, schoolId, brans, mudur });
       if (res.error) return setHata(res.error);
       setSonuc({ email: email.trim().toLowerCase(), sifre: res.sifre! });
       setAd(""); setEmail(""); setTelefon("");
@@ -384,7 +386,7 @@ function OgretmenEkleFormu({ schoolId }: { schoolId: string }) {
     <div className="rounded-2xl p-4 flex flex-col gap-2.5" style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}` }}>
       <div className="flex items-center gap-1.5">
         <UserPlus size={13} color={MINT} />
-        <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[13px] font-bold">Öğretmen ekle</span>
+        <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[13px] font-bold">{mudur ? "Müdür ekle" : "Öğretmen ekle"}</span>
       </div>
       {sonuc && <OlusturulanHesap email={sonuc.email} sifre={sonuc.sifre} />}
       <form onSubmit={ekle} className="flex flex-col gap-2">
@@ -394,14 +396,20 @@ function OgretmenEkleFormu({ schoolId }: { schoolId: string }) {
           className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
         <input value={telefon} onChange={(e) => setTelefon(telefonSanitize(e.target.value))} type="tel" inputMode="numeric" placeholder={TELEFON_IPUCU} required
           className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
-        <select value={brans} onChange={(e) => setBrans(e.target.value)}
-          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
-          {BRANS_LISTESI.map((b) => <option key={b} value={b}>{b}</option>)}
-        </select>
+        {!mudur && (
+          <select value={brans} onChange={(e) => setBrans(e.target.value)}
+            className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+            {BRANS_LISTESI.map((b) => <option key={b} value={b}>{b}</option>)}
+          </select>
+        )}
+        <label className="flex items-center gap-1.5 cursor-pointer">
+          <input type="checkbox" checked={mudur} onChange={(e) => setMudur(e.target.checked)} />
+          <span style={{ color: TEXT_MUTED }} className="text-[11px] font-semibold">Müdür olarak ekle (okul kodu + şifre ile giriş yapar)</span>
+        </label>
         {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
         <button type="submit" disabled={pending}
           className="sgec-btn text-xs font-bold py-2 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
-          {pending ? "Ekleniyor..." : "Öğretmen ekle"}
+          {pending ? "Ekleniyor..." : mudur ? "Müdür ekle" : "Öğretmen ekle"}
         </button>
       </form>
     </div>

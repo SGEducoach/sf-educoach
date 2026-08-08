@@ -143,7 +143,7 @@ function manuelEklemeHatasi(mesaj: string): string {
 }
 
 export async function ogretmenEkleManuel(input: {
-  ad: string; email: string; telefon: string; schoolId: string; brans: string;
+  ad: string; email: string; telefon: string; schoolId: string; brans: string; mudur?: boolean;
 }) {
   const { supabase, user, admin } = await requireAdmin();
   if (!admin) return { error: "Bu işlem için yönetici yetkisi gerekiyor.", sifre: null };
@@ -154,16 +154,19 @@ export async function ogretmenEkleManuel(input: {
   if (!email) return { error: "E-posta gerekli.", sifre: null };
   if (!telefonGecerliMi(input.telefon)) return { error: "Telefon numarası geçersiz.", sifre: null };
   if (!input.schoolId) return { error: "Okul seçin.", sifre: null };
-  if (!input.brans) return { error: "Branş seçin.", sifre: null };
+  // Müdür için branş anlamsız — handle_new_user() trigger'ı zaten 'Müdür'ü
+  // sabit atıyor (bkz. migration 0009), metadata'daki brans'ı yok sayıyor.
+  if (!input.mudur && !input.brans) return { error: "Branş seçin.", sifre: null };
 
+  const rol = input.mudur ? "mudur" : "ogretmen";
   const sifre = rastgeleSifre();
   const { data: created, error } = await admin.auth.admin.createUser({
     email, password: sifre, email_confirm: true,
-    user_metadata: { role: "ogretmen", ad, telefon: input.telefon, school_id: input.schoolId, brans: input.brans },
+    user_metadata: { role: rol, ad, telefon: input.telefon, school_id: input.schoolId, brans: input.brans },
   });
   if (error) return { error: manuelEklemeHatasi(error.message), sifre: null };
 
-  await auditLogYaz(supabase, user.id, "ogretmen_ekle_manuel", { ogretmen_id: created.user?.id, email, school_id: input.schoolId });
+  await auditLogYaz(supabase, user.id, input.mudur ? "mudur_ekle_manuel" : "ogretmen_ekle_manuel", { ogretmen_id: created.user?.id, email, school_id: input.schoolId });
   revalidatePath("/yonetici");
   return { error: null, sifre };
 }
