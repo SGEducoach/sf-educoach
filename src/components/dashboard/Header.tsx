@@ -2,6 +2,7 @@ import Image from "next/image";
 import { LogOut } from "lucide-react";
 import { BG0, BORDER, SEAFOAM, TEXT, TEXT_MUTED } from "@/lib/theme";
 import { signOut } from "@/app/dashboard/actions";
+import { MesajlarimIkonu } from "@/components/dashboard/MesajlarimIkonu";
 import type { UserRole } from "@/lib/types";
 
 const rolEtiket: Record<UserRole, string> = {
@@ -12,7 +13,7 @@ const rolEtiket: Record<UserRole, string> = {
   admin: "Yönetici",
 };
 
-export function Header({ ad, role }: { ad: string; role: UserRole }) {
+export function Header({ ad, role, okunmamisMesajSayisi = 0 }: { ad: string; role: UserRole; okunmamisMesajSayisi?: number }) {
   return (
     <div className="print:hidden" style={{
       background: `radial-gradient(circle at 12% -30%, #262B4E 0%, ${BG0} 55%)`,
@@ -38,6 +39,7 @@ export function Header({ ad, role }: { ad: string; role: UserRole }) {
               <span style={{ color: TEXT }} className="text-[12px] font-bold">{ad}</span>
               <span style={{ color: TEXT_MUTED }} className="text-[11px]">· {rolEtiket[role]}</span>
             </div>
+            {(role === "ogrenci" || role === "veli") && <MesajlarimIkonu baslangicSayisi={okunmamisMesajSayisi} />}
             <form action={signOut}>
               <button type="submit" title="Çıkış yap"
                 className="sgec-btn w-8 h-8 rounded-full flex items-center justify-center"

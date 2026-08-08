@@ -623,7 +623,7 @@ export async function adminDuyuruGonder(mesaj: string): Promise<{ error: string 
   const { data: ogrenciler } = await admin.from("students").select("id");
   const ogrenciIdleri = (ogrenciler ?? []).map((o) => o.id);
 
-  const sonuc = await duyuruGonder(admin, ogrenciIdleri, "SG EDUCOACH duyurusu", mesajTemiz);
+  const sonuc = await duyuruGonder(admin, ogrenciIdleri, "SG EDUCOACH duyurusu", mesajTemiz, user.id);
   await auditLogYaz(supabase, user.id, "admin_duyuru_gonder", { ogrenci_sayisi: sonuc.ogrenciSayisi, veli_sayisi: sonuc.veliSayisi, mesaj: mesajTemiz });
   return { error: null, ...sonuc };
 }

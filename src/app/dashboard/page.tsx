@@ -42,9 +42,21 @@ export default async function DashboardPage({
   const params = await searchParams;
   const donem = (["haftalik", "aylik", "tum"].includes(params.donem ?? "") ? params.donem : "tum") as RaporDonemi;
 
+  // Sadece öğrenci/veli duyuru alıcısı olabiliyor — diğer rollerde sorgu
+  // zaten boş dönüyor, koşul sadece gereksiz sorguyu atlıyor.
+  let okunmamisMesajSayisi = 0;
+  if (role === "ogrenci" || role === "veli") {
+    const { count } = await supabase
+      .from("duyuru_aliciler")
+      .select("*", { count: "exact", head: true })
+      .eq("profile_id", user.id)
+      .eq("okundu", false);
+    okunmamisMesajSayisi = count ?? 0;
+  }
+
   return (
     <div style={{ minHeight: "100vh", width: "100%" }} className="flex-1 flex flex-col">
-      <Header ad={profile.ad} role={role} />
+      <Header ad={profile.ad} role={role} okunmamisMesajSayisi={okunmamisMesajSayisi} />
       <ZorunluSifreDegisikligiKapisi gecici={profile.gecici_sifre} />
       <HosgeldinPopuplari role={role} />
       <div className="max-w-6xl mx-auto px-6 py-7 w-full flex-1 flex flex-col gap-6">

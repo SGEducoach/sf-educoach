@@ -52,11 +52,15 @@ export async function pushGonderProfile(
 // veli(ler)ine aynı mesajı gönderir. Admin (herkese), müdür (kendi okulu)
 // ve öğretmen (kendi sınıfı) duyuru araçları bunu paylaşıyor — kapsamı
 // çağıran server action belirliyor, burası sadece gönderiyor.
+// Push'a EK olarak (header'daki "Mesajlarım" kutusu için) duyurular +
+// duyuru_aliciler'a da kalıcı olarak yazıyor — alıcı listesi push'un
+// GERÇEKTEN gittiği aynı profil id'leri, ayrı bir kapsam hesaplaması yok.
 export async function duyuruGonder(
   admin: SupabaseClient,
   ogrenciIdleri: string[],
   baslik: string,
   govde: string,
+  gonderenId?: string,
 ): Promise<{ ogrenciSayisi: number; veliSayisi: number }> {
   if (ogrenciIdleri.length === 0) return { ogrenciSayisi: 0, veliSayisi: 0 };
 
@@ -68,6 +72,16 @@ export async function duyuruGonder(
 
   for (const ogrenciId of ogrenciIdleri) await pushGonderProfile(admin, ogrenciId, baslik, govde);
   for (const veliId of veliIdSeti) await pushGonderProfile(admin, veliId, baslik, govde);
+
+  const { data: duyuru, error: duyuruHatasi } = await admin
+    .from("duyurular")
+    .insert({ gonderen_id: gonderenId ?? null, baslik, mesaj: govde })
+    .select("id")
+    .single();
+  if (!duyuruHatasi && duyuru) {
+    const aliciSatirlari = [...ogrenciIdleri, ...veliIdSeti].map((profileId) => ({ duyuru_id: duyuru.id, profile_id: profileId }));
+    if (aliciSatirlari.length > 0) await admin.from("duyuru_aliciler").insert(aliciSatirlari);
+  }
 
   return { ogrenciSayisi: ogrenciIdleri.length, veliSayisi: veliIdSeti.size };
 }

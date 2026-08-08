@@ -331,6 +331,6 @@ export async function ogretmenDuyuruGonder(mesaj: string, kapsam?: string): Prom
     baslik = "Öğretmeninizden duyuru";
   }
 
-  const sonuc = await duyuruGonderTemel(admin, ogrenciIdleri, baslik, mesajTemiz);
+  const sonuc = await duyuruGonderTemel(admin, ogrenciIdleri, baslik, mesajTemiz, user.id);
   return { error: null, ...sonuc };
 }
