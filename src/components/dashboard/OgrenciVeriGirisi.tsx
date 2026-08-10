@@ -47,7 +47,7 @@ function GecmisTarihSecici({ tarih, setTarih, geriyeMaksGun }: { tarih: string; 
   return (
     <label className="flex flex-col gap-1">
       <Etiket>Tarih</Etiket>
-      <div className="flex gap-2">
+      <div className="flex gap-2 relative">
         <Girdi type="date" max={bugununTarihi()} min={enEskiTarih(geriyeMaksGun)} value={tarih} onChange={(e) => setTarih(e.target.value)} required />
         <button type="button" onClick={() => { setAcik(false); setTarih(bugununTarihi()); }}
           className="sgec-btn shrink-0 text-[11px] font-bold px-3 py-1.5 rounded-xl"
