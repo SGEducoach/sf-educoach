@@ -64,8 +64,8 @@ export function MesajlarimIkonu({ baslangicSayisi }: { baslangicSayisi: number }
 
       {acik && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setAcik(false)} />
-          <div className="absolute right-0 top-10 z-50 w-80 max-w-[85vw] rounded-2xl p-3 flex flex-col gap-2 max-h-96 overflow-y-auto"
+          <div className="fixed inset-0 z-10" onClick={() => setAcik(false)} />
+          <div className="absolute right-0 top-10 z-[999] w-80 max-w-[85vw] rounded-2xl p-3 flex flex-col gap-2 max-h-96 overflow-y-auto"
             style={{ background: BG1, border: `1px solid ${BORDER_STRONG}`, boxShadow: "0 8px 24px rgba(0,0,0,0.35)" }}>
             <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-sm font-bold px-1">Mesajlarım</span>
             {yukleniyor && <p style={{ color: TEXT_MUTED }} className="text-xs text-center py-4">Yükleniyor...</p>}
