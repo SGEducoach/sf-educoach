@@ -74,7 +74,14 @@ export default function LoginForm() {
       girisEmail = cozulenEmail;
     }
 
-    const { error } = await supabase.auth.signInWithPassword({ email: girisEmail, password: girisSifre });
+    void girisEmail;
+    const response = await fetch("/api/giris", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role, schoolId, okulNo: okulNo.trim(), kod: kod.trim(), email: email.trim(), password: girisSifre }),
+    });
+    const sonuc = await response.json() as { error?: string };
+    const error = response.ok ? null : { message: sonuc.error ?? "Giriş yapılamadı." };
     setYukleniyor(false);
     if (error) {
       setHata(error.message === "Invalid login credentials" ? "Bilgiler hatalı." : error.message);

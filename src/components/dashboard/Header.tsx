@@ -6,6 +6,7 @@ import { signOut } from "@/app/dashboard/actions";
 import { MesajlarimIkonu } from "@/components/dashboard/MesajlarimIkonu";
 import type { UserRole } from "@/lib/types";
 import { MobilAltNavigasyon } from "@/components/dashboard/MobilAltNavigasyon";
+import { OturumZamanAsimi } from "@/components/OturumZamanAsimi";
 
 const rolEtiket: Record<UserRole, string> = {
   ogrenci: "Öğrenci",
@@ -17,6 +18,8 @@ const rolEtiket: Record<UserRole, string> = {
 
 export function Header({ ad, role, okunmamisMesajSayisi = 0, mobilNavigasyon = true, moderatorMu = false, rolEtiketi }: { ad: string; role: UserRole; okunmamisMesajSayisi?: number; mobilNavigasyon?: boolean; moderatorMu?: boolean; rolEtiketi?: string }) {
   return (
+    <>
+    <OturumZamanAsimi aktif={role === "admin" || moderatorMu} />
     <header className="sticky top-0 z-[100] isolate overflow-clip print:hidden" style={{
       background: `radial-gradient(circle at 12% -30%, #DDF7F3 0%, ${BG0} 55%)`,
       borderBottom: `2px solid ${BORDER}`,
@@ -55,5 +58,6 @@ export function Header({ ad, role, okunmamisMesajSayisi = 0, mobilNavigasyon = t
       </div>
       {mobilNavigasyon && <MobilAltNavigasyon role={role} />}
     </header>
+    </>
   );
 }
