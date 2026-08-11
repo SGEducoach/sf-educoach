@@ -43,7 +43,9 @@ export function AnalizPaneli({ veri, ogrenciAdi }: { veri: AnalizVerisi; ogrenci
   const router = useRouter();
   const searchParams = useSearchParams();
   const denemeChartData = veri.denemeTrend.map((d) => ({ tarih: tarihFormat(d.tarih), [d.tur]: d.net }));
-  const calismaChartData = veri.calismaGunluk.map((c) => ({ gun: tarihFormat(c.tarih), dakika: c.dakika }));
+  const konuChartData = veri.konuCalismaGunluk.map((c) => ({ gun: tarihFormat(c.tarih), dakika: c.dakika }));
+  const soruChartData = veri.soruCozumuGunluk.map((c) => ({ gun: tarihFormat(c.tarih), soru: c.soru }));
+  const denemeSureChartData = veri.denemeSureleri.map((d) => ({ gun: tarihFormat(d.tarih), dakika: d.dakika, tur: d.tur }));
   const verimlilikChartData = veri.haftalikVerimlilik.map((v) => ({ tarih: tarihFormat(v.tarih), puan: v.puan, duzey: VERIMLILIK_ETIKET[v.duzey] }));
 
   const hedefToplam = veri.hedefeYakinlikDagilimi.yakin + veri.hedefeYakinlikDagilimi.belirsiz + veri.hedefeYakinlikDagilimi.uzak;
@@ -80,9 +82,11 @@ export function AnalizPaneli({ veri, ogrenciAdi }: { veri: AnalizVerisi; ogrenci
         </button>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
         <IstatKart icon={TrendingUp} etiket="Son deneme neti" deger={veri.sonDenemeNet ?? "—"} renk={MINT} bg={MINT_BG} />
-        <IstatKart icon={Clock} etiket="Bu hafta" deger={`${Math.floor(veri.buHaftaDakika / 60)}s ${veri.buHaftaDakika % 60}dk`} renk={BUTTER} bg={BUTTER_BG} />
+        <IstatKart icon={Clock} etiket="Bu hafta · konu" deger={`${veri.buHaftaKonuDakika} dk`} renk={BUTTER} bg={BUTTER_BG} />
+        <IstatKart icon={Target} etiket="Bu hafta · soru" deger={`${veri.buHaftaSoru} soru`} renk={SKY} bg={SKY_BG} />
+        <IstatKart icon={Clock} etiket="Bu hafta · deneme" deger={`${veri.buHaftaDenemeDakika} dk`} renk={LILAC} bg="rgba(199,182,255,0.15)" />
         <IstatKart icon={Target} etiket="Deneme sayısı" deger={veri.denemeTrend.length} renk={SKY} bg={SKY_BG} />
         <IstatKart icon={Sparkles} etiket="Toplam giriş" deger={hedefToplam} renk={LILAC} bg="rgba(199,182,255,0.15)" />
       </div>
@@ -98,7 +102,7 @@ export function AnalizPaneli({ veri, ogrenciAdi }: { veri: AnalizVerisi; ogrenci
                 <CartesianGrid strokeDasharray="3 3" stroke={BORDER} vertical={false} />
                 <XAxis dataKey="tarih" tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={{ stroke: BORDER }} tickLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={false} tickLine={false} />
-                <RTooltip contentStyle={{ fontSize: 12, borderRadius: 12, border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT }} labelStyle={{ color: TEXT_MUTED }} />
+                <RTooltip cursor={false} contentStyle={{ fontSize: 12, borderRadius: 12, border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT }} labelStyle={{ color: TEXT_MUTED }} />
                 <Legend wrapperStyle={{ fontSize: 11, color: TEXT_MUTED }} />
                 <Line type="monotone" dataKey="TYT" stroke={SKY} strokeWidth={2.25} dot={{ r: 3.5, fill: SKY, strokeWidth: 2, stroke: BG1 }} connectNulls />
                 <Line type="monotone" dataKey="AYT" stroke={MINT} strokeWidth={2.25} dot={{ r: 3.5, fill: MINT, strokeWidth: 2, stroke: BG1 }} connectNulls />
@@ -108,17 +112,51 @@ export function AnalizPaneli({ veri, ogrenciAdi }: { veri: AnalizVerisi; ogrenci
         </div>
 
         <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-          <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold mb-4 block">Günlük çalışma (dakika)</span>
-          {calismaChartData.length === 0 ? (
+          <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold mb-4 block">Günlük konu çalışması (dakika)</span>
+          {konuChartData.length === 0 ? (
             <BosDurum />
           ) : (
             <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={calismaChartData} margin={{ left: -20, right: 10 }}>
+              <BarChart data={konuChartData} margin={{ left: -20, right: 10 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={BORDER} vertical={false} />
                 <XAxis dataKey="gun" tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={{ stroke: BORDER }} tickLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={false} tickLine={false} />
-                <RTooltip contentStyle={{ fontSize: 12, borderRadius: 12, border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT }} labelStyle={{ color: TEXT_MUTED }} />
-                <Bar dataKey="dakika" fill={MINT} radius={[5, 5, 0, 0]} maxBarSize={34} />
+                <RTooltip cursor={false} formatter={(deger) => [`${deger} dk`, "Konu çalışması"]} contentStyle={{ fontSize: 12, borderRadius: 12, border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT }} labelStyle={{ color: TEXT_MUTED }} />
+                <Bar dataKey="dakika" fill={MINT} activeBar={false} radius={[5, 5, 0, 0]} maxBarSize={34} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+          <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold mb-4 block">Günlük soru çözümü (soru)</span>
+          {soruChartData.length === 0 ? (
+            <BosDurum />
+          ) : (
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={soruChartData} margin={{ left: -20, right: 10 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke={BORDER} vertical={false} />
+                <XAxis dataKey="gun" tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={{ stroke: BORDER }} tickLine={false} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={false} tickLine={false} />
+                <RTooltip cursor={false} formatter={(deger) => [`${deger} soru`, "Soru çözümü"]} contentStyle={{ fontSize: 12, borderRadius: 12, border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT }} labelStyle={{ color: TEXT_MUTED }} />
+                <Bar dataKey="soru" fill={SKY} activeBar={false} radius={[5, 5, 0, 0]} maxBarSize={34} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+          <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold mb-4 block">Deneme süreleri (dakika)</span>
+          {denemeSureChartData.length === 0 ? (
+            <BosDurum />
+          ) : (
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={denemeSureChartData} margin={{ left: -20, right: 10 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke={BORDER} vertical={false} />
+                <XAxis dataKey="gun" tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={{ stroke: BORDER }} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={false} tickLine={false} />
+                <RTooltip cursor={false} formatter={(deger, _, oge) => [`${deger} dk`, `${oge.payload.tur} denemesi`]} contentStyle={{ fontSize: 12, borderRadius: 12, border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT }} labelStyle={{ color: TEXT_MUTED }} />
+                <Bar dataKey="dakika" fill={LILAC} activeBar={false} radius={[5, 5, 0, 0]} maxBarSize={34} />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -134,8 +172,8 @@ export function AnalizPaneli({ veri, ogrenciAdi }: { veri: AnalizVerisi; ogrenci
                 <CartesianGrid strokeDasharray="3 3" stroke={BORDER} vertical={false} />
                 <XAxis dataKey="ders" tick={{ fontSize: 10, fill: TEXT_MUTED }} axisLine={{ stroke: BORDER }} tickLine={false} interval={0} angle={-25} textAnchor="end" height={50} />
                 <YAxis tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={false} tickLine={false} />
-                <RTooltip contentStyle={{ fontSize: 12, borderRadius: 12, border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT }} labelStyle={{ color: TEXT_MUTED }} />
-                <Bar dataKey="net" fill={SKY} radius={[5, 5, 0, 0]} maxBarSize={34} />
+                <RTooltip cursor={false} contentStyle={{ fontSize: 12, borderRadius: 12, border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT }} labelStyle={{ color: TEXT_MUTED }} />
+                <Bar dataKey="net" fill={SKY} activeBar={false} radius={[5, 5, 0, 0]} maxBarSize={34} />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -174,7 +212,7 @@ export function AnalizPaneli({ veri, ogrenciAdi }: { veri: AnalizVerisi; ogrenci
               <CartesianGrid strokeDasharray="3 3" stroke={BORDER} vertical={false} />
               <XAxis dataKey="tarih" tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={{ stroke: BORDER }} tickLine={false} />
               <YAxis domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={false} tickLine={false} />
-              <RTooltip contentStyle={{ fontSize: 12, borderRadius: 12, border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT }} labelStyle={{ color: TEXT_MUTED }}
+              <RTooltip cursor={false} contentStyle={{ fontSize: 12, borderRadius: 12, border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT }} labelStyle={{ color: TEXT_MUTED }}
                 formatter={(_, __, props) => [props.payload.duzey, "Verimlilik"]} />
               <Line type="monotone" dataKey="puan" stroke={LILAC} strokeWidth={2.25} dot={{ r: 3.5, fill: LILAC, strokeWidth: 2, stroke: BG1 }} />
             </LineChart>

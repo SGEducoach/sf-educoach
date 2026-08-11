@@ -11,14 +11,17 @@ export const RAPOR_DONEMI_ETIKET: Record<RaporDonemi, string> = {
 };
 
 export interface AnalizVerisi {
-  denemeTrend: { tarih: string; net: number; tur: "TYT" | "AYT" }[];
-  calismaGunluk: { tarih: string; dakika: number }[];
+  denemeTrend: { tarih: string; net: number; tur: "TYT" | "AYT"; sureDakika: number }[];
+  konuCalismaGunluk: { tarih: string; dakika: number }[];
+  soruCozumuGunluk: { tarih: string; soru: number }[];
+  denemeSureleri: { tarih: string; dakika: number; tur: "TYT" | "AYT" }[];
   dersNetOrtalama: { ders: string; net: number }[];
   hedefeYakinlikDagilimi: Record<HedefeYakinlik, number>;
   haftalikVerimlilik: { tarih: string; puan: number; duzey: VerimlilikDuzeyi }[];
   sonDenemeNet: number | null;
-  buHaftaDakika: number;
-  toplamDakika: number;
+  buHaftaKonuDakika: number;
+  buHaftaSoru: number;
+  buHaftaDenemeDakika: number;
   donem: RaporDonemi;
   donemBaslangic: string | null;
 }
@@ -42,7 +45,7 @@ export async function analizVerisiGetir(
 ): Promise<AnalizVerisi> {
   const baslangic = donemBaslangicHesapla(donem);
 
-  let denemeQuery = supabase.from("denemeler").select("id, tarih, tur, hedefe_yakinlik, deneme_ders_sonuclari(dogru, yanlis)").eq("student_id", studentId).order("tarih");
+  let denemeQuery = supabase.from("denemeler").select("id, tarih, tur, sure_dakika, hedefe_yakinlik, deneme_ders_sonuclari(dogru, yanlis)").eq("student_id", studentId).order("tarih");
   let konuQuery = supabase.from("konu_calismalar").select("tarih, sure_dakika, hedefe_yakinlik").eq("student_id", studentId);
   let soruQuery = supabase.from("soru_cozumleri").select("tarih, sure_dakika, ders, dogru, yanlis, hedefe_yakinlik").eq("student_id", studentId);
   let verimlilikQuery = supabase.from("haftalik_verimlilikler").select("created_at, duzey").eq("student_id", studentId).order("created_at");
@@ -61,7 +64,7 @@ export async function analizVerisiGetir(
     { data: verimlilikler },
   ] = await Promise.all([denemeQuery, konuQuery, soruQuery, verimlilikQuery]);
 
-  type DenemeRow = { id: string; tarih: string; tur: "TYT" | "AYT"; hedefe_yakinlik: HedefeYakinlik; deneme_ders_sonuclari: { dogru: number; yanlis: number }[] };
+  type DenemeRow = { id: string; tarih: string; tur: "TYT" | "AYT"; sure_dakika: number; hedefe_yakinlik: HedefeYakinlik; deneme_ders_sonuclari: { dogru: number; yanlis: number }[] };
   type KonuRow = { tarih: string; sure_dakika: number; hedefe_yakinlik: HedefeYakinlik };
   type SoruRow = { tarih: string; sure_dakika: number; ders: string; dogru: number; yanlis: number; hedefe_yakinlik: HedefeYakinlik };
 
@@ -73,16 +76,25 @@ export async function analizVerisiGetir(
   const denemeTrend = denemeListesi.map((d) => ({
     tarih: d.tarih,
     tur: d.tur,
+    sureDakika: d.sure_dakika,
     net: Math.round(d.deneme_ders_sonuclari.reduce((t, s) => t + netHesapla(s.dogru, s.yanlis), 0) * 100) / 100,
   }));
 
-  // Gün bazlı toplam çalışma süresi (konu + soru)
-  const gunMap = new Map<string, number>();
-  for (const k of konuListesi) gunMap.set(k.tarih, (gunMap.get(k.tarih) ?? 0) + k.sure_dakika);
-  for (const s of soruListesi) gunMap.set(s.tarih, (gunMap.get(s.tarih) ?? 0) + s.sure_dakika);
-  const calismaGunluk = Array.from(gunMap.entries())
+  // Rozet kategorileriyle aynı sınırlar korunur: konu, soru ve deneme
+  // birbirine eklenmez; her biri kendi doğal birimiyle raporlanır.
+  const konuGunMap = new Map<string, number>();
+  for (const k of konuListesi) konuGunMap.set(k.tarih, (konuGunMap.get(k.tarih) ?? 0) + k.sure_dakika);
+  const konuCalismaGunluk = Array.from(konuGunMap.entries())
     .map(([tarih, dakika]) => ({ tarih, dakika }))
     .sort((a, b) => a.tarih.localeCompare(b.tarih));
+
+  const soruGunMap = new Map<string, number>();
+  for (const s of soruListesi) soruGunMap.set(s.tarih, (soruGunMap.get(s.tarih) ?? 0) + s.dogru + s.yanlis);
+  const soruCozumuGunluk = Array.from(soruGunMap.entries())
+    .map(([tarih, soru]) => ({ tarih, soru }))
+    .sort((a, b) => a.tarih.localeCompare(b.tarih));
+
+  const denemeSureleri = denemeListesi.map((d) => ({ tarih: d.tarih, dakika: d.sure_dakika, tur: d.tur }));
 
   // Ders bazlı ortalama net (sadece soru çözümlerinden)
   const dersMap = new Map<string, { toplam: number; adet: number }>();
@@ -109,21 +121,29 @@ export async function analizVerisiGetir(
   const bugun = new Date();
   const buHaftaBaslangic = new Date(bugun);
   buHaftaBaslangic.setDate(bugun.getDate() - 6);
-  const buHaftaDakika = calismaGunluk
+  buHaftaBaslangic.setHours(0, 0, 0, 0);
+  const buHaftaKonuDakika = konuCalismaGunluk
+    .filter((c) => new Date(c.tarih) >= buHaftaBaslangic)
+    .reduce((t, c) => t + c.dakika, 0);
+  const buHaftaSoru = soruCozumuGunluk
+    .filter((c) => new Date(c.tarih) >= buHaftaBaslangic)
+    .reduce((t, c) => t + c.soru, 0);
+  const buHaftaDenemeDakika = denemeSureleri
     .filter((c) => new Date(c.tarih) >= buHaftaBaslangic)
     .reduce((t, c) => t + c.dakika, 0);
 
-  const toplamDakika = calismaGunluk.reduce((t, c) => t + c.dakika, 0);
-
   return {
     denemeTrend,
-    calismaGunluk,
+    konuCalismaGunluk,
+    soruCozumuGunluk,
+    denemeSureleri,
     dersNetOrtalama,
     hedefeYakinlikDagilimi,
     haftalikVerimlilik,
     sonDenemeNet: denemeTrend.length > 0 ? denemeTrend[denemeTrend.length - 1].net : null,
-    buHaftaDakika,
-    toplamDakika,
+    buHaftaKonuDakika,
+    buHaftaSoru,
+    buHaftaDenemeDakika,
     donem,
     donemBaslangic: baslangic,
   };
