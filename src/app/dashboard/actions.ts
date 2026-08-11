@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { telefonGecerliMi, okulNoGecerliMi, rastgeleSifre, adNormalize } from "@/lib/validators";
 import { duyuruGonder as duyuruGonderTemel } from "@/lib/push-send";
+import type { DuyuruAliciTuru } from "@/lib/push-send";
 import { DUYURU_MIN_UZUNLUK, duyuruGonderimIzniKontrol } from "@/lib/duyuru-guvenligi";
 
 const DUYURU_MAKS_UZUNLUK = 500;
@@ -282,11 +283,12 @@ export async function ogrencileriTopluEkle(input: {
 // çünkü onun kapsamı zaten sabit: kendi sınıfı).
 // kapsam değerleri (müdür): "okul" (tüm okul, varsayılan) | "11" | "12"
 // (seviye) | <classId> (belirli bir şube).
-export async function ogretmenDuyuruGonder(mesaj: string, kapsam?: string): Promise<{ error: string | null; ogrenciSayisi: number; veliSayisi: number }> {
+export async function ogretmenDuyuruGonder(mesaj: string, kapsam?: string, aliciTuru: DuyuruAliciTuru = "hepsi"): Promise<{ error: string | null; ogrenciSayisi: number; veliSayisi: number }> {
   const { supabase, user } = await requireUser();
   const bosSonuc = { ogrenciSayisi: 0, veliSayisi: 0 };
 
   const mesajTemiz = mesaj.trim();
+  if (!["hepsi", "ogrenci", "veli"].includes(aliciTuru)) return { error: "Geçersiz alıcı seçimi.", ...bosSonuc };
   if (!mesajTemiz) return { error: "Mesaj boş olamaz.", ...bosSonuc };
   if (mesajTemiz.length < DUYURU_MIN_UZUNLUK) return { error: `Duyuru en az ${DUYURU_MIN_UZUNLUK} karakter olmalıdır.`, ...bosSonuc };
   if (mesajTemiz.length > DUYURU_MAKS_UZUNLUK) {
@@ -335,11 +337,11 @@ export async function ogretmenDuyuruGonder(mesaj: string, kapsam?: string): Prom
     baslik = "Öğretmeninizden duyuru";
   }
 
-  const sonuc = await duyuruGonderTemel(admin, ogrenciIdleri, baslik, mesajTemiz, user.id);
+  const sonuc = await duyuruGonderTemel(admin, ogrenciIdleri, baslik, mesajTemiz, user.id, aliciTuru);
   await admin.from("admin_audit_log").insert({
     actor_id: user.id,
     eylem: profile.role === "mudur" ? "mudur_duyuru_gonder" : "ogretmen_duyuru_gonder",
-    detay: { school_id: teacher.school_id, class_id: teacher.class_id, kapsam: kapsam ?? null, ogrenci_sayisi: sonuc.ogrenciSayisi, veli_sayisi: sonuc.veliSayisi },
+    detay: { school_id: teacher.school_id, class_id: teacher.class_id, kapsam: kapsam ?? null, alici_turu: aliciTuru, ogrenci_sayisi: sonuc.ogrenciSayisi, veli_sayisi: sonuc.veliSayisi },
   });
   return { error: null, ...sonuc };
 }

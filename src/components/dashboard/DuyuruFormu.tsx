@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { Megaphone, Send, X } from "lucide-react";
 import { BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
+import type { DuyuruAliciTuru } from "@/lib/push-send";
 
 const MAKS_UZUNLUK = 500;
 const MIN_UZUNLUK = 10;
@@ -19,15 +20,17 @@ export interface KapsamSecenegi {
 // `gonder` action'ına iletiyor. kapsamSecenekleri verilmezse (öğretmen,
 // admin) kapsam seçici hiç gösterilmiyor — o rollerde kapsam zaten sabit.
 export function DuyuruFormu({
-  baslik, aciklama, gonder, kapsamSecenekleri,
+  baslik, aciklama, gonder, kapsamSecenekleri, aliciTuruSecilebilir = false,
 }: {
   baslik: string;
   aciklama: string;
-  gonder: (mesaj: string, kapsam?: string) => Promise<{ error: string | null; ogrenciSayisi: number; veliSayisi: number }>;
+  gonder: (mesaj: string, kapsam?: string, aliciTuru?: DuyuruAliciTuru) => Promise<{ error: string | null; ogrenciSayisi: number; veliSayisi: number }>;
   kapsamSecenekleri?: KapsamSecenegi[];
+  aliciTuruSecilebilir?: boolean;
 }) {
   const [mesaj, setMesaj] = useState("");
   const [kapsam, setKapsam] = useState(kapsamSecenekleri?.[0]?.deger ?? "");
+  const [aliciTuru, setAliciTuru] = useState<DuyuruAliciTuru>("hepsi");
   const [hata, setHata] = useState<string | null>(null);
   const [basari, setBasari] = useState<string | null>(null);
   const [onayAcik, setOnayAcik] = useState(false);
@@ -47,7 +50,7 @@ export function DuyuruFormu({
     const temiz = mesaj.trim();
     setOnayAcik(false);
     startTransition(async () => {
-      const res = await gonder(temiz, kapsamSecenekleri ? kapsam : undefined);
+      const res = await gonder(temiz, kapsamSecenekleri ? kapsam : undefined, aliciTuruSecilebilir ? aliciTuru : undefined);
       if (res.error) return setHata(res.error);
       setBasari(`Gönderildi — ${res.ogrenciSayisi} öğrenci, ${res.veliSayisi} veliye ulaştı.`);
       setMesaj("");
@@ -70,6 +73,16 @@ export function DuyuruFormu({
             <select value={kapsam} onChange={(e) => setKapsam(e.target.value)}
               className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
               {kapsamSecenekleri.map((k) => <option key={k.deger} value={k.deger}>{k.etiket}</option>)}
+            </select>
+          </label>
+        )}
+        {aliciTuruSecilebilir && (
+          <label className="flex flex-col gap-1">
+            <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Kimlere gönderilsin</span>
+            <select value={aliciTuru} onChange={(e) => setAliciTuru(e.target.value as DuyuruAliciTuru)} className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+              <option value="hepsi">Hepsi - öğrenci ve veliler</option>
+              <option value="ogrenci">Sadece öğrenciler</option>
+              <option value="veli">Sadece veliler</option>
             </select>
           </label>
         )}
@@ -97,7 +110,8 @@ export function DuyuruFormu({
           <div role="dialog" aria-modal="true" aria-labelledby="duyuru-onay-baslik" className="relative w-full max-w-sm rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }} onClick={(e) => e.stopPropagation()}>
             <button type="button" onClick={() => setOnayAcik(false)} aria-label="Kapat" className="sgec-btn absolute right-4 top-4 h-8 w-8 rounded-full" style={{ border: `2px solid ${BORDER_STRONG}` }}><X size={14} color={TEXT_MUTED} className="m-auto" /></button>
             <h2 id="duyuru-onay-baslik" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="pr-10 text-base font-bold">Duyuru gönderilsin mi?</h2>
-            <p style={{ color: TEXT_MUTED }} className="mt-1 text-xs">Hedef: {kapsamSecenekleri?.find((secenek) => secenek.deger === kapsam)?.etiket ?? aciklama}</p>
+            <p style={{ color: TEXT_MUTED }} className="mt-1 text-xs">Kapsam: {kapsamSecenekleri?.find((secenek) => secenek.deger === kapsam)?.etiket ?? aciklama}</p>
+            {aliciTuruSecilebilir && <p style={{ color: TEXT_MUTED }} className="mt-1 text-xs">Alıcılar: {aliciTuru === "hepsi" ? "Öğrenciler ve veliler" : aliciTuru === "ogrenci" ? "Sadece öğrenciler" : "Sadece veliler"}</p>}
             <div className="my-4 max-h-40 overflow-y-auto rounded-2xl p-3 text-sm leading-relaxed" style={{ color: TEXT, background: BG0, border: `2px solid ${BORDER_STRONG}` }}>{mesaj.trim()}</div>
             <p style={{ color: BLUSH }} className="mb-4 text-[11px] font-semibold">Gönderilen duyuru alıcıların mesaj kutusuna eklenir ve geri alınamaz.</p>
             <div className="flex gap-2">

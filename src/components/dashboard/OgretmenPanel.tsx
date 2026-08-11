@@ -72,10 +72,11 @@ export function OgretmenPanel({
         <section id="duyurular" className="sgec-section"><DuyuruFormu
           baslik={role === "mudur" ? "Okula duyuru gönder" : "Sınıfınıza duyuru gönder"}
           aciklama={role === "mudur"
-            ? "Seçtiğiniz kapsamdaki öğrencilere ve bağlı velilere push bildirimi olarak gider."
-            : "Sadece sınıf öğretmeni olduğunuz sınıftaki öğrencilere ve bağlı velilere push bildirimi olarak gider."}
+            ? "Okul veya sınıf kapsamını ve duyurunun öğrenciye, veliye ya da ikisine birden gideceğini seçebilirsiniz."
+            : "Kendi sınıfınız için duyurunun öğrenciye, veliye ya da ikisine birden gideceğini seçebilirsiniz."}
           gonder={ogretmenDuyuruGonder}
           kapsamSecenekleri={duyuruKapsamSecenekleri}
+          aliciTuruSecilebilir
         /></section>
       )}
 

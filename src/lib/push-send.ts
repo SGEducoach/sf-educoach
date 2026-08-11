@@ -1,6 +1,8 @@
 import webpush from "web-push";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+export type DuyuruAliciTuru = "hepsi" | "ogrenci" | "veli";
+
 // Rozet kazanımı gibi anlık (kullanıcı işlem yaparken tetiklenen) push
 // bildirimleri için — cron route'undaki toplu gönderim ayrı/optimize
 // kalıyor (yüzlerce öğrenciyi tek seferde işliyor), bu ise tek bir
@@ -61,6 +63,7 @@ export async function duyuruGonder(
   baslik: string,
   govde: string,
   gonderenId?: string,
+  aliciTuru: DuyuruAliciTuru = "hepsi",
 ): Promise<{ ogrenciSayisi: number; veliSayisi: number }> {
   if (ogrenciIdleri.length === 0) return { ogrenciSayisi: 0, veliSayisi: 0 };
 
@@ -69,9 +72,11 @@ export async function duyuruGonder(
     .select("parent_id")
     .in("student_id", ogrenciIdleri);
   const veliIdSeti = new Set((veliBaglantilari ?? []).map((v) => v.parent_id as string));
+  const ogrenciAlicilari = aliciTuru === "veli" ? [] : ogrenciIdleri;
+  const veliAlicilari = aliciTuru === "ogrenci" ? new Set<string>() : veliIdSeti;
 
-  for (const ogrenciId of ogrenciIdleri) await pushGonderProfile(admin, ogrenciId, baslik, govde);
-  for (const veliId of veliIdSeti) await pushGonderProfile(admin, veliId, baslik, govde);
+  for (const ogrenciId of ogrenciAlicilari) await pushGonderProfile(admin, ogrenciId, baslik, govde);
+  for (const veliId of veliAlicilari) await pushGonderProfile(admin, veliId, baslik, govde);
 
   const { data: duyuru, error: duyuruHatasi } = await admin
     .from("duyurular")
@@ -79,9 +84,9 @@ export async function duyuruGonder(
     .select("id")
     .single();
   if (!duyuruHatasi && duyuru) {
-    const aliciSatirlari = [...ogrenciIdleri, ...veliIdSeti].map((profileId) => ({ duyuru_id: duyuru.id, profile_id: profileId }));
+    const aliciSatirlari = [...ogrenciAlicilari, ...veliAlicilari].map((profileId) => ({ duyuru_id: duyuru.id, profile_id: profileId }));
     if (aliciSatirlari.length > 0) await admin.from("duyuru_aliciler").insert(aliciSatirlari);
   }
 
-  return { ogrenciSayisi: ogrenciIdleri.length, veliSayisi: veliIdSeti.size };
+  return { ogrenciSayisi: ogrenciAlicilari.length, veliSayisi: veliAlicilari.size };
 }
