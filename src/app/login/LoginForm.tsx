@@ -64,7 +64,7 @@ export default function LoginForm() {
         return setHata("Okul no veya kod hatalı.");
       }
       girisEmail = cozulenEmail;
-      girisSifre = kod.trim();
+      girisSifre = password;
     } else if (role === "mudur") {
       const { data: cozulenEmail } = await supabase.rpc("resolve_mudur_email", { p_okul_kodu: okulNo.trim() });
       if (!cozulenEmail) {
@@ -149,6 +149,13 @@ export default function LoginForm() {
                   onChange={(e) => (role === "veli" ? setKod(e.target.value.toUpperCase()) : setPassword(e.target.value))}
                   className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
               </label>
+              {role === "veli" && (
+                <label className="flex flex-col gap-1">
+                  <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Şifre</span>
+                  <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
+                    className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+                </label>
+              )}
             </>
           )}
 

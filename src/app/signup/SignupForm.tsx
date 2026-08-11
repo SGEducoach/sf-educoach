@@ -531,11 +531,14 @@ Haklarınız: KVKK madde 11 kapsamında verilerin düzeltilmesi, silinmesi, işl
 Onay: Yukarıdaki bilgilendirmeyi okudum; velisi/vasisi olduğum öğrencinin belirtilen kapsamda kişisel verilerinin işlenmesine açık rızamla onay veriyorum.`;
 
 function VeliTamamlaForm({ schools, router }: { schools: School[]; router: ReturnType<typeof useRouter>; supabase: ReturnType<typeof createClient> }) {
+  const [asama, setAsama] = useState<1 | 2>(1);
   const [schoolId, setSchoolId] = useState("");
   const [okulNo, setOkulNo] = useState("");
   const [kod, setKod] = useState("");
   const [veliAd, setVeliAd] = useState("");
   const [veliTelefon, setVeliTelefon] = useState("");
+  const [sifre, setSifre] = useState("");
+  const [sifreTekrar, setSifreTekrar] = useState("");
   const [kvkkOnay, setKvkkOnay] = useState(false);
   const [hata, setHata] = useState<string | null>(null);
   const [yukleniyor, setYukleniyor] = useState(false);
@@ -547,12 +550,14 @@ function VeliTamamlaForm({ schools, router }: { schools: School[]; router: Retur
     if (!veliAd.trim()) return setHata("Adınız Soyadınız gerekli.");
     if (!telefonGecerliMi(veliTelefon)) return setHata("Telefon numarası geçersiz. " + TELEFON_IPUCU);
     if (!kvkkOnay) return setHata("Devam etmek için KVKK aydınlatma metnini onaylamanız gerekiyor.");
+    if (!sifreGecerliMi(sifre)) return setHata(SIFRE_IPUCU);
+    if (sifre !== sifreTekrar) return setHata("Şifreler aynı değil.");
     setYukleniyor(true);
     const res = await fetch("/api/veli/tamamla", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        school_id: schoolId, okul_no: okulNo.trim(), kod: kod.trim(), kvkkOnay: true,
+        school_id: schoolId, okul_no: okulNo.trim(), kod: kod.trim(), sifre, kvkkOnay: true,
         veli_ad: adNormalize(veliAd), veli_telefon: veliTelefon,
       }),
     });
@@ -566,6 +571,12 @@ function VeliTamamlaForm({ schools, router }: { schools: School[]; router: Retur
   return (
     <>
     <form onSubmit={tamamla} className="flex flex-col gap-3">
+      <div className="flex items-center gap-2 text-[11px] font-bold" style={{ color: TEXT_MUTED }}>
+        <span className="rounded-full px-2.5 py-1" style={{ background: asama === 1 ? MINT : BG0, color: asama === 1 ? MINT_ON : TEXT_MUTED }}>1 · Kodu doğrula</span>
+        <span>→</span>
+        <span className="rounded-full px-2.5 py-1" style={{ background: asama === 2 ? MINT : BG0, color: asama === 2 ? MINT_ON : TEXT_MUTED }}>2 · Şifreni oluştur</span>
+      </div>
+      {asama === 1 ? <>
       <label className="flex flex-col gap-1"><Etiket>Öğrencinin Okulu</Etiket>
         <Secim required value={schoolId} onChange={(e) => setSchoolId(e.target.value)}>
           <option value="">Seçiniz</option>
@@ -594,9 +605,31 @@ function VeliTamamlaForm({ schools, router }: { schools: School[]; router: Retur
       </label>
 
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
-      <button type="submit" disabled={yukleniyor || !kvkkOnay} className="sgec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
-        {yukleniyor ? "Tamamlanıyor..." : "Kaydı tamamla"}
+      <button type="button" onClick={() => {
+        setHata(null);
+        if (!schoolId) return setHata("Okul seçin.");
+        if (!okulNo.trim() || !kod.trim()) return setHata("Okul no ve kod gerekli.");
+        if (!veliAd.trim()) return setHata("Adınız Soyadınız gerekli.");
+        if (!telefonGecerliMi(veliTelefon)) return setHata("Telefon numarası geçersiz. " + TELEFON_IPUCU);
+        if (!kvkkOnay) return setHata("Devam etmek için KVKK metnini onaylayın.");
+        setAsama(2);
+      }} className="sgec-btn rounded-xl py-2.5 text-sm font-bold" style={{ background: MINT, color: MINT_ON }}>
+        Devam et
       </button>
+      </> : <>
+      <p style={{ color: TEXT_MUTED }} className="text-xs leading-relaxed">Kod yalnız hesabı eşleştirmek için kullanılacak. Bundan sonraki girişlerinizde aşağıda oluşturduğunuz kişisel şifreyi kullanacaksınız.</p>
+      <label className="flex flex-col gap-1"><Etiket>Yeni Şifre</Etiket><Girdi type="password" required value={sifre} onChange={(e) => setSifre(e.target.value)} /></label>
+      <label className="flex flex-col gap-1"><Etiket>Yeni Şifre Tekrar</Etiket><Girdi type="password" required value={sifreTekrar} onChange={(e) => setSifreTekrar(e.target.value)} /></label>
+      <p style={{ color: TEXT_MUTED }} className="text-[11px] leading-relaxed">{SIFRE_IPUCU}</p>
+
+      {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
+      <div className="flex gap-2">
+        <button type="button" onClick={() => { setHata(null); setAsama(1); }} disabled={yukleniyor} className="sgec-btn flex-1 rounded-xl py-2.5 text-sm font-bold" style={{ background: BG0, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>Geri</button>
+        <button type="submit" disabled={yukleniyor} className="sgec-btn flex-1 text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+          {yukleniyor ? "Tamamlanıyor..." : "Şifreyi oluştur"}
+        </button>
+      </div>
+      </>}
     </form>
     <YukleniyorOverlay visible={yukleniyor} mesaj="Tamamlanıyor..." />
     </>

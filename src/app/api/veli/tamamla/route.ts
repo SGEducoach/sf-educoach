@@ -6,10 +6,13 @@ import { telefonGecerliMi, adNormalize } from "@/lib/validators";
 const KVKK_ONAY_VERSIYON = "v1-2026-08-05";
 
 export async function POST(request: Request) {
-  const { school_id, okul_no, kod, kvkkOnay, veli_ad, veli_telefon } = await request.json();
+  const { school_id, okul_no, kod, sifre, kvkkOnay, veli_ad, veli_telefon } = await request.json();
 
   if (!school_id || !okul_no || !kod) {
     return NextResponse.json({ error: "Okul, okul no ve kod gerekli." }, { status: 400 });
+  }
+  if (typeof sifre !== "string" || sifre.length < 8 || !/[A-Za-z]/.test(sifre) || !/[0-9]/.test(sifre) || !/[^A-Za-z0-9\s]/.test(sifre)) {
+    return NextResponse.json({ error: "Şifre en az 8 karakter olmalı; harf, rakam ve özel işaret içermelidir." }, { status: 400 });
   }
   if (kvkkOnay !== true) {
     return NextResponse.json({ error: "Devam etmek için KVKK aydınlatma metnini onaylamanız gerekiyor." }, { status: 400 });
@@ -58,7 +61,7 @@ export async function POST(request: Request) {
 
   const { data: createdUser, error: createError } = await admin.auth.admin.createUser({
     email: syntheticEmail,
-    password: kodTemiz,
+    password: sifre,
     email_confirm: true,
     user_metadata: {
       role: "veli",
@@ -89,7 +92,7 @@ export async function POST(request: Request) {
   const supabase = await createClient();
   const { error: signInError } = await supabase.auth.signInWithPassword({
     email: syntheticEmail,
-    password: kodTemiz,
+    password: sifre,
   });
 
   if (signInError) {

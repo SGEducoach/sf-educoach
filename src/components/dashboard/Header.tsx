@@ -1,5 +1,6 @@
 import Image from "next/image";
-import { LogOut } from "lucide-react";
+import Link from "next/link";
+import { LogOut, ShieldCheck } from "lucide-react";
 import { BG0, BORDER, SEAFOAM, TEXT, TEXT_MUTED } from "@/lib/theme";
 import { signOut } from "@/app/dashboard/actions";
 import { MesajlarimIkonu } from "@/components/dashboard/MesajlarimIkonu";
@@ -14,7 +15,7 @@ const rolEtiket: Record<UserRole, string> = {
   admin: "Yönetici",
 };
 
-export function Header({ ad, role, okunmamisMesajSayisi = 0, mobilNavigasyon = true }: { ad: string; role: UserRole; okunmamisMesajSayisi?: number; mobilNavigasyon?: boolean }) {
+export function Header({ ad, role, okunmamisMesajSayisi = 0, mobilNavigasyon = true, moderatorMu = false, rolEtiketi }: { ad: string; role: UserRole; okunmamisMesajSayisi?: number; mobilNavigasyon?: boolean; moderatorMu?: boolean; rolEtiketi?: string }) {
   return (
     <header className="sticky top-0 z-[100] isolate overflow-clip print:hidden" style={{
       background: `radial-gradient(circle at 12% -30%, #DDF7F3 0%, ${BG0} 55%)`,
@@ -38,8 +39,9 @@ export function Header({ ad, role, okunmamisMesajSayisi = 0, mobilNavigasyon = t
           <div className="flex items-center gap-3">
             <div className="hidden md:flex items-center gap-2 px-3.5 py-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.06)", border: `2px solid ${BORDER}` }}>
               <span style={{ color: TEXT }} className="text-[12px] font-bold">{ad}</span>
-              <span style={{ color: TEXT_MUTED }} className="text-[11px]">· {rolEtiket[role]}</span>
+              <span style={{ color: TEXT_MUTED }} className="text-[11px]">· {rolEtiketi ?? rolEtiket[role]}</span>
             </div>
+            {moderatorMu && <Link href="/moderator" title="Moderatör paneli" className="sgec-btn flex h-11 w-11 items-center justify-center rounded-full sm:h-8 sm:w-8" style={{ background: "rgba(13,148,136,0.12)", border: `2px solid ${BORDER}` }}><ShieldCheck size={16} color={SEAFOAM}/></Link>}
             {(role === "ogrenci" || role === "veli") && <MesajlarimIkonu baslangicSayisi={okunmamisMesajSayisi} />}
             <form action={signOut}>
               <button type="submit" title="Çıkış yap"

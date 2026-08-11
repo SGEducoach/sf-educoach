@@ -41,6 +41,9 @@ export default async function DashboardPage({
   if (role === "admin") redirect("/yonetici");
   const params = await searchParams;
   const donem = (["haftalik", "aylik", "tum"].includes(params.donem ?? "") ? params.donem : "tum") as RaporDonemi;
+  const { data: moderatorYetkisi } = (role === "ogretmen" || role === "mudur")
+    ? await supabase.from("school_moderators").select("school_id").eq("profile_id", user.id).maybeSingle()
+    : { data: null };
 
   // Sadece öğrenci/veli duyuru alıcısı olabiliyor — diğer rollerde sorgu
   // zaten boş dönüyor, koşul sadece gereksiz sorguyu atlıyor.
@@ -56,7 +59,7 @@ export default async function DashboardPage({
 
   return (
     <div style={{ minHeight: "100vh", width: "100%" }} className="flex-1 flex flex-col">
-      <Header ad={profile.ad} role={role} okunmamisMesajSayisi={okunmamisMesajSayisi} />
+      <Header ad={profile.ad} role={role} okunmamisMesajSayisi={okunmamisMesajSayisi} moderatorMu={!!moderatorYetkisi} />
       <ZorunluSifreDegisikligiKapisi gecici={profile.gecici_sifre} />
       <HosgeldinPopuplari role={role} />
       <main id="ana-icerik" className="max-w-6xl mx-auto px-4 sm:px-6 py-7 pb-24 lg:pb-7 w-full flex-1 flex flex-col gap-6">

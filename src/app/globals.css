@@ -151,7 +151,7 @@ select option {
   z-index: 1;
   left: max(2px, env(safe-area-inset-left));
   bottom: max(4px, env(safe-area-inset-bottom));
-  width: clamp(112px, 35vw, 156px);
+  width: clamp(134px, 42vw, 187px);
   height: auto;
   max-height: 42dvh;
   object-fit: contain;
@@ -187,7 +187,7 @@ select option {
 
 @media (max-height: 620px) {
   .sgec-mascot-stage { min-height: 0; }
-  .sgec-mascot-character { width: 96px; max-height: 34dvh; }
+  .sgec-mascot-character { width: 115px; max-height: 40dvh; }
   .sgec-mascot-bubble { width: min(78vw, 330px); max-height: calc(100dvh - 116px); padding: 12px; }
 }
 
