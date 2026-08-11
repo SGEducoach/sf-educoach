@@ -18,6 +18,7 @@ import { IzinliOgrenciListesi } from "@/components/yonetici/IzinliOgrenciListesi
 import { AYT_ALAN_ETIKET, BRANS_LISTESI, TYT_DERSLERI, AYT_DERSLERI, DENEME_ZORLUGU_ETIKET, dersSoruSayisi } from "@/lib/types";
 import type { AytAlan, DenemeTuru, DenemeZorlugu } from "@/lib/types";
 import { telefonSanitize, okulNoSanitize, TELEFON_IPUCU } from "@/lib/validators";
+import { ogrenciKaydiEslestir } from "@/lib/ogrenci-eslestirme";
 
 interface OkulSatiri {
   id: string;
@@ -657,6 +658,8 @@ function DenemeTopluGirisFormu({ siniflar }: { siniflar: SinifSatiri[] }) {
   const [girisler, setGirisler] = useState<Record<string, { dogru: string; yanlis: string }>>({});
   const [hata, setHata] = useState<string | null>(null);
   const [sonuclar, setSonuclar] = useState<{ ad: string; hata: string | null }[] | null>(null);
+  const [yapistirilan, setYapistirilan] = useState("");
+  const [eslestirmeRaporu, setEslestirmeRaporu] = useState<{ kaynak: string; sonuc: string; hata: boolean }[] | null>(null);
   const [pending, startTransition] = useTransition();
 
   const dersListesi = tur === "TYT" ? TYT_DERSLERI : AYT_DERSLERI[aytAlan];
@@ -668,6 +671,7 @@ function DenemeTopluGirisFormu({ siniflar }: { siniflar: SinifSatiri[] }) {
     setOgrenciler(null);
     setGirisler({});
     setSonuclar(null);
+    setEslestirmeRaporu(null);
     if (!id) return;
     sinifOgrencileriGetir(id).then((res) => {
       if (res.error) return setHata(res.error);
@@ -691,6 +695,37 @@ function DenemeTopluGirisFormu({ siniflar }: { siniflar: SinifSatiri[] }) {
 
   function alanGuncelle(studentId: string, alan: "dogru" | "yanlis", deger: string) {
     setGirisler((g) => ({ ...g, [studentId]: { ...(g[studentId] ?? { dogru: "", yanlis: "" }), [alan]: deger } }));
+  }
+
+  function yapistirilaniEslestir() {
+    if (!ogrenciler) return setHata("Önce sınıf seçin.");
+    const rapor: { kaynak: string; sonuc: string; hata: boolean }[] = [];
+    const yeniGirisler: Record<string, { dogru: string; yanlis: string }> = {};
+    for (const [index, ham] of yapistirilan.split(/\r?\n/).entries()) {
+      if (!ham.trim()) continue;
+      const parcalar = ham.includes("\t") ? ham.split("\t") : ham.split(";");
+      if (parcalar.length < 4) {
+        rapor.push({ kaynak: `${index + 1}. satır`, sonuc: "Biçim: okul no; ad soyad; doğru; yanlış", hata: true });
+        continue;
+      }
+      const [okulNo, ad, dogruHam, yanlisHam] = parcalar.map((p) => p.trim());
+      const dogru = Number(dogruHam.replace(",", "."));
+      const yanlis = Number(yanlisHam.replace(",", "."));
+      if (!Number.isInteger(dogru) || !Number.isInteger(yanlis) || dogru < 0 || yanlis < 0 || (maxSoru !== undefined && dogru + yanlis > maxSoru)) {
+        rapor.push({ kaynak: `${okulNo} - ${ad}`, sonuc: `Doğru/yanlış değerleri geçersiz${maxSoru ? ` veya toplam ${maxSoru} soruyu aşıyor` : ""}.`, hata: true });
+        continue;
+      }
+      const eslesme = ogrenciKaydiEslestir({ okulNo, ad }, ogrenciler);
+      if (eslesme.durum === "belirsiz") {
+        rapor.push({ kaynak: `${okulNo} - ${ad}`, sonuc: eslesme.gerekce, hata: true });
+        continue;
+      }
+      yeniGirisler[eslesme.ogrenci.id] = { dogru: String(dogru), yanlis: String(yanlis) };
+      rapor.push({ kaynak: `${okulNo} - ${ad}`, sonuc: `${eslesme.ogrenci.okulNo} - ${eslesme.ogrenci.ad}: ${eslesme.gerekce}`, hata: false });
+    }
+    setGirisler((g) => ({ ...g, ...yeniGirisler }));
+    setEslestirmeRaporu(rapor);
+    setHata(rapor.length === 0 ? "Eşleştirilecek satır bulunamadı." : null);
   }
 
   function kaydet() {
@@ -756,6 +791,24 @@ function DenemeTopluGirisFormu({ siniflar }: { siniflar: SinifSatiri[] }) {
           {(Object.keys(DENEME_ZORLUGU_ETIKET) as DenemeZorlugu[]).map((z) => <option key={z} value={z}>{DENEME_ZORLUGU_ETIKET[z]}</option>)}
         </select>
       </div>
+
+      {classId && ogrenciler !== null && (
+        <div className="rounded-2xl p-3 flex flex-col gap-2" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
+          <div style={{ color: TEXT }} className="text-xs font-bold">Listeyi yapıştır ve güvenli eşleştir</div>
+          <p style={{ color: TEXT_MUTED }} className="text-[10px]">Her satır: <strong>okul no; ad soyad; doğru; yanlış</strong>. Birebir olmayan adlar okul numarası ve ortak ad parçalarıyla değerlendirilir; belirsiz kayıtlar otomatik doldurulmaz.</p>
+          <textarea value={yapistirilan} onChange={(e) => setYapistirilan(e.target.value)} rows={4}
+            placeholder={"307; İkra; 37; 3\n195; Nilda Karadaş; 33; 7"}
+            className="w-full resize-y rounded-xl px-3 py-2 text-xs outline-none" style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }} />
+          <button type="button" onClick={yapistirilaniEslestir} className="sgec-btn self-start rounded-xl px-3.5 py-2 text-xs font-bold" style={{ background: MINT, color: MINT_ON }}>
+            Eşleştir ve alanları doldur
+          </button>
+          {eslestirmeRaporu && (
+            <div className="max-h-44 overflow-y-auto rounded-xl p-2" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
+              {eslestirmeRaporu.map((r, i) => <div key={`${r.kaynak}-${i}`} className="py-1 text-[10px] leading-relaxed" style={{ color: r.hata ? BLUSH : TEXT }}><strong>{r.kaynak}</strong> → {r.sonuc}</div>)}
+            </div>
+          )}
+        </div>
+      )}
 
       {classId && ogrenciler === null && <p style={{ color: TEXT_MUTED }} className="text-xs py-2 text-center">Öğrenciler yükleniyor...</p>}
       {classId && ogrenciler !== null && filtrelenmisOgrenciler.length === 0 && (
