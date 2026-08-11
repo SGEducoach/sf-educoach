@@ -39,6 +39,11 @@
   --sgec-seafoam: #7ce8d8;
 }
 
+.sgec-loading-overlay {
+  background: color-mix(in srgb, var(--sgec-bg0) 82%, transparent);
+  backdrop-filter: blur(3px);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

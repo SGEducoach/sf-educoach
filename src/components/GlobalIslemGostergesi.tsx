@@ -9,6 +9,8 @@ export function GlobalIslemGostergesi() {
   const [visible, setVisible] = useState(false);
   const devamEden = useRef(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const gosterilmeAni = useRef(0);
+  const kapatmaTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const asilFetch = window.fetch;
@@ -16,7 +18,10 @@ export function GlobalIslemGostergesi() {
     window.fetch = async (...args) => {
       devamEden.current += 1;
       if (devamEden.current === 1) {
-        timer.current = setTimeout(() => setVisible(true), 180);
+        timer.current = setTimeout(() => {
+          gosterilmeAni.current = Date.now();
+          setVisible(true);
+        }, 180);
       }
 
       try {
@@ -26,7 +31,9 @@ export function GlobalIslemGostergesi() {
         if (devamEden.current === 0) {
           if (timer.current) clearTimeout(timer.current);
           timer.current = null;
-          setVisible(false);
+          const kalanSure = Math.max(0, 650 - (Date.now() - gosterilmeAni.current));
+          if (kapatmaTimer.current) clearTimeout(kapatmaTimer.current);
+          kapatmaTimer.current = setTimeout(() => setVisible(false), kalanSure);
         }
       }
     };
@@ -34,6 +41,7 @@ export function GlobalIslemGostergesi() {
     return () => {
       window.fetch = asilFetch;
       if (timer.current) clearTimeout(timer.current);
+      if (kapatmaTimer.current) clearTimeout(kapatmaTimer.current);
     };
   }, []);
 
