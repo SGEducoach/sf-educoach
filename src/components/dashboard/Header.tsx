@@ -29,7 +29,7 @@ export function Header({ ad, role, okunmamisMesajSayisi = 0, mobilNavigasyon = t
 
       <div className="max-w-6xl mx-auto px-4 py-3 sm:px-6 sm:py-4 relative">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+          <Link href="/dashboard" title="Ana sayfaya dön" className="sgec-btn flex items-center gap-3 rounded-xl">
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden shrink-0" style={{ boxShadow: "0 4px 16px rgba(124,232,176,0.28)" }}>
               <Image src="/logo.png" alt="SG EduCoach" width={40} height={40} className="w-full h-full object-cover" priority />
             </div>
@@ -37,7 +37,7 @@ export function Header({ ad, role, okunmamisMesajSayisi = 0, mobilNavigasyon = t
               <div style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="font-bold text-[16px] leading-none tracking-tight">SG EduCoach</div>
               <div style={{ color: SEAFOAM }} className="hidden sm:block text-[12px] italic mt-1.5">Her zaman bir adım ötesini düşün</div>
             </div>
-          </div>
+          </Link>
 
           <div className="flex items-center gap-3">
             <div className="hidden md:flex items-center gap-2 px-3.5 py-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.06)", border: `2px solid ${BORDER}` }}>

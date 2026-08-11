@@ -13,6 +13,8 @@ export interface ModeratorKullanici {
   role: UserRole;
   aktif: boolean;
   detay: string;
+  kategori: "ogrenci" | "ogretmen" | "veli";
+  sinif: string | null;
 }
 
 async function requireModerator() {
@@ -51,7 +53,12 @@ export async function moderatorKullanicilariGetir(): Promise<{ okulAdi: string; 
     kullanicilar: ((profiles ?? []) as { id: string; ad: string; role: UserRole; aktif: boolean }[]).map(p => {
       const s = studentMap.get(p.id) as { okul_no: string; classes: { seviye: string; sube: string } | null } | undefined;
       const t = teacherMap.get(p.id) as { brans: string; classes: { seviye: string; sube: string } | null } | undefined;
-      return { id: p.id, ad: p.ad, role: p.role, aktif: p.aktif, detay: s ? `Öğrenci · #${s.okul_no}${s.classes ? ` · ${s.classes.seviye}-${s.classes.sube}` : ""}` : t ? `${p.role === "mudur" ? "Müdür" : "Öğretmen"} · ${t.brans}` : "Veli" };
+      const sinif = s?.classes ? `${s.classes.seviye}-${s.classes.sube}` : t?.classes ? `${t.classes.seviye}-${t.classes.sube}` : null;
+      return {
+        id: p.id, ad: p.ad, role: p.role, aktif: p.aktif, sinif,
+        kategori: s ? "ogrenci" as const : t ? "ogretmen" as const : "veli" as const,
+        detay: s ? `Öğrenci · #${s.okul_no}${sinif ? ` · ${sinif}` : ""}` : t ? `${p.role === "mudur" ? "Müdür" : "Öğretmen"} · ${t.brans}${sinif ? ` · ${sinif}` : ""}` : "Veli",
+      };
     }).sort((a, b) => a.ad.localeCompare(b.ad, "tr")),
   };
 }
