@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect, useTransition } from "react";
-import { Search, Users, KeyRound, EyeOff, Eye, Copy, Check, ArrowRightLeft, Trash2 } from "lucide-react";
+import { Search, Users, KeyRound, EyeOff, Eye, Copy, Check, ArrowRightLeft, Trash2, Settings } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH, LILAC } from "@/lib/theme";
 import { kullaniciAra, sifreSifirla, hesapAktiflikDegistir, hesapSil, okulSiniflari, ogrenciSinifTasi, ogretmenBransDegistir, type KullaniciSonuc } from "@/app/yonetici/actions";
 import { BRANS_LISTESI } from "@/lib/types";
 import type { UserRole } from "@/lib/types";
+import { KullaniciDetayYonetimi } from "@/components/yonetici/KullaniciDetayYonetimi";
 
 const ROL_SEKME: { id: UserRole | "hepsi"; ad: string }[] = [
   { id: "hepsi", ad: "Tümü" },
@@ -107,6 +108,7 @@ function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
   const [aktiflikPending, startAktiflikTransition] = useTransition();
   const [silmePending, startSilmeTransition] = useTransition();
   const [duzenleAcik, setDuzenleAcik] = useState(false);
+  const [detayAcik, setDetayAcik] = useState(false);
 
   function sifreSifirlaTikla() {
     if (!window.confirm(`${kullanici.ad} için yeni bir şifre oluşturulsun mu? Eski şifre geçersiz olacak.`)) return;
@@ -184,6 +186,11 @@ function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
             style={{ background: "rgba(225,29,72,0.08)", color: BLUSH, border: `1px solid ${BLUSH}` }}>
             <Trash2 size={11} /> {silmePending ? "Siliniyor..." : "Sil"}
           </button>
+          <button type="button" onClick={() => setDetayAcik((v) => !v)} title="Detaylı kullanıcı yönetimi"
+            className="sgec-btn flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full"
+            style={{ background: detayAcik ? MINT : "rgba(13,148,136,0.08)", color: detayAcik ? MINT_ON : TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
+            <Settings size={11} /> Yönet
+          </button>
         </div>
       </div>
 
@@ -209,6 +216,7 @@ function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
           </button>
         </div>
       )}
+      {detayAcik && <KullaniciDetayYonetimi kullanici={kullanici} />}
     </div>
   );
 }

@@ -4,8 +4,11 @@ import { BG1, BORDER, MINT, MINT_BG, TEXT, TEXT_MUTED } from "@/lib/theme";
 const YETKILER = [
   "Tüm kullanıcıları rol, ad ve e-posta ile listeleme ve arama",
   "Kullanıcı şifresini geçici şifreyle sıfırlama",
+  "Kullanıcının ad, e-posta, telefon ve okul numarası bilgilerini düzenleme",
   "Hesabı pasifleştirme, yeniden aktifleştirme veya kalıcı silme",
   "Öğrenciyi aynı okuldaki başka bir sınıfa taşıma",
+  "Veli–öğrenci bağlantılarını ekleme veya kaldırma",
+  "Öğrencinin çalışma, soru ve deneme kayıtlarını düzeltme veya silme",
   "Öğretmen ve müdür branşını değiştirme",
   "Okul ve sınıf ekleme, düzenleme ve pasifleştirme",
   "Sınıf öğretmeni atama veya görevden çıkarma",

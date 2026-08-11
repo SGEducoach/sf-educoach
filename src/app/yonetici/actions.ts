@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { rastgeleSifre, adNormalize } from "@/lib/validators";
+import { rastgeleSifre, adNormalize, telefonGecerliMi, okulNoGecerliMi } from "@/lib/validators";
 import { getAnthropicClient } from "@/lib/anthropic";
 import { KONU_ANLATIMI_SISTEM_PROMPTU, icerikTemizle } from "@/lib/konu-anlatimi";
 import { duyuruGonder } from "@/lib/push-send";
@@ -132,9 +132,9 @@ export async function hesapSil(userId: string): Promise<{ error: string | null }
   if (!hedef) return { error: "Kullanıcı bulunamadı." };
   if (hedef.role === "admin") return { error: "Yönetici hesabı bu ekrandan silinemez." };
 
-  await auditLogYaz(supabase, user.id, "hesap_sil", { hedef_id: userId, hedef_ad: hedef.ad, hedef_rol: hedef.role });
   const { error } = await admin.auth.admin.deleteUser(userId);
   if (error) return { error: error.message };
+  await auditLogYaz(supabase, user.id, "hesap_sil", { hedef_id: userId, hedef_ad: hedef.ad, hedef_rol: hedef.role });
   revalidatePath("/yonetici");
   return { error: null };
 }
@@ -188,10 +188,171 @@ export async function sinifSil(classId: string): Promise<{ error: string | null 
 
 export async function ogrenciSinifTasi(studentId: string, classId: string): Promise<{ error: string | null }> {
   const { supabase, user, admin } = await requireAdmin();
+  const [{ data: ogrenci }, { data: hedefSinif }] = await Promise.all([
+    admin.from("students").select("school_id").eq("id", studentId).maybeSingle(),
+    admin.from("classes").select("school_id").eq("id", classId).maybeSingle(),
+  ]);
+  if (!ogrenci || !hedefSinif) return { error: "Öğrenci veya hedef sınıf bulunamadı." };
+  if (ogrenci.school_id !== hedefSinif.school_id) return { error: "Öğrenci yalnızca kendi okulundaki bir sınıfa taşınabilir." };
   const { error } = await admin.from("students").update({ class_id: classId }).eq("id", studentId);
   if (error) return { error: error.message };
   await auditLogYaz(supabase, user.id, "ogrenci_sinif_tasi", { student_id: studentId, class_id: classId });
   revalidatePath("/yonetici");
+  return { error: null };
+}
+
+export async function kullaniciProfilGuncelle(input: {
+  userId: string; ad: string; email: string; telefon: string; okulNo?: string;
+}): Promise<{ error: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const ad = adNormalize(input.ad);
+  const email = input.email.trim().toLowerCase();
+  const telefon = input.telefon.trim();
+  if (!ad) return { error: "Ad soyad gerekli." };
+  if (!email || !email.includes("@")) return { error: "Geçerli bir e-posta girin." };
+  if (telefon && !telefonGecerliMi(telefon)) return { error: "Telefon 10-11 rakam olmalı." };
+
+  const { data: mevcut } = await admin.from("profiles").select("email, role").eq("id", input.userId).maybeSingle();
+  if (!mevcut || mevcut.role === "admin") return { error: "Kullanıcı bulunamadı veya düzenlenemez." };
+  if (mevcut.role === "ogrenci" && input.okulNo !== undefined && !okulNoGecerliMi(input.okulNo)) return { error: "Okul numarası geçersiz." };
+
+  const { error: authError } = await admin.auth.admin.updateUserById(input.userId, { email, email_confirm: true });
+  if (authError) return { error: authError.message };
+  const { error: profileError } = await admin.from("profiles").update({ ad, email, telefon: telefon || null }).eq("id", input.userId);
+  if (profileError) {
+    if (mevcut.email) await admin.auth.admin.updateUserById(input.userId, { email: mevcut.email, email_confirm: true });
+    return { error: profileError.message };
+  }
+  if (mevcut.role === "ogrenci" && input.okulNo !== undefined) {
+    const { error: ogrenciError } = await admin.from("students").update({ okul_no: input.okulNo }).eq("id", input.userId);
+    if (ogrenciError) return { error: ogrenciError.message };
+  }
+  await auditLogYaz(supabase, user.id, "kullanici_profil_guncelle", { hedef_id: input.userId });
+  revalidatePath("/yonetici");
+  return { error: null };
+}
+
+export interface YonetimOkulu { id: string; ad: string; siniflar: { id: string; ad: string }[] }
+
+export async function yonetimOkullariGetir(): Promise<{ error: string | null; okullar: YonetimOkulu[] }> {
+  const { admin } = await requireAdmin();
+  const [{ data: okullar, error }, { data: siniflar }] = await Promise.all([
+    admin.from("schools").select("id, ad").eq("aktif", true).order("ad"),
+    admin.from("classes").select("id, school_id, seviye, sube").order("seviye").order("sube"),
+  ]);
+  if (error) return { error: error.message, okullar: [] };
+  return { error: null, okullar: (okullar ?? []).map((o) => ({ id: o.id, ad: o.ad, siniflar: (siniflar ?? []).filter((s) => s.school_id === o.id).map((s) => ({ id: s.id, ad: `${s.seviye}-${s.sube}` })) })) };
+}
+
+export async function kullaniciKurumDegistir(input: { userId: string; role: UserRole; schoolId: string; classId?: string }): Promise<{ error: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  if (input.role === "ogrenci") {
+    if (!input.classId) return { error: "Öğrenci için sınıf seçin." };
+    const { data: sinif } = await admin.from("classes").select("school_id").eq("id", input.classId).maybeSingle();
+    if (!sinif || sinif.school_id !== input.schoolId) return { error: "Seçilen sınıf bu okula ait değil." };
+    const { error } = await admin.from("students").update({ school_id: input.schoolId, class_id: input.classId }).eq("id", input.userId);
+    if (error) return { error: error.message };
+  } else if (input.role === "ogretmen" || input.role === "mudur") {
+    const { error } = await admin.from("teachers").update({ school_id: input.schoolId, class_id: null }).eq("id", input.userId);
+    if (error) return { error: error.message };
+  } else return { error: "Bu kullanıcı rolünde okul değiştirilemez." };
+  await auditLogYaz(supabase, user.id, "kullanici_kurum_degistir", { hedef_id: input.userId, school_id: input.schoolId, class_id: input.classId ?? null });
+  revalidatePath("/yonetici");
+  return { error: null };
+}
+
+export interface VeliBaglantisi {
+  parentId: string;
+  parentAd: string;
+  parentEmail: string | null;
+}
+
+export async function ogrenciVeliBaglantilari(studentId: string): Promise<{ error: string | null; baglantilar: VeliBaglantisi[] }> {
+  const { admin } = await requireAdmin();
+  const { data, error } = await admin.from("parent_students").select("parent_id, profiles!parent_students_parent_id_fkey(ad, email)").eq("student_id", studentId);
+  if (error) return { error: error.message, baglantilar: [] };
+  type Row = { parent_id: string; profiles: { ad: string; email: string | null } | null };
+  return { error: null, baglantilar: ((data as unknown as Row[]) ?? []).map((r) => ({ parentId: r.parent_id, parentAd: r.profiles?.ad ?? "İsimsiz", parentEmail: r.profiles?.email ?? null })) };
+}
+
+export async function ogrenciyeVeliBagla(studentId: string, veliSorgu: string): Promise<{ error: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const q = veliSorgu.trim();
+  if (q.length < 2) return { error: "Veli adı veya e-postası girin." };
+  const veliQuery = admin.from("profiles").select("id").eq("role", "veli").limit(2);
+  const { data: veliler, error: bulmaError } = q.includes("@")
+    ? await veliQuery.eq("email", q.toLowerCase())
+    : await veliQuery.ilike("ad", `%${q.replace(/[%_,()]/g, "")}%`);
+  if (bulmaError) return { error: bulmaError.message };
+  if (!veliler || veliler.length !== 1) return { error: veliler?.length ? "Birden fazla veli bulundu; tam e-posta yazın." : "Veli bulunamadı." };
+  const { error } = await admin.from("parent_students").upsert({ parent_id: veliler[0].id, student_id: studentId }, { onConflict: "parent_id,student_id", ignoreDuplicates: true });
+  if (error) return { error: error.message };
+  await auditLogYaz(supabase, user.id, "veli_ogrenci_bagla", { parent_id: veliler[0].id, student_id: studentId });
+  revalidatePath("/yonetici");
+  return { error: null };
+}
+
+export async function ogrenciVeliBaglantisiSil(studentId: string, parentId: string): Promise<{ error: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const { error } = await admin.from("parent_students").delete().eq("student_id", studentId).eq("parent_id", parentId);
+  if (error) return { error: error.message };
+  await auditLogYaz(supabase, user.id, "veli_ogrenci_baglantisi_sil", { parent_id: parentId, student_id: studentId });
+  revalidatePath("/yonetici");
+  return { error: null };
+}
+
+export type OgrenciKayitTuru = "konu" | "soru" | "deneme";
+export interface OgrenciYonetimKaydi {
+  id: string; tur: OgrenciKayitTuru; tarih: string; ders: string; aciklama: string; sureDakika: number;
+  konu?: string; dogru?: number; yanlis?: number;
+}
+
+export async function ogrenciYonetimKayitlari(studentId: string): Promise<{ error: string | null; kayitlar: OgrenciYonetimKaydi[] }> {
+  const { admin } = await requireAdmin();
+  const [konular, sorular, denemeler] = await Promise.all([
+    admin.from("konu_calismalar").select("id, tarih, ders, konu, sure_dakika").eq("student_id", studentId).order("tarih", { ascending: false }).limit(30),
+    admin.from("soru_cozumleri").select("id, tarih, ders, dogru, yanlis, sure_dakika").eq("student_id", studentId).order("tarih", { ascending: false }).limit(30),
+    admin.from("denemeler").select("id, tarih, tur, sure_dakika").eq("student_id", studentId).order("tarih", { ascending: false }).limit(30),
+  ]);
+  const hata = konular.error ?? sorular.error ?? denemeler.error;
+  if (hata) return { error: hata.message, kayitlar: [] };
+  const kayitlar: OgrenciYonetimKaydi[] = [
+    ...(konular.data ?? []).map((r) => ({ id: r.id, tur: "konu" as const, tarih: r.tarih, ders: r.ders, aciklama: r.konu, sureDakika: r.sure_dakika, konu: r.konu })),
+    ...(sorular.data ?? []).map((r) => ({ id: r.id, tur: "soru" as const, tarih: r.tarih, ders: r.ders, aciklama: `${r.dogru} doğru / ${r.yanlis} yanlış`, sureDakika: r.sure_dakika, dogru: r.dogru, yanlis: r.yanlis })),
+    ...(denemeler.data ?? []).map((r) => ({ id: r.id, tur: "deneme" as const, tarih: r.tarih, ders: r.tur, aciklama: `${r.tur} denemesi`, sureDakika: r.sure_dakika })),
+  ].sort((a, b) => b.tarih.localeCompare(a.tarih));
+  return { error: null, kayitlar };
+}
+
+export async function ogrenciYonetimKaydiGuncelle(input: { id: string; tur: OgrenciKayitTuru; tarih: string; sureDakika: number; ders: string; konu?: string; dogru?: number; yanlis?: number }): Promise<{ error: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.tarih)) return { error: "Tarih geçersiz." };
+  if (!Number.isInteger(input.sureDakika) || input.sureDakika < 1 || input.sureDakika > 480) return { error: "Süre 1-480 dakika arasında olmalı." };
+  const ders = input.ders.trim();
+  if (!ders) return { error: "Ders veya deneme türü boş olamaz." };
+  let error: { message: string } | null = null;
+  if (input.tur === "konu") {
+    const konu = input.konu?.trim();
+    if (!konu) return { error: "Konu boş olamaz." };
+    ({ error } = await admin.from("konu_calismalar").update({ tarih: input.tarih, sure_dakika: input.sureDakika, ders, konu }).eq("id", input.id));
+  } else if (input.tur === "soru") {
+    if (!Number.isInteger(input.dogru) || !Number.isInteger(input.yanlis) || input.dogru! < 0 || input.yanlis! < 0) return { error: "Doğru ve yanlış sayıları sıfır veya daha büyük olmalı." };
+    ({ error } = await admin.from("soru_cozumleri").update({ tarih: input.tarih, sure_dakika: input.sureDakika, ders, dogru: input.dogru, yanlis: input.yanlis }).eq("id", input.id));
+  } else {
+    if (ders !== "TYT" && ders !== "AYT") return { error: "Deneme türü TYT veya AYT olmalı." };
+    ({ error } = await admin.from("denemeler").update({ tarih: input.tarih, sure_dakika: input.sureDakika, tur: ders }).eq("id", input.id));
+  }
+  if (error) return { error: error.message };
+  await auditLogYaz(supabase, user.id, "ogrenci_kaydi_guncelle", { kayit_id: input.id, tur: input.tur });
+  return { error: null };
+}
+
+export async function ogrenciYonetimKaydiSil(id: string, tur: OgrenciKayitTuru): Promise<{ error: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const tablo = tur === "konu" ? "konu_calismalar" : tur === "soru" ? "soru_cozumleri" : "denemeler";
+  const { error } = await admin.from(tablo).delete().eq("id", id);
+  if (error) return { error: error.message };
+  await auditLogYaz(supabase, user.id, "ogrenci_kaydi_sil", { kayit_id: id, tur });
   return { error: null };
 }
 
