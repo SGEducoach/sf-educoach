@@ -52,7 +52,7 @@ export function MesajlarimIkonu({ baslangicSayisi }: { baslangicSayisi: number }
   return (
     <div className="relative">
       <button type="button" onClick={ac} title="Mesajlarım"
-        className="sgec-btn w-8 h-8 rounded-full flex items-center justify-center relative"
+        className="sgec-btn w-11 h-11 sm:w-8 sm:h-8 rounded-full flex items-center justify-center relative"
         style={{ background: sayisi > 0 ? "rgba(124,232,176,0.15)" : "rgba(255,255,255,0.06)", border: `2px solid ${BORDER}` }}>
         <Mail size={14} color={sayisi > 0 ? MINT : TEXT_MUTED} />
         {sayisi > 0 && (
@@ -65,9 +65,9 @@ export function MesajlarimIkonu({ baslangicSayisi }: { baslangicSayisi: number }
 
       {acik && createPortal(
         <>
-          <div className="fixed inset-0 z-[150]" onClick={() => setAcik(false)} />
+          <div className="fixed inset-0 z-[190]" onClick={() => setAcik(false)} />
           <div
-            className="fixed right-4 top-16 z-[160] flex max-h-96 w-80 max-w-[85vw] flex-col gap-2 overflow-y-auto rounded-2xl p-3"
+            className="fixed right-4 top-16 z-[200] flex max-h-96 w-80 max-w-[85vw] flex-col gap-2 overflow-y-auto rounded-2xl p-3"
             style={{ background: BG1, border: `2px solid ${BORDER_STRONG}`, boxShadow: "0 8px 24px rgba(0,0,0,0.35)" }}
           >
             <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-sm font-bold px-1">Mesajlarım</span>

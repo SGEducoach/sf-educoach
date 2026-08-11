@@ -69,18 +69,18 @@ export function OgretmenPanel({
   return (
     <div className="flex flex-col gap-6">
       {duyuruMumkunMu && (
-        <DuyuruFormu
+        <section id="duyurular" className="sgec-section"><DuyuruFormu
           baslik={role === "mudur" ? "Okula duyuru gönder" : "Sınıfınıza duyuru gönder"}
           aciklama={role === "mudur"
             ? "Seçtiğiniz kapsamdaki öğrencilere ve bağlı velilere push bildirimi olarak gider."
             : "Sadece sınıf öğretmeni olduğunuz sınıftaki öğrencilere ve bağlı velilere push bildirimi olarak gider."}
           gonder={ogretmenDuyuruGonder}
           kapsamSecenekleri={duyuruKapsamSecenekleri}
-        />
+        /></section>
       )}
 
       {kendiSinifId && (
-        <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+        <div id="veli-talepleri" className="sgec-section sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
           <div className="flex items-center gap-2 mb-4">
             <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: MINT_BG }}>
               <UserPlus size={13} color={MINT} />
@@ -124,7 +124,7 @@ export function OgretmenPanel({
         </div>
       )}
 
-      <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+      <div id="siniflar" className="sgec-section sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: kendiSinifiMi ? MINT_BG : SKY_BG }}>

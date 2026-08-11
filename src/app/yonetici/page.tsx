@@ -67,22 +67,22 @@ export default async function YoneticiPage({
   return (
     <div style={{ minHeight: "100vh", width: "100%" }} className="flex-1 flex flex-col">
       <Header ad={profile.ad} role="admin" />
-      <div className="max-w-6xl mx-auto px-6 py-7 w-full flex-1 flex flex-col gap-6">
+      <main id="ana-icerik" className="max-w-6xl mx-auto px-4 sm:px-6 py-7 pb-24 lg:pb-7 w-full flex-1 flex flex-col gap-6">
         <SifreDegistir />
-        <PlatformIstatistikleri />
+        <section id="istatistikler" className="sgec-section"><PlatformIstatistikleri /></section>
         <YoneticiYetkileri />
-        <KullaniciArama />
+        <section id="kullanicilar" className="sgec-section"><KullaniciArama /></section>
         <VeliTalepleri />
-        <AdminPanel
+        <section id="okullar" className="sgec-section"><AdminPanel
           okullar={okulListesi}
           gorunecekOkulId={gorunecekOkulId}
           siniflar={(siniflar ?? []) as { id: string; seviye: string; sube: string }[]}
           ogretmenListesi={ogretmenListesi}
           islemKayitlari={kayitListesi}
-        />
-        <KonuAnlatimYonetimi />
+        /></section>
+        <section id="icerik" className="sgec-section"><KonuAnlatimYonetimi /></section>
         <KurallarYonetimi />
-      </div>
+      </main>
     </div>
   );
 }

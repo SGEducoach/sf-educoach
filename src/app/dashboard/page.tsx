@@ -59,14 +59,14 @@ export default async function DashboardPage({
       <Header ad={profile.ad} role={role} okunmamisMesajSayisi={okunmamisMesajSayisi} />
       <ZorunluSifreDegisikligiKapisi gecici={profile.gecici_sifre} />
       <HosgeldinPopuplari role={role} />
-      <div className="max-w-6xl mx-auto px-6 py-7 w-full flex-1 flex flex-col gap-6">
-        <BildirimAyarlari />
+      <main id="ana-icerik" className="max-w-6xl mx-auto px-4 sm:px-6 py-7 pb-24 lg:pb-7 w-full flex-1 flex flex-col gap-6">
+        <section id="bildirimler" className="sgec-section"><BildirimAyarlari /></section>
         {role === "ogrenci" && <OgrenciIcerik userId={user.id} ad={profile.ad} donem={donem} />}
         {(role === "ogretmen" || role === "mudur") && (
           <OgretmenIcerik userId={user.id} role={role} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} donem={donem} />
         )}
         {role === "veli" && <VeliIcerik userId={user.id} secilenOgrenciId={params.ogrenci} donem={donem} />}
-      </div>
+      </main>
     </div>
   );
 }
@@ -139,7 +139,7 @@ async function OgrenciIcerik({ userId, ad, donem }: { userId: string; ad: string
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="sgec-fade rounded-3xl p-6 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+      <div id="ozet" className="sgec-section sgec-fade rounded-3xl p-6 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-bold mb-4">Hoş geldin! 👋</h1>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <Bilgi etiket="Okul No" deger={s.okul_no} />
@@ -151,13 +151,13 @@ async function OgrenciIcerik({ userId, ad, donem }: { userId: string; ad: string
 
       <Rozetlerim durum={rozetDurum} />
 
-      <ZayifKonular konular={zayifKonular} />
+      <section id="zayif-konular" className="sgec-section"><ZayifKonular konular={zayifKonular} /></section>
 
-      <div className="print:hidden">
+      <div id="veri-girisi" className="sgec-section print:hidden">
         <OgrenciVeriGirisi aytAlan={s.ayt_alan} konuOnerileri={konuOnerileri} />
       </div>
 
-      <div>
+      <div id="analiz" className="sgec-section">
         <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-lg font-bold mb-3 print:hidden">Analiz / Rapor</h2>
         <AnalizPaneli veri={analiz} ogrenciAdi={ad} />
       </div>
@@ -277,7 +277,7 @@ async function VeliIcerik({ userId, secilenOgrenciId, donem }: { userId: string;
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="sgec-fade rounded-3xl p-6 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+      <div id="ozet" className="sgec-section sgec-fade rounded-3xl p-6 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-bold mb-4">Hoş geldiniz! 👋</h1>
         {cocuklar.length === 0 ? (
           <p style={{ color: TEXT_MUTED }} className="text-sm">Henüz bağlı bir öğrenci yok.</p>
@@ -297,9 +297,7 @@ async function VeliIcerik({ userId, secilenOgrenciId, donem }: { userId: string;
         )}
       </div>
 
-      {seciliCocuk?.students && (
-        <AnalizPaneli veri={await analizVerisiGetir(supabase, seciliCocuk.students.id, donem)} ogrenciAdi={seciliCocuk.students.profiles?.ad} />
-      )}
+      {seciliCocuk?.students && <section id="analiz" className="sgec-section"><AnalizPaneli veri={await analizVerisiGetir(supabase, seciliCocuk.students.id, donem)} ogrenciAdi={seciliCocuk.students.profiles?.ad} /></section>}
     </div>
   );
 }

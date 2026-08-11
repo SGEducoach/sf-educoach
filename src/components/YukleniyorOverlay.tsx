@@ -10,7 +10,7 @@ import { BG1, BORDER_STRONG, MINT, TEXT } from "@/lib/theme";
 export function YukleniyorOverlay({ visible, mesaj }: { visible: boolean; mesaj?: string }) {
   if (!visible) return null;
   return (
-    <div className="fixed inset-0 z-[1000] flex flex-col items-center justify-center gap-3" style={{ background: "rgba(247,251,251,0.72)", backdropFilter: "blur(2px)" }} aria-live="polite" aria-busy="true">
+    <div className="fixed inset-0 z-[500] flex flex-col items-center justify-center gap-3" style={{ background: "rgba(247,251,251,0.72)", backdropFilter: "blur(2px)" }} aria-live="polite" aria-busy="true">
       <div className="rounded-full p-4" style={{ background: BG1, border: `2px solid ${BORDER_STRONG}`, boxShadow: "0 8px 24px rgba(13,148,136,0.22)" }}>
         <Loader2 size={34} color={MINT} className="animate-spin" />
       </div>

@@ -29,7 +29,7 @@ export interface RozetDurum {
 
 function RozetKurallariModal({ onKapat }: { onKapat: () => void }) {
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center px-4 py-8"
+    <div className="fixed inset-0 z-[400] flex items-center justify-center px-4 py-8"
       style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" }}
       onClick={onKapat}>
       <div className="sgec-fade w-full max-w-sm rounded-3xl p-6 flex flex-col gap-4 relative"

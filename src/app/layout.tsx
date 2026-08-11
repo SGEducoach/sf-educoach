@@ -44,6 +44,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${montserratGovde.variable} ${montserratBaslik.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans">
+        <a href="#ana-icerik" className="sgec-skip-link">İçeriğe geç</a>
         {children}
         <GlobalIslemGostergesi />
       </body>

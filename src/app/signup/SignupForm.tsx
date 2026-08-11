@@ -75,7 +75,7 @@ function KurallarModal({ metin, versiyon, onKabul }: { metin: string; versiyon: 
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-8" style={{ background: "rgba(0,0,0,0.65)" }}>
+    <div className="fixed inset-0 z-[400] flex items-center justify-center px-4 py-8" style={{ background: "rgba(0,0,0,0.65)" }}>
       <div className="w-full max-w-md rounded-3xl p-6 flex flex-col gap-4" style={{ background: BG1, border: `2px solid ${BORDER}`, maxHeight: "90vh" }}>
         <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-lg font-bold">Kayıt ve kullanım kuralları</h2>
         <div className="overflow-y-auto rounded-xl p-3.5 text-xs leading-relaxed whitespace-pre-line"
@@ -491,7 +491,7 @@ function VeliTalepForm({ schools, supabase }: { schools: School[]; supabase: Ret
       <YukleniyorOverlay visible={yukleniyor} mesaj="Gönderiliyor..." />
 
       {gonderildi && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }}>
+        <div className="fixed inset-0 z-[400] flex items-center justify-center px-4" style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }}>
           <div className="sgec-fade rounded-3xl p-6 max-w-sm w-full text-center" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
             <p style={{ color: TEXT }} className="text-sm leading-relaxed mb-5">
               Kod talebiniz alındı. <strong>SG.EDUCOACH ekibi veya öğrencinizin sınıf öğretmeni tarafından bilgilendirileceksiniz.</strong>

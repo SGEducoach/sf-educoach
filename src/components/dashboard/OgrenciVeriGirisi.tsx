@@ -484,7 +484,7 @@ function HaftalikVerimlilikModal({ onKapat }: { onKapat: () => void }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: "rgba(0,0,0,0.5)" }}>
+    <div className="fixed inset-0 z-[400] flex items-center justify-center px-4" style={{ background: "rgba(0,0,0,0.5)" }}>
       <div className="sgec-fade rounded-3xl p-6 max-w-sm w-full" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <div className="flex items-center gap-2 mb-3">
           <Sparkles size={16} color={MINT} />
