@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { Mail } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { BG1, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
@@ -62,7 +63,7 @@ export function MesajlarimIkonu({ baslangicSayisi }: { baslangicSayisi: number }
         )}
       </button>
 
-      {acik && (
+      {acik && createPortal(
         <>
           <div className="fixed inset-0 z-[150]" onClick={() => setAcik(false)} />
           <div
@@ -80,7 +81,8 @@ export function MesajlarimIkonu({ baslangicSayisi }: { baslangicSayisi: number }
               </div>
             ))}
           </div>
-        </>
+        </>,
+        document.body,
       )}
     </div>
   );
