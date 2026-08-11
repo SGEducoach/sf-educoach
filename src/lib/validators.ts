@@ -20,7 +20,11 @@ export function okulNoGecerliMi(v: string) {
 // izinli isim listesiyle karşılaştırmak için kullanılıyor. Fazla boşlukları
 // da tek boşluğa indirip baş/son boşlukları kırpıyor.
 export function adNormalize(v: string) {
-  return v.trim().replace(/\s+/g, " ").toLocaleUpperCase("tr-TR");
+  return v
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLocaleLowerCase("tr-TR")
+    .replace(/(^|[\s'-])([a-zçğıöşü])/g, (_, ayirici: string, harf: string) => ayirici + harf.toLocaleUpperCase("tr-TR"));
 }
 const OZEL_KARAKTER_REGEX = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?~`]/;
 
