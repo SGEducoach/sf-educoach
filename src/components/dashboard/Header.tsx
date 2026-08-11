@@ -14,7 +14,7 @@ const rolEtiket: Record<UserRole, string> = {
   admin: "Yönetici",
 };
 
-export function Header({ ad, role, okunmamisMesajSayisi = 0 }: { ad: string; role: UserRole; okunmamisMesajSayisi?: number }) {
+export function Header({ ad, role, okunmamisMesajSayisi = 0, mobilNavigasyon = true }: { ad: string; role: UserRole; okunmamisMesajSayisi?: number; mobilNavigasyon?: boolean }) {
   return (
     <header className="sticky top-0 z-[100] isolate overflow-clip print:hidden" style={{
       background: `radial-gradient(circle at 12% -30%, #DDF7F3 0%, ${BG0} 55%)`,
@@ -51,7 +51,7 @@ export function Header({ ad, role, okunmamisMesajSayisi = 0 }: { ad: string; rol
           </div>
         </div>
       </div>
-      <MobilAltNavigasyon role={role} />
+      {mobilNavigasyon && <MobilAltNavigasyon role={role} />}
     </header>
   );
 }

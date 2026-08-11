@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useTransition } from "react";
+import Link from "next/link";
 import { Search, Users, KeyRound, EyeOff, Eye, Copy, Check, ArrowRightLeft, Trash2, Settings } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH, LILAC } from "@/lib/theme";
 import { kullaniciAra, sifreSifirla, hesapAktiflikDegistir, hesapSil, okulSiniflari, ogrenciSinifTasi, ogretmenBransDegistir, type KullaniciSonuc } from "@/app/yonetici/actions";
@@ -154,15 +155,15 @@ function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
   return (
     <div className="rounded-xl px-3.5 py-2.5 flex flex-col gap-2" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}`, opacity: aktif ? 1 : 0.6 }}>
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <div>
-          <div style={{ color: TEXT }} className="text-sm font-semibold">
+        <Link href={`/yonetici/kullanici/${kullanici.id}`} className="min-w-0 flex-1 rounded-lg p-1 -m-1" title={`${kullanici.ad} kullanıcısının sayfasını görüntüle`}>
+          <div style={{ color: TEXT }} className="text-sm font-semibold underline-offset-2 hover:underline">
             {kullanici.ad} <span style={{ color: LILAC }} className="text-[10px] font-bold ml-1">{ROL_ETIKET[kullanici.role]}</span>
             {!aktif && <span style={{ color: BLUSH }} className="text-[10px] font-bold ml-1">PASİF</span>}
           </div>
           <div style={{ color: TEXT_MUTED }} className="text-xs mt-0.5">
             {[kullanici.email, kullanici.okulAdi, kullanici.sinifAdi, kullanici.okulNo && `#${kullanici.okulNo}`, kullanici.brans].filter(Boolean).join(" · ")}
           </div>
-        </div>
+        </Link>
         <div className="flex items-center gap-1.5 shrink-0">
           <button type="button" onClick={sifreSifirlaTikla} disabled={sifrePending} title="Şifre sıfırla"
             className="sgec-btn flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full disabled:opacity-60"
