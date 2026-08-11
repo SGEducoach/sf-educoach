@@ -41,7 +41,7 @@ export function KurallarYonetimi() {
   }
 
   return (
-    <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+    <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <div className="flex items-center gap-2 mb-4 flex-wrap">
         <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(199,182,255,0.15)" }}>
           <FileText size={13} color={LILAC} />
@@ -59,7 +59,7 @@ export function KurallarYonetimi() {
             onChange={(e) => setDuzenlemeMetni(e.target.value)}
             rows={14}
             className="text-xs px-3 py-2.5 rounded-xl outline-none resize-y leading-relaxed"
-            style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}
+            style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}
           />
           {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
           {basarili && <div style={{ color: MINT }} className="text-xs font-semibold">Kaydedildi.</div>}

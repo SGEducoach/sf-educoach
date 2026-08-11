@@ -2,8 +2,8 @@
 export const BG0 = "#F7FBFB";
 export const BG1 = "#FFFFFF";
 export const BG1_ALT = "#EFFAF9";
-export const BORDER = "rgba(13,148,136,0.24)";
-export const BORDER_STRONG = "rgba(13,148,136,0.46)";
+export const BORDER = "#5EEAD4";
+export const BORDER_STRONG = "#2DD4BF";
 export const TEXT = "#18302F";
 export const TEXT_MUTED = "#58706E";
 

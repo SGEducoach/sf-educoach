@@ -39,14 +39,14 @@ export function SifreDegistir() {
     return (
       <button type="button" onClick={() => setAcik(true)}
         className="sgec-btn flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl self-start"
-        style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `1px solid ${BORDER_STRONG}` }}>
+        style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
         <KeyRound size={13} /> Şifremi değiştir
       </button>
     );
   }
 
   return (
-    <div className="sgec-fade rounded-3xl p-5 max-w-sm" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+    <div className="sgec-fade rounded-3xl p-5 max-w-sm" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <button type="button" onClick={() => setAcik(false)}
         className="sgec-btn w-full flex items-center justify-between gap-2 mb-3">
         <div className="flex items-center gap-2">
@@ -62,12 +62,12 @@ export function SifreDegistir() {
         <label className="flex flex-col gap-1">
           <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Yeni şifre</span>
           <input type="password" required value={yeniSifre} onChange={(e) => setYeniSifre(e.target.value)}
-            className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+            className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
         </label>
         <label className="flex flex-col gap-1">
           <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Yeni şifre (tekrar)</span>
           <input type="password" required value={tekrar} onChange={(e) => setTekrar(e.target.value)}
-            className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+            className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
         </label>
         <p style={{ color: TEXT_MUTED }} className="text-[10px]">{SIFRE_IPUCU}</p>
 

@@ -33,7 +33,7 @@ export function VeliTalepleri() {
   const digerleri = talepler?.filter((t) => t.durum !== "bekliyor") ?? [];
 
   return (
-    <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+    <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <div className="flex items-center gap-2 mb-4">
         <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(199,182,255,0.15)" }}>
           <UserCheck size={13} color={LILAC} />
@@ -98,7 +98,7 @@ function TalepSatiri({ talep, onGuncelle }: { talep: VeliTalebiSonuc; onGuncelle
   }
 
   return (
-    <div className="rounded-xl px-3.5 py-2.5 flex flex-col gap-2" style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}` }}>
+    <div className="rounded-xl px-3.5 py-2.5 flex flex-col gap-2" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <div style={{ color: TEXT }} className="text-sm font-semibold">
@@ -120,7 +120,7 @@ function TalepSatiri({ talep, onGuncelle }: { talep: VeliTalebiSonuc; onGuncelle
             </button>
             <button type="button" onClick={reddet} disabled={redPending}
               className="sgec-btn flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full disabled:opacity-60"
-              style={{ background: "rgba(255,255,255,0.06)", color: BLUSH, border: `1px solid ${BORDER_STRONG}` }}>
+              style={{ background: "rgba(255,255,255,0.06)", color: BLUSH, border: `2px solid ${BORDER_STRONG}` }}>
               <X size={11} /> Reddet
             </button>
           </div>

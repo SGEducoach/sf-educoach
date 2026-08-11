@@ -53,7 +53,7 @@ export function MesajlarimIkonu({ baslangicSayisi }: { baslangicSayisi: number }
     <div className="relative">
       <button type="button" onClick={ac} title="Mesajlarım"
         className="sgec-btn w-8 h-8 rounded-full flex items-center justify-center relative"
-        style={{ background: sayisi > 0 ? "rgba(124,232,176,0.15)" : "rgba(255,255,255,0.06)", border: `1px solid ${BORDER}` }}>
+        style={{ background: sayisi > 0 ? "rgba(124,232,176,0.15)" : "rgba(255,255,255,0.06)", border: `2px solid ${BORDER}` }}>
         <Mail size={14} color={sayisi > 0 ? MINT : TEXT_MUTED} />
         {sayisi > 0 && (
           <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-[9px] font-bold"
@@ -68,13 +68,13 @@ export function MesajlarimIkonu({ baslangicSayisi }: { baslangicSayisi: number }
           <div className="fixed inset-0 z-[150]" onClick={() => setAcik(false)} />
           <div
             className="fixed right-4 top-16 z-[160] flex max-h-96 w-80 max-w-[85vw] flex-col gap-2 overflow-y-auto rounded-2xl p-3"
-            style={{ background: BG1, border: `1px solid ${BORDER_STRONG}`, boxShadow: "0 8px 24px rgba(0,0,0,0.35)" }}
+            style={{ background: BG1, border: `2px solid ${BORDER_STRONG}`, boxShadow: "0 8px 24px rgba(0,0,0,0.35)" }}
           >
             <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-sm font-bold px-1">Mesajlarım</span>
             {yukleniyor && <p style={{ color: TEXT_MUTED }} className="text-xs text-center py-4">Yükleniyor...</p>}
             {!yukleniyor && duyurular?.length === 0 && <p style={{ color: TEXT_MUTED }} className="text-xs text-center py-4">Henüz mesaj yok.</p>}
             {duyurular?.map((d) => (
-              <div key={d.id} className="rounded-xl p-2.5" style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BORDER}` }}>
+              <div key={d.id} className="rounded-xl p-2.5" style={{ background: "rgba(255,255,255,0.04)", border: `2px solid ${BORDER}` }}>
                 <div style={{ color: TEXT }} className="text-xs font-bold mb-0.5">{d.baslik}</div>
                 <div style={{ color: TEXT_MUTED }} className="text-xs leading-relaxed">{d.mesaj}</div>
                 <div style={{ color: TEXT_MUTED }} className="text-[10px] mt-1">{new Date(d.created_at).toLocaleString("tr-TR")}</div>

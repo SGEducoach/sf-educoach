@@ -57,16 +57,16 @@ export function YoneticiGirisForm() {
           <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-bold">Yönetim Girişi</h1>
         </div>
 
-        <form onSubmit={girisYap} className="rounded-3xl p-6 flex flex-col gap-4" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+        <form onSubmit={girisYap} className="rounded-3xl p-6 flex flex-col gap-4" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
           <label className="flex flex-col gap-1">
             <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">E-posta</span>
             <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-              className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+              className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
           </label>
           <label className="flex flex-col gap-1">
             <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Şifre</span>
             <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
-              className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+              className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
           </label>
 
           {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}

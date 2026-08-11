@@ -100,7 +100,7 @@ export function AdminPanel({
         gonder={adminDuyuruGonder}
       />
 
-      <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+      <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(199,182,255,0.15)" }}>
@@ -117,7 +117,7 @@ export function AdminPanel({
                   value={gorunecekOkulId ?? ""}
                   onChange={(e) => router.push(`/yonetici?okul=${e.target.value}`)}
                   className="text-xs font-bold px-3 py-1.5 rounded-full outline-none"
-                  style={{ background: BG1_ALT, color: TEXT, border: `1px solid ${BORDER_STRONG}` }}>
+                  style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
                   {okullar.map((o) => (
                     <option key={o.id} value={o.id}>{o.ad}{!o.aktif ? " (Pasif)" : ""}</option>
                   ))}
@@ -125,7 +125,7 @@ export function AdminPanel({
                 {gorunenOkul && (
                   <button type="button" onClick={() => setOkulDuzenleAcik((v) => !v)} title="Okulu düzenle"
                     className="sgec-btn w-7 h-7 rounded-full flex items-center justify-center shrink-0"
-                    style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${BORDER_STRONG}` }}>
+                    style={{ background: "rgba(255,255,255,0.06)", border: `2px solid ${BORDER_STRONG}` }}>
                     <Pencil size={11} color={TEXT_MUTED} />
                   </button>
                 )}
@@ -134,7 +134,7 @@ export function AdminPanel({
             )}
             <button type="button" onClick={() => setOkulEkleAcik((v) => !v)}
               className="sgec-btn flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full"
-              style={{ background: okulEkleAcik ? MINT : "rgba(255,255,255,0.06)", color: okulEkleAcik ? MINT_ON : TEXT_MUTED, border: `1px solid ${BORDER_STRONG}` }}>
+              style={{ background: okulEkleAcik ? MINT : "rgba(255,255,255,0.06)", color: okulEkleAcik ? MINT_ON : TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
               <Plus size={12} /> Okul ekle
             </button>
           </div>
@@ -191,7 +191,7 @@ export function AdminPanel({
         )}
       </div>
 
-      <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+      <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <div className="flex items-center gap-2 mb-4">
           <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(199,182,255,0.15)" }}>
             <ScrollText size={13} color={LILAC} />
@@ -203,7 +203,7 @@ export function AdminPanel({
         ) : (
           <div className="flex flex-col gap-1.5">
             {islemKayitlari.map((k) => (
-              <div key={k.id} className="rounded-xl px-3.5 py-2 flex items-center justify-between flex-wrap gap-1.5 text-xs" style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}` }}>
+              <div key={k.id} className="rounded-xl px-3.5 py-2 flex items-center justify-between flex-wrap gap-1.5 text-xs" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
                 <span style={{ color: TEXT }} className="font-semibold">{EYLEM_ETIKET[k.eylem] ?? k.eylem} <span style={{ color: TEXT_MUTED }} className="font-normal">· {k.aktorAdi}</span></span>
                 <span style={{ color: TEXT_MUTED }}>{new Date(k.createdAt).toLocaleString("tr-TR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</span>
               </div>
@@ -234,18 +234,18 @@ function OkulEkleFormu({ onDone }: { onDone: () => void }) {
   }
 
   return (
-    <form onSubmit={ekle} className="rounded-2xl p-4 mb-4 flex flex-col gap-2.5" style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}` }}>
+    <form onSubmit={ekle} className="rounded-2xl p-4 mb-4 flex flex-col gap-2.5" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
       <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[13px] font-bold">Yeni okul</span>
       <div className="flex gap-2 flex-wrap">
         <input value={ad} onChange={(e) => setAd(e.target.value)} placeholder="Okul adı" required
-          className="text-sm px-3 py-1.5 rounded-xl outline-none flex-1 min-w-[140px]" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+          className="text-sm px-3 py-1.5 rounded-xl outline-none flex-1 min-w-[140px]" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
         <select value={tur} onChange={(e) => setTur(e.target.value as "okul" | "dershane")}
-          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
           <option value="okul">Okul</option>
           <option value="dershane">Dershane</option>
         </select>
         <input value={okulKodu} onChange={(e) => setOkulKodu(e.target.value)} placeholder="Okul kodu" required
-          className="text-sm px-3 py-1.5 rounded-xl outline-none w-32" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+          className="text-sm px-3 py-1.5 rounded-xl outline-none w-32" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
       </div>
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
       <button type="submit" disabled={pending}
@@ -282,13 +282,13 @@ function OkulDuzenleFormu({ okul, onDone }: { okul: OkulSatiri; onDone: () => vo
   }
 
   return (
-    <form onSubmit={kaydet} className="rounded-2xl p-4 mb-4 flex flex-col gap-2.5" style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}` }}>
+    <form onSubmit={kaydet} className="rounded-2xl p-4 mb-4 flex flex-col gap-2.5" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
       <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[13px] font-bold">Okulu düzenle</span>
       <div className="flex gap-2 flex-wrap">
         <input value={ad} onChange={(e) => setAd(e.target.value)} placeholder="Okul adı" required
-          className="text-sm px-3 py-1.5 rounded-xl outline-none flex-1 min-w-[140px]" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+          className="text-sm px-3 py-1.5 rounded-xl outline-none flex-1 min-w-[140px]" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
         <input value={okulKodu} onChange={(e) => setOkulKodu(e.target.value)} placeholder="Okul kodu" required
-          className="text-sm px-3 py-1.5 rounded-xl outline-none w-32" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+          className="text-sm px-3 py-1.5 rounded-xl outline-none w-32" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
       </div>
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
       <div className="flex items-center gap-2">
@@ -298,7 +298,7 @@ function OkulDuzenleFormu({ okul, onDone }: { okul: OkulSatiri; onDone: () => vo
         </button>
         <button type="button" onClick={aktiflikDegistir} disabled={aktiflikPending}
           className="sgec-btn flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-xl disabled:opacity-60"
-          style={{ background: "rgba(255,255,255,0.06)", color: okul.aktif ? BLUSH : MINT, border: `1px solid ${BORDER_STRONG}` }}>
+          style={{ background: "rgba(255,255,255,0.06)", color: okul.aktif ? BLUSH : MINT, border: `2px solid ${BORDER_STRONG}` }}>
           {okul.aktif ? <><EyeOff size={12} /> Pasifleştir</> : <><Eye size={12} /> Aktifleştir</>}
         </button>
       </div>
@@ -319,7 +319,7 @@ function OgretmenSatir({ ogretmen, siniflar }: { ogretmen: OgretmenSatiri; sinif
   }
 
   return (
-    <div className="rounded-xl px-3.5 py-2.5 flex items-center justify-between flex-wrap gap-2" style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}` }}>
+    <div className="rounded-xl px-3.5 py-2.5 flex items-center justify-between flex-wrap gap-2" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
       <div>
         <div style={{ color: TEXT }} className="text-sm font-semibold">
           {ogretmen.ad} {ogretmen.mudurMu && <span style={{ color: LILAC }} className="text-[10px] font-bold ml-1">MÜDÜR</span>}
@@ -334,7 +334,7 @@ function OgretmenSatir({ ogretmen, siniflar }: { ogretmen: OgretmenSatiri; sinif
           disabled={pending}
           onChange={(e) => ata(e.target.value)}
           className="text-xs font-bold px-2.5 py-1.5 rounded-full outline-none disabled:opacity-60"
-          style={{ background: "rgba(255,255,255,0.04)", color: ogretmen.classId ? MINT : TEXT_MUTED, border: `1px solid ${BORDER_STRONG}` }}>
+          style={{ background: "rgba(255,255,255,0.04)", color: ogretmen.classId ? MINT : TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
           <option value="">— Yok —</option>
           {siniflar.map((s) => <option key={s.id} value={s.id}>{s.seviye}-{s.sube}</option>)}
         </select>
@@ -392,7 +392,7 @@ function OgretmenEkleFormu({ schoolId }: { schoolId: string }) {
   }
 
   return (
-    <div className="rounded-2xl p-4 flex flex-col gap-2.5" style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}` }}>
+    <div className="rounded-2xl p-4 flex flex-col gap-2.5" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
       <div className="flex items-center gap-1.5">
         <UserPlus size={13} color={MINT} />
         <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[13px] font-bold">{mudur ? "Müdür ekle" : "Öğretmen ekle"}</span>
@@ -400,14 +400,14 @@ function OgretmenEkleFormu({ schoolId }: { schoolId: string }) {
       {sonuc && <OlusturulanHesap email={sonuc.email} sifre={sonuc.sifre} />}
       <form onSubmit={ekle} className="flex flex-col gap-2">
         <input value={ad} onChange={(e) => setAd(e.target.value)} placeholder="Ad Soyad" required
-          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
         <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="E-posta" required
-          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
         <input value={telefon} onChange={(e) => setTelefon(telefonSanitize(e.target.value))} type="tel" inputMode="numeric" placeholder={TELEFON_IPUCU} required
-          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
         {!mudur && (
           <select value={brans} onChange={(e) => setBrans(e.target.value)}
-            className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+            className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
             {BRANS_LISTESI.map((b) => <option key={b} value={b}>{b}</option>)}
           </select>
         )}
@@ -450,7 +450,7 @@ function OgrenciEkleFormu({ schoolId, siniflar }: { schoolId: string; siniflar: 
   }
 
   return (
-    <div className="rounded-2xl p-4 flex flex-col gap-2.5" style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}` }}>
+    <div className="rounded-2xl p-4 flex flex-col gap-2.5" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
       <div className="flex items-center gap-1.5">
         <UserPlus size={13} color={MINT} />
         <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[13px] font-bold">Öğrenci ekle</span>
@@ -458,26 +458,26 @@ function OgrenciEkleFormu({ schoolId, siniflar }: { schoolId: string; siniflar: 
       {sonuc && <OlusturulanHesap email={sonuc.email} sifre={sonuc.sifre} />}
       <form onSubmit={ekle} className="flex flex-col gap-2">
         <input value={ad} onChange={(e) => setAd(e.target.value)} placeholder="Ad Soyad" required
-          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
         <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="E-posta" required
-          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
         <div className="flex gap-2">
           <input value={okulNo} onChange={(e) => setOkulNo(okulNoSanitize(e.target.value))} inputMode="numeric" maxLength={5} placeholder="Okul No" required
-            className="text-sm px-3 py-1.5 rounded-xl outline-none w-1/2" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+            className="text-sm px-3 py-1.5 rounded-xl outline-none w-1/2" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
           <input value={telefon} onChange={(e) => setTelefon(telefonSanitize(e.target.value))} type="tel" inputMode="numeric" placeholder="Telefon (ops.)"
-            className="text-sm px-3 py-1.5 rounded-xl outline-none w-1/2" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+            className="text-sm px-3 py-1.5 rounded-xl outline-none w-1/2" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
         </div>
         <select value={classId} onChange={(e) => setClassId(e.target.value)} required
-          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
           <option value="">Sınıf seçin</option>
           {siniflar.map((s) => <option key={s.id} value={s.id}>{s.seviye}-{s.sube}</option>)}
         </select>
         <select value={aytAlan} onChange={(e) => setAytAlan(e.target.value as AytAlan)}
-          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
           {(Object.keys(AYT_ALAN_ETIKET) as AytAlan[]).map((a) => <option key={a} value={a}>{AYT_ALAN_ETIKET[a]}</option>)}
         </select>
         <input value={hedefBolum} onChange={(e) => setHedefBolum(e.target.value)} placeholder="Hedef bölüm (ops.)"
-          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
         {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
         <button type="submit" disabled={pending}
           className="sgec-btn text-xs font-bold py-2 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
@@ -509,7 +509,7 @@ function SinifRozeti({ sinif }: { sinif: SinifSatiri }) {
 
   return (
     <div className="flex flex-col gap-1">
-      <div className="flex items-center gap-1.5 rounded-full pl-3 pr-1.5 py-1" style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}` }}>
+      <div className="flex items-center gap-1.5 rounded-full pl-3 pr-1.5 py-1" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
         <span style={{ color: TEXT }} className="text-xs font-bold">{sinif.seviye}-{sinif.sube}</span>
         <button type="button" onClick={sil} disabled={pending} title="Sınıfı sil"
           className="sgec-btn w-5 h-5 rounded-full flex items-center justify-center disabled:opacity-60" style={{ background: "rgba(255,255,255,0.06)" }}>
@@ -564,14 +564,14 @@ function OgrenciTopluEkleFormu({ schoolId, siniflar }: { schoolId: string; sinif
     return (
       <button type="button" onClick={() => setAcik(true)}
         className="sgec-btn flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl"
-        style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `1px solid ${BORDER_STRONG}` }}>
+        style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
         <ClipboardList size={13} /> Toplu öğrenci ekle
       </button>
     );
   }
 
   return (
-    <div className="rounded-2xl p-4 flex flex-col gap-2.5" style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}` }}>
+    <div className="rounded-2xl p-4 flex flex-col gap-2.5" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
       <div className="flex items-center gap-1.5">
         <ClipboardList size={13} color={MINT} />
         <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[13px] font-bold">Toplu öğrenci ekle</span>
@@ -580,18 +580,18 @@ function OgrenciTopluEkleFormu({ schoolId, siniflar }: { schoolId: string; sinif
 
       <div className="flex gap-2 flex-wrap">
         <select value={classId} onChange={(e) => setClassId(e.target.value)}
-          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
           <option value="">Sınıf seçin</option>
           {siniflar.map((s) => <option key={s.id} value={s.id}>{s.seviye}-{s.sube}</option>)}
         </select>
         <select value={aytAlan} onChange={(e) => setAytAlan(e.target.value as AytAlan)}
-          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
           {(Object.keys(AYT_ALAN_ETIKET) as AytAlan[]).map((a) => <option key={a} value={a}>{AYT_ALAN_ETIKET[a]}</option>)}
         </select>
       </div>
 
       <textarea value={metin} onChange={(e) => setMetin(e.target.value)} rows={6} placeholder={"Ahmet Yılmaz, 1234\nAyşe Kaya, 1235"}
-        className="text-xs px-3 py-2.5 rounded-xl outline-none resize-y font-mono" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+        className="text-xs px-3 py-2.5 rounded-xl outline-none resize-y font-mono" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
 
       {metin.trim() && (
         <span style={{ color: TEXT_MUTED }} className="text-[11px]">
@@ -613,7 +613,7 @@ function OgrenciTopluEkleFormu({ schoolId, siniflar }: { schoolId: string; sinif
       </div>
 
       {sonuclar && (
-        <div className="rounded-xl p-3 flex flex-col gap-1.5 mt-1" style={{ background: BG0, border: `1px solid ${BORDER_STRONG}` }}>
+        <div className="rounded-xl p-3 flex flex-col gap-1.5 mt-1" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
           <div style={{ color: TEXT }} className="text-xs font-bold mb-1">
             {sonuclar.filter((s) => !s.hata).length}/{sonuclar.length} eklendi
           </div>
@@ -708,14 +708,14 @@ function DenemeTopluGirisFormu({ siniflar }: { siniflar: SinifSatiri[] }) {
     return (
       <button type="button" onClick={() => setAcik(true)}
         className="sgec-btn flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl"
-        style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `1px solid ${BORDER_STRONG}` }}>
+        style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
         <ClipboardList size={13} /> Toplu deneme sonucu gir
       </button>
     );
   }
 
   return (
-    <div className="rounded-2xl p-4 flex flex-col gap-2.5" style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}` }}>
+    <div className="rounded-2xl p-4 flex flex-col gap-2.5" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
       <div className="flex items-center gap-1.5">
         <ClipboardList size={13} color={MINT} />
         <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[13px] font-bold">Toplu deneme sonucu gir</span>
@@ -724,29 +724,29 @@ function DenemeTopluGirisFormu({ siniflar }: { siniflar: SinifSatiri[] }) {
 
       <div className="flex gap-2 flex-wrap">
         <select value={classId} onChange={(e) => classIdSec(e.target.value)}
-          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
           <option value="">Sınıf seçin</option>
           {siniflar.map((s) => <option key={s.id} value={s.id}>{s.seviye}-{s.sube}</option>)}
         </select>
         <input type="date" value={tarih} onChange={(e) => setTarih(e.target.value)}
-          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
         <select value={tur} onChange={(e) => turDegistir(e.target.value as DenemeTuru)}
-          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
           <option value="TYT">TYT</option>
           <option value="AYT">AYT</option>
         </select>
         {tur === "AYT" && (
           <select value={aytAlan} onChange={(e) => alanDegistir(e.target.value as AytAlan)}
-            className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+            className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
             {(Object.keys(AYT_ALAN_ETIKET) as AytAlan[]).map((a) => <option key={a} value={a}>{AYT_ALAN_ETIKET[a]}</option>)}
           </select>
         )}
         <select value={ders} onChange={(e) => setDers(e.target.value)} key={dersListesiKey}
-          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
           {dersListesi.map((d) => <option key={d} value={d}>{d}</option>)}
         </select>
         <select value={zorluk} onChange={(e) => setZorluk(e.target.value as DenemeZorlugu)}
-          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
           {(Object.keys(DENEME_ZORLUGU_ETIKET) as DenemeZorlugu[]).map((z) => <option key={z} value={z}>{DENEME_ZORLUGU_ETIKET[z]}</option>)}
         </select>
       </div>
@@ -764,12 +764,12 @@ function DenemeTopluGirisFormu({ siniflar }: { siniflar: SinifSatiri[] }) {
             <span className="w-16 text-center">Yanlış</span>
           </div>
           {filtrelenmisOgrenciler.map((o) => (
-            <div key={o.id} className="flex items-center gap-2 rounded-xl px-2.5 py-1.5" style={{ background: BG0, border: `1px solid ${BORDER_STRONG}` }}>
+            <div key={o.id} className="flex items-center gap-2 rounded-xl px-2.5 py-1.5" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
               <span style={{ color: TEXT }} className="text-xs font-semibold flex-1">{o.ad} <span style={{ color: TEXT_MUTED }} className="font-normal">#{o.okulNo}</span></span>
               <input type="number" min={0} max={maxSoru} value={girisler[o.id]?.dogru ?? ""} onChange={(e) => alanGuncelle(o.id, "dogru", e.target.value)}
-                className="w-16 text-xs px-2 py-1 rounded-lg outline-none text-center" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }} />
+                className="w-16 text-xs px-2 py-1 rounded-lg outline-none text-center" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }} />
               <input type="number" min={0} max={maxSoru} value={girisler[o.id]?.yanlis ?? ""} onChange={(e) => alanGuncelle(o.id, "yanlis", e.target.value)}
-                className="w-16 text-xs px-2 py-1 rounded-lg outline-none text-center" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }} />
+                className="w-16 text-xs px-2 py-1 rounded-lg outline-none text-center" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }} />
             </div>
           ))}
         </div>
@@ -789,7 +789,7 @@ function DenemeTopluGirisFormu({ siniflar }: { siniflar: SinifSatiri[] }) {
       </div>
 
       {sonuclar && (
-        <div className="rounded-xl p-3 flex flex-col gap-1 mt-1" style={{ background: BG0, border: `1px solid ${BORDER_STRONG}` }}>
+        <div className="rounded-xl p-3 flex flex-col gap-1 mt-1" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
           <div style={{ color: TEXT }} className="text-xs font-bold mb-1">
             {sonuclar.filter((s) => !s.hata).length}/{sonuclar.length} kaydedildi
           </div>
@@ -842,7 +842,7 @@ function OgrenciCsvIndirButonu({ okul }: { okul: OkulSatiri }) {
     <div className="flex flex-col items-end">
       <button type="button" onClick={indir} disabled={pending} title="Öğrenci listesini CSV indir"
         className="sgec-btn w-7 h-7 rounded-full flex items-center justify-center shrink-0 disabled:opacity-60"
-        style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${BORDER_STRONG}` }}>
+        style={{ background: "rgba(255,255,255,0.06)", border: `2px solid ${BORDER_STRONG}` }}>
         <Download size={11} color={TEXT_MUTED} />
       </button>
       {hata && <span style={{ color: BLUSH }} className="text-[10px] font-semibold mt-1">{hata}</span>}

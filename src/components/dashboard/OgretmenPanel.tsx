@@ -80,7 +80,7 @@ export function OgretmenPanel({
       )}
 
       {kendiSinifId && (
-        <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+        <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
           <div className="flex items-center gap-2 mb-4">
             <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: MINT_BG }}>
               <UserPlus size={13} color={MINT} />
@@ -96,7 +96,7 @@ export function OgretmenPanel({
           ) : (
             <div className="flex flex-col gap-2.5">
               {oturumdaOnaylanan.map((t) => (
-                <div key={t.id} className="rounded-2xl p-3.5 flex items-center justify-between flex-wrap gap-2" style={{ background: BG1_ALT, border: `1px solid ${BORDER}` }}>
+                <div key={t.id} className="rounded-2xl p-3.5 flex items-center justify-between flex-wrap gap-2" style={{ background: BG1_ALT, border: `2px solid ${BORDER}` }}>
                   <div>
                     <div style={{ color: TEXT }} className="text-sm font-semibold">{t.veli_ad} <span style={{ color: TEXT_MUTED }} className="font-normal">· {t.veli_telefon}</span></div>
                     <div style={{ color: TEXT_MUTED }} className="text-xs mt-0.5">Öğrenci: {t.ogrenci_ad}</div>
@@ -107,7 +107,7 @@ export function OgretmenPanel({
                 </div>
               ))}
               {gosterilecekBekleyenler.map((t) => (
-                <div key={t.id} className="rounded-2xl p-3.5 flex items-center justify-between flex-wrap gap-2" style={{ background: BG1_ALT, border: `1px solid ${BORDER}` }}>
+                <div key={t.id} className="rounded-2xl p-3.5 flex items-center justify-between flex-wrap gap-2" style={{ background: BG1_ALT, border: `2px solid ${BORDER}` }}>
                   <div>
                     <div style={{ color: TEXT }} className="text-sm font-semibold">{t.veli_ad} <span style={{ color: TEXT_MUTED }} className="font-normal">· {t.veli_telefon}</span></div>
                     <div style={{ color: TEXT_MUTED }} className="text-xs mt-0.5">Öğrenci: {t.ogrenci_ad}</div>
@@ -124,7 +124,7 @@ export function OgretmenPanel({
         </div>
       )}
 
-      <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+      <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: kendiSinifiMi ? MINT_BG : SKY_BG }}>
@@ -142,7 +142,7 @@ export function OgretmenPanel({
               value={gorunecekSinifId ?? ""}
               onChange={(e) => router.push(`/dashboard?sinif=${e.target.value}`)}
               className="text-xs font-bold px-3 py-1.5 rounded-full outline-none"
-              style={{ background: BG1_ALT, color: TEXT, border: `1px solid ${BORDER_STRONG}` }}>
+              style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
               {siniflar.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.seviye}-{s.sube}{s.id === kendiSinifId ? " (sınıfınız)" : ""}
@@ -159,7 +159,7 @@ export function OgretmenPanel({
             {ogrenciler.map((o) => (
               <button key={o.id} onClick={() => router.push(`/dashboard?sinif=${gorunecekSinifId}&ogrenci=${o.id}`)}
                 className="sgec-btn rounded-xl px-3.5 py-2.5 flex items-center justify-between text-left"
-                style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}` }}>
+                style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
                 <span style={{ color: TEXT }} className="text-sm font-semibold">{o.ad}</span>
                 <span style={{ color: TEXT_MUTED }} className="text-xs">#{o.okul_no}</span>
               </button>
@@ -199,7 +199,7 @@ export function SinifEkleFormu({ schoolId }: { schoolId: string }) {
       <label className="flex flex-col gap-1">
         <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Seviye</span>
         <select value={seviye} onChange={(e) => setSeviye(e.target.value as "11" | "12")}
-          className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
+          className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
           <option value="11">11</option>
           <option value="12">12</option>
         </select>
@@ -207,7 +207,7 @@ export function SinifEkleFormu({ schoolId }: { schoolId: string }) {
       <label className="flex flex-col gap-1">
         <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Şube</span>
         <input value={sube} onChange={(e) => setSube(e.target.value)} placeholder="örn. E" maxLength={2}
-          className="text-sm px-2.5 py-1.5 rounded-xl outline-none w-20" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }} />
+          className="text-sm px-2.5 py-1.5 rounded-xl outline-none w-20" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }} />
       </label>
       <button type="submit" disabled={pending}
         className="sgec-btn flex items-center gap-1 text-xs font-bold px-3.5 py-1.5 rounded-full disabled:opacity-60"

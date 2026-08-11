@@ -95,7 +95,7 @@ export default function LoginForm() {
           <p style={{ color: TEXT_MUTED }} className="text-xs mt-1 italic">Her zaman bir adım ötesini düşün</p>
         </div>
 
-        <div className="flex gap-1 p-1 rounded-full mb-4" style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${BORDER}` }}>
+        <div className="flex gap-1 p-1 rounded-full mb-4" style={{ background: "rgba(255,255,255,0.06)", border: `2px solid ${BORDER}` }}>
           {rolSecenekleri.map((r) => {
             const Icon = r.icon;
             const aktif = role === r.id;
@@ -109,18 +109,18 @@ export default function LoginForm() {
           })}
         </div>
 
-        <form onSubmit={girisYap} className="rounded-3xl p-6 flex flex-col gap-4" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+        <form onSubmit={girisYap} className="rounded-3xl p-6 flex flex-col gap-4" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
           {role === "ogretmen" ? (
             <>
               <label className="flex flex-col gap-1">
                 <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">E-posta</span>
                 <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-                  className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+                  className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
               </label>
               <label className="flex flex-col gap-1">
                 <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Şifre</span>
                 <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
-                  className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+                  className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
               </label>
             </>
           ) : (
@@ -129,7 +129,7 @@ export default function LoginForm() {
                 <label className="flex flex-col gap-1">
                   <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Okul</span>
                   <select required value={schoolId} onChange={(e) => setSchoolId(e.target.value)}
-                    className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+                    className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
                     <option value="">Seçiniz</option>
                     {schools.map((s) => <option key={s.id} value={s.id}>{s.ad}</option>)}
                   </select>
@@ -138,14 +138,14 @@ export default function LoginForm() {
               <label className="flex flex-col gap-1">
                 <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">{role === "mudur" ? "Okul Kodu" : "Okul No"}</span>
                 <input required value={okulNo} onChange={(e) => setOkulNo(e.target.value)}
-                  className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+                  className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
               </label>
               <label className="flex flex-col gap-1">
                 <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">{role === "veli" ? "Kod" : "Şifre"}</span>
                 <input type={role === "veli" ? "text" : "password"} required
                   value={role === "veli" ? kod : password}
                   onChange={(e) => (role === "veli" ? setKod(e.target.value) : setPassword(e.target.value))}
-                  className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+                  className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
               </label>
             </>
           )}

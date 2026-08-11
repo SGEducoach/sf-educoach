@@ -30,7 +30,7 @@ function Girdi(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input {...props}
       className={`text-sm px-3 py-2 rounded-xl outline-none w-full ${props.className ?? ""}`}
-      style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+      style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
   );
 }
 
@@ -38,7 +38,7 @@ function Secim({ children, ...props }: React.SelectHTMLAttributes<HTMLSelectElem
   return (
     <select {...props}
       className="text-sm px-3 py-2 rounded-xl outline-none w-full"
-      style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+      style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
       {children}
     </select>
   );
@@ -76,10 +76,10 @@ function KurallarModal({ metin, versiyon, onKabul }: { metin: string; versiyon: 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-8" style={{ background: "rgba(0,0,0,0.65)" }}>
-      <div className="w-full max-w-md rounded-3xl p-6 flex flex-col gap-4" style={{ background: BG1, border: `1px solid ${BORDER}`, maxHeight: "90vh" }}>
+      <div className="w-full max-w-md rounded-3xl p-6 flex flex-col gap-4" style={{ background: BG1, border: `2px solid ${BORDER}`, maxHeight: "90vh" }}>
         <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-lg font-bold">Kayıt ve kullanım kuralları</h2>
         <div className="overflow-y-auto rounded-xl p-3.5 text-xs leading-relaxed whitespace-pre-line"
-          style={{ background: BG0, color: TEXT_MUTED, border: `1px solid ${BORDER_STRONG}`, maxHeight: "45vh" }}>
+          style={{ background: BG0, color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}`, maxHeight: "45vh" }}>
           {metin}
         </div>
         <label className="flex items-start gap-2 cursor-pointer">
@@ -129,7 +129,7 @@ export default function SignupForm({ kurallarMetni, kurallarVersiyon }: { kurall
           <p style={{ color: TEXT_MUTED }} className="text-xs mt-1 italic">Her zaman bir adım ötesini düşün</p>
         </div>
 
-        <div className="flex gap-1 p-1 rounded-full mb-4" style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${BORDER}` }}>
+        <div className="flex gap-1 p-1 rounded-full mb-4" style={{ background: "rgba(255,255,255,0.06)", border: `2px solid ${BORDER}` }}>
           {rolSecenekleri.map((r) => {
             const Icon = r.icon;
             const aktif = role === r.id;
@@ -218,12 +218,12 @@ function OgrenciKayit({ schools, classes, router, supabase }: {
 
   if (basarili) {
     return (
-      <div className="text-center rounded-3xl p-6 flex flex-col gap-4" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+      <div className="text-center rounded-3xl p-6 flex flex-col gap-4" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-lg font-bold">Kaydınız tamamlandı 🎉</h2>
         <p style={{ color: TEXT_MUTED }} className="text-sm leading-relaxed">
           Aşağıdaki geçici şifrenizi not alın. İlk girişten sonra kendi şifrenizi belirlemeniz istenecek.
         </p>
-        <div className="rounded-2xl px-4 py-3" style={{ background: MINT_BG, border: `1px solid ${BORDER_STRONG}` }}>
+        <div className="rounded-2xl px-4 py-3" style={{ background: MINT_BG, border: `2px solid ${BORDER_STRONG}` }}>
           <div style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide mb-1">Geçici şifreniz</div>
           <div style={{ color: MINT, fontFamily: "monospace" }} className="text-2xl font-bold tracking-widest">{geciciSifre}</div>
         </div>
@@ -245,7 +245,7 @@ function OgrenciKayit({ schools, classes, router, supabase }: {
   if (adim === 2) {
     return (
       <>
-        <form onSubmit={kayitOl} className="rounded-3xl p-6 flex flex-col gap-4" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+        <form onSubmit={kayitOl} className="rounded-3xl p-6 flex flex-col gap-4" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
           <div className="rounded-xl px-3 py-2 text-[12px] font-semibold" style={{ background: MINT_BG, color: MINT }}>
             Bilgileriniz tamam ✓ — kaydınızı tamamlayabilirsiniz.
           </div>
@@ -254,7 +254,7 @@ function OgrenciKayit({ schools, classes, router, supabase }: {
           </p>
           {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
           <div className="flex gap-2">
-            <button type="button" onClick={() => setAdim(1)} className="sgec-btn shrink-0 w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: BG0, border: `1px solid ${BORDER_STRONG}` }}>
+            <button type="button" onClick={() => setAdim(1)} className="sgec-btn shrink-0 w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
               <ChevronLeft size={16} color={TEXT_MUTED} />
             </button>
             <button type="submit" disabled={yukleniyor} className="sgec-btn flex-1 text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
@@ -268,7 +268,7 @@ function OgrenciKayit({ schools, classes, router, supabase }: {
   }
 
   return (
-    <form onSubmit={ileri} className="rounded-3xl p-6 flex flex-col gap-3" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+    <form onSubmit={ileri} className="rounded-3xl p-6 flex flex-col gap-3" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <label className="flex flex-col gap-1"><Etiket>Ad Soyad</Etiket><Girdi required value={ad} onChange={(e) => setAd(e.target.value)} /></label>
       <label className="flex flex-col gap-1"><Etiket>Okul No</Etiket><Girdi required value={okulNo} inputMode="numeric" maxLength={5} placeholder="örn. 1234" onChange={(e) => setOkulNo(okulNoSanitize(e.target.value))} /></label>
       <label className="flex flex-col gap-1"><Etiket>E-posta</Etiket><Girdi type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></label>
@@ -361,7 +361,7 @@ function OgretmenKayit({ schools, router, supabase }: {
   if (adim === 2) {
     return (
       <>
-        <form onSubmit={kayitOl} className="rounded-3xl p-6 flex flex-col gap-4" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+        <form onSubmit={kayitOl} className="rounded-3xl p-6 flex flex-col gap-4" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
           <div className="rounded-xl px-3 py-2 text-[12px] font-semibold" style={{ background: MINT_BG, color: MINT }}>
             Bilgileriniz tamam ✓ — şimdi şifrenizi belirleyin.
           </div>
@@ -374,7 +374,7 @@ function OgretmenKayit({ schools, router, supabase }: {
           </label>
           {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
           <div className="flex gap-2">
-            <button type="button" onClick={() => setAdim(1)} className="sgec-btn shrink-0 w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: BG0, border: `1px solid ${BORDER_STRONG}` }}>
+            <button type="button" onClick={() => setAdim(1)} className="sgec-btn shrink-0 w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
               <ChevronLeft size={16} color={TEXT_MUTED} />
             </button>
             <button type="submit" disabled={yukleniyor} className="sgec-btn flex-1 text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
@@ -388,7 +388,7 @@ function OgretmenKayit({ schools, router, supabase }: {
   }
 
   return (
-    <form onSubmit={ileri} className="rounded-3xl p-6 flex flex-col gap-3" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+    <form onSubmit={ileri} className="rounded-3xl p-6 flex flex-col gap-3" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <label className="flex flex-col gap-1"><Etiket>Ad Soyad</Etiket><Girdi required value={ad} onChange={(e) => setAd(e.target.value)} /></label>
       <label className="flex flex-col gap-1"><Etiket>E-posta</Etiket><Girdi type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></label>
       <label className="flex flex-col gap-1"><Etiket>Telefon</Etiket><Girdi type="tel" required value={telefon} inputMode="numeric" placeholder="5xxxxxxxxx" onChange={(e) => setTelefon(telefonSanitize(e.target.value))} /></label>
@@ -417,8 +417,8 @@ function VeliKayit({ schools, router, supabase }: { schools: School[]; router: R
   const [mod, setMod] = useState<"talep" | "tamamla">("talep");
 
   return (
-    <div className="rounded-3xl p-6 flex flex-col gap-4" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
-      <div className="flex gap-1 p-1 rounded-full" style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${BORDER}` }}>
+    <div className="rounded-3xl p-6 flex flex-col gap-4" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+      <div className="flex gap-1 p-1 rounded-full" style={{ background: "rgba(255,255,255,0.06)", border: `2px solid ${BORDER}` }}>
         <button type="button" onClick={() => setMod("talep")}
           className="sgec-btn flex-1 text-[11px] font-bold py-1.5 rounded-full"
           style={{ background: mod === "talep" ? MINT : "transparent", color: mod === "talep" ? MINT_ON : TEXT_MUTED }}>
@@ -492,7 +492,7 @@ function VeliTalepForm({ schools, supabase }: { schools: School[]; supabase: Ret
 
       {gonderildi && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }}>
-          <div className="sgec-fade rounded-3xl p-6 max-w-sm w-full text-center" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+          <div className="sgec-fade rounded-3xl p-6 max-w-sm w-full text-center" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
             <p style={{ color: TEXT }} className="text-sm leading-relaxed mb-5">
               Kod talebiniz alındı. <strong>SG.EDUCOACH ekibi veya öğrencinizin sınıf öğretmeni tarafından bilgilendirileceksiniz.</strong>
             </p>
@@ -571,7 +571,7 @@ function VeliTamamlaForm({ schools, router }: { schools: School[]; router: Retur
       <div className="flex flex-col gap-1.5">
         <Etiket>KVKK Aydınlatma Metni ve Rıza Beyanı</Etiket>
         <div className="text-[11px] leading-relaxed whitespace-pre-line rounded-xl p-3 max-h-40 overflow-y-auto"
-          style={{ background: BG0, border: `1px solid ${BORDER_STRONG}`, color: TEXT_MUTED }}>
+          style={{ background: BG0, border: `2px solid ${BORDER_STRONG}`, color: TEXT_MUTED }}>
           {KVKK_METNI}
         </div>
       </div>
@@ -596,7 +596,7 @@ function VeliTamamlaForm({ schools, router }: { schools: School[]; router: Retur
 
 function KayitTamamMesaji({ email }: { email: string }) {
   return (
-    <div className="text-center rounded-3xl p-6" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+    <div className="text-center rounded-3xl p-6" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-lg font-bold mb-2">E-postanızı kontrol edin</h2>
       <p style={{ color: TEXT_MUTED }} className="text-sm">Hesabınızı doğrulamak için {email} adresine bir bağlantı gönderdik.</p>
       <Link href="/login" style={{ color: MINT }} className="text-sm font-semibold mt-4 inline-block">Girişe dön</Link>

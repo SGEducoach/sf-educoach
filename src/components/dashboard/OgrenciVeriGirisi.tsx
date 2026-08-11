@@ -38,7 +38,7 @@ function GecmisTarihSecici({ tarih, setTarih, geriyeMaksGun }: { tarih: string; 
     return (
       <button type="button" onClick={() => setAcik(true)}
         className="sgec-btn self-start flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1.5 rounded-full"
-        style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `1px solid ${BORDER_STRONG}` }}>
+        style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
         <CalendarClock size={12} /> Geçmiş tarih için gir
       </button>
     );
@@ -51,7 +51,7 @@ function GecmisTarihSecici({ tarih, setTarih, geriyeMaksGun }: { tarih: string; 
         <Girdi type="date" max={bugununTarihi()} min={enEskiTarih(geriyeMaksGun)} value={tarih} onChange={(e) => setTarih(e.target.value)} required />
         <button type="button" onClick={() => { setAcik(false); setTarih(bugununTarihi()); }}
           className="sgec-btn shrink-0 text-[11px] font-bold px-3 py-1.5 rounded-xl"
-          style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `1px solid ${BORDER_STRONG}` }}>
+          style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
           Bugüne dön
         </button>
       </div>
@@ -66,10 +66,10 @@ function Etiket({ children }: { children: React.ReactNode }) {
   return <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">{children}</span>;
 }
 function Girdi(props: React.InputHTMLAttributes<HTMLInputElement>) {
-  return <input {...props} className="text-sm px-2.5 py-1.5 rounded-xl outline-none w-full" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }} />;
+  return <input {...props} className="text-sm px-2.5 py-1.5 rounded-xl outline-none w-full" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }} />;
 }
 function Secim({ children, ...props }: React.SelectHTMLAttributes<HTMLSelectElement>) {
-  return <select {...props} className="text-sm px-2.5 py-1.5 rounded-xl outline-none w-full" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>{children}</select>;
+  return <select {...props} className="text-sm px-2.5 py-1.5 rounded-xl outline-none w-full" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>{children}</select>;
 }
 
 // Genel 3-seçenekli buton grubu — Konu Çalışma/Soru Çözümü/Deneme'de aynı
@@ -117,8 +117,8 @@ export function OgrenciVeriGirisi({ aytAlan, konuOnerileri }: {
         </div>
       )}
 
-      <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
-        <div className="flex gap-1 p-1 rounded-full mb-4" style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${BORDER}` }}>
+      <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+        <div className="flex gap-1 p-1 rounded-full mb-4" style={{ background: "rgba(255,255,255,0.06)", border: `2px solid ${BORDER}` }}>
           {[
             { id: "konu" as const, ad: "Konu Çalışma", icon: BookOpen },
             { id: "soru" as const, ad: "Soru Çözümü", icon: PenLine },
@@ -155,7 +155,7 @@ function KonuOneriDropdown({ oneriler, aktif, onSec }: {
   if (!aktif || oneriler.length === 0) return null;
   return (
     <div className="absolute left-0 right-0 top-full mt-1 z-20 max-h-56 overflow-y-auto rounded-xl sgec-fade"
-      style={{ background: BG0, border: `1px solid ${BORDER_STRONG}`, boxShadow: "0 8px 20px rgba(0,0,0,0.35)" }}>
+      style={{ background: BG0, border: `2px solid ${BORDER_STRONG}`, boxShadow: "0 8px 20px rgba(0,0,0,0.35)" }}>
       {oneriler.map((o) => (
         <button key={o.konu} type="button" onMouseDown={(e) => { e.preventDefault(); onSec(o.konu); }}
           className="sgec-btn w-full flex items-center justify-between gap-2 text-left px-3 py-2 text-xs font-semibold"
@@ -285,7 +285,7 @@ function KonuCalismaForm({ dersListesi, konuOnerileri, onBasari }: {
       </label>
 
       {anlatimAcik && (
-        <div className="rounded-2xl p-3.5" style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}` }}>
+        <div className="rounded-2xl p-3.5" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
           {anlatimHata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{anlatimHata}</div>}
           {anlatim && (
             <>
@@ -446,7 +446,7 @@ function DenemeForm({ aytAlan, onBasari }: { aytAlan: AytAlan; onBasari: (m: str
         </label>
       </div>
 
-      <div className="rounded-2xl p-3 flex flex-col gap-2" style={{ background: BG1_ALT, border: `1px solid ${BORDER}` }}>
+      <div className="rounded-2xl p-3 flex flex-col gap-2" style={{ background: BG1_ALT, border: `2px solid ${BORDER}` }}>
         <Etiket>Ders bazlı sonuçlar</Etiket>
         {dersler.map((d) => {
           const maks = dersSoruSayisi(tur, d);
@@ -485,7 +485,7 @@ function HaftalikVerimlilikModal({ onKapat }: { onKapat: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: "rgba(0,0,0,0.5)" }}>
-      <div className="sgec-fade rounded-3xl p-6 max-w-sm w-full" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+      <div className="sgec-fade rounded-3xl p-6 max-w-sm w-full" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <div className="flex items-center gap-2 mb-3">
           <Sparkles size={16} color={MINT} />
           <h3 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold">Bu dönemki genel çalışma düzeyin nasıldı?</h3>
@@ -494,7 +494,7 @@ function HaftalikVerimlilikModal({ onKapat }: { onKapat: () => void }) {
           {(Object.entries(VERIMLILIK_ETIKET) as [VerimlilikDuzeyi, string][]).map(([k, v]) => (
             <button key={k} disabled={pending} onClick={() => sec(k)}
               className="sgec-btn text-sm font-semibold py-2 rounded-xl text-left px-4"
-              style={{ background: BG1_ALT, color: TEXT, border: `1px solid ${BORDER_STRONG}` }}>
+              style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
               {v}
             </button>
           ))}

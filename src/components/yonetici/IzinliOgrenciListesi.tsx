@@ -64,14 +64,14 @@ export function IzinliOgrenciListesi({ schoolId }: { schoolId: string }) {
     return (
       <button type="button" onClick={ac}
         className="sgec-btn flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl"
-        style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `1px solid ${BORDER_STRONG}` }}>
+        style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
         <ShieldCheck size={13} /> İzinli öğrenci listesi
       </button>
     );
   }
 
   return (
-    <div className="rounded-2xl p-4 flex flex-col gap-2.5" style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}` }}>
+    <div className="rounded-2xl p-4 flex flex-col gap-2.5" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
       <div className="flex items-center gap-1.5">
         <ShieldCheck size={13} color={MINT} />
         <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[13px] font-bold">İzinli öğrenci listesi</span>
@@ -82,7 +82,7 @@ export function IzinliOgrenciListesi({ schoolId }: { schoolId: string }) {
       </p>
 
       <textarea value={metin} onChange={(e) => setMetin(e.target.value)} rows={5} placeholder={"Her satıra bir isim:\nAhmet Yılmaz\nAyşe Kaya"}
-        className="text-xs px-3 py-2.5 rounded-xl outline-none resize-y font-mono" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+        className="text-xs px-3 py-2.5 rounded-xl outline-none resize-y font-mono" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
 
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
       {basari && <div style={{ color: MINT }} className="text-xs font-semibold">{basari}</div>}
@@ -105,7 +105,7 @@ export function IzinliOgrenciListesi({ schoolId }: { schoolId: string }) {
             {isimler.length > 0 && (
               <button type="button" onClick={temizle} disabled={pending}
                 className="sgec-btn flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full disabled:opacity-60"
-                style={{ background: "rgba(255,255,255,0.06)", color: BLUSH, border: `1px solid ${BORDER_STRONG}` }}>
+                style={{ background: "rgba(255,255,255,0.06)", color: BLUSH, border: `2px solid ${BORDER_STRONG}` }}>
                 <Trash2 size={10} /> Listeyi temizle
               </button>
             )}

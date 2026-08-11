@@ -67,7 +67,7 @@ export function HosgeldinPopuplari({ role }: { role: UserRole }) {
 
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center px-4" style={{ background: "rgba(0,0,0,0.55)" }}>
-      <div className="sgec-fade rounded-3xl p-6 max-w-sm w-full relative" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+      <div className="sgec-fade rounded-3xl p-6 max-w-sm w-full relative" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <button type="button" onClick={() => sonrakiyeGec(false)}
           className="sgec-btn absolute top-3 right-3 w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.06)" }}>
           <X size={13} color={TEXT_MUTED} />
@@ -102,7 +102,7 @@ export function HosgeldinPopuplari({ role }: { role: UserRole }) {
         {asama !== "bildirim" && (
           <div className="flex gap-2">
             <button type="button" onClick={() => sonrakiyeGec(true)}
-              className="sgec-btn flex-1 flex items-center justify-center gap-1.5 text-xs font-bold py-2 rounded-xl" style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `1px solid ${BORDER_STRONG}` }}>
+              className="sgec-btn flex-1 flex items-center justify-center gap-1.5 text-xs font-bold py-2 rounded-xl" style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
               <BellOff size={13} /> Bir daha gösterme
             </button>
             <button type="button" onClick={() => sonrakiyeGec(false)}
@@ -145,7 +145,7 @@ function BildirimSoftAsk({ onTamamlandi }: { onTamamlandi: () => void }) {
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold mb-3">{hata}</div>}
       <div className="flex gap-2">
         <button type="button" onClick={onTamamlandi} disabled={yukleniyor}
-          className="sgec-btn flex-1 flex items-center justify-center gap-1.5 text-xs font-bold py-2 rounded-xl disabled:opacity-60" style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `1px solid ${BORDER_STRONG}` }}>
+          className="sgec-btn flex-1 flex items-center justify-center gap-1.5 text-xs font-bold py-2 rounded-xl disabled:opacity-60" style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
           <BellOff size={13} /> Şimdi değil
         </button>
         <button type="button" onClick={ac} disabled={yukleniyor}

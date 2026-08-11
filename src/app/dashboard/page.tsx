@@ -87,7 +87,7 @@ async function OgrenciIcerik({ userId, ad, donem }: { userId: string; ad: string
 
   if (!s) {
     return (
-      <div className="sgec-fade rounded-3xl p-6 text-center" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+      <div className="sgec-fade rounded-3xl p-6 text-center" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <p style={{ color: TEXT_MUTED }} className="text-sm">Öğrenci profili bulunamadı.</p>
       </div>
     );
@@ -139,7 +139,7 @@ async function OgrenciIcerik({ userId, ad, donem }: { userId: string; ad: string
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="sgec-fade rounded-3xl p-6 print:hidden" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+      <div className="sgec-fade rounded-3xl p-6 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-bold mb-4">Hoş geldin! 👋</h1>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <Bilgi etiket="Okul No" deger={s.okul_no} />
@@ -177,7 +177,7 @@ async function OgretmenIcerik({ userId, role, secilenSinifId, secilenOgrenciId, 
 
   if (!teacher) {
     return (
-      <div className="sgec-fade rounded-3xl p-6 text-center" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+      <div className="sgec-fade rounded-3xl p-6 text-center" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <p style={{ color: TEXT_MUTED }} className="text-sm">Öğretmen profili bulunamadı.</p>
       </div>
     );
@@ -200,7 +200,7 @@ async function OgretmenIcerik({ userId, role, secilenSinifId, secilenOgrenciId, 
         <div className="flex flex-col gap-4">
           <Link href={secilenSinifId ? `/dashboard?sinif=${secilenSinifId}` : "/dashboard"}
             className="sgec-btn inline-flex items-center gap-1 text-xs font-bold w-fit px-3 py-1.5 rounded-full print:hidden"
-            style={{ background: BG1_ALT, color: TEXT_MUTED, border: `1px solid ${BORDER_STRONG}` }}>
+            style={{ background: BG1_ALT, color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
             <ChevronLeft size={14} /> Listeye dön
           </Link>
           <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-bold print:hidden">{ogrenciAdi}</h1>
@@ -277,7 +277,7 @@ async function VeliIcerik({ userId, secilenOgrenciId, donem }: { userId: string;
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="sgec-fade rounded-3xl p-6 print:hidden" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+      <div className="sgec-fade rounded-3xl p-6 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-bold mb-4">Hoş geldiniz! 👋</h1>
         {cocuklar.length === 0 ? (
           <p style={{ color: TEXT_MUTED }} className="text-sm">Henüz bağlı bir öğrenci yok.</p>

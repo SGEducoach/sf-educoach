@@ -48,7 +48,7 @@ function ZorunluSifreDegisikligi({ onTamam }: { onTamam: () => void }) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center px-4"
       style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }}>
-      <form onSubmit={gonder} className="sgec-fade rounded-3xl p-6 max-w-sm w-full flex flex-col gap-3" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+      <form onSubmit={gonder} className="sgec-fade rounded-3xl p-6 max-w-sm w-full flex flex-col gap-3" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <div className="w-10 h-10 rounded-full flex items-center justify-center mb-1" style={{ background: MINT_BG }}>
           <KeyRound size={18} color={MINT} />
         </div>
@@ -59,13 +59,13 @@ function ZorunluSifreDegisikligi({ onTamam }: { onTamam: () => void }) {
         <label className="flex flex-col gap-1">
           <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Yeni şifre</span>
           <input type="password" required minLength={8} autoFocus value={sifre} onChange={(e) => setSifre(e.target.value)}
-            className="text-sm px-3 py-2 rounded-xl outline-none w-full" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+            className="text-sm px-3 py-2 rounded-xl outline-none w-full" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
           <span style={{ color: TEXT_MUTED }} className="text-[10px]">{SIFRE_IPUCU}</span>
         </label>
         <label className="flex flex-col gap-1">
           <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Yeni şifre (tekrar)</span>
           <input type="password" required minLength={8} value={sifre2} onChange={(e) => setSifre2(e.target.value)}
-            className="text-sm px-3 py-2 rounded-xl outline-none w-full" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+            className="text-sm px-3 py-2 rounded-xl outline-none w-full" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
         </label>
         {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
         <button type="submit" disabled={yukleniyor}

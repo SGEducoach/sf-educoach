@@ -15,7 +15,7 @@ export function ZayifKonular({ konular }: { konular: ZayifKonu[] }) {
   if (konular.length === 0) return null;
 
   return (
-    <div className="sgec-fade rounded-3xl p-6 print:hidden" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+    <div className="sgec-fade rounded-3xl p-6 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <div className="flex items-center gap-2 mb-1">
         <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: PEACH_BG }}>
           <BookOpen size={13} color={PEACH} />
@@ -51,7 +51,7 @@ function KonuSatiri({ konu }: { konu: ZayifKonu }) {
   }
 
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}` }}>
+    <div className="rounded-2xl overflow-hidden" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
       <button type="button" onClick={ac}
         className="sgec-btn w-full flex items-center justify-between px-4 py-3 text-left">
         <div>
@@ -69,7 +69,7 @@ function KonuSatiri({ konu }: { konu: ZayifKonu }) {
         <div className="px-4 pb-4">
           {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
           {icerik && (
-            <div style={{ color: TEXT_MUTED, borderTop: `1px solid ${BORDER_STRONG}` }} className="text-sm leading-relaxed whitespace-pre-line pt-3">
+            <div style={{ color: TEXT_MUTED, borderTop: `2px solid ${BORDER_STRONG}` }} className="text-sm leading-relaxed whitespace-pre-line pt-3">
               {icerik}
             </div>
           )}

@@ -45,7 +45,7 @@ export function DuyuruFormu({
   }
 
   return (
-    <div className="sgec-fade rounded-3xl p-5 print:hidden" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+    <div className="sgec-fade rounded-3xl p-5 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <div className="flex items-center gap-2 mb-1">
         <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: MINT_BG }}>
           <Megaphone size={13} color={MINT} />
@@ -58,7 +58,7 @@ export function DuyuruFormu({
           <label className="flex flex-col gap-1">
             <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Kime gitsin</span>
             <select value={kapsam} onChange={(e) => setKapsam(e.target.value)}
-              className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+              className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
               {kapsamSecenekleri.map((k) => <option key={k.deger} value={k.deger}>{k.etiket}</option>)}
             </select>
           </label>
@@ -69,7 +69,7 @@ export function DuyuruFormu({
           rows={2}
           placeholder="örn. Sevgili öğrenciler, yarınki denemede başarılar dilerim."
           className="text-sm px-3 py-2 rounded-xl outline-none resize-none"
-          style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}
+          style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}
         />
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <span style={{ color: TEXT_MUTED }} className="text-[10px]">{mesaj.length}/{MAKS_UZUNLUK}</span>

@@ -78,7 +78,7 @@ export function BildirimAyarlari() {
   if (durum === "kontrolEdiliyor" || durum === "desteklenmiyor") return null;
 
   return (
-    <div className="sgec-fade rounded-2xl px-4 py-3 flex items-center justify-between flex-wrap gap-2 print:hidden" style={{ background: BG1_ALT, border: `1px solid ${BORDER}` }}>
+    <div className="sgec-fade rounded-2xl px-4 py-3 flex items-center justify-between flex-wrap gap-2 print:hidden" style={{ background: BG1_ALT, border: `2px solid ${BORDER}` }}>
       <div className="flex items-center gap-2.5">
         <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: durum === "acik" ? MINT_BG : "rgba(255,255,255,0.06)" }}>
           {durum === "acik" ? <BellRing size={14} color={MINT} /> : <Bell size={14} color={TEXT_MUTED} />}
@@ -106,7 +106,7 @@ export function BildirimAyarlari() {
           style={{
             background: durum === "acik" ? "transparent" : MINT,
             color: durum === "acik" ? TEXT_MUTED : MINT_ON,
-            border: durum === "acik" ? `1px solid ${BORDER_STRONG}` : "none",
+            border: durum === "acik" ? `2px solid ${BORDER_STRONG}` : "none",
           }}>
           {durum === "acik" ? <BellOff size={13} /> : <Bell size={13} />}
           {yukleniyor ? "..." : durum === "acik" ? "Kapat" : "Bildirimleri Aç"}

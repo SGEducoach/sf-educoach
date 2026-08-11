@@ -17,7 +17,7 @@ export function Header({ ad, role, okunmamisMesajSayisi = 0 }: { ad: string; rol
   return (
     <div className="print:hidden" style={{
       background: `radial-gradient(circle at 12% -30%, #DDF7F3 0%, ${BG0} 55%)`,
-      borderBottom: `1px solid ${BORDER}`,
+      borderBottom: `2px solid ${BORDER}`,
           }}>
       <div style={{ position: "absolute", top: -100, right: -50, width: 260, height: 260, borderRadius: "50%", background: "rgba(124,232,176,0.08)" }} />
       <div style={{ position: "absolute", bottom: -120, right: 160, width: 200, height: 200, borderRadius: "50%", background: "rgba(143,198,255,0.08)" }} />
@@ -35,7 +35,7 @@ export function Header({ ad, role, okunmamisMesajSayisi = 0 }: { ad: string; rol
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${BORDER}` }}>
+            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.06)", border: `2px solid ${BORDER}` }}>
               <span style={{ color: TEXT }} className="text-[12px] font-bold">{ad}</span>
               <span style={{ color: TEXT_MUTED }} className="text-[11px]">· {rolEtiket[role]}</span>
             </div>
@@ -43,7 +43,7 @@ export function Header({ ad, role, okunmamisMesajSayisi = 0 }: { ad: string; rol
             <form action={signOut}>
               <button type="submit" title="Çıkış yap"
                 className="sgec-btn w-8 h-8 rounded-full flex items-center justify-center"
-                style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${BORDER}` }}>
+                style={{ background: "rgba(255,255,255,0.06)", border: `2px solid ${BORDER}` }}>
                 <LogOut size={14} color={TEXT_MUTED} />
               </button>
             </form>

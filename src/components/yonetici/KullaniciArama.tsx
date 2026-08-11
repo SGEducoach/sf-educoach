@@ -47,7 +47,7 @@ export function KullaniciArama() {
 }
 
   return (
-    <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+    <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <div className="flex items-center gap-2 mb-4">
         <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(199,182,255,0.15)" }}>
           <Users size={13} color={LILAC} />
@@ -63,7 +63,7 @@ export function KullaniciArama() {
             onChange={(e) => { setSorgu(e.target.value); ara(e.target.value, rol); }}
             placeholder="Ad veya e-posta ile ara (en az 2 karakter)..."
             className="text-sm pl-9 pr-3 py-2 rounded-xl outline-none w-full"
-            style={{ border: `1px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}
+            style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}
           />
         </div>
       </div>
@@ -75,7 +75,7 @@ export function KullaniciArama() {
             <button key={r.id} type="button"
               onClick={() => { setRol(r.id); ara(sorgu, r.id); }}
               className="sgec-btn text-[11px] font-bold px-3 py-1.5 rounded-full"
-              style={{ background: aktif ? MINT : "rgba(255,255,255,0.06)", color: aktif ? "#0B3B24" : TEXT_MUTED, border: `1px solid ${BORDER_STRONG}` }}>
+              style={{ background: aktif ? MINT : "rgba(255,255,255,0.06)", color: aktif ? "#0B3B24" : TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
               {r.ad}
             </button>
           );
@@ -150,7 +150,7 @@ function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
   if (silindi) return null;
 
   return (
-    <div className="rounded-xl px-3.5 py-2.5 flex flex-col gap-2" style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}`, opacity: aktif ? 1 : 0.6 }}>
+    <div className="rounded-xl px-3.5 py-2.5 flex flex-col gap-2" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}`, opacity: aktif ? 1 : 0.6 }}>
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <div style={{ color: TEXT }} className="text-sm font-semibold">
@@ -164,18 +164,18 @@ function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
         <div className="flex items-center gap-1.5 shrink-0">
           <button type="button" onClick={sifreSifirlaTikla} disabled={sifrePending} title="Şifre sıfırla"
             className="sgec-btn flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full disabled:opacity-60"
-            style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `1px solid ${BORDER_STRONG}` }}>
+            style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
             <KeyRound size={11} /> Şifre sıfırla
           </button>
           <button type="button" onClick={aktiflikTikla} disabled={aktiflikPending} title={aktif ? "Pasifleştir" : "Aktifleştir"}
             className="sgec-btn flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full disabled:opacity-60"
-            style={{ background: "rgba(255,255,255,0.06)", color: aktif ? BLUSH : MINT, border: `1px solid ${BORDER_STRONG}` }}>
+            style={{ background: "rgba(255,255,255,0.06)", color: aktif ? BLUSH : MINT, border: `2px solid ${BORDER_STRONG}` }}>
             {aktif ? <><EyeOff size={11} /> Pasifleştir</> : <><Eye size={11} /> Aktifleştir</>}
           </button>
           {(kullanici.role === "ogrenci" || kullanici.role === "ogretmen" || kullanici.role === "mudur") && (
             <button type="button" onClick={() => setDuzenleAcik((v) => !v)} title={kullanici.role === "ogrenci" ? "Sınıf taşı" : "Branş değiştir"}
               className="sgec-btn flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full"
-              style={{ background: duzenleAcik ? MINT : "rgba(255,255,255,0.06)", color: duzenleAcik ? MINT_ON : TEXT_MUTED, border: `1px solid ${BORDER_STRONG}` }}>
+              style={{ background: duzenleAcik ? MINT : "rgba(255,255,255,0.06)", color: duzenleAcik ? MINT_ON : TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
               <ArrowRightLeft size={11} /> {kullanici.role === "ogrenci" ? "Sınıf taşı" : "Branş"}
             </button>
           )}
@@ -238,7 +238,7 @@ function OgrenciSinifTasiFormu({ studentId, okulId, suankiSinifId, onDone }: { s
   }
 
   return (
-    <div className="rounded-xl p-2.5 flex items-center gap-2 flex-wrap" style={{ background: BG0, border: `1px solid ${BORDER_STRONG}` }}>
+    <div className="rounded-xl p-2.5 flex items-center gap-2 flex-wrap" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
       {siniflar === null ? (
         <span style={{ color: TEXT_MUTED }} className="text-xs">Sınıflar yükleniyor...</span>
       ) : siniflar.length === 0 ? (
@@ -246,7 +246,7 @@ function OgrenciSinifTasiFormu({ studentId, okulId, suankiSinifId, onDone }: { s
       ) : (
         <>
           <select value={seciliSinifId} onChange={(e) => setSeciliSinifId(e.target.value)}
-            className="text-xs font-bold px-2.5 py-1.5 rounded-full outline-none" style={{ background: BG1_ALT, color: TEXT, border: `1px solid ${BORDER_STRONG}` }}>
+            className="text-xs font-bold px-2.5 py-1.5 rounded-full outline-none" style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
             {siniflar.map((s) => <option key={s.id} value={s.id}>{s.seviye}-{s.sube}</option>)}
           </select>
           <button type="button" onClick={tasi} disabled={pending || !seciliSinifId || seciliSinifId === suankiSinifId}
@@ -276,9 +276,9 @@ function OgretmenBransFormu({ teacherId, suankiBrans, onDone }: { teacherId: str
   }
 
   return (
-    <div className="rounded-xl p-2.5 flex items-center gap-2 flex-wrap" style={{ background: BG0, border: `1px solid ${BORDER_STRONG}` }}>
+    <div className="rounded-xl p-2.5 flex items-center gap-2 flex-wrap" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
       <select value={brans} onChange={(e) => setBrans(e.target.value)}
-        className="text-xs font-bold px-2.5 py-1.5 rounded-full outline-none" style={{ background: BG1_ALT, color: TEXT, border: `1px solid ${BORDER_STRONG}` }}>
+        className="text-xs font-bold px-2.5 py-1.5 rounded-full outline-none" style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
         {BRANS_LISTESI.map((b) => <option key={b} value={b}>{b}</option>)}
       </select>
       <button type="button" onClick={kaydet} disabled={pending || brans === suankiBrans}
