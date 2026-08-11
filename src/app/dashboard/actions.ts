@@ -336,5 +336,10 @@ export async function ogretmenDuyuruGonder(mesaj: string, kapsam?: string): Prom
   }
 
   const sonuc = await duyuruGonderTemel(admin, ogrenciIdleri, baslik, mesajTemiz, user.id);
+  await admin.from("admin_audit_log").insert({
+    actor_id: user.id,
+    eylem: profile.role === "mudur" ? "mudur_duyuru_gonder" : "ogretmen_duyuru_gonder",
+    detay: { school_id: teacher.school_id, class_id: teacher.class_id, kapsam: kapsam ?? null, ogrenci_sayisi: sonuc.ogrenciSayisi, veli_sayisi: sonuc.veliSayisi },
+  });
   return { error: null, ...sonuc };
 }
