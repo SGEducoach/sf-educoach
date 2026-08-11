@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
 import "./globals.css";
+import { GlobalIslemGostergesi } from "@/components/GlobalIslemGostergesi";
 
 // Not: değişken isimleri (--font-nunito, --font-baloo) kod tabanında onlarca
 // yerde referans veriliyor; tekrar adlandırmak yerine ikisini de Montserrat'a
@@ -42,7 +43,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="tr"
       className={`${montserratGovde.variable} ${montserratBaslik.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="min-h-full flex flex-col font-sans">
+        {children}
+        <GlobalIslemGostergesi />
+      </body>
     </html>
   );
 }
