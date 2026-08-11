@@ -4,6 +4,16 @@
 :root {
   --background: #f7fbfb;
   --foreground: #18302f;
+  --sgec-bg0: #f7fbfb;
+  --sgec-bg1: #ffffff;
+  --sgec-bg1-alt: #effaf9;
+  --sgec-border: #5eead4;
+  --sgec-border-strong: #2dd4bf;
+  --sgec-text: #18302f;
+  --sgec-text-muted: #58706e;
+  --sgec-mint: #0d9488;
+  --sgec-mint-on: #ffffff;
+  --sgec-seafoam: #0f766e;
   --z-header: 100;
   --z-mobile-nav: 110;
   --z-dropdown: 200;
@@ -11,6 +21,22 @@
   --z-required: 450;
   --z-loading: 500;
   --mobile-nav-height: 64px;
+}
+
+:root[data-theme="koyu"] {
+  color-scheme: dark;
+  --background: #0d1f1e;
+  --foreground: #e8f7f5;
+  --sgec-bg0: #0d1f1e;
+  --sgec-bg1: #142b29;
+  --sgec-bg1-alt: #1a3734;
+  --sgec-border: #267f75;
+  --sgec-border-strong: #35b8a8;
+  --sgec-text: #e8f7f5;
+  --sgec-text-muted: #abc7c3;
+  --sgec-mint: #5eead4;
+  --sgec-mint-on: #102624;
+  --sgec-seafoam: #7ce8d8;
 }
 
 @theme inline {
@@ -80,8 +106,8 @@ html {
 }
 
 select option {
-  background: #ffffff;
-  color: #18302f;
+  background: var(--sgec-bg1);
+  color: var(--sgec-text);
 }
 
 @keyframes sgecFadeUp {

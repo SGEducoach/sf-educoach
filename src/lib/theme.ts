@@ -1,15 +1,15 @@
 // Açık zemin + turkuaz kenarlık paleti.
-export const BG0 = "#F7FBFB";
-export const BG1 = "#FFFFFF";
-export const BG1_ALT = "#EFFAF9";
-export const BORDER = "#5EEAD4";
-export const BORDER_STRONG = "#2DD4BF";
-export const TEXT = "#18302F";
-export const TEXT_MUTED = "#58706E";
+export const BG0 = "var(--sgec-bg0)";
+export const BG1 = "var(--sgec-bg1)";
+export const BG1_ALT = "var(--sgec-bg1-alt)";
+export const BORDER = "var(--sgec-border)";
+export const BORDER_STRONG = "var(--sgec-border-strong)";
+export const TEXT = "var(--sgec-text)";
+export const TEXT_MUTED = "var(--sgec-text-muted)";
 
-export const MINT = "#0D9488";
+export const MINT = "var(--sgec-mint)";
 export const MINT_BG = "rgba(13,148,136,0.12)";
-export const MINT_ON = "#FFFFFF";
+export const MINT_ON = "var(--sgec-mint-on)";
 export const SKY = "#2563EB";
 export const SKY_BG = "rgba(143,198,255,0.14)";
 export const PEACH = "#C2410C";
@@ -20,7 +20,7 @@ export const BLUSH = "#E11D48";
 export const BLUSH_BG = "rgba(255,159,180,0.15)";
 export const LILAC = "#7C3AED";
 export const LILAC_BG = "rgba(199,182,255,0.15)";
-export const SEAFOAM = "#0F766E";
+export const SEAFOAM = "var(--sgec-seafoam)";
 
 export const dersRenkleri: Record<string, string> = {
   Matematik: MINT,

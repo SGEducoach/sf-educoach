@@ -1,12 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { LogOut, ShieldCheck } from "lucide-react";
-import { BG0, BORDER, SEAFOAM, TEXT, TEXT_MUTED } from "@/lib/theme";
+import { BG0, BG1_ALT, BORDER, SEAFOAM, TEXT, TEXT_MUTED } from "@/lib/theme";
 import { signOut } from "@/app/dashboard/actions";
 import { MesajlarimIkonu } from "@/components/dashboard/MesajlarimIkonu";
 import type { UserRole } from "@/lib/types";
 import { MobilAltNavigasyon } from "@/components/dashboard/MobilAltNavigasyon";
 import { OturumZamanAsimi } from "@/components/OturumZamanAsimi";
+import { TemaButonu } from "@/components/TemaDenetimi";
 
 const rolEtiket: Record<UserRole, string> = {
   ogrenci: "Öğrenci",
@@ -21,7 +22,7 @@ export function Header({ ad, role, okunmamisMesajSayisi = 0, mobilNavigasyon = t
     <>
     <OturumZamanAsimi aktif={role === "admin" || moderatorMu} />
     <header className="sticky top-0 z-[100] isolate overflow-clip print:hidden" style={{
-      background: `radial-gradient(circle at 12% -30%, #DDF7F3 0%, ${BG0} 55%)`,
+      background: `radial-gradient(circle at 12% -30%, ${BG1_ALT} 0%, ${BG0} 55%)`,
       borderBottom: `2px solid ${BORDER}`,
           }}>
       <div className="pointer-events-none" style={{ position: "absolute", top: -100, right: -50, width: 260, height: 260, borderRadius: "50%", background: "rgba(124,232,176,0.08)" }} />
@@ -45,6 +46,7 @@ export function Header({ ad, role, okunmamisMesajSayisi = 0, mobilNavigasyon = t
               <span style={{ color: TEXT_MUTED }} className="text-[11px]">· {rolEtiketi ?? rolEtiket[role]}</span>
             </div>
             {moderatorMu && <Link href="/moderator" title="Moderatör paneli" className="sgec-btn flex h-11 w-11 items-center justify-center rounded-full sm:h-8 sm:w-8" style={{ background: "rgba(13,148,136,0.12)", border: `2px solid ${BORDER}` }}><ShieldCheck size={16} color={SEAFOAM}/></Link>}
+            <TemaButonu />
             {(role === "ogrenci" || role === "veli") && <MesajlarimIkonu baslangicSayisi={okunmamisMesajSayisi} />}
             <form action={signOut}>
               <button type="submit" title="Çıkış yap"
