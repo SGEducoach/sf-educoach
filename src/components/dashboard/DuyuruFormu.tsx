@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Megaphone, Send } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Megaphone, Send, X } from "lucide-react";
 import { BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 
 const MAKS_UZUNLUK = 500;
+const MIN_UZUNLUK = 10;
 
 export interface KapsamSecenegi {
   deger: string;
@@ -28,6 +30,7 @@ export function DuyuruFormu({
   const [kapsam, setKapsam] = useState(kapsamSecenekleri?.[0]?.deger ?? "");
   const [hata, setHata] = useState<string | null>(null);
   const [basari, setBasari] = useState<string | null>(null);
+  const [onayAcik, setOnayAcik] = useState(false);
   const [pending, startTransition] = useTransition();
 
   function gonderTikla(e: React.FormEvent) {
@@ -35,7 +38,14 @@ export function DuyuruFormu({
     setHata(null);
     setBasari(null);
     const temiz = mesaj.trim();
-    if (!temiz) return setHata("Mesaj boş olamaz.");
+    if (!temiz) return setHata("Duyuru boş olamaz.");
+    if (temiz.length < MIN_UZUNLUK) return setHata(`Duyuru en az ${MIN_UZUNLUK} karakter olmalıdır.`);
+    setOnayAcik(true);
+  }
+
+  function onaylaVeGonder() {
+    const temiz = mesaj.trim();
+    setOnayAcik(false);
     startTransition(async () => {
       const res = await gonder(temiz, kapsamSecenekleri ? kapsam : undefined);
       if (res.error) return setHata(res.error);
@@ -67,21 +77,36 @@ export function DuyuruFormu({
           value={mesaj}
           onChange={(e) => setMesaj(e.target.value.slice(0, MAKS_UZUNLUK))}
           rows={2}
-          placeholder="örn. Sevgili öğrenciler, yarınki denemede başarılar dilerim."
+          placeholder="Örn. Sevgili öğrenciler, yarınki denemede başarılar dilerim."
           className="text-sm px-3 py-2 rounded-xl outline-none resize-none"
           style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}
         />
         <div className="flex items-center justify-between gap-2 flex-wrap">
-          <span style={{ color: TEXT_MUTED }} className="text-[10px]">{mesaj.length}/{MAKS_UZUNLUK}</span>
-          <button type="submit" disabled={pending || !mesaj.trim()}
+          <span style={{ color: mesaj.trim().length > 0 && mesaj.trim().length < MIN_UZUNLUK ? BLUSH : TEXT_MUTED }} className="text-[10px]">En az {MIN_UZUNLUK} · {mesaj.length}/{MAKS_UZUNLUK}</span>
+          <button type="submit" disabled={pending || mesaj.trim().length < MIN_UZUNLUK}
             className="sgec-btn flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-full disabled:opacity-50"
             style={{ background: MINT, color: MINT_ON }}>
-            <Send size={13} /> {pending ? "Gönderiliyor..." : "Bildirim olarak gönder"}
+            <Send size={13} /> {pending ? "Gönderiliyor..." : "Duyuruyu gönder"}
           </button>
         </div>
         {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
         {basari && <div style={{ color: MINT }} className="text-xs font-semibold">{basari}</div>}
       </form>
+      {onayAcik && createPortal((
+        <div className="fixed inset-0 z-[450] flex items-center justify-center p-4" style={{ background: "rgba(24,48,47,0.55)", backdropFilter: "blur(4px)" }} onClick={() => setOnayAcik(false)}>
+          <div role="dialog" aria-modal="true" aria-labelledby="duyuru-onay-baslik" className="relative w-full max-w-sm rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }} onClick={(e) => e.stopPropagation()}>
+            <button type="button" onClick={() => setOnayAcik(false)} aria-label="Kapat" className="sgec-btn absolute right-4 top-4 h-8 w-8 rounded-full" style={{ border: `2px solid ${BORDER_STRONG}` }}><X size={14} color={TEXT_MUTED} className="m-auto" /></button>
+            <h2 id="duyuru-onay-baslik" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="pr-10 text-base font-bold">Duyuru gönderilsin mi?</h2>
+            <p style={{ color: TEXT_MUTED }} className="mt-1 text-xs">Hedef: {kapsamSecenekleri?.find((secenek) => secenek.deger === kapsam)?.etiket ?? aciklama}</p>
+            <div className="my-4 max-h-40 overflow-y-auto rounded-2xl p-3 text-sm leading-relaxed" style={{ color: TEXT, background: BG0, border: `2px solid ${BORDER_STRONG}` }}>{mesaj.trim()}</div>
+            <p style={{ color: BLUSH }} className="mb-4 text-[11px] font-semibold">Gönderilen duyuru alıcıların mesaj kutusuna eklenir ve geri alınamaz.</p>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setOnayAcik(false)} className="sgec-btn flex-1 rounded-xl py-2.5 text-sm font-bold" style={{ color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>Vazgeç</button>
+              <button type="button" onClick={onaylaVeGonder} className="sgec-btn flex-1 rounded-xl py-2.5 text-sm font-bold" style={{ background: MINT, color: MINT_ON }}>Onayla ve gönder</button>
+            </div>
+          </div>
+        </div>
+      ), document.body)}
     </div>
   );
 }

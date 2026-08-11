@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { telefonGecerliMi, okulNoGecerliMi, rastgeleSifre, adNormalize } from "@/lib/validators";
 import { duyuruGonder as duyuruGonderTemel } from "@/lib/push-send";
+import { DUYURU_MIN_UZUNLUK, duyuruGonderimIzniKontrol } from "@/lib/duyuru-guvenligi";
 
 const DUYURU_MAKS_UZUNLUK = 500;
 
@@ -287,6 +288,7 @@ export async function ogretmenDuyuruGonder(mesaj: string, kapsam?: string): Prom
 
   const mesajTemiz = mesaj.trim();
   if (!mesajTemiz) return { error: "Mesaj boş olamaz.", ...bosSonuc };
+  if (mesajTemiz.length < DUYURU_MIN_UZUNLUK) return { error: `Duyuru en az ${DUYURU_MIN_UZUNLUK} karakter olmalıdır.`, ...bosSonuc };
   if (mesajTemiz.length > DUYURU_MAKS_UZUNLUK) {
     return { error: `Mesaj en fazla ${DUYURU_MAKS_UZUNLUK} karakter olabilir.`, ...bosSonuc };
   }
@@ -300,6 +302,8 @@ export async function ogretmenDuyuruGonder(mesaj: string, kapsam?: string): Prom
   }
 
   const admin = createAdminClient();
+  const izin = await duyuruGonderimIzniKontrol(admin, user.id);
+  if (izin.error) return { error: izin.error, ...bosSonuc };
   let ogrenciIdleri: string[];
   let baslik: string;
 

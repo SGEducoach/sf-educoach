@@ -8,6 +8,7 @@ import { rastgeleSifre, adNormalize, telefonGecerliMi, okulNoGecerliMi } from "@
 import { getAnthropicClient } from "@/lib/anthropic";
 import { KONU_ANLATIMI_SISTEM_PROMPTU, icerikTemizle } from "@/lib/konu-anlatimi";
 import { duyuruGonder } from "@/lib/push-send";
+import { DUYURU_MIN_UZUNLUK, duyuruGonderimIzniKontrol } from "@/lib/duyuru-guvenligi";
 import type { AytAlan, DenemeTuru, DenemeZorlugu, UserRole } from "@/lib/types";
 
 const DUYURU_MAKS_UZUNLUK = 500;
@@ -801,10 +802,13 @@ export async function adminDuyuruGonder(mesaj: string): Promise<{ error: string 
 
   const mesajTemiz = mesaj.trim();
   if (!mesajTemiz) return { error: "Mesaj boş olamaz.", ...bosSonuc };
+  if (mesajTemiz.length < DUYURU_MIN_UZUNLUK) return { error: `Duyuru en az ${DUYURU_MIN_UZUNLUK} karakter olmalıdır.`, ...bosSonuc };
   if (mesajTemiz.length > DUYURU_MAKS_UZUNLUK) {
     return { error: `Mesaj en fazla ${DUYURU_MAKS_UZUNLUK} karakter olabilir.`, ...bosSonuc };
   }
 
+  const izin = await duyuruGonderimIzniKontrol(admin, user.id);
+  if (izin.error) return { error: izin.error, ...bosSonuc };
   const { data: ogrenciler } = await admin.from("students").select("id");
   const ogrenciIdleri = (ogrenciler ?? []).map((o) => o.id);
 
