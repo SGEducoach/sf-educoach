@@ -118,8 +118,25 @@ export async function sifreSifirla(userId: string): Promise<{ error: string | nu
   const sifre = rastgeleSifre();
   const { error } = await admin.auth.admin.updateUserById(userId, { password: sifre });
   if (error) return { error: error.message, sifre: null };
+  const { error: profileError } = await admin.from("profiles").update({ gecici_sifre: true }).eq("id", userId).neq("role", "admin");
+  if (profileError) return { error: profileError.message, sifre: null };
   await auditLogYaz(supabase, user.id, "sifre_sifirla", { hedef_id: userId });
   return { error: null, sifre };
+}
+
+// Kullanıcı Auth kaydı silinince profiles ve kullanıcıya bağlı veriler,
+// şemadaki foreign key zinciri üzerinden kalıcı olarak temizlenir.
+export async function hesapSil(userId: string): Promise<{ error: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const { data: hedef } = await admin.from("profiles").select("ad, role").eq("id", userId).maybeSingle();
+  if (!hedef) return { error: "Kullanıcı bulunamadı." };
+  if (hedef.role === "admin") return { error: "Yönetici hesabı bu ekrandan silinemez." };
+
+  await auditLogYaz(supabase, user.id, "hesap_sil", { hedef_id: userId, hedef_ad: hedef.ad, hedef_rol: hedef.role });
+  const { error } = await admin.auth.admin.deleteUser(userId);
+  if (error) return { error: error.message };
+  revalidatePath("/yonetici");
+  return { error: null };
 }
 
 // ============ Hesap pasifleştirme/aktifleştirme (soft-delete) ============

@@ -9,6 +9,7 @@ import { KonuAnlatimYonetimi } from "@/components/yonetici/KonuAnlatimYonetimi";
 import { KurallarYonetimi } from "@/components/yonetici/KurallarYonetimi";
 import { SifreDegistir } from "@/components/yonetici/SifreDegistir";
 import { YoneticiGirisForm } from "@/components/yonetici/YoneticiGirisForm";
+import { YoneticiYetkileri } from "@/components/yonetici/YoneticiYetkileri";
 
 // SG EduCoach'un tek kontrol noktası — bilerek /dashboard'dan ayrı, kendi
 // bağımsız girişi olan, hiçbir yerden link verilmeyen bir adres. Normal
@@ -69,6 +70,7 @@ export default async function YoneticiPage({
       <div className="max-w-6xl mx-auto px-6 py-7 w-full flex-1 flex flex-col gap-6">
         <SifreDegistir />
         <PlatformIstatistikleri />
+        <YoneticiYetkileri />
         <KullaniciArama />
         <VeliTalepleri />
         <AdminPanel

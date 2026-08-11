@@ -64,6 +64,7 @@ const EYLEM_ETIKET: Record<string, string> = {
   sifre_sifirla: "Şifre sıfırlandı",
   hesap_aktiflestir: "Hesap aktifleştirildi",
   hesap_pasiflestir: "Hesap pasifleştirildi",
+  hesap_sil: "Kullanıcı kalıcı olarak silindi",
   sinif_sil: "Sınıf silindi",
   ogrenci_sinif_tasi: "Öğrenci sınıf değiştirdi",
   ogretmen_brans_degistir: "Öğretmen branşı değiştirildi",

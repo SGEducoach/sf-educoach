@@ -16,7 +16,8 @@ const rolEtiket: Record<UserRole, string> = {
 export function Header({ ad, role, okunmamisMesajSayisi = 0 }: { ad: string; role: UserRole; okunmamisMesajSayisi?: number }) {
   return (
     <div className="print:hidden" style={{
-      background: `radial-gradient(circle at 12% -30%, #262B4E 0%, ${BG0} 55%)`,
+      background: `radial-gradient(circle at 12% -30%, #DDF7F3 0%, ${BG0} 55%)`,
+      borderBottom: `1px solid ${BORDER}`,
           }}>
       <div style={{ position: "absolute", top: -100, right: -50, width: 260, height: 260, borderRadius: "50%", background: "rgba(124,232,176,0.08)" }} />
       <div style={{ position: "absolute", bottom: -120, right: 160, width: 200, height: 200, borderRadius: "50%", background: "rgba(143,198,255,0.08)" }} />

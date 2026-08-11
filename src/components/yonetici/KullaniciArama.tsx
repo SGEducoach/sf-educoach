@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect, useTransition } from "react";
-import { Search, Users, KeyRound, EyeOff, Eye, Copy, Check, ArrowRightLeft } from "lucide-react";
+import { Search, Users, KeyRound, EyeOff, Eye, Copy, Check, ArrowRightLeft, Trash2 } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH, LILAC } from "@/lib/theme";
-import { kullaniciAra, sifreSifirla, hesapAktiflikDegistir, okulSiniflari, ogrenciSinifTasi, ogretmenBransDegistir, type KullaniciSonuc } from "@/app/yonetici/actions";
+import { kullaniciAra, sifreSifirla, hesapAktiflikDegistir, hesapSil, okulSiniflari, ogrenciSinifTasi, ogretmenBransDegistir, type KullaniciSonuc } from "@/app/yonetici/actions";
 import { BRANS_LISTESI } from "@/lib/types";
 import type { UserRole } from "@/lib/types";
 
@@ -98,12 +98,14 @@ export function KullaniciArama() {
 }
 
 function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
+  const [silindi, setSilindi] = useState(false);
   const [aktif, setAktif] = useState(kullanici.aktif);
   const [yeniSifre, setYeniSifre] = useState<string | null>(null);
   const [kopyalandi, setKopyalandi] = useState(false);
   const [hata, setHata] = useState<string | null>(null);
   const [sifrePending, startSifreTransition] = useTransition();
   const [aktiflikPending, startAktiflikTransition] = useTransition();
+  const [silmePending, startSilmeTransition] = useTransition();
   const [duzenleAcik, setDuzenleAcik] = useState(false);
 
   function sifreSifirlaTikla() {
@@ -135,6 +137,18 @@ function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
     });
   }
 
+  function silTikla() {
+    if (!window.confirm(`${kullanici.ad} kalıcı olarak silinsin mi? Hesap ve bağlı veriler geri alınamaz.`)) return;
+    setHata(null);
+    startSilmeTransition(async () => {
+      const res = await hesapSil(kullanici.id);
+      if (res.error) return setHata(res.error);
+      setSilindi(true);
+    });
+  }
+
+  if (silindi) return null;
+
   return (
     <div className="rounded-xl px-3.5 py-2.5 flex flex-col gap-2" style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}`, opacity: aktif ? 1 : 0.6 }}>
       <div className="flex items-center justify-between flex-wrap gap-2">
@@ -165,6 +179,11 @@ function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
               <ArrowRightLeft size={11} /> {kullanici.role === "ogrenci" ? "Sınıf taşı" : "Branş"}
             </button>
           )}
+          <button type="button" onClick={silTikla} disabled={silmePending} title="Kullanıcıyı kalıcı sil"
+            className="sgec-btn flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full disabled:opacity-60"
+            style={{ background: "rgba(225,29,72,0.08)", color: BLUSH, border: `1px solid ${BLUSH}` }}>
+            <Trash2 size={11} /> {silmePending ? "Siliniyor..." : "Sil"}
+          </button>
         </div>
       </div>
 

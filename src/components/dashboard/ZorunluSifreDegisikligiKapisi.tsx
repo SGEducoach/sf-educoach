@@ -54,7 +54,7 @@ function ZorunluSifreDegisikligi({ onTamam }: { onTamam: () => void }) {
         </div>
         <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold">Yeni şifrenizi belirleyin</h2>
         <p style={{ color: TEXT_MUTED }} className="text-xs leading-relaxed mb-1">
-          Kayıt sırasında sistem tarafından oluşturulan geçici şifreyle giriş yaptınız. Devam etmeden önce kendi şifrenizi belirlemeniz gerekiyor.
+          Geçici şifreyle giriş yaptınız. Devam etmeden önce yeni şifrenizi iki alana da aynı şekilde yazarak belirlemeniz gerekiyor.
         </p>
         <label className="flex flex-col gap-1">
           <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Yeni şifre</span>

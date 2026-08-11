@@ -107,7 +107,7 @@ create table public.veli_link_requests (
   veli_telefon text not null,
   durum public.veli_talep_durum not null default 'bekliyor',
   kod text, -- öğretmen onaylayınca üretilir
-  onaylayan_ogretmen_id uuid references public.profiles(id),
+  onaylayan_ogretmen_id uuid references public.profiles(id) on delete set null,
   created_at timestamptz not null default now(),
   onaylanma_at timestamptz
 );

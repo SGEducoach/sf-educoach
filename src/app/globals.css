@@ -1,10 +1,9 @@
 @import "tailwindcss";
 
-/* SG EduCoach her zaman koyu temalı bir arayüz kullanır (sistem temasından
-   bağımsız) — prototipteki palet ile birebir. */
+/* SG EduCoach açık ve ferah bir arayüz kullanır. */
 :root {
-  --background: #15172a; /* BG0 */
-  --foreground: #f3f1fb; /* TEXT */
+  --background: #f7fbfb;
+  --foreground: #18302f;
 }
 
 @theme inline {
@@ -25,8 +24,8 @@ body {
 }
 
 select option {
-  background: #1e2138;
-  color: #f3f1fb;
+  background: #ffffff;
+  color: #18302f;
 }
 
 @keyframes sgecFadeUp {
