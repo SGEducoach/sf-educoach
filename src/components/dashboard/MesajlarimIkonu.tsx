@@ -4,7 +4,8 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Mail } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { BG1, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
+import { BORDER, MINT, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
+import { MaskotKonusmaBalonu } from "@/components/dashboard/MaskotKonusmaBalonu";
 
 interface DuyuruSatiri {
   id: string;
@@ -64,24 +65,20 @@ export function MesajlarimIkonu({ baslangicSayisi }: { baslangicSayisi: number }
       </button>
 
       {acik && createPortal(
-        <>
-          <div className="fixed inset-0 z-[190]" onClick={() => setAcik(false)} />
-          <div
-            className="fixed right-4 top-16 z-[200] flex max-h-96 w-80 max-w-[85vw] flex-col gap-2 overflow-y-auto rounded-2xl p-3"
-            style={{ background: BG1, border: `2px solid ${BORDER_STRONG}`, boxShadow: "0 8px 24px rgba(0,0,0,0.35)" }}
-          >
-            <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-sm font-bold px-1">Mesajlarım</span>
+        <MaskotKonusmaBalonu onKapat={() => setAcik(false)} ariaLabel="Mesajlarım">
+            <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="block pr-9 text-sm font-bold">Mesajlarım</span>
             {yukleniyor && <p style={{ color: TEXT_MUTED }} className="text-xs text-center py-4">Yükleniyor...</p>}
             {!yukleniyor && duyurular?.length === 0 && <p style={{ color: TEXT_MUTED }} className="text-xs text-center py-4">Henüz mesaj yok.</p>}
-            {duyurular?.map((d) => (
-              <div key={d.id} className="rounded-xl p-2.5" style={{ background: "rgba(255,255,255,0.04)", border: `2px solid ${BORDER}` }}>
+            <div className="mt-2 flex flex-col gap-2">
+              {duyurular?.map((d) => (
+              <div key={d.id} className="rounded-xl p-2.5" style={{ background: "rgba(13,148,136,0.05)", border: `2px solid ${BORDER}` }}>
                 <div style={{ color: TEXT }} className="text-xs font-bold mb-0.5">{d.baslik}</div>
                 <div style={{ color: TEXT_MUTED }} className="text-xs leading-relaxed">{d.mesaj}</div>
                 <div style={{ color: TEXT_MUTED }} className="text-[10px] mt-1">{new Date(d.created_at).toLocaleString("tr-TR")}</div>
               </div>
-            ))}
-          </div>
-        </>,
+              ))}
+            </div>
+        </MaskotKonusmaBalonu>,
         document.body,
       )}
     </div>

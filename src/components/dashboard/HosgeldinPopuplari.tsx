@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Heart, Smartphone, BellOff, BellRing, X } from "lucide-react";
-import { BG1, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
+import { Heart, Smartphone, BellOff, BellRing } from "lucide-react";
+import { BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 import { pushAbonelikAc } from "@/lib/push-subscribe";
 import type { UserRole } from "@/lib/types";
+import { MaskotKonusmaBalonu } from "@/components/dashboard/MaskotKonusmaBalonu";
 
 const HOSGELDIN_ANAHTAR = "sgec_hosgeldin_kapatildi_v1";
 const HATIRLATMA_ANAHTAR = "sgec_hatirlatma_kapatildi_v1";
@@ -27,9 +28,12 @@ export function HosgeldinPopuplari({ role }: { role: UserRole }) {
   useEffect(() => {
     if (role !== "veli" && role !== "ogrenci") return;
     if (typeof window === "undefined") return;
-    if (!kapatildiMi(HOSGELDIN_ANAHTAR)) { setAsama("hosgeldin"); return; }
-    if (!kapatildiMi(HATIRLATMA_ANAHTAR)) { setAsama("hatirlatma"); return; }
-    if (role === "veli" && !kapatildiMi(BILDIRIM_ANAHTAR)) { setAsama("bildirim"); }
+    const zamanlayici = window.setTimeout(() => {
+      if (!kapatildiMi(HOSGELDIN_ANAHTAR)) { setAsama("hosgeldin"); return; }
+      if (!kapatildiMi(HATIRLATMA_ANAHTAR)) { setAsama("hatirlatma"); return; }
+      if (role === "veli" && !kapatildiMi(BILDIRIM_ANAHTAR)) { setAsama("bildirim"); }
+    }, 0);
+    return () => window.clearTimeout(zamanlayici);
   }, [role]);
 
   if (role !== "veli" && role !== "ogrenci") return null;
@@ -66,13 +70,8 @@ export function HosgeldinPopuplari({ role }: { role: UserRole }) {
   const cumle2 = "Faydalı olması dileğiyle...";
 
   return (
-    <div className="fixed inset-0 z-[400] flex items-center justify-center px-4" style={{ background: "rgba(0,0,0,0.55)" }}>
-      <div className="sgec-fade rounded-3xl p-6 max-w-sm w-full relative" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-        <button type="button" onClick={() => sonrakiyeGec(false)}
-          className="sgec-btn absolute top-3 right-3 w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.06)" }}>
-          <X size={13} color={TEXT_MUTED} />
-        </button>
-
+    <MaskotKonusmaBalonu onKapat={() => sonrakiyeGec(false)} ariaLabel="Giriş bilgilendirmesi">
+      <div className="pt-1">
         {asama === "hosgeldin" && (
           <>
             <div className="w-10 h-10 rounded-full flex items-center justify-center mb-3" style={{ background: "rgba(255,159,180,0.15)" }}>
@@ -112,7 +111,7 @@ export function HosgeldinPopuplari({ role }: { role: UserRole }) {
           </div>
         )}
       </div>
-    </div>
+    </MaskotKonusmaBalonu>
   );
 }
 

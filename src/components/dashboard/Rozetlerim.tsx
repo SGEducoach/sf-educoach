@@ -29,22 +29,23 @@ export interface RozetDurum {
 
 function RozetKurallariModal({ onKapat }: { onKapat: () => void }) {
   return (
-    <div className="fixed inset-0 z-[400] flex items-center justify-center px-4 py-8"
+    <div className="fixed inset-0 z-[400] flex items-start justify-center px-3 py-4 sm:items-center sm:px-4 sm:py-8"
       style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" }}
       onClick={onKapat}>
-      <div className="sgec-fade w-full max-w-sm rounded-3xl p-6 flex flex-col gap-4 relative"
-        style={{ background: BG1, border: `2px solid ${BORDER}`, maxHeight: "85vh", overflowY: "auto" }}
+      <div className="sgec-fade relative flex w-full max-w-sm flex-col overflow-hidden rounded-3xl"
+        style={{ background: BG1, border: `2px solid ${BORDER}`, maxHeight: "calc(100dvh - 2rem)" }}
         onClick={(e) => e.stopPropagation()}>
         <button type="button" onClick={onKapat}
           className="sgec-btn absolute top-4 right-4 w-7 h-7 rounded-full flex items-center justify-center"
           style={{ background: "rgba(255,255,255,0.06)" }}>
           <X size={13} color={TEXT_MUTED} />
         </button>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2 px-5 pb-3 pt-5 pr-14">
           <BookText size={16} color={MINT} />
           <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold">Rozet kuralları</span>
         </div>
 
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain px-5 pb-3">
         <div className="rounded-2xl p-3.5" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
           <div style={{ color: MINT }} className="text-xs font-bold mb-1">📖 Konu Çalışma</div>
           <p style={{ color: TEXT_MUTED }} className="text-xs leading-relaxed">
@@ -76,11 +77,14 @@ function RozetKurallariModal({ onKapat }: { onKapat: () => void }) {
         <p style={{ color: TEXT_MUTED }} className="text-[10px] leading-relaxed italic">
           Not: Rozetler kalıcı değil — düzenli girişi kesersen seviye düşebilir/sıfırlanabilir.
         </p>
+        </div>
 
-        <button type="button" onClick={onKapat}
-          className="sgec-btn text-sm font-bold py-2.5 rounded-xl" style={{ background: MINT, color: MINT_ON }}>
-          Anladım
-        </button>
+        <div className="shrink-0 px-5 pb-5 pt-2" style={{ background: BG1, borderTop: `1px solid ${BORDER}` }}>
+          <button type="button" onClick={onKapat}
+            className="sgec-btn w-full rounded-xl py-2.5 text-sm font-bold" style={{ background: MINT, color: MINT_ON }}>
+            Anladım
+          </button>
+        </div>
       </div>
     </div>
   );
