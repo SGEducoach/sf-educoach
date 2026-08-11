@@ -8,6 +8,7 @@ import { telefonGecerliMi, okulNoGecerliMi, rastgeleSifre, adNormalize } from "@
 import { duyuruGonder as duyuruGonderTemel } from "@/lib/push-send";
 import type { DuyuruAliciTuru } from "@/lib/push-send";
 import { DUYURU_MIN_UZUNLUK, duyuruGonderimIzniKontrol } from "@/lib/duyuru-guvenligi";
+import type { SinifSeviyesi } from "@/lib/types";
 
 const DUYURU_MAKS_UZUNLUK = 500;
 
@@ -55,8 +56,9 @@ async function auditLogYaz(
   if (error) console.error("audit log yazılamadı:", error.message);
 }
 
-export async function sinifEkle(schoolId: string, seviye: "11" | "12", sube: string) {
+export async function sinifEkle(schoolId: string, seviye: SinifSeviyesi, sube: string) {
   const { supabase, user } = await requireUser();
+  if (!["9", "10", "11", "12"].includes(seviye)) return { error: "Geçersiz sınıf seviyesi." };
   const subeBuyuk = sube.trim().toUpperCase();
   const { error } = await supabase.from("classes").insert({
     school_id: schoolId, seviye, sube: subeBuyuk,
@@ -310,7 +312,7 @@ export async function ogretmenDuyuruGonder(mesaj: string, kapsam?: string, alici
   let baslik: string;
 
   if (profile.role === "mudur") {
-    if (kapsam === "11" || kapsam === "12") {
+    if (["9", "10", "11", "12"].includes(kapsam ?? "")) {
       const { data: ogrenciler } = await admin
         .from("students").select("id, classes!inner(seviye)")
         .eq("school_id", teacher.school_id).eq("classes.seviye", kapsam);

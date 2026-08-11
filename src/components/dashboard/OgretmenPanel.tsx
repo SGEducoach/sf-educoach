@@ -6,7 +6,7 @@ import { UserPlus, Check, Users, Eye, Plus } from "lucide-react";
 import { BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, SKY, SKY_BG, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 import { veliTalepOnayla, sinifEkle, ogretmenDuyuruGonder } from "@/app/dashboard/actions";
 import { DuyuruFormu } from "@/components/dashboard/DuyuruFormu";
-import type { VeliLinkRequest } from "@/lib/types";
+import type { SinifSeviyesi, VeliLinkRequest } from "@/lib/types";
 
 interface OgrenciSatiri {
   id: string;
@@ -60,6 +60,8 @@ export function OgretmenPanel({
   const duyuruKapsamSecenekleri = role === "mudur"
     ? [
         { deger: "okul", etiket: "Tüm okul" },
+        { deger: "9", etiket: "9. Sınıflar" },
+        { deger: "10", etiket: "10. Sınıflar" },
         { deger: "11", etiket: "11. Sınıflar" },
         { deger: "12", etiket: "12. Sınıflar" },
         ...siniflar.map((s) => ({ deger: s.id, etiket: `Sadece ${s.seviye}-${s.sube}` })),
@@ -174,7 +176,7 @@ export function OgretmenPanel({
 }
 
 export function SinifEkleFormu({ schoolId }: { schoolId: string }) {
-  const [seviye, setSeviye] = useState<"11" | "12">("11");
+  const [seviye, setSeviye] = useState<SinifSeviyesi>("9");
   const [sube, setSube] = useState("");
   const [hata, setHata] = useState<string | null>(null);
   const [basari, setBasari] = useState<string | null>(null);
@@ -199,8 +201,10 @@ export function SinifEkleFormu({ schoolId }: { schoolId: string }) {
     <form onSubmit={ekle} className="flex flex-wrap items-end gap-2.5">
       <label className="flex flex-col gap-1">
         <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Seviye</span>
-        <select value={seviye} onChange={(e) => setSeviye(e.target.value as "11" | "12")}
+        <select value={seviye} onChange={(e) => setSeviye(e.target.value as SinifSeviyesi)}
           className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
+          <option value="9">9</option>
+          <option value="10">10</option>
           <option value="11">11</option>
           <option value="12">12</option>
         </select>

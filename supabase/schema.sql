@@ -46,7 +46,7 @@ create table public.schools (
 create table public.classes (
   id uuid primary key default gen_random_uuid(),
   school_id uuid not null references public.schools(id) on delete cascade,
-  seviye text not null check (seviye in ('11', '12')),
+  seviye text not null check (seviye in ('9', '10', '11', '12')),
   sube text not null,
   created_at timestamptz not null default now(),
   unique (school_id, seviye, sube)

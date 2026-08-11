@@ -7,6 +7,7 @@ export type HedefeYakinlik = "yakin" | "belirsiz" | "uzak";
 export type VerimlilikDuzeyi = "cok_dusuk" | "dusuk" | "orta" | "iyi" | "cok_iyi";
 export type DenemeTuru = "TYT" | "AYT";
 export type DenemeZorlugu = "kolay" | "orta" | "zor";
+export type SinifSeviyesi = "9" | "10" | "11" | "12";
 
 export interface Profile {
   id: string;
@@ -28,7 +29,7 @@ export interface School {
 export interface SchoolClass {
   id: string;
   school_id: string;
-  seviye: "11" | "12";
+  seviye: SinifSeviyesi;
   sube: string;
   created_at: string;
 }
