@@ -8,7 +8,7 @@ language sql
 immutable
 set search_path = public
 as $$
-  select trim(regexp_replace(translate(lower(coalesce(p_ad, '')), 'ı', 'i'), '\s+', ' ', 'g'));
+  select trim(regexp_replace(translate(lower(coalesce(p_ad, '')), 'ı̇', 'i'), '\s+', ' ', 'g'));
 $$;
 
 create or replace function public.ad_baslik(p_ad text)
