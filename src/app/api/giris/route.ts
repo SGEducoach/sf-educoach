@@ -7,7 +7,7 @@ const PENCERE_MS = 15 * 60 * 1000;
 const ENGEL_MS = 15 * 60 * 1000;
 const MAKS_HATA = 5;
 
-type GirisRolu = "ogrenci" | "ogretmen" | "veli" | "mudur";
+type GirisRolu = "ogrenci" | "ogretmen" | "veli" | "mudur" | "admin";
 interface GirisGovdesi { role?: GirisRolu; schoolId?: string; okulNo?: string; kod?: string; email?: string; password?: string }
 
 function istemciIp(request: NextRequest) {
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
   try { body = await request.json(); }
   catch { return NextResponse.json({ error: "Geçersiz giriş isteği." }, { status: 400 }); }
 
-  if (!body.role || !["ogrenci", "ogretmen", "veli", "mudur"].includes(body.role) || !body.password) {
+  if (!body.role || !["ogrenci", "ogretmen", "veli", "mudur", "admin"].includes(body.role) || !body.password) {
     return NextResponse.json({ error: "Giriş bilgileri eksik." }, { status: 400 });
   }
 
@@ -55,9 +55,18 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = await createClient();
-  const { error } = girisEmail
+  let { error } = girisEmail
     ? await supabase.auth.signInWithPassword({ email: girisEmail, password: body.password })
     : { error: new Error("Invalid login credentials") };
+
+  if (!error && body.role === "admin") {
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data: profile } = user ? await admin.from("profiles").select("role").eq("id", user.id).maybeSingle() : { data: null };
+    if (profile?.role !== "admin") {
+      await supabase.auth.signOut();
+      error = new Error("Invalid login credentials");
+    }
+  }
 
   if (error) {
     const simdi = Date.now();

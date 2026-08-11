@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { createClient } from "@/lib/supabase/client";
 import { BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 import { YukleniyorOverlay } from "@/components/YukleniyorOverlay";
 
@@ -14,7 +13,6 @@ import { YukleniyorOverlay } from "@/components/YukleniyorOverlay";
 // hiçbir şekilde dışarı sızmaz.
 export function YoneticiGirisForm() {
   const router = useRouter();
-  const supabase = createClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [hata, setHata] = useState<string | null>(null);
@@ -25,21 +23,15 @@ export function YoneticiGirisForm() {
     setHata(null);
     setYukleniyor(true);
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: email.trim().toLowerCase(),
-      password,
+    const response = await fetch("/api/giris", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role: "admin", email: email.trim().toLowerCase(), password }),
     });
-    if (error || !data.user) {
+    const sonuc = await response.json() as { error?: string };
+    if (!response.ok) {
       setYukleniyor(false);
-      setHata("Giriş bilgileri hatalı.");
-      return;
-    }
-
-    const { data: profile } = await supabase.from("profiles").select("role").eq("id", data.user.id).single();
-    if (profile?.role !== "admin") {
-      await supabase.auth.signOut();
-      setYukleniyor(false);
-      setHata("Giriş bilgileri hatalı.");
+      setHata(sonuc.error ?? "Giriş bilgileri hatalı.");
       return;
     }
 
