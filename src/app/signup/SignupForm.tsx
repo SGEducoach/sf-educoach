@@ -7,7 +7,7 @@ import Image from "next/image";
 import { GraduationCap, BookOpen, Users, ChevronLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { AytAlan, School, SchoolClass, UserRole } from "@/lib/types";
-import { AYT_ALAN_ETIKET, BRANS_LISTESI } from "@/lib/types";
+import { AYT_ALAN_ETIKET, BRANS_LISTESI, dokuzOnSinifMi } from "@/lib/types";
 import {
   BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH,
 } from "@/lib/theme";
@@ -179,6 +179,11 @@ function OgrenciKayit({ schools, classes, router, supabase }: {
   const [oturumVar, setOturumVar] = useState(false);
 
   const sinifOptions = classes.filter((c) => c.school_id === schoolId);
+  // 9-10. sınıfta TYT/AYT sorulmuyor — Branş Denemesi modeli kullanılıyor
+  // (bkz. 9_10_sinif_ekleme_senaryosu.pdf). ayt_alan sütunu yine de NOT
+  // NULL olduğu için varsayılan "SAY" sessizce gönderiliyor, öğrenciye
+  // hiçbir yerde gösterilmiyor.
+  const dokuzOnMu = dokuzOnSinifMi(sinifOptions.find((c) => c.id === classId)?.seviye);
   const adim1Tamam = ad && okulNo && email && telefon && schoolId && classId && hedefBolum;
 
   function ileri(e: React.FormEvent) {
@@ -286,14 +291,22 @@ function OgrenciKayit({ schools, classes, router, supabase }: {
           {sinifOptions.map((c) => <option key={c.id} value={c.id}>{c.seviye}-{c.sube}</option>)}
         </Secim>
       </label>
-      <div className="rounded-xl px-3 py-2 text-[12px] font-semibold" style={{ background: MINT_BG, color: MINT }}>
-        TYT: Zorunlu (otomatik dahil)
-      </div>
-      <label className="flex flex-col gap-1"><Etiket>AYT Alanı</Etiket>
-        <Secim required value={aytAlan} onChange={(e) => setAytAlan(e.target.value as AytAlan)}>
-          {(Object.entries(AYT_ALAN_ETIKET) as [AytAlan, string][]).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-        </Secim>
-      </label>
+      {dokuzOnMu ? (
+        <div className="rounded-xl px-3 py-2 text-[12px] font-semibold" style={{ background: MINT_BG, color: MINT }}>
+          Sınav türü: Branş Denemesi (9-10. sınıf)
+        </div>
+      ) : (
+        <>
+          <div className="rounded-xl px-3 py-2 text-[12px] font-semibold" style={{ background: MINT_BG, color: MINT }}>
+            TYT: Zorunlu (otomatik dahil)
+          </div>
+          <label className="flex flex-col gap-1"><Etiket>AYT Alanı</Etiket>
+            <Secim required value={aytAlan} onChange={(e) => setAytAlan(e.target.value as AytAlan)}>
+              {(Object.entries(AYT_ALAN_ETIKET) as [AytAlan, string][]).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            </Secim>
+          </label>
+        </>
+      )}
       <label className="flex flex-col gap-1"><Etiket>Hedef Bölüm</Etiket><Girdi required value={hedefBolum} onChange={(e) => setHedefBolum(e.target.value)} /></label>
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
       <button type="submit" className="sgec-btn text-sm font-bold py-2.5 rounded-xl" style={{ background: MINT, color: MINT_ON }}>Devam et</button>

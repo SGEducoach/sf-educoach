@@ -5,9 +5,19 @@ export type VeriGirisSikligi = "gunluk" | "3gunluk" | "haftalik";
 export type VeliTalepDurum = "bekliyor" | "onaylandi" | "reddedildi" | "kullanildi";
 export type HedefeYakinlik = "yakin" | "belirsiz" | "uzak";
 export type VerimlilikDuzeyi = "cok_dusuk" | "dusuk" | "orta" | "iyi" | "cok_iyi";
-export type DenemeTuru = "TYT" | "AYT";
+// BRANS = Branş Denemesi — 9 ve 10. sınıf öğrencilerinde TYT/AYT yerine
+// kullanılıyor (bkz. 9_10_sinif_ekleme_senaryosu.pdf, "Ürün kararı").
+export type DenemeTuru = "TYT" | "AYT" | "BRANS";
 export type DenemeZorlugu = "kolay" | "orta" | "zor";
 export type SinifSeviyesi = "9" | "10" | "11" | "12";
+
+// 9 ve 10. sınıflarda TYT/AYT alan ayrımı yok — Branş Denemesi modeli
+// kullanılıyor (bkz. 9_10_sinif_ekleme_senaryosu.pdf). Sınıf seçilince
+// TYT/AYT/AYT-alan soruları hiç sorulmuyor; deneme, öğretmen toplu girişi
+// ve öğrenci kayıt formları bu fonksiyonla moda karar veriyor.
+export function dokuzOnSinifMi(seviye: string | null | undefined): boolean {
+  return seviye === "9" || seviye === "10";
+}
 
 export interface Profile {
   id: string;
@@ -158,8 +168,20 @@ const AYT_SORU_SAYISI: Record<string, number> = {
   "Felsefe Grubu": 12, "Din Kültürü": 6,
 };
 
+// 9-10. sınıf Branş Denemesi — örnek PDF'lerden çıkarılan dağılım (120 soru,
+// 4 ana branş, her biri 30 soru). Sosyal Bilimler ve Fen Bilimleri kendi
+// alt derslerine (Tarih/Coğrafya/Din Kültürü/Felsefe, Fizik/Kimya/Biyoloji)
+// yalnızca konu çalışma ve soru çözümü menülerinde ayrılır — deneme
+// girişinde tek bir branş skoru olarak kaydedilir (bkz. TYT_DERSLERI, bu
+// alt dersleri zaten içeriyor).
+export const BRANS_DENEMESI_DERSLERI = ["Türk Dili ve Edebiyatı", "Sosyal Bilimler", "Matematik", "Fen Bilimleri"] as const;
+const BRANS_SORU_SAYISI: Record<string, number> = {
+  "Türk Dili ve Edebiyatı": 30, "Sosyal Bilimler": 30, "Matematik": 30, "Fen Bilimleri": 30,
+};
+
 export function dersSoruSayisi(tur: DenemeTuru, ders: string): number | undefined {
-  return (tur === "TYT" ? TYT_SORU_SAYISI : AYT_SORU_SAYISI)[ders];
+  const kaynak = tur === "TYT" ? TYT_SORU_SAYISI : tur === "AYT" ? AYT_SORU_SAYISI : BRANS_SORU_SAYISI;
+  return kaynak[ders];
 }
 
 export function netHesapla(dogru: number, yanlis: number): number {

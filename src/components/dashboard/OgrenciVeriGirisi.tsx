@@ -6,8 +6,8 @@ import type {
   AytAlan, DenemeTuru, DenemeZorlugu, HedefeYakinlik, VerimlilikDuzeyi,
 } from "@/lib/types";
 import {
-  TYT_DERSLERI, AYT_DERSLERI, VERIMLILIK_ETIKET, netHesapla, dersSoruSayisi,
-  SURE_UST_SINIR, DENEME_SURE_UST_SINIR, KATEGORI_GERIYE_DONUK_SINIR,
+  TYT_DERSLERI, AYT_DERSLERI, BRANS_DENEMESI_DERSLERI, VERIMLILIK_ETIKET, netHesapla, dersSoruSayisi,
+  SURE_UST_SINIR, DENEME_SURE_UST_SINIR, KATEGORI_GERIYE_DONUK_SINIR, dokuzOnSinifMi,
 } from "@/lib/types";
 import {
   BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, SKY, SKY_BG, TEXT, TEXT_MUTED, BLUSH,
@@ -93,15 +93,23 @@ function SecenekSecici<T extends string>({ baslik, secenekler, value, onChange }
   );
 }
 
-export function OgrenciVeriGirisi({ aytAlan, konuOnerileri }: {
+export function OgrenciVeriGirisi({ aytAlan, konuOnerileri, sinifSeviyesi }: {
   aytAlan: AytAlan;
   konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
+  sinifSeviyesi?: string | null;
 }) {
   const [sekme, setSekme] = useState<Sekme>("konu");
   const [verimlilikSor, setVerimlilikSor] = useState(false);
   const [basari, setBasari] = useState<string | null>(null);
 
-  const dersListesi = [...TYT_DERSLERI, ...AYT_DERSLERI[aytAlan].filter((d) => !TYT_DERSLERI.includes(d as typeof TYT_DERSLERI[number]))];
+  const dokuzOnMu = dokuzOnSinifMi(sinifSeviyesi);
+  // 9-10. sınıfta AYT alanı ayrımı yok — TYT_DERSLERI zaten Fen/Sosyal'i
+  // kendi alt derslerine (Fizik/Kimya/Biyoloji, Tarih/Coğrafya/Din
+  // Kültürü/Felsefe) ayrılmış hâlde içeriyor, o yüzden ek bir liste
+  // tanımlamaya gerek yok (bkz. 9_10_sinif_ekleme_senaryosu.pdf).
+  const dersListesi = dokuzOnMu
+    ? [...TYT_DERSLERI]
+    : [...TYT_DERSLERI, ...AYT_DERSLERI[aytAlan].filter((d) => !TYT_DERSLERI.includes(d as typeof TYT_DERSLERI[number]))];
 
   function basariGoster(mesaj: string, sorulsunMu: boolean) {
     setBasari(mesaj);
@@ -138,7 +146,7 @@ export function OgrenciVeriGirisi({ aytAlan, konuOnerileri }: {
 
         {sekme === "konu" && <KonuCalismaForm dersListesi={dersListesi} konuOnerileri={konuOnerileri} onBasari={basariGoster} />}
         {sekme === "soru" && <SoruCozumuForm dersListesi={dersListesi} onBasari={basariGoster} />}
-        {sekme === "deneme" && <DenemeForm aytAlan={aytAlan} onBasari={basariGoster} />}
+        {sekme === "deneme" && <DenemeForm aytAlan={aytAlan} dokuzOnMu={dokuzOnMu} onBasari={basariGoster} />}
       </div>
 
       {verimlilikSor && <HaftalikVerimlilikModal onKapat={() => setVerimlilikSor(false)} />}
@@ -377,8 +385,14 @@ function SoruCozumuForm({ dersListesi, onBasari }: { dersListesi: string[]; onBa
   );
 }
 
-function DenemeForm({ aytAlan, onBasari }: { aytAlan: AytAlan; onBasari: (m: string, s: boolean) => void }) {
+// 9-10. sınıfta TYT/AYT hiç sorulmuyor: sınav türü sabit Branş Denemesi,
+// öğrenci dört ana branştan (Türk Dili ve Edebiyatı/Sosyal Bilimler/
+// Matematik/Fen Bilimleri) SADECE birini seçip o branşın tek sonucunu
+// girer (bkz. 9_10_sinif_ekleme_senaryosu.pdf 7.1 "Ürün kararı") — 11-12
+// TYT/AYT akışı (birden çok ders aynı anda) değişmeden kalıyor.
+function DenemeForm({ aytAlan, dokuzOnMu, onBasari }: { aytAlan: AytAlan; dokuzOnMu: boolean; onBasari: (m: string, s: boolean) => void }) {
   const [tur, setTur] = useState<DenemeTuru>("TYT");
+  const [brans, setBrans] = useState<string>(BRANS_DENEMESI_DERSLERI[0]);
   const [sonuclar, setSonuclar] = useState<Record<string, { dogru: string; yanlis: string }>>({});
   const [sureDakika, setSureDakika] = useState("");
   const [hedefeYakinlik, setHedefeYakinlik] = useState<HedefeYakinlik>("belirsiz");
@@ -387,13 +401,14 @@ function DenemeForm({ aytAlan, onBasari }: { aytAlan: AytAlan; onBasari: (m: str
   const [hata, setHata] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const dersler = tur === "TYT" ? TYT_DERSLERI : AYT_DERSLERI[aytAlan];
+  const efektifTur: DenemeTuru = dokuzOnMu ? "BRANS" : tur;
+  const dersler = dokuzOnMu ? [brans] : (tur === "TYT" ? TYT_DERSLERI : AYT_DERSLERI[aytAlan]);
 
-  // Doğru+yanlış toplamı, dersin sınavdaki resmi soru sayısını aşamaz —
-  // eksik girilirse kalanı cevaplanmamış (boş) sayılır, bu zaten net
+  // Doğru+yanlış toplamı, dersin sınavdaki resmi/branş soru sayısını aşamaz
+  // — eksik girilirse kalanı cevaplanmamış (boş) sayılır, bu zaten net
   // hesabını etkilemiyor.
   function alanGuncelle(ders: string, alan: "dogru" | "yanlis", deger: string) {
-    const maks = dersSoruSayisi(tur, ders);
+    const maks = dersSoruSayisi(efektifTur, ders);
     setSonuclar((s) => {
       const mevcutDiger = Number(s[ders]?.[alan === "dogru" ? "yanlis" : "dogru"] ?? "0");
       let sayi = deger === "" ? 0 : Number(deger);
@@ -420,10 +435,10 @@ function DenemeForm({ aytAlan, onBasari }: { aytAlan: AytAlan; onBasari: (m: str
       yanlis: Number(sonuclar[d]?.yanlis ?? 0),
     }));
     startTransition(async () => {
-      const res = await denemeEkle(tur, Number(sureDakika), hedefeYakinlik, zorluk, dersSonuclari, tarih);
+      const res = await denemeEkle(efektifTur, Number(sureDakika), hedefeYakinlik, zorluk, dersSonuclari, tarih);
       if (res.error) setHata(res.error);
       else {
-        onBasari(`${tur} denemesi kaydedildi.`, res.verimlilikSorulsunMu);
+        onBasari(dokuzOnMu ? `${brans} Branş Denemesi kaydedildi.` : `${tur} denemesi kaydedildi.`, res.verimlilikSorulsunMu);
         setSonuclar({});
         setSureDakika("");
         setTarih(bugununTarihi());
@@ -435,21 +450,29 @@ function DenemeForm({ aytAlan, onBasari }: { aytAlan: AytAlan; onBasari: (m: str
     <form onSubmit={submit} className="flex flex-col gap-3">
       <GecmisTarihSecici tarih={tarih} setTarih={setTarih} geriyeMaksGun={KATEGORI_GERIYE_DONUK_SINIR.deneme} />
       <div className="grid grid-cols-2 gap-3">
-        <label className="flex flex-col gap-1"><Etiket>Deneme türü</Etiket>
-          <Secim value={tur} onChange={(e) => { setTur(e.target.value as DenemeTuru); setSonuclar({}); }}>
-            <option value="TYT">TYT</option>
-            <option value="AYT">AYT ({aytAlan})</option>
-          </Secim>
-        </label>
+        {dokuzOnMu ? (
+          <label className="flex flex-col gap-1"><Etiket>Branş</Etiket>
+            <Secim value={brans} onChange={(e) => { setBrans(e.target.value); setSonuclar({}); }}>
+              {BRANS_DENEMESI_DERSLERI.map((b) => <option key={b} value={b}>{b}</option>)}
+            </Secim>
+          </label>
+        ) : (
+          <label className="flex flex-col gap-1"><Etiket>Deneme türü</Etiket>
+            <Secim value={tur} onChange={(e) => { setTur(e.target.value as DenemeTuru); setSonuclar({}); }}>
+              <option value="TYT">TYT</option>
+              <option value="AYT">AYT ({aytAlan})</option>
+            </Secim>
+          </label>
+        )}
         <label className="flex flex-col gap-1"><Etiket>Süre (dakika)</Etiket>
           <Girdi type="number" min={1} max={DENEME_SURE_UST_SINIR} required value={sureDakika} onChange={(e) => setSureDakika(e.target.value)} />
         </label>
       </div>
 
       <div className="rounded-2xl p-3 flex flex-col gap-2" style={{ background: BG1_ALT, border: `2px solid ${BORDER}` }}>
-        <Etiket>Ders bazlı sonuçlar</Etiket>
+        <Etiket>{dokuzOnMu ? "Branş sonucu" : "Ders bazlı sonuçlar"}</Etiket>
         {dersler.map((d) => {
-          const maks = dersSoruSayisi(tur, d);
+          const maks = dersSoruSayisi(efektifTur, d);
           return (
             <div key={d} className="grid grid-cols-[1fr_auto_auto] gap-2 items-center">
               <span style={{ color: TEXT }} className="text-xs font-semibold">{d} {maks !== undefined && <span style={{ color: TEXT_MUTED }} className="font-normal">(max {maks})</span>}</span>

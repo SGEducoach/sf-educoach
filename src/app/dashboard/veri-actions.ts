@@ -8,8 +8,8 @@ import { getAnthropicClient } from "@/lib/anthropic";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
 import { KONU_ANLATIMI_SISTEM_PROMPTU, icerikTemizle } from "@/lib/konu-anlatimi";
 import { pushGonderProfile } from "@/lib/push-send";
-import { SURE_UST_SINIR, DENEME_SURE_UST_SINIR, KATEGORI_GERIYE_DONUK_SINIR } from "@/lib/types";
-import type { DenemeZorlugu, HedefeYakinlik, VerimlilikDuzeyi } from "@/lib/types";
+import { SURE_UST_SINIR, DENEME_SURE_UST_SINIR, KATEGORI_GERIYE_DONUK_SINIR, dersSoruSayisi } from "@/lib/types";
+import type { DenemeTuru, DenemeZorlugu, HedefeYakinlik, VerimlilikDuzeyi } from "@/lib/types";
 
 const SEVIYE_ETIKET: Record<string, string> = { bronz: "Bronz 🥉", gumus: "Gümüş 🥈", altin: "Altın 🥇" };
 const KATEGORI_ETIKET: Record<string, string> = { konu: "Konu Çalışma", soru: "Soru Çözümü", deneme: "Deneme" };
@@ -207,7 +207,7 @@ export async function soruCozumuEkle(formData: FormData) {
 }
 
 export async function denemeEkle(
-  tur: "TYT" | "AYT",
+  tur: DenemeTuru,
   sureDakika: number,
   hedefeYakinlik: HedefeYakinlik,
   zorluk: DenemeZorlugu,
@@ -223,6 +223,16 @@ export async function denemeEkle(
   if (tarihHatasi) return { error: tarihHatasi, verimlilikSorulsunMu: false };
   if (sureDakika > DENEME_SURE_UST_SINIR) {
     return { error: `Süre en fazla ${DENEME_SURE_UST_SINIR} dakika olabilir.`, verimlilikSorulsunMu: false };
+  }
+  // Ders başına resmî/branş soru sayısı üst sınırı sunucu tarafında da
+  // doğrulanıyor (bkz. 9_10_sinif_ekleme_senaryosu.pdf 7.5 — Branş Denemesi
+  // sınırlarının sunucuda doğrulanması istendi; TYT/AYT için de aynı kontrol
+  // ücretsiz bir ek güvence).
+  for (const d of dersSonuclari) {
+    const maksSoru = dersSoruSayisi(tur, d.ders);
+    if (maksSoru !== undefined && d.dogru + d.yanlis > maksSoru) {
+      return { error: `${d.ders} için doğru+yanlış toplamı ${maksSoru} soruyu aşamaz.`, verimlilikSorulsunMu: false };
+    }
   }
 
   // Okul bu tarih+tür için sonuçları zaten toplu girdiyse (kaynak='ogretmen'),

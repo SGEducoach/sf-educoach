@@ -15,7 +15,7 @@ import {
 import { SinifEkleFormu } from "@/components/dashboard/OgretmenPanel";
 import { DuyuruFormu } from "@/components/dashboard/DuyuruFormu";
 import { IzinliOgrenciListesi } from "@/components/yonetici/IzinliOgrenciListesi";
-import { AYT_ALAN_ETIKET, BRANS_LISTESI, TYT_DERSLERI, AYT_DERSLERI, DENEME_ZORLUGU_ETIKET, dersSoruSayisi } from "@/lib/types";
+import { AYT_ALAN_ETIKET, BRANS_LISTESI, TYT_DERSLERI, AYT_DERSLERI, BRANS_DENEMESI_DERSLERI, DENEME_ZORLUGU_ETIKET, dersSoruSayisi, dokuzOnSinifMi } from "@/lib/types";
 import type { AytAlan, DenemeTuru, DenemeZorlugu } from "@/lib/types";
 import { telefonSanitize, okulNoSanitize, TELEFON_IPUCU } from "@/lib/validators";
 import { ogrenciKaydiEslestir } from "@/lib/ogrenci-eslestirme";
@@ -445,6 +445,10 @@ function OgrenciEkleFormu({ schoolId, siniflar }: { schoolId: string; siniflar: 
   const [hata, setHata] = useState<string | null>(null);
   const [sonuc, setSonuc] = useState<{ email: string; sifre: string } | null>(null);
   const [pending, startTransition] = useTransition();
+  // 9-10. sınıfta AYT alanı sorulmuyor — Branş Denemesi modeli kullanılıyor
+  // (bkz. dashboard/OgrenciVeriGirisi). Sunucuya yine bir değer gitmesi
+  // gerektiği için (ayt_alan NOT NULL) varsayılan "SAY" sessizce gönderiliyor.
+  const dokuzOnMu = dokuzOnSinifMi(siniflar.find((s) => s.id === classId)?.seviye);
 
   function ekle(e: React.FormEvent) {
     e.preventDefault();
@@ -481,10 +485,12 @@ function OgrenciEkleFormu({ schoolId, siniflar }: { schoolId: string; siniflar: 
           <option value="">Sınıf seçin</option>
           {siniflar.map((s) => <option key={s.id} value={s.id}>{s.seviye}-{s.sube}</option>)}
         </select>
-        <select value={aytAlan} onChange={(e) => setAytAlan(e.target.value as AytAlan)}
-          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
-          {(Object.keys(AYT_ALAN_ETIKET) as AytAlan[]).map((a) => <option key={a} value={a}>{AYT_ALAN_ETIKET[a]}</option>)}
-        </select>
+        {!dokuzOnMu && (
+          <select value={aytAlan} onChange={(e) => setAytAlan(e.target.value as AytAlan)}
+            className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+            {(Object.keys(AYT_ALAN_ETIKET) as AytAlan[]).map((a) => <option key={a} value={a}>{AYT_ALAN_ETIKET[a]}</option>)}
+          </select>
+        )}
         <input value={hedefBolum} onChange={(e) => setHedefBolum(e.target.value)} placeholder="Hedef bölüm (ops.)"
           className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
         {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
@@ -556,6 +562,7 @@ function OgrenciTopluEkleFormu({ schoolId, siniflar }: { schoolId: string; sinif
   const satirlar = metin.split("\n").map((s) => s.trim()).filter(Boolean).map(satirAyristir);
   const gecerliSatirlar = satirlar.filter((s): s is { ad: string; okulNo: string } => s !== null);
   const hatalıSayisi = satirlar.length - gecerliSatirlar.length;
+  const dokuzOnMu = dokuzOnSinifMi(siniflar.find((s) => s.id === classId)?.seviye);
 
   function ekle() {
     setHata(null);
@@ -593,10 +600,12 @@ function OgrenciTopluEkleFormu({ schoolId, siniflar }: { schoolId: string; sinif
           <option value="">Sınıf seçin</option>
           {siniflar.map((s) => <option key={s.id} value={s.id}>{s.seviye}-{s.sube}</option>)}
         </select>
-        <select value={aytAlan} onChange={(e) => setAytAlan(e.target.value as AytAlan)}
-          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
-          {(Object.keys(AYT_ALAN_ETIKET) as AytAlan[]).map((a) => <option key={a} value={a}>{AYT_ALAN_ETIKET[a]}</option>)}
-        </select>
+        {!dokuzOnMu && (
+          <select value={aytAlan} onChange={(e) => setAytAlan(e.target.value as AytAlan)}
+            className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+            {(Object.keys(AYT_ALAN_ETIKET) as AytAlan[]).map((a) => <option key={a} value={a}>{AYT_ALAN_ETIKET[a]}</option>)}
+          </select>
+        )}
       </div>
 
       <textarea value={metin} onChange={(e) => setMetin(e.target.value)} rows={6} placeholder={"Ahmet Yılmaz, 1234\nAyşe Kaya, 1235"}
@@ -667,7 +676,14 @@ function DenemeTopluGirisFormu({ siniflar }: { siniflar: SinifSatiri[] }) {
   const [bildirimSonuclari, setBildirimSonuclari] = useState<DenemeBildirimSonucu[] | null>(null);
   const [bildirimPending, startBildirimTransition] = useTransition();
 
-  const dersListesi = tur === "TYT" ? TYT_DERSLERI : AYT_DERSLERI[aytAlan];
+  // 9-10. sınıfta TYT/AYT hiç sorulmuyor: seçilen sınıfın seviyesine göre
+  // form otomatik Branş Denemesi moduna geçiyor (bkz. dashboard/OgrenciVeriGirisi
+  // aynı mantık öğrenci tarafında da uygulanıyor).
+  const seciliSinif = siniflar.find((s) => s.id === classId);
+  const dokuzOnMu = dokuzOnSinifMi(seciliSinif?.seviye);
+  const efektifTur: DenemeTuru = dokuzOnMu ? "BRANS" : tur;
+
+  const dersListesi = dokuzOnMu ? [...BRANS_DENEMESI_DERSLERI] : (tur === "TYT" ? TYT_DERSLERI : AYT_DERSLERI[aytAlan]);
   const [ders, setDers] = useState<string>(dersListesi[0]);
   const dersListesiKey = dersListesi.join("|");
 
@@ -677,6 +693,8 @@ function DenemeTopluGirisFormu({ siniflar }: { siniflar: SinifSatiri[] }) {
     setGirisler({});
     setSonuclar(null);
     setEslestirmeRaporu(null);
+    const yeniSinif = siniflar.find((s) => s.id === id);
+    setDers(dokuzOnSinifMi(yeniSinif?.seviye) ? BRANS_DENEMESI_DERSLERI[0] : TYT_DERSLERI[0]);
     if (!id) return;
     sinifOgrencileriGetir(id).then((res) => {
       if (res.error) return setHata(res.error);
@@ -695,8 +713,8 @@ function DenemeTopluGirisFormu({ siniflar }: { siniflar: SinifSatiri[] }) {
     if (tur === "AYT") setDers(AYT_DERSLERI[yeniAlan][0]);
   }
 
-  const filtrelenmisOgrenciler = (ogrenciler ?? []).filter((o) => tur === "TYT" || o.aytAlan === aytAlan);
-  const maxSoru = dersSoruSayisi(tur, ders);
+  const filtrelenmisOgrenciler = (ogrenciler ?? []).filter((o) => dokuzOnMu || tur === "TYT" || o.aytAlan === aytAlan);
+  const maxSoru = dersSoruSayisi(efektifTur, ders);
 
   function alanGuncelle(studentId: string, alan: "dogru" | "yanlis", deger: string) {
     setGirisler((g) => ({ ...g, [studentId]: { ...(g[studentId] ?? { dogru: "", yanlis: "" }), [alan]: deger } }));
@@ -742,7 +760,7 @@ function DenemeTopluGirisFormu({ siniflar }: { siniflar: SinifSatiri[] }) {
     if (girilenler.length === 0) return setHata("En az bir öğrenci için sonuç girin.");
     setHata(null);
     startTransition(async () => {
-      const res = await denemeSonucuTopluGir({ tarih, tur, zorluk, ders, sonuclar: girilenler });
+      const res = await denemeSonucuTopluGir({ tarih, tur: efektifTur, zorluk, ders, sonuclar: girilenler });
       if (res.error) return setHata(res.error);
       const adMap = new Map(filtrelenmisOgrenciler.map((o) => [o.id, o.ad]));
       setSonuclar(res.sonuclar.map((s) => ({ ad: adMap.get(s.studentId) ?? "—", hata: s.hata })));
@@ -758,7 +776,7 @@ function DenemeTopluGirisFormu({ siniflar }: { siniflar: SinifSatiri[] }) {
     if (!classId) return setBildirimHata("Sınıf seçin.");
     setBildirimHata(null);
     startBildirimTransition(async () => {
-      const res = await denemeBildirimGonder({ classId, tarih, tur, aytAlan: tur === "AYT" ? aytAlan : undefined });
+      const res = await denemeBildirimGonder({ classId, tarih, tur: efektifTur, aytAlan: !dokuzOnMu && tur === "AYT" ? aytAlan : undefined });
       if (res.error) return setBildirimHata(res.error);
       setBildirimSonuclari(res.sonuclar);
     });
@@ -790,16 +808,24 @@ function DenemeTopluGirisFormu({ siniflar }: { siniflar: SinifSatiri[] }) {
         </select>
         <input type="date" value={tarih} onChange={(e) => setTarih(e.target.value)}
           className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
-        <select value={tur} onChange={(e) => turDegistir(e.target.value as DenemeTuru)}
-          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
-          <option value="TYT">TYT</option>
-          <option value="AYT">AYT</option>
-        </select>
-        {tur === "AYT" && (
-          <select value={aytAlan} onChange={(e) => alanDegistir(e.target.value as AytAlan)}
-            className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
-            {(Object.keys(AYT_ALAN_ETIKET) as AytAlan[]).map((a) => <option key={a} value={a}>{AYT_ALAN_ETIKET[a]}</option>)}
-          </select>
+        {dokuzOnMu ? (
+          <span className="text-xs font-bold px-3 py-1.5 rounded-xl flex items-center" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT_MUTED }}>
+            Branş Denemesi
+          </span>
+        ) : (
+          <>
+            <select value={tur} onChange={(e) => turDegistir(e.target.value as DenemeTuru)}
+              className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+              <option value="TYT">TYT</option>
+              <option value="AYT">AYT</option>
+            </select>
+            {tur === "AYT" && (
+              <select value={aytAlan} onChange={(e) => alanDegistir(e.target.value as AytAlan)}
+                className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+                {(Object.keys(AYT_ALAN_ETIKET) as AytAlan[]).map((a) => <option key={a} value={a}>{AYT_ALAN_ETIKET[a]}</option>)}
+              </select>
+            )}
+          </>
         )}
         <select value={ders} onChange={(e) => setDers(e.target.value)} key={dersListesiKey}
           className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>

@@ -9,6 +9,7 @@ import { getAnthropicClient } from "@/lib/anthropic";
 import { KONU_ANLATIMI_SISTEM_PROMPTU, icerikTemizle } from "@/lib/konu-anlatimi";
 import { duyuruGonder, pushGonderProfile } from "@/lib/push-send";
 import { DUYURU_MIN_UZUNLUK, duyuruGonderimIzniKontrol } from "@/lib/duyuru-guvenligi";
+import { dersSoruSayisi } from "@/lib/types";
 import type { AytAlan, DenemeTuru, DenemeZorlugu, UserRole } from "@/lib/types";
 
 const DUYURU_MAKS_UZUNLUK = 500;
@@ -651,6 +652,13 @@ export async function denemeSonucuTopluGir(input: {
   if (!input.tarih) return { error: "Tarih gerekli.", sonuclar: [] };
   if (!input.ders) return { error: "Ders seçin.", sonuclar: [] };
   if (input.sonuclar.length === 0) return { error: "Girilecek öğrenci bulunamadı.", sonuclar: [] };
+
+  // 9_10_sinif_ekleme_senaryosu.pdf 7.5: Branş Denemesi soru sınırları
+  // sunucu tarafında da doğrulanmalı; TYT/AYT için de aynı kontrol geçerli.
+  const maksSoru = dersSoruSayisi(input.tur, input.ders);
+  if (maksSoru !== undefined && input.sonuclar.some((s) => s.dogru + s.yanlis > maksSoru)) {
+    return { error: `${input.ders} için doğru+yanlış toplamı ${maksSoru} soruyu aşamaz.`, sonuclar: [] };
+  }
 
   const sonuclar: DenemeTopluSonuc[] = [];
   let basariliSayisi = 0;
