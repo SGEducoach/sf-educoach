@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Trophy, BookOpen, PenLine, ClipboardList, BookText, X } from "lucide-react";
 import type { RozetSeviye } from "@/lib/types";
 import { ROZET_SEVIYE_ETIKET } from "@/lib/types";
@@ -28,7 +29,22 @@ export interface RozetDurum {
 }
 
 function RozetKurallariModal({ onKapat }: { onKapat: () => void }) {
-  return (
+  useEffect(() => {
+    const oncekiTasima = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const escapeIleKapat = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onKapat();
+    };
+    document.addEventListener("keydown", escapeIleKapat);
+
+    return () => {
+      document.body.style.overflow = oncekiTasima;
+      document.removeEventListener("keydown", escapeIleKapat);
+    };
+  }, [onKapat]);
+
+  return createPortal(
     <div className="fixed inset-0 z-[400] flex items-start justify-center px-3 pt-[max(12px,env(safe-area-inset-top))] pb-[max(12px,env(safe-area-inset-bottom))] sm:items-center sm:px-4 sm:py-8"
       style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" }}
       onClick={onKapat}>
@@ -86,7 +102,8 @@ function RozetKurallariModal({ onKapat }: { onKapat: () => void }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
