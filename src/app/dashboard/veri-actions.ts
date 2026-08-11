@@ -225,6 +225,24 @@ export async function denemeEkle(
     return { error: `Süre en fazla ${DENEME_SURE_UST_SINIR} dakika olabilir.`, verimlilikSorulsunMu: false };
   }
 
+  // Okul bu tarih+tür için sonuçları zaten toplu girdiyse (kaynak='ogretmen'),
+  // öğrencinin aynı denemeyi bir de kendisinin girip mükerrer/çelişkili kayıt
+  // oluşturması engelleniyor — istatistikler ve rozetler tek kaynaktan beslensin.
+  const { data: okulKaydi } = await supabase
+    .from("denemeler")
+    .select("id")
+    .eq("student_id", user.id)
+    .eq("tarih", tarih)
+    .eq("tur", tur)
+    .eq("kaynak", "ogretmen")
+    .maybeSingle();
+  if (okulKaydi) {
+    return {
+      error: `Bu tarihteki ${tur} denemenin sonucu okul tarafından sisteme yüklendi, tekrar giremezsin.`,
+      verimlilikSorulsunMu: false,
+    };
+  }
+
   const { data: deneme, error } = await supabase
     .from("denemeler")
     .insert({ student_id: user.id, tur, sure_dakika: sureDakika, hedefe_yakinlik: hedefeYakinlik, zorluk, kaynak: "ogrenci", tarih })

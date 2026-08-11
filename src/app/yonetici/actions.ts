@@ -7,7 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { rastgeleSifre, adNormalize, telefonGecerliMi, okulNoGecerliMi } from "@/lib/validators";
 import { getAnthropicClient } from "@/lib/anthropic";
 import { KONU_ANLATIMI_SISTEM_PROMPTU, icerikTemizle } from "@/lib/konu-anlatimi";
-import { duyuruGonder } from "@/lib/push-send";
+import { duyuruGonder, pushGonderProfile } from "@/lib/push-send";
 import { DUYURU_MIN_UZUNLUK, duyuruGonderimIzniKontrol } from "@/lib/duyuru-guvenligi";
 import type { AytAlan, DenemeTuru, DenemeZorlugu, UserRole } from "@/lib/types";
 
@@ -709,6 +709,129 @@ export async function denemeSonucuTopluGir(input: {
       tarih: input.tarih, tur: input.tur, ders: input.ders, basarili: basariliSayisi, toplam: input.sonuclar.length,
     });
     revalidatePath("/dashboard");
+  }
+
+  return { error: null, sonuclar };
+}
+
+// ============ Deneme sonucu bildirimleri ============
+// Bir sınıfın tüm dersleri toplu girildikten sonra admin bunu tek seferlik
+// tetikler: o tarih+tür için hiç sonucu girilmemiş öğrencinin velisine
+// uyarı, sonucu girilmiş öğrencinin velisine VE sınıf öğretmenine bilgi,
+// öğrencinin kendisine de ayrı bir bilgi mesajı gider. deneme_bildirimleri
+// tablosu aynı öğrenci+tarih+tür için durumu değişmeyene ikinci kez
+// bildirim gitmesini engelliyor (buton güvenle tekrar tıklanabilir) —
+// 'girilmedi' iken sonradan sonuç girilirse durum 'girildi'ye yükselip
+// yeniden bildirim gönderilir.
+
+async function bildirimGonderVeKaydet(
+  admin: ReturnType<typeof createAdminClient>,
+  profileId: string,
+  baslik: string,
+  govde: string,
+  gonderenId: string,
+) {
+  await pushGonderProfile(admin, profileId, baslik, govde);
+  const { data: duyuru } = await admin.from("duyurular").insert({ gonderen_id: gonderenId, baslik, mesaj: govde }).select("id").single();
+  if (duyuru) await admin.from("duyuru_aliciler").insert({ duyuru_id: duyuru.id, profile_id: profileId });
+}
+
+export interface DenemeBildirimSonucu {
+  ad: string;
+  durum: "girildi" | "girilmedi";
+  gonderildi: boolean;
+}
+
+export async function denemeBildirimGonder(input: {
+  classId: string; tarih: string; tur: DenemeTuru; aytAlan?: AytAlan;
+}): Promise<{ error: string | null; sonuclar: DenemeBildirimSonucu[] }> {
+  const { supabase, user, admin } = await requireAdmin();
+  if (!input.classId) return { error: "Sınıf seçin.", sonuclar: [] };
+  if (!input.tarih) return { error: "Tarih gerekli.", sonuclar: [] };
+
+  const { data: ogrencilerHam, error: ogrenciHata } = await admin
+    .from("students")
+    .select("id, ayt_alan, profiles!students_id_fkey(ad)")
+    .eq("class_id", input.classId);
+  if (ogrenciHata) return { error: ogrenciHata.message, sonuclar: [] };
+
+  type OgrenciRow = { id: string; ayt_alan: AytAlan; profiles: { ad: string } | null };
+  const ogrenciler = ((ogrencilerHam as unknown as OgrenciRow[]) ?? []).filter(
+    (o) => input.tur === "TYT" || o.ayt_alan === input.aytAlan,
+  );
+  if (ogrenciler.length === 0) return { error: "Bu sınıfta/alanda öğrenci yok.", sonuclar: [] };
+
+  const ogrenciIdleri = ogrenciler.map((o) => o.id);
+
+  const { data: denemelerHam } = await admin
+    .from("denemeler")
+    .select("id, student_id")
+    .in("student_id", ogrenciIdleri)
+    .eq("tarih", input.tarih)
+    .eq("tur", input.tur)
+    .eq("kaynak", "ogretmen");
+  const denemeIdMap = new Map((denemelerHam ?? []).map((d) => [d.student_id as string, d.id as string]));
+
+  const girildiSet = new Set<string>();
+  const denemeIdleri = [...denemeIdMap.values()];
+  if (denemeIdleri.length > 0) {
+    const { data: sonucHam } = await admin.from("deneme_ders_sonuclari").select("deneme_id").in("deneme_id", denemeIdleri);
+    const sonucluDenemeIdleri = new Set((sonucHam ?? []).map((s) => s.deneme_id as string));
+    for (const [studentId, denemeId] of denemeIdMap) {
+      if (sonucluDenemeIdleri.has(denemeId)) girildiSet.add(studentId);
+    }
+  }
+
+  const { data: mevcutBildirimlerHam } = await admin
+    .from("deneme_bildirimleri")
+    .select("student_id, durum")
+    .in("student_id", ogrenciIdleri)
+    .eq("tarih", input.tarih)
+    .eq("tur", input.tur);
+  const mevcutBildirimMap = new Map((mevcutBildirimlerHam ?? []).map((b) => [b.student_id as string, b.durum as string]));
+
+  // Sınıf öğretmeni(ler)i — normalde tek kişi, birden fazlaysa hepsine gider.
+  const { data: ogretmenlerHam } = await admin.from("teachers").select("id").eq("class_id", input.classId);
+  const ogretmenIdleri = (ogretmenlerHam ?? []).map((t) => t.id as string);
+
+  const sonuclar: DenemeBildirimSonucu[] = [];
+
+  for (const o of ogrenciler) {
+    const ad = o.profiles?.ad ?? "Öğrenci";
+    const yeniDurum: "girildi" | "girilmedi" = girildiSet.has(o.id) ? "girildi" : "girilmedi";
+    const oncekiDurum = mevcutBildirimMap.get(o.id);
+
+    if (oncekiDurum === yeniDurum) {
+      sonuclar.push({ ad, durum: yeniDurum, gonderildi: false });
+      continue;
+    }
+
+    const { data: veliler } = await admin.from("parent_students").select("parent_id").eq("student_id", o.id);
+    const baslik = `${ad} — Deneme sonucu bildirimi`;
+
+    if (yeniDurum === "girilmedi") {
+      const govde = "Bugünkü yüklenen deneme sınavı sonuçlarında öğrenciniz yer almamaktadır.";
+      for (const v of veliler ?? []) await bildirimGonderVeKaydet(admin, v.parent_id, baslik, govde, user.id);
+    } else {
+      const veliGovde = "Öğrencinizin deneme sonuçları yüklendi.";
+      for (const v of veliler ?? []) await bildirimGonderVeKaydet(admin, v.parent_id, baslik, veliGovde, user.id);
+      for (const ogretmenId of ogretmenIdleri) await bildirimGonderVeKaydet(admin, ogretmenId, baslik, veliGovde, user.id);
+      await bildirimGonderVeKaydet(admin, o.id, "Deneme sonucu bildirimi", "Deneme sınavı sonuçlarınız yüklendi.", user.id);
+    }
+
+    await admin.from("deneme_bildirimleri").upsert(
+      { student_id: o.id, tarih: input.tarih, tur: input.tur, durum: yeniDurum, gonderen_id: user.id, updated_at: new Date().toISOString() },
+      { onConflict: "student_id,tarih,tur" },
+    );
+
+    sonuclar.push({ ad, durum: yeniDurum, gonderildi: true });
+  }
+
+  const gonderilenSayisi = sonuclar.filter((s) => s.gonderildi).length;
+  if (gonderilenSayisi > 0) {
+    await auditLogYaz(supabase, user.id, "deneme_bildirim_gonder", {
+      class_id: input.classId, tarih: input.tarih, tur: input.tur, gonderilen: gonderilenSayisi, toplam: sonuclar.length,
+    });
   }
 
   return { error: null, sonuclar };

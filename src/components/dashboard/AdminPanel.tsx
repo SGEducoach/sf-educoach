@@ -10,7 +10,7 @@ import {
 } from "@/app/dashboard/actions";
 import {
   sinifSil, sinifOgrencileriGetir, denemeSonucuTopluGir, ogrenciListesiDisaAktar, adminDuyuruGonder,
-  type SinifOgrencisi,
+  denemeBildirimGonder, type SinifOgrencisi, type DenemeBildirimSonucu,
 } from "@/app/yonetici/actions";
 import { SinifEkleFormu } from "@/components/dashboard/OgretmenPanel";
 import { DuyuruFormu } from "@/components/dashboard/DuyuruFormu";
@@ -56,6 +56,7 @@ const EYLEM_ETIKET: Record<string, string> = {
   ogrenci_ekle_manuel: "Öğrenci eklendi",
   ogrenci_toplu_ekle: "Öğrenciler toplu eklendi",
   deneme_toplu_gir: "Deneme sonuçları toplu girildi",
+  deneme_bildirim_gonder: "Deneme sonucu bildirimleri gönderildi",
   sinif_ogretmeni_ata: "Sınıf öğretmeni atandı",
   sinif_ogretmenliginden_cikar: "Sınıf öğretmenliğinden çıkarıldı",
   okul_ekle: "Okul eklendi",
@@ -661,6 +662,9 @@ function DenemeTopluGirisFormu({ siniflar }: { siniflar: SinifSatiri[] }) {
   const [yapistirilan, setYapistirilan] = useState("");
   const [eslestirmeRaporu, setEslestirmeRaporu] = useState<{ kaynak: string; sonuc: string; hata: boolean }[] | null>(null);
   const [pending, startTransition] = useTransition();
+  const [bildirimHata, setBildirimHata] = useState<string | null>(null);
+  const [bildirimSonuclari, setBildirimSonuclari] = useState<DenemeBildirimSonucu[] | null>(null);
+  const [bildirimPending, startBildirimTransition] = useTransition();
 
   const dersListesi = tur === "TYT" ? TYT_DERSLERI : AYT_DERSLERI[aytAlan];
   const [ders, setDers] = useState<string>(dersListesi[0]);
@@ -742,6 +746,20 @@ function DenemeTopluGirisFormu({ siniflar }: { siniflar: SinifSatiri[] }) {
       const adMap = new Map(filtrelenmisOgrenciler.map((o) => [o.id, o.ad]));
       setSonuclar(res.sonuclar.map((s) => ({ ad: adMap.get(s.studentId) ?? "—", hata: s.hata })));
       setGirisler({});
+    });
+  }
+
+  // Bir sınıfın o tarih/türdeki bütün dersleri girildikten sonra tek seferlik
+  // tetiklenir: sonucu hiç girilmemiş öğrencinin velisine uyarı, girilmiş
+  // öğrencinin velisine + sınıf öğretmenine + öğrencinin kendisine bilgi
+  // mesajı gider. Aynı durumda tekrar tıklanırsa ikinci kez bildirim gitmez.
+  function bildirimGonder() {
+    if (!classId) return setBildirimHata("Sınıf seçin.");
+    setBildirimHata(null);
+    startBildirimTransition(async () => {
+      const res = await denemeBildirimGonder({ classId, tarih, tur, aytAlan: tur === "AYT" ? aytAlan : undefined });
+      if (res.error) return setBildirimHata(res.error);
+      setBildirimSonuclari(res.sonuclar);
     });
   }
 
@@ -855,6 +873,36 @@ function DenemeTopluGirisFormu({ siniflar }: { siniflar: SinifSatiri[] }) {
           {sonuclar.filter((s) => s.hata).map((s, i) => (
             <div key={i} style={{ color: BLUSH }} className="text-[11px]">{s.ad}: {s.hata}</div>
           ))}
+        </div>
+      )}
+
+      {classId && (
+        <div className="rounded-2xl p-3 mt-1 flex flex-col gap-2" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
+          <div style={{ color: TEXT }} className="text-xs font-bold">Velilere ve öğrenciye bildirim gönder</div>
+          <p style={{ color: TEXT_MUTED }} className="text-[10px]">
+            Sınıfın o tarih/türe ait tüm dersleri girildikten sonra tek sefer tıklayın: sonucu girilmeyen öğrencinin velisine uyarı,
+            girilen öğrencinin velisine, sınıf öğretmenine ve öğrencinin kendisine bilgi mesajı gider. Durumu değişmeyen öğrenciye
+            tekrar tıklansa bile ikinci kez bildirim gitmez.
+          </p>
+          <button type="button" onClick={bildirimGonder} disabled={bildirimPending}
+            className="sgec-btn self-start text-xs font-bold px-4 py-2 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+            {bildirimPending ? "Gönderiliyor..." : "Bildirim gönder"}
+          </button>
+          {bildirimHata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{bildirimHata}</div>}
+          {bildirimSonuclari && (
+            <div className="max-h-48 overflow-y-auto flex flex-col gap-1 mt-1">
+              <div style={{ color: TEXT }} className="text-xs font-bold mb-1">
+                {bildirimSonuclari.filter((s) => s.gonderildi).length}/{bildirimSonuclari.length} bildirim gönderildi
+                {" · "}{bildirimSonuclari.filter((s) => s.durum === "girildi").length} girildi, {bildirimSonuclari.filter((s) => s.durum === "girilmedi").length} girilmedi
+              </div>
+              {bildirimSonuclari.map((s, i) => (
+                <div key={i} className="text-[11px] flex items-center justify-between gap-2" style={{ color: s.durum === "girilmedi" ? BLUSH : TEXT_MUTED }}>
+                  <span>{s.ad}</span>
+                  <span>{s.durum === "girildi" ? "Girildi" : "Girilmedi"}{!s.gonderildi && " · daha önce bildirildi"}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
