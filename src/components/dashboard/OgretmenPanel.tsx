@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { UserPlus, Check, Users, Eye, Plus } from "lucide-react";
 import { BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, SKY, SKY_BG, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
-import { veliTalepOnayla, sinifEkle, ogretmenDuyuruGonder } from "@/app/dashboard/actions";
+import { veliTalepOnayla, sinifEkle, ogretmenDuyuruGonder, gonderilenDuyurularGetir } from "@/app/dashboard/actions";
 import { DuyuruFormu } from "@/components/dashboard/DuyuruFormu";
 import type { SinifSeviyesi, VeliLinkRequest } from "@/lib/types";
 
@@ -79,6 +79,7 @@ export function OgretmenPanel({
           gonder={ogretmenDuyuruGonder}
           kapsamSecenekleri={duyuruKapsamSecenekleri}
           aliciTuruSecilebilir
+          gecmisGetir={gonderilenDuyurularGetir}
         /></section>
       )}
 

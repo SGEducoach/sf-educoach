@@ -10,7 +10,7 @@ import {
 } from "@/app/dashboard/actions";
 import {
   sinifSil, sinifOgrencileriGetir, denemeSonucuTopluGir, ogrenciListesiDisaAktar, adminDuyuruGonder,
-  denemeBildirimGonder, type SinifOgrencisi, type DenemeBildirimSonucu,
+  denemeBildirimGonder, adminGonderilenDuyurularGetir, type SinifOgrencisi, type DenemeBildirimSonucu,
 } from "@/app/yonetici/actions";
 import { SinifEkleFormu } from "@/components/dashboard/OgretmenPanel";
 import { DuyuruFormu } from "@/components/dashboard/DuyuruFormu";
@@ -106,6 +106,7 @@ export function AdminPanel({
         baslik="Tüm platforma duyuru gönder"
         aciklama="Bütün okullardaki tüm öğrencilere ve bağlı velilere push bildirimi olarak gider."
         gonder={adminDuyuruGonder}
+        gecmisGetir={adminGonderilenDuyurularGetir}
       />
 
       <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>

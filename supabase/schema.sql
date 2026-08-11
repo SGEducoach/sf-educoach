@@ -1700,3 +1700,26 @@ create policy "deneme_bildirimleri_insert_admin" on public.deneme_bildirimleri
 
 create policy "deneme_bildirimleri_update_admin" on public.deneme_bildirimleri
   for update using (public.is_admin()) with check (public.is_admin());
+
+-- ============ login_attempt_limits (0037 + 0040) ============
+-- Sunucu taraflı kaba kuvvet koruması: IP+rol+kimlik hash'i başına başarısız
+-- deneme sayacı. 5 başarısız denemede engellenir; block_count aynı
+-- attempt_key art arda kaç kez engellendiğini tutar ve her yeni engelde
+-- süre katlanarak artar (kademeli artış, 0040).
+create table if not exists public.login_attempt_limits (
+  attempt_key text primary key,
+  failed_count integer not null default 0 check (failed_count >= 0),
+  window_started_at timestamptz not null default now(),
+  blocked_until timestamptz,
+  block_count integer not null default 0 check (block_count >= 0),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.login_attempt_limits enable row level security;
+revoke all on table public.login_attempt_limits from anon, authenticated;
+
+create index if not exists login_attempt_limits_cleanup_idx
+  on public.login_attempt_limits (updated_at);
+
+comment on table public.login_attempt_limits is
+  'Stores hashed application login attempt keys for server-side brute-force protection.';

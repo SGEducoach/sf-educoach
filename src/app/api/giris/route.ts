@@ -5,7 +5,15 @@ import { createClient } from "@/lib/supabase/server";
 
 const PENCERE_MS = 15 * 60 * 1000;
 const ENGEL_MS = 15 * 60 * 1000;
+const ENGEL_UST_SINIR_MS = 24 * 60 * 60 * 1000;
 const MAKS_HATA = 5;
+
+// Kademeli artış: aynı attempt_key art arda kaç kez engellendiyse (block_count),
+// engel süresi 15dk -> 30dk -> 60dk ... şeklinde katlanır, 24 saatte tavanlanır.
+// Başarılı girişte satır tamamen silindiği için sayaç sıfırlanır.
+function kademeliEngelSuresi(blockCount: number): number {
+  return Math.min(ENGEL_MS * 2 ** blockCount, ENGEL_UST_SINIR_MS);
+}
 
 type GirisRolu = "ogrenci" | "ogretmen" | "veli" | "mudur" | "admin";
 interface GirisGovdesi { role?: GirisRolu; schoolId?: string; okulNo?: string; kod?: string; email?: string; password?: string }
@@ -35,7 +43,7 @@ export async function POST(request: NextRequest) {
   const admin = createAdminClient();
   const attemptKey = anahtarOlustur(request, body);
   const { data: limit } = await admin.from("login_attempt_limits")
-    .select("failed_count, window_started_at, blocked_until").eq("attempt_key", attemptKey).maybeSingle();
+    .select("failed_count, window_started_at, blocked_until, block_count").eq("attempt_key", attemptKey).maybeSingle();
 
   if (limit?.blocked_until && new Date(limit.blocked_until).getTime() > Date.now()) {
     const dakika = Math.max(1, Math.ceil((new Date(limit.blocked_until).getTime() - Date.now()) / 60_000));
@@ -73,14 +81,18 @@ export async function POST(request: NextRequest) {
     const pencereBaslangici = limit?.window_started_at ? new Date(limit.window_started_at).getTime() : 0;
     const ayniPencere = simdi - pencereBaslangici < PENCERE_MS;
     const yeniSayac = ayniPencere ? (limit?.failed_count ?? 0) + 1 : 1;
-    const blockedUntil = yeniSayac >= MAKS_HATA ? new Date(simdi + ENGEL_MS).toISOString() : null;
+    const engelTetiklendi = yeniSayac >= MAKS_HATA;
+    const yeniBlockCount = engelTetiklendi ? (limit?.block_count ?? 0) + 1 : (limit?.block_count ?? 0);
+    const engelSuresiMs = kademeliEngelSuresi(yeniBlockCount - 1);
+    const blockedUntil = engelTetiklendi ? new Date(simdi + engelSuresiMs).toISOString() : null;
     await admin.from("login_attempt_limits").upsert({
       attempt_key: attemptKey, failed_count: yeniSayac,
       window_started_at: ayniPencere && limit?.window_started_at ? limit.window_started_at : new Date(simdi).toISOString(),
-      blocked_until: blockedUntil, updated_at: new Date(simdi).toISOString(),
+      blocked_until: blockedUntil, block_count: yeniBlockCount, updated_at: new Date(simdi).toISOString(),
     });
     const kalan = Math.max(0, MAKS_HATA - yeniSayac);
-    const mesaj = blockedUntil ? "Çok fazla hatalı deneme yapıldı. 15 dakika sonra tekrar deneyin." : `Bilgiler hatalı. Kalan deneme hakkı: ${kalan}.`;
+    const engelDakika = Math.round(engelSuresiMs / 60_000);
+    const mesaj = blockedUntil ? `Çok fazla hatalı deneme yapıldı. ${engelDakika} dakika sonra tekrar deneyin.` : `Bilgiler hatalı. Kalan deneme hakkı: ${kalan}.`;
     return NextResponse.json({ error: mesaj }, { status: blockedUntil ? 429 : 401 });
   }
 

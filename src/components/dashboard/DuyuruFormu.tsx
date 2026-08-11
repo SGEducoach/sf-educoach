@@ -2,8 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { createPortal } from "react-dom";
-import { Megaphone, Send, X } from "lucide-react";
-import { BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
+import { History, Megaphone, Send, X } from "lucide-react";
+import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 import type { DuyuruAliciTuru } from "@/lib/push-send";
 
 const MAKS_UZUNLUK = 500;
@@ -14,19 +14,28 @@ export interface KapsamSecenegi {
   etiket: string;
 }
 
+export interface GonderilenDuyuruSatiri {
+  id: string;
+  baslik: string;
+  mesaj: string;
+  createdAt: string;
+  aliciSayisi: number;
+}
+
 // Öğrenci + bağlı veliye push bildirimi olarak giden serbest metin duyuru.
 // Kapsam (kime gideceği) tamamen server-side belirleniyor/doğrulanıyor —
 // bu bileşen sadece mesajı (ve seçiliyse bir kapsam değerini) alıp verilen
 // `gonder` action'ına iletiyor. kapsamSecenekleri verilmezse (öğretmen,
 // admin) kapsam seçici hiç gösterilmiyor — o rollerde kapsam zaten sabit.
 export function DuyuruFormu({
-  baslik, aciklama, gonder, kapsamSecenekleri, aliciTuruSecilebilir = false,
+  baslik, aciklama, gonder, kapsamSecenekleri, aliciTuruSecilebilir = false, gecmisGetir,
 }: {
   baslik: string;
   aciklama: string;
-  gonder: (mesaj: string, kapsam?: string, aliciTuru?: DuyuruAliciTuru) => Promise<{ error: string | null; ogrenciSayisi: number; veliSayisi: number }>;
+  gonder: (mesaj: string, kapsam?: string, aliciTuru?: DuyuruAliciTuru) => Promise<{ error: string | null; ogrenciSayisi: number; veliSayisi: number; kalanGunlukHak: number }>;
   kapsamSecenekleri?: KapsamSecenegi[];
   aliciTuruSecilebilir?: boolean;
+  gecmisGetir?: () => Promise<{ error: string | null; duyurular: GonderilenDuyuruSatiri[] }>;
 }) {
   const [mesaj, setMesaj] = useState("");
   const [kapsam, setKapsam] = useState(kapsamSecenekleri?.[0]?.deger ?? "");
@@ -35,6 +44,20 @@ export function DuyuruFormu({
   const [basari, setBasari] = useState<string | null>(null);
   const [onayAcik, setOnayAcik] = useState(false);
   const [pending, startTransition] = useTransition();
+  const [gecmisAcik, setGecmisAcik] = useState(false);
+  const [gecmis, setGecmis] = useState<GonderilenDuyuruSatiri[] | null>(null);
+  const [gecmisPending, startGecmisTransition] = useTransition();
+
+  function gecmisiAcKapat() {
+    const acilacak = !gecmisAcik;
+    setGecmisAcik(acilacak);
+    if (acilacak && gecmisGetir) {
+      startGecmisTransition(async () => {
+        const res = await gecmisGetir();
+        setGecmis(res.error ? [] : res.duyurular);
+      });
+    }
+  }
 
   function gonderTikla(e: React.FormEvent) {
     e.preventDefault();
@@ -52,8 +75,9 @@ export function DuyuruFormu({
     startTransition(async () => {
       const res = await gonder(temiz, kapsamSecenekleri ? kapsam : undefined, aliciTuruSecilebilir ? aliciTuru : undefined);
       if (res.error) return setHata(res.error);
-      setBasari(`Gönderildi — ${res.ogrenciSayisi} öğrenci, ${res.veliSayisi} veliye ulaştı.`);
+      setBasari(`Gönderildi — ${res.ogrenciSayisi} öğrenci, ${res.veliSayisi} veliye ulaştı. Bugün için kalan hakkınız: ${res.kalanGunlukHak}.`);
       setMesaj("");
+      setGecmis(null);
     });
   }
 
@@ -105,6 +129,33 @@ export function DuyuruFormu({
         {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
         {basari && <div style={{ color: MINT }} className="text-xs font-semibold">{basari}</div>}
       </form>
+
+      {gecmisGetir && (
+        <div className="mt-3">
+          <button type="button" onClick={gecmisiAcKapat}
+            className="sgec-btn flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-full"
+            style={{ background: gecmisAcik ? MINT : "rgba(255,255,255,0.06)", color: gecmisAcik ? MINT_ON : TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
+            <History size={12} /> Gönderilen duyurular
+          </button>
+          {gecmisAcik && (
+            <div className="mt-2 rounded-2xl p-3 max-h-56 overflow-y-auto flex flex-col gap-2" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
+              {gecmisPending && <p style={{ color: TEXT_MUTED }} className="text-xs text-center py-2">Yükleniyor...</p>}
+              {!gecmisPending && gecmis?.length === 0 && <p style={{ color: TEXT_MUTED }} className="text-xs text-center py-2">Henüz gönderilmiş duyuru yok.</p>}
+              {!gecmisPending && gecmis?.map((d) => (
+                <div key={d.id} className="rounded-xl p-2.5" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span style={{ color: TEXT }} className="text-xs font-bold">{d.baslik}</span>
+                    <span style={{ color: TEXT_MUTED }} className="text-[10px] shrink-0">{new Date(d.createdAt).toLocaleString("tr-TR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</span>
+                  </div>
+                  <p style={{ color: TEXT_MUTED }} className="text-[11px] mt-1 leading-relaxed">{d.mesaj}</p>
+                  <span style={{ color: MINT }} className="text-[10px] font-semibold">{d.aliciSayisi} alıcıya ulaştı</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {onayAcik && createPortal((
         <div className="fixed inset-0 z-[450] flex items-center justify-center p-4" style={{ background: "rgba(24,48,47,0.55)", backdropFilter: "blur(4px)" }} onClick={() => setOnayAcik(false)}>
           <div role="dialog" aria-modal="true" aria-labelledby="duyuru-onay-baslik" className="relative w-full max-w-sm rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }} onClick={(e) => e.stopPropagation()}>

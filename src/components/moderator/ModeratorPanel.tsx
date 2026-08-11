@@ -13,6 +13,7 @@ export function ModeratorPanel({ okulAdi, kullanicilar }: { okulAdi: string; kul
   const [sekme, setSekme] = useState<"tumu" | ModeratorKullanici["kategori"]>("ogrenci");
   const [arama, setArama] = useState("");
   const [sinif, setSinif] = useState("tumu");
+  const [durum, setDurum] = useState<"tumu" | "aktif" | "pasif">("tumu");
   const [sayfa, setSayfa] = useState(1);
   const siniflar = useMemo(() => [...new Set(kullanicilar.map((k) => k.sinif).filter((x): x is string => !!x))].sort(), [kullanicilar]);
   const sayilar = useMemo(() => ({
@@ -26,9 +27,10 @@ export function ModeratorPanel({ okulAdi, kullanicilar }: { okulAdi: string; kul
     return kullanicilar.filter((k) =>
       (sekme === "tumu" || k.kategori === sekme)
       && (sinif === "tumu" || k.sinif === sinif)
+      && (durum === "tumu" || (durum === "aktif" ? k.aktif : !k.aktif))
       && (!terim || `${k.ad} ${k.detay}`.toLocaleLowerCase("tr-TR").includes(terim))
     );
-  }, [arama, kullanicilar, sekme, sinif]);
+  }, [arama, kullanicilar, sekme, sinif, durum]);
   const toplamSayfa = Math.max(1, Math.ceil(gosterilenler.length / SAYFA_BOYUTU));
   const etkinSayfa = Math.min(sayfa, toplamSayfa);
   const sayfadakiler = useMemo(() => gosterilenler.slice((etkinSayfa - 1) * SAYFA_BOYUTU, etkinSayfa * SAYFA_BOYUTU), [etkinSayfa, gosterilenler]);
@@ -49,9 +51,14 @@ export function ModeratorPanel({ okulAdi, kullanicilar }: { okulAdi: string; kul
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {sekmeler.map((s) => <button key={s.id} type="button" onClick={() => { setSekme(s.id); setSayfa(1); if (s.id === "veli") setSinif("tumu"); }} className="sgec-btn rounded-xl px-2 py-2.5 text-xs font-bold" style={{ background: sekme === s.id ? MINT : BG1_ALT, color: sekme === s.id ? "#18302f" : TEXT, border: `2px solid ${sekme === s.id ? MINT : BORDER_STRONG}` }}>{s.ad} ({sayilar[s.id]})</button>)}
       </div>
-      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_180px]">
+      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_160px_140px]">
         <label className="relative"><Search size={14} color={TEXT_MUTED} className="absolute left-3 top-1/2 -translate-y-1/2"/><input value={arama} onChange={(e) => { setArama(e.target.value); setSayfa(1); }} placeholder="İsim, okul no veya branş ara" className="w-full rounded-xl py-2 pl-9 pr-3 text-sm outline-none" style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}/></label>
         <select value={sinif} onChange={(e) => { setSinif(e.target.value); setSayfa(1); }} disabled={sekme === "veli"} className="rounded-xl px-3 py-2 text-sm outline-none disabled:opacity-50" style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}><option value="tumu">Tüm sınıflar</option>{siniflar.map((s) => <option key={s} value={s}>{s}</option>)}</select>
+        <select value={durum} onChange={(e) => { setDurum(e.target.value as typeof durum); setSayfa(1); }} className="rounded-xl px-3 py-2 text-sm outline-none" style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
+          <option value="tumu">Aktif + pasif</option>
+          <option value="aktif">Sadece aktif</option>
+          <option value="pasif">Sadece pasif</option>
+        </select>
       </div>
       <p style={{ color: TEXT_MUTED }} className="mt-3 text-xs font-semibold">Listelenen kişi: <strong style={{ color: TEXT }}>{gosterilenler.length}</strong></p>
     </div>

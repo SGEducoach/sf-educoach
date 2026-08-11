@@ -919,9 +919,9 @@ export async function izinliOgrencileriTemizle(schoolId: string): Promise<{ erro
 // Admin duyurusu — TÜM okullardaki tüm öğrencilere ve bağlı velilere gider.
 // Öğretmen/müdür sürümü (kendi sınıfı/okulu ile sınırlı) dashboard/
 // actions.ts'te ogretmenDuyuruGonder.
-export async function adminDuyuruGonder(mesaj: string): Promise<{ error: string | null; ogrenciSayisi: number; veliSayisi: number }> {
+export async function adminDuyuruGonder(mesaj: string): Promise<{ error: string | null; ogrenciSayisi: number; veliSayisi: number; kalanGunlukHak: number }> {
   const { supabase, user, admin } = await requireAdmin();
-  const bosSonuc = { ogrenciSayisi: 0, veliSayisi: 0 };
+  const bosSonuc = { ogrenciSayisi: 0, veliSayisi: 0, kalanGunlukHak: 0 };
 
   const mesajTemiz = mesaj.trim();
   if (!mesajTemiz) return { error: "Mesaj boş olamaz.", ...bosSonuc };
@@ -937,5 +937,36 @@ export async function adminDuyuruGonder(mesaj: string): Promise<{ error: string 
 
   const sonuc = await duyuruGonder(admin, ogrenciIdleri, "SG EDUCOACH duyurusu", mesajTemiz, user.id);
   await auditLogYaz(supabase, user.id, "admin_duyuru_gonder", { ogrenci_sayisi: sonuc.ogrenciSayisi, veli_sayisi: sonuc.veliSayisi, mesaj: mesajTemiz });
-  return { error: null, ...sonuc };
+  return { error: null, ...sonuc, kalanGunlukHak: izin.kalanGunlukHak };
+}
+
+// Admin'in kendi gönderdiği duyuruların geçmişi — bkz dashboard/actions.ts
+// gonderilenDuyurularGetir'deki RLS notu, aynı gerekçeyle admin client kullanılıyor.
+export async function adminGonderilenDuyurularGetir(): Promise<{ error: string | null; duyurular: { id: string; baslik: string; mesaj: string; createdAt: string; aliciSayisi: number }[] }> {
+  const { user, admin } = await requireAdmin();
+  const { data, error } = await admin
+    .from("duyurular")
+    .select("id, baslik, mesaj, created_at")
+    .eq("gonderen_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(20);
+  if (error) return { error: error.message, duyurular: [] };
+
+  const ids = (data ?? []).map((d) => d.id as string);
+  const aliciSayilari = new Map<string, number>();
+  if (ids.length > 0) {
+    const { data: aliciSatirlari } = await admin.from("duyuru_aliciler").select("duyuru_id").in("duyuru_id", ids);
+    for (const satir of aliciSatirlari ?? []) {
+      const id = satir.duyuru_id as string;
+      aliciSayilari.set(id, (aliciSayilari.get(id) ?? 0) + 1);
+    }
+  }
+
+  return {
+    error: null,
+    duyurular: (data ?? []).map((d) => ({
+      id: d.id as string, baslik: d.baslik as string, mesaj: d.mesaj as string,
+      createdAt: d.created_at as string, aliciSayisi: aliciSayilari.get(d.id as string) ?? 0,
+    })),
+  };
 }

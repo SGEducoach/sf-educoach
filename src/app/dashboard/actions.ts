@@ -285,9 +285,9 @@ export async function ogrencileriTopluEkle(input: {
 // çünkü onun kapsamı zaten sabit: kendi sınıfı).
 // kapsam değerleri (müdür): "okul" (tüm okul, varsayılan) | "11" | "12"
 // (seviye) | <classId> (belirli bir şube).
-export async function ogretmenDuyuruGonder(mesaj: string, kapsam?: string, aliciTuru: DuyuruAliciTuru = "hepsi"): Promise<{ error: string | null; ogrenciSayisi: number; veliSayisi: number }> {
+export async function ogretmenDuyuruGonder(mesaj: string, kapsam?: string, aliciTuru: DuyuruAliciTuru = "hepsi"): Promise<{ error: string | null; ogrenciSayisi: number; veliSayisi: number; kalanGunlukHak: number }> {
   const { supabase, user } = await requireUser();
-  const bosSonuc = { ogrenciSayisi: 0, veliSayisi: 0 };
+  const bosSonuc = { ogrenciSayisi: 0, veliSayisi: 0, kalanGunlukHak: 0 };
 
   const mesajTemiz = mesaj.trim();
   if (!["hepsi", "ogrenci", "veli"].includes(aliciTuru)) return { error: "Geçersiz alıcı seçimi.", ...bosSonuc };
@@ -345,5 +345,47 @@ export async function ogretmenDuyuruGonder(mesaj: string, kapsam?: string, alici
     eylem: profile.role === "mudur" ? "mudur_duyuru_gonder" : "ogretmen_duyuru_gonder",
     detay: { school_id: teacher.school_id, class_id: teacher.class_id, kapsam: kapsam ?? null, alici_turu: aliciTuru, ogrenci_sayisi: sonuc.ogrenciSayisi, veli_sayisi: sonuc.veliSayisi },
   });
-  return { error: null, ...sonuc };
+  return { error: null, ...sonuc, kalanGunlukHak: izin.kalanGunlukHak };
+}
+
+// Bir öğretmen/müdürün kendi gönderdiği duyuruların geçmişi — RLS'te
+// "duyurular_select_alici" sadece alıcıya izin veriyor, gönderen kendi
+// duyurusunun bile alıcısı olmayabileceği için burada admin client ile
+// SADECE kendi gonderen_id'sine göre filtrelenmiş satırlar okunuyor.
+export interface GonderilenDuyuru {
+  id: string;
+  baslik: string;
+  mesaj: string;
+  createdAt: string;
+  aliciSayisi: number;
+}
+
+export async function gonderilenDuyurularGetir(): Promise<{ error: string | null; duyurular: GonderilenDuyuru[] }> {
+  const { user } = await requireUser();
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("duyurular")
+    .select("id, baslik, mesaj, created_at")
+    .eq("gonderen_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(20);
+  if (error) return { error: error.message, duyurular: [] };
+
+  const ids = (data ?? []).map((d) => d.id as string);
+  const aliciSayilari = new Map<string, number>();
+  if (ids.length > 0) {
+    const { data: aliciSatirlari } = await admin.from("duyuru_aliciler").select("duyuru_id").in("duyuru_id", ids);
+    for (const satir of aliciSatirlari ?? []) {
+      const id = satir.duyuru_id as string;
+      aliciSayilari.set(id, (aliciSayilari.get(id) ?? 0) + 1);
+    }
+  }
+
+  return {
+    error: null,
+    duyurular: (data ?? []).map((d) => ({
+      id: d.id as string, baslik: d.baslik as string, mesaj: d.mesaj as string,
+      createdAt: d.created_at as string, aliciSayisi: aliciSayilari.get(d.id as string) ?? 0,
+    })),
+  };
 }
