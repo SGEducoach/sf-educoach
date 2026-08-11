@@ -144,7 +144,9 @@ export default function LoginForm() {
                 <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">{role === "veli" ? "Kod" : "Şifre"}</span>
                 <input type={role === "veli" ? "text" : "password"} required
                   value={role === "veli" ? kod : password}
-                  onChange={(e) => (role === "veli" ? setKod(e.target.value) : setPassword(e.target.value))}
+                  maxLength={role === "veli" ? 12 : undefined}
+                  autoCapitalize={role === "veli" ? "characters" : undefined}
+                  onChange={(e) => (role === "veli" ? setKod(e.target.value.toUpperCase()) : setPassword(e.target.value))}
                   className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
               </label>
             </>

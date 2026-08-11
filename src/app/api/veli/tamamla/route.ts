@@ -39,12 +39,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Okul no veya kod hatalı." }, { status: 400 });
   }
 
+  const kodTemiz = String(kod).trim().toUpperCase();
   const { data: talep } = await admin
     .from("veli_link_requests")
     .select("*")
     .eq("student_id", student.id)
-    .eq("kod", kod)
+    .eq("kod", kodTemiz)
     .eq("durum", "onaylandi")
+    .gt("kod_expires_at", new Date().toISOString())
     .single();
 
   if (!talep) {
@@ -56,7 +58,7 @@ export async function POST(request: Request) {
 
   const { data: createdUser, error: createError } = await admin.auth.admin.createUser({
     email: syntheticEmail,
-    password: kod,
+    password: kodTemiz,
     email_confirm: true,
     user_metadata: {
       role: "veli",
@@ -87,7 +89,7 @@ export async function POST(request: Request) {
   const supabase = await createClient();
   const { error: signInError } = await supabase.auth.signInWithPassword({
     email: syntheticEmail,
-    password: kod,
+    password: kodTemiz,
   });
 
   if (signInError) {

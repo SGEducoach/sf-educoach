@@ -409,14 +409,17 @@ export async function veliTalepleriGetir(): Promise<{ error: string | null; tale
 // bu yüzden aynı işlemi service-role client ile burada tekrarlıyoruz.
 export async function veliTalebiAdminOnayla(requestId: string): Promise<{ error: string | null; kod: string | null }> {
   const { supabase, user, admin } = await requireAdmin();
-  const kod = crypto.randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase();
+  const kod = crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase();
 
-  const { error } = await admin
+  const { data: guncellenen, error } = await admin
     .from("veli_link_requests")
-    .update({ durum: "onaylandi", kod, onaylayan_ogretmen_id: user.id, onaylanma_at: new Date().toISOString() })
+    .update({ durum: "onaylandi", kod, onaylayan_ogretmen_id: user.id, onaylanma_at: new Date().toISOString(), kod_expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString() })
     .eq("id", requestId)
-    .eq("durum", "bekliyor");
+    .eq("durum", "bekliyor")
+    .select("id")
+    .maybeSingle();
   if (error) return { error: error.message, kod: null };
+  if (!guncellenen) return { error: "Talep daha önce işlenmiş veya bulunamadı.", kod: null };
 
   await auditLogYaz(supabase, user.id, "veli_talebi_admin_onayla", { request_id: requestId });
   revalidatePath("/yonetici");

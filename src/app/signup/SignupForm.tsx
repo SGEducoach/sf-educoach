@@ -111,7 +111,8 @@ export default function SignupForm({ kurallarMetni, kurallarVersiyon }: { kurall
   }, [supabase]);
 
   useEffect(() => {
-    setKurallarKabul(kurallarOnayliMi(kurallarVersiyon));
+    const zamanlayici = window.setTimeout(() => setKurallarKabul(kurallarOnayliMi(kurallarVersiyon)), 0);
+    return () => window.clearTimeout(zamanlayici);
   }, [kurallarVersiyon]);
 
   if (!kurallarKabul) {
@@ -430,12 +431,12 @@ function VeliKayit({ schools, router, supabase }: { schools: School[]; router: R
           Kodum var, tamamla
         </button>
       </div>
-      {mod === "talep" ? <VeliTalepForm schools={schools} supabase={supabase} /> : <VeliTamamlaForm schools={schools} router={router} supabase={supabase} />}
+      {mod === "talep" ? <VeliTalepForm schools={schools} /> : <VeliTamamlaForm schools={schools} router={router} supabase={supabase} />}
     </div>
   );
 }
 
-function VeliTalepForm({ schools, supabase }: { schools: School[]; supabase: ReturnType<typeof createClient> }) {
+function VeliTalepForm({ schools }: { schools: School[] }) {
   const [ad, setAd] = useState("");
   const [telefon, setTelefon] = useState("");
   const [schoolId, setSchoolId] = useState("");
@@ -451,19 +452,16 @@ function VeliTalepForm({ schools, supabase }: { schools: School[]; supabase: Ret
     if (!schoolId) return setHata("Okul seçin.");
     setYukleniyor(true);
 
-    const { data: studentId, error: bulmaHatasi } = await supabase
-      .rpc("find_student_id_by_okul_no", { p_school_id: schoolId, p_okul_no: okulNo.trim() });
-
-    if (bulmaHatasi || !studentId) {
-      setYukleniyor(false);
-      return setHata("Bu okul numarasıyla kayıtlı bir öğrenci bulunamadı.");
-    }
-
-    const { error } = await supabase.from("veli_link_requests").insert({
-      student_id: studentId, veli_ad: ad, veli_telefon: telefon,
+    const res = await fetch("/api/veli/talep", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        school_id: schoolId, okul_no: okulNo.trim(), veli_ad: adNormalize(ad), veli_telefon: telefon,
+      }),
     });
+    const body = await res.json();
     setYukleniyor(false);
-    if (error) return setHata(error.message);
+    if (!res.ok) return setHata(body.error ?? "Talep oluşturulamadı.");
     setGonderildi(true);
   }
 
@@ -493,9 +491,20 @@ function VeliTalepForm({ schools, supabase }: { schools: School[]; supabase: Ret
       {gonderildi && (
         <div className="fixed inset-0 z-[400] flex items-center justify-center px-4" style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }}>
           <div className="sgec-fade rounded-3xl p-6 max-w-sm w-full text-center" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-            <p style={{ color: TEXT }} className="text-sm leading-relaxed mb-5">
-              Kod talebiniz alındı. <strong>SG.EDUCOACH ekibi veya öğrencinizin sınıf öğretmeni tarafından bilgilendirileceksiniz.</strong>
+            <p style={{ color: TEXT }} className="text-sm font-bold leading-relaxed mb-3">
+              Kod talebiniz alındı.
             </p>
+            <div className="mb-4 flex flex-col gap-2 text-left">
+              <div className="rounded-xl p-3" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
+                <p style={{ color: TEXT }} className="text-xs font-bold">Öğrencinize yönlendirin</p>
+                <p style={{ color: TEXT_MUTED }} className="mt-1 text-xs leading-relaxed">Sınıf öğretmeni talebi onayladığında kod öğrencinin <strong>Mesajlarım</strong> kutusuna gelir. Öğrencinizden bu kutuyu kontrol etmesini isteyin.</p>
+              </div>
+              <div className="rounded-xl p-3" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
+                <p style={{ color: TEXT }} className="text-xs font-bold">Sınıf öğretmenine yönlendirin</p>
+                <p style={{ color: TEXT_MUTED }} className="mt-1 text-xs leading-relaxed">Talebin onaylanması için öğrencinin sınıf öğretmenine ulaşabilirsiniz. Güvenlik nedeniyle burada öğrenci veya öğretmen bilgisi gösterilmez.</p>
+              </div>
+            </div>
+            <p style={{ color: BLUSH }} className="mb-4 text-[11px] font-semibold leading-relaxed">Kodu yalnız doğrulanmış veli–öğrenci iletişiminde paylaşın. Kod mesajını veya ekran görüntüsünü üçüncü kişilere göndermeyin; ilk kayıt 48 saat içinde tamamlanmalıdır.</p>
             <button type="button" onClick={yeniTalep}
               className="sgec-btn text-sm font-bold py-2.5 px-8 rounded-xl" style={{ background: MINT, color: MINT_ON }}>
               Tamam
@@ -564,7 +573,7 @@ function VeliTamamlaForm({ schools, router }: { schools: School[]; router: Retur
         </Secim>
       </label>
       <label className="flex flex-col gap-1"><Etiket>Öğrenci Okul No</Etiket><Girdi required value={okulNo} onChange={(e) => setOkulNo(e.target.value)} /></label>
-      <label className="flex flex-col gap-1"><Etiket>Kod</Etiket><Girdi required value={kod} onChange={(e) => setKod(e.target.value)} /></label>
+      <label className="flex flex-col gap-1"><Etiket>Kod</Etiket><Girdi required value={kod} maxLength={12} autoCapitalize="characters" onChange={(e) => setKod(e.target.value.toUpperCase())} /></label>
       <label className="flex flex-col gap-1"><Etiket>Adınız Soyadınız</Etiket><Girdi required value={veliAd} onChange={(e) => setVeliAd(e.target.value)} /></label>
       <label className="flex flex-col gap-1"><Etiket>Telefon</Etiket><Girdi type="tel" required value={veliTelefon} inputMode="numeric" placeholder="5xxxxxxxxx" onChange={(e) => setVeliTelefon(telefonSanitize(e.target.value))} /></label>
 
