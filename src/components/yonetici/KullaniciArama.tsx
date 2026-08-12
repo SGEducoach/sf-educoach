@@ -77,7 +77,7 @@ export function KullaniciArama() {
             <button key={r.id} type="button"
               onClick={() => { setRol(r.id); ara(sorgu, r.id); }}
               className="sgec-btn text-[11px] font-bold px-3 py-1.5 rounded-full"
-              style={{ background: aktif ? MINT : "rgba(255,255,255,0.06)", color: aktif ? "#0B3B24" : TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
+              style={{ background: aktif ? MINT : "rgba(255,255,255,0.06)", color: aktif ? MINT_ON : TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
               {r.ad}
             </button>
           );

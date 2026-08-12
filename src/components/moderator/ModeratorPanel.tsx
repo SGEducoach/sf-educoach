@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { KeyRound, LayoutDashboard, Search, ShieldCheck, Trash2, UserCheck, UserX } from "lucide-react";
 import { moderatorAktiflikDegistir, moderatorHesapSil, moderatorSifreSifirla, type ModeratorKullanici } from "@/app/moderator/actions";
-import { BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
+import { BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 
 export function ModeratorPanel({ okulAdi, kullanicilar }: { okulAdi: string; kullanicilar: ModeratorKullanici[] }) {
   const SAYFA_BOYUTU = 50;
@@ -49,7 +49,7 @@ export function ModeratorPanel({ okulAdi, kullanicilar }: { okulAdi: string; kul
     {mesaj && <div className="rounded-xl p-3 text-xs font-bold" style={{ color: mesaj.startsWith("Hata") ? BLUSH : MINT, background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>{mesaj}</div>}
     <div className="rounded-3xl p-3 sm:p-4" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {sekmeler.map((s) => <button key={s.id} type="button" onClick={() => { setSekme(s.id); setSayfa(1); if (s.id === "veli") setSinif("tumu"); }} className="sgec-btn rounded-xl px-2 py-2.5 text-xs font-bold" style={{ background: sekme === s.id ? MINT : BG1_ALT, color: sekme === s.id ? "#18302f" : TEXT, border: `2px solid ${sekme === s.id ? MINT : BORDER_STRONG}` }}>{s.ad} ({sayilar[s.id]})</button>)}
+        {sekmeler.map((s) => <button key={s.id} type="button" onClick={() => { setSekme(s.id); setSayfa(1); if (s.id === "veli") setSinif("tumu"); }} className="sgec-btn rounded-xl px-2 py-2.5 text-xs font-bold" style={{ background: sekme === s.id ? MINT : BG1_ALT, color: sekme === s.id ? MINT_ON : TEXT, border: `2px solid ${sekme === s.id ? MINT : BORDER_STRONG}` }}>{s.ad} ({sayilar[s.id]})</button>)}
       </div>
       <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_160px_140px]">
         <label className="relative"><Search size={14} color={TEXT_MUTED} className="absolute left-3 top-1/2 -translate-y-1/2"/><input value={arama} onChange={(e) => { setArama(e.target.value); setSayfa(1); }} placeholder="İsim, okul no veya branş ara" className="w-full rounded-xl py-2 pl-9 pr-3 text-sm outline-none" style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}/></label>
@@ -75,7 +75,7 @@ export function ModeratorPanel({ okulAdi, kullanicilar }: { okulAdi: string; kul
     </div>
     {toplamSayfa > 1 && <nav aria-label="Kullanıcı listesi sayfaları" className="flex flex-wrap items-center justify-center gap-2">
       <button type="button" disabled={sayfa === 1} onClick={() => setSayfa((s) => Math.max(1, s - 1))} className="sgec-btn rounded-xl px-3 py-2 text-xs font-bold disabled:opacity-40" style={{ color: TEXT, background: BG1, border: `2px solid ${BORDER_STRONG}` }}>Önceki</button>
-      {Array.from({ length: toplamSayfa }, (_, i) => i + 1).map((no) => <button key={no} type="button" aria-current={sayfa === no ? "page" : undefined} onClick={() => setSayfa(no)} className="sgec-btn min-w-9 rounded-xl px-3 py-2 text-xs font-bold" style={{ color: sayfa === no ? "#18302f" : TEXT, background: sayfa === no ? MINT : BG1, border: `2px solid ${sayfa === no ? MINT : BORDER_STRONG}` }}>{no}</button>)}
+      {Array.from({ length: toplamSayfa }, (_, i) => i + 1).map((no) => <button key={no} type="button" aria-current={sayfa === no ? "page" : undefined} onClick={() => setSayfa(no)} className="sgec-btn min-w-9 rounded-xl px-3 py-2 text-xs font-bold" style={{ color: sayfa === no ? MINT_ON : TEXT, background: sayfa === no ? MINT : BG1, border: `2px solid ${sayfa === no ? MINT : BORDER_STRONG}` }}>{no}</button>)}
       <button type="button" disabled={sayfa === toplamSayfa} onClick={() => setSayfa((s) => Math.min(toplamSayfa, s + 1))} className="sgec-btn rounded-xl px-3 py-2 text-xs font-bold disabled:opacity-40" style={{ color: TEXT, background: BG1, border: `2px solid ${BORDER_STRONG}` }}>Sonraki</button>
     </nav>}
   </div>;
