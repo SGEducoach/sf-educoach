@@ -3,6 +3,7 @@ import Link from "next/link";
 import { LogOut, ShieldCheck } from "lucide-react";
 import { signOut } from "@/app/dashboard/actions";
 import { MesajlarimIkonu } from "@/components/dashboard/MesajlarimIkonu";
+import { BildirimAyarlari } from "@/components/dashboard/BildirimAyarlari";
 import type { UserRole } from "@/lib/types";
 import { MobilAltNavigasyon } from "@/components/dashboard/MobilAltNavigasyon";
 import { OturumZamanAsimi } from "@/components/OturumZamanAsimi";
@@ -51,6 +52,7 @@ export function Header({ ad, role, okunmamisMesajSayisi = 0, mobilNavigasyon = t
             </div>
             {moderatorMu && <Link href="/moderator" title="Moderatör paneli" className="sgec-btn flex h-11 w-11 items-center justify-center rounded-full sm:h-8 sm:w-8" style={{ background: "rgba(13,148,136,0.16)", border: "1px solid rgba(255,255,255,0.14)" }}><ShieldCheck size={16} color="#8fe6b0"/></Link>}
             <TemaButonu />
+            <BildirimAyarlari />
             {(role === "ogrenci" || role === "veli") && <MesajlarimIkonu baslangicSayisi={okunmamisMesajSayisi} />}
             <form action={signOut}>
               <button type="submit" title="Çıkış yap"
