@@ -32,15 +32,17 @@ export function Header({ ad, role, okunmamisMesajSayisi = 0, mobilNavigasyon = t
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-4 pb-4 sm:pt-5 sm:pb-5 relative">
         <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
-          <Link href="/dashboard" title="Ana sayfaya dön" className="sgec-btn flex items-center gap-3 rounded-xl">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden shrink-0" style={{ boxShadow: "0 4px 16px rgba(124,232,176,0.28)" }}>
-              <Image src="/logo.png" alt="SG EduCoach" width={40} height={40} className="w-full h-full object-cover" priority />
-            </div>
+          <div className="flex items-center gap-3">
+            <Link href="/dashboard" title="Ana sayfaya dön" className="rounded-full shrink-0">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(124,232,176,0.28)" }}>
+                <Image src="/logo.png" alt="SG EduCoach" width={40} height={40} className="w-full h-full object-cover" priority />
+              </div>
+            </Link>
             <div>
               <div style={{ color: "#ffffff", fontFamily: "var(--font-baloo)" }} className="font-bold text-[15px] sm:text-[16px] leading-none tracking-tight">SG EduCoach</div>
               <div style={{ color: "#8fe6b0" }} className="hidden sm:block text-[12px] italic mt-1.5">Her zaman bir adım ötesini düşün</div>
             </div>
-          </Link>
+          </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.14)" }}>
