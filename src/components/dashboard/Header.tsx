@@ -6,6 +6,7 @@ import { MesajlarimIkonu } from "@/components/dashboard/MesajlarimIkonu";
 import { BildirimAyarlari } from "@/components/dashboard/BildirimAyarlari";
 import type { UserRole } from "@/lib/types";
 import { MobilAltNavigasyon } from "@/components/dashboard/MobilAltNavigasyon";
+import { MobilMenu } from "@/components/dashboard/MobilMenu";
 import { OturumZamanAsimi } from "@/components/OturumZamanAsimi";
 import { TemaButonu } from "@/components/TemaDenetimi";
 
@@ -39,36 +40,37 @@ export function Header({ ad, role, okunmamisMesajSayisi = 0, mobilNavigasyon = t
                 <Image src="/logo.png" alt="SG EduCoach" width={40} height={40} className="w-full h-full object-cover" priority />
               </div>
             </Link>
-            {/* Yazı bloğu (isim + slogan) telefon genişliğinde ikon sırasıyla
-                yer çekişiyordu — sadece sm+ (640px) genişlikte gösteriliyor,
-                telefonda sadece yuvarlak logo kalıyor. */}
-            <div className="hidden sm:block">
-              <div style={{ color: "#ffffff", fontFamily: "var(--font-baloo)" }} className="font-bold text-[16px] leading-none tracking-tight">SG EduCoach</div>
-              <div style={{ color: "#8fe6b0" }} className="text-[12px] italic mt-1.5">Her zaman bir adım ötesini düşün</div>
+            {/* Logo yanındaki isim + slogan artık telefonda da görünüyor —
+                sağdaki ikon kalabalığı mobilde tek bir hamburger menüye
+                toplandığı için yer sorunu kalmadı. */}
+            <div>
+              <div style={{ color: "#ffffff", fontFamily: "var(--font-baloo)" }} className="font-bold text-[15px] sm:text-[16px] leading-none tracking-tight">SG EduCoach</div>
+              <div style={{ color: "#8fe6b0" }} className="text-[11px] sm:text-[12px] italic mt-1.5 truncate max-w-[150px] sm:max-w-none">Her zaman bir adım ötesini düşün</div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* Mobilde ikon sırası (moderatör/tema/bildirim/mesajlar/çıkış)
-                tek satıra ancak isim rozeti olmadan sığıyor — o yüzden isim
-                sadece md+ (768px) genişlikte gösteriliyor, daha dar
-                ekranlarda kayıp/alt satıra taşma olmasın diye. */}
+          {/* Masaüstü (sm+): ikonlar doğrudan yan yana. Telefon: tek hamburger
+              menü (MobilMenu, kendi içinde sm:hidden) — birçok sitede olduğu
+              gibi basılınca header'ın altına doğru açılıyor. */}
+          <div className="hidden sm:flex items-center gap-3">
             <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.14)" }}>
               <span style={{ color: "#ffffff" }} className="text-[12px] font-bold truncate max-w-[160px]">{ad}</span>
               <span style={{ color: "#b7c4d6" }} className="text-[11px] shrink-0">· {rolEtiketi ?? rolEtiket[role]}</span>
             </div>
-            {moderatorMu && <Link href="/moderator" title="Moderatör paneli" className="sgec-btn flex h-11 w-11 shrink-0 items-center justify-center rounded-full sm:h-8 sm:w-8" style={{ background: "rgba(13,148,136,0.16)", border: "1px solid rgba(255,255,255,0.14)" }}><ShieldCheck size={16} color="#8fe6b0"/></Link>}
+            {moderatorMu && <Link href="/moderator" title="Moderatör paneli" className="sgec-btn flex h-8 w-8 shrink-0 items-center justify-center rounded-full" style={{ background: "rgba(13,148,136,0.16)", border: "1px solid rgba(255,255,255,0.14)" }}><ShieldCheck size={16} color="#8fe6b0"/></Link>}
             <TemaButonu />
             <BildirimAyarlari />
             {(role === "ogrenci" || role === "veli") && <MesajlarimIkonu baslangicSayisi={okunmamisMesajSayisi} />}
             <form action={signOut}>
               <button type="submit" title="Çıkış yap"
-                className="sgec-btn w-11 h-11 sm:w-8 sm:h-8 rounded-full flex items-center justify-center shrink-0"
+                className="sgec-btn w-8 h-8 rounded-full flex items-center justify-center shrink-0"
                 style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.14)" }}>
                 <LogOut size={14} color="#b7c4d6" />
               </button>
             </form>
           </div>
+
+          <MobilMenu ad={ad} role={role} okunmamisMesajSayisi={okunmamisMesajSayisi} moderatorMu={moderatorMu} rolEtiketi={rolEtiketi} />
         </div>
       </div>
       {mobilNavigasyon && <MobilAltNavigasyon role={role} />}
