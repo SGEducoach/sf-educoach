@@ -46,9 +46,13 @@ export function Header({ ad, role, okunmamisMesajSayisi = 0, mobilNavigasyon = t
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.14)" }}>
-              <span style={{ color: "#ffffff" }} className="text-[11px] sm:text-[12px] font-bold truncate max-w-[120px] sm:max-w-none">{ad}</span>
-              <span style={{ color: "#b7c4d6" }} className="text-[10px] sm:text-[11px]">· {rolEtiketi ?? rolEtiket[role]}</span>
+            {/* Mobilde ikon sırası (moderatör/tema/bildirim/mesajlar/çıkış)
+                tek satıra ancak isim rozeti olmadan sığıyor — o yüzden isim
+                sadece md+ (768px) genişlikte gösteriliyor, daha dar
+                ekranlarda kayıp/alt satıra taşma olmasın diye. */}
+            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.14)" }}>
+              <span style={{ color: "#ffffff" }} className="text-[12px] font-bold truncate max-w-[160px]">{ad}</span>
+              <span style={{ color: "#b7c4d6" }} className="text-[11px] shrink-0">· {rolEtiketi ?? rolEtiket[role]}</span>
             </div>
             {moderatorMu && <Link href="/moderator" title="Moderatör paneli" className="sgec-btn flex h-11 w-11 items-center justify-center rounded-full sm:h-8 sm:w-8" style={{ background: "rgba(13,148,136,0.16)", border: "1px solid rgba(255,255,255,0.14)" }}><ShieldCheck size={16} color="#8fe6b0"/></Link>}
             <TemaButonu />
