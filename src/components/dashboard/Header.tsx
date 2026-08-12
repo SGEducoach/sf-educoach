@@ -1,13 +1,6 @@
 import Image from "next/image";
-import Link from "next/link";
-import { LogOut, ShieldCheck } from "lucide-react";
-import { BG0, BG1_ALT, BORDER, SEAFOAM, TEXT, TEXT_MUTED } from "@/lib/theme";
-import { signOut } from "@/app/dashboard/actions";
-import { MesajlarimIkonu } from "@/components/dashboard/MesajlarimIkonu";
+import { LogOut } from "lucide-react";
 import type { UserRole } from "@/lib/types";
-import { MobilAltNavigasyon } from "@/components/dashboard/MobilAltNavigasyon";
-import { OturumZamanAsimi } from "@/components/OturumZamanAsimi";
-import { TemaButonu } from "@/components/TemaDenetimi";
 
 const rolEtiket: Record<UserRole, string> = {
   ogrenci: "Öğrenci",
@@ -17,49 +10,44 @@ const rolEtiket: Record<UserRole, string> = {
   admin: "Yönetici",
 };
 
-export function Header({ ad, role, okunmamisMesajSayisi = 0, mobilNavigasyon = true, moderatorMu = false, rolEtiketi }: { ad: string; role: UserRole; okunmamisMesajSayisi?: number; mobilNavigasyon?: boolean; moderatorMu?: boolean; rolEtiketi?: string }) {
+export function Header({ ad, role, okunmamisMesajSayisi = 0 }: { ad: string; role: UserRole; okunmamisMesajSayisi?: number }) {
   return (
-    <>
-    <OturumZamanAsimi aktif={role === "admin" || moderatorMu} />
-    <header className="sticky top-0 z-[100] isolate overflow-clip print:hidden" style={{
-      background: `radial-gradient(circle at 12% -30%, ${BG1_ALT} 0%, ${BG0} 55%)`,
-      borderBottom: `2px solid ${BORDER}`,
-          }}>
-      <div className="pointer-events-none" style={{ position: "absolute", top: -100, right: -50, width: 260, height: 260, borderRadius: "50%", background: "rgba(124,232,176,0.08)" }} />
-      <div className="pointer-events-none" style={{ position: "absolute", bottom: -120, right: 160, width: 200, height: 200, borderRadius: "50%", background: "rgba(143,198,255,0.08)" }} />
+    <div className="print:hidden relative overflow-hidden" style={{
+      background: `radial-gradient(circle at 12% -30%, #262B4E 0%, var(--background, #0d1f1e) 55%)`,
+    }}>
+      <div style={{ position: "absolute", top: -100, right: -50, width: 260, height: 260, borderRadius: "50%", background: "rgba(124,232,176,0.08)", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", bottom: -120, right: 160, width: 200, height: 200, borderRadius: "50%", background: "rgba(143,198,255,0.08)", pointerEvents: "none" }} />
 
-      <div className="max-w-6xl mx-auto px-4 py-3 sm:px-6 sm:py-4 relative">
-        <div className="flex items-center justify-between gap-3">
-          <Link href="/dashboard" title="Ana sayfaya dön" className="sgec-btn flex items-center gap-3 rounded-xl">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden shrink-0" style={{ boxShadow: "0 4px 16px rgba(124,232,176,0.28)" }}>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-5 pb-5 relative">
+        <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
+          {/* Logo ve Slogan Bölümü */}
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full overflow-hidden shrink-0" style={{ boxShadow: "0 4px 16px rgba(124,232,176,0.28)" }}>
               <Image src="/logo.png" alt="SG EduCoach" width={40} height={40} className="w-full h-full object-cover" priority />
             </div>
             <div>
-              <div style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="font-bold text-[16px] leading-none tracking-tight">SG EduCoach</div>
-              <div style={{ color: SEAFOAM }} className="hidden sm:block text-[12px] italic mt-1.5">Her zaman bir adım ötesini düşün</div>
+              <div style={{ color: "var(--text, #ffffff)", fontFamily: "var(--font-baloo)" }} className="font-bold text-[15px] sm:text-[16px] leading-none tracking-tight">SG EduCoach</div>
+              <div style={{ color: "var(--seafoam, #8fe6b0)" }} className="text-[11px] sm:text-[12px] italic mt-1.5">Her zaman bir adım ötesini düşün</div>
             </div>
-          </Link>
+          </div>
 
-          <div className="flex items-center gap-3">
-            <div className="hidden md:flex items-center gap-2 px-3.5 py-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.06)", border: `2px solid ${BORDER}` }}>
-              <span style={{ color: TEXT }} className="text-[12px] font-bold">{ad}</span>
-              <span style={{ color: TEXT_MUTED }} className="text-[11px]">· {rolEtiketi ?? rolEtiket[role]}</span>
+          {/* Kullanıcı Bilgisi ve İşlemler (Mobilde kaybolmaması için esnek ve düzenli) */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.06)", border: `1px solid var(--border, rgba(255,255,255,0.1))` }}>
+              <span style={{ color: "var(--text, #ffffff)" }} className="text-[11px] sm:text-[12px] font-bold truncate max-w-[120px] sm:max-w-none">{ad}</span>
+              <span style={{ color: "var(--text-muted, #94a3b8)" }} className="text-[10px] sm:text-[11px]">· {rolEtiket[role]}</span>
             </div>
-            {moderatorMu && <Link href="/moderator" title="Moderatör paneli" className="sgec-btn flex h-11 w-11 items-center justify-center rounded-full sm:h-8 sm:w-8" style={{ background: "rgba(13,148,136,0.12)", border: `2px solid ${BORDER}` }}><ShieldCheck size={16} color={SEAFOAM}/></Link>}
-            <TemaButonu />
             {(role === "ogrenci" || role === "veli") && <MesajlarimIkonu baslangicSayisi={okunmamisMesajSayisi} />}
             <form action={signOut}>
               <button type="submit" title="Çıkış yap"
-                className="sgec-btn w-11 h-11 sm:w-8 sm:h-8 rounded-full flex items-center justify-center"
-                style={{ background: "rgba(255,255,255,0.06)", border: `2px solid ${BORDER}` }}>
-                <LogOut size={14} color={TEXT_MUTED} />
+                className="sgec-btn w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+                style={{ background: "rgba(255,255,255,0.06)", border: `1px solid var(--border, rgba(255,255,255,0.1))` }}>
+                <LogOut size={14} color="var(--text-muted, #94a3b8)" />
               </button>
             </form>
           </div>
         </div>
       </div>
-      {mobilNavigasyon && <MobilAltNavigasyon role={role} />}
-    </header>
-    </>
+    </div>
   );
 }
