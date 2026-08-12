@@ -152,7 +152,7 @@ async function OgrenciIcerik({ userId, ad, donem }: { userId: string; ad: string
         </div>
       </div>
 
-      <Rozetlerim durum={rozetDurum} />
+      <Rozetlerim durum={rozetDurum} sinifSeviyesi={s.classes?.seviye ?? null} />
 
       <section id="zayif-konular" className="sgec-section"><ZayifKonular konular={zayifKonular} /></section>
 

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Trophy, BookOpen, PenLine, ClipboardList, BookText, X } from "lucide-react";
 import type { RozetSeviye } from "@/lib/types";
-import { ROZET_SEVIYE_ETIKET } from "@/lib/types";
+import { ROZET_SEVIYE_ETIKET, dokuzOnSinifMi } from "@/lib/types";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
 
 // Rozet sistemi v2: 3 bağımsız kategori (konu/soru/deneme) + bunlardan
@@ -28,7 +28,7 @@ export interface RozetDurum {
   genel: RozetSeviye;
 }
 
-function RozetKurallariModal({ onKapat }: { onKapat: () => void }) {
+function RozetKurallariModal({ onKapat, dokuzOnMu }: { onKapat: () => void; dokuzOnMu: boolean }) {
   useEffect(() => {
     const oncekiTasima = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -78,9 +78,15 @@ function RozetKurallariModal({ onKapat }: { onKapat: () => void }) {
 
         <div className="rounded-2xl p-3.5" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
           <div style={{ color: "#FFB199" }} className="text-xs font-bold mb-1">📋 Deneme</div>
-          <p style={{ color: TEXT_MUTED }} className="text-xs leading-relaxed">
-            Kayan 30 günde toplam deneme sayısı. Geriye dönük en fazla <strong>7 gün</strong>. <strong>3+ Bronz · 4+ Gümüş · 8+ Altın</strong>.
-          </p>
+          {dokuzOnMu ? (
+            <p style={{ color: TEXT_MUTED }} className="text-xs leading-relaxed">
+              9 ve 10. sınıfta Branş Denemesi sayılır — kayan 30 günde (aylık) toplam deneme sayısı. Geriye dönük en fazla <strong>7 gün</strong>. <strong>1+ Bronz · 2+ Gümüş · 3+ Altın</strong>.
+            </p>
+          ) : (
+            <p style={{ color: TEXT_MUTED }} className="text-xs leading-relaxed">
+              Kayan 30 günde toplam deneme sayısı. Geriye dönük en fazla <strong>7 gün</strong>. <strong>3+ Bronz · 4+ Gümüş · 8+ Altın</strong>.
+            </p>
+          )}
         </div>
 
         <div className="rounded-2xl p-3.5" style={{ background: "rgba(255,196,107,0.1)", border: "1px solid rgba(255,196,107,0.3)" }}>
@@ -107,8 +113,9 @@ function RozetKurallariModal({ onKapat }: { onKapat: () => void }) {
   );
 }
 
-export function Rozetlerim({ durum }: { durum: RozetDurum }) {
+export function Rozetlerim({ durum, sinifSeviyesi }: { durum: RozetDurum; sinifSeviyesi?: string | null }) {
   const [kurallarAcik, setKurallarAcik] = useState(false);
+  const dokuzOnMu = dokuzOnSinifMi(sinifSeviyesi);
 
   return (
     <div className="sgec-fade rounded-3xl p-5 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
@@ -154,7 +161,7 @@ export function Rozetlerim({ durum }: { durum: RozetDurum }) {
         })}
       </div>
 
-      {kurallarAcik && <RozetKurallariModal onKapat={() => setKurallarAcik(false)} />}
+      {kurallarAcik && <RozetKurallariModal onKapat={() => setKurallarAcik(false)} dokuzOnMu={dokuzOnMu} />}
     </div>
   );
 }

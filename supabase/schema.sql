@@ -1701,6 +1701,50 @@ create policy "deneme_bildirimleri_insert_admin" on public.deneme_bildirimleri
 create policy "deneme_bildirimleri_update_admin" on public.deneme_bildirimleri
   for update using (public.is_admin()) with check (public.is_admin());
 
+-- ============ 9-10. sınıf deneme rozeti eşikleri (0043) ============
+-- 11-12 eşikleri (3/4/8, kayan 30 gün) değişmedi; 9-10 için aynı pencerede
+-- daha düşük eşikler (1/2/3) uygulanıyor (bkz. kullanıcı notu, migration 0043).
+create or replace function public.ogrenci_deneme_seviyesi(p_student_id uuid)
+returns text
+language plpgsql
+security definer
+set search_path = public
+stable
+as $$
+declare
+  v_seviye text;
+  v_sayi int;
+begin
+  select c.seviye into v_seviye
+  from public.students s
+  left join public.classes c on c.id = s.class_id
+  where s.id = p_student_id;
+
+  select count(*) into v_sayi
+  from public.denemeler
+  where student_id = p_student_id and tarih between current_date - 30 and current_date;
+
+  if v_seviye in ('9', '10') then
+    return case
+      when v_sayi >= 3 then 'altin'
+      when v_sayi >= 2 then 'gumus'
+      when v_sayi >= 1 then 'bronz'
+      else 'yok'
+    end;
+  end if;
+
+  return case
+    when v_sayi >= 8 then 'altin'
+    when v_sayi >= 4 then 'gumus'
+    when v_sayi >= 3 then 'bronz'
+    else 'yok'
+  end;
+end;
+$$;
+
+revoke all on function public.ogrenci_deneme_seviyesi(uuid) from public;
+grant execute on function public.ogrenci_deneme_seviyesi(uuid) to authenticated;
+
 -- ============ handle_new_user 9-10. sınıf izinli-liste muafiyeti (0042) ============
 -- 9 ve 10. sınıf için izinli öğrenci listesi henüz hazırlanmadığından, bu
 -- sınıflardaki self-signup kayıtları listeye-göre-doğrulama adımından
