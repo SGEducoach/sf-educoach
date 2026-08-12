@@ -14,7 +14,7 @@ import { HosgeldinPopuplari } from "@/components/dashboard/HosgeldinPopuplari";
 import { ZorunluSifreDegisikligiKapisi } from "@/components/dashboard/ZorunluSifreDegisikligiKapisi";
 import { analizVerisiGetir } from "@/lib/analiz";
 import type { RaporDonemi } from "@/lib/analiz";
-import { AYT_ALAN_ETIKET } from "@/lib/types";
+import { AYT_ALAN_ETIKET, sinifSiraKarsilastir } from "@/lib/types";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
 import type { AytAlan, UserRole } from "@/lib/types";
 import { BG1, BG1_ALT, BORDER, BORDER_STRONG, TEXT, TEXT_MUTED, MINT } from "@/lib/theme";
@@ -216,11 +216,9 @@ async function OgretmenIcerik({ userId, role, secilenSinifId, secilenOgrenciId, 
   const { data: siniflar } = await supabase
     .from("classes")
     .select("id, seviye, sube")
-    .eq("school_id", teacher.school_id)
-    .order("seviye")
-    .order("sube");
+    .eq("school_id", teacher.school_id);
 
-  const sinifListesi = (siniflar ?? []) as { id: string; seviye: string; sube: string }[];
+  const sinifListesi = ((siniflar ?? []) as { id: string; seviye: string; sube: string }[]).sort(sinifSiraKarsilastir);
   const gorunecekSinifId = secilenSinifId || teacher.class_id || sinifListesi[0]?.id || null;
   const kendiSinifiMi = gorunecekSinifId === teacher.class_id;
 

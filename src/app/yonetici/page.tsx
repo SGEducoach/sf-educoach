@@ -10,6 +10,7 @@ import { KurallarYonetimi } from "@/components/yonetici/KurallarYonetimi";
 import { SifreDegistir } from "@/components/yonetici/SifreDegistir";
 import { YoneticiGirisForm } from "@/components/yonetici/YoneticiGirisForm";
 import { YoneticiYetkileri } from "@/components/yonetici/YoneticiYetkileri";
+import { sinifSiraKarsilastir } from "@/lib/types";
 
 // SG EduCoach'un tek kontrol noktası — bilerek /dashboard'dan ayrı, kendi
 // bağımsız girişi olan, hiçbir yerden link verilmeyen bir adres. Normal
@@ -39,7 +40,7 @@ export default async function YoneticiPage({
 
   const [{ data: siniflar }, { data: ogretmenler }] = await Promise.all([
     gorunecekOkulId
-      ? supabase.from("classes").select("id, seviye, sube").eq("school_id", gorunecekOkulId).order("seviye").order("sube")
+      ? supabase.from("classes").select("id, seviye, sube").eq("school_id", gorunecekOkulId)
       : Promise.resolve({ data: [] }),
     gorunecekOkulId
       ? supabase.from("teachers").select("id, brans, class_id, profiles!teachers_id_fkey(ad, role), classes(seviye, sube)").eq("school_id", gorunecekOkulId)
@@ -76,7 +77,7 @@ export default async function YoneticiPage({
         <section id="okullar" className="sgec-section"><AdminPanel
           okullar={okulListesi}
           gorunecekOkulId={gorunecekOkulId}
-          siniflar={(siniflar ?? []) as { id: string; seviye: string; sube: string }[]}
+          siniflar={((siniflar ?? []) as { id: string; seviye: string; sube: string }[]).sort(sinifSiraKarsilastir)}
           ogretmenListesi={ogretmenListesi}
           islemKayitlari={kayitListesi}
         /></section>

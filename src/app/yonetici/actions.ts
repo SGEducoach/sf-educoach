@@ -9,7 +9,7 @@ import { getAnthropicClient } from "@/lib/anthropic";
 import { KONU_ANLATIMI_SISTEM_PROMPTU, icerikTemizle } from "@/lib/konu-anlatimi";
 import { duyuruGonder, pushGonderProfile } from "@/lib/push-send";
 import { DUYURU_MIN_UZUNLUK, duyuruGonderimIzniKontrol } from "@/lib/duyuru-guvenligi";
-import { dersSoruSayisi } from "@/lib/types";
+import { dersSoruSayisi, sinifSiraKarsilastir } from "@/lib/types";
 import type { AytAlan, DenemeTuru, DenemeZorlugu, UserRole } from "@/lib/types";
 
 const DUYURU_MAKS_UZUNLUK = 500;
@@ -167,9 +167,9 @@ export async function hesapAktiflikDegistir(userId: string, aktif: boolean): Pro
 // service-role client'a gerek yok.
 export async function okulSiniflari(schoolId: string): Promise<{ error: string | null; siniflar: { id: string; seviye: string; sube: string }[] }> {
   const { supabase } = await requireAdmin();
-  const { data, error } = await supabase.from("classes").select("id, seviye, sube").eq("school_id", schoolId).order("seviye").order("sube");
+  const { data, error } = await supabase.from("classes").select("id, seviye, sube").eq("school_id", schoolId);
   if (error) return { error: error.message, siniflar: [] };
-  return { error: null, siniflar: data ?? [] };
+  return { error: null, siniflar: (data ?? []).sort(sinifSiraKarsilastir) };
 }
 
 // FK kısıtı (students.class_id / teachers.class_id "not null references",
@@ -240,10 +240,11 @@ export async function yonetimOkullariGetir(): Promise<{ error: string | null; ok
   const { admin } = await requireAdmin();
   const [{ data: okullar, error }, { data: siniflar }] = await Promise.all([
     admin.from("schools").select("id, ad").eq("aktif", true).order("ad"),
-    admin.from("classes").select("id, school_id, seviye, sube").order("seviye").order("sube"),
+    admin.from("classes").select("id, school_id, seviye, sube"),
   ]);
   if (error) return { error: error.message, okullar: [] };
-  return { error: null, okullar: (okullar ?? []).map((o) => ({ id: o.id, ad: o.ad, siniflar: (siniflar ?? []).filter((s) => s.school_id === o.id).map((s) => ({ id: s.id, ad: `${s.seviye}-${s.sube}` })) })) };
+  const siniflarSirali = (siniflar ?? []).sort(sinifSiraKarsilastir);
+  return { error: null, okullar: (okullar ?? []).map((o) => ({ id: o.id, ad: o.ad, siniflar: siniflarSirali.filter((s) => s.school_id === o.id).map((s) => ({ id: s.id, ad: `${s.seviye}-${s.sube}` })) })) };
 }
 
 export async function kullaniciKurumDegistir(input: { userId: string; role: UserRole; schoolId: string; classId?: string }): Promise<{ error: string | null }> {

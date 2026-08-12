@@ -19,6 +19,15 @@ export function dokuzOnSinifMi(seviye: string | null | undefined): boolean {
   return seviye === "9" || seviye === "10";
 }
 
+// classes.seviye bir text sütun olduğu için DB'nin kendi .order("seviye")'si
+// alfabetik sıralar ("10" < "11" < "12" < "9") — 9-10 eklenene kadar 11/12
+// tesadüfen doğru sıradaydı. Sınıf listesi gösterilen her yerde (kayıt formu,
+// admin/müdür panelleri) bu karşılaştırıcıyla sayısal sıralanmalı: 9-A_D,
+// 10-A_D, 11-A_D, 12-A_D.
+export function sinifSiraKarsilastir(a: { seviye: string; sube: string }, b: { seviye: string; sube: string }): number {
+  return Number(a.seviye) - Number(b.seviye) || a.sube.localeCompare(b.sube, "tr");
+}
+
 export interface Profile {
   id: string;
   ad: string;

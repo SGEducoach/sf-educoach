@@ -7,7 +7,7 @@ import Image from "next/image";
 import { GraduationCap, BookOpen, Users, ChevronLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { AytAlan, School, SchoolClass, UserRole } from "@/lib/types";
-import { AYT_ALAN_ETIKET, BRANS_LISTESI, dokuzOnSinifMi } from "@/lib/types";
+import { AYT_ALAN_ETIKET, BRANS_LISTESI, dokuzOnSinifMi, sinifSiraKarsilastir } from "@/lib/types";
 import {
   BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH,
 } from "@/lib/theme";
@@ -107,7 +107,9 @@ export default function SignupForm({ kurallarMetni, kurallarVersiyon }: { kurall
 
   useEffect(() => {
     supabase.from("schools").select("*").eq("tur", "okul").then(({ data }) => setSchools((data as School[]) ?? []));
-    supabase.from("classes").select("*").then(({ data }) => setClasses((data as SchoolClass[]) ?? []));
+    supabase.from("classes").select("*").then(({ data }) => {
+      setClasses(((data as SchoolClass[]) ?? []).sort(sinifSiraKarsilastir));
+    });
   }, [supabase]);
 
   useEffect(() => {
