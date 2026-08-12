@@ -155,8 +155,8 @@ function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
   return (
     <div className="rounded-xl px-3.5 py-2.5 flex flex-col gap-2" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}`, opacity: aktif ? 1 : 0.6 }}>
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <Link href={`/yonetici/kullanici/${kullanici.id}`} className="min-w-0 flex-1 rounded-lg p-1 -m-1" title={`${kullanici.ad} kullanıcısının sayfasını görüntüle`}>
-          <div style={{ color: TEXT }} className="text-sm font-semibold underline-offset-2 hover:underline">
+        <Link href={`/yonetici/kullanici/${kullanici.id}`} className="min-w-0 flex-1 cursor-pointer group" title={`${kullanici.ad} kullanıcısının sayfasını görüntüle`}>
+          <div style={{ color: TEXT }} className="text-sm font-semibold underline-offset-2 group-hover:underline transition-colors">
             {kullanici.ad} <span style={{ color: LILAC }} className="text-[10px] font-bold ml-1">{ROL_ETIKET[kullanici.role]}</span>
             {!aktif && <span style={{ color: BLUSH }} className="text-[10px] font-bold ml-1">PASİF</span>}
           </div>
