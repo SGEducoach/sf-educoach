@@ -185,20 +185,6 @@ select option {
 .sgec-ai-glow {
   animation: sgecGlowBreathe 3.2s ease-in-out infinite;
 }
-@keyframes sgecBob {
-  0%, 100% { transform: translateY(0) rotate(-2deg); }
-  50% { transform: translateY(-6px) rotate(2deg); }
-}
-.sgec-ai-mascot {
-  animation: sgecBob 3.6s ease-in-out infinite;
-}
-@keyframes sgecBubblePop {
-  0% { opacity: 0; transform: scale(0.8) translateY(4px); }
-  100% { opacity: 1; transform: scale(1) translateY(0); }
-}
-.sgec-ai-bubble {
-  animation: sgecBubblePop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
 
 /* Recharts'in eksen bazlı hover katmanı tüm grafik alanını karartmasın. */
 .recharts-tooltip-cursor,
