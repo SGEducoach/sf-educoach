@@ -23,6 +23,16 @@
   --mobile-nav-height: 64px;
 }
 
+  /* Yapay Zeka Analizi kartı — açık modda görünür olsun diye kendi
+     renk seti (genel teal paleti değil). Koyu modda ayrıca override edilir. */
+  --sgec-ai-bg: linear-gradient(135deg, rgba(124,58,237,0.16) 0%, rgba(37,99,235,0.11) 55%, rgba(94,234,212,0.09) 100%);
+  --sgec-ai-border: rgba(124,58,237,0.4);
+  --sgec-ai-glow-1: rgba(124,58,237,0.28);
+  --sgec-ai-glow-2: rgba(37,99,235,0.20);
+  --sgec-ai-accent-text: #6D28D9;
+  --sgec-ai-chip-bg: linear-gradient(135deg, rgba(124,58,237,0.16), rgba(37,99,235,0.16));
+}
+
 :root[data-theme="koyu"] {
   color-scheme: dark;
   --background: #0d1f1e;
@@ -37,6 +47,15 @@
   --sgec-mint: #5eead4;
   --sgec-mint-on: #102624;
   --sgec-seafoam: #7ce8d8;
+
+  /* Koyu modda düşük opaklıklı pastel tonlar arka planla neredeyse
+     görünmez oluyordu — daha parlak/doygun mor-mavi tonlara geçiliyor. */
+  --sgec-ai-bg: linear-gradient(135deg, rgba(167,139,250,0.30) 0%, rgba(96,165,250,0.20) 55%, rgba(45,212,191,0.14) 100%);
+  --sgec-ai-border: rgba(167,139,250,0.6);
+  --sgec-ai-glow-1: rgba(167,139,250,0.4);
+  --sgec-ai-glow-2: rgba(96,165,250,0.3);
+  --sgec-ai-accent-text: #D6C9FF;
+  --sgec-ai-chip-bg: linear-gradient(135deg, rgba(167,139,250,0.3), rgba(96,165,250,0.28));
 }
 
 .sgec-loading-overlay {
@@ -166,6 +185,20 @@ select option {
 }
 .sgec-ai-glow {
   animation: sgecGlowBreathe 3.2s ease-in-out infinite;
+}
+@keyframes sgecBob {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-6px) rotate(2deg); }
+}
+.sgec-ai-mascot {
+  animation: sgecBob 3.6s ease-in-out infinite;
+}
+@keyframes sgecBubblePop {
+  0% { opacity: 0; transform: scale(0.8) translateY(4px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.sgec-ai-bubble {
+  animation: sgecBubblePop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
 /* Recharts'in eksen bazlı hover katmanı tüm grafik alanını karartmasın. */
