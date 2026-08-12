@@ -54,5 +54,5 @@ export function TemaButonu() {
     window.dispatchEvent(new Event(TEMA_OLAYI));
   }
 
-  return <button type="button" onClick={degistir} title={`${etiket[tercih]} - değiştirmek için dokunun`} aria-label={etiket[tercih]} className="sgec-btn flex h-11 w-11 items-center justify-center rounded-full sm:h-8 sm:w-8" style={{ background: BG1_ALT, border: `2px solid ${BORDER}` }}><Icon size={15} color={TEXT_MUTED}/></button>;
+  return <button type="button" onClick={degistir} title={`${etiket[tercih]} - değiştirmek için dokunun`} aria-label={etiket[tercih]} className="sgec-btn flex h-11 w-11 shrink-0 items-center justify-center rounded-full sm:h-8 sm:w-8" style={{ background: BG1_ALT, border: `2px solid ${BORDER}` }}><Icon size={15} color={TEXT_MUTED}/></button>;
 }

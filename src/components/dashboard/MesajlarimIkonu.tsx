@@ -53,7 +53,7 @@ export function MesajlarimIkonu({ baslangicSayisi }: { baslangicSayisi: number }
   return (
     <div className="relative">
       <button type="button" onClick={ac} title="Mesajlarım"
-        className="sgec-btn h-[53px] w-[53px] sm:h-8 sm:w-8 rounded-full flex items-center justify-center relative"
+        className="sgec-btn h-11 w-11 sm:h-8 sm:w-8 rounded-full flex items-center justify-center relative shrink-0"
         style={{ background: sayisi > 0 ? "rgba(124,232,176,0.15)" : "rgba(255,255,255,0.06)", border: `2px solid ${BORDER}` }}>
         <Mail size={17} color={sayisi > 0 ? MINT : TEXT_MUTED} />
         {sayisi > 0 && (

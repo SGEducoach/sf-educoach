@@ -39,9 +39,12 @@ export function Header({ ad, role, okunmamisMesajSayisi = 0, mobilNavigasyon = t
                 <Image src="/logo.png" alt="SG EduCoach" width={40} height={40} className="w-full h-full object-cover" priority />
               </div>
             </Link>
-            <div>
-              <div style={{ color: "#ffffff", fontFamily: "var(--font-baloo)" }} className="font-bold text-[15px] sm:text-[16px] leading-none tracking-tight">SG EduCoach</div>
-              <div style={{ color: "#8fe6b0" }} className="hidden sm:block text-[12px] italic mt-1.5">Her zaman bir adım ötesini düşün</div>
+            {/* Yazı bloğu (isim + slogan) telefon genişliğinde ikon sırasıyla
+                yer çekişiyordu — sadece sm+ (640px) genişlikte gösteriliyor,
+                telefonda sadece yuvarlak logo kalıyor. */}
+            <div className="hidden sm:block">
+              <div style={{ color: "#ffffff", fontFamily: "var(--font-baloo)" }} className="font-bold text-[16px] leading-none tracking-tight">SG EduCoach</div>
+              <div style={{ color: "#8fe6b0" }} className="text-[12px] italic mt-1.5">Her zaman bir adım ötesini düşün</div>
             </div>
           </div>
 
@@ -54,7 +57,7 @@ export function Header({ ad, role, okunmamisMesajSayisi = 0, mobilNavigasyon = t
               <span style={{ color: "#ffffff" }} className="text-[12px] font-bold truncate max-w-[160px]">{ad}</span>
               <span style={{ color: "#b7c4d6" }} className="text-[11px] shrink-0">· {rolEtiketi ?? rolEtiket[role]}</span>
             </div>
-            {moderatorMu && <Link href="/moderator" title="Moderatör paneli" className="sgec-btn flex h-11 w-11 items-center justify-center rounded-full sm:h-8 sm:w-8" style={{ background: "rgba(13,148,136,0.16)", border: "1px solid rgba(255,255,255,0.14)" }}><ShieldCheck size={16} color="#8fe6b0"/></Link>}
+            {moderatorMu && <Link href="/moderator" title="Moderatör paneli" className="sgec-btn flex h-11 w-11 shrink-0 items-center justify-center rounded-full sm:h-8 sm:w-8" style={{ background: "rgba(13,148,136,0.16)", border: "1px solid rgba(255,255,255,0.14)" }}><ShieldCheck size={16} color="#8fe6b0"/></Link>}
             <TemaButonu />
             <BildirimAyarlari />
             {(role === "ogrenci" || role === "veli") && <MesajlarimIkonu baslangicSayisi={okunmamisMesajSayisi} />}
