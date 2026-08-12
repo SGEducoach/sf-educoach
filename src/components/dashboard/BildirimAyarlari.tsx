@@ -12,7 +12,9 @@ type Durum = "kontrolEdiliyor" | "desteklenmiyor" | "anaEkranaEklenmeli" | "kapa
 // Header'daki diğer ikonlar (tema, mesajlar) gibi küçük bir zil ikonu —
 // tıklanınca açılan bir kutuda durum ve "aç/kapat" seçeneği gösteriliyor.
 // Önceden sayfanın en üstünde tam genişlik bir banner olarak duruyordu, her
-// girişte göze batıyordu — artık sadece ihtiyaç olunca açılıyor.
+// girişte göze batıyordu — artık sadece ihtiyaç olunca açılıyor. Durum ne
+// olursa olsun (kontrol ediliyor, desteklenmiyor, izin reddedilmiş, kapalı,
+// açık) ikon her zaman görünür — sadece içeriği duruma göre değişiyor.
 export function BildirimAyarlari() {
   const [durum, setDurum] = useState<Durum>("kontrolEdiliyor");
   const [hata, setHata] = useState<string | null>(null);
@@ -85,9 +87,7 @@ export function BildirimAyarlari() {
     }
   }
 
-  if (durum === "kontrolEdiliyor" || durum === "desteklenmiyor") return null;
-
-  const Ikon = durum === "acik" ? BellRing : durum === "reddedildi" ? BellOff : Bell;
+  const Ikon = durum === "acik" ? BellRing : (durum === "reddedildi" || durum === "desteklenmiyor") ? BellOff : Bell;
   const ikonRengi = durum === "acik" ? MINT : durum === "reddedildi" ? BLUSH : TEXT_MUTED;
 
   return (
@@ -107,6 +107,8 @@ export function BildirimAyarlari() {
           >
             <div className="flex items-start justify-between gap-2 mb-1">
               <span style={{ color: TEXT }} className="text-sm font-bold pr-2">
+                {durum === "kontrolEdiliyor" && "Bildirim durumu kontrol ediliyor..."}
+                {durum === "desteklenmiyor" && "Bu tarayıcı bildirimleri desteklemiyor"}
                 {durum === "anaEkranaEklenmeli" && "Bildirim almak için ana ekrana ekleyin"}
                 {durum === "reddedildi" && "Bildirim izni reddedilmiş"}
                 {durum === "kapali" && "Bildirimler kapalı"}
@@ -117,6 +119,9 @@ export function BildirimAyarlari() {
                 <X size={12} color={TEXT_MUTED} />
               </button>
             </div>
+            {durum === "desteklenmiyor" && (
+              <p style={{ color: TEXT_MUTED }} className="text-xs leading-relaxed">Farklı bir tarayıcı veya cihaz deneyebilirsiniz.</p>
+            )}
             {durum === "anaEkranaEklenmeli" && (
               <p style={{ color: TEXT_MUTED }} className="text-xs leading-relaxed">Safari&apos;de Paylaş → &quot;Ana Ekrana Ekle&quot;yi kullanın.</p>
             )}
