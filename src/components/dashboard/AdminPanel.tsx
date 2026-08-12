@@ -103,11 +103,11 @@ export function AdminPanel({
   return (
     <div className="flex flex-col gap-6">
       <DuyuruFormu
-        baslik="Tüm platforma duyuru gönder"
-        aciklama="Bütün okullardaki tüm öğrencilere ve bağlı velilere push bildirimi olarak gider."
-        gonder={adminDuyuruGonder}
-        gecmisGetir={adminGonderilenDuyurularGetir}
-      />
+  baslik="Genel Duyuru Gönder"
+  aciklama="Tüm platformdaki öğrenci ve velilere anlık duyuru bildirim gönderin."
+  gonder={yoneticiDuyuruGonderAction}
+  gecmisGetir={yoneticiGecmisDuyurularAction}
+/>
 
       <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
