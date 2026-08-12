@@ -7,6 +7,7 @@ import { OgretmenPanel } from "@/components/dashboard/OgretmenPanel";
 import { OgrenciVeriGirisi } from "@/components/dashboard/OgrenciVeriGirisi";
 import { ZayifKonular } from "@/components/dashboard/ZayifKonular";
 import { Rozetlerim } from "@/components/dashboard/Rozetlerim";
+import { YapayZekaAnaliziPromosu } from "@/components/dashboard/YapayZekaAnaliziPromosu";
 import type { RozetDurum } from "@/components/dashboard/Rozetlerim";
 import { AnalizPaneli } from "@/components/dashboard/AnalizPaneli";
 import { BildirimAyarlari } from "@/components/dashboard/BildirimAyarlari";
@@ -151,6 +152,8 @@ async function OgrenciIcerik({ userId, ad, donem }: { userId: string; ad: string
           <Bilgi etiket="AYT Alanı" deger={AYT_ALAN_ETIKET[s.ayt_alan]} />
         </div>
       </div>
+
+      <section className="sgec-section print:hidden"><YapayZekaAnaliziPromosu /></section>
 
       <Rozetlerim durum={rozetDurum} sinifSeviyesi={s.classes?.seviye ?? null} />
 

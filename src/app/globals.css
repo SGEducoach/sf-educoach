@@ -151,6 +151,23 @@ select option {
     transform 0.2s ease;
 }
 
+/* Yapay Zeka Analizi promosu — twinkle eden sparkle ikonları + yumuşak
+   nefes alan (breathing) arka plan parıltısı. */
+@keyframes sgecTwinkle {
+  0%, 100% { opacity: 0.25; transform: scale(0.75) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1.15) rotate(12deg); }
+}
+.sgec-sparkle {
+  animation: sgecTwinkle 2.4s ease-in-out infinite;
+}
+@keyframes sgecGlowBreathe {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+.sgec-ai-glow {
+  animation: sgecGlowBreathe 3.2s ease-in-out infinite;
+}
+
 /* Recharts'in eksen bazlı hover katmanı tüm grafik alanını karartmasın. */
 .recharts-tooltip-cursor,
 .recharts-active-bar {
