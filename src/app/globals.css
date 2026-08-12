@@ -31,7 +31,7 @@
   --sgec-ai-glow-2: rgba(37,99,235,0.20);
   --sgec-ai-accent-text: #6D28D9;
   --sgec-ai-chip-bg: linear-gradient(135deg, rgba(124,58,237,0.16), rgba(37,99,235,0.16));
-}
+
 
 :root[data-theme="koyu"] {
   color-scheme: dark;

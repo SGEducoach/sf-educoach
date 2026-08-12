@@ -1,0 +1,73 @@
+﻿sira,pdf_okul_no,pdf_adi,gecen_yil_sinifi,mevcut_okul_no,mevcut_adi,mevcut_sinifi,durum,gerekce,turkce_d,turkce_y,sosyal_d,sosyal_y,matematik_d,matematik_y,fen_d,fen_y
+1,1907,AKİF PAKİNHOO,10-A,59,MEHMED AKİF PAK,11-A,ortak_noktayla_eslesti,AKİF ve PAK ortak; 10-A -> 11-A,39,1,16,4,39,0,19,0
+2,53,ZEYNEP SUDE ÜCÜK,10-B,53,ZEYNEP SUDE ÜCÜK,11-B,birebir,numara aynı; ad aynı; şube aynı,36,2,18,2,37,0,14,6
+3,1453,BOJACK,10-Ç,,,,aktarilmadi,BOJACK için mevcut listede güvenilir ortak nokta yok,32,5,19,1,35,3,18,2
+4,307,İKRA,10-C,307,İKRA ELİF TURAÇ,11-C,ortak_noktayla_eslesti,numara aynı; ortak ad parçaları: IKRA; şube aynı,37,3,17,3,32,4,17,3
+5,257,KEVSER BÜYÜK,10-C,257,KEVSER BÜYÜK,11-C,birebir,numara aynı; ad aynı; şube aynı,37,1,17,2,32,3,15,3
+6,0,ECRİN SU CINGILI,10-A,38,ECRİN SU ÇINGILI,11-A,ortak_noktayla_eslesti,numara farklı; ad aynı; şube aynı,37,1,15,2,33,1,14,1
+7,159,KARAGENÇ,10-B,159,OSMAN UĞUR KARAGENÇ,11-B,ortak_noktayla_eslesti,numara aynı; ortak ad parçaları: KARAGENC; şube aynı,33,5,17,2,32,4,15,4
+8,95,AHMET ERDEM KILIÇ,10-A,95,AHMET ERDEM KILIÇ,11-A,birebir,numara aynı; ad aynı; şube aynı,35,3,15,5,32,5,14,5
+9,6,ERTUĞRUL PIÇAKÇI,10-A,6,ERTUĞRUL PIÇAKÇI,11-A,birebir,numara aynı; ad aynı; şube aynı,33,3,15,5,31,3,16,4
+10,430,HAMİT HAN YUCEL,10-B,430,HAMİT HAN YÜCEL,11-B,birebir,numara aynı; ad aynı; şube aynı,33,3,16,2,31,2,14,4
+11,375,YUSUF GÖY,10-D,375,YUSUF SELİM GÖY,11-D,ortak_noktayla_eslesti,"numara aynı; ortak ad parçaları: GOY, YUSUF; şube aynı",34,5,18,2,29,8,15,5
+12,117,FADİME SOYKÖK,10-B,117,FADİME SOYKÖK,11-B,birebir,numara aynı; ad aynı; şube aynı,31,2,17,1,32,4,14,5
+13,202,ESMA KURT,10-B,202,ESMA KURT,11-B,birebir,numara aynı; ad aynı; şube aynı,34,6,18,2,30,7,14,6
+14,104,NİSANUR AKTAŞ,10-B,104,NİSANUR AKTAŞ,11-B,birebir,numara aynı; ad aynı; şube aynı,34,4,16,4,32,4,13,6
+15,11,SADULLAH IŞIK,10-A,11,MEHMED SADULLAH IŞIK,11-A,ortak_noktayla_eslesti,"numara aynı; ortak ad parçaları: ISIK, SADULLAH; şube aynı",34,6,17,3,29,7,15,5
+16,73,ASLI,10-A,73,ASLI SUDE SOYDAN,11-A,ortak_noktayla_eslesti,numara aynı; ortak ad parçaları: ASLI; şube aynı,36,4,17,3,32,5,10,8
+17,135,AHMET BOZATLI,10-B,135,AHMET GÖKTUĞ BOZATLI,11-B,ortak_noktayla_eslesti,"numara aynı; ortak ad parçaları: AHMET, BOZATLI; şube aynı",33,6,18,1,28,4,14,4
+18,52,ZEYNEP DAĞÇİÇEĞİ,10-A,52,ZEYNEP DAĞÇİÇEĞİ,11-A,birebir,numara aynı; ad aynı; şube aynı,34,5,18,1,28,3,12,5
+19,386,ZEHRA KILIÇ,10-D,386,ZEHRA KILIÇ,11-D,birebir,numara aynı; ad aynı; şube aynı,33,3,17,2,32,2,9,6
+20,329,ÖMER TAŞÇÜ,10-B,329,ÖMER TAŞ,11-B,ortak_noktayla_eslesti,numara aynı; ortak ad parçaları: OMER; şube aynı,32,5,17,3,32,5,11,7
+21,98,ENES DOĞAN,10-B,98,ENES DOĞAN,11-B,birebir,numara aynı; ad aynı; şube aynı,35,5,16,4,30,8,12,8
+22,389,BÜŞRA DERE,10-C,389,ELİF BÜŞRA DERE,11-C,ortak_noktayla_eslesti,"numara aynı; ortak ad parçaları: BUSRA, DERE; şube aynı",34,6,16,4,30,10,13,7
+23,12,ESMA SAYKIN,10-A,12,ESMA ECRİN SAYKIN,11-A,ortak_noktayla_eslesti,"numara aynı; ortak ad parçaları: ESMA, SAYKIN; şube aynı",33,2,18,2,26,3,12,5
+24,312,HAMZA DERELİ,10-C,312,HAMZA DERELİ,11-C,birebir,numara aynı; ad aynı; şube aynı,29,5,10,9,35,4,16,3
+25,88,ARDA KALENDER,10-A,88,AHMET ARDA KALENDER,11-A,ortak_noktayla_eslesti,"numara aynı; ortak ad parçaları: ARDA, KALENDER; şube aynı",33,6,16,4,29,7,13,7
+26,97,COŞKUN SÖNMEZ,10-A,97,COŞKUN SÖNMEZ,11-A,birebir,numara aynı; ad aynı; şube aynı,35,4,18,2,29,8,9,10
+27,47,SERRA KARAHAN,10-A,47,SERRA KARAHAN,11-A,birebir,numara aynı; ad aynı; şube aynı,28,8,17,2,30,6,14,3
+28,296,YİĞİT GÖK,10-C,296,MUHAMMED YİĞİT GÖK,11-C,ortak_noktayla_eslesti,"numara aynı; ortak ad parçaları: GOK, YIGIT; şube aynı",31,5,13,2,32,8,13,6
+29,4,EYLÜL BERK,10-A,4,EYLÜL BERSU BERK,11-A,ortak_noktayla_eslesti,"numara aynı; ortak ad parçaları: BERK, EYLUL; şube aynı",34,4,14,5,29,6,12,6
+30,8,HALİL,10-A,8,HALİL İBRAHİM BOZKURT,11-A,ortak_noktayla_eslesti,numara aynı; ortak ad parçaları: HALIL; şube aynı,31,5,18,2,28,7,11,8
+31,68,İCLAL,10-A,68,İCLAL AHSEN KAHVECİ,11-A,ortak_noktayla_eslesti,numara aynı; ortak ad parçaları: ICLAL; şube aynı,34,5,14,6,28,7,12,8
+32,383,ZEYNEP KAMACI,10-D,383,ZEYNEP KAMACI,11-D,birebir,numara aynı; ad aynı; şube aynı,35,4,19,1,26,8,7,12
+33,195,NİLDA KARADAŞ,10-D,193,NİLDA KARADAŞ,11-D,ortak_noktayla_eslesti,"NİLDA KARADAŞ birebir; 10-D -> 11-D, eski numara 195",33,7,15,5,28,9,11,6
+34,122,ULUER,10-B,122,HATİCE ULUER,11-B,ortak_noktayla_eslesti,numara aynı; ortak ad parçaları: ULUER; şube aynı,30,5,15,5,23,10,17,3
+35,5,HATİCE ARDIÇ,10-B,5,HATİCE ARDIÇ,11-B,birebir,numara aynı; ad aynı; şube aynı,32,2,18,2,24,7,10,6
+36,284,MEHMET TORUK,10-C,284,MEHMET TORUK,11-C,birebir,numara aynı; ad aynı; şube aynı,30,5,15,4,27,8,13,5
+37,222,BUĞRA KARAKAŞ,10-B,222,AHMET BUĞRA KARAKAŞ,11-B,ortak_noktayla_eslesti,"numara aynı; ortak ad parçaları: BUGRA, KARAKAS; şube aynı",29,6,17,2,29,5,9,5
+38,328,ZEHRA YANIK,10-C,328,ZEHRA YANIK,11-C,birebir,numara aynı; ad aynı; şube aynı,28,4,16,2,28,4,11,5
+39,32,NAVRUZ,10-A,32,NAVRUZ ARSLAN,11-A,ortak_noktayla_eslesti,numara aynı; ortak ad parçaları: NAVRUZ; şube aynı,30,7,16,4,29,3,9,6
+40,380,RMS DMR,10-D,380,RÜMEYSA DEMİR,11-D,ortak_noktayla_eslesti,numara aynı; ortak ad parçaları: ; şube aynı,33,4,15,3,23,7,11,5
+41,363,LEYLANUR,10-D,363,LEYLANUR ÖZDEMİR,11-D,ortak_noktayla_eslesti,numara aynı; ortak ad parçaları: LEYLANUR; şube aynı,32,4,14,6,25,2,10,5
+42,348,FATMANUR,10-C,348,FATMANUR ALKAYA,11-C,ortak_noktayla_eslesti,numara aynı; ortak ad parçaları: FATMANUR; şube aynı,27,7,12,3,30,2,11,4
+43,20,ONUR İDEV,10-A,20,ONUR MEHMET İDEV,11-A,ortak_noktayla_eslesti,"numara aynı; ortak ad parçaları: IDEV, ONUR; şube aynı",30,5,16,3,27,3,7,5
+44,41,YAVUZ TÜRKAN,10-A,41,YAVUZ SELİM TÜRKAN,11-A,ortak_noktayla_eslesti,"numara aynı; ortak ad parçaları: TURKAN, YAVUZ; şube aynı",29,7,16,4,26,11,12,8
+45,390,ZEYNEPSU,10-D,390,ZEYNEP SU KAYA,11-D,ortak_noktayla_eslesti,numara aynı; ortak ad parçaları: ; şube aynı,33,6,9,5,28,8,12,7
+46,282,AVNİ,10-B,282,AVNİ DOĞAN,11-B,ortak_noktayla_eslesti,numara aynı; ortak ad parçaları: AVNI; şube aynı,35,4,17,3,23,11,7,7
+47,373,ZEYNEP TOPAL,10-D,373,ZEYNEP TOPAL,11-D,birebir,numara aynı; ad aynı; şube aynı,28,2,7,3,35,2,8,4
+48,377,ARİF KOCA,10-D,377,ARİF KOCA,11-D,birebir,numara aynı; ad aynı; şube aynı,32,8,10,10,28,8,13,7
+49,0,EFE,10-B,194,MUHAMMED EFE ÖZDEMİR,11-B,ortak_noktayla_eslesti,EFE ortak ve 10-B -> 11-B; tek isim nedeniyle orta güven,28,5,15,1,22,2,12,4
+50,10,LİONEL MESSİ,10-D,,,,aktarilmadi,LİONEL MESSİ adı ve 10-D şubesi mevcut 10 numarayla uyuşmuyor,23,5,18,2,28,11,11,6
+51,66,ONUR GEZER,10-A,66,ONUR GEZER,11-A,birebir,numara aynı; ad aynı; şube aynı,28,12,13,6,26,7,14,4
+52,394,MERT PER,10-B,394,İBRAHİM MERT PER,11-B,ortak_noktayla_eslesti,"numara aynı; ortak ad parçaları: MERT, PER; şube aynı",26,10,15,5,30,8,11,9
+53,376,AYŞEGÜL FEYZİOĞLU,10-D,376,AYŞEGÜL FEYZİOĞLU,11-D,birebir,numara aynı; ad aynı; şube aynı,30,5,13,3,27,4,8,4
+54,0,AHMET,10-XX,,,,aktarilmadi,AHMET tek başına ve 10-XX sınıfı ayırt edici değil,30,7,16,2,22,6,11,7
+55,187,YAĞMUR YANIK,10-XX,187,YAĞMUR YANIK,11-B,ortak_noktayla_eslesti,numara aynı; ad aynı; şube farklı,30,9,13,6,27,9,11,7
+56,93,EMİRHAN KAYNAK,10-A,93,EMİRHAN KAYNAK,11-A,birebir,numara aynı; ad aynı; şube aynı,34,5,9,5,26,10,11,7
+57,391,ELİF SUDE TAŞ,10-D,391,ELİF SUDE TAŞ,11-D,birebir,numara aynı; ad aynı; şube aynı,35,5,13,7,24,4,7,6
+58,351,OSMAN UÇAR,10-C,351,OSMAN EMRE UÇAR,11-C,ortak_noktayla_eslesti,"numara aynı; ortak ad parçaları: OSMAN, UCAR; şube aynı",23,3,14,5,29,6,12,6
+59,419,İLAYDA DOĞAN,10-A,419,İLAYDA DOĞAN,11-A,birebir,numara aynı; ad aynı; şube aynı,24,8,15,4,25,4,13,2
+60,56,ESRA KANDİLLİ,10-A,56,HATİCE ESRA KANDİLLİ,11-A,ortak_noktayla_eslesti,"numara aynı; ortak ad parçaları: ESRA, KANDILLI; şube aynı",36,3,15,4,20,11,8,9
+61,340,G YAREN COŞKUN,10-C,340,GÜMÜŞ YAREN COŞKUN,11-C,ortak_noktayla_eslesti,"numara aynı; ortak ad parçaları: COSKUN, YAREN; şube aynı",32,5,14,2,18,5,11,4
+62,186,HATİCE KILIÇ,10-B,186,HATİCE KILIÇ,11-B,birebir,numara aynı; ad aynı; şube aynı,33,4,16,3,20,4,6,9
+63,384,İLKER MURAT KURT,10-D,393,İLKER MURAT KURT,11-D,ortak_noktayla_eslesti,"İLKER MURAT KURT birebir; 10-D -> 11-D, eski numara 384",26,7,16,1,23,9,10,7
+64,188,ERDEM KARACA,10-B,188,MEHMET ERDEM KARACA,11-B,ortak_noktayla_eslesti,"numara aynı; ortak ad parçaları: ERDEM, KARACA; şube aynı",30,9,19,1,17,5,9,10
+65,99,ÖZGE ÜSTÜN,10-B,99,ÖZGE ÜSTÜN,11-B,birebir,numara aynı; ad aynı; şube aynı,28,10,14,5,23,7,9,9
+66,199,MERT,10-C,,,,aktarilmadi,MERT tek başına; aynı şubede güvenilir aday yok,28,7,15,5,25,9,4,2
+67,28,ECRİNGÜL,10-A,28,ECRİNGÜL CEYHAN,11-A,ortak_noktayla_eslesti,numara aynı; ortak ad parçaları: ECRINGUL; şube aynı,30,3,13,5,22,4,5,6
+68,361,AYŞEGÜL BAYAZIT,10-D,361,AYŞEGÜL BAYAZIT,11-D,birebir,numara aynı; ad aynı; şube aynı,31,2,9,7,21,7,9,5
+69,397,FATİH,10-B,397,FATİH BUĞRA SERT,11-B,ortak_noktayla_eslesti,numara aynı; ortak ad parçaları: FATIH; şube aynı,28,6,14,5,22,9,4,9
+70,302,EDA TOZ,10-C,302,FATMA EDA TOZ,11-C,ortak_noktayla_eslesti,"numara aynı; ortak ad parçaları: EDA, TOZ; şube aynı",32,4,15,0,15,1,62,5
+71,510,AHMET MEHMET,10-Ç,,,,aktarilmadi,AHMET MEHMET ve 10-Ç için güvenilir karşılık yok,27,4,13,1,14,2,54,7
+72,451,HALİL,10-C,4646,HALİL İBRAHİM ÇİFLİKLİ,11-C,ortak_noktayla_eslesti,HALİL ortak ve 10-C -> 11-C; tek isim nedeniyle orta güven,1,4,8,8,28,12,14,6
