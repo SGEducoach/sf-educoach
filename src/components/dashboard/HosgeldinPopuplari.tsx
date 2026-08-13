@@ -1,27 +1,27 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Heart, Smartphone, BellOff, BellRing } from "lucide-react";
+import { Smartphone, BellOff, BellRing } from "lucide-react";
 import { BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 import { pushAbonelikAc } from "@/lib/push-subscribe";
 import type { UserRole } from "@/lib/types";
 import { MaskotKonusmaBalonu } from "@/components/dashboard/MaskotKonusmaBalonu";
 
-const HOSGELDIN_ANAHTAR = "sgec_hosgeldin_kapatildi_v1";
 const HATIRLATMA_ANAHTAR = "sgec_hatirlatma_kapatildi_v1";
 const BILDIRIM_ANAHTAR = "sgec_bildirim_softask_kapatildi_v1";
 
-type Asama = "hosgeldin" | "hatirlatma" | "bildirim" | null;
+type Asama = "hatirlatma" | "bildirim" | null;
 
 function kapatildiMi(anahtar: string): boolean {
   try { return localStorage.getItem(anahtar) === "1"; } catch { return false; }
 }
 
 // Veli ve öğrenciye, dashboard'a her girişte (kalıcı olarak kapatmadıkları
-// sürece) sırayla pop-up gösterir: hoşgeldin/tanıtım → ana ekrana ekleme
-// hatırlatması → (sadece veli) bildirim izni için soft-ask. Tarayıcının
-// çıplak izin diyaloğunu doğrudan göstermek yerine önce "neden" sorusunu
-// sorup kabul oranını artırmak için.
+// sürece) sırayla pop-up gösterir: ana ekrana ekleme hatırlatması → (sadece
+// veli) bildirim izni için soft-ask. Tarayıcının çıplak izin diyaloğunu
+// doğrudan göstermek yerine önce "neden" sorusunu sorup kabul oranını
+// artırmak için. (Eskiden ilk aşamada "S. Güler" imzalı bir karşılama
+// mesajı da vardı, kaldırıldı.)
 export function HosgeldinPopuplari({ role }: { role: UserRole }) {
   const [asama, setAsama] = useState<Asama>(null);
 
@@ -29,7 +29,6 @@ export function HosgeldinPopuplari({ role }: { role: UserRole }) {
     if (role !== "veli" && role !== "ogrenci") return;
     if (typeof window === "undefined") return;
     const zamanlayici = window.setTimeout(() => {
-      if (!kapatildiMi(HOSGELDIN_ANAHTAR)) { setAsama("hosgeldin"); return; }
       if (!kapatildiMi(HATIRLATMA_ANAHTAR)) { setAsama("hatirlatma"); return; }
       if (role === "veli" && !kapatildiMi(BILDIRIM_ANAHTAR)) { setAsama("bildirim"); }
     }, 0);
@@ -39,17 +38,13 @@ export function HosgeldinPopuplari({ role }: { role: UserRole }) {
   if (role !== "veli" && role !== "ogrenci") return null;
 
   function siradakiAsama(): Asama {
-    if (asama === "hosgeldin") {
-      if (!kapatildiMi(HATIRLATMA_ANAHTAR)) return "hatirlatma";
-    }
-    if (asama === "hosgeldin" || asama === "hatirlatma") {
+    if (asama === "hatirlatma") {
       if (role === "veli" && !kapatildiMi(BILDIRIM_ANAHTAR)) return "bildirim";
     }
     return null;
   }
 
   function anahtarGetir(a: Asama): string {
-    if (a === "hosgeldin") return HOSGELDIN_ANAHTAR;
     if (a === "hatirlatma") return HATIRLATMA_ANAHTAR;
     return BILDIRIM_ANAHTAR;
   }
@@ -63,27 +58,9 @@ export function HosgeldinPopuplari({ role }: { role: UserRole }) {
 
   if (!asama) return null;
 
-  const selamlama = role === "veli" ? "Sayın Veli," : "Sevgili Öğrencim,";
-  const cumle1 = role === "veli"
-    ? "Öğrencilerim için yoğun mesai ve emek harcadığım uygulamayı ücretsiz olarak sunuyorum."
-    : "Sizler için yoğun mesai ve emek harcadığım uygulamayı ücretsiz olarak sunuyorum.";
-  const cumle2 = "Faydalı olması dileğiyle...";
-
   return (
     <MaskotKonusmaBalonu onKapat={() => sonrakiyeGec(false)} ariaLabel="Giriş bilgilendirmesi">
       <div className="pt-1">
-        {asama === "hosgeldin" && (
-          <>
-            <div className="w-10 h-10 rounded-full flex items-center justify-center mb-3" style={{ background: "rgba(255,159,180,0.15)" }}>
-              <Heart size={18} color="#FF9FB4" />
-            </div>
-            <p style={{ color: TEXT }} className="text-sm leading-relaxed mb-1">{selamlama}</p>
-            <p style={{ color: TEXT }} className="text-sm leading-relaxed mb-1">{cumle1}</p>
-            <p style={{ color: TEXT }} className="text-sm leading-relaxed mb-4">{cumle2}</p>
-            <p style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base text-right mb-4 font-bold">S. Güler</p>
-          </>
-        )}
-
         {asama === "hatirlatma" && (
           <>
             <div className="w-10 h-10 rounded-full flex items-center justify-center mb-3" style={{ background: "rgba(124,232,176,0.15)" }}>
