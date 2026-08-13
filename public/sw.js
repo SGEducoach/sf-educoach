@@ -1,4 +1,4 @@
-// SG EduCoach — Web Push service worker
+// SF EduCoach — Web Push service worker
 
 self.addEventListener("install", () => {
   self.skipWaiting();
@@ -14,10 +14,10 @@ self.addEventListener("push", (event) => {
   try {
     veri = event.data.json();
   } catch {
-    veri = { title: "SG EduCoach", body: event.data.text() };
+    veri = { title: "SF EduCoach", body: event.data.text() };
   }
 
-  const baslik = veri.title || "SG EduCoach";
+  const baslik = veri.title || "SF EduCoach";
   const secenekler = {
     body: veri.body || "",
     icon: "/icon-192.png",

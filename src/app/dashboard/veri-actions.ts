@@ -37,10 +37,10 @@ async function rozetKontrolVeBildir(supabase: Awaited<ReturnType<typeof createCl
       const [kategori, seviye] = token.split(":");
       const seviyeEtiket = SEVIYE_ETIKET[seviye] ?? seviye;
       const baslik = kategori === "genel"
-        ? `SG EDUCOACH ${seviyeEtiket} Rozeti Kazanıldı!`
+        ? `SF EDUCOACH ${seviyeEtiket} Rozeti Kazanıldı!`
         : `${KATEGORI_ETIKET[kategori] ?? kategori} — ${seviyeEtiket} Rozeti Kazanıldı!`;
       const govde = kategori === "genel"
-        ? `${ad}, üç kategorinin de gerektirdiği seviyeye ulaşarak SG EDUCOACH ${seviyeEtiket} rozetini kazandı.`
+        ? `${ad}, üç kategorinin de gerektirdiği seviyeye ulaşarak SF EDUCOACH ${seviyeEtiket} rozetini kazandı.`
         : `${ad}, ${KATEGORI_ETIKET[kategori] ?? kategori} kategorisinde ${seviyeEtiket} rozetine ulaştı.`;
       for (const v of veliler) await pushGonderProfile(admin, v.parent_id, baslik, govde);
     }

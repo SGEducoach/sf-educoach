@@ -27,7 +27,7 @@ const KATEGORI_TANIM: Record<KategoriAnahtar, {
     tablo: "konu_calismalar",
     deadlineKolonu: "son_hatirlatma_konu_deadline",
     ad: "Konu Çalışma",
-    ogrenciGovde: (gun) => `${gun} gündür konu çalışması girmedin. SG EduCoach'a girip güncel verilerini ekle.`,
+    ogrenciGovde: (gun) => `${gun} gündür konu çalışması girmedin. SF EduCoach'a girip güncel verilerini ekle.`,
     veliBaslik: () => "Öğrenciniz konu verisi girmiyor!",
     veliGovde: (ad, gun) => `${ad} adlı öğrenciniz ${gun} gündür konu çalışması verisi girmedi.`,
   },
@@ -35,7 +35,7 @@ const KATEGORI_TANIM: Record<KategoriAnahtar, {
     tablo: "soru_cozumleri",
     deadlineKolonu: "son_hatirlatma_soru_deadline",
     ad: "Soru Çözümü",
-    ogrenciGovde: (gun) => `${gun} gündür soru çözümü girmedin. SG EduCoach'a girip güncel verilerini ekle.`,
+    ogrenciGovde: (gun) => `${gun} gündür soru çözümü girmedin. SF EduCoach'a girip güncel verilerini ekle.`,
     veliBaslik: () => "Öğrenciniz soru çözümü girmiyor!",
     veliGovde: (ad, gun) => `${ad} adlı öğrenciniz ${gun} gündür soru çözümü verisi girmedi.`,
   },
@@ -43,7 +43,7 @@ const KATEGORI_TANIM: Record<KategoriAnahtar, {
     tablo: "denemeler",
     deadlineKolonu: "son_hatirlatma_deneme_deadline",
     ad: "Deneme",
-    ogrenciGovde: () => `Bu hafta deneme girişi yapmadın. SG EduCoach'a girip güncel verilerini ekle.`,
+    ogrenciGovde: () => `Bu hafta deneme girişi yapmadın. SF EduCoach'a girip güncel verilerini ekle.`,
     veliBaslik: () => "Öğrenciniz bu hafta deneme girişi yapmadı!",
     veliGovde: (ad) => `${ad} adlı öğrenciniz bu hafta deneme sınavı girmedi.`,
   },
@@ -174,7 +174,7 @@ export async function GET(request: Request) {
 
         try {
           await resend.emails.send({
-            from: "SG EduCoach <onboarding@resend.dev>",
+            from: "SF EduCoach <onboarding@resend.dev>",
             to: profile.email,
             subject: ogrenciBaslik,
             html: `<p>Merhaba ${profile.ad},</p><p>${ogrenciGovde}</p>`,
@@ -185,7 +185,7 @@ export async function GET(request: Request) {
         if (veliEmailler.length > 0) {
           try {
             await resend.emails.send({
-              from: "SG EduCoach <onboarding@resend.dev>",
+              from: "SF EduCoach <onboarding@resend.dev>",
               to: veliEmailler,
               subject: veliBaslik,
               html: `<p>Merhaba,</p><p>${veliGovde}</p>`,

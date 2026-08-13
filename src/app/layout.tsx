@@ -21,13 +21,13 @@ const montserratBaslik = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "SG EduCoach",
+  title: "SF EduCoach",
   description: "Her zaman bir adım ötesini düşün",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "SG EduCoach",
+    title: "SF EduCoach",
   },
   icons: {
     apple: "/apple-touch-icon.png",

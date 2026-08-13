@@ -12,7 +12,7 @@ import { YoneticiGirisForm } from "@/components/yonetici/YoneticiGirisForm";
 import { YoneticiYetkileri } from "@/components/yonetici/YoneticiYetkileri";
 import { sinifSiraKarsilastir } from "@/lib/types";
 
-// SG EduCoach'un tek kontrol noktası — bilerek /dashboard'dan ayrı, kendi
+// SF EduCoach'un tek kontrol noktası — bilerek /dashboard'dan ayrı, kendi
 // bağımsız girişi olan, hiçbir yerden link verilmeyen bir adres. Normal
 // giriş/rol seçimi akışının hiçbir parçası değil: sadece bu URL'yi bilen
 // (ve admin hesabı olan) kişi buraya ulaşabilir.

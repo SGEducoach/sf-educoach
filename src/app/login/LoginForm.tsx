@@ -96,9 +96,9 @@ export default function LoginForm() {
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-7">
           <div className="w-16 h-16 rounded-full overflow-hidden mb-3" style={{ boxShadow: "0 4px 16px rgba(124,232,176,0.28)" }}>
-            <Image src="/logo.png" alt="SG EduCoach" width={64} height={64} className="w-full h-full object-cover" priority />
+            <Image src="/logo.png" alt="SF EduCoach" width={64} height={64} className="w-full h-full object-cover" priority />
           </div>
-          <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-bold">SG EduCoach</h1>
+          <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-bold">SF EduCoach</h1>
           <p style={{ color: TEXT_MUTED }} className="text-xs mt-1 italic">Her zaman bir adım ötesini düşün</p>
         </div>
 
