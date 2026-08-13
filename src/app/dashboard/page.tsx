@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Sparkles } from "lucide-react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Header } from "@/components/dashboard/Header";
@@ -142,7 +142,12 @@ async function OgrenciIcerik({ userId, ad, donem }: { userId: string; ad: string
   return (
     <div className="flex flex-col gap-6">
       <div id="ozet" className="sgec-section sgec-fade rounded-3xl p-6 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-        <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-bold mb-4">Hoş geldin! 👋</h1>
+        <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-bold mb-4 flex items-center gap-2">
+          Hoş geldin!
+          <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full" style={{ background: "linear-gradient(135deg, #7C3AED, #2563EB)" }}>
+            <Sparkles size={13} color="#fff" />
+          </span>
+        </h1>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <Bilgi etiket="Okul No" deger={s.okul_no} />
           <Bilgi etiket="Okul" deger={s.schools?.ad ?? "—"} />
@@ -280,7 +285,12 @@ async function VeliIcerik({ userId, secilenOgrenciId, donem }: { userId: string;
   return (
     <div className="flex flex-col gap-6">
       <div id="ozet" className="sgec-section sgec-fade rounded-3xl p-6 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-        <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-bold mb-4">Hoş geldiniz! 👋</h1>
+        <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-bold mb-4 flex items-center gap-2">
+          Hoş geldiniz!
+          <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full" style={{ background: "linear-gradient(135deg, #7C3AED, #2563EB)" }}>
+            <Sparkles size={13} color="#fff" />
+          </span>
+        </h1>
         {cocuklar.length === 0 ? (
           <p style={{ color: TEXT_MUTED }} className="text-sm">Henüz bağlı bir öğrenci yok.</p>
         ) : (
