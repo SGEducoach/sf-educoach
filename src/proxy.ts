@@ -1,27 +1,14 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
-// SG EduCoach -> SF EduCoach marka değişikliği sırasında Vercel projesi
-// yeniden adlandırıldı (sg-educoach -> sf-educoach). Eski otomatik
-// vercel.app adresleri hâlâ bu projeye alias'lı olduğu için, kayıtlı
-// kullanıcıların eski kısayolları/bookmarkları kırılmasın diye kalıcı
-// (308) yönlendirme yapıyoruz.
-const ESKI_VERCEL_DOMAINLERI = new Set([
-  "sg-educoach.vercel.app",
-  "sg-educoach-sg-educoach.vercel.app",
-  "sg-educoach-git-main-sg-educoach.vercel.app",
-]);
-const YENI_DOMAIN = "sf-educoach.vercel.app";
-
+// NOT: sg-educoach.vercel.app -> sf-educoach.vercel.app yönlendirmesi
+// BİLEREK devre dışı. sf-educoach.vercel.app, Vercel'in "all except
+// custom domains" SSO korumasına takılıyor (yalnızca projenin özgün
+// varsayılan domaini olan sg-educoach.vercel.app bu korumadan muaf) —
+// yönlendirme açılırsa gerçek kullanıcılar Vercel giriş ekranına düşer.
+// Kullanıcıyla SSO korumasını kapatma kararı netleşmeden bu satır geri
+// açılmayacak.
 export async function proxy(request: NextRequest) {
-  const host = request.headers.get("host");
-  if (host && ESKI_VERCEL_DOMAINLERI.has(host)) {
-    const hedefUrl = new URL(request.url);
-    hedefUrl.protocol = "https:";
-    hedefUrl.host = YENI_DOMAIN;
-    hedefUrl.port = "";
-    return NextResponse.redirect(hedefUrl, 308);
-  }
   return await updateSession(request);
 }
 
