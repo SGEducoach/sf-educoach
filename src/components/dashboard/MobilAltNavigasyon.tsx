@@ -36,7 +36,7 @@ const MENULER: Record<UserRole, { href: string; etiket: string; ikon: typeof Hom
 export function MobilAltNavigasyon({ role }: { role: UserRole }) {
   const menu = MENULER[role];
   return (
-    <nav className="sgec-mobile-nav fixed inset-x-0 bottom-0 z-[110] border-t lg:hidden print:hidden" aria-label="Mobil bölüm navigasyonu"
+    <nav className="sfec-mobile-nav fixed inset-x-0 bottom-0 z-[110] border-t lg:hidden print:hidden" aria-label="Mobil bölüm navigasyonu"
       style={{ background: BG1, borderColor: BORDER_STRONG, paddingBottom: "env(safe-area-inset-bottom)" }}>
       <div className="mx-auto grid max-w-md" style={{ gridTemplateColumns: `repeat(${menu.length}, minmax(0, 1fr))` }}>
         {menu.map(({ href, etiket, ikon: Ikon }) => (

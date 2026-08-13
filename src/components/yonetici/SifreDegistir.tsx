@@ -38,7 +38,7 @@ export function SifreDegistir() {
   if (!acik) {
     return (
       <button type="button" onClick={() => setAcik(true)}
-        className="sgec-btn flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl self-start"
+        className="sfec-btn flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl self-start"
         style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
         <KeyRound size={13} /> Şifremi değiştir
       </button>
@@ -46,9 +46,9 @@ export function SifreDegistir() {
   }
 
   return (
-    <div className="sgec-fade rounded-3xl p-5 max-w-sm" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+    <div className="sfec-fade rounded-3xl p-5 max-w-sm" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <button type="button" onClick={() => setAcik(false)}
-        className="sgec-btn w-full flex items-center justify-between gap-2 mb-3">
+        className="sfec-btn w-full flex items-center justify-between gap-2 mb-3">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(199,182,255,0.15)" }}>
             <KeyRound size={13} color={LILAC} />
@@ -79,7 +79,7 @@ export function SifreDegistir() {
         )}
 
         <button type="submit" disabled={pending}
-          className="sgec-btn self-start text-xs font-bold px-4 py-2 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+          className="sfec-btn self-start text-xs font-bold px-4 py-2 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
           {pending ? "Güncelleniyor..." : "Şifreyi güncelle"}
         </button>
       </form>

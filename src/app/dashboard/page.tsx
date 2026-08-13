@@ -89,7 +89,7 @@ async function OgrenciIcerik({ userId, ad, donem }: { userId: string; ad: string
 
   if (!s) {
     return (
-      <div className="sgec-fade rounded-3xl p-6 text-center" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+      <div className="sfec-fade rounded-3xl p-6 text-center" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <p style={{ color: TEXT_MUTED }} className="text-sm">Öğrenci profili bulunamadı.</p>
       </div>
     );
@@ -141,7 +141,7 @@ async function OgrenciIcerik({ userId, ad, donem }: { userId: string; ad: string
 
   return (
     <div className="flex flex-col gap-6">
-      <div id="ozet" className="sgec-section sgec-fade rounded-3xl p-6 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+      <div id="ozet" className="sfec-section sfec-fade rounded-3xl p-6 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-bold mb-4 flex items-center gap-2">
           Hoş geldin!
           <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full" style={{ background: "linear-gradient(135deg, #7C3AED, #2563EB)" }}>
@@ -156,17 +156,17 @@ async function OgrenciIcerik({ userId, ad, donem }: { userId: string; ad: string
         </div>
       </div>
 
-      <section className="sgec-section print:hidden"><YapayZekaAnaliziPromosu /></section>
+      <section className="sfec-section print:hidden"><YapayZekaAnaliziPromosu /></section>
 
       <Rozetlerim durum={rozetDurum} sinifSeviyesi={s.classes?.seviye ?? null} />
 
-      <section id="zayif-konular" className="sgec-section"><ZayifKonular konular={zayifKonular} /></section>
+      <section id="zayif-konular" className="sfec-section"><ZayifKonular konular={zayifKonular} /></section>
 
-      <div id="veri-girisi" className="sgec-section print:hidden">
+      <div id="veri-girisi" className="sfec-section print:hidden">
         <OgrenciVeriGirisi aytAlan={s.ayt_alan} konuOnerileri={konuOnerileri} sinifSeviyesi={s.classes?.seviye ?? null} />
       </div>
 
-      <div id="analiz" className="sgec-section">
+      <div id="analiz" className="sfec-section">
         <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-lg font-bold mb-3 print:hidden">Analiz / Rapor</h2>
         <AnalizPaneli veri={analiz} ogrenciAdi={ad} />
       </div>
@@ -186,7 +186,7 @@ async function OgretmenIcerik({ userId, role, secilenSinifId, secilenOgrenciId, 
 
   if (!teacher) {
     return (
-      <div className="sgec-fade rounded-3xl p-6 text-center" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+      <div className="sfec-fade rounded-3xl p-6 text-center" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <p style={{ color: TEXT_MUTED }} className="text-sm">Öğretmen profili bulunamadı.</p>
       </div>
     );
@@ -208,7 +208,7 @@ async function OgretmenIcerik({ userId, role, secilenSinifId, secilenOgrenciId, 
       return (
         <div className="flex flex-col gap-4">
           <Link href={secilenSinifId ? `/dashboard?sinif=${secilenSinifId}` : "/dashboard"}
-            className="sgec-btn inline-flex items-center gap-1 text-xs font-bold w-fit px-3 py-1.5 rounded-full print:hidden"
+            className="sfec-btn inline-flex items-center gap-1 text-xs font-bold w-fit px-3 py-1.5 rounded-full print:hidden"
             style={{ background: BG1_ALT, color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
             <ChevronLeft size={14} /> Listeye dön
           </Link>
@@ -284,7 +284,7 @@ async function VeliIcerik({ userId, secilenOgrenciId, donem }: { userId: string;
 
   return (
     <div className="flex flex-col gap-6">
-      <div id="ozet" className="sgec-section sgec-fade rounded-3xl p-6 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+      <div id="ozet" className="sfec-section sfec-fade rounded-3xl p-6 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-bold mb-4 flex items-center gap-2">
           Hoş geldiniz!
           <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full" style={{ background: "linear-gradient(135deg, #7C3AED, #2563EB)" }}>
@@ -299,7 +299,7 @@ async function VeliIcerik({ userId, secilenOgrenciId, donem }: { userId: string;
               const secili = c.students?.id === seciliId;
               return (
                 <Link key={i} href={`/dashboard?ogrenci=${c.students?.id}`}
-                  className="sgec-btn rounded-xl px-3.5 py-2.5 text-sm font-semibold"
+                  className="sfec-btn rounded-xl px-3.5 py-2.5 text-sm font-semibold"
                   style={{ color: secili ? MINT : TEXT, background: secili ? "rgba(124,232,176,0.12)" : "rgba(255,255,255,0.04)", border: `1px solid ${secili ? MINT : "transparent"}` }}>
                   {c.students?.profiles?.ad} <span style={{ color: TEXT_MUTED }} className="font-normal">· #{c.students?.okul_no}</span>
                 </Link>
@@ -309,7 +309,7 @@ async function VeliIcerik({ userId, secilenOgrenciId, donem }: { userId: string;
         )}
       </div>
 
-      {seciliCocuk?.students && <section id="analiz" className="sgec-section"><AnalizPaneli veri={await analizVerisiGetir(supabase, seciliCocuk.students.id, donem)} ogrenciAdi={seciliCocuk.students.profiles?.ad} /></section>}
+      {seciliCocuk?.students && <section id="analiz" className="sfec-section"><AnalizPaneli veri={await analizVerisiGetir(supabase, seciliCocuk.students.id, donem)} ogrenciAdi={seciliCocuk.students.profiles?.ad} /></section>}
     </div>
   );
 }

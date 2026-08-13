@@ -37,7 +37,7 @@ export function MobilMenu({ ad, role, okunmamisMesajSayisi, moderatorMu, rolEtik
   return (
     <div className="relative sm:hidden">
       <button type="button" onClick={() => setAcik((v) => !v)} aria-label={acik ? "Menüyü kapat" : "Menüyü aç"} aria-expanded={acik}
-        className="sgec-btn h-11 w-11 rounded-full flex items-center justify-center shrink-0"
+        className="sfec-btn h-11 w-11 rounded-full flex items-center justify-center shrink-0"
         style={{ background: "rgba(255,255,255,0.06)", border: `2px solid ${BORDER}` }}>
         {acik ? <X size={18} color={TEXT} /> : <Menu size={18} color={TEXT} />}
       </button>
@@ -46,7 +46,7 @@ export function MobilMenu({ ad, role, okunmamisMesajSayisi, moderatorMu, rolEtik
         <>
           <button type="button" aria-label="Menüyü kapat" onClick={() => setAcik(false)} className="fixed inset-0 z-[150]" style={{ background: "transparent" }} />
           <div
-            className="sgec-fade absolute right-0 top-14 z-[150] w-64 rounded-2xl p-3 flex flex-col gap-1"
+            className="sfec-fade absolute right-0 top-14 z-[150] w-64 rounded-2xl p-3 flex flex-col gap-1"
             style={{ background: BG1, border: `2px solid ${BORDER_STRONG}`, boxShadow: "0 16px 32px rgba(0,0,0,0.28)" }}
           >
             <div className="px-2 py-1.5 mb-1" style={{ borderBottom: `2px solid ${BORDER}` }}>
@@ -56,7 +56,7 @@ export function MobilMenu({ ad, role, okunmamisMesajSayisi, moderatorMu, rolEtik
 
             {moderatorMu && (
               <Link href="/moderator" onClick={() => setAcik(false)}
-                className="sgec-btn flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-[13px] font-semibold" style={{ color: TEXT }}>
+                className="sfec-btn flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-[13px] font-semibold" style={{ color: TEXT }}>
                 <ShieldCheck size={16} color={SEAFOAM} /> Moderatör paneli
               </Link>
             )}
@@ -80,7 +80,7 @@ export function MobilMenu({ ad, role, okunmamisMesajSayisi, moderatorMu, rolEtik
 
             <form action={signOut} className="mt-1 pt-2" style={{ borderTop: `2px solid ${BORDER}` }}>
               <button type="submit"
-                className="sgec-btn w-full flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-[13px] font-semibold" style={{ color: BLUSH }}>
+                className="sfec-btn w-full flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-[13px] font-semibold" style={{ color: BLUSH }}>
                 <LogOut size={16} /> Çıkış yap
               </button>
             </form>

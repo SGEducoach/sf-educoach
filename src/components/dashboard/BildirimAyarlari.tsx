@@ -93,7 +93,7 @@ export function BildirimAyarlari() {
   return (
     <div className="relative">
       <button type="button" onClick={() => setAcik((v) => !v)} title="Bildirim ayarları"
-        className="sgec-btn h-11 w-11 sm:h-8 sm:w-8 rounded-full flex items-center justify-center shrink-0"
+        className="sfec-btn h-11 w-11 sm:h-8 sm:w-8 rounded-full flex items-center justify-center shrink-0"
         style={{ background: durum === "acik" ? MINT_BG : "rgba(255,255,255,0.06)", border: `2px solid ${BORDER}` }}>
         <Ikon size={16} color={ikonRengi} />
       </button>
@@ -101,7 +101,7 @@ export function BildirimAyarlari() {
       {acik && createPortal(
         <div className="fixed inset-0 z-[400]" onClick={() => setAcik(false)}>
           <div
-            className="sgec-fade absolute right-4 top-16 sm:right-6 w-[min(320px,calc(100vw-2rem))] rounded-2xl p-4"
+            className="sfec-fade absolute right-4 top-16 sm:right-6 w-[min(320px,calc(100vw-2rem))] rounded-2xl p-4"
             style={{ background: BG1, border: `2px solid ${BORDER_STRONG}`, boxShadow: "0 12px 30px rgba(0,0,0,0.28)" }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -115,7 +115,7 @@ export function BildirimAyarlari() {
                 {durum === "acik" && "Bildirimler açık"}
               </span>
               <button type="button" onClick={() => setAcik(false)} aria-label="Kapat"
-                className="sgec-btn shrink-0 w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.06)" }}>
+                className="sfec-btn shrink-0 w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.06)" }}>
                 <X size={12} color={TEXT_MUTED} />
               </button>
             </div>
@@ -132,7 +132,7 @@ export function BildirimAyarlari() {
 
             {(durum === "kapali" || durum === "acik") && (
               <button onClick={durum === "acik" ? kapat : ac} disabled={yukleniyor}
-                className="sgec-btn mt-3 flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-full disabled:opacity-60"
+                className="sfec-btn mt-3 flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-full disabled:opacity-60"
                 style={{
                   background: durum === "acik" ? "transparent" : MINT,
                   color: durum === "acik" ? TEXT_MUTED : MINT_ON,

@@ -49,7 +49,7 @@ export function KullaniciArama() {
 }
 
   return (
-    <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+    <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <div className="flex items-center gap-2 mb-4">
         <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(199,182,255,0.15)" }}>
           <Users size={13} color={LILAC} />
@@ -76,7 +76,7 @@ export function KullaniciArama() {
           return (
             <button key={r.id} type="button"
               onClick={() => { setRol(r.id); ara(sorgu, r.id); }}
-              className="sgec-btn text-[11px] font-bold px-3 py-1.5 rounded-full"
+              className="sfec-btn text-[11px] font-bold px-3 py-1.5 rounded-full"
               style={{ background: aktif ? MINT : "rgba(255,255,255,0.06)", color: aktif ? MINT_ON : TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
               {r.ad}
             </button>
@@ -166,29 +166,29 @@ function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
         </Link>
         <div className="flex items-center gap-1.5 shrink-0">
           <button type="button" onClick={sifreSifirlaTikla} disabled={sifrePending} title="Şifre sıfırla"
-            className="sgec-btn flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full disabled:opacity-60"
+            className="sfec-btn flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full disabled:opacity-60"
             style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
             <KeyRound size={11} /> Şifre sıfırla
           </button>
           <button type="button" onClick={aktiflikTikla} disabled={aktiflikPending} title={aktif ? "Pasifleştir" : "Aktifleştir"}
-            className="sgec-btn flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full disabled:opacity-60"
+            className="sfec-btn flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full disabled:opacity-60"
             style={{ background: "rgba(255,255,255,0.06)", color: aktif ? BLUSH : MINT, border: `2px solid ${BORDER_STRONG}` }}>
             {aktif ? <><EyeOff size={11} /> Pasifleştir</> : <><Eye size={11} /> Aktifleştir</>}
           </button>
           {(kullanici.role === "ogrenci" || kullanici.role === "ogretmen" || kullanici.role === "mudur") && (
             <button type="button" onClick={() => setDuzenleAcik((v) => !v)} title={kullanici.role === "ogrenci" ? "Sınıf taşı" : "Branş değiştir"}
-              className="sgec-btn flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full"
+              className="sfec-btn flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full"
               style={{ background: duzenleAcik ? MINT : "rgba(255,255,255,0.06)", color: duzenleAcik ? MINT_ON : TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
               <ArrowRightLeft size={11} /> {kullanici.role === "ogrenci" ? "Sınıf taşı" : "Branş"}
             </button>
           )}
           <button type="button" onClick={silTikla} disabled={silmePending} title="Kullanıcıyı kalıcı sil"
-            className="sgec-btn flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full disabled:opacity-60"
+            className="sfec-btn flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full disabled:opacity-60"
             style={{ background: "rgba(225,29,72,0.08)", color: BLUSH, border: `1px solid ${BLUSH}` }}>
             <Trash2 size={11} /> {silmePending ? "Siliniyor..." : "Sil"}
           </button>
           <button type="button" onClick={() => setDetayAcik((v) => !v)} title="Detaylı kullanıcı yönetimi"
-            className="sgec-btn flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full"
+            className="sfec-btn flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full"
             style={{ background: detayAcik ? MINT : "rgba(13,148,136,0.08)", color: detayAcik ? MINT_ON : TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
             <Settings size={11} /> Yönet
           </button>
@@ -211,7 +211,7 @@ function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
             <div style={{ color: TEXT_MUTED }} className="mt-0.5">Bu şifreyi ilgili kişiye iletin, tekrar gösterilmeyecek.</div>
           </div>
           <button type="button" onClick={sifreKopyala}
-            className="sgec-btn shrink-0 flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full"
+            className="sfec-btn shrink-0 flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full"
             style={{ background: MINT, color: MINT_ON }}>
             {kopyalandi ? <><Check size={12} /> Kopyalandı</> : <><Copy size={12} /> Kopyala</>}
           </button>
@@ -259,7 +259,7 @@ function OgrenciSinifTasiFormu({ studentId, okulId, suankiSinifId, onDone }: { s
             {siniflar.map((s) => <option key={s.id} value={s.id}>{s.seviye}-{s.sube}</option>)}
           </select>
           <button type="button" onClick={tasi} disabled={pending || !seciliSinifId || seciliSinifId === suankiSinifId}
-            className="sgec-btn text-[11px] font-bold px-3 py-1.5 rounded-full disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+            className="sfec-btn text-[11px] font-bold px-3 py-1.5 rounded-full disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
             {pending ? "Taşınıyor..." : "Taşı"}
           </button>
         </>
@@ -291,7 +291,7 @@ function OgretmenBransFormu({ teacherId, suankiBrans, onDone }: { teacherId: str
         {BRANS_LISTESI.map((b) => <option key={b} value={b}>{b}</option>)}
       </select>
       <button type="button" onClick={kaydet} disabled={pending || brans === suankiBrans}
-        className="sgec-btn text-[11px] font-bold px-3 py-1.5 rounded-full disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+        className="sfec-btn text-[11px] font-bold px-3 py-1.5 rounded-full disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
         {pending ? "Kaydediliyor..." : "Kaydet"}
       </button>
       {hata && <span style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</span>}

@@ -5,8 +5,8 @@ import { Clock3, Moon, Sun } from "lucide-react";
 import { BG1_ALT, BORDER, TEXT_MUTED } from "@/lib/theme";
 
 type TemaTercihi = "otomatik" | "acik" | "koyu";
-const TEMA_ANAHTARI = "sgec_tema_tercihi";
-const TEMA_OLAYI = "sgec-tema-degisti";
+const TEMA_ANAHTARI = "sfec_tema_tercihi";
+const TEMA_OLAYI = "sfec-tema-degisti";
 
 function kayitliTercih(): TemaTercihi {
   const tercih = localStorage.getItem(TEMA_ANAHTARI);
@@ -54,5 +54,5 @@ export function TemaButonu() {
     window.dispatchEvent(new Event(TEMA_OLAYI));
   }
 
-  return <button type="button" onClick={degistir} title={`${etiket[tercih]} - değiştirmek için dokunun`} aria-label={etiket[tercih]} className="sgec-btn flex h-11 w-11 shrink-0 items-center justify-center rounded-full sm:h-8 sm:w-8" style={{ background: BG1_ALT, border: `2px solid ${BORDER}` }}><Icon size={15} color={TEXT_MUTED}/></button>;
+  return <button type="button" onClick={degistir} title={`${etiket[tercih]} - değiştirmek için dokunun`} aria-label={etiket[tercih]} className="sfec-btn flex h-11 w-11 shrink-0 items-center justify-center rounded-full sm:h-8 sm:w-8" style={{ background: BG1_ALT, border: `2px solid ${BORDER}` }}><Icon size={15} color={TEXT_MUTED}/></button>;
 }

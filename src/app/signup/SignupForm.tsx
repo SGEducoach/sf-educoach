@@ -50,7 +50,7 @@ function Secim({ children, ...props }: React.SelectHTMLAttributes<HTMLSelectElem
 // src/app/signup/page.tsx, src/lib/app-ayarlari.ts). Admin metni her
 // güncellediğinde versiyon otomatik bump'lanır, böylece daha önce eski
 // metni kabul etmiş kullanıcılara yeni metin tekrar sorulur.
-const KURALLAR_STORAGE_KEY = "sgec_kurallar_kabul";
+const KURALLAR_STORAGE_KEY = "sfec_kurallar_kabul";
 
 function kurallarOnayliMi(versiyon: string) {
   if (typeof window === "undefined") return false;
@@ -87,7 +87,7 @@ function KurallarModal({ metin, versiyon, onKabul }: { metin: string; versiyon: 
           <span style={{ color: TEXT }} className="text-xs font-semibold">Kuralları okudum, kabul ediyorum.</span>
         </label>
         <button type="button" disabled={!okundu} onClick={kabulEt}
-          className="sgec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-50"
+          className="sfec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-50"
           style={{ background: MINT, color: MINT_ON }}>
           Devam et
         </button>
@@ -139,7 +139,7 @@ export default function SignupForm({ kurallarMetni, kurallarVersiyon }: { kurall
             return (
               <button
                 key={r.id} type="button" onClick={() => setRole(r.id)}
-                className="sgec-btn flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-full text-[12px] font-bold"
+                className="sfec-btn flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-full text-[12px] font-bold"
                 style={{ background: aktif ? MINT : "transparent", color: aktif ? MINT_ON : TEXT_MUTED }}>
                 <Icon size={13} /> {r.ad}
               </button>
@@ -237,7 +237,7 @@ function OgrenciKayit({ schools, classes, router, supabase }: {
         </div>
         {oturumVar ? (
           <button type="button" onClick={() => { router.push("/dashboard"); router.refresh(); }}
-            className="sgec-btn text-sm font-bold py-2.5 rounded-xl" style={{ background: MINT, color: MINT_ON }}>
+            className="sfec-btn text-sm font-bold py-2.5 rounded-xl" style={{ background: MINT, color: MINT_ON }}>
             Panele git
           </button>
         ) : (
@@ -262,10 +262,10 @@ function OgrenciKayit({ schools, classes, router, supabase }: {
           </p>
           {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
           <div className="flex gap-2">
-            <button type="button" onClick={() => setAdim(1)} className="sgec-btn shrink-0 w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
+            <button type="button" onClick={() => setAdim(1)} className="sfec-btn shrink-0 w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
               <ChevronLeft size={16} color={TEXT_MUTED} />
             </button>
-            <button type="submit" disabled={yukleniyor} className="sgec-btn flex-1 text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+            <button type="submit" disabled={yukleniyor} className="sfec-btn flex-1 text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
               {yukleniyor ? "Kaydediliyor..." : "Kayıt ol"}
             </button>
           </div>
@@ -311,7 +311,7 @@ function OgrenciKayit({ schools, classes, router, supabase }: {
       )}
       <label className="flex flex-col gap-1"><Etiket>Hedef Bölüm</Etiket><Girdi required value={hedefBolum} onChange={(e) => setHedefBolum(e.target.value)} /></label>
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
-      <button type="submit" className="sgec-btn text-sm font-bold py-2.5 rounded-xl" style={{ background: MINT, color: MINT_ON }}>Devam et</button>
+      <button type="submit" className="sfec-btn text-sm font-bold py-2.5 rounded-xl" style={{ background: MINT, color: MINT_ON }}>Devam et</button>
     </form>
   );
 }
@@ -390,10 +390,10 @@ function OgretmenKayit({ schools, router, supabase }: {
           </label>
           {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
           <div className="flex gap-2">
-            <button type="button" onClick={() => setAdim(1)} className="sgec-btn shrink-0 w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
+            <button type="button" onClick={() => setAdim(1)} className="sfec-btn shrink-0 w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
               <ChevronLeft size={16} color={TEXT_MUTED} />
             </button>
-            <button type="submit" disabled={yukleniyor} className="sgec-btn flex-1 text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+            <button type="submit" disabled={yukleniyor} className="sfec-btn flex-1 text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
               {yukleniyor ? "Kaydediliyor..." : "Kayıt ol"}
             </button>
           </div>
@@ -423,7 +423,7 @@ function OgretmenKayit({ schools, router, supabase }: {
         </Secim>
       </label>
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
-      <button type="submit" className="sgec-btn text-sm font-bold py-2.5 rounded-xl" style={{ background: MINT, color: MINT_ON }}>Devam et</button>
+      <button type="submit" className="sfec-btn text-sm font-bold py-2.5 rounded-xl" style={{ background: MINT, color: MINT_ON }}>Devam et</button>
     </form>
   );
 }
@@ -436,12 +436,12 @@ function VeliKayit({ schools, router, supabase }: { schools: School[]; router: R
     <div className="rounded-3xl p-6 flex flex-col gap-4" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <div className="flex gap-1 p-1 rounded-full" style={{ background: "rgba(255,255,255,0.06)", border: `2px solid ${BORDER}` }}>
         <button type="button" onClick={() => setMod("talep")}
-          className="sgec-btn flex-1 text-[11px] font-bold py-1.5 rounded-full"
+          className="sfec-btn flex-1 text-[11px] font-bold py-1.5 rounded-full"
           style={{ background: mod === "talep" ? MINT : "transparent", color: mod === "talep" ? MINT_ON : TEXT_MUTED }}>
           Kod talep et
         </button>
         <button type="button" onClick={() => setMod("tamamla")}
-          className="sgec-btn flex-1 text-[11px] font-bold py-1.5 rounded-full"
+          className="sfec-btn flex-1 text-[11px] font-bold py-1.5 rounded-full"
           style={{ background: mod === "tamamla" ? MINT : "transparent", color: mod === "tamamla" ? MINT_ON : TEXT_MUTED }}>
           Kodum var, tamamla
         </button>
@@ -497,7 +497,7 @@ function VeliTalepForm({ schools }: { schools: School[] }) {
         </label>
         <label className="flex flex-col gap-1"><Etiket>Öğrenci Okul No</Etiket><Girdi required value={okulNo} inputMode="numeric" maxLength={5} onChange={(e) => setOkulNo(okulNoSanitize(e.target.value))} /></label>
         {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
-        <button type="submit" disabled={yukleniyor} className="sgec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+        <button type="submit" disabled={yukleniyor} className="sfec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
           {yukleniyor ? "Gönderiliyor..." : "Kod talep et"}
         </button>
       </form>
@@ -505,7 +505,7 @@ function VeliTalepForm({ schools }: { schools: School[] }) {
 
       {gonderildi && (
         <div className="fixed inset-0 z-[400] flex items-center justify-center px-4" style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }}>
-          <div className="sgec-fade rounded-3xl p-6 max-w-sm w-full text-center" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+          <div className="sfec-fade rounded-3xl p-6 max-w-sm w-full text-center" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
             <p style={{ color: TEXT }} className="text-sm font-bold leading-relaxed mb-3">
               Kod talebiniz alındı.
             </p>
@@ -521,7 +521,7 @@ function VeliTalepForm({ schools }: { schools: School[] }) {
             </div>
             <p style={{ color: BLUSH }} className="mb-4 text-[11px] font-semibold leading-relaxed">Kodu yalnız doğrulanmış veli–öğrenci iletişiminde paylaşın. Kod mesajını veya ekran görüntüsünü üçüncü kişilere göndermeyin; ilk kayıt 48 saat içinde tamamlanmalıdır.</p>
             <button type="button" onClick={yeniTalep}
-              className="sgec-btn text-sm font-bold py-2.5 px-8 rounded-xl" style={{ background: MINT, color: MINT_ON }}>
+              className="sfec-btn text-sm font-bold py-2.5 px-8 rounded-xl" style={{ background: MINT, color: MINT_ON }}>
               Tamam
             </button>
           </div>
@@ -628,7 +628,7 @@ function VeliTamamlaForm({ schools, router }: { schools: School[]; router: Retur
         if (!telefonGecerliMi(veliTelefon)) return setHata("Telefon numarası geçersiz. " + TELEFON_IPUCU);
         if (!kvkkOnay) return setHata("Devam etmek için KVKK metnini onaylayın.");
         setAsama(2);
-      }} className="sgec-btn rounded-xl py-2.5 text-sm font-bold" style={{ background: MINT, color: MINT_ON }}>
+      }} className="sfec-btn rounded-xl py-2.5 text-sm font-bold" style={{ background: MINT, color: MINT_ON }}>
         Devam et
       </button>
       </> : <>
@@ -639,8 +639,8 @@ function VeliTamamlaForm({ schools, router }: { schools: School[]; router: Retur
 
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
       <div className="flex gap-2">
-        <button type="button" onClick={() => { setHata(null); setAsama(1); }} disabled={yukleniyor} className="sgec-btn flex-1 rounded-xl py-2.5 text-sm font-bold" style={{ background: BG0, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>Geri</button>
-        <button type="submit" disabled={yukleniyor} className="sgec-btn flex-1 text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+        <button type="button" onClick={() => { setHata(null); setAsama(1); }} disabled={yukleniyor} className="sfec-btn flex-1 rounded-xl py-2.5 text-sm font-bold" style={{ background: BG0, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>Geri</button>
+        <button type="submit" disabled={yukleniyor} className="sfec-btn flex-1 text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
           {yukleniyor ? "Tamamlanıyor..." : "Şifreyi oluştur"}
         </button>
       </div>

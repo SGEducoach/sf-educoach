@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 const ZAMAN_ASIMI_MS = 30 * 60 * 1000;
-const SON_HAREKET_ANAHTARI = "sgec_yetkili_son_hareket";
+const SON_HAREKET_ANAHTARI = "sfec_yetkili_son_hareket";
 
 export function OturumZamanAsimi({ aktif }: { aktif: boolean }) {
   useEffect(() => {

@@ -41,7 +41,7 @@ export function KurallarYonetimi() {
   }
 
   return (
-    <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+    <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <div className="flex items-center gap-2 mb-4 flex-wrap">
         <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(199,182,255,0.15)" }}>
           <FileText size={13} color={LILAC} />
@@ -64,7 +64,7 @@ export function KurallarYonetimi() {
           {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
           {basarili && <div style={{ color: MINT }} className="text-xs font-semibold">Kaydedildi.</div>}
           <button type="button" onClick={kaydet} disabled={pending || duzenlemeMetni.trim() === metin}
-            className="sgec-btn self-start flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-xl disabled:opacity-60"
+            className="sfec-btn self-start flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-xl disabled:opacity-60"
             style={{ background: MINT, color: MINT_ON }}>
             <Save size={12} /> {pending ? "Kaydediliyor..." : "Kaydet (yeni versiyon)"}
           </button>

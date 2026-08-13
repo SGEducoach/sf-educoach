@@ -48,7 +48,7 @@ function ZorunluSifreDegisikligi({ onTamam }: { onTamam: () => void }) {
   return (
     <div className="fixed inset-0 z-[450] flex items-center justify-center px-4"
       style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }}>
-      <form onSubmit={gonder} className="sgec-fade rounded-3xl p-6 max-w-sm w-full flex flex-col gap-3" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+      <form onSubmit={gonder} className="sfec-fade rounded-3xl p-6 max-w-sm w-full flex flex-col gap-3" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <div className="w-10 h-10 rounded-full flex items-center justify-center mb-1" style={{ background: MINT_BG }}>
           <KeyRound size={18} color={MINT} />
         </div>
@@ -69,7 +69,7 @@ function ZorunluSifreDegisikligi({ onTamam }: { onTamam: () => void }) {
         </label>
         {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
         <button type="submit" disabled={yukleniyor}
-          className="sgec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+          className="sfec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
           {yukleniyor ? "Kaydediliyor..." : "Şifreyi belirle ve devam et"}
         </button>
       </form>

@@ -33,7 +33,7 @@ export function VeliTalepleri() {
   const digerleri = talepler?.filter((t) => t.durum !== "bekliyor") ?? [];
 
   return (
-    <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+    <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <div className="flex items-center gap-2 mb-4">
         <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(199,182,255,0.15)" }}>
           <UserCheck size={13} color={LILAC} />
@@ -114,12 +114,12 @@ function TalepSatiri({ talep, onGuncelle }: { talep: VeliTalebiSonuc; onGuncelle
         {talep.durum === "bekliyor" && (
           <div className="flex items-center gap-1.5 shrink-0">
             <button type="button" onClick={onayla} disabled={onayPending}
-              className="sgec-btn flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full disabled:opacity-60"
+              className="sfec-btn flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full disabled:opacity-60"
               style={{ background: MINT, color: MINT_ON }}>
               <Check size={11} /> Onayla
             </button>
             <button type="button" onClick={reddet} disabled={redPending}
-              className="sgec-btn flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full disabled:opacity-60"
+              className="sfec-btn flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full disabled:opacity-60"
               style={{ background: "rgba(255,255,255,0.06)", color: BLUSH, border: `2px solid ${BORDER_STRONG}` }}>
               <X size={11} /> Reddet
             </button>
@@ -133,7 +133,7 @@ function TalepSatiri({ talep, onGuncelle }: { talep: VeliTalebiSonuc; onGuncelle
         <div className="rounded-xl p-2.5 flex items-center justify-between gap-2 flex-wrap" style={{ background: MINT_BG, border: `1px solid ${MINT}` }}>
           <div className="text-xs" style={{ color: TEXT }}>Kod: <strong>{talep.kod}</strong></div>
           <button type="button" onClick={kodKopyala}
-            className="sgec-btn shrink-0 flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full"
+            className="sfec-btn shrink-0 flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full"
             style={{ background: MINT, color: MINT_ON }}>
             {kopyalandi ? <><Check size={12} /> Kopyalandı</> : <><Copy size={12} /> Kopyala</>}
           </button>

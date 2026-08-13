@@ -48,11 +48,11 @@ function RozetKurallariModal({ onKapat, dokuzOnMu }: { onKapat: () => void; doku
     <div className="fixed inset-0 z-[400] flex items-start justify-center px-3 pt-[max(12px,env(safe-area-inset-top))] pb-[max(12px,env(safe-area-inset-bottom))] sm:items-center sm:px-4 sm:py-8"
       style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" }}
       onClick={onKapat}>
-      <div className="sgec-fade relative grid w-full max-w-sm grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-3xl"
+      <div className="sfec-fade relative grid w-full max-w-sm grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-3xl"
         style={{ background: BG1, border: `2px solid ${BORDER}`, height: "calc(100dvh - max(24px, env(safe-area-inset-top) + env(safe-area-inset-bottom)))", maxHeight: 860 }}
         onClick={(e) => e.stopPropagation()}>
         <button type="button" onClick={onKapat}
-          className="sgec-btn absolute top-4 right-4 w-7 h-7 rounded-full flex items-center justify-center"
+          className="sfec-btn absolute top-4 right-4 w-7 h-7 rounded-full flex items-center justify-center"
           style={{ background: "rgba(255,255,255,0.06)" }}>
           <X size={13} color={TEXT_MUTED} />
         </button>
@@ -103,7 +103,7 @@ function RozetKurallariModal({ onKapat, dokuzOnMu }: { onKapat: () => void; doku
 
         <div className="relative z-20 shrink-0 px-5 pb-[max(16px,env(safe-area-inset-bottom))] pt-3" style={{ background: BG1, borderTop: `2px solid ${BORDER}` }}>
           <button type="button" onClick={onKapat}
-            className="sgec-btn w-full rounded-xl py-2.5 text-sm font-bold" style={{ background: MINT, color: MINT_ON }}>
+            className="sfec-btn w-full rounded-xl py-2.5 text-sm font-bold" style={{ background: MINT, color: MINT_ON }}>
             Anladım
           </button>
         </div>
@@ -118,7 +118,7 @@ export function Rozetlerim({ durum, sinifSeviyesi }: { durum: RozetDurum; sinifS
   const dokuzOnMu = dokuzOnSinifMi(sinifSeviyesi);
 
   return (
-    <div className="sgec-fade rounded-3xl p-5 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+    <div className="sfec-fade rounded-3xl p-5 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(255,196,107,0.15)" }}>
@@ -127,7 +127,7 @@ export function Rozetlerim({ durum, sinifSeviyesi }: { durum: RozetDurum; sinifS
           <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Rozetlerim</span>
         </div>
         <button type="button" onClick={() => setKurallarAcik(true)} title="Rozet kuralları"
-          className="sgec-btn w-7 h-7 rounded-full flex items-center justify-center"
+          className="sfec-btn w-7 h-7 rounded-full flex items-center justify-center"
           style={{ background: "rgba(255,255,255,0.06)", border: `2px solid ${BORDER_STRONG}` }}>
           <BookText size={13} color={TEXT_MUTED} />
         </button>

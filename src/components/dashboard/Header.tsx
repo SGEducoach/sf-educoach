@@ -55,13 +55,13 @@ export function Header({ ad, role, okunmamisMesajSayisi = 0, mobilNavigasyon = t
               <span style={{ color: TEXT }} className="text-[12px] font-bold truncate max-w-[160px]">{ad}</span>
               <span style={{ color: TEXT_MUTED }} className="text-[11px] shrink-0">· {rolEtiketi ?? rolEtiket[role]}</span>
             </div>
-            {moderatorMu && <Link href="/moderator" title="Moderatör paneli" className="sgec-btn flex h-8 w-8 shrink-0 items-center justify-center rounded-full" style={{ background: "rgba(13,148,136,0.12)", border: `2px solid ${BORDER}` }}><ShieldCheck size={16} color={SEAFOAM}/></Link>}
+            {moderatorMu && <Link href="/moderator" title="Moderatör paneli" className="sfec-btn flex h-8 w-8 shrink-0 items-center justify-center rounded-full" style={{ background: "rgba(13,148,136,0.12)", border: `2px solid ${BORDER}` }}><ShieldCheck size={16} color={SEAFOAM}/></Link>}
             <TemaButonu />
             <BildirimAyarlari />
             {(role === "ogrenci" || role === "veli") && <MesajlarimIkonu baslangicSayisi={okunmamisMesajSayisi} />}
             <form action={signOut}>
               <button type="submit" title="Çıkış yap"
-                className="sgec-btn w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+                className="sfec-btn w-8 h-8 rounded-full flex items-center justify-center shrink-0"
                 style={{ background: "rgba(255,255,255,0.06)", border: `2px solid ${BORDER}` }}>
                 <LogOut size={14} color={TEXT_MUTED} />
               </button>

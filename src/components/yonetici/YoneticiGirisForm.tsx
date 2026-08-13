@@ -64,7 +64,7 @@ export function YoneticiGirisForm() {
           {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
 
           <button type="submit" disabled={yukleniyor}
-            className="sgec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60"
+            className="sfec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60"
             style={{ background: MINT, color: MINT_ON }}>
             {yukleniyor ? "Giriş yapılıyor..." : "Giriş yap"}
           </button>

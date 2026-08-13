@@ -63,7 +63,7 @@ export function IzinliOgrenciListesi({ schoolId }: { schoolId: string }) {
   if (!acik) {
     return (
       <button type="button" onClick={ac}
-        className="sgec-btn flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl"
+        className="sfec-btn flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl"
         style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
         <ShieldCheck size={13} /> İzinli öğrenci listesi
       </button>
@@ -89,11 +89,11 @@ export function IzinliOgrenciListesi({ schoolId }: { schoolId: string }) {
 
       <div className="flex items-center gap-2">
         <button type="button" onClick={yukle} disabled={pending}
-          className="sgec-btn text-xs font-bold px-4 py-2 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+          className="sfec-btn text-xs font-bold px-4 py-2 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
           {pending ? "Kaydediliyor..." : "Yükle"}
         </button>
         <button type="button" onClick={() => setAcik(false)}
-          className="sgec-btn text-xs font-bold px-3 py-2 rounded-xl" style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED }}>
+          className="sfec-btn text-xs font-bold px-3 py-2 rounded-xl" style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED }}>
           Kapat
         </button>
       </div>
@@ -104,7 +104,7 @@ export function IzinliOgrenciListesi({ schoolId }: { schoolId: string }) {
             <span style={{ color: TEXT_MUTED }} className="text-[11px] font-semibold">{isimler.length} isim kayıtlı</span>
             {isimler.length > 0 && (
               <button type="button" onClick={temizle} disabled={pending}
-                className="sgec-btn flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full disabled:opacity-60"
+                className="sfec-btn flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full disabled:opacity-60"
                 style={{ background: "rgba(255,255,255,0.06)", color: BLUSH, border: `2px solid ${BORDER_STRONG}` }}>
                 <Trash2 size={10} /> Listeyi temizle
               </button>
@@ -116,7 +116,7 @@ export function IzinliOgrenciListesi({ schoolId }: { schoolId: string }) {
                 <div key={ad} className="flex items-center justify-between rounded-lg px-2.5 py-1" style={{ background: BG0 }}>
                   <span style={{ color: TEXT }} className="text-[11px]">{ad}</span>
                   <button type="button" onClick={() => sil(ad)} disabled={pending}
-                    className="sgec-btn w-5 h-5 rounded-full flex items-center justify-center disabled:opacity-60" style={{ background: "rgba(255,255,255,0.06)" }}>
+                    className="sfec-btn w-5 h-5 rounded-full flex items-center justify-center disabled:opacity-60" style={{ background: "rgba(255,255,255,0.06)" }}>
                     <X size={9} color={BLUSH} />
                   </button>
                 </div>

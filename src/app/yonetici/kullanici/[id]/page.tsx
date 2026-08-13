@@ -28,7 +28,7 @@ export default async function KullaniciGoruntulemeSayfasi({ params }: { params: 
     <div className="flex min-h-screen w-full flex-1 flex-col">
       <Header ad={yonetici.ad} role="admin" mobilNavigasyon={false} />
       <main id="ana-icerik" className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6">
-        <Link href="/yonetici#kullanicilar" className="sgec-btn inline-flex min-h-11 w-fit items-center gap-1.5 rounded-full px-3 text-xs font-bold"
+        <Link href="/yonetici#kullanicilar" className="sfec-btn inline-flex min-h-11 w-fit items-center gap-1.5 rounded-full px-3 text-xs font-bold"
           style={{ background: BG1, color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}><ArrowLeft size={15} /> Kullanıcılara dön</Link>
         <section className="rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
           <div className="flex items-start gap-3">

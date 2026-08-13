@@ -13,11 +13,11 @@ import { MaskotKonusmaBalonu } from "@/components/dashboard/MaskotKonusmaBalonu"
 // Gerçek analiz akışı hazır olduğunda buton canlı akışa bağlanacak.
 //
 // Kart rengi genel teal paletini değil, kendi CSS değişkenlerini kullanıyor
-// (--sgec-ai-*, bkz. globals.css) — düşük opaklıklı pastel tonlar koyu modda
+// (--sfec-ai-*, bkz. globals.css) — düşük opaklıklı pastel tonlar koyu modda
 // neredeyse görünmez kaldığı için açık/koyu ayrı ayrı tanımlandı.
 
 const SPARKLE_KONUMLARI = [
-  { top: "8%", left: "6%", boyut: 16, gecikme: "0s", Icon: Sparkles, renk: "var(--sgec-mint)" },
+  { top: "8%", left: "6%", boyut: 16, gecikme: "0s", Icon: Sparkles, renk: "var(--sfec-mint)" },
   { top: "16%", left: "90%", boyut: 14, gecikme: "0.6s", Icon: Zap, renk: "#2563EB" },
   { top: "78%", left: "92%", boyut: 16, gecikme: "1.1s", Icon: Sparkles, renk: LILAC },
   { top: "82%", left: "8%", boyut: 13, gecikme: "1.6s", Icon: Wand2, renk: "#2563EB" },
@@ -28,12 +28,12 @@ export function YapayZekaAnaliziPromosu() {
 
   return (
     <div
-      className="sgec-fade relative overflow-hidden rounded-3xl p-5 sm:p-6"
-      style={{ background: "var(--sgec-ai-bg)", border: "2px solid var(--sgec-ai-border)" }}
+      className="sfec-fade relative overflow-hidden rounded-3xl p-5 sm:p-6"
+      style={{ background: "var(--sfec-ai-bg)", border: "2px solid var(--sfec-ai-border)" }}
     >
       {/* Yumuşak nefes alan arka plan parıltıları */}
-      <div className="sgec-ai-glow pointer-events-none absolute -top-16 -right-10 h-48 w-48 rounded-full" style={{ background: "radial-gradient(circle, var(--sgec-ai-glow-1), transparent 70%)" }} />
-      <div className="sgec-ai-glow pointer-events-none absolute -bottom-20 -left-14 h-56 w-56 rounded-full" style={{ background: "radial-gradient(circle, var(--sgec-ai-glow-2), transparent 70%)", animationDelay: "1.2s" }} />
+      <div className="sfec-ai-glow pointer-events-none absolute -top-16 -right-10 h-48 w-48 rounded-full" style={{ background: "radial-gradient(circle, var(--sfec-ai-glow-1), transparent 70%)" }} />
+      <div className="sfec-ai-glow pointer-events-none absolute -bottom-20 -left-14 h-56 w-56 rounded-full" style={{ background: "radial-gradient(circle, var(--sfec-ai-glow-2), transparent 70%)", animationDelay: "1.2s" }} />
 
       {/* Twinkle eden dağınık sparkle ikonları */}
       {SPARKLE_KONUMLARI.map((s, i) => (
@@ -41,7 +41,7 @@ export function YapayZekaAnaliziPromosu() {
           key={i}
           size={s.boyut}
           color={s.renk}
-          className="sgec-sparkle pointer-events-none absolute hidden sm:block"
+          className="sfec-sparkle pointer-events-none absolute hidden sm:block"
           style={{ top: s.top, left: s.left, animationDelay: s.gecikme }}
         />
       ))}
@@ -62,7 +62,7 @@ export function YapayZekaAnaliziPromosu() {
           </span>
           <span
             className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"
-            style={{ background: "var(--sgec-ai-chip-bg)", color: "var(--sgec-ai-accent-text)" }}
+            style={{ background: "var(--sfec-ai-chip-bg)", color: "var(--sfec-ai-accent-text)" }}
           >
             <Sparkles size={9} /> Yakında
           </span>
@@ -75,7 +75,7 @@ export function YapayZekaAnaliziPromosu() {
         <button
           type="button"
           onClick={() => setMascotAcik(true)}
-          className="sgec-btn flex items-center gap-1.5 text-[12px] font-bold px-4 py-2.5 rounded-full"
+          className="sfec-btn flex items-center gap-1.5 text-[12px] font-bold px-4 py-2.5 rounded-full"
           style={{ background: "linear-gradient(135deg, #7C3AED, #2563EB)", color: "#fff", boxShadow: "0 4px 14px rgba(124,58,237,0.32)" }}
         >
           <Wand2 size={13} /> Analiz iste

@@ -21,7 +21,7 @@ const YETKILER = [
 
 export function YoneticiYetkileri() {
   return (
-    <section className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+    <section className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <div className="mb-3 flex items-center gap-2">
         <div className="flex h-7 w-7 items-center justify-center rounded-full" style={{ background: MINT_BG }}>
           <ShieldCheck size={14} color={MINT} />

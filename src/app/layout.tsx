@@ -40,7 +40,7 @@ export const viewport = {
 
 const temaBaslangicKodu = `
 try {
-  var tercih = localStorage.getItem('sgec_tema_tercihi');
+  var tercih = localStorage.getItem('sfec_tema_tercihi');
   var tema = tercih;
   if (tercih !== 'acik' && tercih !== 'koyu') {
     var saat = Number(new Intl.DateTimeFormat('tr-TR', { hour: '2-digit', hour12: false, timeZone: 'Europe/Istanbul' }).formatToParts(new Date()).find(function (p) { return p.type === 'hour'; }).value);
@@ -61,7 +61,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head><script dangerouslySetInnerHTML={{ __html: temaBaslangicKodu }} /></head>
       <body className="min-h-full flex flex-col font-sans">
         <TemaDenetimi />
-        <a href="#ana-icerik" className="sgec-skip-link">İçeriğe geç</a>
+        <a href="#ana-icerik" className="sfec-skip-link">İçeriğe geç</a>
         {children}
         <GlobalIslemGostergesi />
       </body>

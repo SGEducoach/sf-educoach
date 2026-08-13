@@ -109,7 +109,7 @@ export function AdminPanel({
         gecmisGetir={adminGonderilenDuyurularGetir}
       />
 
-      <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+      <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(199,182,255,0.15)" }}>
@@ -133,7 +133,7 @@ export function AdminPanel({
                 </select>
                 {gorunenOkul && (
                   <button type="button" onClick={() => setOkulDuzenleAcik((v) => !v)} title="Okulu düzenle"
-                    className="sgec-btn w-7 h-7 rounded-full flex items-center justify-center shrink-0"
+                    className="sfec-btn w-7 h-7 rounded-full flex items-center justify-center shrink-0"
                     style={{ background: "rgba(255,255,255,0.06)", border: `2px solid ${BORDER_STRONG}` }}>
                     <Pencil size={11} color={TEXT_MUTED} />
                   </button>
@@ -142,7 +142,7 @@ export function AdminPanel({
               </div>
             )}
             <button type="button" onClick={() => setOkulEkleAcik((v) => !v)}
-              className="sgec-btn flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full"
+              className="sfec-btn flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full"
               style={{ background: okulEkleAcik ? MINT : "rgba(255,255,255,0.06)", color: okulEkleAcik ? MINT_ON : TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
               <Plus size={12} /> Okul ekle
             </button>
@@ -200,7 +200,7 @@ export function AdminPanel({
         )}
       </div>
 
-      <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+      <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <div className="flex items-center gap-2 mb-4">
           <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(199,182,255,0.15)" }}>
             <ScrollText size={13} color={LILAC} />
@@ -258,7 +258,7 @@ function OkulEkleFormu({ onDone }: { onDone: () => void }) {
       </div>
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
       <button type="submit" disabled={pending}
-        className="sgec-btn self-start text-xs font-bold px-4 py-2 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+        className="sfec-btn self-start text-xs font-bold px-4 py-2 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
         {pending ? "Ekleniyor..." : "Okulu ekle"}
       </button>
     </form>
@@ -302,11 +302,11 @@ function OkulDuzenleFormu({ okul, onDone }: { okul: OkulSatiri; onDone: () => vo
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
       <div className="flex items-center gap-2">
         <button type="submit" disabled={pending}
-          className="sgec-btn text-xs font-bold px-4 py-2 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+          className="sfec-btn text-xs font-bold px-4 py-2 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
           {pending ? "Kaydediliyor..." : "Kaydet"}
         </button>
         <button type="button" onClick={aktiflikDegistir} disabled={aktiflikPending}
-          className="sgec-btn flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-xl disabled:opacity-60"
+          className="sfec-btn flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-xl disabled:opacity-60"
           style={{ background: "rgba(255,255,255,0.06)", color: okul.aktif ? BLUSH : MINT, border: `2px solid ${BORDER_STRONG}` }}>
           {okul.aktif ? <><EyeOff size={12} /> Pasifleştir</> : <><Eye size={12} /> Aktifleştir</>}
         </button>
@@ -371,7 +371,7 @@ function OlusturulanHesap({ email, sifre }: { email: string; sifre: string }) {
         <div style={{ color: TEXT_MUTED }} className="mt-0.5">Bu şifreyi ilgili kişiye iletin, tekrar gösterilmeyecek.</div>
       </div>
       <button type="button" onClick={kopyala}
-        className="sgec-btn shrink-0 flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full"
+        className="sfec-btn shrink-0 flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full"
         style={{ background: MINT, color: MINT_ON }}>
         {kopyalandi ? <><Check size={12} /> Kopyalandı</> : <><Copy size={12} /> Kopyala</>}
       </button>
@@ -426,7 +426,7 @@ function OgretmenEkleFormu({ schoolId }: { schoolId: string }) {
         </label>
         {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
         <button type="submit" disabled={pending}
-          className="sgec-btn text-xs font-bold py-2 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+          className="sfec-btn text-xs font-bold py-2 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
           {pending ? "Ekleniyor..." : mudur ? "Müdür ekle" : "Öğretmen ekle"}
         </button>
       </form>
@@ -495,7 +495,7 @@ function OgrenciEkleFormu({ schoolId, siniflar }: { schoolId: string; siniflar: 
           className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
         {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
         <button type="submit" disabled={pending}
-          className="sgec-btn text-xs font-bold py-2 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+          className="sfec-btn text-xs font-bold py-2 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
           {pending ? "Ekleniyor..." : "Öğrenci ekle"}
         </button>
       </form>
@@ -527,7 +527,7 @@ function SinifRozeti({ sinif }: { sinif: SinifSatiri }) {
       <div className="flex items-center gap-1.5 rounded-full pl-3 pr-1.5 py-1" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
         <span style={{ color: TEXT }} className="text-xs font-bold">{sinif.seviye}-{sinif.sube}</span>
         <button type="button" onClick={sil} disabled={pending} title="Sınıfı sil"
-          className="sgec-btn w-5 h-5 rounded-full flex items-center justify-center disabled:opacity-60" style={{ background: "rgba(255,255,255,0.06)" }}>
+          className="sfec-btn w-5 h-5 rounded-full flex items-center justify-center disabled:opacity-60" style={{ background: "rgba(255,255,255,0.06)" }}>
           <X size={10} color={BLUSH} />
         </button>
       </div>
@@ -579,7 +579,7 @@ function OgrenciTopluEkleFormu({ schoolId, siniflar }: { schoolId: string; sinif
   if (!acik) {
     return (
       <button type="button" onClick={() => setAcik(true)}
-        className="sgec-btn flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl"
+        className="sfec-btn flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl"
         style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
         <ClipboardList size={13} /> Toplu öğrenci ekle
       </button>
@@ -621,11 +621,11 @@ function OgrenciTopluEkleFormu({ schoolId, siniflar }: { schoolId: string; sinif
 
       <div className="flex items-center gap-2">
         <button type="button" onClick={ekle} disabled={pending}
-          className="sgec-btn text-xs font-bold px-4 py-2 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+          className="sfec-btn text-xs font-bold px-4 py-2 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
           {pending ? "Ekleniyor..." : `${gecerliSatirlar.length || ""} öğrenciyi ekle`}
         </button>
         <button type="button" onClick={() => { setAcik(false); setSonuclar(null); }}
-          className="sgec-btn text-xs font-bold px-3 py-2 rounded-xl" style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED }}>
+          className="sfec-btn text-xs font-bold px-3 py-2 rounded-xl" style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED }}>
           Kapat
         </button>
       </div>
@@ -785,7 +785,7 @@ function DenemeTopluGirisFormu({ siniflar }: { siniflar: SinifSatiri[] }) {
   if (!acik) {
     return (
       <button type="button" onClick={() => setAcik(true)}
-        className="sgec-btn flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl"
+        className="sfec-btn flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl"
         style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
         <ClipboardList size={13} /> Toplu deneme sonucu gir
       </button>
@@ -844,7 +844,7 @@ function DenemeTopluGirisFormu({ siniflar }: { siniflar: SinifSatiri[] }) {
           <textarea value={yapistirilan} onChange={(e) => setYapistirilan(e.target.value)} rows={4}
             placeholder={"307; İkra; 37; 3\n195; Nilda Karadaş; 33; 7"}
             className="w-full resize-y rounded-xl px-3 py-2 text-xs outline-none" style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }} />
-          <button type="button" onClick={yapistirilaniEslestir} className="sgec-btn self-start rounded-xl px-3.5 py-2 text-xs font-bold" style={{ background: MINT, color: MINT_ON }}>
+          <button type="button" onClick={yapistirilaniEslestir} className="sfec-btn self-start rounded-xl px-3.5 py-2 text-xs font-bold" style={{ background: MINT, color: MINT_ON }}>
             Eşleştir ve alanları doldur
           </button>
           {eslestirmeRaporu && (
@@ -883,11 +883,11 @@ function DenemeTopluGirisFormu({ siniflar }: { siniflar: SinifSatiri[] }) {
 
       <div className="flex items-center gap-2">
         <button type="button" onClick={kaydet} disabled={pending || filtrelenmisOgrenciler.length === 0}
-          className="sgec-btn text-xs font-bold px-4 py-2 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+          className="sfec-btn text-xs font-bold px-4 py-2 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
           {pending ? "Kaydediliyor..." : "Sonuçları kaydet"}
         </button>
         <button type="button" onClick={() => { setAcik(false); setSonuclar(null); }}
-          className="sgec-btn text-xs font-bold px-3 py-2 rounded-xl" style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED }}>
+          className="sfec-btn text-xs font-bold px-3 py-2 rounded-xl" style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED }}>
           Kapat
         </button>
       </div>
@@ -912,7 +912,7 @@ function DenemeTopluGirisFormu({ siniflar }: { siniflar: SinifSatiri[] }) {
             tekrar tıklansa bile ikinci kez bildirim gitmez.
           </p>
           <button type="button" onClick={bildirimGonder} disabled={bildirimPending}
-            className="sgec-btn self-start text-xs font-bold px-4 py-2 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+            className="sfec-btn self-start text-xs font-bold px-4 py-2 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
             {bildirimPending ? "Gönderiliyor..." : "Bildirim gönder"}
           </button>
           {bildirimHata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{bildirimHata}</div>}
@@ -975,7 +975,7 @@ function OgrenciCsvIndirButonu({ okul }: { okul: OkulSatiri }) {
   return (
     <div className="flex flex-col items-end">
       <button type="button" onClick={indir} disabled={pending} title="Öğrenci listesini CSV indir"
-        className="sgec-btn w-7 h-7 rounded-full flex items-center justify-center shrink-0 disabled:opacity-60"
+        className="sfec-btn w-7 h-7 rounded-full flex items-center justify-center shrink-0 disabled:opacity-60"
         style={{ background: "rgba(255,255,255,0.06)", border: `2px solid ${BORDER_STRONG}` }}>
         <Download size={11} color={TEXT_MUTED} />
       </button>

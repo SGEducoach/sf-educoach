@@ -24,7 +24,7 @@ function IstatKart({ icon: Icon, etiket, deger, altYazi, renk, bg }: {
   icon: typeof Target; etiket: string; deger: string | number; altYazi?: string; renk: string; bg: string;
 }) {
   return (
-    <div className="sgec-fade rounded-3xl p-4 flex-1 min-w-0" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+    <div className="sfec-fade rounded-3xl p-4 flex-1 min-w-0" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <div className="flex items-center gap-2.5 mb-3">
         <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: bg }}>
           <Icon size={14} color={renk} />
@@ -69,14 +69,14 @@ export function AnalizPaneli({ veri, ogrenciAdi }: { veri: AnalizVerisi; ogrenci
         <div className="flex gap-1 p-1 rounded-full" style={{ background: "rgba(255,255,255,0.06)", border: `2px solid ${BORDER}` }}>
           {(Object.entries(RAPOR_DONEMI_ETIKET) as [RaporDonemi, string][]).map(([k, v]) => (
             <button key={k} type="button" onClick={() => donemDegistir(k)}
-              className="sgec-btn text-[11px] font-bold px-3 py-1.5 rounded-full"
+              className="sfec-btn text-[11px] font-bold px-3 py-1.5 rounded-full"
               style={{ background: veri.donem === k ? MINT : "transparent", color: veri.donem === k ? MINT_ON : TEXT_MUTED }}>
               {v}
             </button>
           ))}
         </div>
         <button type="button" onClick={() => window.print()}
-          className="sgec-btn flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-full"
+          className="sfec-btn flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-full"
           style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
           <Printer size={13} /> Yazdır / PDF olarak kaydet
         </button>
@@ -92,7 +92,7 @@ export function AnalizPaneli({ veri, ogrenciAdi }: { veri: AnalizVerisi; ogrenci
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+        <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
           <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold mb-4 block">Deneme net trendi</span>
           {denemeChartData.length === 0 ? (
             <BosDurum />
@@ -111,7 +111,7 @@ export function AnalizPaneli({ veri, ogrenciAdi }: { veri: AnalizVerisi; ogrenci
           )}
         </div>
 
-        <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+        <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
           <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold mb-4 block">Günlük konu çalışması (dakika)</span>
           {konuChartData.length === 0 ? (
             <BosDurum />
@@ -128,7 +128,7 @@ export function AnalizPaneli({ veri, ogrenciAdi }: { veri: AnalizVerisi; ogrenci
           )}
         </div>
 
-        <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+        <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
           <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold mb-4 block">Günlük soru çözümü (soru)</span>
           {soruChartData.length === 0 ? (
             <BosDurum />
@@ -145,7 +145,7 @@ export function AnalizPaneli({ veri, ogrenciAdi }: { veri: AnalizVerisi; ogrenci
           )}
         </div>
 
-        <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+        <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
           <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold mb-4 block">Deneme süreleri (dakika)</span>
           {denemeSureChartData.length === 0 ? (
             <BosDurum />
@@ -162,7 +162,7 @@ export function AnalizPaneli({ veri, ogrenciAdi }: { veri: AnalizVerisi; ogrenci
           )}
         </div>
 
-        <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+        <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
           <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold mb-4 block">Ders bazlı ortalama net</span>
           {veri.dersNetOrtalama.length === 0 ? (
             <BosDurum />
@@ -179,7 +179,7 @@ export function AnalizPaneli({ veri, ogrenciAdi }: { veri: AnalizVerisi; ogrenci
           )}
         </div>
 
-        <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+        <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
           <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold mb-4 block">Hedefe yakınlık dağılımı</span>
           {hedefToplam === 0 ? (
             <BosDurum />
@@ -205,7 +205,7 @@ export function AnalizPaneli({ veri, ogrenciAdi }: { veri: AnalizVerisi; ogrenci
       </div>
 
       {verimlilikChartData.length > 0 && (
-        <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+        <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
           <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold mb-4 block">Haftalık verimlilik trendi</span>
           <ResponsiveContainer width="100%" height={180}>
             <LineChart data={verimlilikChartData} margin={{ left: -20, right: 10 }}>

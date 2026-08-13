@@ -4,16 +4,16 @@
 :root {
   --background: #f7fbfb;
   --foreground: #18302f;
-  --sgec-bg0: #f7fbfb;
-  --sgec-bg1: #ffffff;
-  --sgec-bg1-alt: #effaf9;
-  --sgec-border: #5eead4;
-  --sgec-border-strong: #2dd4bf;
-  --sgec-text: #18302f;
-  --sgec-text-muted: #58706e;
-  --sgec-mint: #0d9488;
-  --sgec-mint-on: #ffffff;
-  --sgec-seafoam: #0f766e;
+  --sfec-bg0: #f7fbfb;
+  --sfec-bg1: #ffffff;
+  --sfec-bg1-alt: #effaf9;
+  --sfec-border: #5eead4;
+  --sfec-border-strong: #2dd4bf;
+  --sfec-text: #18302f;
+  --sfec-text-muted: #58706e;
+  --sfec-mint: #0d9488;
+  --sfec-mint-on: #ffffff;
+  --sfec-seafoam: #0f766e;
   --z-header: 100;
   --z-mobile-nav: 110;
   --z-dropdown: 200;
@@ -24,41 +24,41 @@
 
   /* Yapay Zeka Analizi kartı — açık modda görünür olsun diye kendi
      renk seti (genel teal paleti değil). Koyu modda ayrıca override edilir. */
-  --sgec-ai-bg: linear-gradient(135deg, rgba(124,58,237,0.16) 0%, rgba(37,99,235,0.11) 55%, rgba(94,234,212,0.09) 100%);
-  --sgec-ai-border: rgba(124,58,237,0.4);
-  --sgec-ai-glow-1: rgba(124,58,237,0.28);
-  --sgec-ai-glow-2: rgba(37,99,235,0.20);
-  --sgec-ai-accent-text: #6D28D9;
-  --sgec-ai-chip-bg: linear-gradient(135deg, rgba(124,58,237,0.16), rgba(37,99,235,0.16));
+  --sfec-ai-bg: linear-gradient(135deg, rgba(124,58,237,0.16) 0%, rgba(37,99,235,0.11) 55%, rgba(94,234,212,0.09) 100%);
+  --sfec-ai-border: rgba(124,58,237,0.4);
+  --sfec-ai-glow-1: rgba(124,58,237,0.28);
+  --sfec-ai-glow-2: rgba(37,99,235,0.20);
+  --sfec-ai-accent-text: #6D28D9;
+  --sfec-ai-chip-bg: linear-gradient(135deg, rgba(124,58,237,0.16), rgba(37,99,235,0.16));
 }
 
 :root[data-theme="koyu"] {
   color-scheme: dark;
   --background: #0d1f1e;
   --foreground: #e8f7f5;
-  --sgec-bg0: #0d1f1e;
-  --sgec-bg1: #142b29;
-  --sgec-bg1-alt: #1a3734;
-  --sgec-border: #267f75;
-  --sgec-border-strong: #35b8a8;
-  --sgec-text: #e8f7f5;
-  --sgec-text-muted: #abc7c3;
-  --sgec-mint: #5eead4;
-  --sgec-mint-on: #102624;
-  --sgec-seafoam: #7ce8d8;
+  --sfec-bg0: #0d1f1e;
+  --sfec-bg1: #142b29;
+  --sfec-bg1-alt: #1a3734;
+  --sfec-border: #267f75;
+  --sfec-border-strong: #35b8a8;
+  --sfec-text: #e8f7f5;
+  --sfec-text-muted: #abc7c3;
+  --sfec-mint: #5eead4;
+  --sfec-mint-on: #102624;
+  --sfec-seafoam: #7ce8d8;
 
   /* Koyu modda düşük opaklıklı pastel tonlar arka planla neredeyse
      görünmez oluyordu — daha parlak/doygun mor-mavi tonlara geçiliyor. */
-  --sgec-ai-bg: linear-gradient(135deg, rgba(167,139,250,0.30) 0%, rgba(96,165,250,0.20) 55%, rgba(45,212,191,0.14) 100%);
-  --sgec-ai-border: rgba(167,139,250,0.6);
-  --sgec-ai-glow-1: rgba(167,139,250,0.4);
-  --sgec-ai-glow-2: rgba(96,165,250,0.3);
-  --sgec-ai-accent-text: #D6C9FF;
-  --sgec-ai-chip-bg: linear-gradient(135deg, rgba(167,139,250,0.3), rgba(96,165,250,0.28));
+  --sfec-ai-bg: linear-gradient(135deg, rgba(167,139,250,0.30) 0%, rgba(96,165,250,0.20) 55%, rgba(45,212,191,0.14) 100%);
+  --sfec-ai-border: rgba(167,139,250,0.6);
+  --sfec-ai-glow-1: rgba(167,139,250,0.4);
+  --sfec-ai-glow-2: rgba(96,165,250,0.3);
+  --sfec-ai-accent-text: #D6C9FF;
+  --sfec-ai-chip-bg: linear-gradient(135deg, rgba(167,139,250,0.3), rgba(96,165,250,0.28));
 }
 
-.sgec-loading-overlay {
-  background: color-mix(in srgb, var(--sgec-bg0) 82%, transparent);
+.sfec-loading-overlay {
+  background: color-mix(in srgb, var(--sfec-bg0) 82%, transparent);
   backdrop-filter: blur(3px);
 }
 
@@ -97,11 +97,11 @@ html {
   scroll-padding-top: 80px;
 }
 
-.sgec-section {
+.sfec-section {
   scroll-margin-top: 80px;
 }
 
-.sgec-skip-link {
+.sfec-skip-link {
   position: fixed;
   top: -100px;
   left: 12px;
@@ -113,12 +113,12 @@ html {
   font-weight: 700;
 }
 
-.sgec-skip-link:focus {
+.sfec-skip-link:focus {
   top: 12px;
 }
 
 @media (max-width: 1023px) {
-  body:has(input:focus, textarea:focus, select:focus) .sgec-mobile-nav {
+  body:has(input:focus, textarea:focus, select:focus) .sfec-mobile-nav {
     display: none;
   }
 }
@@ -129,11 +129,11 @@ html {
 }
 
 select option {
-  background: var(--sgec-bg1);
-  color: var(--sgec-text);
+  background: var(--sfec-bg1);
+  color: var(--sfec-text);
 }
 
-@keyframes sgecFadeUp {
+@keyframes sfecFadeUp {
   from {
     opacity: 0;
     transform: translateY(10px);
@@ -143,10 +143,10 @@ select option {
     transform: translateY(0);
   }
 }
-.sgec-fade {
-  animation: sgecFadeUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+.sfec-fade {
+  animation: sfecFadeUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
-.sgec-btn {
+.sfec-btn {
   transition:
     transform 0.12s ease,
     box-shadow 0.12s ease,
@@ -154,16 +154,16 @@ select option {
     background 0.15s ease;
 }
 @media (hover: hover) {
-  .sgec-btn:hover:not(:disabled) {
+  .sfec-btn:hover:not(:disabled) {
     filter: brightness(1.12);
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
   }
 }
-.sgec-btn:active:not(:disabled) {
+.sfec-btn:active:not(:disabled) {
   transform: scale(0.97);
   filter: brightness(0.94);
 }
-.sgec-card {
+.sfec-card {
   transition:
     box-shadow 0.2s ease,
     transform 0.2s ease;
@@ -171,19 +171,19 @@ select option {
 
 /* Yapay Zeka Analizi promosu — twinkle eden sparkle ikonları + yumuşak
    nefes alan (breathing) arka plan parıltısı. */
-@keyframes sgecTwinkle {
+@keyframes sfecTwinkle {
   0%, 100% { opacity: 0.25; transform: scale(0.75) rotate(0deg); }
   50% { opacity: 1; transform: scale(1.15) rotate(12deg); }
 }
-.sgec-sparkle {
-  animation: sgecTwinkle 2.4s ease-in-out infinite;
+.sfec-sparkle {
+  animation: sfecTwinkle 2.4s ease-in-out infinite;
 }
-@keyframes sgecGlowBreathe {
+@keyframes sfecGlowBreathe {
   0%, 100% { opacity: 0.55; }
   50% { opacity: 1; }
 }
-.sgec-ai-glow {
-  animation: sgecGlowBreathe 3.2s ease-in-out infinite;
+.sfec-ai-glow {
+  animation: sfecGlowBreathe 3.2s ease-in-out infinite;
 }
 
 /* Recharts'in eksen bazlı hover katmanı tüm grafik alanını karartmasın. */
@@ -194,7 +194,7 @@ select option {
   opacity: 0 !important;
 }
 
-.sgec-mascot-scene {
+.sfec-mascot-scene {
   position: fixed;
   inset: 0;
   z-index: 400;
@@ -204,7 +204,7 @@ select option {
   -webkit-backdrop-filter: blur(3px);
 }
 
-.sgec-mascot-stage {
+.sfec-mascot-stage {
   position: relative;
   width: min(100%, 430px);
   height: 100dvh;
@@ -212,7 +212,7 @@ select option {
   margin: 0 auto;
 }
 
-.sgec-mascot-character {
+.sfec-mascot-character {
   position: absolute;
   z-index: 1;
   left: max(2px, env(safe-area-inset-left));
@@ -227,7 +227,7 @@ select option {
   object-position: left bottom;
 }
 
-.sgec-mascot-bubble {
+.sfec-mascot-bubble {
   position: absolute;
   z-index: 2;
   top: max(12px, env(safe-area-inset-top));
@@ -241,7 +241,7 @@ select option {
   box-shadow: 0 14px 40px rgba(24, 48, 47, 0.28);
 }
 
-.sgec-mascot-bubble::after {
+.sfec-mascot-bubble::after {
   content: "";
   position: absolute;
   left: 18px;
@@ -255,9 +255,9 @@ select option {
 }
 
 @media (max-height: 620px) {
-  .sgec-mascot-stage { min-height: 0; }
-  .sgec-mascot-character { width: 230px; max-height: 80dvh; }
-  .sgec-mascot-bubble { width: min(78vw, 330px); max-height: calc(100dvh - 116px); padding: 12px; }
+  .sfec-mascot-stage { min-height: 0; }
+  .sfec-mascot-character { width: 230px; max-height: 80dvh; }
+  .sfec-mascot-bubble { width: min(78vw, 330px); max-height: calc(100dvh - 116px); padding: 12px; }
 }
 
 /* Rapor yazdırma: koyu temayı yazıcı için açık zemine çevir. */

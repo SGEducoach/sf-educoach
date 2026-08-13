@@ -37,7 +37,7 @@ function GecmisTarihSecici({ tarih, setTarih, geriyeMaksGun }: { tarih: string; 
   if (!acik) {
     return (
       <button type="button" onClick={() => setAcik(true)}
-        className="sgec-btn self-start flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1.5 rounded-full"
+        className="sfec-btn self-start flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1.5 rounded-full"
         style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
         <CalendarClock size={12} /> Geçmiş tarih için gir
       </button>
@@ -50,7 +50,7 @@ function GecmisTarihSecici({ tarih, setTarih, geriyeMaksGun }: { tarih: string; 
       <div className="flex gap-2 relative">
         <Girdi type="date" max={bugununTarihi()} min={enEskiTarih(geriyeMaksGun)} value={tarih} onChange={(e) => setTarih(e.target.value)} required />
         <button type="button" onClick={() => { setAcik(false); setTarih(bugununTarihi()); }}
-          className="sgec-btn shrink-0 text-[11px] font-bold px-3 py-1.5 rounded-xl"
+          className="sfec-btn shrink-0 text-[11px] font-bold px-3 py-1.5 rounded-xl"
           style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
           Bugüne dön
         </button>
@@ -83,7 +83,7 @@ function SecenekSecici<T extends string>({ baslik, secenekler, value, onChange }
       <div className="flex gap-1.5">
         {secenekler.map(([k, v]) => (
           <button type="button" key={k} onClick={() => onChange(k)}
-            className="sgec-btn flex-1 text-[11px] font-bold py-1.5 rounded-full"
+            className="sfec-btn flex-1 text-[11px] font-bold py-1.5 rounded-full"
             style={{ background: value === k ? MINT : "transparent", color: value === k ? MINT_ON : TEXT_MUTED, border: `1px solid ${value === k ? MINT : BORDER_STRONG}` }}>
             {v}
           </button>
@@ -120,12 +120,12 @@ export function OgrenciVeriGirisi({ aytAlan, konuOnerileri, sinifSeviyesi }: {
   return (
     <div className="flex flex-col gap-4">
       {basari && (
-        <div className="sgec-fade rounded-2xl px-4 py-2.5 text-[13px] font-semibold" style={{ background: MINT_BG, color: MINT }}>
+        <div className="sfec-fade rounded-2xl px-4 py-2.5 text-[13px] font-semibold" style={{ background: MINT_BG, color: MINT }}>
           ✓ {basari}
         </div>
       )}
 
-      <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+      <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <div className="flex gap-1 p-1 rounded-full mb-4" style={{ background: "rgba(255,255,255,0.06)", border: `2px solid ${BORDER}` }}>
           {[
             { id: "konu" as const, ad: "Konu Çalışma", icon: BookOpen },
@@ -136,7 +136,7 @@ export function OgrenciVeriGirisi({ aytAlan, konuOnerileri, sinifSeviyesi }: {
             const aktif = sekme === s.id;
             return (
               <button key={s.id} type="button" onClick={() => setSekme(s.id)}
-                className="sgec-btn flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-full text-[12px] font-bold"
+                className="sfec-btn flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-full text-[12px] font-bold"
                 style={{ background: aktif ? MINT : "transparent", color: aktif ? MINT_ON : TEXT_MUTED }}>
                 <Icon size={13} /> {s.ad}
               </button>
@@ -162,11 +162,11 @@ function KonuOneriDropdown({ oneriler, aktif, onSec }: {
 }) {
   if (!aktif || oneriler.length === 0) return null;
   return (
-    <div className="absolute left-0 right-0 top-full mt-1 z-20 max-h-56 overflow-y-auto rounded-xl sgec-fade"
+    <div className="absolute left-0 right-0 top-full mt-1 z-20 max-h-56 overflow-y-auto rounded-xl sfec-fade"
       style={{ background: BG0, border: `2px solid ${BORDER_STRONG}`, boxShadow: "0 8px 20px rgba(0,0,0,0.35)" }}>
       {oneriler.map((o) => (
         <button key={o.konu} type="button" onMouseDown={(e) => { e.preventDefault(); onSec(o.konu); }}
-          className="sgec-btn w-full flex items-center justify-between gap-2 text-left px-3 py-2 text-xs font-semibold"
+          className="sfec-btn w-full flex items-center justify-between gap-2 text-left px-3 py-2 text-xs font-semibold"
           style={{ color: TEXT }}>
           <span>{o.konu}</span>
           {o.seviye && <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: SKY_BG, color: SKY }}>{o.seviye}</span>}
@@ -283,7 +283,7 @@ function KonuCalismaForm({ dersListesi, konuOnerileri, onBasari }: {
             onChange={(e) => { setAramaMetni(e.target.value); setKonu(e.target.value); setOneriAcik(true); setAnlatim(null); setAnlatimSeviye(null); }}
             disabled={!ders} />
           <button type="button" onClick={konuyuOku} disabled={!ders || !konu.trim()}
-            className="sgec-btn shrink-0 flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"
+            className="sfec-btn shrink-0 flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"
             style={{ background: SKY_BG, color: SKY, border: `1px solid rgba(143,198,255,0.3)` }}>
             {anlatimYukleniyor ? <Loader2 size={13} className="animate-spin" /> : anlatimAcik ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
             Konuyu oku
@@ -314,7 +314,7 @@ function KonuCalismaForm({ dersListesi, konuOnerileri, onBasari }: {
       <SecenekSecici baslik="Konuya hakimiyet" value={hedefeYakinlik} onChange={setHedefeYakinlik}
         secenekler={[["uzak", "Yetersiz"], ["belirsiz", "Orta"], ["yakin", "Yeterli"]]} />
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
-      <button type="submit" disabled={pending} className="sgec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+      <button type="submit" disabled={pending} className="sfec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
         {pending ? "Kaydediliyor..." : "Kaydet"}
       </button>
       <YukleniyorOverlay visible={pending} mesaj={anlatimYukleniyor ? undefined : "Kaydediliyor..."} />
@@ -377,7 +377,7 @@ function SoruCozumuForm({ dersListesi, onBasari }: { dersListesi: string[]; onBa
       <SecenekSecici baslik="Soru çözüm sayım" value={hedefeYakinlik} onChange={setHedefeYakinlik}
         secenekler={[["uzak", "Az"], ["belirsiz", "Orta"], ["yakin", "Çok"]]} />
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
-      <button type="submit" disabled={pending} className="sgec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+      <button type="submit" disabled={pending} className="sfec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
         {pending ? "Kaydediliyor..." : "Kaydet"}
       </button>
       <YukleniyorOverlay visible={pending} mesaj="Kaydediliyor..." />
@@ -488,7 +488,7 @@ function DenemeForm({ aytAlan, dokuzOnMu, onBasari }: { aytAlan: AytAlan; dokuzO
       <SecenekSecici baslik="Deneme net hedefim" value={hedefeYakinlik} onChange={setHedefeYakinlik}
         secenekler={[["uzak", "Uzak"], ["belirsiz", "Ortalama"], ["yakin", "Ulaştım"]]} />
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
-      <button type="submit" disabled={pending} className="sgec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+      <button type="submit" disabled={pending} className="sfec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
         {pending ? "Kaydediliyor..." : "Kaydet"}
       </button>
       <YukleniyorOverlay visible={pending} mesaj="Kaydediliyor..." />
@@ -508,7 +508,7 @@ function HaftalikVerimlilikModal({ onKapat }: { onKapat: () => void }) {
 
   return (
     <div className="fixed inset-0 z-[400] flex items-center justify-center px-4" style={{ background: "rgba(0,0,0,0.5)" }}>
-      <div className="sgec-fade rounded-3xl p-6 max-w-sm w-full" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+      <div className="sfec-fade rounded-3xl p-6 max-w-sm w-full" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <div className="flex items-center gap-2 mb-3">
           <Sparkles size={16} color={MINT} />
           <h3 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold">Bu dönemki genel çalışma düzeyin nasıldı?</h3>
@@ -516,7 +516,7 @@ function HaftalikVerimlilikModal({ onKapat }: { onKapat: () => void }) {
         <div className="flex flex-col gap-2">
           {(Object.entries(VERIMLILIK_ETIKET) as [VerimlilikDuzeyi, string][]).map(([k, v]) => (
             <button key={k} disabled={pending} onClick={() => sec(k)}
-              className="sgec-btn text-sm font-semibold py-2 rounded-xl text-left px-4"
+              className="sfec-btn text-sm font-semibold py-2 rounded-xl text-left px-4"
               style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
               {v}
             </button>

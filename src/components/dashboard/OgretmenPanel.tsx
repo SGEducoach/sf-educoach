@@ -71,7 +71,7 @@ export function OgretmenPanel({
   return (
     <div className="flex flex-col gap-6">
       {duyuruMumkunMu && (
-        <section id="duyurular" className="sgec-section"><DuyuruFormu
+        <section id="duyurular" className="sfec-section"><DuyuruFormu
           baslik={role === "mudur" ? "Okula duyuru gönder" : "Sınıfınıza duyuru gönder"}
           aciklama={role === "mudur"
             ? "Okul veya sınıf kapsamını ve duyurunun öğrenciye, veliye ya da ikisine birden gideceğini seçebilirsiniz."
@@ -84,7 +84,7 @@ export function OgretmenPanel({
       )}
 
       {kendiSinifId && (
-        <div id="veli-talepleri" className="sgec-section sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+        <div id="veli-talepleri" className="sfec-section sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
           <div className="flex items-center gap-2 mb-4">
             <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: MINT_BG }}>
               <UserPlus size={13} color={MINT} />
@@ -117,7 +117,7 @@ export function OgretmenPanel({
                     <div style={{ color: TEXT_MUTED }} className="text-xs mt-0.5">Öğrenci: {t.ogrenci_ad}</div>
                   </div>
                   <button onClick={() => onayla(t)} disabled={pending}
-                    className="sgec-btn text-xs font-bold px-3.5 py-1.5 rounded-full disabled:opacity-60"
+                    className="sfec-btn text-xs font-bold px-3.5 py-1.5 rounded-full disabled:opacity-60"
                     style={{ background: MINT, color: MINT_ON }}>
                     Onayla ve kod üret
                   </button>
@@ -128,7 +128,7 @@ export function OgretmenPanel({
         </div>
       )}
 
-      <div id="siniflar" className="sgec-section sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+      <div id="siniflar" className="sfec-section sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: kendiSinifiMi ? MINT_BG : SKY_BG }}>
@@ -162,7 +162,7 @@ export function OgretmenPanel({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {ogrenciler.map((o) => (
               <button key={o.id} onClick={() => router.push(`/dashboard?sinif=${gorunecekSinifId}&ogrenci=${o.id}`)}
-                className="sgec-btn rounded-xl px-3.5 py-2.5 flex items-center justify-between text-left"
+                className="sfec-btn rounded-xl px-3.5 py-2.5 flex items-center justify-between text-left"
                 style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
                 <span style={{ color: TEXT }} className="text-sm font-semibold">{o.ad}</span>
                 <span style={{ color: TEXT_MUTED }} className="text-xs">#{o.okul_no}</span>
@@ -216,7 +216,7 @@ export function SinifEkleFormu({ schoolId }: { schoolId: string }) {
           className="text-sm px-2.5 py-1.5 rounded-xl outline-none w-20" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }} />
       </label>
       <button type="submit" disabled={pending}
-        className="sgec-btn flex items-center gap-1 text-xs font-bold px-3.5 py-1.5 rounded-full disabled:opacity-60"
+        className="sfec-btn flex items-center gap-1 text-xs font-bold px-3.5 py-1.5 rounded-full disabled:opacity-60"
         style={{ background: MINT, color: MINT_ON }}>
         <Plus size={13} /> {pending ? "Ekleniyor..." : "Sınıf ekle"}
       </button>

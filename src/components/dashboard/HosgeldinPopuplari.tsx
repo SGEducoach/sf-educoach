@@ -7,8 +7,8 @@ import { pushAbonelikAc } from "@/lib/push-subscribe";
 import type { UserRole } from "@/lib/types";
 import { MaskotKonusmaBalonu } from "@/components/dashboard/MaskotKonusmaBalonu";
 
-const HATIRLATMA_ANAHTAR = "sgec_hatirlatma_kapatildi_v1";
-const BILDIRIM_ANAHTAR = "sgec_bildirim_softask_kapatildi_v1";
+const HATIRLATMA_ANAHTAR = "sfec_hatirlatma_kapatildi_v1";
+const BILDIRIM_ANAHTAR = "sfec_bildirim_softask_kapatildi_v1";
 
 type Asama = "hatirlatma" | "bildirim" | null;
 
@@ -78,11 +78,11 @@ export function HosgeldinPopuplari({ role }: { role: UserRole }) {
         {asama !== "bildirim" && (
           <div className="flex gap-2">
             <button type="button" onClick={() => sonrakiyeGec(true)}
-              className="sgec-btn flex-1 flex items-center justify-center gap-1.5 text-xs font-bold py-2 rounded-xl" style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
+              className="sfec-btn flex-1 flex items-center justify-center gap-1.5 text-xs font-bold py-2 rounded-xl" style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
               <BellOff size={13} /> Bir daha gösterme
             </button>
             <button type="button" onClick={() => sonrakiyeGec(false)}
-              className="sgec-btn flex-1 text-xs font-bold py-2 rounded-xl" style={{ background: MINT, color: MINT_ON }}>
+              className="sfec-btn flex-1 text-xs font-bold py-2 rounded-xl" style={{ background: MINT, color: MINT_ON }}>
               Tamam
             </button>
           </div>
@@ -121,11 +121,11 @@ function BildirimSoftAsk({ onTamamlandi }: { onTamamlandi: () => void }) {
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold mb-3">{hata}</div>}
       <div className="flex gap-2">
         <button type="button" onClick={onTamamlandi} disabled={yukleniyor}
-          className="sgec-btn flex-1 flex items-center justify-center gap-1.5 text-xs font-bold py-2 rounded-xl disabled:opacity-60" style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
+          className="sfec-btn flex-1 flex items-center justify-center gap-1.5 text-xs font-bold py-2 rounded-xl disabled:opacity-60" style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
           <BellOff size={13} /> Şimdi değil
         </button>
         <button type="button" onClick={ac} disabled={yukleniyor}
-          className="sgec-btn flex-1 flex items-center justify-center gap-1.5 text-xs font-bold py-2 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+          className="sfec-btn flex-1 flex items-center justify-center gap-1.5 text-xs font-bold py-2 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
           <BellRing size={13} /> {yukleniyor ? "Açılıyor..." : "Bildirimleri Aç"}
         </button>
       </div>

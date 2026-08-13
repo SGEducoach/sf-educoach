@@ -28,7 +28,7 @@ export function KonuAnlatimYonetimi() {
   }
 
   return (
-    <div className="sgec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+    <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <div className="flex items-center gap-2 mb-4">
         <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(199,182,255,0.15)" }}>
           <BookOpen size={13} color={LILAC} />
@@ -107,7 +107,7 @@ function KonuSatiri({ satir, acik, onToggle }: { satir: KonuAnlatimiSatiri; acik
 
   return (
     <div className="rounded-xl px-3.5 py-2.5" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
-      <button type="button" onClick={ac} className="sgec-btn w-full flex items-center justify-between gap-2 text-left">
+      <button type="button" onClick={ac} className="sfec-btn w-full flex items-center justify-between gap-2 text-left">
         <div>
           <div style={{ color: TEXT }} className="text-sm font-semibold">
             {satir.konu} {satir.seviye && <span style={{ color: LILAC }} className="text-[10px] font-bold ml-1">{satir.seviye}</span>}
@@ -133,12 +133,12 @@ function KonuSatiri({ satir, acik, onToggle }: { satir: KonuAnlatimiSatiri; acik
               {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
               <div className="flex items-center gap-2">
                 <button type="button" onClick={kaydet} disabled={kaydetPending || duzenlemeMetni.trim() === icerik}
-                  className="sgec-btn flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl disabled:opacity-60"
+                  className="sfec-btn flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl disabled:opacity-60"
                   style={{ background: MINT, color: MINT_ON }}>
                   <Save size={12} /> {kaydetPending ? "Kaydediliyor..." : "Kaydet"}
                 </button>
                 <button type="button" onClick={yenidenUret} disabled={uretPending}
-                  className="sgec-btn flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl disabled:opacity-60"
+                  className="sfec-btn flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl disabled:opacity-60"
                   style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
                   <RefreshCw size={12} /> {uretPending ? "Üretiliyor..." : "AI ile yeniden üret"}
                 </button>

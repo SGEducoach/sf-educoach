@@ -59,7 +59,7 @@ export function KullaniciDetayYonetimi({ kullanici }: { kullanici: KullaniciSonu
         <Alan etiket="Telefon" value={telefon} onChange={setTelefon} />
         {kullanici.role === "ogrenci" && <Alan etiket="Okul numarası" value={okulNo} onChange={setOkulNo} />}
       </div>
-      <button type="button" onClick={profilKaydet} disabled={pending} className="sgec-btn self-start rounded-full px-3 py-1.5 text-[11px] font-bold" style={{ background: MINT, color: MINT_ON }}>
+      <button type="button" onClick={profilKaydet} disabled={pending} className="sfec-btn self-start rounded-full px-3 py-1.5 text-[11px] font-bold" style={{ background: MINT, color: MINT_ON }}>
         <span className="flex items-center gap-1"><Save size={11} /> {pending ? "Kaydediliyor..." : "Profili kaydet"}</span>
       </button>
       {(kullanici.role === "ogrenci" || kullanici.role === "ogretmen" || kullanici.role === "mudur") && <div className="flex flex-wrap items-end gap-2">

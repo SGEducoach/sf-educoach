@@ -82,7 +82,7 @@ export function DuyuruFormu({
   }
 
   return (
-    <div className="sgec-fade rounded-3xl p-5 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+    <div className="sfec-fade rounded-3xl p-5 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <div className="flex items-center gap-2 mb-1">
         <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: MINT_BG }}>
           <Megaphone size={13} color={MINT} />
@@ -121,7 +121,7 @@ export function DuyuruFormu({
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <span style={{ color: mesaj.trim().length > 0 && mesaj.trim().length < MIN_UZUNLUK ? BLUSH : TEXT_MUTED }} className="text-[10px]">En az {MIN_UZUNLUK} · {mesaj.length}/{MAKS_UZUNLUK}</span>
           <button type="submit" disabled={pending || mesaj.trim().length < MIN_UZUNLUK}
-            className="sgec-btn flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-full disabled:opacity-50"
+            className="sfec-btn flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-full disabled:opacity-50"
             style={{ background: MINT, color: MINT_ON }}>
             <Send size={13} /> {pending ? "Gönderiliyor..." : "Duyuruyu gönder"}
           </button>
@@ -133,7 +133,7 @@ export function DuyuruFormu({
       {gecmisGetir && (
         <div className="mt-3">
           <button type="button" onClick={gecmisiAcKapat}
-            className="sgec-btn flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-full"
+            className="sfec-btn flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-full"
             style={{ background: gecmisAcik ? MINT : "rgba(255,255,255,0.06)", color: gecmisAcik ? MINT_ON : TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
             <History size={12} /> Gönderilen duyurular
           </button>
@@ -159,15 +159,15 @@ export function DuyuruFormu({
       {onayAcik && createPortal((
         <div className="fixed inset-0 z-[450] flex items-center justify-center p-4" style={{ background: "rgba(24,48,47,0.55)", backdropFilter: "blur(4px)" }} onClick={() => setOnayAcik(false)}>
           <div role="dialog" aria-modal="true" aria-labelledby="duyuru-onay-baslik" className="relative w-full max-w-sm rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }} onClick={(e) => e.stopPropagation()}>
-            <button type="button" onClick={() => setOnayAcik(false)} aria-label="Kapat" className="sgec-btn absolute right-4 top-4 h-8 w-8 rounded-full" style={{ border: `2px solid ${BORDER_STRONG}` }}><X size={14} color={TEXT_MUTED} className="m-auto" /></button>
+            <button type="button" onClick={() => setOnayAcik(false)} aria-label="Kapat" className="sfec-btn absolute right-4 top-4 h-8 w-8 rounded-full" style={{ border: `2px solid ${BORDER_STRONG}` }}><X size={14} color={TEXT_MUTED} className="m-auto" /></button>
             <h2 id="duyuru-onay-baslik" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="pr-10 text-base font-bold">Duyuru gönderilsin mi?</h2>
             <p style={{ color: TEXT_MUTED }} className="mt-1 text-xs">Kapsam: {kapsamSecenekleri?.find((secenek) => secenek.deger === kapsam)?.etiket ?? aciklama}</p>
             {aliciTuruSecilebilir && <p style={{ color: TEXT_MUTED }} className="mt-1 text-xs">Alıcılar: {aliciTuru === "hepsi" ? "Öğrenciler ve veliler" : aliciTuru === "ogrenci" ? "Sadece öğrenciler" : "Sadece veliler"}</p>}
             <div className="my-4 max-h-40 overflow-y-auto rounded-2xl p-3 text-sm leading-relaxed" style={{ color: TEXT, background: BG0, border: `2px solid ${BORDER_STRONG}` }}>{mesaj.trim()}</div>
             <p style={{ color: BLUSH }} className="mb-4 text-[11px] font-semibold">Gönderilen duyuru alıcıların mesaj kutusuna eklenir ve geri alınamaz.</p>
             <div className="flex gap-2">
-              <button type="button" onClick={() => setOnayAcik(false)} className="sgec-btn flex-1 rounded-xl py-2.5 text-sm font-bold" style={{ color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>Vazgeç</button>
-              <button type="button" onClick={onaylaVeGonder} className="sgec-btn flex-1 rounded-xl py-2.5 text-sm font-bold" style={{ background: MINT, color: MINT_ON }}>Onayla ve gönder</button>
+              <button type="button" onClick={() => setOnayAcik(false)} className="sfec-btn flex-1 rounded-xl py-2.5 text-sm font-bold" style={{ color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>Vazgeç</button>
+              <button type="button" onClick={onaylaVeGonder} className="sfec-btn flex-1 rounded-xl py-2.5 text-sm font-bold" style={{ background: MINT, color: MINT_ON }}>Onayla ve gönder</button>
             </div>
           </div>
         </div>

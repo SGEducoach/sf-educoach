@@ -15,7 +15,7 @@ export function ZayifKonular({ konular }: { konular: ZayifKonu[] }) {
   if (konular.length === 0) return null;
 
   return (
-    <div className="sgec-fade rounded-3xl p-6 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+    <div className="sfec-fade rounded-3xl p-6 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <div className="flex items-center gap-2 mb-1">
         <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: PEACH_BG }}>
           <BookOpen size={13} color={PEACH} />
@@ -53,7 +53,7 @@ function KonuSatiri({ konu }: { konu: ZayifKonu }) {
   return (
     <div className="rounded-2xl overflow-hidden" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
       <button type="button" onClick={ac}
-        className="sgec-btn w-full flex items-center justify-between px-4 py-3 text-left">
+        className="sfec-btn w-full flex items-center justify-between px-4 py-3 text-left">
         <div>
           <div className="flex items-center gap-1.5">
             <span style={{ color: TEXT }} className="text-sm font-semibold">{konu.konu}</span>

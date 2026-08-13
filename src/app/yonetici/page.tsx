@@ -70,18 +70,18 @@ export default async function YoneticiPage({
       <Header ad={profile.ad} role="admin" />
       <main id="ana-icerik" className="max-w-6xl mx-auto px-4 sm:px-6 py-7 pb-24 lg:pb-7 w-full flex-1 flex flex-col gap-6">
         <SifreDegistir />
-        <section id="istatistikler" className="sgec-section"><PlatformIstatistikleri /></section>
+        <section id="istatistikler" className="sfec-section"><PlatformIstatistikleri /></section>
         <YoneticiYetkileri />
-        <section id="kullanicilar" className="sgec-section"><KullaniciArama /></section>
+        <section id="kullanicilar" className="sfec-section"><KullaniciArama /></section>
         <VeliTalepleri />
-        <section id="okullar" className="sgec-section"><AdminPanel
+        <section id="okullar" className="sfec-section"><AdminPanel
           okullar={okulListesi}
           gorunecekOkulId={gorunecekOkulId}
           siniflar={((siniflar ?? []) as { id: string; seviye: string; sube: string }[]).sort(sinifSiraKarsilastir)}
           ogretmenListesi={ogretmenListesi}
           islemKayitlari={kayitListesi}
         /></section>
-        <section id="icerik" className="sgec-section"><KonuAnlatimYonetimi /></section>
+        <section id="icerik" className="sfec-section"><KonuAnlatimYonetimi /></section>
         <KurallarYonetimi />
       </main>
     </div>

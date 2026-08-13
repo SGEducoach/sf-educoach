@@ -108,7 +108,7 @@ export default function LoginForm() {
             const aktif = role === r.id;
             return (
               <button key={r.id} type="button" onClick={() => { setRole(r.id); setHata(null); }}
-                className="sgec-btn flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-full text-[12px] font-bold"
+                className="sfec-btn flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-full text-[12px] font-bold"
                 style={{ background: aktif ? MINT : "transparent", color: aktif ? MINT_ON : TEXT_MUTED }}>
                 <Icon size={13} /> {r.ad}
               </button>
@@ -169,7 +169,7 @@ export default function LoginForm() {
           {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
 
           <button type="submit" disabled={yukleniyor}
-            className="sgec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60"
+            className="sfec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60"
             style={{ background: MINT, color: MINT_ON }}>
             {yukleniyor ? "Giriş yapılıyor..." : "Giriş yap"}
           </button>
