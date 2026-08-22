@@ -147,6 +147,22 @@ async function verimlilikSorulsunMu(
   return count > 0 && count % 3 === 0;
 }
 
+// Bir veri girişi bir görevin karşılığıysa (gorevAtamaId formData'da geldiyse),
+// o görev ataması "tamamlandı" işaretlenir. Hata olsa bile asıl veri girişini
+// engellemez — sadece konsola düşer (görev sistemi, veri girişinin üstüne
+// kurulu ek bir katman, tersi değil).
+async function gorevTamamlaIsaretle(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  gorevAtamaId: string,
+  studentId: string,
+) {
+  const { error } = await supabase.from("gorev_atamalari")
+    .update({ durum: "tamamlandi" })
+    .eq("id", gorevAtamaId)
+    .eq("student_id", studentId);
+  if (error) console.error("görev tamamlama işaretlenemedi:", error.message);
+}
+
 export async function konuCalismaEkle(formData: FormData) {
   const { supabase, user } = await requireStudent();
   const ders = String(formData.get("ders"));
@@ -154,6 +170,7 @@ export async function konuCalismaEkle(formData: FormData) {
   const sureDakika = Number(formData.get("sureDakika"));
   const hedefeYakinlik = String(formData.get("hedefeYakinlik")) as HedefeYakinlik;
   const yayinevi = String(formData.get("yayinevi") ?? "").trim();
+  const gorevAtamaId = String(formData.get("gorevAtamaId") ?? "").trim() || null;
   const { tarih, error: tarihHatasi } = tarihDogrula(formData.get("tarih"), KATEGORI_GERIYE_DONUK_SINIR.konu);
 
   if (!ders || !konu || !sureDakika || sureDakika <= 0 || !hedefeYakinlik || !yayinevi) {
@@ -166,8 +183,10 @@ export async function konuCalismaEkle(formData: FormData) {
 
   const { error } = await supabase.from("konu_calismalar").insert({
     student_id: user.id, ders, konu, sure_dakika: sureDakika, hedefe_yakinlik: hedefeYakinlik, yayinevi, tarih,
+    gorev_atama_id: gorevAtamaId,
   });
   if (error) return { error: error.message, verimlilikSorulsunMu: false };
+  if (gorevAtamaId) await gorevTamamlaIsaretle(supabase, gorevAtamaId, user.id);
 
   await rozetKontrolVeBildir(supabase, user.id);
   const sorulsunMu = await verimlilikSorulsunMu(supabase, user.id);
@@ -184,6 +203,7 @@ export async function soruCozumuEkle(formData: FormData) {
   const konu = String(formData.get("konu") ?? "").trim();
   const sureDakika = Number(formData.get("sureDakika"));
   const yayinevi = String(formData.get("yayinevi") ?? "").trim();
+  const gorevAtamaId = String(formData.get("gorevAtamaId") ?? "").trim() || null;
   const { tarih, error: tarihHatasi } = tarihDogrula(formData.get("tarih"), KATEGORI_GERIYE_DONUK_SINIR.soru);
 
   if (!ders || Number.isNaN(dogru) || Number.isNaN(yanlis) || Number.isNaN(bos) || bos < 0 || !sureDakika || sureDakika <= 0 || !yayinevi) {
@@ -198,12 +218,14 @@ export async function soruCozumuEkle(formData: FormData) {
     return { error: `Süre, toplam soru sayısının (${toplamSoru}) iki katı olan ${toplamSoru * 2} dakikayı geçemez.`, verimlilikSorulsunMu: false };
   }
 
-  // Bu action sadece öğrencinin kendi girişi için — görev karşılığı soru
-  // çözümleri (kaynak='ogretmen') Görevler alt sisteminden gelecek (Faz 3).
+  // kaynak: bu bir görevin karşılığıysa 'ogretmen', öğrencinin kendi
+  // inisiyatifiyle girdiyse 'ogrenci' (bkz. Görevler alt sistemi, Faz 3).
   const { error } = await supabase.from("soru_cozumleri").insert({
-    student_id: user.id, ders, dogru, yanlis, bos, konu: konu || null, sure_dakika: sureDakika, yayinevi, kaynak: "ogrenci", tarih,
+    student_id: user.id, ders, dogru, yanlis, bos, konu: konu || null, sure_dakika: sureDakika, yayinevi,
+    kaynak: gorevAtamaId ? "ogretmen" : "ogrenci", tarih, gorev_atama_id: gorevAtamaId,
   });
   if (error) return { error: error.message, verimlilikSorulsunMu: false };
+  if (gorevAtamaId) await gorevTamamlaIsaretle(supabase, gorevAtamaId, user.id);
 
   await rozetKontrolVeBildir(supabase, user.id);
   const sorulsunMu = await verimlilikSorulsunMu(supabase, user.id);
@@ -219,6 +241,7 @@ export async function denemeEkle(
   dersSonuclari: { ders: string; dogru: number; yanlis: number }[],
   tarihGirdisi?: string,
   zorla = false,
+  gorevAtamaId?: string,
 ): Promise<{ error: string | null; verimlilikSorulsunMu: boolean; benzerUyari?: boolean }> {
   const { supabase, user } = await requireStudent();
   const { tarih, error: tarihHatasi } = tarihDogrula(tarihGirdisi ?? null, KATEGORI_GERIYE_DONUK_SINIR.deneme);
@@ -280,7 +303,7 @@ export async function denemeEkle(
 
   const { data: deneme, error } = await supabase
     .from("denemeler")
-    .insert({ student_id: user.id, tur, hedefe_yakinlik: hedefeYakinlik, zorluk, yayinevi, kaynak: "ogrenci", tarih })
+    .insert({ student_id: user.id, tur, hedefe_yakinlik: hedefeYakinlik, zorluk, yayinevi, kaynak: "ogrenci", tarih, gorev_atama_id: gorevAtamaId ?? null })
     .select("id")
     .single();
 
@@ -290,6 +313,7 @@ export async function denemeEkle(
     dersSonuclari.map((d) => ({ deneme_id: deneme.id, ders: d.ders, dogru: d.dogru, yanlis: d.yanlis }))
   );
   if (sonucError) return { error: sonucError.message, verimlilikSorulsunMu: false };
+  if (gorevAtamaId) await gorevTamamlaIsaretle(supabase, gorevAtamaId, user.id);
 
   await rozetKontrolVeBildir(supabase, user.id);
   const sorulsunMu = await verimlilikSorulsunMu(supabase, user.id);

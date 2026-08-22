@@ -2,14 +2,15 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { UserPlus, Check, Users, Eye, Plus, X, BookMarked, ClipboardCheck, ArrowRightLeft, ChevronDown, ChevronUp } from "lucide-react";
+import { UserPlus, Check, Users, Eye, Plus, X, BookMarked, ClipboardCheck, ArrowRightLeft, ChevronDown, ChevronUp, CalendarPlus } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, SKY, SKY_BG, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 import {
   veliTalepOnayla, sinifEkle, ogretmenDuyuruGonder, gonderilenDuyurularGetir,
   ogretmenDersEkle, ogretmenDersSil, ogrenciSinifTasi, soruCozumuOnayla,
 } from "@/app/dashboard/actions";
+import { gorevVer } from "@/app/dashboard/gorev-actions";
 import { DuyuruFormu } from "@/components/dashboard/DuyuruFormu";
-import { BRANS_LISTESI, type SinifSeviyesi, type VeliLinkRequest } from "@/lib/types";
+import { BRANS_LISTESI, type GorevTuru, type SinifSeviyesi, type VeliLinkRequest } from "@/lib/types";
 
 interface OgrenciSatiri {
   id: string;
@@ -75,6 +76,10 @@ export function OgretmenPanel({
 
   const onaylananIdSeti = new Set(oturumdaOnaylanan.map((t) => t.id));
   const gosterilecekBekleyenler = bekleyenTalepler.filter((t) => !onaylananIdSeti.has(t.id));
+
+  // Görev verilebilir mi: kendi sınıfı veya ogretmen_dersleri ile ilişkili
+  // olduğu bir sınıf görüntüleniyorsa (bkz. migration 0047 RLS kuralı).
+  const gorevVerilebilirMi = kendiSinifiMi || ogretmenDersleri.some((d) => d.classId === gorunecekSinifId);
 
   const duyuruMumkunMu = role === "mudur" || !!kendiSinifId;
   // Müdür kapsamı seçebiliyor: tüm okul / seviye / belirli şube. Öğretmende
@@ -151,6 +156,10 @@ export function OgretmenPanel({
       )}
 
       {role === "ogretmen" && kendiSinifId && <BekleyenOnaylarBolumu onaylar={bekleyenOnaylar} />}
+
+      {role === "ogretmen" && gorevVerilebilirMi && ogrenciler.length > 0 && (
+        <GorevVerBolumu ogrenciler={ogrenciler} />
+      )}
 
       {role === "ogretmen" && <DerslerimBolumu dersler={ogretmenDersleri} siniflar={siniflar} />}
 
@@ -487,5 +496,178 @@ export function SinifEkleFormu({ schoolId }: { schoolId: string }) {
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
       {basari && <div style={{ color: MINT }} className="text-xs font-semibold">{basari}</div>}
     </form>
+  );
+}
+
+// Görev ver / toplu görev — tek bir form: bir veya birden çok öğrenci
+// (checkbox ile, "Tümünü seç" toplu görev karşılığı) seçilip aynı görev
+// hepsine birden atanıyor. Öğrenci tarafında bu görev, ilgili mevcut veri
+// giriş formundan (Konu/Soru/Deneme) tamamlanıyor (bkz. Gorevlerim.tsx).
+function GorevVerBolumu({ ogrenciler }: { ogrenciler: OgrenciSatiri[] }) {
+  const [secili, setSecili] = useState<Set<string>>(new Set());
+  const [tur, setTur] = useState<GorevTuru>("soru");
+  const [ders, setDers] = useState<string>(BRANS_LISTESI[0]);
+  const [konu, setKonu] = useState("");
+  const [hedefSoru, setHedefSoru] = useState("");
+  const [hedefDakika, setHedefDakika] = useState("");
+  const [tarih, setTarih] = useState(() => new Date().toISOString().slice(0, 10));
+  const [sonTarih, setSonTarih] = useState("");
+  const [baslangicSaat, setBaslangicSaat] = useState("");
+  const [bitisSaat, setBitisSaat] = useState("");
+  const [aciklama, setAciklama] = useState("");
+  const [hata, setHata] = useState<string | null>(null);
+  const [basari, setBasari] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  const tumuSeciliMi = ogrenciler.length > 0 && secili.size === ogrenciler.length;
+
+  function ogrenciToggle(id: string) {
+    setSecili((s) => {
+      const yeni = new Set(s);
+      if (yeni.has(id)) yeni.delete(id); else yeni.add(id);
+      return yeni;
+    });
+  }
+
+  function tumunuSecToggle() {
+    setSecili(tumuSeciliMi ? new Set() : new Set(ogrenciler.map((o) => o.id)));
+  }
+
+  function gonder(e: React.FormEvent) {
+    e.preventDefault();
+    setHata(null);
+    setBasari(null);
+    if (secili.size === 0) return setHata("En az bir öğrenci seçin.");
+    if (!ders.trim()) return setHata("Ders seçin.");
+    startTransition(async () => {
+      const res = await gorevVer({
+        studentIds: Array.from(secili),
+        tur, ders, konu: konu || undefined,
+        hedefSoruSayisi: hedefSoru ? Number(hedefSoru) : undefined,
+        hedefDakika: hedefDakika ? Number(hedefDakika) : undefined,
+        tarih, sonTarih: sonTarih || undefined,
+        baslangicSaat: baslangicSaat || undefined, bitisSaat: bitisSaat || undefined,
+        aciklama: aciklama || undefined,
+      });
+      if (res.error) setHata(res.error);
+      else {
+        setBasari(`Görev ${secili.size} öğrenciye verildi.`);
+        setKonu(""); setHedefSoru(""); setHedefDakika(""); setSonTarih(""); setBaslangicSaat(""); setBitisSaat(""); setAciklama("");
+      }
+    });
+  }
+
+  return (
+    <div className="sfec-section sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+      <div className="flex items-center gap-2 mb-4">
+        <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: MINT_BG }}>
+          <CalendarPlus size={13} color={MINT} />
+        </div>
+        <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Görev ver</span>
+      </div>
+
+      <form onSubmit={gonder} className="flex flex-col gap-3">
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center justify-between">
+            <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Öğrenciler</span>
+            <button type="button" onClick={tumunuSecToggle}
+              className="sfec-btn text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: BG1_ALT, color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
+              {tumuSeciliMi ? "Seçimi kaldır" : "Tümünü seç (toplu görev)"}
+            </button>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-40 overflow-y-auto rounded-xl p-2" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
+            {ogrenciler.map((o) => {
+              const isSecili = secili.has(o.id);
+              return (
+                <button key={o.id} type="button" onClick={() => ogrenciToggle(o.id)}
+                  className="sfec-btn flex items-center gap-1.5 text-xs font-semibold px-2 py-1.5 rounded-lg text-left"
+                  style={{ background: isSecili ? MINT : "transparent", color: isSecili ? MINT_ON : TEXT }}>
+                  {isSecili && <Check size={11} className="shrink-0" />} <span className="truncate">{o.ad}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <label className="flex flex-col gap-1">
+            <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Tür</span>
+            <select value={tur} onChange={(e) => setTur(e.target.value as GorevTuru)}
+              className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
+              <option value="konu">Konu Çalışma</option>
+              <option value="soru">Soru Çözümü</option>
+              <option value="deneme">Deneme</option>
+            </select>
+          </label>
+          <label className="flex flex-col gap-1">
+            <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Ders</span>
+            <select value={ders} onChange={(e) => setDers(e.target.value)}
+              className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
+              {BRANS_LISTESI.map((d) => <option key={d} value={d}>{d}</option>)}
+            </select>
+          </label>
+        </div>
+
+        <label className="flex flex-col gap-1">
+          <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Konu (opsiyonel)</span>
+          <input value={konu} onChange={(e) => setKonu(e.target.value)} placeholder="örn. Türev - Zincir Kuralı"
+            className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }} />
+        </label>
+
+        {tur === "soru" && (
+          <label className="flex flex-col gap-1">
+            <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Hedef soru sayısı (opsiyonel)</span>
+            <input type="number" min={1} value={hedefSoru} onChange={(e) => setHedefSoru(e.target.value)}
+              className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }} />
+          </label>
+        )}
+        {tur === "konu" && (
+          <label className="flex flex-col gap-1">
+            <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Hedef süre, dk (opsiyonel)</span>
+            <input type="number" min={1} value={hedefDakika} onChange={(e) => setHedefDakika(e.target.value)}
+              className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }} />
+          </label>
+        )}
+
+        <div className="grid grid-cols-2 gap-3">
+          <label className="flex flex-col gap-1">
+            <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Tarih</span>
+            <input type="date" value={tarih} onChange={(e) => setTarih(e.target.value)} required
+              className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }} />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Son tarih (opsiyonel)</span>
+            <input type="date" min={tarih} value={sonTarih} onChange={(e) => setSonTarih(e.target.value)}
+              className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }} />
+          </label>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <label className="flex flex-col gap-1">
+            <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Başlangıç saati (opsiyonel)</span>
+            <input type="time" value={baslangicSaat} onChange={(e) => setBaslangicSaat(e.target.value)}
+              className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }} />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Bitiş saati (opsiyonel)</span>
+            <input type="time" value={bitisSaat} onChange={(e) => setBitisSaat(e.target.value)}
+              className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }} />
+          </label>
+        </div>
+
+        <label className="flex flex-col gap-1">
+          <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Açıklama (opsiyonel)</span>
+          <input value={aciklama} onChange={(e) => setAciklama(e.target.value)} placeholder="örn. Sınava hazırlık"
+            className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }} />
+        </label>
+
+        {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
+        {basari && <div style={{ color: MINT }} className="text-xs font-semibold">{basari}</div>}
+        <button type="submit" disabled={pending}
+          className="sfec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+          {pending ? "Gönderiliyor..." : `Görev ver${secili.size > 1 ? ` (${secili.size} öğrenci)` : ""}`}
+        </button>
+      </form>
+    </div>
   );
 }

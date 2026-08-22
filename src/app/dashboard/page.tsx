@@ -14,15 +14,29 @@ import { HosgeldinPopuplari } from "@/components/dashboard/HosgeldinPopuplari";
 import { ZorunluSifreDegisikligiKapisi } from "@/components/dashboard/ZorunluSifreDegisikligiKapisi";
 import { analizVerisiGetir } from "@/lib/analiz";
 import type { RaporDonemi } from "@/lib/analiz";
-import { AYT_ALAN_ETIKET, sinifSiraKarsilastir } from "@/lib/types";
+import { AYT_ALAN_ETIKET, sinifSiraKarsilastir, dokuzOnSinifMi, TYT_DERSLERI, AYT_DERSLERI } from "@/lib/types";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
 import type { AytAlan, UserRole } from "@/lib/types";
 import { BG1, BG1_ALT, BORDER, BORDER_STRONG, TEXT, TEXT_MUTED, MINT } from "@/lib/theme";
+import { Gorevlerim } from "@/components/dashboard/Gorevlerim";
+import type { GorevSatiri } from "@/components/dashboard/Gorevlerim";
+
+// Görevlerim takvimi haftalık gösteriliyor — verilen tarihin (veya bugünün)
+// içinde bulunduğu haftanın Pazartesi'sini döndürür.
+function haftaninPazartesisi(tarihISO?: string): string {
+  const gecerliMi = tarihISO && /^\d{4}-\d{2}-\d{2}$/.test(tarihISO);
+  const d = gecerliMi ? new Date(`${tarihISO}T00:00:00`) : new Date();
+  if (Number.isNaN(d.getTime())) return haftaninPazartesisi();
+  const gun = d.getDay();
+  const fark = gun === 0 ? -6 : 1 - gun;
+  d.setDate(d.getDate() + fark);
+  return d.toISOString().slice(0, 10);
+}
 
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sinif?: string; ogrenci?: string; donem?: string; okul?: string }>;
+  searchParams: Promise<{ sinif?: string; ogrenci?: string; donem?: string; okul?: string; hafta?: string }>;
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -63,7 +77,7 @@ export default async function DashboardPage({
       <ZorunluSifreDegisikligiKapisi gecici={profile.gecici_sifre} />
       <HosgeldinPopuplari role={role} />
       <main id="ana-icerik" className="max-w-6xl mx-auto px-4 sm:px-6 py-7 pb-24 lg:pb-7 w-full flex-1 flex flex-col gap-6">
-        {role === "ogrenci" && <OgrenciIcerik userId={user.id} ad={profile.ad} donem={donem} />}
+        {role === "ogrenci" && <OgrenciIcerik userId={user.id} ad={profile.ad} donem={donem} haftaBaslangic={haftaninPazartesisi(params.hafta)} />}
         {(role === "ogretmen" || role === "mudur") && (
           <OgretmenIcerik userId={user.id} role={role} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} donem={donem} />
         )}
@@ -73,7 +87,7 @@ export default async function DashboardPage({
   );
 }
 
-async function OgrenciIcerik({ userId, ad, donem }: { userId: string; ad: string; donem: RaporDonemi }) {
+async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic }: { userId: string; ad: string; donem: RaporDonemi; haftaBaslangic: string }) {
   const supabase = await createClient();
   const { data: student } = await supabase
     .from("students")
@@ -161,6 +175,50 @@ async function OgrenciIcerik({ userId, ad, donem }: { userId: string; ad: string
     konuSayaclari[ders] = { tamamlanan, toplam };
   }
 
+  const dokuzOnMu = dokuzOnSinifMi(s.classes?.seviye ?? null);
+  const dersListesi = dokuzOnMu
+    ? [...TYT_DERSLERI]
+    : [...TYT_DERSLERI, ...AYT_DERSLERI[s.ayt_alan].filter((d) => !TYT_DERSLERI.includes(d as typeof TYT_DERSLERI[number]))];
+
+  // Görevlerim (Faz 3, §5): görüntülenen haftanın (Pzt-Paz) görevleri —
+  // gorev_atamalari + gorevler join'i.
+  const haftaBitis = (() => {
+    const d = new Date(`${haftaBaslangic}T00:00:00`);
+    d.setDate(d.getDate() + 6);
+    return d.toISOString().slice(0, 10);
+  })();
+  const { data: gorevAtamalariHam } = await supabase
+    .from("gorev_atamalari")
+    .select("id, durum, gorevler!inner(tur, ders, konu, hedef_soru_sayisi, hedef_dakika, tarih, son_tarih, baslangic_saat, bitis_saat, aciklama)")
+    .eq("student_id", userId)
+    .gte("gorevler.tarih", haftaBaslangic)
+    .lte("gorevler.tarih", haftaBitis);
+
+  type GorevAtamaRow = {
+    id: string; durum: GorevSatiri["durum"];
+    gorevler: {
+      tur: GorevSatiri["tur"]; ders: string; konu: string | null;
+      hedef_soru_sayisi: number | null; hedef_dakika: number | null;
+      tarih: string; son_tarih: string; baslangic_saat: string | null; bitis_saat: string | null; aciklama: string | null;
+    } | null;
+  };
+  const gorevlerimListesi: GorevSatiri[] = ((gorevAtamalariHam as unknown as GorevAtamaRow[]) ?? [])
+    .filter((g) => g.gorevler)
+    .map((g) => ({
+      atamaId: g.id,
+      tur: g.gorevler!.tur,
+      ders: g.gorevler!.ders,
+      konu: g.gorevler!.konu,
+      hedefSoruSayisi: g.gorevler!.hedef_soru_sayisi,
+      hedefDakika: g.gorevler!.hedef_dakika,
+      tarih: g.gorevler!.tarih,
+      sonTarih: g.gorevler!.son_tarih,
+      baslangicSaat: g.gorevler!.baslangic_saat,
+      bitisSaat: g.gorevler!.bitis_saat,
+      aciklama: g.gorevler!.aciklama,
+      durum: g.durum,
+    }));
+
   return (
     <div className="flex flex-col gap-6">
       <div id="ozet" className="sfec-section sfec-fade rounded-3xl p-6 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
@@ -177,6 +235,18 @@ async function OgrenciIcerik({ userId, ad, donem }: { userId: string; ad: string
           <Bilgi etiket="AYT Alanı" deger={AYT_ALAN_ETIKET[s.ayt_alan]} />
         </div>
       </div>
+
+      <section id="gorevlerim" className="sfec-section print:hidden">
+        <Gorevlerim
+          gorevler={gorevlerimListesi}
+          haftaBaslangic={haftaBaslangic}
+          aytAlan={s.ayt_alan}
+          dokuzOnMu={dokuzOnMu}
+          dersListesi={dersListesi}
+          konuOnerileri={konuOnerileri}
+          konuSayaclari={konuSayaclari}
+        />
+      </section>
 
       <section className="sfec-section print:hidden"><YapayZekaAnaliziPromosu /></section>
 

@@ -204,6 +204,20 @@ export async function GET(request: Request) {
       }
     }
 
+    // Faz 3 (§5): süresi (son_tarih) geçmiş, hâlâ "bekliyor" olan görev
+    // atamalarını "tamamlanmadı" işaretle.
+    const bugunISO = now.toISOString().slice(0, 10);
+    const { data: suresiGecenGorevler } = await admin
+      .from("gorev_atamalari")
+      .select("id, gorevler!inner(son_tarih)")
+      .eq("durum", "bekliyor")
+      .lt("gorevler.son_tarih", bugunISO);
+    const suresiGecenIdler = (suresiGecenGorevler ?? []).map((g) => g.id as string);
+    if (suresiGecenIdler.length > 0) {
+      await admin.from("gorev_atamalari").update({ durum: "tamamlanmadi" }).in("id", suresiGecenIdler);
+      detaylar.push(`${suresiGecenIdler.length} görev ataması süresi geçtiği için tamamlanmadı işaretlendi.`);
+    }
+
     return NextResponse.json({ ok: true, gonderilen, detaylar });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });

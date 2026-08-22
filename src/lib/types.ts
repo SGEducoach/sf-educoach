@@ -128,6 +128,46 @@ export interface DenemeDersSonucu {
   yanlis: number;
 }
 
+// ============ Görevler (Faz 3, yenilikler_1.txt §4-6) ============
+export type GorevTuru = "konu" | "soru" | "deneme";
+export type GorevDurumu = "bekliyor" | "tamamlandi" | "tamamlanmadi";
+
+export const GOREV_TURU_ETIKET: Record<GorevTuru, string> = {
+  konu: "Konu Çalışma",
+  soru: "Soru Çözümü",
+  deneme: "Deneme",
+};
+
+export const GOREV_DURUMU_ETIKET: Record<GorevDurumu, string> = {
+  bekliyor: "Bekliyor",
+  tamamlandi: "Tamamlandı",
+  tamamlanmadi: "Tamamlanmadı",
+};
+
+export interface Gorev {
+  id: string;
+  olusturan_ogretmen_id: string;
+  tur: GorevTuru;
+  ders: string;
+  konu: string | null;
+  hedef_soru_sayisi: number | null;
+  hedef_dakika: number | null;
+  tarih: string;
+  son_tarih: string;
+  baslangic_saat: string | null;
+  bitis_saat: string | null;
+  aciklama: string | null;
+  created_at: string;
+}
+
+export interface GorevAtama {
+  id: string;
+  gorev_id: string;
+  student_id: string;
+  durum: GorevDurumu;
+  created_at: string;
+}
+
 export interface Deneme {
   id: string;
   student_id: string;

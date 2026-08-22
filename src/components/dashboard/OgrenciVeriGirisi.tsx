@@ -180,14 +180,15 @@ function KonuOneriDropdown({ oneriler, aktif, onSec }: {
 // Akış: önce ders+konu seçilir (eksik olduğun konuyu SEN bulursun), "Konuyu
 // oku" ile o an AI anlatımı gösterilir; süre ve konuya hakimiyet — yani
 // konuyu ne kadar anladığın — bunu OKUDUKTAN/çalıştıktan SONRA girilir.
-function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, onBasari }: {
+export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, onBasari, prefillDers, prefillKonu, gorevAtamaId }: {
   dersListesi: string[]; konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
   konuSayaclari?: Record<string, { tamamlanan: number; toplam: number }>;
   onBasari: (m: string, s: boolean) => void;
+  prefillDers?: string; prefillKonu?: string; gorevAtamaId?: string;
 }) {
-  const [ders, setDers] = useState("");
-  const [konu, setKonu] = useState("");
-  const [aramaMetni, setAramaMetni] = useState("");
+  const [ders, setDers] = useState(prefillDers ?? "");
+  const [konu, setKonu] = useState(prefillKonu ?? "");
+  const [aramaMetni, setAramaMetni] = useState(prefillKonu ?? "");
   const [oneriAcik, setOneriAcik] = useState(false);
   const [hedefeYakinlik, setHedefeYakinlik] = useState<HedefeYakinlik>("belirsiz");
   const [yayinevi, setYayinevi] = useState("");
@@ -256,6 +257,7 @@ function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, onBasari }
     formData.set("hedefeYakinlik", hedefeYakinlik);
     formData.set("yayinevi", yayinevi.trim());
     formData.set("tarih", tarih);
+    if (gorevAtamaId) formData.set("gorevAtamaId", gorevAtamaId);
     startTransition(async () => {
       const res = await konuCalismaEkle(formData);
       if (res.error) return setHata(res.error);
@@ -341,16 +343,17 @@ function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, onBasari }
   );
 }
 
-function SoruCozumuForm({ dersListesi, konuOnerileri, onBasari }: {
+export function SoruCozumuForm({ dersListesi, konuOnerileri, onBasari, prefillDers, prefillKonu, gorevAtamaId }: {
   dersListesi: string[]; konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
   onBasari: (m: string, s: boolean) => void;
+  prefillDers?: string; prefillKonu?: string; gorevAtamaId?: string;
 }) {
-  const [ders, setDers] = useState("");
+  const [ders, setDers] = useState(prefillDers ?? "");
   const [dogru, setDogru] = useState("");
   const [yanlis, setYanlis] = useState("");
   const [bos, setBos] = useState("");
-  const [konu, setKonu] = useState("");
-  const [aramaMetni, setAramaMetni] = useState("");
+  const [konu, setKonu] = useState(prefillKonu ?? "");
+  const [aramaMetni, setAramaMetni] = useState(prefillKonu ?? "");
   const [oneriAcik, setOneriAcik] = useState(false);
   const [yayinevi, setYayinevi] = useState("");
   const [tarih, setTarih] = useState(bugununTarihi());
@@ -377,6 +380,7 @@ function SoruCozumuForm({ dersListesi, konuOnerileri, onBasari }: {
     formData.set("konu", konu);
     formData.set("yayinevi", yayinevi.trim());
     formData.set("tarih", tarih);
+    if (gorevAtamaId) formData.set("gorevAtamaId", gorevAtamaId);
     startTransition(async () => {
       const res = await soruCozumuEkle(formData);
       if (res.error) setHata(res.error);
@@ -443,7 +447,9 @@ function SoruCozumuForm({ dersListesi, konuOnerileri, onBasari }: {
 // Matematik/Fen Bilimleri) SADECE birini seçip o branşın tek sonucunu
 // girer (bkz. 9_10_sinif_ekleme_senaryosu.pdf 7.1 "Ürün kararı") — 11-12
 // TYT/AYT akışı (birden çok ders aynı anda) değişmeden kalıyor.
-function DenemeForm({ aytAlan, dokuzOnMu, onBasari }: { aytAlan: AytAlan; dokuzOnMu: boolean; onBasari: (m: string, s: boolean) => void }) {
+export function DenemeForm({ aytAlan, dokuzOnMu, onBasari, gorevAtamaId }: {
+  aytAlan: AytAlan; dokuzOnMu: boolean; onBasari: (m: string, s: boolean) => void; gorevAtamaId?: string;
+}) {
   const [tur, setTur] = useState<DenemeTuru>("TYT");
   const [brans, setBrans] = useState<string>(BRANS_DENEMESI_DERSLERI[0]);
   const [sonuclar, setSonuclar] = useState<Record<string, { dogru: string; yanlis: string }>>({});
@@ -485,7 +491,7 @@ function DenemeForm({ aytAlan, dokuzOnMu, onBasari }: { aytAlan: AytAlan; dokuzO
       yanlis: Number(sonuclar[d]?.yanlis ?? 0),
     }));
     startTransition(async () => {
-      const res = await denemeEkle(efektifTur, yayinevi.trim(), hedefeYakinlik, zorluk, dersSonuclari, tarih, zorla);
+      const res = await denemeEkle(efektifTur, yayinevi.trim(), hedefeYakinlik, zorluk, dersSonuclari, tarih, zorla, gorevAtamaId);
       if (res.error) { setHata(res.error); setBenzerUyari(false); }
       else if (res.benzerUyari) { setBenzerUyari(true); }
       else {
