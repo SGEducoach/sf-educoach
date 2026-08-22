@@ -59,7 +59,17 @@ export function Gorevlerim({ gorevler, haftaBaslangic, aytAlan, dokuzOnMu, dersL
   const searchParams = useSearchParams();
   const gunler = Array.from({ length: 7 }, (_, i) => tarihEkle(haftaBaslangic, i));
   const bugun = bugununTarihiTR();
-  const [seciliGun, setSeciliGun] = useState(gunler.includes(bugun) ? bugun : gunler[0]);
+  const [seciliGun, setSeciliGun] = useState(() => (gunler.includes(bugun) ? bugun : gunler[0]));
+  // Hafta değiştirilince (önceki/sonraki hafta okları) bu bileşen YENİDEN
+  // MOUNT olmuyor — sadece haftaBaslangic prop'u değişiyor. useState'in
+  // ilk değeri sadece ilk render'da hesaplandığı için, prop değiştiğinde
+  // seciliGun eski haftadaki günde donuk kalıyordu ("hâlâ Cumartesi"
+  // hatası). React'in önerdiği "render sırasında state'i sıfırla" deseni:
+  const [sonHaftaBaslangic, setSonHaftaBaslangic] = useState(haftaBaslangic);
+  if (haftaBaslangic !== sonHaftaBaslangic) {
+    setSonHaftaBaslangic(haftaBaslangic);
+    setSeciliGun(gunler.includes(bugun) ? bugun : gunler[0]);
+  }
   const [acikGorev, setAcikGorev] = useState<GorevSatiri | null>(null);
   const [planModalAcik, setPlanModalAcik] = useState(false);
 
