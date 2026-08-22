@@ -41,7 +41,7 @@ interface BekleyenOnaySatiri {
 
 export function OgretmenPanel({
   role, bekleyenTalepler, ogrenciler, sinifAdi, siniflar, gorunecekSinifId, kendiSinifId, kendiSinifiMi,
-  ogretmenDersleri, bekleyenOnaylar,
+  ogretmenDersleri, bekleyenOnaylar, konuOnerileri,
 }: {
   role: "ogretmen" | "mudur";
   bekleyenTalepler: (VeliLinkRequest & { ogrenci_ad: string })[];
@@ -53,6 +53,7 @@ export function OgretmenPanel({
   kendiSinifiMi: boolean;
   ogretmenDersleri: OgretmenDersiSatiri[];
   bekleyenOnaylar: BekleyenOnaySatiri[];
+  konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
 }) {
   const router = useRouter();
   const [uretilenKodlar, setUretilenKodlar] = useState<Record<string, string>>({});
@@ -158,7 +159,7 @@ export function OgretmenPanel({
       {role === "ogretmen" && kendiSinifId && <BekleyenOnaylarBolumu onaylar={bekleyenOnaylar} />}
 
       {role === "ogretmen" && gorevVerilebilirMi && ogrenciler.length > 0 && (
-        <GorevVerBolumu ogrenciler={ogrenciler} />
+        <GorevVerBolumu ogrenciler={ogrenciler} konuOnerileri={konuOnerileri} />
       )}
 
       {role === "ogretmen" && <DerslerimBolumu dersler={ogretmenDersleri} siniflar={siniflar} />}
@@ -503,11 +504,14 @@ export function SinifEkleFormu({ schoolId }: { schoolId: string }) {
 // (checkbox ile, "Tümünü seç" toplu görev karşılığı) seçilip aynı görev
 // hepsine birden atanıyor. Öğrenci tarafında bu görev, ilgili mevcut veri
 // giriş formundan (Konu/Soru/Deneme) tamamlanıyor (bkz. Gorevlerim.tsx).
-function GorevVerBolumu({ ogrenciler }: { ogrenciler: OgrenciSatiri[] }) {
+function GorevVerBolumu({ ogrenciler, konuOnerileri }: {
+  ogrenciler: OgrenciSatiri[]; konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
+}) {
   const [secili, setSecili] = useState<Set<string>>(new Set());
   const [tur, setTur] = useState<GorevTuru>("soru");
   const [ders, setDers] = useState<string>(BRANS_LISTESI[0]);
   const [konu, setKonu] = useState("");
+  const dersKonulari = konuOnerileri.filter((k) => k.ders === ders);
   const [hedefSoru, setHedefSoru] = useState("");
   const [hedefDakika, setHedefDakika] = useState("");
   const [tarih, setTarih] = useState(() => new Date().toISOString().slice(0, 10));
@@ -601,7 +605,7 @@ function GorevVerBolumu({ ogrenciler }: { ogrenciler: OgrenciSatiri[] }) {
           </label>
           <label className="flex flex-col gap-1">
             <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Ders</span>
-            <select value={ders} onChange={(e) => setDers(e.target.value)}
+            <select value={ders} onChange={(e) => { setDers(e.target.value); setKonu(""); }}
               className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
               {BRANS_LISTESI.map((d) => <option key={d} value={d}>{d}</option>)}
             </select>
@@ -610,8 +614,11 @@ function GorevVerBolumu({ ogrenciler }: { ogrenciler: OgrenciSatiri[] }) {
 
         <label className="flex flex-col gap-1">
           <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Konu (opsiyonel)</span>
-          <input value={konu} onChange={(e) => setKonu(e.target.value)} placeholder="örn. Türev - Zincir Kuralı"
-            className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }} />
+          <select value={konu} onChange={(e) => setKonu(e.target.value)}
+            className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
+            <option value="">Seçiniz (opsiyonel)</option>
+            {dersKonulari.map((k) => <option key={k.konu} value={k.konu}>{k.konu}</option>)}
+          </select>
         </label>
 
         {tur === "soru" && (

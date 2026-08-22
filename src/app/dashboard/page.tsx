@@ -388,6 +388,7 @@ async function OgretmenIcerik({ userId, role, secilenSinifId, secilenOgrenciId, 
       kendiSinifiMi={kendiSinifiMi}
       ogretmenDersleri={ogretmenDersleri}
       bekleyenOnaylar={bekleyenOnaylar}
+      konuOnerileri={MUFREDAT_KONULARI}
     />
   );
 }
