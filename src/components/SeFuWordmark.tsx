@@ -1,4 +1,4 @@
-import { SEFU_MAVI, SEFU_KIRMIZI, SEFU_KIRMIZI_KOYU } from "@/lib/theme";
+import { SEFU_MAVI, SEFU_KIRMIZI, SEFU_KIRMIZI_VURGU } from "@/lib/theme";
 
 // Marka adı — ÖSYM mavisi (kullanıcı kararı). `as` ile h1/span arasında
 // seçim yapılabiliyor — bazı sayfalarda bu isim sayfanın tek H1'i (login/
@@ -7,15 +7,21 @@ export function SeFuMarkaAdi({ className, as: Etiket = "span" }: { className?: s
   return <Etiket style={{ color: SEFU_MAVI, fontFamily: "var(--font-baloo)" }} className={className}>SeFu Koç</Etiket>;
 }
 
-// Slogan — ÖSYM kırmızısı; "SeFu" ile eşleşen baş harfler (Sen'in S'i,
-// Farkın'ın F'i) biraz büyük ve daha koyu bir kırmızı ile vurgulanıyor.
+// Slogan — ÖSYM kırmızısı; her kelimenin baş harfi (S/G/F/D) biraz büyük
+// ve daha vurgulu bir kırmızı ile öne çıkarılıyor.
 export function SeFuSlogan({ className }: { className?: string }) {
+  const vurgu = { color: SEFU_KIRMIZI_VURGU, fontWeight: 800, fontSize: "1.2em" };
+  const normal = { color: SEFU_KIRMIZI };
   return (
     <span className={className}>
-      <span style={{ color: SEFU_KIRMIZI_KOYU, fontWeight: 800, fontSize: "1.2em" }}>S</span>
-      <span style={{ color: SEFU_KIRMIZI }}>en Geliş, </span>
-      <span style={{ color: SEFU_KIRMIZI_KOYU, fontWeight: 800, fontSize: "1.2em" }}>F</span>
-      <span style={{ color: SEFU_KIRMIZI }}>arkın Duyulur</span>
+      <span style={vurgu}>S</span>
+      <span style={normal}>en </span>
+      <span style={vurgu}>G</span>
+      <span style={normal}>eliş, </span>
+      <span style={vurgu}>F</span>
+      <span style={normal}>arkın </span>
+      <span style={vurgu}>D</span>
+      <span style={normal}>uyulur</span>
     </span>
   );
 }

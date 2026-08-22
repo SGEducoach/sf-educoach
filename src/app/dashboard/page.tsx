@@ -17,7 +17,7 @@ import type { RaporDonemi } from "@/lib/analiz";
 import { AYT_ALAN_ETIKET, sinifSiraKarsilastir, dokuzOnSinifMi, TYT_DERSLERI, AYT_DERSLERI } from "@/lib/types";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
 import type { AytAlan, UserRole } from "@/lib/types";
-import { BG1, BG1_ALT, BORDER, BORDER_STRONG, TEXT, TEXT_MUTED, MINT } from "@/lib/theme";
+import { BG1, BG1_ALT, BORDER, BORDER_STRONG, TEXT, TEXT_MUTED, MINT, MINT_BG } from "@/lib/theme";
 import { Gorevlerim } from "@/components/dashboard/Gorevlerim";
 import type { GorevSatiri } from "@/components/dashboard/Gorevlerim";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
@@ -423,7 +423,7 @@ async function VeliIcerik({ userId, secilenOgrenciId, donem }: { userId: string;
               return (
                 <Link key={i} href={`/dashboard?ogrenci=${c.students?.id}`}
                   className="sfec-btn rounded-xl px-3.5 py-2.5 text-sm font-semibold"
-                  style={{ color: secili ? MINT : TEXT, background: secili ? "rgba(124,232,176,0.12)" : "rgba(255,255,255,0.04)", border: `1px solid ${secili ? MINT : "transparent"}` }}>
+                  style={{ color: secili ? MINT : TEXT, background: secili ? MINT_BG : "rgba(255,255,255,0.04)", border: `1px solid ${secili ? MINT : "transparent"}` }}>
                   {c.students?.profiles?.ad} <span style={{ color: TEXT_MUTED }} className="font-normal">· #{c.students?.okul_no}</span>
                 </Link>
               );

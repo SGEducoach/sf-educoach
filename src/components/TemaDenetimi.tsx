@@ -7,20 +7,21 @@ import { BG1_ALT, BORDER, TEXT_MUTED } from "@/lib/theme";
 type TemaTercihi = "otomatik" | "acik" | "koyu";
 const TEMA_ANAHTARI = "sfec_tema_tercihi";
 const TEMA_OLAYI = "sfec-tema-degisti";
+const KOYU_SORGUSU = "(prefers-color-scheme: dark)";
 
 function kayitliTercih(): TemaTercihi {
   const tercih = localStorage.getItem(TEMA_ANAHTARI);
   return tercih === "acik" || tercih === "koyu" ? tercih : "otomatik";
 }
 
-function istanbulSaatiKoyuMu() {
-  const parcalar = new Intl.DateTimeFormat("tr-TR", { hour: "2-digit", hour12: false, timeZone: "Europe/Istanbul" }).formatToParts(new Date());
-  const saat = Number(parcalar.find((parca) => parca.type === "hour")?.value ?? "12");
-  return saat < 7 || saat >= 19;
+// "Otomatik" artık saate göre değil, cihazın/tarayıcının açık-koyu mod
+// tercihine (prefers-color-scheme) göre belirleniyor.
+function sistemKoyuMu() {
+  return window.matchMedia(KOYU_SORGUSU).matches;
 }
 
 function temayiUygula(tercih: TemaTercihi) {
-  const tema = tercih === "otomatik" ? (istanbulSaatiKoyuMu() ? "koyu" : "acik") : tercih;
+  const tema = tercih === "otomatik" ? (sistemKoyuMu() ? "koyu" : "acik") : tercih;
   document.documentElement.dataset.theme = tema;
   document.documentElement.style.colorScheme = tema === "koyu" ? "dark" : "light";
 }
@@ -29,9 +30,10 @@ export function TemaDenetimi() {
   useEffect(() => {
     const yenile = () => temayiUygula(kayitliTercih());
     yenile();
-    const zamanlayici = window.setInterval(yenile, 60_000);
+    const sorgu = window.matchMedia(KOYU_SORGUSU);
+    sorgu.addEventListener("change", yenile);
     window.addEventListener(TEMA_OLAYI, yenile);
-    return () => { window.clearInterval(zamanlayici); window.removeEventListener(TEMA_OLAYI, yenile); };
+    return () => { sorgu.removeEventListener("change", yenile); window.removeEventListener(TEMA_OLAYI, yenile); };
   }, []);
   return null;
 }
@@ -43,7 +45,7 @@ export function TemaButonu() {
     return () => window.cancelAnimationFrame(frame);
   }, []);
   const sonraki: Record<TemaTercihi, TemaTercihi> = { otomatik: "acik", acik: "koyu", koyu: "otomatik" };
-  const etiket: Record<TemaTercihi, string> = { otomatik: "Tema: Otomatik", acik: "Tema: Açık", koyu: "Tema: Koyu" };
+  const etiket: Record<TemaTercihi, string> = { otomatik: "Tema: Otomatik (sistem)", acik: "Tema: Açık", koyu: "Tema: Koyu" };
   const Icon = tercih === "otomatik" ? Clock3 : tercih === "acik" ? Sun : Moon;
 
   function degistir() {

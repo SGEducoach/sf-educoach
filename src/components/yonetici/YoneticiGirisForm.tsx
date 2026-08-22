@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
+import { BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 import { YukleniyorOverlay } from "@/components/YukleniyorOverlay";
 
 // /yonetici'nin kendi bağımsız giriş formu — normal /login akışıyla hiçbir
@@ -43,7 +43,7 @@ export function YoneticiGirisForm() {
     <div style={{ minHeight: "100vh", background: BG0 }} className="flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-7">
-          <div className="w-16 h-16 rounded-full overflow-hidden mb-3" style={{ boxShadow: "0 4px 16px rgba(124,232,176,0.28)" }}>
+          <div className="w-16 h-16 rounded-full overflow-hidden mb-3" style={{ boxShadow: `0 4px 16px ${MINT_BG}` }}>
             <Image src="/logo.png" alt="SeFu Koç" width={64} height={64} className="w-full h-full object-cover" priority />
           </div>
           <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-bold">Yönetim Girişi</h1>

@@ -1,4 +1,5 @@
-// Açık zemin + turkuaz kenarlık paleti.
+// Gündüz: beyaz zemin + ÖSYM mavisi. Gece: siyah zemin + ÖSYM kırmızısı.
+// (bkz. globals.css — tema geçişi TemaDenetimi.tsx'te sistem tercihine göre.)
 export const BG0 = "var(--sfec-bg0)";
 export const BG1 = "var(--sfec-bg1)";
 export const BG1_ALT = "var(--sfec-bg1-alt)";
@@ -8,7 +9,7 @@ export const TEXT = "var(--sfec-text)";
 export const TEXT_MUTED = "var(--sfec-text-muted)";
 
 export const MINT = "var(--sfec-mint)";
-export const MINT_BG = "rgba(13,148,136,0.12)";
+export const MINT_BG = "var(--sfec-mint-bg)";
 export const MINT_ON = "var(--sfec-mint-on)";
 export const SKY = "#2563EB";
 export const SKY_BG = "rgba(143,198,255,0.14)";
@@ -23,11 +24,15 @@ export const LILAC_BG = "rgba(199,182,255,0.15)";
 export const SEAFOAM = "var(--sfec-seafoam)";
 
 // "SeFu Koç" marka renkleri — isim ÖSYM mavisi, slogan ÖSYM kırmızısı
-// (kullanıcı kararı). Slogandaki vurgulu baş harfler (S/F) için daha koyu
-// bir kırmızı tonu ayrıca tanımlı.
-export const SEFU_MAVI = "#0033A0";
-export const SEFU_KIRMIZI = "#C8102E";
-export const SEFU_KIRMIZI_KOYU = "#8C0B20";
+// (kullanıcı kararı). Slogandaki vurgulu baş harfler (S/G/F/D) için ayrı
+// bir vurgu tonu var. Gece temasında kontrast için ikisi de aydınlatılır
+// (bkz. globals.css, :root[data-theme="koyu"]).
+export const SEFU_MAVI = "var(--sfec-marka-mavi)";
+export const SEFU_KIRMIZI = "var(--sfec-marka-kirmizi)";
+export const SEFU_KIRMIZI_VURGU = "var(--sfec-marka-kirmizi-vurgu)";
+
+// Üst navigatör zemini — gündüz sedefli beyaz, gece piano black.
+export const NAV_BG = "var(--sfec-nav-bg)";
 
 export const dersRenkleri: Record<string, string> = {
   Matematik: MINT,

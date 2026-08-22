@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Smartphone, BellOff, BellRing } from "lucide-react";
-import { BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
+import { BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 import { pushAbonelikAc } from "@/lib/push-subscribe";
 import type { UserRole } from "@/lib/types";
 import { MaskotKonusmaBalonu } from "@/components/dashboard/MaskotKonusmaBalonu";
@@ -63,7 +63,7 @@ export function HosgeldinPopuplari({ role }: { role: UserRole }) {
       <div className="pt-1">
         {asama === "hatirlatma" && (
           <>
-            <div className="w-10 h-10 rounded-full flex items-center justify-center mb-3" style={{ background: "rgba(124,232,176,0.15)" }}>
+            <div className="w-10 h-10 rounded-full flex items-center justify-center mb-3" style={{ background: MINT_BG }}>
               <Smartphone size={18} color={MINT} />
             </div>
             <p style={{ color: TEXT }} className="text-sm leading-relaxed mb-1">
@@ -109,7 +109,7 @@ function BildirimSoftAsk({ onTamamlandi }: { onTamamlandi: () => void }) {
 
   return (
     <>
-      <div className="w-10 h-10 rounded-full flex items-center justify-center mb-3" style={{ background: "rgba(124,232,176,0.15)" }}>
+      <div className="w-10 h-10 rounded-full flex items-center justify-center mb-3" style={{ background: MINT_BG }}>
         <BellRing size={18} color={MINT} />
       </div>
       <p style={{ color: TEXT }} className="text-sm leading-relaxed mb-1 font-semibold">

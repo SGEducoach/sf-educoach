@@ -4,7 +4,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Mail } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { BORDER, MINT, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
+import { BORDER, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
 import { MaskotKonusmaBalonu } from "@/components/dashboard/MaskotKonusmaBalonu";
 
 interface DuyuruSatiri {
@@ -54,7 +54,7 @@ export function MesajlarimIkonu({ baslangicSayisi }: { baslangicSayisi: number }
     <div className="relative">
       <button type="button" onClick={ac} title="Mesajlarım"
         className="sfec-btn h-11 w-11 sm:h-8 sm:w-8 rounded-full flex items-center justify-center relative shrink-0"
-        style={{ background: sayisi > 0 ? "rgba(124,232,176,0.15)" : "rgba(255,255,255,0.06)", border: `2px solid ${BORDER}` }}>
+        style={{ background: sayisi > 0 ? MINT_BG : "rgba(255,255,255,0.06)", border: `2px solid ${BORDER}` }}>
         <Mail size={17} color={sayisi > 0 ? MINT : TEXT_MUTED} />
         {sayisi > 0 && (
           <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-[9px] font-bold"
