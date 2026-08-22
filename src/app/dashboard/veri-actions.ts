@@ -8,7 +8,7 @@ import { getAnthropicClient } from "@/lib/anthropic";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
 import { KONU_ANLATIMI_SISTEM_PROMPTU, icerikTemizle } from "@/lib/konu-anlatimi";
 import { pushGonderProfile } from "@/lib/push-send";
-import { SURE_UST_SINIR, DENEME_SURE_UST_SINIR, KATEGORI_GERIYE_DONUK_SINIR, dersSoruSayisi } from "@/lib/types";
+import { SURE_UST_SINIR, KATEGORI_GERIYE_DONUK_SINIR, dersSoruSayisi } from "@/lib/types";
 import type { DenemeTuru, DenemeZorlugu, HedefeYakinlik, VerimlilikDuzeyi } from "@/lib/types";
 
 const SEVIYE_ETIKET: Record<string, string> = { bronz: "Bronz 🥉", gumus: "Gümüş 🥈", altin: "Altın 🥇" };
@@ -153,9 +153,10 @@ export async function konuCalismaEkle(formData: FormData) {
   const konu = String(formData.get("konu") ?? "").trim();
   const sureDakika = Number(formData.get("sureDakika"));
   const hedefeYakinlik = String(formData.get("hedefeYakinlik")) as HedefeYakinlik;
+  const yayinevi = String(formData.get("yayinevi") ?? "").trim();
   const { tarih, error: tarihHatasi } = tarihDogrula(formData.get("tarih"), KATEGORI_GERIYE_DONUK_SINIR.konu);
 
-  if (!ders || !konu || !sureDakika || sureDakika <= 0 || !hedefeYakinlik) {
+  if (!ders || !konu || !sureDakika || sureDakika <= 0 || !hedefeYakinlik || !yayinevi) {
     return { error: "Lütfen tüm alanları doldurun.", verimlilikSorulsunMu: false };
   }
   if (tarihHatasi) return { error: tarihHatasi, verimlilikSorulsunMu: false };
@@ -164,7 +165,7 @@ export async function konuCalismaEkle(formData: FormData) {
   }
 
   const { error } = await supabase.from("konu_calismalar").insert({
-    student_id: user.id, ders, konu, sure_dakika: sureDakika, hedefe_yakinlik: hedefeYakinlik, tarih,
+    student_id: user.id, ders, konu, sure_dakika: sureDakika, hedefe_yakinlik: hedefeYakinlik, yayinevi, tarih,
   });
   if (error) return { error: error.message, verimlilikSorulsunMu: false };
 
@@ -179,24 +180,28 @@ export async function soruCozumuEkle(formData: FormData) {
   const ders = String(formData.get("ders"));
   const dogru = Number(formData.get("dogru"));
   const yanlis = Number(formData.get("yanlis"));
+  const bos = Number(formData.get("bos") ?? 0);
+  const konu = String(formData.get("konu") ?? "").trim();
   const sureDakika = Number(formData.get("sureDakika"));
-  const hedefeYakinlik = String(formData.get("hedefeYakinlik")) as HedefeYakinlik;
+  const yayinevi = String(formData.get("yayinevi") ?? "").trim();
   const { tarih, error: tarihHatasi } = tarihDogrula(formData.get("tarih"), KATEGORI_GERIYE_DONUK_SINIR.soru);
 
-  if (!ders || Number.isNaN(dogru) || Number.isNaN(yanlis) || !sureDakika || sureDakika <= 0 || !hedefeYakinlik) {
+  if (!ders || Number.isNaN(dogru) || Number.isNaN(yanlis) || Number.isNaN(bos) || bos < 0 || !sureDakika || sureDakika <= 0 || !yayinevi) {
     return { error: "Lütfen tüm alanları doldurun.", verimlilikSorulsunMu: false };
   }
   if (tarihHatasi) return { error: tarihHatasi, verimlilikSorulsunMu: false };
-  // Süre, toplam soru sayısının (doğru+yanlış) iki katını geçemez — soru
+  // Süre, toplam soru sayısının (doğru+yanlış+boş) iki katını geçemez — soru
   // başına makul bir üst sınır koyup "günlük toplamı tek oturuma girme"
   // hatasını (bkz. SURE_UST_SINIR yorumu) burada da yakalıyor.
-  const toplamSoru = dogru + yanlis;
+  const toplamSoru = dogru + yanlis + bos;
   if (sureDakika > toplamSoru * 2) {
     return { error: `Süre, toplam soru sayısının (${toplamSoru}) iki katı olan ${toplamSoru * 2} dakikayı geçemez.`, verimlilikSorulsunMu: false };
   }
 
+  // Bu action sadece öğrencinin kendi girişi için — görev karşılığı soru
+  // çözümleri (kaynak='ogretmen') Görevler alt sisteminden gelecek (Faz 3).
   const { error } = await supabase.from("soru_cozumleri").insert({
-    student_id: user.id, ders, dogru, yanlis, sure_dakika: sureDakika, hedefe_yakinlik: hedefeYakinlik, tarih,
+    student_id: user.id, ders, dogru, yanlis, bos, konu: konu || null, sure_dakika: sureDakika, yayinevi, kaynak: "ogrenci", tarih,
   });
   if (error) return { error: error.message, verimlilikSorulsunMu: false };
 
@@ -208,22 +213,20 @@ export async function soruCozumuEkle(formData: FormData) {
 
 export async function denemeEkle(
   tur: DenemeTuru,
-  sureDakika: number,
+  yayinevi: string,
   hedefeYakinlik: HedefeYakinlik,
   zorluk: DenemeZorlugu,
   dersSonuclari: { ders: string; dogru: number; yanlis: number }[],
   tarihGirdisi?: string,
-) {
+  zorla = false,
+): Promise<{ error: string | null; verimlilikSorulsunMu: boolean; benzerUyari?: boolean }> {
   const { supabase, user } = await requireStudent();
   const { tarih, error: tarihHatasi } = tarihDogrula(tarihGirdisi ?? null, KATEGORI_GERIYE_DONUK_SINIR.deneme);
 
-  if (!sureDakika || sureDakika <= 0 || !hedefeYakinlik || !zorluk || dersSonuclari.length === 0) {
+  if (!yayinevi.trim() || !hedefeYakinlik || !zorluk || dersSonuclari.length === 0) {
     return { error: "Lütfen tüm alanları doldurun.", verimlilikSorulsunMu: false };
   }
   if (tarihHatasi) return { error: tarihHatasi, verimlilikSorulsunMu: false };
-  if (sureDakika > DENEME_SURE_UST_SINIR) {
-    return { error: `Süre en fazla ${DENEME_SURE_UST_SINIR} dakika olabilir.`, verimlilikSorulsunMu: false };
-  }
   // Ders başına resmî/branş soru sayısı üst sınırı sunucu tarafında da
   // doğrulanıyor (bkz. 9_10_sinif_ekleme_senaryosu.pdf 7.5 — Branş Denemesi
   // sınırlarının sunucuda doğrulanması istendi; TYT/AYT için de aynı kontrol
@@ -253,9 +256,31 @@ export async function denemeEkle(
     };
   }
 
+  // Benzerlik uyarısı: öğrenci aynı tarih+tür için kendi girişini tekrar mı
+  // ekliyor? (BRANS'ta ayrıca aynı branş mı, çünkü aynı gün farklı branşlar
+  // girilebilir.) `zorla` true ise (kullanıcı uyarıyı görüp devam ettiyse)
+  // bu kontrol atlanır.
+  if (!zorla) {
+    const { data: kendiKayitlari } = await supabase
+      .from("denemeler")
+      .select("id, deneme_ders_sonuclari(ders)")
+      .eq("student_id", user.id)
+      .eq("tarih", tarih)
+      .eq("tur", tur)
+      .eq("kaynak", "ogrenci");
+    type BenzerKayit = { id: string; deneme_ders_sonuclari: { ders: string }[] };
+    const benzerVarMi = tur !== "BRANS"
+      ? (kendiKayitlari?.length ?? 0) > 0
+      : ((kendiKayitlari as BenzerKayit[] | null) ?? []).some((k) =>
+          k.deneme_ders_sonuclari?.some((s) => s.ders === dersSonuclari[0]?.ders));
+    if (benzerVarMi) {
+      return { error: null, verimlilikSorulsunMu: false, benzerUyari: true };
+    }
+  }
+
   const { data: deneme, error } = await supabase
     .from("denemeler")
-    .insert({ student_id: user.id, tur, sure_dakika: sureDakika, hedefe_yakinlik: hedefeYakinlik, zorluk, kaynak: "ogrenci", tarih })
+    .insert({ student_id: user.id, tur, hedefe_yakinlik: hedefeYakinlik, zorluk, yayinevi, kaynak: "ogrenci", tarih })
     .select("id")
     .single();
 

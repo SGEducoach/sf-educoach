@@ -371,6 +371,9 @@ create table public.konu_calismalar (
   konu text not null,
   sure_dakika integer not null check (sure_dakika > 0),
   hedefe_yakinlik public.hedefe_yakinlik not null,
+  -- Yayınevi: serbest metin, zorunlu (bkz. migration 0044 — sabit liste
+  -- bilinçli olarak kullanılmıyor).
+  yayinevi text not null,
   created_at timestamptz not null default now()
 );
 
@@ -381,8 +384,17 @@ create table public.soru_cozumleri (
   ders text not null,
   dogru integer not null check (dogru >= 0),
   yanlis integer not null check (yanlis >= 0),
+  -- Boş (cevapsız) sayısı — Doğru/Yanlış/Boş revizyonu, migration 0044.
+  bos integer not null default 0 check (bos >= 0),
   sure_dakika integer not null check (sure_dakika > 0),
-  hedefe_yakinlik public.hedefe_yakinlik not null,
+  -- "Soru çözüm sayım" (Az/Orta/Çok) self-rating kaldırıldı (migration
+  -- 0044) — bu tabloda artık hedefe_yakinlik YOK, konu_calismalar ve
+  -- denemeler'de hâlâ var.
+  konu text,
+  yayinevi text not null,
+  -- Bu kaydın öğrencinin kendi girişi mi yoksa bir görevin karşılığı mı
+  -- olduğunu ayırt eder (Görevler alt sistemi, Faz 3).
+  kaynak text not null default 'ogrenci' check (kaynak in ('ogrenci', 'ogretmen')),
   created_at timestamptz not null default now()
 );
 
@@ -391,8 +403,11 @@ create table public.denemeler (
   student_id uuid not null references public.students(id) on delete cascade,
   tarih date not null default current_date,
   tur public.deneme_turu not null,
-  sure_dakika integer not null check (sure_dakika > 0),
+  -- Süre alanı formdan kaldırıldı (migration 0044) — nullable, yeni
+  -- kayıtlarda artık girilmiyor.
+  sure_dakika integer check (sure_dakika > 0),
   hedefe_yakinlik public.hedefe_yakinlik not null,
+  yayinevi text not null,
   kaynak text not null default 'ogrenci' check (kaynak in ('ogrenci', 'ogretmen')),
   created_at timestamptz not null default now()
 );

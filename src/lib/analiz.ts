@@ -16,6 +16,9 @@ export interface AnalizVerisi {
   soruCozumuGunluk: { tarih: string; soru: number }[];
   denemeSureleri: { tarih: string; dakika: number; tur: "TYT" | "AYT" }[];
   dersNetOrtalama: { ders: string; net: number }[];
+  // Ders bazlı, tarihe göre sıralı net listesi — Analiz panelindeki ders
+  // seçim dropdown'u bir ders seçince (§1) o dersin trendini göstermek için.
+  dersGunlukNet: Record<string, { tarih: string; net: number }[]>;
   hedefeYakinlikDagilimi: Record<HedefeYakinlik, number>;
   haftalikVerimlilik: { tarih: string; puan: number; duzey: VerimlilikDuzeyi }[];
   sonDenemeNet: number | null;
@@ -47,7 +50,7 @@ export async function analizVerisiGetir(
 
   let denemeQuery = supabase.from("denemeler").select("id, tarih, tur, sure_dakika, hedefe_yakinlik, deneme_ders_sonuclari(dogru, yanlis)").eq("student_id", studentId).order("tarih");
   let konuQuery = supabase.from("konu_calismalar").select("tarih, sure_dakika, hedefe_yakinlik").eq("student_id", studentId);
-  let soruQuery = supabase.from("soru_cozumleri").select("tarih, sure_dakika, ders, dogru, yanlis, hedefe_yakinlik").eq("student_id", studentId);
+  let soruQuery = supabase.from("soru_cozumleri").select("tarih, sure_dakika, ders, dogru, yanlis").eq("student_id", studentId);
   let verimlilikQuery = supabase.from("haftalik_verimlilikler").select("created_at, duzey").eq("student_id", studentId).order("created_at");
 
   if (baslangic) {
@@ -66,7 +69,7 @@ export async function analizVerisiGetir(
 
   type DenemeRow = { id: string; tarih: string; tur: "TYT" | "AYT"; sure_dakika: number; hedefe_yakinlik: HedefeYakinlik; deneme_ders_sonuclari: { dogru: number; yanlis: number }[] };
   type KonuRow = { tarih: string; sure_dakika: number; hedefe_yakinlik: HedefeYakinlik };
-  type SoruRow = { tarih: string; sure_dakika: number; ders: string; dogru: number; yanlis: number; hedefe_yakinlik: HedefeYakinlik };
+  type SoruRow = { tarih: string; sure_dakika: number; ders: string; dogru: number; yanlis: number };
 
   const denemeListesi = (denemeler as unknown as DenemeRow[]) ?? [];
   const konuListesi = (konular as unknown as KonuRow[]) ?? [];
@@ -108,11 +111,19 @@ export async function analizVerisiGetir(
     ders, net: Math.round((v.toplam / v.adet) * 100) / 100,
   }));
 
-  // Hedefe yakınlık dağılımı (tüm giriş türlerinden)
+  // Ders bazlı günlük net — Analiz panelinde tekil ders seçilince gösterilen
+  // trend grafiği için (bkz. AnalizPaneli ders dropdown'u).
+  const dersGunlukNet: Record<string, { tarih: string; net: number }[]> = {};
+  for (const s of soruListesi) {
+    (dersGunlukNet[s.ders] ??= []).push({ tarih: s.tarih, net: netHesapla(s.dogru, s.yanlis) });
+  }
+  for (const ders of Object.keys(dersGunlukNet)) dersGunlukNet[ders].sort((a, b) => a.tarih.localeCompare(b.tarih));
+
+  // Hedefe yakınlık dağılımı — sadece konu çalışma ve deneme'den (soru
+  // çözümünde "Az/Orta/Çok" self-rating kaldırıldı, migration 0044).
   const hedefeYakinlikDagilimi: Record<HedefeYakinlik, number> = { yakin: 0, belirsiz: 0, uzak: 0 };
   for (const d of denemeListesi) hedefeYakinlikDagilimi[d.hedefe_yakinlik]++;
   for (const k of konuListesi) hedefeYakinlikDagilimi[k.hedefe_yakinlik]++;
-  for (const s of soruListesi) hedefeYakinlikDagilimi[s.hedefe_yakinlik]++;
 
   const haftalikVerimlilik = verimlilikListesi.map((v) => ({
     tarih: v.created_at, duzey: v.duzey, puan: VERIMLILIK_PUAN[v.duzey],
@@ -138,6 +149,7 @@ export async function analizVerisiGetir(
     soruCozumuGunluk,
     denemeSureleri,
     dersNetOrtalama,
+    dersGunlukNet,
     hedefeYakinlikDagilimi,
     haftalikVerimlilik,
     sonDenemeNet: denemeTrend.length > 0 ? denemeTrend[denemeTrend.length - 1].net : null,

@@ -50,9 +50,22 @@ export function AnalizPaneli({ veri, ogrenciAdi }: { veri: AnalizVerisi; ogrenci
 
   const hedefToplam = veri.hedefeYakinlikDagilimi.yakin + veri.hedefeYakinlikDagilimi.belirsiz + veri.hedefeYakinlikDagilimi.uzak;
 
+  // Ders bazlı ortalama net grafiğinde tekil ders seçilince o dersin
+  // net trendi gösteriliyor (§1, yenilikler_1.txt). Dropdown, gerçekten
+  // veri girilmiş derslerden oluşuyor.
+  const dersSecenekleri = Object.keys(veri.dersGunlukNet).sort();
+  const seciliDers = searchParams.get("ders") && dersSecenekleri.includes(searchParams.get("ders") ?? "") ? searchParams.get("ders") : null;
+  const dersTrendChartData = seciliDers ? veri.dersGunlukNet[seciliDers].map((d) => ({ gun: tarihFormat(d.tarih), net: d.net })) : [];
+
   function donemDegistir(donem: RaporDonemi) {
     const params = new URLSearchParams(searchParams.toString());
     params.set("donem", donem);
+    router.push(`/dashboard?${params.toString()}`);
+  }
+
+  function dersDegistir(ders: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (ders) params.set("ders", ders); else params.delete("ders");
     router.push(`/dashboard?${params.toString()}`);
   }
 
@@ -163,8 +176,31 @@ export function AnalizPaneli({ veri, ogrenciAdi }: { veri: AnalizVerisi; ogrenci
         </div>
 
         <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-          <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold mb-4 block">Ders bazlı ortalama net</span>
-          {veri.dersNetOrtalama.length === 0 ? (
+          <div className="flex items-center justify-between gap-2 mb-4 flex-wrap print:hidden">
+            <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Ders bazlı {seciliDers ? "net trendi" : "ortalama net"}</span>
+            {dersSecenekleri.length > 0 && (
+              <select value={seciliDers ?? ""} onChange={(e) => dersDegistir(e.target.value)}
+                className="text-xs font-semibold px-2.5 py-1.5 rounded-xl outline-none"
+                style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
+                <option value="">Tüm dersler</option>
+                {dersSecenekleri.map((d) => <option key={d} value={d}>{d}</option>)}
+              </select>
+            )}
+          </div>
+          <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold mb-4 hidden print:block">Ders bazlı ortalama net</span>
+          {seciliDers ? (
+            dersTrendChartData.length === 0 ? <BosDurum /> : (
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={dersTrendChartData} margin={{ left: -20, right: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={BORDER} vertical={false} />
+                  <XAxis dataKey="gun" tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={{ stroke: BORDER }} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={false} tickLine={false} />
+                  <RTooltip cursor={false} contentStyle={{ fontSize: 12, borderRadius: 12, border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT }} labelStyle={{ color: TEXT_MUTED }} formatter={(deger) => [deger, seciliDers]} />
+                  <Line type="monotone" dataKey="net" stroke={SKY} strokeWidth={2.25} dot={{ r: 3.5, fill: SKY, strokeWidth: 2, stroke: BG1 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            )
+          ) : veri.dersNetOrtalama.length === 0 ? (
             <BosDurum />
           ) : (
             <ResponsiveContainer width="100%" height={200}>

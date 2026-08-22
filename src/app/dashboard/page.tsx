@@ -139,6 +139,28 @@ async function OgrenciIcerik({ userId, ad, donem }: { userId: string; ad: string
   const { data: rozetDurumHam } = await supabase.rpc("ogrenci_rozet_durumu", { p_student_id: userId });
   const rozetDurum = (rozetDurumHam as RozetDurum | null) ?? { konu: "yok", soru: "yok", deneme: "yok", genel: "yok" };
 
+  // Konu tamamlama sayacı (§1, yenilikler_1.txt): payda = müfredattaki ders
+  // başına konu sayısı (MUFREDAT_KONULARI), pay = öğrencinin "hakimim"
+  // (hedefe_yakinlik='yakin') işaretlediği FARKLI konu sayısı — aynı konuyu
+  // birden fazla kez çalışmış olsa bile bir kez sayılır.
+  const { data: tamamlananKonularHam } = await supabase
+    .from("konu_calismalar")
+    .select("ders, konu")
+    .eq("student_id", userId)
+    .eq("hedefe_yakinlik", "yakin");
+  const tamamlananSet = new Set<string>();
+  for (const r of (tamamlananKonularHam as { ders: string; konu: string }[] | null) ?? []) {
+    tamamlananSet.add(`${r.ders}|${r.konu}`);
+  }
+  const dersMufredatToplam = new Map<string, number>();
+  for (const k of MUFREDAT_KONULARI) dersMufredatToplam.set(k.ders, (dersMufredatToplam.get(k.ders) ?? 0) + 1);
+  const konuSayaclari: Record<string, { tamamlanan: number; toplam: number }> = {};
+  for (const [ders, toplam] of dersMufredatToplam.entries()) {
+    let tamamlanan = 0;
+    for (const anahtar of tamamlananSet) if (anahtar.startsWith(`${ders}|`)) tamamlanan++;
+    konuSayaclari[ders] = { tamamlanan, toplam };
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div id="ozet" className="sfec-section sfec-fade rounded-3xl p-6 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
@@ -163,7 +185,7 @@ async function OgrenciIcerik({ userId, ad, donem }: { userId: string; ad: string
       <section id="zayif-konular" className="sfec-section"><ZayifKonular konular={zayifKonular} /></section>
 
       <div id="veri-girisi" className="sfec-section print:hidden">
-        <OgrenciVeriGirisi aytAlan={s.ayt_alan} konuOnerileri={konuOnerileri} sinifSeviyesi={s.classes?.seviye ?? null} />
+        <OgrenciVeriGirisi aytAlan={s.ayt_alan} konuOnerileri={konuOnerileri} sinifSeviyesi={s.classes?.seviye ?? null} konuSayaclari={konuSayaclari} />
       </div>
 
       <div id="analiz" className="sfec-section">

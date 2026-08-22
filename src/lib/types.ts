@@ -92,6 +92,7 @@ export interface KonuCalisma {
   konu: string;
   sure_dakika: number;
   hedefe_yakinlik: HedefeYakinlik;
+  yayinevi: string;
   created_at: string;
 }
 
@@ -102,8 +103,11 @@ export interface SoruCozumu {
   ders: string;
   dogru: number;
   yanlis: number;
+  bos: number;
   sure_dakika: number;
-  hedefe_yakinlik: HedefeYakinlik;
+  konu: string | null;
+  yayinevi: string;
+  kaynak: "ogrenci" | "ogretmen";
   created_at: string;
 }
 
@@ -118,9 +122,10 @@ export interface Deneme {
   student_id: string;
   tarih: string;
   tur: DenemeTuru;
-  sure_dakika: number;
+  sure_dakika: number | null;
   hedefe_yakinlik: HedefeYakinlik;
   zorluk: DenemeZorlugu | null;
+  yayinevi: string;
   kaynak: "ogrenci" | "ogretmen";
   created_at: string;
   deneme_ders_sonuclari?: DenemeDersSonucu[];
@@ -158,9 +163,6 @@ export const DENEME_ZORLUGU_ETIKET: Record<DenemeZorlugu, string> = {
 // (ör. "4000 dakika") istatistikleri bozmasını engellemek için. 480 dk = 8
 // saat, tek oturum için zaten cömert bir üst sınır.
 export const SURE_UST_SINIR = 480;
-// Deneme süresi üst sınırı — tek oturumluk bir sınav için (TYT/AYT ayrımı
-// yapılmadan) sabit 165 dakika.
-export const DENEME_SURE_UST_SINIR = 165;
 
 // Ders bazında ÖSYM'nin resmi TYT/AYT soru sayıları (2026). Deneme
 // girerken doğru+yanlış toplamının bunu aşmaması için kullanılıyor.
