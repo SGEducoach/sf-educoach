@@ -108,6 +108,17 @@ export interface SoruCozumu {
   konu: string | null;
   yayinevi: string;
   kaynak: "ogrenci" | "ogretmen";
+  onaylandi_mi: boolean;
+  onaylayan_id: string | null;
+  onaylanma_at: string | null;
+  created_at: string;
+}
+
+export interface OgretmenDersi {
+  id: string;
+  teacher_id: string;
+  class_id: string;
+  ders: string;
   created_at: string;
 }
 

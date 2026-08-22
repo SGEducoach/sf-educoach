@@ -348,6 +348,62 @@ export async function ogretmenDuyuruGonder(mesaj: string, kapsam?: string, alici
   return { error: null, ...sonuc, kalanGunlukHak: izin.kalanGunlukHak };
 }
 
+// ============ Faz 2 (yenilikler_1.txt §4): öğretmen çoklu sınıf/ders ============
+// Öğretmenin kendi ekleyip çıkarabildiği, admin onayı gerektirmeyen bir
+// self-servis ilişki (bkz. migration 0045, ogretmen_dersleri). Yetki kontrolü
+// RLS'te (kendi okulundaki bir sınıf olmalı) — buradaki kontrol sadece daha
+// anlaşılır bir hata mesajı için.
+export async function ogretmenDersEkle(classId: string, ders: string) {
+  const { supabase, user } = await requireUser();
+  const dersTemiz = ders.trim();
+  if (!classId || !dersTemiz) return { error: "Sınıf ve ders seçin." };
+  const { error } = await supabase.from("ogretmen_dersleri").insert({ teacher_id: user.id, class_id: classId, ders: dersTemiz });
+  if (error) {
+    if (error.code === "23505") return { error: "Bu sınıf/ders zaten listenizde." };
+    if (error.message?.includes("row-level security")) return { error: "Bu sınıf kendi okulunuza ait değil." };
+    return { error: error.message };
+  }
+  revalidatePath("/dashboard");
+  return { error: null };
+}
+
+export async function ogretmenDersSil(id: string) {
+  const { supabase } = await requireUser();
+  const { error } = await supabase.from("ogretmen_dersleri").delete().eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard");
+  return { error: null };
+}
+
+// Öğrenci sınıf transferi ("öğrenci ekle/çıkar", kullanıcı kararı — bkz.
+// migration 0045). RLS + students_transfer_guard trigger'ı, sadece kendi
+// sınıfındaki bir öğrenciyi aynı okuldaki başka bir sınıfa taşımaya izin
+// veriyor; buradaki kontrol yalnızca anlaşılır bir hata mesajı için.
+export async function ogrenciSinifTasi(studentId: string, yeniSinifId: string) {
+  const { supabase, user } = await requireUser();
+  if (!yeniSinifId) return { error: "Hedef sınıf seçin." };
+  const { error } = await supabase.from("students").update({ class_id: yeniSinifId }).eq("id", studentId);
+  if (error) {
+    if (error.message?.includes("row-level security")) return { error: "Bu öğrenciyi taşıma yetkiniz yok (kendi sınıfınızda olmalı)." };
+    return { error: error.message };
+  }
+  await auditLogYaz(supabase, user.id, "ogrenci_sinif_tasi", { ogrenci_id: studentId, yeni_sinif_id: yeniSinifId });
+  revalidatePath("/dashboard");
+  return { error: null };
+}
+
+// Soru çözümü "gördüm" onayı — RLS (soru_cozumleri_update_ogretmen_onay)
+// sadece kendi sınıfındaki öğrencinin kaydına izin veriyor.
+export async function soruCozumuOnayla(id: string) {
+  const { supabase, user } = await requireUser();
+  const { error } = await supabase.from("soru_cozumleri")
+    .update({ onaylandi_mi: true, onaylayan_id: user.id, onaylanma_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard");
+  return { error: null };
+}
+
 // Bir öğretmen/müdürün kendi gönderdiği duyuruların geçmişi — RLS'te
 // "duyurular_select_alici" sadece alıcıya izin veriyor, gönderen kendi
 // duyurusunun bile alıcısı olmayabileceği için burada admin client ile
