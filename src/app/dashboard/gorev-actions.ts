@@ -68,3 +68,67 @@ export async function gorevVer(input: {
   revalidatePath("/dashboard");
   return { error: null, ogrenciSayisi: input.studentIds.length };
 }
+
+// Öğrenci kendi planını ekler — aynı Görevlerim takvimine, öğretmen
+// görevleriyle birlikte görünür (bkz. migration 0049). Öğretmen görevinden
+// farklı olarak saat aralığı ZORUNLU ve aynı gün çakışan bir saat aralığına
+// izin verilmiyor (o günkü TÜM görevlerle — hem öğretmenin verdiği hem
+// kendi eklediği planlarla — karşılaştırılıyor).
+export async function planEkle(input: {
+  tur: GorevTuru;
+  ders: string;
+  konu?: string;
+  hedefSoruSayisi?: number;
+  hedefDakika?: number;
+  tarih: string;
+  baslangicSaat: string;
+  bitisSaat: string;
+  aciklama?: string;
+}) {
+  const { supabase, user } = await requireUser();
+  const ders = input.ders.trim();
+
+  if (!ders) return { error: "Ders seçin." };
+  if (!input.tarih) return { error: "Tarih seçin." };
+  if (!input.baslangicSaat || !input.bitisSaat) return { error: "Başlangıç ve bitiş saati zorunludur." };
+  if (input.bitisSaat <= input.baslangicSaat) return { error: "Bitiş saati başlangıçtan sonra olmalı." };
+
+  const { data: gununGorevleriHam, error: sorguHatasi } = await supabase
+    .from("gorev_atamalari")
+    .select("gorevler!inner(baslangic_saat, bitis_saat, tarih)")
+    .eq("student_id", user.id)
+    .eq("gorevler.tarih", input.tarih);
+  if (sorguHatasi) return { error: sorguHatasi.message };
+
+  type GunGorevRow = { gorevler: { baslangic_saat: string | null; bitis_saat: string | null } | null };
+  const cakisiyor = ((gununGorevleriHam as unknown as GunGorevRow[]) ?? []).some((r) => {
+    const g = r.gorevler;
+    if (!g?.baslangic_saat || !g.bitis_saat) return false;
+    return g.baslangic_saat < input.bitisSaat && g.bitis_saat > input.baslangicSaat;
+  });
+  if (cakisiyor) return { error: "Bu saat aralığında zaten planlanmış bir göreviniz var." };
+
+  const { data: gorev, error } = await supabase.from("gorevler").insert({
+    olusturan_ogrenci_id: user.id,
+    tur: input.tur,
+    ders,
+    konu: input.konu?.trim() || null,
+    hedef_soru_sayisi: input.hedefSoruSayisi || null,
+    hedef_dakika: input.hedefDakika || null,
+    tarih: input.tarih,
+    son_tarih: input.tarih,
+    baslangic_saat: input.baslangicSaat,
+    bitis_saat: input.bitisSaat,
+    aciklama: input.aciklama?.trim() || null,
+  }).select("id").single();
+  if (error || !gorev) return { error: error?.message ?? "Plan oluşturulamadı." };
+
+  const { error: atamaError } = await supabase.from("gorev_atamalari").insert({ gorev_id: gorev.id, student_id: user.id });
+  if (atamaError) {
+    await supabase.from("gorevler").delete().eq("id", gorev.id);
+    return { error: atamaError.message };
+  }
+
+  revalidatePath("/dashboard");
+  return { error: null };
+}

@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronLeft, ChevronRight, BookOpen, PenLine, ClipboardList, X, Clock } from "lucide-react";
-import { BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, PEACH, PEACH_BG, BLUSH, BLUSH_BG, TEXT, TEXT_MUTED } from "@/lib/theme";
+import { ChevronLeft, ChevronRight, BookOpen, PenLine, ClipboardList, X, Clock, Plus } from "lucide-react";
+import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, PEACH, PEACH_BG, BLUSH, BLUSH_BG, TEXT, TEXT_MUTED } from "@/lib/theme";
 import { GOREV_TURU_ETIKET, GOREV_DURUMU_ETIKET } from "@/lib/types";
 import type { GorevTuru, GorevDurumu, AytAlan } from "@/lib/types";
 import { KonuCalismaForm, SoruCozumuForm, DenemeForm } from "@/components/dashboard/OgrenciVeriGirisi";
+import { planEkle } from "@/app/dashboard/gorev-actions";
 
 export interface GorevSatiri {
   atamaId: string;
@@ -66,6 +67,7 @@ export function Gorevlerim({ gorevler, haftaBaslangic, aytAlan, dokuzOnMu, dersL
   const bugun = bugununTarihi();
   const [seciliGun, setSeciliGun] = useState(gunler.includes(bugun) ? bugun : gunler[0]);
   const [acikGorev, setAcikGorev] = useState<GorevSatiri | null>(null);
+  const [planModalAcik, setPlanModalAcik] = useState(false);
 
   const gunlukGorevSayisi = new Map<string, number>();
   for (const g of gorevler) gunlukGorevSayisi.set(g.tarih, (gunlukGorevSayisi.get(g.tarih) ?? 0) + 1);
@@ -82,7 +84,9 @@ export function Gorevlerim({ gorevler, haftaBaslangic, aytAlan, dokuzOnMu, dersL
     haftaGuncelle(d.toISOString().slice(0, 10));
   }
 
-  const gunGorevleri = gorevler.filter((g) => g.tarih === seciliGun);
+  const gunGorevleri = gorevler
+    .filter((g) => g.tarih === seciliGun)
+    .sort((a, b) => (a.baslangicSaat ?? "99:99").localeCompare(b.baslangicSaat ?? "99:99"));
 
   return (
     <div className="sfec-fade rounded-3xl p-5 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
@@ -124,10 +128,11 @@ export function Gorevlerim({ gorevler, haftaBaslangic, aytAlan, dokuzOnMu, dersL
         })}
       </div>
 
-      {gunGorevleri.length === 0 ? (
-        <p style={{ color: TEXT_MUTED }} className="text-sm py-6 text-center">Bu gün için görev yok.</p>
-      ) : (
-        <div className="flex flex-col gap-2.5">
+      {gunGorevleri.length === 0 && (
+        <p style={{ color: TEXT_MUTED }} className="text-sm py-4 text-center">Bu gün için görev yok.</p>
+      )}
+      {gunGorevleri.length > 0 && (
+        <div className="flex flex-col gap-2.5 mb-2.5">
           {gunGorevleri.map((g) => {
             const Icon = TUR_IKON[g.tur];
             const renk = DURUM_RENK[g.durum];
@@ -169,6 +174,12 @@ export function Gorevlerim({ gorevler, haftaBaslangic, aytAlan, dokuzOnMu, dersL
         </div>
       )}
 
+      <button type="button" onClick={() => setPlanModalAcik(true)}
+        className="sfec-btn w-full flex items-center justify-center gap-1.5 text-xs font-bold py-2.5 rounded-2xl"
+        style={{ background: "transparent", color: TEXT_MUTED, border: `2px dashed ${BORDER_STRONG}` }}>
+        <Plus size={14} /> Plan ekle
+      </button>
+
       {acikGorev && createPortal(
         <GorevTamamlamaModal
           gorev={acikGorev}
@@ -178,6 +189,16 @@ export function Gorevlerim({ gorevler, haftaBaslangic, aytAlan, dokuzOnMu, dersL
           konuOnerileri={konuOnerileri}
           konuSayaclari={konuSayaclari}
           onKapat={() => setAcikGorev(null)}
+        />,
+        document.body,
+      )}
+
+      {planModalAcik && createPortal(
+        <PlanEkleModal
+          tarih={seciliGun}
+          dersListesi={dersListesi}
+          konuOnerileri={konuOnerileri}
+          onKapat={() => setPlanModalAcik(false)}
         />,
         document.body,
       )}
@@ -224,6 +245,138 @@ function GorevTamamlamaModal({ gorev, aytAlan, dokuzOnMu, dersListesi, konuOneri
         ) : (
           <DenemeForm aytAlan={aytAlan} dokuzOnMu={dokuzOnMu} gorevAtamaId={gorev.atamaId}
             onBasari={(m) => basariGoster(m)} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Öğrencinin kendi planını eklediği form — öğretmen görevinden farklı
+// olarak saat aralığı ZORUNLU; sunucu tarafı aynı gün çakışan bir saat
+// aralığına izin vermiyor (bkz. planEkle, gorev-actions.ts).
+function PlanEkleModal({ tarih, dersListesi, konuOnerileri, onKapat }: {
+  tarih: string;
+  dersListesi: string[];
+  konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
+  onKapat: () => void;
+}) {
+  const [tur, setTur] = useState<GorevTuru>("konu");
+  const [ders, setDers] = useState(dersListesi[0] ?? "");
+  const [konu, setKonu] = useState("");
+  const [hedefSoru, setHedefSoru] = useState("");
+  const [hedefDakika, setHedefDakika] = useState("");
+  const [baslangicSaat, setBaslangicSaat] = useState("");
+  const [bitisSaat, setBitisSaat] = useState("");
+  const [aciklama, setAciklama] = useState("");
+  const [hata, setHata] = useState<string | null>(null);
+  const [basari, setBasari] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  const dersKonulari = konuOnerileri.filter((k) => k.ders === ders);
+
+  function gonder(e: React.FormEvent) {
+    e.preventDefault();
+    setHata(null);
+    if (!ders) return setHata("Ders seçin.");
+    if (!baslangicSaat || !bitisSaat) return setHata("Başlangıç ve bitiş saati zorunludur.");
+    if (bitisSaat <= baslangicSaat) return setHata("Bitiş saati başlangıçtan sonra olmalı.");
+    startTransition(async () => {
+      const res = await planEkle({
+        tur, ders, konu: konu || undefined,
+        hedefSoruSayisi: hedefSoru ? Number(hedefSoru) : undefined,
+        hedefDakika: hedefDakika ? Number(hedefDakika) : undefined,
+        tarih, baslangicSaat, bitisSaat, aciklama: aciklama || undefined,
+      });
+      if (res.error) setHata(res.error);
+      else { setBasari("Plan eklendi."); setTimeout(onKapat, 1000); }
+    });
+  }
+
+  const tarihEtiket = new Date(`${tarih}T00:00:00`).toLocaleDateString("tr-TR", { weekday: "long", day: "2-digit", month: "long" });
+
+  return (
+    <div className="fixed inset-0 z-[400] flex items-end sm:items-center justify-center px-3 pb-[max(12px,env(safe-area-inset-bottom))] sm:px-4"
+      style={{ background: "rgba(0,0,0,0.55)" }} onClick={onKapat}>
+      <div className="sfec-fade w-full max-w-md rounded-3xl p-5 max-h-[85vh] overflow-y-auto" style={{ background: BG1, border: `2px solid ${BORDER}` }} onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold">Plan ekle · {tarihEtiket}</span>
+          <button type="button" onClick={onKapat} className="sfec-btn w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.06)" }}>
+            <X size={13} color={TEXT_MUTED} />
+          </button>
+        </div>
+
+        {basari ? (
+          <div style={{ color: MINT }} className="text-sm font-semibold py-6 text-center">✓ {basari}</div>
+        ) : (
+          <form onSubmit={gonder} className="flex flex-col gap-3">
+            <div className="grid grid-cols-2 gap-3">
+              <label className="flex flex-col gap-1">
+                <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Tür</span>
+                <select value={tur} onChange={(e) => setTur(e.target.value as GorevTuru)}
+                  className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+                  <option value="konu">Konu Çalışma</option>
+                  <option value="soru">Soru Çözümü</option>
+                  <option value="deneme">Deneme</option>
+                </select>
+              </label>
+              <label className="flex flex-col gap-1">
+                <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Ders</span>
+                <select value={ders} onChange={(e) => { setDers(e.target.value); setKonu(""); }}
+                  className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+                  {dersListesi.map((d) => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </label>
+            </div>
+
+            <label className="flex flex-col gap-1">
+              <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Konu (opsiyonel)</span>
+              <select value={konu} onChange={(e) => setKonu(e.target.value)}
+                className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+                <option value="">Seçiniz (opsiyonel)</option>
+                {dersKonulari.map((k) => <option key={k.konu} value={k.konu}>{k.konu}</option>)}
+              </select>
+            </label>
+
+            {tur === "soru" && (
+              <label className="flex flex-col gap-1">
+                <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Hedef soru sayısı (opsiyonel)</span>
+                <input type="number" min={1} value={hedefSoru} onChange={(e) => setHedefSoru(e.target.value)}
+                  className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+              </label>
+            )}
+            {tur === "konu" && (
+              <label className="flex flex-col gap-1">
+                <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Hedef süre, dk (opsiyonel)</span>
+                <input type="number" min={1} value={hedefDakika} onChange={(e) => setHedefDakika(e.target.value)}
+                  className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+              </label>
+            )}
+
+            <div className="grid grid-cols-2 gap-3">
+              <label className="flex flex-col gap-1">
+                <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Başlangıç saati *</span>
+                <input type="time" required value={baslangicSaat} onChange={(e) => setBaslangicSaat(e.target.value)}
+                  className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Bitiş saati *</span>
+                <input type="time" required value={bitisSaat} onChange={(e) => setBitisSaat(e.target.value)}
+                  className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+              </label>
+            </div>
+
+            <label className="flex flex-col gap-1">
+              <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Açıklama (opsiyonel)</span>
+              <input value={aciklama} onChange={(e) => setAciklama(e.target.value)} placeholder="örn. Sınava hazırlık"
+                className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+            </label>
+
+            {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
+            <button type="submit" disabled={pending}
+              className="sfec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+              {pending ? "Ekleniyor..." : "Plan ekle"}
+            </button>
+          </form>
         )}
       </div>
     </div>

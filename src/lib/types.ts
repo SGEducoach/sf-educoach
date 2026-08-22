@@ -146,7 +146,8 @@ export const GOREV_DURUMU_ETIKET: Record<GorevDurumu, string> = {
 
 export interface Gorev {
   id: string;
-  olusturan_ogretmen_id: string;
+  olusturan_ogretmen_id: string | null;
+  olusturan_ogrenci_id: string | null;
   tur: GorevTuru;
   ders: string;
   konu: string | null;
