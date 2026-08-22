@@ -44,6 +44,16 @@
   --sfec-ai-chip-bg: linear-gradient(135deg, rgba(124,58,237,0.16), rgba(37,99,235,0.16));
 }
 
+/* Şeffaf PNG logonun lacivert bölümleri piano-black zeminde kaybolmasın.
+   Gündüz orijinal renkler korunur; gece logo tek renk ÖSYM turuncusuna döner. */
+.sfec-brand-logo {
+  filter: none;
+}
+
+html[data-theme="koyu"] .sfec-brand-logo {
+  filter: brightness(0) saturate(100%) invert(55%) sepia(97%) saturate(3155%) hue-rotate(352deg) brightness(101%) contrast(91%);
+}
+
 :root[data-theme="koyu"] {
   color-scheme: dark;
   --background: #000000;

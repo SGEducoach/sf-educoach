@@ -15,7 +15,7 @@ import {
   telefonSanitize, telefonGecerliMi, okulNoSanitize, sifreGecerliMi, SIFRE_IPUCU, TELEFON_IPUCU, adNormalize, rastgeleSifre,
 } from "@/lib/validators";
 import { YukleniyorOverlay } from "@/components/YukleniyorOverlay";
-import { SeFuSlogan } from "@/components/SeFuWordmark";
+import { SeFuMarkaAdi, SeFuSlogan } from "@/components/SeFuWordmark";
 
 const rolSecenekleri: { id: UserRole; ad: string; icon: typeof BookOpen }[] = [
   { id: "ogrenci", ad: "Öğrenci", icon: BookOpen },
@@ -126,9 +126,10 @@ export default function SignupForm({ kurallarMetni, kurallarVersiyon }: { kurall
     <div style={{ minHeight: "100vh", background: BG0 }} className="flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-6">
-          <Image src="/logo.png" alt="SeFu Koç" width={800} height={395} className="h-24 w-auto max-w-full object-contain mb-2" priority />
-          <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-bold">Hesap oluşturun</h1>
+          <Image src="/logo.png" alt="SeFu Koç" width={800} height={395} className="sfec-brand-logo h-24 w-auto max-w-full object-contain mb-2" priority />
+          <SeFuMarkaAdi as="h1" className="text-2xl font-extrabold leading-none" />
           <p className="text-xs mt-1 italic"><SeFuSlogan /></p>
+          <p style={{ color: TEXT }} className="text-sm font-bold mt-2">Hesap oluşturun</p>
         </div>
 
         <div className="flex gap-1 p-1 rounded-full mb-4" style={{ background: "rgba(255,255,255,0.06)", border: `2px solid ${BORDER}` }}>

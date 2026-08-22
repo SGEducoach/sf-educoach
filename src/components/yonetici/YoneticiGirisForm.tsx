@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 import { YukleniyorOverlay } from "@/components/YukleniyorOverlay";
+import { SeFuMarkaAdi } from "@/components/SeFuWordmark";
 
 // /yonetici'nin kendi bağımsız giriş formu — normal /login akışıyla hiçbir
 // ilişkisi yok (rol seçimi yok, sadece e-posta/şifre). Giriş başarılı olsa
@@ -43,8 +44,9 @@ export function YoneticiGirisForm() {
     <div style={{ minHeight: "100vh", background: BG0 }} className="flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-7">
-          <Image src="/logo.png" alt="SeFu Koç" width={800} height={395} className="h-28 w-auto max-w-full object-contain mb-2" priority />
-          <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-bold">Yönetim Girişi</h1>
+          <Image src="/logo.png" alt="SeFu Koç" width={800} height={395} className="sfec-brand-logo h-28 w-auto max-w-full object-contain mb-2" priority />
+          <SeFuMarkaAdi as="h1" className="text-2xl font-extrabold leading-none" />
+          <p style={{ color: TEXT }} className="text-sm font-bold mt-2">Yönetim Girişi</p>
         </div>
 
         <form onSubmit={girisYap} className="rounded-3xl p-6 flex flex-col gap-4" style={{ background: BG1, border: `2px solid ${BORDER}` }}>

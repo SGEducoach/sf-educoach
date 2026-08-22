@@ -96,8 +96,8 @@ export default function LoginForm() {
     <div style={{ minHeight: "100vh", background: BG0 }} className="flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-7">
-          <Image src="/logo.png" alt="SeFu Koç" width={800} height={395} className="h-28 w-auto max-w-full object-contain mb-2" priority />
-          <SeFuMarkaAdi as="h1" className="sr-only" />
+          <Image src="/logo.png" alt="SeFu Koç" width={800} height={395} className="sfec-brand-logo h-28 w-auto max-w-full object-contain mb-2" priority />
+          <SeFuMarkaAdi as="h1" className="text-2xl font-extrabold leading-none" />
           <p className="text-xs mt-1 italic"><SeFuSlogan /></p>
         </div>
 

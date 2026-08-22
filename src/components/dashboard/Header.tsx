@@ -10,7 +10,7 @@ import { MobilAltNavigasyon } from "@/components/dashboard/MobilAltNavigasyon";
 import { MobilMenu } from "@/components/dashboard/MobilMenu";
 import { OturumZamanAsimi } from "@/components/OturumZamanAsimi";
 import { TemaButonu } from "@/components/TemaDenetimi";
-import { SeFuSlogan } from "@/components/SeFuWordmark";
+import { SeFuMarkaAdi, SeFuSlogan } from "@/components/SeFuWordmark";
 
 const rolEtiket: Record<UserRole, string> = {
   ogrenci: "Öğrenci",
@@ -32,12 +32,11 @@ export function Header({ ad, role, okunmamisMesajSayisi = 0, mobilNavigasyon = t
         <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <Link href="/dashboard" title="Ana sayfaya dön" className="shrink-0">
-              <Image src="/logo.png" alt="SeFu Koç" width={800} height={395} className="h-10 sm:h-12 w-auto object-contain" priority />
+              <Image src="/logo.png" alt="SeFu Koç" width={800} height={395} className="sfec-brand-logo h-10 sm:h-12 w-auto object-contain" priority />
             </Link>
-            {/* Yeni wordmark kendi marka adını içeriyor; yanında yalnızca slogan
-                gösteriliyor. S/G/F/D baş harf vurguları mobilde de korunur. */}
             <div className="min-w-0">
-              <div className="text-[11px] sm:text-[12px] italic mt-1.5 truncate max-w-[150px] sm:max-w-none"><SeFuSlogan /></div>
+              <SeFuMarkaAdi className="block text-base sm:text-lg font-extrabold leading-none truncate" />
+              <div className="text-[10px] sm:text-[12px] italic mt-1 truncate max-w-[150px] sm:max-w-none"><SeFuSlogan /></div>
             </div>
           </div>
 
