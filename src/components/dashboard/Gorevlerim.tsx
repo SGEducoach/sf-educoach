@@ -264,7 +264,6 @@ function PlanEkleModal({ tarih, dersListesi, konuOnerileri, onKapat }: {
   const [ders, setDers] = useState(dersListesi[0] ?? "");
   const [konu, setKonu] = useState("");
   const [hedefSoru, setHedefSoru] = useState("");
-  const [hedefDakika, setHedefDakika] = useState("");
   const [baslangicSaat, setBaslangicSaat] = useState("");
   const [bitisSaat, setBitisSaat] = useState("");
   const [aciklama, setAciklama] = useState("");
@@ -284,7 +283,6 @@ function PlanEkleModal({ tarih, dersListesi, konuOnerileri, onKapat }: {
       const res = await planEkle({
         tur, ders, konu: konu || undefined,
         hedefSoruSayisi: hedefSoru ? Number(hedefSoru) : undefined,
-        hedefDakika: hedefDakika ? Number(hedefDakika) : undefined,
         tarih, baslangicSaat, bitisSaat, aciklama: aciklama || undefined,
       });
       if (res.error) setHata(res.error);
@@ -344,14 +342,6 @@ function PlanEkleModal({ tarih, dersListesi, konuOnerileri, onKapat }: {
                   className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
               </label>
             )}
-            {tur === "konu" && (
-              <label className="flex flex-col gap-1">
-                <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Hedef süre, dk (opsiyonel)</span>
-                <input type="number" min={1} value={hedefDakika} onChange={(e) => setHedefDakika(e.target.value)}
-                  className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
-              </label>
-            )}
-
             <div className="grid grid-cols-2 gap-3">
               <label className="flex flex-col gap-1">
                 <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Başlangıç saati *</span>

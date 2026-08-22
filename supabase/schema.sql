@@ -2182,3 +2182,18 @@ create policy "gorev_atamalari_insert_own" on public.gorev_atamalari
       and exists (select 1 from public.gorevler g where g.id = gorev_atamalari.gorev_id and g.olusturan_ogrenci_id = auth.uid())
     )
   );
+
+-- ============ Hotfix (migration 0050): kendi oluşturduğunu görme ============
+-- .insert().select().single() bir RETURNING'dir — SELECT policy'nin de
+-- izin vermesi gerekir. Öğrenci kendi planını eklerken henüz gorev_atamalari
+-- yokken (bir sonraki adımda ekleniyor) gorev_ilgili_mi() false dönüyor ve
+-- RETURNING başarısız oluyordu ("row violates RLS"). Öğretmen tarafı zaten
+-- olusturan_ogretmen_id = auth.uid() ile bu sorunu yaşamıyordu; öğrenci
+-- için de aynı doğrudan kontrol eklendi.
+drop policy if exists "gorevler_select_related" on public.gorevler;
+create policy "gorevler_select_related" on public.gorevler
+  for select using (
+    olusturan_ogretmen_id = auth.uid()
+    or olusturan_ogrenci_id = auth.uid()
+    or public.gorev_ilgili_mi(id)
+  );
