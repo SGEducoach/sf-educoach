@@ -16,13 +16,17 @@ import {
   konuCalismaEkle, soruCozumuEkle, denemeEkle, haftalikVerimlilikEkle, konuAnlatimiGetir,
 } from "@/app/dashboard/veri-actions";
 import { YukleniyorOverlay } from "@/components/YukleniyorOverlay";
+import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
 
+// Türkiye saatine göre "bugün" — bkz. src/lib/tarih.ts: naif
+// `new Date().toISOString()` yaklaşımı UTC+3 saat diliminde gece yarısı ile
+// sabah ~03:00 arasında bir önceki günü döndürüyordu.
 function bugununTarihi(): string {
-  return new Date().toISOString().slice(0, 10);
+  return bugununTarihiTR();
 }
 
 function enEskiTarih(geriyeMaksGun: number): string {
-  return new Date(Date.now() - geriyeMaksGun * 24 * 3600 * 1000).toISOString().slice(0, 10);
+  return tarihEkle(bugununTarihiTR(), -geriyeMaksGun);
 }
 
 // Varsayılan: anlık giriş bugünün tarihiyle kaydedilir. Öğrenci geçmiş bir

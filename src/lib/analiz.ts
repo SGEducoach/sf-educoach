@@ -1,6 +1,7 @@
 import type { createClient } from "@/lib/supabase/server";
 import { netHesapla } from "@/lib/types";
 import type { HedefeYakinlik, VerimlilikDuzeyi } from "@/lib/types";
+import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
 
 export type RaporDonemi = "haftalik" | "aylik" | "tum";
 
@@ -36,9 +37,7 @@ const VERIMLILIK_PUAN: Record<VerimlilikDuzeyi, number> = {
 function donemBaslangicHesapla(donem: RaporDonemi): string | null {
   if (donem === "tum") return null;
   const gunSayisi = donem === "haftalik" ? 7 : 30;
-  const d = new Date();
-  d.setDate(d.getDate() - gunSayisi);
-  return d.toISOString().slice(0, 10);
+  return tarihEkle(bugununTarihiTR(), -gunSayisi);
 }
 
 export async function analizVerisiGetir(

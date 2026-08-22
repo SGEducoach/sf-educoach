@@ -3,6 +3,7 @@ import { Resend } from "resend";
 import webpush from "web-push";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { KATEGORI_GERIYE_DONUK_SINIR } from "@/lib/types";
+import { bugununTarihiTR } from "@/lib/tarih";
 
 export const maxDuration = 60;
 
@@ -206,7 +207,7 @@ export async function GET(request: Request) {
 
     // Faz 3 (§5): süresi (son_tarih) geçmiş, hâlâ "bekliyor" olan görev
     // atamalarını "tamamlanmadı" işaretle.
-    const bugunISO = now.toISOString().slice(0, 10);
+    const bugunISO = bugununTarihiTR();
     const { data: suresiGecenGorevler } = await admin
       .from("gorev_atamalari")
       .select("id, gorevler!inner(son_tarih)")

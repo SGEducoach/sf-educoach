@@ -10,6 +10,7 @@ import { KONU_ANLATIMI_SISTEM_PROMPTU, icerikTemizle } from "@/lib/konu-anlatimi
 import { pushGonderProfile } from "@/lib/push-send";
 import { SURE_UST_SINIR, KATEGORI_GERIYE_DONUK_SINIR, dersSoruSayisi } from "@/lib/types";
 import type { DenemeTuru, DenemeZorlugu, HedefeYakinlik, VerimlilikDuzeyi } from "@/lib/types";
+import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
 
 const SEVIYE_ETIKET: Record<string, string> = { bronz: "Bronz 🥉", gumus: "Gümüş 🥈", altin: "Altın 🥇" };
 const KATEGORI_ETIKET: Record<string, string> = { konu: "Konu Çalışma", soru: "Soru Çözümü", deneme: "Deneme" };
@@ -67,12 +68,16 @@ function tarihDogrula(
   ham: FormDataEntryValue | string | null,
   geriyeMaksGun: number,
 ): { tarih: string; error: string | null } {
-  const bugun = new Date().toISOString().slice(0, 10);
+  // bugununTarihiTR(): sunucu (Vercel, UTC) hangi saat diliminde çalışırsa
+  // çalışsın "bugün" Türkiye saatine göre hesaplanır — naif
+  // `new Date().toISOString()` gece yarısı ile sabah ~03:00 arası bir
+  // önceki günü verip geçerli girişleri "ileri tarih" diye reddediyordu.
+  const bugun = bugununTarihiTR();
   const deger = (ham ?? "").toString().trim();
   if (!deger) return { tarih: bugun, error: null };
   if (!/^\d{4}-\d{2}-\d{2}$/.test(deger)) return { tarih: bugun, error: "Tarih geçersiz." };
   if (deger > bugun) return { tarih: bugun, error: "İleri bir tarih girilemez." };
-  const enEskiTarih = new Date(Date.now() - geriyeMaksGun * 24 * 3600 * 1000).toISOString().slice(0, 10);
+  const enEskiTarih = tarihEkle(bugun, -geriyeMaksGun);
   if (deger < enEskiTarih) {
     return { tarih: bugun, error: `En fazla ${geriyeMaksGun} gün geriye dönük giriş yapabilirsin.` };
   }

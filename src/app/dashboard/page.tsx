@@ -20,17 +20,20 @@ import type { AytAlan, UserRole } from "@/lib/types";
 import { BG1, BG1_ALT, BORDER, BORDER_STRONG, TEXT, TEXT_MUTED, MINT } from "@/lib/theme";
 import { Gorevlerim } from "@/components/dashboard/Gorevlerim";
 import type { GorevSatiri } from "@/components/dashboard/Gorevlerim";
+import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
 
-// Görevlerim takvimi haftalık gösteriliyor — verilen tarihin (veya bugünün)
-// içinde bulunduğu haftanın Pazartesi'sini döndürür.
+// Görevlerim takvimi haftalık gösteriliyor — verilen tarihin (veya bugünün,
+// Türkiye saatine göre) içinde bulunduğu haftanın Pazartesi'sini döndürür.
+// Saat dilimi kaymasını önlemek için tüm hesap UTC'ye sabitlenmiş şekilde
+// yapılıyor (bkz. src/lib/tarih.ts) — aksi halde Vercel'in UTC'de çalışan
+// sunucusunda "bugün" İstanbul saatinden bir gün geride hesaplanabiliyordu.
 function haftaninPazartesisi(tarihISO?: string): string {
   const gecerliMi = tarihISO && /^\d{4}-\d{2}-\d{2}$/.test(tarihISO);
-  const d = gecerliMi ? new Date(`${tarihISO}T00:00:00`) : new Date();
-  if (Number.isNaN(d.getTime())) return haftaninPazartesisi();
-  const gun = d.getDay();
+  const temelTarih = gecerliMi ? tarihISO! : bugununTarihiTR();
+  const d = new Date(`${temelTarih}T12:00:00Z`);
+  const gun = d.getUTCDay();
   const fark = gun === 0 ? -6 : 1 - gun;
-  d.setDate(d.getDate() + fark);
-  return d.toISOString().slice(0, 10);
+  return tarihEkle(temelTarih, fark);
 }
 
 export default async function DashboardPage({
@@ -182,11 +185,7 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic }: { userId: st
 
   // Görevlerim (Faz 3, §5): görüntülenen haftanın (Pzt-Paz) görevleri —
   // gorev_atamalari + gorevler join'i.
-  const haftaBitis = (() => {
-    const d = new Date(`${haftaBaslangic}T00:00:00`);
-    d.setDate(d.getDate() + 6);
-    return d.toISOString().slice(0, 10);
-  })();
+  const haftaBitis = tarihEkle(haftaBaslangic, 6);
   const { data: gorevAtamalariHam } = await supabase
     .from("gorev_atamalari")
     .select("id, durum, gorevler!inner(tur, ders, konu, hedef_soru_sayisi, hedef_dakika, tarih, son_tarih, baslangic_saat, bitis_saat, aciklama)")

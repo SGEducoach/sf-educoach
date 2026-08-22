@@ -13,6 +13,7 @@ import {
   denemeBildirimGonder, adminGonderilenDuyurularGetir, type SinifOgrencisi, type DenemeBildirimSonucu,
 } from "@/app/yonetici/actions";
 import { SinifEkleFormu } from "@/components/dashboard/OgretmenPanel";
+import { bugununTarihiTR } from "@/lib/tarih";
 import { DuyuruFormu } from "@/components/dashboard/DuyuruFormu";
 import { IzinliOgrenciListesi } from "@/components/yonetici/IzinliOgrenciListesi";
 import { AYT_ALAN_ETIKET, BRANS_LISTESI, TYT_DERSLERI, AYT_DERSLERI, BRANS_DENEMESI_DERSLERI, DENEME_ZORLUGU_ETIKET, dersSoruSayisi, dokuzOnSinifMi } from "@/lib/types";
@@ -651,7 +652,7 @@ function OgrenciTopluEkleFormu({ schoolId, siniflar }: { schoolId: string; sinif
 }
 
 function bugununTarihi(): string {
-  return new Date().toISOString().slice(0, 10);
+  return bugununTarihiTR();
 }
 
 // Ders bazlı toplu giriş: bir sınıfın tamamı için TEK bir dersin doğru/yanlış

@@ -9,6 +9,7 @@ import { GOREV_TURU_ETIKET, GOREV_DURUMU_ETIKET } from "@/lib/types";
 import type { GorevTuru, GorevDurumu, AytAlan } from "@/lib/types";
 import { KonuCalismaForm, SoruCozumuForm, DenemeForm } from "@/components/dashboard/OgrenciVeriGirisi";
 import { planEkle } from "@/app/dashboard/gorev-actions";
+import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
 
 export interface GorevSatiri {
   atamaId: string;
@@ -38,9 +39,6 @@ function gunAdi(tarihISO: string) {
 function gunSayisi(tarihISO: string) {
   return new Date(`${tarihISO}T00:00:00`).getDate();
 }
-function bugununTarihi() {
-  return new Date().toISOString().slice(0, 10);
-}
 
 // Haftalık görev takvimi — mobilde tek günlük kart listesi + üstte yatay
 // kaydırılabilir gün şeridi (7 sütunlu masaüstü tablo yerine, dar ekranda da
@@ -59,12 +57,8 @@ export function Gorevlerim({ gorevler, haftaBaslangic, aytAlan, dokuzOnMu, dersL
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const gunler = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(`${haftaBaslangic}T00:00:00`);
-    d.setDate(d.getDate() + i);
-    return d.toISOString().slice(0, 10);
-  });
-  const bugun = bugununTarihi();
+  const gunler = Array.from({ length: 7 }, (_, i) => tarihEkle(haftaBaslangic, i));
+  const bugun = bugununTarihiTR();
   const [seciliGun, setSeciliGun] = useState(gunler.includes(bugun) ? bugun : gunler[0]);
   const [acikGorev, setAcikGorev] = useState<GorevSatiri | null>(null);
   const [planModalAcik, setPlanModalAcik] = useState(false);
@@ -79,9 +73,7 @@ export function Gorevlerim({ gorevler, haftaBaslangic, aytAlan, dokuzOnMu, dersL
   }
 
   function haftaDegistir(yon: -1 | 1) {
-    const d = new Date(`${haftaBaslangic}T00:00:00`);
-    d.setDate(d.getDate() + yon * 7);
-    haftaGuncelle(d.toISOString().slice(0, 10));
+    haftaGuncelle(tarihEkle(haftaBaslangic, yon * 7));
   }
 
   const gunGorevleri = gorevler

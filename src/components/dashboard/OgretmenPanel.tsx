@@ -11,6 +11,7 @@ import {
 import { gorevVer } from "@/app/dashboard/gorev-actions";
 import { DuyuruFormu } from "@/components/dashboard/DuyuruFormu";
 import { BRANS_LISTESI, type GorevTuru, type SinifSeviyesi, type VeliLinkRequest } from "@/lib/types";
+import { bugununTarihiTR } from "@/lib/tarih";
 
 interface OgrenciSatiri {
   id: string;
@@ -514,7 +515,7 @@ function GorevVerBolumu({ ogrenciler, konuOnerileri }: {
   const dersKonulari = konuOnerileri.filter((k) => k.ders === ders);
   const [hedefSoru, setHedefSoru] = useState("");
   const [hedefDakika, setHedefDakika] = useState("");
-  const [tarih, setTarih] = useState(() => new Date().toISOString().slice(0, 10));
+  const [tarih, setTarih] = useState(bugununTarihiTR);
   const [sonTarih, setSonTarih] = useState("");
   const [baslangicSaat, setBaslangicSaat] = useState("");
   const [bitisSaat, setBitisSaat] = useState("");
