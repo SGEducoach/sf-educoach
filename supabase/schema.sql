@@ -2087,3 +2087,53 @@ create policy "gorev_atamalari_update_own" on public.gorev_atamalari
 alter table public.konu_calismalar add column gorev_atama_id uuid references public.gorev_atamalari(id);
 alter table public.soru_cozumleri add column gorev_atama_id uuid references public.gorev_atamalari(id);
 alter table public.denemeler add column gorev_atama_id uuid references public.gorev_atamalari(id);
+
+-- ============ Faz 3 hotfix (migration 0048): RLS sonsuz döngü ============
+-- gorevler_select_related <-> gorev_atamalari_select_related birbirini
+-- doğrudan sorguluyordu ("infinite recursion detected"). SECURITY DEFINER
+-- fonksiyonlara taşındı (is_admin() ile aynı desen), döngü kırıldı.
+create or replace function public.gorev_ilgili_mi(p_gorev_id uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1 from public.gorev_atamalari ga
+    where ga.gorev_id = p_gorev_id
+    and (
+      ga.student_id = auth.uid()
+      or exists (select 1 from public.parent_students ps where ps.student_id = ga.student_id and ps.parent_id = auth.uid())
+    )
+  );
+$$;
+revoke all on function public.gorev_ilgili_mi(uuid) from public;
+grant execute on function public.gorev_ilgili_mi(uuid) to authenticated;
+
+create or replace function public.gorev_olusturani_mi(p_gorev_id uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (select 1 from public.gorevler g where g.id = p_gorev_id and g.olusturan_ogretmen_id = auth.uid());
+$$;
+revoke all on function public.gorev_olusturani_mi(uuid) from public;
+grant execute on function public.gorev_olusturani_mi(uuid) to authenticated;
+
+drop policy if exists "gorevler_select_related" on public.gorevler;
+create policy "gorevler_select_related" on public.gorevler
+  for select using (
+    olusturan_ogretmen_id = auth.uid()
+    or public.gorev_ilgili_mi(id)
+  );
+
+drop policy if exists "gorev_atamalari_select_related" on public.gorev_atamalari;
+create policy "gorev_atamalari_select_related" on public.gorev_atamalari
+  for select using (
+    student_id = auth.uid()
+    or public.gorev_olusturani_mi(gorev_id)
+    or exists (select 1 from public.parent_students ps where ps.student_id = gorev_atamalari.student_id and ps.parent_id = auth.uid())
+  );
