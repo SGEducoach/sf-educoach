@@ -1,4 +1,4 @@
-// Gündüz: beyaz zemin + ÖSYM mavisi. Gece: siyah zemin + ÖSYM kırmızısı.
+// Gündüz: beyaz zemin + TYT test başlığı mavisi. Gece: siyah zemin + ÖSYM turuncusu.
 // (bkz. globals.css — tema geçişi TemaDenetimi.tsx'te sistem tercihine göre.)
 export const BG0 = "var(--sfec-bg0)";
 export const BG1 = "var(--sfec-bg1)";
@@ -23,8 +23,8 @@ export const LILAC = "#7C3AED";
 export const LILAC_BG = "rgba(199,182,255,0.15)";
 export const SEAFOAM = "var(--sfec-seafoam)";
 
-// "SeFu Koç" marka renkleri — isim ÖSYM mavisi, slogan ÖSYM kırmızısı
-// (kullanıcı kararı). Slogandaki vurgulu baş harfler (S/G/F/D) için ayrı
+// "SeFu Koç" marka renkleri — gündüz test başlığı mavisinin erişilebilir koyu
+// tonu, gece ÖSYM logosu turuncusu. Slogandaki baş harfler (S/G/F/D) için ayrı
 // bir vurgu tonu var. Gece temasında kontrast için ikisi de aydınlatılır
 // (bkz. globals.css, :root[data-theme="koyu"]).
 export const SEFU_MAVI = "var(--sfec-marka-mavi)";

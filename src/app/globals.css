@@ -1,32 +1,31 @@
 @import "tailwindcss";
 
-/* SeFu Koç renk temaları — ÖSYM'den ilham alan gündüz (beyaz zemin +
-   ÖSYM mavisi) / gece (siyah zemin + ÖSYM kırmızısı) şeması. Gündüz/gece
+/* SeFu Koç renk temaları — 2026 TYT kitapçığından ölçülen gündüz test başlığı
+   mavisi (#c2e9f8) / gece ÖSYM logosu turuncusu (#f47216) şeması. Gündüz/gece
    seçimi TemaDenetimi.tsx tarafından sistem tercihine (prefers-color-scheme)
    göre otomatik uygulanır; kullanıcı isterse elle açık/koyu'ya sabitleyebilir. */
 :root {
   --background: #ffffff;
-  --foreground: #101828;
+  --foreground: #0b4f6c;
   --sfec-bg0: #ffffff;
   --sfec-bg1: #ffffff;
-  --sfec-bg1-alt: #eef3fc;
-  --sfec-border: #c7d6f0;
-  --sfec-border-strong: #0033a0;
-  --sfec-text: #101828;
-  --sfec-text-muted: #55607a;
-  --sfec-mint: #0033a0;
-  --sfec-mint-on: #ffffff;
-  --sfec-mint-bg: rgba(0, 51, 160, 0.1);
-  --sfec-seafoam: #0033a0;
+  --sfec-bg1-alt: #eef9fd;
+  --sfec-border: #c2e9f8;
+  --sfec-border-strong: #78c9e8;
+  --sfec-text: #0b4f6c;
+  --sfec-text-muted: #2f6d82;
+  --sfec-mint: #c2e9f8;
+  --sfec-mint-on: #0b3b4d;
+  --sfec-mint-bg: rgba(194, 233, 248, 0.38);
+  --sfec-seafoam: #78c9e8;
   /* Üst navigatör — Honda HR-V "sedefli gün ışığı beyazı"ndan ilhamla
      hafif sıcak, incimsi bir beyaz gradyan. */
   --sfec-nav-bg: linear-gradient(135deg, #ffffff 0%, #f4f2ec 45%, #ffffff 100%);
-  /* "SeFu Koç" marka adı ÖSYM mavisi, slogan ÖSYM kırmızısı (kullanıcı
-     kararı) — vurgu tonu slogandaki "SeFu" harfleriyle eşleşen baş
-     harfler (S/G/F/D) için daha koyu/belirgin bir kırmızı. */
-  --sfec-marka-mavi: #0033a0;
-  --sfec-marka-kirmizi: #c8102e;
-  --sfec-marka-kirmizi-vurgu: #8c0b20;
+  /* #c2e9f8 beyaz üzerinde metin olarak yeterli kontrast üretmediği için
+     marka metni aynı rengin erişilebilir koyu tonlarını kullanır. */
+  --sfec-marka-mavi: #0b4f6c;
+  --sfec-marka-kirmizi: #0b4f6c;
+  --sfec-marka-kirmizi-vurgu: #07384d;
   --z-header: 100;
   --z-mobile-nav: 110;
   --z-dropdown: 200;
@@ -41,33 +40,31 @@
   --sfec-ai-border: rgba(124,58,237,0.4);
   --sfec-ai-glow-1: rgba(124,58,237,0.28);
   --sfec-ai-glow-2: rgba(37,99,235,0.20);
-  --sfec-ai-accent-text: #6D28D9;
+  --sfec-ai-accent-text: #0b4f6c;
   --sfec-ai-chip-bg: linear-gradient(135deg, rgba(124,58,237,0.16), rgba(37,99,235,0.16));
 }
 
 :root[data-theme="koyu"] {
   color-scheme: dark;
   --background: #000000;
-  --foreground: #f5f5f5;
+  --foreground: #f47216;
   --sfec-bg0: #000000;
   --sfec-bg1: #0d0d0d;
-  --sfec-bg1-alt: #171717;
-  --sfec-border: #3a1218;
-  --sfec-border-strong: #ff4757;
-  --sfec-text: #f5f5f5;
-  --sfec-text-muted: #b8b8b8;
-  --sfec-mint: #ff4757;
-  --sfec-mint-on: #ffffff;
-  --sfec-mint-bg: rgba(255, 71, 87, 0.16);
-  --sfec-seafoam: #ff4757;
+  --sfec-bg1-alt: #17120e;
+  --sfec-border: #6b3512;
+  --sfec-border-strong: #f47216;
+  --sfec-text: #f47216;
+  --sfec-text-muted: #f7a05f;
+  --sfec-mint: #f47216;
+  --sfec-mint-on: #1a0c02;
+  --sfec-mint-bg: rgba(244, 114, 22, 0.18);
+  --sfec-seafoam: #f47216;
   /* Üst navigatör — piano black. */
   --sfec-nav-bg: linear-gradient(135deg, #000000 0%, #161616 50%, #000000 100%);
-  /* Karanlıkta okunabilirlik için marka mavisi/kırmızısı aydınlatıldı;
-     vurgulu baş harfler (S/G/F/D) sitenin gece vurgu rengiyle aynı canlı
-     kırmızıyı kullanıyor. */
-  --sfec-marka-mavi: #5b8def;
-  --sfec-marka-kirmizi: #ff7a87;
-  --sfec-marka-kirmizi-vurgu: #ff3b4e;
+  /* Gece bütün marka yazıları ÖSYM logosundan ölçülen turuncudur. */
+  --sfec-marka-mavi: #f47216;
+  --sfec-marka-kirmizi: #f47216;
+  --sfec-marka-kirmizi-vurgu: #ff9a4f;
 
   /* Koyu modda düşük opaklıklı pastel tonlar arka planla neredeyse
      görünmez oluyordu — daha parlak/doygun mor-mavi tonlara geçiliyor. */
@@ -75,7 +72,7 @@
   --sfec-ai-border: rgba(167,139,250,0.6);
   --sfec-ai-glow-1: rgba(167,139,250,0.4);
   --sfec-ai-glow-2: rgba(96,165,250,0.3);
-  --sfec-ai-accent-text: #D6C9FF;
+  --sfec-ai-accent-text: #f47216;
   --sfec-ai-chip-bg: linear-gradient(135deg, rgba(167,139,250,0.3), rgba(96,165,250,0.28));
 }
 
