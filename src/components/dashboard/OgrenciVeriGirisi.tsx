@@ -284,7 +284,7 @@ function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, onBasari }
 
       <label className="flex flex-col gap-1 relative">
         <div className="flex items-center gap-1.5 flex-wrap">
-          <Etiket>Eksik olduğun konu</Etiket>
+          <Etiket>Konu</Etiket>
           {seciliKonuSeviyesi && (
             <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: SKY_BG, color: SKY }}>{seciliKonuSeviyesi}</span>
           )}
