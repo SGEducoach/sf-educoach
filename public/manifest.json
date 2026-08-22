@@ -1,7 +1,7 @@
 {
-  "name": "SF EduCoach",
-  "short_name": "SF EduCoach",
-  "description": "Her zaman bir adım ötesini düşün",
+  "name": "SeFu Koç",
+  "short_name": "SeFu Koç",
+  "description": "Sen Geliş, Farkın Duyulur",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#15172A",

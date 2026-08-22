@@ -1,4 +1,4 @@
-// SF EduCoach — Web Push service worker
+// SeFu Koç — Web Push service worker
 
 self.addEventListener("install", () => {
   self.skipWaiting();
@@ -14,10 +14,10 @@ self.addEventListener("push", (event) => {
   try {
     veri = event.data.json();
   } catch {
-    veri = { title: "SF EduCoach", body: event.data.text() };
+    veri = { title: "SeFu Koç", body: event.data.text() };
   }
 
-  const baslik = veri.title || "SF EduCoach";
+  const baslik = veri.title || "SeFu Koç";
   const secenekler = {
     body: veri.body || "",
     icon: "/icon-192.png",

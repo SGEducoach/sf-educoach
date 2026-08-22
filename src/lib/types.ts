@@ -285,7 +285,7 @@ export const AYT_DERSLERI: Record<AytAlan, readonly string[]> = {
 };
 
 // ============ Rozet sistemi v2 (kategori bazlı, canlı durum) ============
-// Her kategori kendi ödül eşiklerine sahip; genel "SF EDUCOACH" rozeti bu
+// Her kategori kendi ödül eşiklerine sahip; genel "SEFU KOÇ" rozeti bu
 // üçünün kaç tanesinin altın olduğuna göre türetiliyor (bkz. migration
 // 0029, rozet_kontrol_et). Rozetler KALICI DEĞİL — Duolingo mantığıyla,
 // öğrenci pas geçtiğinde seviye düşebilir/sıfırlanabilir.

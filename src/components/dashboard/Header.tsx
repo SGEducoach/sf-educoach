@@ -10,6 +10,7 @@ import { MobilAltNavigasyon } from "@/components/dashboard/MobilAltNavigasyon";
 import { MobilMenu } from "@/components/dashboard/MobilMenu";
 import { OturumZamanAsimi } from "@/components/OturumZamanAsimi";
 import { TemaButonu } from "@/components/TemaDenetimi";
+import { SeFuMarkaAdi, SeFuSlogan } from "@/components/SeFuWordmark";
 
 const rolEtiket: Record<UserRole, string> = {
   ogrenci: "Öğrenci",
@@ -35,15 +36,15 @@ export function Header({ ad, role, okunmamisMesajSayisi = 0, mobilNavigasyon = t
           <div className="flex items-center gap-3">
             <Link href="/dashboard" title="Ana sayfaya dön" className="rounded-full shrink-0">
               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(124,232,176,0.28)" }}>
-                <Image src="/logo.png" alt="SF EduCoach" width={40} height={40} className="w-full h-full object-cover" priority />
+                <Image src="/logo.png" alt="SeFu Koç" width={40} height={40} className="w-full h-full object-cover" priority />
               </div>
             </Link>
             {/* Logo yanındaki isim + slogan artık telefonda da görünüyor —
                 sağdaki ikon kalabalığı mobilde tek bir hamburger menüye
                 toplandığı için yer sorunu kalmadı. */}
             <div>
-              <div style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="font-bold text-[15px] sm:text-[16px] leading-none tracking-tight">SF EduCoach</div>
-              <div style={{ color: SEAFOAM }} className="text-[11px] sm:text-[12px] italic mt-1.5 truncate max-w-[150px] sm:max-w-none">Her zaman bir adım ötesini düşün</div>
+              <SeFuMarkaAdi className="font-bold text-[15px] sm:text-[16px] leading-none tracking-tight block" />
+              <div className="text-[11px] sm:text-[12px] italic mt-1.5 truncate max-w-[150px] sm:max-w-none"><SeFuSlogan /></div>
             </div>
           </div>
 

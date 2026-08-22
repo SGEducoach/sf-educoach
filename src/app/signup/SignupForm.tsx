@@ -15,6 +15,7 @@ import {
   telefonSanitize, telefonGecerliMi, okulNoSanitize, sifreGecerliMi, SIFRE_IPUCU, TELEFON_IPUCU, adNormalize, rastgeleSifre,
 } from "@/lib/validators";
 import { YukleniyorOverlay } from "@/components/YukleniyorOverlay";
+import { SeFuSlogan } from "@/components/SeFuWordmark";
 
 const rolSecenekleri: { id: UserRole; ad: string; icon: typeof BookOpen }[] = [
   { id: "ogrenci", ad: "Öğrenci", icon: BookOpen },
@@ -126,10 +127,10 @@ export default function SignupForm({ kurallarMetni, kurallarVersiyon }: { kurall
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-6">
           <div className="w-14 h-14 rounded-full overflow-hidden mb-3" style={{ boxShadow: "0 4px 16px rgba(124,232,176,0.28)" }}>
-            <Image src="/logo.png" alt="SF EduCoach" width={56} height={56} className="w-full h-full object-cover" priority />
+            <Image src="/logo.png" alt="SeFu Koç" width={56} height={56} className="w-full h-full object-cover" priority />
           </div>
           <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-bold">Hesap oluşturun</h1>
-          <p style={{ color: TEXT_MUTED }} className="text-xs mt-1 italic">Her zaman bir adım ötesini düşün</p>
+          <p className="text-xs mt-1 italic"><SeFuSlogan /></p>
         </div>
 
         <div className="flex gap-1 p-1 rounded-full mb-4" style={{ background: "rgba(255,255,255,0.06)", border: `2px solid ${BORDER}` }}>
@@ -531,7 +532,7 @@ function VeliTalepForm({ schools }: { schools: School[] }) {
   );
 }
 
-const KVKK_METNI = `SF EduCoach olarak, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, velisi/vasisi olduğunuz öğrencinin kişisel verilerinin işlenmesi hakkında sizi bilgilendirmek isteriz.
+const KVKK_METNI = `SeFu Koç olarak, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, velisi/vasisi olduğunuz öğrencinin kişisel verilerinin işlenmesi hakkında sizi bilgilendirmek isteriz.
 
 İşlenen veriler: öğrencinin adı-soyadı, okul/sınıf bilgisi, iletişim bilgileri, akademik performans verileri (deneme sonuçları, çalışma kayıtları, soru çözüm istatistikleri, motivasyon durumu).
 

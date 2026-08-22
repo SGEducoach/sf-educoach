@@ -22,6 +22,13 @@ export const LILAC = "#7C3AED";
 export const LILAC_BG = "rgba(199,182,255,0.15)";
 export const SEAFOAM = "var(--sfec-seafoam)";
 
+// "SeFu Koç" marka renkleri — isim ÖSYM mavisi, slogan ÖSYM kırmızısı
+// (kullanıcı kararı). Slogandaki vurgulu baş harfler (S/F) için daha koyu
+// bir kırmızı tonu ayrıca tanımlı.
+export const SEFU_MAVI = "#0033A0";
+export const SEFU_KIRMIZI = "#C8102E";
+export const SEFU_KIRMIZI_KOYU = "#8C0B20";
+
 export const dersRenkleri: Record<string, string> = {
   Matematik: MINT,
   Fizik: SKY,

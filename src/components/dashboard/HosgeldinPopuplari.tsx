@@ -67,9 +67,9 @@ export function HosgeldinPopuplari({ role }: { role: UserRole }) {
               <Smartphone size={18} color={MINT} />
             </div>
             <p style={{ color: TEXT }} className="text-sm leading-relaxed mb-1">
-              SF EduCoach&apos;tan en iyi şekilde yararlanmak için telefonunuzun ana ekranına eklemeyi ve bildirimleri açmayı unutmayınız.
+              SeFu Koç&apos;tan en iyi şekilde yararlanmak için telefonunuzun ana ekranına eklemeyi ve bildirimleri açmayı unutmayınız.
             </p>
-            <p style={{ color: TEXT_MUTED }} className="text-xs text-right mb-4 font-semibold">SF EDUCOACH EKİBİ</p>
+            <p style={{ color: TEXT_MUTED }} className="text-xs text-right mb-4 font-semibold">SEFU KOÇ EKİBİ</p>
           </>
         )}
 

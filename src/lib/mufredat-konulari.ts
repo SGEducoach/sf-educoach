@@ -1,4 +1,4 @@
-// SF EduCoach — resmi müfredat (2024 Maarif Modeli) konu listesi.
+// SeFu Koç — resmi müfredat (2024 Maarif Modeli) konu listesi.
 // Kaynak: kullanıcının sağladığı çerçeve programları (Coğrafya, Din Kültürü,
 // Felsefe, Fizik, Kimya, Matematik, Biyoloji, Tarih 9-10-11, T.C. İnkılap
 // Tarihi ve Atatürkçülük 12, Türk Dili ve Edebiyatı). Türkçe/Edebiyat için

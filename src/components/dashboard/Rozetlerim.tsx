@@ -8,7 +8,7 @@ import { ROZET_SEVIYE_ETIKET, dokuzOnSinifMi } from "@/lib/types";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
 
 // Rozet sistemi v2: 3 bağımsız kategori (konu/soru/deneme) + bunlardan
-// türetilen "genel" (SF EDUCOACH) rozeti. Hepsi CANLI durum — kalıcı değil,
+// türetilen "genel" (SEFU KOÇ) rozeti. Hepsi CANLI durum — kalıcı değil,
 // öğrenci pas geçtiğinde seviye düşebilir. Kazanım/düşüş mantığı tamamen
 // DB'de (ogrenci_rozet_durumu RPC, her dashboard yüklemesinde tazeleniyor);
 // burada sadece görüntüleniyor.
@@ -90,7 +90,7 @@ function RozetKurallariModal({ onKapat, dokuzOnMu }: { onKapat: () => void; doku
         </div>
 
         <div className="rounded-2xl p-3.5" style={{ background: "rgba(255,196,107,0.1)", border: "1px solid rgba(255,196,107,0.3)" }}>
-          <div style={{ color: "#FFC46B" }} className="text-xs font-bold mb-1">🏆 SF EDUCOACH</div>
+          <div style={{ color: "#FFC46B" }} className="text-xs font-bold mb-1">🏆 SEFU KOÇ</div>
           <p style={{ color: TEXT_MUTED }} className="text-xs leading-relaxed">
             Yukarıdaki 3 kategoriden kaçı Altın seviyesindeyse: <strong>1 kategori Altın → Bronz · 2 kategori Altın → Gümüş · 3 kategori Altın → Altın</strong>.
           </p>
@@ -133,12 +133,12 @@ export function Rozetlerim({ durum, sinifSeviyesi }: { durum: RozetDurum; sinifS
         </button>
       </div>
 
-      {/* SF EDUCOACH — en belirgin, en dikkat çekici olan */}
+      {/* SEFU KOÇ — en belirgin, en dikkat çekici olan */}
       <div className="rounded-2xl p-4 mb-3 flex items-center gap-3"
         style={{ background: "linear-gradient(135deg, rgba(255,196,107,0.18), rgba(255,196,107,0.05))", border: `1px solid rgba(255,196,107,0.35)` }}>
         <span className="text-3xl">{durum.genel === "yok" ? "🏆" : SEVIYE_EMOJI[durum.genel]}</span>
         <div className="flex flex-col">
-          <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-sm font-bold">SF EDUCOACH {ROZET_SEVIYE_ETIKET[durum.genel]}</span>
+          <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-sm font-bold">SEFU KOÇ {ROZET_SEVIYE_ETIKET[durum.genel]}</span>
           <span style={{ color: TEXT_MUTED }} className="text-[11px]">3 kategorinin üçünde de altına ulaşınca kazanılır</span>
         </div>
       </div>

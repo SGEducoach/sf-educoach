@@ -4,7 +4,7 @@
 // kullanılan yedek — normal akışta görünmez.
 export const VARSAYILAN_KURALLAR_VERSIYON = "v1";
 
-export const VARSAYILAN_KURALLAR_METNI = `SF EduCoach'a hoş geldiniz. Platforma kayıt olarak veya bir öğrencinin verisine veli olarak bağlanarak aşağıdaki kuralları kabul etmiş sayılırsınız.
+export const VARSAYILAN_KURALLAR_METNI = `SeFu Koç'a hoş geldiniz. Platforma kayıt olarak veya bir öğrencinin verisine veli olarak bağlanarak aşağıdaki kuralları kabul etmiş sayılırsınız.
 
 1. HESAP VE BİLGİ DOĞRULUĞU
 Ad, telefon, okul/sınıf, e-posta gibi bilgileri doğru ve güncel girmekle yükümlüsünüz. Öğrenci hesapları okul numarası + şifre, öğretmen hesapları e-posta + şifre, veli hesapları ise öğretmen onaylı bir kod ile açılır. Hesabınızın ve şifrenizin güvenliğinden siz sorumlusunuz; şifrenizi başkasıyla paylaşmayın.
