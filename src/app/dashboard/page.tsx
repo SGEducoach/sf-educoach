@@ -264,7 +264,7 @@ async function OgretmenIcerik({ userId, role, secilenSinifId, secilenOgrenciId, 
     // çözümleri — sadece homeroom (kendi sınıfı) kapsamında.
     teacher.class_id
       ? supabase.from("soru_cozumleri")
-          .select("id, ders, dogru, yanlis, bos, tarih, students!inner(class_id, profiles!students_id_fkey(ad))")
+          .select("id, student_id, ders, dogru, yanlis, bos, tarih, students!inner(class_id, profiles!students_id_fkey(ad))")
           .eq("students.class_id", teacher.class_id)
           .eq("kaynak", "ogrenci")
           .eq("onaylandi_mi", false)
@@ -298,11 +298,11 @@ async function OgretmenIcerik({ userId, role, secilenSinifId, secilenOgrenciId, 
   });
 
   type BekleyenOnayRow = {
-    id: string; ders: string; dogru: number; yanlis: number; bos: number; tarih: string;
+    id: string; student_id: string; ders: string; dogru: number; yanlis: number; bos: number; tarih: string;
     students: { profiles: { ad: string } | null } | null;
   };
   const bekleyenOnaylar = ((bekleyenOnaylarHam as unknown as BekleyenOnayRow[]) ?? []).map((s) => ({
-    id: s.id, ders: s.ders, dogru: s.dogru, yanlis: s.yanlis, bos: s.bos, tarih: s.tarih,
+    id: s.id, studentId: s.student_id, ders: s.ders, dogru: s.dogru, yanlis: s.yanlis, bos: s.bos, tarih: s.tarih,
     ogrenciAd: s.students?.profiles?.ad ?? "İsimsiz",
   }));
 

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { UserPlus, Check, Users, Eye, Plus, X, BookMarked, ClipboardCheck, ArrowRightLeft } from "lucide-react";
+import { UserPlus, Check, Users, Eye, Plus, X, BookMarked, ClipboardCheck, ArrowRightLeft, ChevronDown, ChevronUp } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, SKY, SKY_BG, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 import {
   veliTalepOnayla, sinifEkle, ogretmenDuyuruGonder, gonderilenDuyurularGetir,
@@ -29,6 +29,7 @@ interface OgretmenDersiSatiri {
 }
 interface BekleyenOnaySatiri {
   id: string;
+  studentId: string;
   ders: string;
   dogru: number;
   yanlis: number;
@@ -265,21 +266,36 @@ function OgrenciTasiButonu({ ogrenciId, kendiSinifId, siniflar }: {
 // Görevlendirme dışı (öğrencinin kendi girdiği) soru çözümlerine öğretmenin
 // "gördüm" damgası basması — onaylanana kadar bekleyen iş sayısı olarak
 // gösteriliyor (bkz. migration 0045).
+// Aynı öğrencinin farklı derslerdeki bekleyen soru çözümleri tek satırda
+// toplanıyor — satıra basınca o öğrencinin tüm bekleyen kayıtları sıralanıyor.
+// "Gördüm" onaylanınca kayıt listeden kaybolmuyor, butonu pasifleşip renk
+// değiştiriyor (görsel onay izi).
 function BekleyenOnaylarBolumu({ onaylar }: { onaylar: BekleyenOnaySatiri[] }) {
   const [onaylanan, setOnaylanan] = useState<Set<string>>(new Set());
+  const [onaylanıyorId, setOnaylanıyorId] = useState<string | null>(null);
+  const [acikOgrenciId, setAcikOgrenciId] = useState<string | null>(null);
   const [hata, setHata] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
 
   function onayla(id: string) {
     setHata(null);
+    setOnaylanıyorId(id);
     startTransition(async () => {
       const res = await soruCozumuOnayla(id);
+      setOnaylanıyorId(null);
       if (res.error) setHata(res.error);
       else setOnaylanan((s) => new Set(s).add(id));
     });
   }
 
-  const gosterilecekler = onaylar.filter((o) => !onaylanan.has(o.id));
+  const gruplar = new Map<string, { ogrenciAd: string; kayitlar: BekleyenOnaySatiri[] }>();
+  for (const o of onaylar) {
+    const grup = gruplar.get(o.studentId) ?? { ogrenciAd: o.ogrenciAd, kayitlar: [] };
+    grup.kayitlar.push(o);
+    gruplar.set(o.studentId, grup);
+  }
+  const ogrenciListesi = Array.from(gruplar.entries()).map(([studentId, g]) => ({ studentId, ...g }));
+  const toplamBekleyen = onaylar.filter((o) => !onaylanan.has(o.id)).length;
 
   return (
     <div className="sfec-section sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
@@ -288,28 +304,57 @@ function BekleyenOnaylarBolumu({ onaylar }: { onaylar: BekleyenOnaySatiri[] }) {
           <ClipboardCheck size={13} color={SKY} />
         </div>
         <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Bekleyen onaylar</span>
-        {gosterilecekler.length > 0 && (
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: SKY_BG, color: SKY }}>{gosterilecekler.length}</span>
+        {toplamBekleyen > 0 && (
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: SKY_BG, color: SKY }}>{toplamBekleyen}</span>
         )}
       </div>
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold mb-3">{hata}</div>}
-      {gosterilecekler.length === 0 ? (
+      {ogrenciListesi.length === 0 ? (
         <p style={{ color: TEXT_MUTED }} className="text-sm py-4 text-center">Onay bekleyen soru çözümü yok.</p>
       ) : (
         <div className="flex flex-col gap-2">
-          {gosterilecekler.map((o) => (
-            <div key={o.id} className="rounded-2xl p-3 flex items-center justify-between flex-wrap gap-2" style={{ background: BG1_ALT, border: `2px solid ${BORDER}` }}>
-              <div>
-                <div style={{ color: TEXT }} className="text-sm font-semibold">{o.ogrenciAd} <span style={{ color: TEXT_MUTED }} className="font-normal">· {o.ders}</span></div>
-                <div style={{ color: TEXT_MUTED }} className="text-xs mt-0.5">D:{o.dogru} Y:{o.yanlis} B:{o.bos} · {o.tarih}</div>
+          {ogrenciListesi.map((g) => {
+            const acik = acikOgrenciId === g.studentId;
+            const bekleyenSayisi = g.kayitlar.filter((k) => !onaylanan.has(k.id)).length;
+            return (
+              <div key={g.studentId} className="rounded-2xl overflow-hidden" style={{ background: BG1_ALT, border: `2px solid ${BORDER}` }}>
+                <button type="button" onClick={() => setAcikOgrenciId(acik ? null : g.studentId)}
+                  className="sfec-btn w-full flex items-center justify-between gap-2 p-3 text-left">
+                  <span style={{ color: TEXT }} className="text-sm font-semibold">{g.ogrenciAd}</span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {bekleyenSayisi > 0 ? (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: SKY_BG, color: SKY }}>{bekleyenSayisi} bekliyor</span>
+                    ) : (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: MINT_BG, color: MINT }}>tamamlandı</span>
+                    )}
+                    {acik ? <ChevronUp size={15} color={TEXT_MUTED} /> : <ChevronDown size={15} color={TEXT_MUTED} />}
+                  </div>
+                </button>
+                {acik && (
+                  <div className="flex flex-col gap-2 px-3 pb-3">
+                    {g.kayitlar.map((o) => {
+                      const onaylandi = onaylanan.has(o.id);
+                      return (
+                        <div key={o.id} className="rounded-xl p-2.5 flex items-center justify-between flex-wrap gap-2" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
+                          <div>
+                            <div style={{ color: TEXT }} className="text-xs font-semibold">{o.ders}</div>
+                            <div style={{ color: TEXT_MUTED }} className="text-[11px] mt-0.5">D:{o.dogru} Y:{o.yanlis} B:{o.bos} · {o.tarih}</div>
+                          </div>
+                          <button onClick={() => onayla(o.id)} disabled={onaylandi || onaylanıyorId === o.id}
+                            className="sfec-btn flex items-center gap-1 text-xs font-bold px-3.5 py-1.5 rounded-full disabled:opacity-100"
+                            style={onaylandi
+                              ? { background: MINT_BG, color: MINT, cursor: "default" }
+                              : { background: MINT, color: MINT_ON }}>
+                            <Check size={13} /> {onaylandi ? "Onaylandı" : "Gördüm"}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-              <button onClick={() => onayla(o.id)} disabled={pending}
-                className="sfec-btn flex items-center gap-1 text-xs font-bold px-3.5 py-1.5 rounded-full disabled:opacity-60"
-                style={{ background: MINT, color: MINT_ON }}>
-                <Check size={13} /> Gördüm
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
