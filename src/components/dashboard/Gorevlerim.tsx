@@ -100,13 +100,13 @@ export function Gorevlerim({ gorevler, haftaBaslangic, aytAlan, dokuzOnMu, dersL
         </div>
       </div>
 
-      <div className="flex gap-1.5 overflow-x-auto pb-1 mb-4 -mx-1 px-1">
+      <div className="grid grid-cols-7 gap-1.5 mb-4">
         {gunler.map((g) => {
           const secili = g === seciliGun;
           const sayisi = gunlukGorevSayisi.get(g) ?? 0;
           return (
             <button key={g} type="button" onClick={() => setSeciliGun(g)}
-              className="sfec-btn shrink-0 flex flex-col items-center gap-0.5 rounded-2xl px-3 py-2 min-w-[52px]"
+              className="sfec-btn flex flex-col items-center gap-0.5 rounded-2xl px-2 py-2"
               style={{
                 background: secili ? MINT : g === bugun ? MINT_BG : BG1_ALT,
                 color: secili ? MINT_ON : TEXT,
