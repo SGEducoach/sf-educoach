@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { telefonGecerliMi, okulNoGecerliMi, rastgeleSifre, adNormalize, hedefBolumNormalize } from "@/lib/validators";
+import { telefonGecerliMi, okulNoGecerliMi, rastgeleSifre, adNormalize, hedefBolumNormalize, TELEFON_IPUCU } from "@/lib/validators";
 import { duyuruGonder as duyuruGonderTemel } from "@/lib/push-send";
 import type { DuyuruAliciTuru } from "@/lib/push-send";
 import { DUYURU_MIN_UZUNLUK, duyuruGonderimIzniKontrol } from "@/lib/duyuru-guvenligi";
@@ -28,6 +28,20 @@ async function requireAdmin() {
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
   if (profile?.role !== "admin") return { supabase, user, admin: null };
   return { supabase, user, admin: createAdminClient() };
+}
+
+// DERSHANE MODU: müdür kendi kurumu dershane ise öğretmen/öğrenci CRUD
+// yapabilir (bkz. migration 0051 üstündeki not) — admin'inkiyle aynı
+// desen: service-role client, sadece rol+kurum tur'u doğrulanınca döner.
+async function requireDershaneMudur() {
+  const { supabase, user } = await requireUser();
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  if (profile?.role !== "mudur") return { supabase, user, admin: null, schoolId: null as string | null };
+  const { data: teacher } = await supabase.from("teachers").select("school_id").eq("id", user.id).single();
+  if (!teacher) return { supabase, user, admin: null, schoolId: null };
+  const { data: school } = await supabase.from("schools").select("tur").eq("id", teacher.school_id).single();
+  if (school?.tur !== "dershane") return { supabase, user, admin: null, schoolId: null };
+  return { supabase, user, admin: createAdminClient(), schoolId: teacher.school_id as string };
 }
 
 export async function signOut() {
@@ -209,6 +223,36 @@ export async function ogrenciEkleManuel(input: {
   await auditLogYaz(supabase, user.id, "ogrenci_ekle_manuel", { ogrenci_id: created.user?.id, okul_no: input.okulNo, school_id: input.schoolId, class_id: input.classId });
   revalidatePath("/yonetici");
   return { error: null, sifre };
+}
+
+// ============ DERSHANE MODU: müdür roster ekleme (tek) ============
+// Öğrenci henüz bir auth hesabına sahip değil — müdür sadece bir "ön kayıt"
+// bırakıyor (bkz. migration 0051, pending_dershane_ogrenciler). Gerçek
+// hesap, öğrenci telefonuyla kendi kaydını tamamlayınca açılır
+// (bkz. src/app/signup/dershane-actions.ts, dershaneKayitTamamla).
+export async function dershaneRosterTekEkle(input: {
+  ad: string; telefon: string; veliTelefon?: string; classId: string; aytAlan: "SAY" | "EA" | "SOZ";
+}) {
+  const { user, admin, schoolId } = await requireDershaneMudur();
+  if (!admin || !schoolId) return { error: "Bu işlem için dershane müdürü yetkisi gerekiyor." };
+
+  const ad = adNormalize(input.ad);
+  const telefon = input.telefon.trim();
+  if (!ad) return { error: "Ad Soyad gerekli." };
+  if (!telefonGecerliMi(telefon)) return { error: "Telefon numarası geçersiz. " + TELEFON_IPUCU };
+  if (input.veliTelefon && !telefonGecerliMi(input.veliTelefon.trim())) return { error: "Veli telefon numarası geçersiz. " + TELEFON_IPUCU };
+  if (!input.classId) return { error: "Sınıf seçin." };
+
+  const { error } = await admin.from("pending_dershane_ogrenciler").insert({
+    school_id: schoolId, class_id: input.classId, ad, telefon,
+    veli_telefon: input.veliTelefon?.trim() || null, ayt_alan: input.aytAlan, created_by: user.id,
+  });
+  if (error) {
+    if (error.code === "23505") return { error: "Bu telefon numarasıyla zaten bir kayıt var." };
+    return { error: error.message };
+  }
+  revalidatePath("/dashboard");
+  return { error: null };
 }
 
 // ============ Admin: toplu öğrenci ekleme ============

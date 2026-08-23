@@ -14,10 +14,12 @@ import {
 import { KURUM_ETIKET } from "@/lib/kurum";
 import {
   telefonSanitize, telefonGecerliMi, okulNoSanitize, sifreGecerliMi, SIFRE_IPUCU, TELEFON_IPUCU, adNormalize, hedefBolumNormalize, rastgeleSifre,
+  kullaniciAdiSanitize, kullaniciAdiGecerliMi, KULLANICI_ADI_IPUCU,
 } from "@/lib/validators";
 import { YukleniyorOverlay } from "@/components/YukleniyorOverlay";
 import { SeFuMarkaAdi, SeFuSlogan } from "@/components/SeFuWordmark";
 import { KurumTuruSecici } from "@/components/KurumTuruSecici";
+import { dershaneKayitTamamla } from "@/app/signup/dershane-actions";
 
 const rolSecenekleri: { id: UserRole; ad: string; icon: typeof BookOpen }[] = [
   { id: "ogrenci", ad: "Öğrenci", icon: BookOpen },
@@ -154,7 +156,8 @@ export default function SignupForm({ kurallarMetni, kurallarVersiyon }: { kurall
 
         {/* key={kurumTuru}: tur değişince bu bileşenler yeniden mount olur,
             kendi local schoolId/classId state'leri otomatik temizlenir. */}
-        {role === "ogrenci" && <OgrenciKayit key={kurumTuru} kurumTuru={kurumTuru} schools={schools} classes={classes} router={router} supabase={supabase} />}
+        {role === "ogrenci" && kurumTuru === "dershane" && <DershaneOgrenciTamamlaForm key="dershane-ogrenci" schools={schools} />}
+        {role === "ogrenci" && kurumTuru === "okul" && <OgrenciKayit key={kurumTuru} kurumTuru={kurumTuru} schools={schools} classes={classes} router={router} supabase={supabase} />}
         {role === "ogretmen" && <OgretmenKayit key={kurumTuru} kurumTuru={kurumTuru} schools={schools} classes={classes} router={router} supabase={supabase} />}
         {role === "veli" && <VeliKayit key={kurumTuru} kurumTuru={kurumTuru} schools={schools} router={router} supabase={supabase} />}
 
@@ -319,6 +322,76 @@ function OgrenciKayit({ kurumTuru, schools, classes, router, supabase }: {
       <label className="flex flex-col gap-1"><Etiket>Hedef Bölüm</Etiket><Girdi required value={hedefBolum} autoCapitalize="characters" onChange={(e) => setHedefBolum(e.target.value.toLocaleUpperCase("tr-TR"))} /></label>
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
       <button type="submit" className="sfec-btn text-sm font-bold py-2.5 rounded-xl" style={{ background: MINT, color: MINT_ON }}>Devam et</button>
+    </form>
+  );
+}
+
+// ============ DERSHANE ÖĞRENCİSİ (kayıt tamamlama) ============
+// Okul öğrencisinden farklı: dershane öğrencisi kendi kaydını SERBEST
+// AÇMAZ — önce müdürün roster'a eklemesi gerekir (bkz. Faz D2 planı).
+// Burada sadece kullanıcı adı + telefon istenir; ad/alan/sınıf müdürün
+// yüklediği kayıttan gelir. Hesap `dershaneKayitTamamla` server action'ı
+// tarafından (admin API ile, okul akışındaki gibi geçici şifreyle) açılır.
+function DershaneOgrenciTamamlaForm({ schools }: { schools: School[] }) {
+  const [schoolId, setSchoolId] = useState("");
+  const [kullaniciAdi, setKullaniciAdi] = useState("");
+  const [telefon, setTelefon] = useState("");
+  const [hata, setHata] = useState<string | null>(null);
+  const [yukleniyor, setYukleniyor] = useState(false);
+  const [sonuc, setSonuc] = useState<{ ad: string; sifre: string } | null>(null);
+
+  async function tamamla(e: React.FormEvent) {
+    e.preventDefault();
+    setHata(null);
+    if (!schoolId) return setHata("Dershane seçin.");
+    if (!kullaniciAdiGecerliMi(kullaniciAdi)) return setHata(KULLANICI_ADI_IPUCU);
+    if (!telefonGecerliMi(telefon)) return setHata("Telefon numarası geçersiz. " + TELEFON_IPUCU);
+    setYukleniyor(true);
+    const yanit = await dershaneKayitTamamla({ schoolId, telefon, kullaniciAdi });
+    setYukleniyor(false);
+    if (yanit.error || !yanit.sifre) return setHata(yanit.error ?? "Kayıt tamamlanamadı.");
+    setSonuc({ ad: yanit.ad ?? "Öğrenci", sifre: yanit.sifre });
+  }
+
+  if (sonuc) {
+    return (
+      <div className="text-center rounded-3xl p-6 flex flex-col gap-4" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+        <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-lg font-bold">Kaydınız tamamlandı 🎉</h2>
+        <p style={{ color: TEXT_MUTED }} className="text-sm leading-relaxed">
+          Aşağıdaki geçici şifrenizi not alın. İlk girişten sonra kendi şifrenizi belirlemeniz istenecek.
+        </p>
+        <div className="rounded-2xl px-4 py-3" style={{ background: MINT_BG, border: `2px solid ${BORDER_STRONG}` }}>
+          <div style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide mb-1">Geçici şifreniz</div>
+          <div style={{ color: MINT, fontFamily: "monospace" }} className="text-2xl font-bold tracking-widest">{sonuc.sifre}</div>
+        </div>
+        <p style={{ color: TEXT_MUTED }} className="text-xs">Giriş yapmak için kullanıcı adınızı ve bu şifreyi kullanın.</p>
+        <Link href="/login" style={{ color: MINT }} className="text-sm font-semibold">Girişe git</Link>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={tamamla} className="rounded-3xl p-6 flex flex-col gap-3" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+      <div className="rounded-xl px-3 py-2 text-[11px] leading-snug" style={{ background: "rgba(143,198,255,0.14)", color: TEXT_MUTED }}>
+        Dershaneniz sizi sisteme eklemeden kayıt tamamlanamaz — ad, alan ve sınıf bilgileriniz dershanenizin yüklediği kayıttan otomatik gelecek.
+      </div>
+      <label className="flex flex-col gap-1"><Etiket>{KURUM_ETIKET.dershane.secim}</Etiket>
+        <Secim required value={schoolId} onChange={(e) => setSchoolId(e.target.value)}>
+          <option value="">Seçiniz</option>
+          {schools.map((s) => <option key={s.id} value={s.id}>{s.ad}</option>)}
+        </Secim>
+      </label>
+      <label className="flex flex-col gap-1"><Etiket>{KURUM_ETIKET.dershane.no}</Etiket>
+        <Girdi required value={kullaniciAdi} onChange={(e) => setKullaniciAdi(kullaniciAdiSanitize(e.target.value))} />
+        <span style={{ color: TEXT_MUTED }} className="text-[10px]">{KULLANICI_ADI_IPUCU}</span>
+      </label>
+      <label className="flex flex-col gap-1"><Etiket>Telefon</Etiket>
+        <Girdi type="tel" required value={telefon} inputMode="numeric" placeholder="5xxxxxxxxx" onChange={(e) => setTelefon(telefonSanitize(e.target.value))} />
+      </label>
+      {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
+      <button type="submit" disabled={yukleniyor} className="sfec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+        {yukleniyor ? "Tamamlanıyor..." : "Kaydı tamamla"}
+      </button>
     </form>
   );
 }
@@ -502,7 +575,12 @@ function VeliTalepForm({ kurumTuru, schools }: { kurumTuru: KurumTuru; schools: 
             {schools.map((s) => <option key={s.id} value={s.id}>{s.ad}</option>)}
           </Secim>
         </label>
-        <label className="flex flex-col gap-1"><Etiket>{KURUM_ETIKET[kurumTuru].no}</Etiket><Girdi required value={okulNo} inputMode="numeric" maxLength={5} onChange={(e) => setOkulNo(okulNoSanitize(e.target.value))} /></label>
+        <label className="flex flex-col gap-1"><Etiket>{KURUM_ETIKET[kurumTuru].no}</Etiket>
+          <Girdi required value={okulNo}
+            inputMode={kurumTuru === "okul" ? "numeric" : "text"}
+            maxLength={kurumTuru === "okul" ? 5 : 32}
+            onChange={(e) => setOkulNo(kurumTuru === "okul" ? okulNoSanitize(e.target.value) : kullaniciAdiSanitize(e.target.value))} />
+        </label>
         {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
         <button type="submit" disabled={yukleniyor} className="sfec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
           {yukleniyor ? "Gönderiliyor..." : "Kod talep et"}

@@ -6,5 +6,5 @@ export const KURUM_ETIKET: Record<KurumTuru, {
   secim: string; ogrenciSecim: string; no: string; kod: string;
 }> = {
   okul: { secim: "Okul", ogrenciSecim: "Öğrencinin Okulu", no: "Okul No", kod: "Okul Kodu" },
-  dershane: { secim: "Dershane", ogrenciSecim: "Öğrencinin Dershanesi", no: "Öğrenci No", kod: "Dershane Kodu" },
+  dershane: { secim: "Dershane", ogrenciSecim: "Öğrencinin Dershanesi", no: "Kullanıcı Adı", kod: "Dershane Kodu" },
 };

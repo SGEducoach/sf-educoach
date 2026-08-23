@@ -15,6 +15,17 @@ export function okulNoGecerliMi(v: string) {
   return /^[0-9]{1,5}$/.test(v);
 }
 
+// Dershane öğrencisi için "kullanıcı adı" — okul_no kolonunu paylaşır
+// (bkz. migration 0051, ogrenci_no_format_kontrol trigger'ı) ama format
+// farklı: en az 6 karakter, boşluksuz.
+export function kullaniciAdiSanitize(v: string) {
+  return v.replace(/\s/g, "").slice(0, 32);
+}
+export function kullaniciAdiGecerliMi(v: string) {
+  return /^[A-Za-z0-9_]{6,32}$/.test(v);
+}
+export const KULLANICI_ADI_IPUCU = "En az 6 karakter, boşluksuz (harf/rakam/_ kullanabilirsiniz).";
+
 // Türkçe'ye özel büyük harf dönüşümü (i → İ, ı → I) — düz .toUpperCase()
 // bunu yanlış yapar (i → I). Ad/soyad kayıtlarını normalize etmek ve
 // izinli isim listesiyle karşılaştırmak için kullanılıyor. Fazla boşlukları
