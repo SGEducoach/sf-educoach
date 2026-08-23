@@ -6,10 +6,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { GraduationCap, BookOpen, Users, Building2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import type { School, UserRole } from "@/lib/types";
+import type { KurumTuru, School, UserRole } from "@/lib/types";
 import { BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
+import { KURUM_ETIKET } from "@/lib/kurum";
 import { YukleniyorOverlay } from "@/components/YukleniyorOverlay";
 import { SeFuMarkaAdi, SeFuSlogan } from "@/components/SeFuWordmark";
+import { KurumTuruSecici } from "@/components/KurumTuruSecici";
 
 const rolSecenekleri: { id: UserRole; ad: string; icon: typeof BookOpen }[] = [
   { id: "ogrenci", ad: "Öğrenci", icon: BookOpen },
@@ -21,6 +23,7 @@ const rolSecenekleri: { id: UserRole; ad: string; icon: typeof BookOpen }[] = [
 export default function LoginForm() {
   const router = useRouter();
   const supabase = createClient();
+  const [kurumTuru, setKurumTuru] = useState<KurumTuru>("okul");
   const [role, setRole] = useState<UserRole>("ogrenci");
 
   const [schools, setSchools] = useState<School[]>([]);
@@ -33,9 +36,9 @@ export default function LoginForm() {
   const [yukleniyor, setYukleniyor] = useState(false);
 
   useEffect(() => {
-    supabase.from("schools").select("*").eq("tur", "okul").then(({ data }) => setSchools((data as School[]) ?? []));
+    supabase.from("schools").select("*").eq("tur", kurumTuru).then(({ data }) => setSchools((data as School[]) ?? []));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [kurumTuru]);
 
   async function girisYap(e: React.FormEvent) {
     e.preventDefault();
@@ -44,7 +47,7 @@ export default function LoginForm() {
     // okul_no sadece okul içinde benzersiz olduğu için öğrenci/veli
     // girişinde okul seçimi zorunlu (bkz. migration 0023).
     if ((role === "ogrenci" || role === "veli") && !schoolId) {
-      return setHata("Okul seçin.");
+      return setHata(`${KURUM_ETIKET[kurumTuru].secim} seçin.`);
     }
     setYukleniyor(true);
 
@@ -55,14 +58,14 @@ export default function LoginForm() {
       const { data: cozulenEmail } = await supabase.rpc("resolve_ogrenci_email", { p_school_id: schoolId, p_okul_no: okulNo.trim() });
       if (!cozulenEmail) {
         setYukleniyor(false);
-        return setHata("Bu okul numarasıyla kayıtlı bir öğrenci bulunamadı.");
+        return setHata("Bu numarayla kayıtlı bir öğrenci bulunamadı.");
       }
       girisEmail = cozulenEmail;
     } else if (role === "veli") {
       const { data: cozulenEmail } = await supabase.rpc("resolve_veli_login", { p_school_id: schoolId, p_okul_no: okulNo.trim(), p_kod: kod.trim() });
       if (!cozulenEmail) {
         setYukleniyor(false);
-        return setHata("Okul no veya kod hatalı.");
+        return setHata("Numara veya kod hatalı.");
       }
       girisEmail = cozulenEmail;
       girisSifre = password;
@@ -70,7 +73,7 @@ export default function LoginForm() {
       const { data: cozulenEmail } = await supabase.rpc("resolve_mudur_email", { p_okul_kodu: okulNo.trim() });
       if (!cozulenEmail) {
         setYukleniyor(false);
-        return setHata("Okul kodu hatalı.");
+        return setHata(`${KURUM_ETIKET[kurumTuru].kod} hatalı.`);
       }
       girisEmail = cozulenEmail;
     }
@@ -100,6 +103,8 @@ export default function LoginForm() {
           <SeFuMarkaAdi as="h1" className="text-2xl font-extrabold leading-none" />
           <p className="text-xs mt-1 italic"><SeFuSlogan /></p>
         </div>
+
+        <KurumTuruSecici deger={kurumTuru} onChange={(t) => { setKurumTuru(t); setSchoolId(""); setHata(null); }} />
 
         <div className="flex gap-1 p-1 rounded-full mb-4" style={{ background: "rgba(255,255,255,0.06)", border: `2px solid ${BORDER}` }}>
           {rolSecenekleri.map((r) => {
@@ -133,7 +138,7 @@ export default function LoginForm() {
             <>
               {(role === "ogrenci" || role === "veli") && (
                 <label className="flex flex-col gap-1">
-                  <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Okul</span>
+                  <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">{KURUM_ETIKET[kurumTuru].secim}</span>
                   <select required value={schoolId} onChange={(e) => setSchoolId(e.target.value)}
                     className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
                     <option value="">Seçiniz</option>
@@ -142,7 +147,7 @@ export default function LoginForm() {
                 </label>
               )}
               <label className="flex flex-col gap-1">
-                <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">{role === "mudur" ? "Okul Kodu" : "Okul No"}</span>
+                <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">{role === "mudur" ? KURUM_ETIKET[kurumTuru].kod : KURUM_ETIKET[kurumTuru].no}</span>
                 <input required value={okulNo} onChange={(e) => setOkulNo(e.target.value)}
                   className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
               </label>

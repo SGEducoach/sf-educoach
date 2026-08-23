@@ -6,16 +6,18 @@ import Link from "next/link";
 import Image from "next/image";
 import { GraduationCap, BookOpen, Users, ChevronLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import type { AytAlan, School, SchoolClass, UserRole } from "@/lib/types";
+import type { AytAlan, KurumTuru, School, SchoolClass, UserRole } from "@/lib/types";
 import { AYT_ALAN_ETIKET, BRANS_LISTESI, dokuzOnSinifMi, sinifSiraKarsilastir } from "@/lib/types";
 import {
   BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH,
 } from "@/lib/theme";
+import { KURUM_ETIKET } from "@/lib/kurum";
 import {
   telefonSanitize, telefonGecerliMi, okulNoSanitize, sifreGecerliMi, SIFRE_IPUCU, TELEFON_IPUCU, adNormalize, rastgeleSifre,
 } from "@/lib/validators";
 import { YukleniyorOverlay } from "@/components/YukleniyorOverlay";
 import { SeFuMarkaAdi, SeFuSlogan } from "@/components/SeFuWordmark";
+import { KurumTuruSecici } from "@/components/KurumTuruSecici";
 
 const rolSecenekleri: { id: UserRole; ad: string; icon: typeof BookOpen }[] = [
   { id: "ogrenci", ad: "Öğrenci", icon: BookOpen },
@@ -101,17 +103,18 @@ export default function SignupForm({ kurallarMetni, kurallarVersiyon }: { kurall
   const router = useRouter();
   const supabase = createClient();
 
+  const [kurumTuru, setKurumTuru] = useState<KurumTuru>("okul");
   const [role, setRole] = useState<UserRole>("ogrenci");
   const [schools, setSchools] = useState<School[]>([]);
   const [classes, setClasses] = useState<SchoolClass[]>([]);
   const [kurallarKabul, setKurallarKabul] = useState(false);
 
   useEffect(() => {
-    supabase.from("schools").select("*").eq("tur", "okul").then(({ data }) => setSchools((data as School[]) ?? []));
+    supabase.from("schools").select("*").eq("tur", kurumTuru).then(({ data }) => setSchools((data as School[]) ?? []));
     supabase.from("classes").select("*").then(({ data }) => {
       setClasses(((data as SchoolClass[]) ?? []).sort(sinifSiraKarsilastir));
     });
-  }, [supabase]);
+  }, [supabase, kurumTuru]);
 
   useEffect(() => {
     const zamanlayici = window.setTimeout(() => setKurallarKabul(kurallarOnayliMi(kurallarVersiyon)), 0);
@@ -132,6 +135,8 @@ export default function SignupForm({ kurallarMetni, kurallarVersiyon }: { kurall
           <p style={{ color: TEXT }} className="text-sm font-bold mt-2">Hesap oluşturun</p>
         </div>
 
+        <KurumTuruSecici deger={kurumTuru} onChange={setKurumTuru} />
+
         <div className="flex gap-1 p-1 rounded-full mb-4" style={{ background: "rgba(255,255,255,0.06)", border: `2px solid ${BORDER}` }}>
           {rolSecenekleri.map((r) => {
             const Icon = r.icon;
@@ -147,9 +152,11 @@ export default function SignupForm({ kurallarMetni, kurallarVersiyon }: { kurall
           })}
         </div>
 
-        {role === "ogrenci" && <OgrenciKayit schools={schools} classes={classes} router={router} supabase={supabase} />}
-        {role === "ogretmen" && <OgretmenKayit schools={schools} classes={classes} router={router} supabase={supabase} />}
-        {role === "veli" && <VeliKayit schools={schools} router={router} supabase={supabase} />}
+        {/* key={kurumTuru}: tur değişince bu bileşenler yeniden mount olur,
+            kendi local schoolId/classId state'leri otomatik temizlenir. */}
+        {role === "ogrenci" && <OgrenciKayit key={kurumTuru} kurumTuru={kurumTuru} schools={schools} classes={classes} router={router} supabase={supabase} />}
+        {role === "ogretmen" && <OgretmenKayit key={kurumTuru} kurumTuru={kurumTuru} schools={schools} classes={classes} router={router} supabase={supabase} />}
+        {role === "veli" && <VeliKayit key={kurumTuru} kurumTuru={kurumTuru} schools={schools} router={router} supabase={supabase} />}
 
         <p style={{ color: TEXT_MUTED }} className="text-xs text-center mt-5">
           Zaten hesabınız var mı?{" "}
@@ -161,8 +168,8 @@ export default function SignupForm({ kurallarMetni, kurallarVersiyon }: { kurall
 }
 
 // ============ ÖĞRENCİ ============
-function OgrenciKayit({ schools, classes, router, supabase }: {
-  schools: School[]; classes: SchoolClass[]; router: ReturnType<typeof useRouter>;
+function OgrenciKayit({ kurumTuru, schools, classes, router, supabase }: {
+  kurumTuru: KurumTuru; schools: School[]; classes: SchoolClass[]; router: ReturnType<typeof useRouter>;
   supabase: ReturnType<typeof createClient>;
 }) {
   const [adim, setAdim] = useState<1 | 2>(1);
@@ -278,10 +285,10 @@ function OgrenciKayit({ schools, classes, router, supabase }: {
   return (
     <form onSubmit={ileri} className="rounded-3xl p-6 flex flex-col gap-3" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <label className="flex flex-col gap-1"><Etiket>Ad Soyad</Etiket><Girdi required value={ad} onChange={(e) => setAd(e.target.value)} /></label>
-      <label className="flex flex-col gap-1"><Etiket>Okul No</Etiket><Girdi required value={okulNo} inputMode="numeric" maxLength={5} placeholder="örn. 1234" onChange={(e) => setOkulNo(okulNoSanitize(e.target.value))} /></label>
+      <label className="flex flex-col gap-1"><Etiket>{KURUM_ETIKET[kurumTuru].no}</Etiket><Girdi required value={okulNo} inputMode="numeric" maxLength={5} placeholder="örn. 1234" onChange={(e) => setOkulNo(okulNoSanitize(e.target.value))} /></label>
       <label className="flex flex-col gap-1"><Etiket>E-posta</Etiket><Girdi type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></label>
       <label className="flex flex-col gap-1"><Etiket>Telefon</Etiket><Girdi type="tel" required value={telefon} inputMode="numeric" placeholder="5xxxxxxxxx" onChange={(e) => setTelefon(telefonSanitize(e.target.value))} /></label>
-      <label className="flex flex-col gap-1"><Etiket>Okul</Etiket>
+      <label className="flex flex-col gap-1"><Etiket>{KURUM_ETIKET[kurumTuru].secim}</Etiket>
         <Secim required value={schoolId} onChange={(e) => { setSchoolId(e.target.value); setClassId(""); }}>
           <option value="">Seçiniz</option>
           {schools.map((s) => <option key={s.id} value={s.id}>{s.ad}</option>)}
@@ -317,8 +324,8 @@ function OgrenciKayit({ schools, classes, router, supabase }: {
 }
 
 // ============ ÖĞRETMEN ============
-function OgretmenKayit({ schools, router, supabase }: {
-  schools: School[]; classes: SchoolClass[]; router: ReturnType<typeof useRouter>;
+function OgretmenKayit({ kurumTuru, schools, router, supabase }: {
+  kurumTuru: KurumTuru; schools: School[]; classes: SchoolClass[]; router: ReturnType<typeof useRouter>;
   supabase: ReturnType<typeof createClient>;
 }) {
   const [adim, setAdim] = useState<1 | 2>(1);
@@ -408,14 +415,14 @@ function OgretmenKayit({ schools, router, supabase }: {
       <label className="flex flex-col gap-1"><Etiket>Ad Soyad</Etiket><Girdi required value={ad} onChange={(e) => setAd(e.target.value)} /></label>
       <label className="flex flex-col gap-1"><Etiket>E-posta</Etiket><Girdi type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></label>
       <label className="flex flex-col gap-1"><Etiket>Telefon</Etiket><Girdi type="tel" required value={telefon} inputMode="numeric" placeholder="5xxxxxxxxx" onChange={(e) => setTelefon(telefonSanitize(e.target.value))} /></label>
-      <label className="flex flex-col gap-1"><Etiket>Okulu veya Dershanesi</Etiket>
+      <label className="flex flex-col gap-1"><Etiket>{KURUM_ETIKET[kurumTuru].secim}</Etiket>
         <Secim required value={schoolId} onChange={(e) => setSchoolId(e.target.value)}>
           <option value="">Seçiniz</option>
           {schools.map((s) => <option key={s.id} value={s.id}>{s.ad}</option>)}
         </Secim>
       </label>
       <div className="rounded-xl px-3 py-2 text-[11px] leading-snug" style={{ background: "rgba(143,198,255,0.14)", color: TEXT_MUTED }}>
-        Sınıf öğretmenliği ataması kayıt sırasında yapılmaz — okul müdürünüz sizi Yönetim panelinden bir sınıfa atayabilir.
+        Sınıf öğretmenliği ataması kayıt sırasında yapılmaz — {kurumTuru === "okul" ? "okul müdürünüz" : "dershane müdürünüz"} sizi Yönetim panelinden bir sınıfa atayabilir.
       </div>
       <label className="flex flex-col gap-1"><Etiket>Branş</Etiket>
         <Secim required value={brans} onChange={(e) => setBrans(e.target.value)}>
@@ -429,7 +436,7 @@ function OgretmenKayit({ schools, router, supabase }: {
 }
 
 // ============ VELİ ============
-function VeliKayit({ schools, router, supabase }: { schools: School[]; router: ReturnType<typeof useRouter>; supabase: ReturnType<typeof createClient> }) {
+function VeliKayit({ kurumTuru, schools, router, supabase }: { kurumTuru: KurumTuru; schools: School[]; router: ReturnType<typeof useRouter>; supabase: ReturnType<typeof createClient> }) {
   const [mod, setMod] = useState<"talep" | "tamamla">("talep");
 
   return (
@@ -446,12 +453,12 @@ function VeliKayit({ schools, router, supabase }: { schools: School[]; router: R
           Kodum var, tamamla
         </button>
       </div>
-      {mod === "talep" ? <VeliTalepForm schools={schools} /> : <VeliTamamlaForm schools={schools} router={router} supabase={supabase} />}
+      {mod === "talep" ? <VeliTalepForm kurumTuru={kurumTuru} schools={schools} /> : <VeliTamamlaForm kurumTuru={kurumTuru} schools={schools} router={router} supabase={supabase} />}
     </div>
   );
 }
 
-function VeliTalepForm({ schools }: { schools: School[] }) {
+function VeliTalepForm({ kurumTuru, schools }: { kurumTuru: KurumTuru; schools: School[] }) {
   const [ad, setAd] = useState("");
   const [telefon, setTelefon] = useState("");
   const [schoolId, setSchoolId] = useState("");
@@ -464,7 +471,7 @@ function VeliTalepForm({ schools }: { schools: School[] }) {
     e.preventDefault();
     setHata(null);
     if (!telefonGecerliMi(telefon)) return setHata("Telefon numarası geçersiz. " + TELEFON_IPUCU);
-    if (!schoolId) return setHata("Okul seçin.");
+    if (!schoolId) return setHata(`${KURUM_ETIKET[kurumTuru].secim} seçin.`);
     setYukleniyor(true);
 
     const res = await fetch("/api/veli/talep", {
@@ -489,13 +496,13 @@ function VeliTalepForm({ schools }: { schools: School[] }) {
       <form onSubmit={gonder} className="flex flex-col gap-3">
         <label className="flex flex-col gap-1"><Etiket>Ad Soyad</Etiket><Girdi required value={ad} onChange={(e) => setAd(e.target.value)} /></label>
         <label className="flex flex-col gap-1"><Etiket>Telefon</Etiket><Girdi type="tel" required value={telefon} inputMode="numeric" placeholder="5xxxxxxxxx" onChange={(e) => setTelefon(telefonSanitize(e.target.value))} /></label>
-        <label className="flex flex-col gap-1"><Etiket>Öğrencinin Okulu</Etiket>
+        <label className="flex flex-col gap-1"><Etiket>{KURUM_ETIKET[kurumTuru].ogrenciSecim}</Etiket>
           <Secim required value={schoolId} onChange={(e) => setSchoolId(e.target.value)}>
             <option value="">Seçiniz</option>
             {schools.map((s) => <option key={s.id} value={s.id}>{s.ad}</option>)}
           </Secim>
         </label>
-        <label className="flex flex-col gap-1"><Etiket>Öğrenci Okul No</Etiket><Girdi required value={okulNo} inputMode="numeric" maxLength={5} onChange={(e) => setOkulNo(okulNoSanitize(e.target.value))} /></label>
+        <label className="flex flex-col gap-1"><Etiket>{KURUM_ETIKET[kurumTuru].no}</Etiket><Girdi required value={okulNo} inputMode="numeric" maxLength={5} onChange={(e) => setOkulNo(okulNoSanitize(e.target.value))} /></label>
         {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
         <button type="submit" disabled={yukleniyor} className="sfec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
           {yukleniyor ? "Gönderiliyor..." : "Kod talep et"}
@@ -545,7 +552,7 @@ Haklarınız: KVKK madde 11 kapsamında verilerin düzeltilmesi, silinmesi, işl
 
 Onay: Yukarıdaki bilgilendirmeyi okudum; velisi/vasisi olduğum öğrencinin belirtilen kapsamda kişisel verilerinin işlenmesine açık rızamla onay veriyorum.`;
 
-function VeliTamamlaForm({ schools, router }: { schools: School[]; router: ReturnType<typeof useRouter>; supabase: ReturnType<typeof createClient> }) {
+function VeliTamamlaForm({ kurumTuru, schools, router }: { kurumTuru: KurumTuru; schools: School[]; router: ReturnType<typeof useRouter>; supabase: ReturnType<typeof createClient> }) {
   const [asama, setAsama] = useState<1 | 2>(1);
   const [schoolId, setSchoolId] = useState("");
   const [okulNo, setOkulNo] = useState("");
@@ -561,7 +568,7 @@ function VeliTamamlaForm({ schools, router }: { schools: School[]; router: Retur
   async function tamamla(e: React.FormEvent) {
     e.preventDefault();
     setHata(null);
-    if (!schoolId) return setHata("Okul seçin.");
+    if (!schoolId) return setHata(`${KURUM_ETIKET[kurumTuru].secim} seçin.`);
     if (!veliAd.trim()) return setHata("Adınız Soyadınız gerekli.");
     if (!telefonGecerliMi(veliTelefon)) return setHata("Telefon numarası geçersiz. " + TELEFON_IPUCU);
     if (!kvkkOnay) return setHata("Devam etmek için KVKK aydınlatma metnini onaylamanız gerekiyor.");
@@ -592,13 +599,13 @@ function VeliTamamlaForm({ schools, router }: { schools: School[]; router: Retur
         <span className="rounded-full px-2.5 py-1" style={{ background: asama === 2 ? MINT : BG0, color: asama === 2 ? MINT_ON : TEXT_MUTED }}>2 · Şifreni oluştur</span>
       </div>
       {asama === 1 ? <>
-      <label className="flex flex-col gap-1"><Etiket>Öğrencinin Okulu</Etiket>
+      <label className="flex flex-col gap-1"><Etiket>{KURUM_ETIKET[kurumTuru].ogrenciSecim}</Etiket>
         <Secim required value={schoolId} onChange={(e) => setSchoolId(e.target.value)}>
           <option value="">Seçiniz</option>
           {schools.map((s) => <option key={s.id} value={s.id}>{s.ad}</option>)}
         </Secim>
       </label>
-      <label className="flex flex-col gap-1"><Etiket>Öğrenci Okul No</Etiket><Girdi required value={okulNo} onChange={(e) => setOkulNo(e.target.value)} /></label>
+      <label className="flex flex-col gap-1"><Etiket>{KURUM_ETIKET[kurumTuru].no}</Etiket><Girdi required value={okulNo} onChange={(e) => setOkulNo(e.target.value)} /></label>
       <label className="flex flex-col gap-1"><Etiket>Kod</Etiket><Girdi required value={kod} maxLength={12} autoCapitalize="characters" onChange={(e) => setKod(e.target.value.toUpperCase())} /></label>
       <label className="flex flex-col gap-1"><Etiket>Adınız Soyadınız</Etiket><Girdi required value={veliAd} onChange={(e) => setVeliAd(e.target.value)} /></label>
       <label className="flex flex-col gap-1"><Etiket>Telefon</Etiket><Girdi type="tel" required value={veliTelefon} inputMode="numeric" placeholder="5xxxxxxxxx" onChange={(e) => setVeliTelefon(telefonSanitize(e.target.value))} /></label>
@@ -622,7 +629,7 @@ function VeliTamamlaForm({ schools, router }: { schools: School[]; router: Retur
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
       <button type="button" onClick={() => {
         setHata(null);
-        if (!schoolId) return setHata("Okul seçin.");
+        if (!schoolId) return setHata(`${KURUM_ETIKET[kurumTuru].secim} seçin.`);
         if (!okulNo.trim() || !kod.trim()) return setHata("Okul no ve kod gerekli.");
         if (!veliAd.trim()) return setHata("Adınız Soyadınız gerekli.");
         if (!telefonGecerliMi(veliTelefon)) return setHata("Telefon numarası geçersiz. " + TELEFON_IPUCU);
