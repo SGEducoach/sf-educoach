@@ -158,7 +158,7 @@ function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
         <Link href={`/yonetici/kullanici/${kullanici.id}`} className="min-w-0 flex-1 cursor-pointer group" title={`${kullanici.ad} kullanıcısının sayfasını görüntüle`}>
           <div style={{ color: TEXT }} className="text-sm font-semibold underline-offset-2 group-hover:underline transition-colors">
             {kullanici.ad} <span style={{ color: LILAC }} className="text-[10px] font-bold ml-1">{ROL_ETIKET[kullanici.role]}</span>
-            {!aktif && <span style={{ color: BLUSH }} className="text-[10px] font-bold ml-1">PASİF</span>}
+            {!aktif && <span style={{ color: BLUSH }} className="text-[10px] font-bold ml-1">Pasif</span>}
           </div>
           <div style={{ color: TEXT_MUTED }} className="text-xs mt-0.5">
             {[kullanici.email, kullanici.okulAdi, kullanici.sinifAdi, kullanici.okulNo && `#${kullanici.okulNo}`, kullanici.brans].filter(Boolean).join(" · ")}

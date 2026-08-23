@@ -142,6 +142,21 @@ body {
   color: var(--foreground);
 }
 
+/* Cümle olmayan arayüz metinleri başlık düzeninde gösterilir. Sayfa dili
+   Türkçe olduğu için tarayıcı i/İ dönüşümünü Türkçe yazımına göre uygular. */
+:where(
+  h1, h2, h3, h4, h5, h6,
+  button,
+  input[type="button"], input[type="submit"],
+  legend, summary, caption, th,
+  nav a,
+  [role="button"], [role="tab"], [role="menuitem"],
+  select, option,
+  .uppercase
+) {
+  text-transform: capitalize;
+}
+
 .sfec-dashboard-shell {
   background: var(--sfec-shell-bg);
 }

@@ -332,7 +332,7 @@ function OgretmenSatir({ ogretmen, siniflar }: { ogretmen: OgretmenSatiri; sinif
     <div className="rounded-xl px-3.5 py-2.5 flex items-center justify-between flex-wrap gap-2" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
       <div>
         <div style={{ color: TEXT }} className="text-sm font-semibold">
-          {ogretmen.ad} {ogretmen.mudurMu && <span style={{ color: LILAC }} className="text-[10px] font-bold ml-1">MÜDÜR</span>}
+          {ogretmen.ad} {ogretmen.mudurMu && <span style={{ color: LILAC }} className="text-[10px] font-bold ml-1">Müdür</span>}
         </div>
         <div style={{ color: TEXT_MUTED }} className="text-xs mt-0.5">{ogretmen.brans}</div>
         {hata && <div style={{ color: BLUSH }} className="text-[11px] font-semibold mt-1">{hata}</div>}

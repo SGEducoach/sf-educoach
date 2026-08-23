@@ -75,7 +75,7 @@ export function HosgeldinPopuplari({ role }: { role: UserRole }) {
             </p>
             <p style={{ color: TEXT_MUTED }} className="mb-4 flex items-center justify-end gap-1.5 text-xs font-semibold">
               <SeFuLogo className="h-6 w-auto max-w-20" />
-              <span>EKİBİ</span>
+              <span>Ekibi</span>
             </p>
           </>
         )}
