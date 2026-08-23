@@ -57,6 +57,14 @@ html[data-theme="koyu"] .sfec-brand-logo {
   filter: brightness(0) saturate(100%) invert(55%) sepia(97%) saturate(3155%) hue-rotate(352deg) brightness(101%) contrast(91%);
 }
 
+.sfec-hosgeldin-kapi {
+  display: inline-block;
+  flex: none;
+  background-color: var(--sfec-marka-mavi);
+  -webkit-mask: url("/istanbul-universitesi-kapi.png") center / contain no-repeat;
+  mask: url("/istanbul-universitesi-kapi.png") center / contain no-repeat;
+}
+
 :root[data-theme="koyu"] {
   color-scheme: dark;
   --background: #000000;

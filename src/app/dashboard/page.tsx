@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BarChart3, CalendarCheck2, ChevronLeft, CircleUserRound, ListChecks, Sparkles, Target } from "lucide-react";
+import { BarChart3, CalendarCheck2, ChevronLeft, ListChecks, Sparkles, Target } from "lucide-react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Header } from "@/components/dashboard/Header";
@@ -217,7 +217,7 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
             <div className="flex items-center gap-4 sm:gap-5 min-w-0">
               <div className="flex h-16 w-16 sm:h-20 sm:w-20 shrink-0 items-center justify-center rounded-3xl"
                 style={{ background: MINT_BG, border: `2px solid ${BORDER_STRONG}` }}>
-                <CircleUserRound size={36} color={MINT} strokeWidth={1.8} />
+                <span className="sfec-hosgeldin-kapi h-11 w-11 sm:h-14 sm:w-14" aria-hidden="true" />
               </div>
               <div className="min-w-0">
                 <div className="mb-1 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: TEXT_MUTED }}>
@@ -420,11 +420,11 @@ async function VeliIcerik({ userId, ad, secilenOgrenciId, donem, aktifBolum }: {
   return (
     <div className="flex flex-col gap-6">
       <div className="sfec-fade rounded-3xl p-6 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-        <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-bold mb-4 flex items-center gap-2">
-          Hoş geldin {ad}
-          <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full" style={{ background: "linear-gradient(135deg, #7C3AED, #2563EB)" }}>
-            <Sparkles size={13} color="#fff" />
+        <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="mb-4 flex items-center gap-2 text-xl font-bold">
+          <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: MINT_BG, border: `1px solid ${BORDER_STRONG}` }}>
+            <span className="sfec-hosgeldin-kapi h-6 w-6" aria-hidden="true" />
           </span>
+          <span>Hoş geldin {ad}</span>
         </h1>
         {cocuklar.length === 0 ? (
           <p style={{ color: TEXT_MUTED }} className="text-sm">Henüz bağlı bir öğrenci yok.</p>

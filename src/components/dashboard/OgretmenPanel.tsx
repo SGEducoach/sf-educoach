@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { UserPlus, Check, Users, Eye, Plus, X, BookMarked, ClipboardCheck, ArrowRightLeft, ChevronDown, ChevronUp, CalendarPlus, Sparkles } from "lucide-react";
+import { UserPlus, Check, Users, Eye, Plus, X, BookMarked, ClipboardCheck, ArrowRightLeft, ChevronDown, ChevronUp, CalendarPlus } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, SKY, SKY_BG, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 import {
   veliTalepOnayla, sinifEkle, ogretmenDuyuruGonder, gonderilenDuyurularGetir,
@@ -105,7 +105,7 @@ export function OgretmenPanel({
         <section className="sfec-dashboard-hero sfec-fade rounded-3xl px-6 py-5 sm:px-7 print:hidden">
           <div className="relative z-10 flex items-center gap-3">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl" style={{ background: MINT_BG, border: `1px solid ${BORDER_STRONG}` }}>
-              <Sparkles size={18} color={MINT} aria-hidden="true" />
+              <span className="sfec-hosgeldin-kapi h-7 w-7" aria-hidden="true" />
             </span>
             <div>
               <div className="text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: TEXT_MUTED }}>Eğitimci paneli</div>
