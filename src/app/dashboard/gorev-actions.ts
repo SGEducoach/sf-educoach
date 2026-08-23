@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { GorevTuru } from "@/lib/types";
+import { saatiDakikayaCevir, saatAraliklariCakisiyor } from "@/lib/saat-araligi";
 
 async function requireUser() {
   const supabase = await createClient();
@@ -91,7 +92,11 @@ export async function planEkle(input: {
   if (!ders) return { error: "Ders seçin." };
   if (!input.tarih) return { error: "Tarih seçin." };
   if (!input.baslangicSaat || !input.bitisSaat) return { error: "Başlangıç ve bitiş saati zorunludur." };
-  if (input.bitisSaat <= input.baslangicSaat) return { error: "Bitiş saati başlangıçtan sonra olmalı." };
+  const baslangicDakika = saatiDakikayaCevir(input.baslangicSaat);
+  const bitisDakika = saatiDakikayaCevir(input.bitisSaat);
+  if (baslangicDakika === null || bitisDakika === null || bitisDakika <= baslangicDakika) {
+    return { error: "Bitiş saati başlangıçtan sonra olmalı." };
+  }
 
   const { data: gununGorevleriHam, error: sorguHatasi } = await supabase
     .from("gorev_atamalari")
@@ -104,7 +109,12 @@ export async function planEkle(input: {
   const cakisiyor = ((gununGorevleriHam as unknown as GunGorevRow[]) ?? []).some((r) => {
     const g = r.gorevler;
     if (!g?.baslangic_saat || !g.bitis_saat) return false;
-    return g.baslangic_saat < input.bitisSaat && g.bitis_saat > input.baslangicSaat;
+    return saatAraliklariCakisiyor(
+      g.baslangic_saat,
+      g.bitis_saat,
+      input.baslangicSaat,
+      input.bitisSaat,
+    );
   });
   if (cakisiyor) return { error: "Bu saat aralığında zaten planlanmış bir göreviniz var." };
 

@@ -3,13 +3,14 @@
 import { useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ChevronLeft, ChevronRight, BookOpen, PenLine, ClipboardList, X, Clock, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, BookOpen, PenLine, ClipboardList, X, Clock, Plus, CalendarDays, Rows3 } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, PEACH, PEACH_BG, BLUSH, BLUSH_BG, TEXT, TEXT_MUTED } from "@/lib/theme";
 import { GOREV_TURU_ETIKET, GOREV_DURUMU_ETIKET } from "@/lib/types";
 import type { GorevTuru, GorevDurumu, AytAlan } from "@/lib/types";
 import { KonuCalismaForm, SoruCozumuForm, DenemeForm } from "@/components/dashboard/OgrenciVeriGirisi";
 import { planEkle } from "@/app/dashboard/gorev-actions";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
+import { saatiDakikayaCevir } from "@/lib/saat-araligi";
 
 export interface GorevSatiri {
   atamaId: string;
@@ -32,6 +33,8 @@ const DURUM_RENK: Record<GorevDurumu, { bg: string; renk: string }> = {
   tamamlandi: { bg: MINT_BG, renk: MINT },
   tamamlanmadi: { bg: BLUSH_BG, renk: BLUSH },
 };
+const SAAT_YUKSEKLIGI = 36;
+const GUN_YUKSEKLIGI = SAAT_YUKSEKLIGI * 24;
 
 function gunAdi(tarihISO: string) {
   return new Date(`${tarihISO}T00:00:00`).toLocaleDateString("tr-TR", { weekday: "short" });
@@ -73,6 +76,7 @@ export function Gorevlerim({ gorevler, haftaBaslangic, aytAlan, dokuzOnMu, dersL
   }
   const [acikGorev, setAcikGorev] = useState<GorevSatiri | null>(null);
   const [planModalAcik, setPlanModalAcik] = useState(false);
+  const [haftalikGorunum, setHaftalikGorunum] = useState(false);
 
   const gunlukGorevSayisi = new Map<string, number>();
   for (const g of gorevler) gunlukGorevSayisi.set(g.tarih, (gunlukGorevSayisi.get(g.tarih) ?? 0) + 1);
@@ -93,8 +97,17 @@ export function Gorevlerim({ gorevler, haftaBaslangic, aytAlan, dokuzOnMu, dersL
 
   return (
     <div className="sfec-fade rounded-3xl p-5 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-      <div className="flex items-center justify-between mb-4">
-        <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Görevlerim</span>
+      <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Görevlerim</span>
+          <button type="button" onClick={() => setHaftalikGorunum((acik) => !acik)}
+            aria-pressed={haftalikGorunum}
+            className="sfec-btn inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold"
+            style={{ background: haftalikGorunum ? MINT : BG1_ALT, color: haftalikGorunum ? MINT_ON : TEXT_MUTED, border: `2px solid ${haftalikGorunum ? MINT : BORDER_STRONG}` }}>
+            {haftalikGorunum ? <Rows3 size={13} /> : <CalendarDays size={13} />}
+            {haftalikGorunum ? "Günlük göster" : "Haftalık göster"}
+          </button>
+        </div>
         <div className="flex items-center gap-1.5">
           <button type="button" onClick={() => haftaDegistir(-1)} title="Önceki hafta"
             className="sfec-btn w-7 h-7 rounded-full flex items-center justify-center" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
@@ -111,30 +124,39 @@ export function Gorevlerim({ gorevler, haftaBaslangic, aytAlan, dokuzOnMu, dersL
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-1.5 mb-4">
-        {gunler.map((g) => {
-          const secili = g === seciliGun;
-          const sayisi = gunlukGorevSayisi.get(g) ?? 0;
-          return (
-            <button key={g} type="button" onClick={() => setSeciliGun(g)}
-              className="sfec-btn flex flex-col items-center gap-0.5 rounded-2xl px-2 py-2"
-              style={{
-                background: secili ? MINT : g === bugun ? MINT_BG : BG1_ALT,
-                color: secili ? MINT_ON : TEXT,
-                border: `2px solid ${secili ? MINT : BORDER_STRONG}`,
-              }}>
-              <span className="text-[10px] font-semibold uppercase">{gunAdi(g)}</span>
-              <span className="text-sm font-bold">{gunSayisi(g)}</span>
-              <span className="w-1.5 h-1.5 rounded-full" style={{ background: sayisi > 0 ? (secili ? MINT_ON : PEACH) : "transparent" }} />
-            </button>
-          );
-        })}
-      </div>
-
-      {gunGorevleri.length === 0 && (
-        <p style={{ color: TEXT_MUTED }} className="text-sm py-4 text-center">Bu gün için görev yok.</p>
+      {!haftalikGorunum && (
+        <div className="grid grid-cols-7 gap-1.5 mb-4">
+          {gunler.map((g) => {
+            const secili = g === seciliGun;
+            const sayisi = gunlukGorevSayisi.get(g) ?? 0;
+            return (
+              <button key={g} type="button" onClick={() => setSeciliGun(g)}
+                className="sfec-btn flex flex-col items-center gap-0.5 rounded-2xl px-2 py-2"
+                style={{
+                  background: secili ? MINT : g === bugun ? MINT_BG : BG1_ALT,
+                  color: secili ? MINT_ON : TEXT,
+                  border: `2px solid ${secili ? MINT : BORDER_STRONG}`,
+                }}>
+                <span className="text-[10px] font-semibold uppercase">{gunAdi(g)}</span>
+                <span className="text-sm font-bold">{gunSayisi(g)}</span>
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: sayisi > 0 ? (secili ? MINT_ON : PEACH) : "transparent" }} />
+              </button>
+            );
+          })}
+        </div>
       )}
-      {gunGorevleri.length > 0 && (
+
+      {haftalikGorunum ? (
+        <HaftalikZamanPlani
+          gunler={gunler}
+          gorevler={gorevler}
+          bugun={bugun}
+          onGunSec={(gun) => { setSeciliGun(gun); setPlanModalAcik(true); }}
+          onGorevAc={(gorev) => setAcikGorev(gorev)}
+        />
+      ) : gunGorevleri.length === 0 ? (
+        <p style={{ color: TEXT_MUTED }} className="text-sm py-4 text-center">Bu gün için görev yok.</p>
+      ) : (
         <div className="flex flex-col gap-2.5 mb-2.5">
           {gunGorevleri.map((g) => {
             const Icon = TUR_IKON[g.tur];
@@ -205,6 +227,100 @@ export function Gorevlerim({ gorevler, haftaBaslangic, aytAlan, dokuzOnMu, dersL
         />,
         document.body,
       )}
+    </div>
+  );
+}
+
+function HaftalikZamanPlani({ gunler, gorevler, bugun, onGunSec, onGorevAc }: {
+  gunler: string[];
+  gorevler: GorevSatiri[];
+  bugun: string;
+  onGunSec: (gun: string) => void;
+  onGorevAc: (gorev: GorevSatiri) => void;
+}) {
+  return (
+    <div className="mb-3 overflow-hidden rounded-3xl" style={{ background: BG0, border: `2px solid ${BORDER}`, boxShadow: `inset 0 0 0 1px ${BORDER_STRONG}` }}>
+      <div className="overflow-x-auto overscroll-x-contain">
+        <div className="min-w-[70rem] p-2.5">
+          <div className="grid grid-cols-7 gap-2 mb-2">
+            {gunler.map((gun, gunIndex) => (
+              <button key={gun} type="button" onClick={() => onGunSec(gun)}
+                title="Bu güne plan ekle"
+                className="sfec-btn rounded-2xl px-2 py-2 text-center"
+                style={{
+                  color: TEXT,
+                  background: gunIndex % 2 === 0 ? MINT_BG : PEACH_BG,
+                  border: `2px solid ${gun === bugun ? MINT : BORDER_STRONG}`,
+                }}>
+                <span className="block text-[10px] font-bold uppercase tracking-wide">{gunAdi(gun)}</span>
+                <span className="block text-sm font-extrabold">{gunSayisi(gun)}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-7 gap-2" aria-label="Haftalık 24 saatlik çalışma planı">
+            {gunler.map((gun, gunIndex) => {
+              const gununGorevleri = gorevler
+                .filter((g) => g.tarih === gun)
+                .sort((a, b) => (a.baslangicSaat ?? "99:99").localeCompare(b.baslangicSaat ?? "99:99"));
+              const zamanliGorevler = gununGorevleri.filter((g) => saatiDakikayaCevir(g.baslangicSaat) !== null && saatiDakikayaCevir(g.bitisSaat) !== null);
+              const saatsizGorevler = gununGorevleri.filter((g) => !zamanliGorevler.includes(g));
+              const sutunArkaPlan = gunIndex % 2 === 0 ? MINT_BG : PEACH_BG;
+              const sutunVurgu = gunIndex % 2 === 0 ? MINT : PEACH;
+
+              return (
+                <div key={gun} className="min-w-0">
+                  {saatsizGorevler.length > 0 && (
+                    <div className="mb-2 flex min-h-14 flex-col gap-1 rounded-xl p-1.5" style={{ background: sutunArkaPlan, border: `1px solid ${BORDER_STRONG}` }}>
+                      <span className="px-1 text-[9px] font-bold uppercase" style={{ color: TEXT_MUTED }}>Saati belirtilmemiş</span>
+                      {saatsizGorevler.map((g) => (
+                        <button key={g.atamaId} type="button" onClick={() => g.durum === "bekliyor" && onGorevAc(g)}
+                          className="sfec-btn truncate rounded-lg px-2 py-1 text-left text-[10px] font-bold"
+                          style={{ background: BG1, color: TEXT, border: `1px solid ${sutunVurgu}` }}>
+                          {GOREV_TURU_ETIKET[g.tur]} · {g.ders}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <div className="relative overflow-hidden rounded-2xl" style={{ height: GUN_YUKSEKLIGI, background: sutunArkaPlan, border: `1px solid ${BORDER_STRONG}` }}
+                    aria-label={`${gunAdi(gun)} günü 24 saatlik plan alanı`}>
+                    {zamanliGorevler.map((g) => {
+                      const baslangic = saatiDakikayaCevir(g.baslangicSaat) ?? 0;
+                      const bitis = saatiDakikayaCevir(g.bitisSaat) ?? baslangic;
+                      const yukseklik = Math.max(((bitis - baslangic) / 60) * SAAT_YUKSEKLIGI, 30);
+                      const Icon = TUR_IKON[g.tur];
+                      const durumRengi = DURUM_RENK[g.durum];
+                      return (
+                        <button key={g.atamaId} type="button" disabled={g.durum !== "bekliyor"} onClick={() => onGorevAc(g)}
+                          title={`${g.baslangicSaat?.slice(0, 5)}–${g.bitisSaat?.slice(0, 5)} ${GOREV_TURU_ETIKET[g.tur]} · ${g.ders}`}
+                          className="sfec-btn absolute left-1.5 right-1.5 overflow-hidden rounded-xl px-2 py-1.5 text-left disabled:cursor-default"
+                          style={{
+                            top: (baslangic / 60) * SAAT_YUKSEKLIGI,
+                            height: yukseklik,
+                            background: BG1,
+                            color: TEXT,
+                            border: `2px solid ${sutunVurgu}`,
+                            boxShadow: `0 4px 12px ${BORDER}`,
+                          }}>
+                          <span className="flex items-center gap-1 text-[9px] font-extrabold leading-tight" style={{ color: sutunVurgu }}>
+                            <Icon size={10} /> {g.baslangicSaat?.slice(0, 5)}–{g.bitisSaat?.slice(0, 5)}
+                          </span>
+                          <span className="mt-0.5 block truncate text-[10px] font-bold leading-tight">{GOREV_TURU_ETIKET[g.tur]} · {g.ders}</span>
+                          {yukseklik >= 48 && g.konu && <span className="mt-0.5 block truncate text-[9px] leading-tight" style={{ color: TEXT_MUTED }}>{g.konu}</span>}
+                          {yukseklik >= 65 && <span className="mt-1 inline-block rounded-full px-1.5 py-0.5 text-[8px] font-bold" style={{ background: durumRengi.bg, color: durumRengi.renk }}>{GOREV_DURUMU_ETIKET[g.durum]}</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+      <p className="px-4 pb-3 pt-1 text-[10px]" style={{ color: TEXT_MUTED }}>
+        Günler 24 saat üzerinden gösterilir; boş zamanlar özellikle boş bırakılır. Başlığa dokunarak o güne plan ekleyebilirsiniz.
+      </p>
     </div>
   );
 }
@@ -281,7 +397,11 @@ function PlanEkleModal({ tarih, dersListesi, konuOnerileri, onKapat }: {
     setHata(null);
     if (!ders) return setHata("Ders seçin.");
     if (!baslangicSaat || !bitisSaat) return setHata("Başlangıç ve bitiş saati zorunludur.");
-    if (bitisSaat <= baslangicSaat) return setHata("Bitiş saati başlangıçtan sonra olmalı.");
+    const baslangicDakika = saatiDakikayaCevir(baslangicSaat);
+    const bitisDakika = saatiDakikayaCevir(bitisSaat);
+    if (baslangicDakika === null || bitisDakika === null || bitisDakika <= baslangicDakika) {
+      return setHata("Bitiş saati başlangıçtan sonra olmalı.");
+    }
     startTransition(async () => {
       const res = await planEkle({
         tur, ders, konu: konu || undefined,
