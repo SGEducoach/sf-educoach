@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
-/* SeFu Koç renk temaları — 2026 TYT kitapçığından ölçülen gündüz test başlığı
-   mavisi (#c2e9f8) / gece ÖSYM logosu turuncusu (#f47216) şeması. Gündüz/gece
+/* SeFu Koç renk temaları — 2026 TYT kitapçığından ölçülen test başlığı
+   mavisi (#c2e9f8); gündüz beyaz, gece koyu füme zemin üzerinde kullanılır. Gündüz/gece
    seçimi TemaDenetimi.tsx tarafından sistem tercihine (prefers-color-scheme)
    göre otomatik uygulanır; kullanıcı isterse elle açık/koyu'ya sabitleyebilir. */
 :root {
@@ -81,27 +81,27 @@ html[data-theme="koyu"] .sfec-brand-logo {
 :root[data-theme="koyu"] {
   color-scheme: dark;
   --background: #08090b;
-  --foreground: #eb6a32;
+  --foreground: #c2e9f8;
   --sfec-bg0: #08090b;
   --sfec-bg1: #111316;
   --sfec-bg1-alt: #191a1d;
-  --sfec-border: #664033;
-  --sfec-border-strong: #eb6a32;
-  --sfec-text: #eb6a32;
-  --sfec-text-muted: #dc906f;
-  --sfec-mint: #eb6a32;
-  --sfec-mint-on: #1d0d08;
-  --sfec-mint-bg: rgba(235, 106, 50, 0.18);
-  --sfec-seafoam: #eb6a32;
+  --sfec-border: #315d6d;
+  --sfec-border-strong: #78c9e8;
+  --sfec-text: #c2e9f8;
+  --sfec-text-muted: #8fc6d9;
+  --sfec-mint: #c2e9f8;
+  --sfec-mint-on: #0b3b4d;
+  --sfec-mint-bg: rgba(194, 233, 248, 0.18);
+  --sfec-seafoam: #78c9e8;
   --sfec-shell-bg: #0b0c0f;
   --sfec-panel-shadow: 0 16px 34px rgba(0, 0, 0, 0.45);
   --sfec-hero-bg: linear-gradient(135deg, #111316 0%, #191a1d 62%, #0c0d10 100%);
   /* Üst navigatör — piano black karakterini koruyan çok koyu füme. */
   --sfec-nav-bg: linear-gradient(135deg, #08090b 0%, #181a1e 50%, #08090b 100%);
-  /* Gece marka ve arayüz yazıları, ÖSYM turuncusunun biraz daha soğuk tonudur. */
-  --sfec-marka-mavi: #eb6a32;
-  --sfec-marka-kirmizi: #eb6a32;
-  --sfec-marka-kirmizi-vurgu: #f18a61;
+  /* Gece yazıları ve düğmeler gündüz düğmelerindeki aynı serin ÖSYM mavisidir. */
+  --sfec-marka-mavi: #c2e9f8;
+  --sfec-marka-kirmizi: #c2e9f8;
+  --sfec-marka-kirmizi-vurgu: #78c9e8;
 
   /* Koyu modda düşük opaklıklı pastel tonlar arka planla neredeyse
      görünmez oluyordu — daha parlak/doygun mor-mavi tonlara geçiliyor. */
@@ -109,12 +109,12 @@ html[data-theme="koyu"] .sfec-brand-logo {
   --sfec-ai-border: rgba(167,139,250,0.6);
   --sfec-ai-glow-1: rgba(167,139,250,0.4);
   --sfec-ai-glow-2: rgba(96,165,250,0.3);
-  --sfec-ai-accent-text: #eb6a32;
+  --sfec-ai-accent-text: #c2e9f8;
   --sfec-ai-chip-bg: linear-gradient(135deg, rgba(167,139,250,0.3), rgba(96,165,250,0.28));
 
-  --sfec-gorev-sayfa-bg: linear-gradient(145deg, rgba(244,114,22,0.17), rgba(120,53,15,0.07));
-  --sfec-gorev-sayfa-border: rgba(251,146,60,0.56);
-  --sfec-gorev-takvim-bg: rgba(244,114,22,0.10);
+  --sfec-gorev-sayfa-bg: linear-gradient(145deg, rgba(194,233,248,0.15), rgba(120,201,232,0.06));
+  --sfec-gorev-sayfa-border: rgba(120,201,232,0.56);
+  --sfec-gorev-takvim-bg: rgba(194,233,248,0.09);
   --sfec-plan-sayfa-bg: linear-gradient(145deg, rgba(126,34,206,0.24), rgba(88,28,135,0.09));
   --sfec-plan-sayfa-border: rgba(192,132,252,0.55);
   --sfec-plan-takvim-bg: rgba(126,34,206,0.15);
