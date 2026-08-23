@@ -1,5 +1,5 @@
-// Gündüz: beyaz zemin + TYT test başlığı mavisi. Gece: siyah zemin + ÖSYM turuncusu.
-// (bkz. globals.css — tema geçişi TemaDenetimi.tsx'te sistem tercihine göre.)
+// Bulgu 11 kararı (23 Ağustos 2026) ile site tek bir sabit koyu temaya
+// geçti — siyah/füme zemin + ÖSYM mavisi. Değerler globals.css'teki :root'ta.
 export const BG0 = "var(--sfec-bg0)";
 export const BG1 = "var(--sfec-bg1)";
 export const BG1_ALT = "var(--sfec-bg1-alt)";
@@ -23,15 +23,13 @@ export const LILAC = "#7C3AED";
 export const LILAC_BG = "rgba(199,182,255,0.15)";
 export const SEAFOAM = "var(--sfec-seafoam)";
 
-// "SeFu Koç" marka renkleri — gündüz test başlığı mavisinin erişilebilir koyu
-// tonu, gece ÖSYM logosu turuncusu. Slogandaki baş harfler (S/G/F/D) için ayrı
-// bir vurgu tonu var. Gece temasında kontrast için ikisi de aydınlatılır
-// (bkz. globals.css, :root[data-theme="koyu"]).
+// "SeFu Koç" marka renkleri — ÖSYM mavisi. Slogandaki baş harfler
+// (S/G/F/D) için ayrı bir vurgu tonu var.
 export const SEFU_MAVI = "var(--sfec-marka-mavi)";
 export const SEFU_KIRMIZI = "var(--sfec-marka-kirmizi)";
 export const SEFU_KIRMIZI_VURGU = "var(--sfec-marka-kirmizi-vurgu)";
 
-// Üst navigatör zemini — gündüz sedefli beyaz, gece piano black.
+// Üst navigatör zemini — piano black.
 export const NAV_BG = "var(--sfec-nav-bg)";
 
 export const dersRenkleri: Record<string, string> = {

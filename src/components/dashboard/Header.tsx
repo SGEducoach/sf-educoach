@@ -8,7 +8,6 @@ import { BildirimAyarlari } from "@/components/dashboard/BildirimAyarlari";
 import type { KurumTuru, UserRole } from "@/lib/types";
 import { MobilMenu } from "@/components/dashboard/MobilMenu";
 import { OturumZamanAsimi } from "@/components/OturumZamanAsimi";
-import { TemaButonu } from "@/components/TemaDenetimi";
 import { SeFuMarkaAdi, SeFuSlogan } from "@/components/SeFuWordmark";
 import type { DashboardBolumu } from "@/lib/dashboard-navigation";
 
@@ -48,7 +47,6 @@ export function Header({ ad, role, kurumTuru, okunmamisMesajSayisi = 0, mobilNav
               <span style={{ color: TEXT_MUTED }} className="text-[11px] shrink-0">· {rolEtiketi ?? rolEtiket[role]}</span>
             </div>
             {moderatorMu && <Link href="/moderator" title="Moderatör paneli" className="sfec-btn flex h-8 w-8 shrink-0 items-center justify-center rounded-full" style={{ background: MINT_BG, border: `2px solid ${BORDER}` }}><ShieldCheck size={16} color={MINT}/></Link>}
-            <TemaButonu />
             <BildirimAyarlari />
             {(role === "ogrenci" || role === "veli") && <MesajlarimIkonu baslangicSayisi={okunmamisMesajSayisi} />}
             <form action={signOut}>

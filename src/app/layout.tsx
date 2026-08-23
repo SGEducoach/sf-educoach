@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
 import "./globals.css";
 import { GlobalIslemGostergesi } from "@/components/GlobalIslemGostergesi";
-import { TemaDenetimi } from "@/components/TemaDenetimi";
 
 // Not: değişken isimleri (--font-nunito, --font-baloo) kod tabanında onlarca
 // yerde referans veriliyor; tekrar adlandırmak yerine ikisini de Montserrat'a
@@ -34,36 +33,24 @@ export const metadata: Metadata = {
   },
 };
 
+// Bulgu 11 kararı (23 Ağustos 2026): açık tema kaldırıldı, site tek bir
+// sabit koyu temayla çalışıyor. Önceden burada ayrıca sistem tercihine
+// (prefers-color-scheme) göre açık/koyu seçen, ilk boyamadan önce çalışan
+// bir betik vardı (üstelik saat bazlı eski mantıkla — TemaDenetimi.tsx'in
+// asıl uyguladığı sistem-tercihi mantığıyla ÇELİŞİYORDU, ilk açılışta kısa
+// bir "yanlış tema" parlamasına sebep oluyordu). Artık tema doğrudan
+// globals.css'teki :root'ta sabit olduğu için bu betiğe hiç gerek kalmadı.
 export const viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#000000" },
-  ],
+  themeColor: "#08090b",
 };
-
-const temaBaslangicKodu = `
-try {
-  var tercih = localStorage.getItem('sfec_tema_tercihi');
-  var tema = tercih;
-  if (tercih !== 'acik' && tercih !== 'koyu') {
-    var saat = Number(new Intl.DateTimeFormat('tr-TR', { hour: '2-digit', hour12: false, timeZone: 'Europe/Istanbul' }).formatToParts(new Date()).find(function (p) { return p.type === 'hour'; }).value);
-    tema = saat < 7 || saat >= 19 ? 'koyu' : 'acik';
-  }
-  document.documentElement.dataset.theme = tema;
-  document.documentElement.style.colorScheme = tema === 'koyu' ? 'dark' : 'light';
-} catch (_) {}
-`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="tr"
-      suppressHydrationWarning
       className={`${montserratGovde.variable} ${montserratBaslik.variable} h-full antialiased`}
     >
-      <head><script dangerouslySetInnerHTML={{ __html: temaBaslangicKodu }} /></head>
       <body className="min-h-full flex flex-col font-sans">
-        <TemaDenetimi />
         <a href="#ana-icerik" className="sfec-skip-link">İçeriğe geç</a>
         {children}
         <GlobalIslemGostergesi />

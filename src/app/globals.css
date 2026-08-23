@@ -1,80 +1,11 @@
 @import "tailwindcss";
 
-/* SeFu Koç renk temaları — 2026 TYT kitapçığından ölçülen test başlığı
-   mavisi (#c2e9f8); gündüz beyaz, gece koyu füme zemin üzerinde kullanılır. Gündüz/gece
-   seçimi TemaDenetimi.tsx tarafından sistem tercihine (prefers-color-scheme)
-   göre otomatik uygulanır; kullanıcı isterse elle açık/koyu'ya sabitleyebilir. */
+/* SeFu Koç renk teması — SADECE GECE. Bulgu 11 kararı (23 Ağustos 2026):
+   açık tema kaldırıldı, site artık tek bir sabit koyu füme zemin üzerinde
+   çalışıyor. Önceden buradaki değerler açık temaydı ve gece değerleri
+   :root[data-theme="koyu"] altında ayrıca tanımlıydı — artık tek tema
+   olduğu için ayrım kalktı, eski gece değerleri doğrudan buraya taşındı. */
 :root {
-  --background: #ffffff;
-  --foreground: #0b4f6c;
-  --sfec-bg0: #ffffff;
-  --sfec-bg1: #ffffff;
-  --sfec-bg1-alt: #eef9fd;
-  --sfec-border: #c2e9f8;
-  --sfec-border-strong: #78c9e8;
-  --sfec-text: #0b4f6c;
-  --sfec-text-muted: #2f6d82;
-  --sfec-mint: #c2e9f8;
-  --sfec-mint-on: #0b3b4d;
-  --sfec-mint-bg: rgba(194, 233, 248, 0.38);
-  --sfec-seafoam: #78c9e8;
-  --sfec-shell-bg: #f3f7f9;
-  --sfec-panel-shadow: 0 12px 30px rgba(11, 79, 108, 0.08);
-  --sfec-hero-bg: linear-gradient(135deg, #ffffff 0%, #f5fbfd 58%, #e8f6fb 100%);
-  /* Üst navigatör — Honda HR-V "sedefli gün ışığı beyazı"ndan ilhamla
-     hafif sıcak, incimsi bir beyaz gradyan. */
-  --sfec-nav-bg: linear-gradient(135deg, #ffffff 0%, #f4f2ec 45%, #ffffff 100%);
-  /* #c2e9f8 beyaz üzerinde metin olarak yeterli kontrast üretmediği için
-     marka metni aynı rengin erişilebilir koyu tonlarını kullanır. */
-  --sfec-marka-mavi: #0b4f6c;
-  --sfec-marka-kirmizi: #0b4f6c;
-  --sfec-marka-kirmizi-vurgu: #07384d;
-  --z-header: 100;
-  --z-mobile-nav: 110;
-  --z-dropdown: 200;
-  --z-modal: 400;
-  --z-required: 450;
-  --z-loading: 500;
-  --mobile-nav-height: 64px;
-
-  /* Yapay Zeka Analizi kartı — açık modda görünür olsun diye kendi
-     renk seti (genel teal paleti değil). Koyu modda ayrıca override edilir. */
-  --sfec-ai-bg: linear-gradient(135deg, rgba(124,58,237,0.16) 0%, rgba(37,99,235,0.11) 55%, rgba(94,234,212,0.09) 100%);
-  --sfec-ai-border: rgba(124,58,237,0.4);
-  --sfec-ai-glow-1: rgba(124,58,237,0.28);
-  --sfec-ai-glow-2: rgba(37,99,235,0.20);
-  --sfec-ai-accent-text: #0b4f6c;
-  --sfec-ai-chip-bg: linear-gradient(135deg, rgba(124,58,237,0.16), rgba(37,99,235,0.16));
-
-  /* Görev ve plan takvimleri aynı işlevi paylaşır ama farklı birer sayfa gibi
-     algılansın: görevler serin mavi, planlar lila/şeftali cam yüzey kullanır. */
-  --sfec-gorev-sayfa-bg: linear-gradient(145deg, rgba(194,233,248,0.30), rgba(120,201,232,0.08));
-  --sfec-gorev-sayfa-border: rgba(66,153,187,0.46);
-  --sfec-gorev-takvim-bg: rgba(194,233,248,0.24);
-  --sfec-plan-sayfa-bg: linear-gradient(145deg, rgba(199,182,255,0.24), rgba(255,177,153,0.13));
-  --sfec-plan-sayfa-border: rgba(124,58,237,0.34);
-  --sfec-plan-takvim-bg: rgba(199,182,255,0.17);
-
-  --sfec-oyun-konu: #a76b00;
-  --sfec-oyun-soru: #1677b8;
-  --sfec-oyun-deneme: #d84b24;
-}
-
-/* Logo tema değiştirirken renk değiştirmez: bütün sayfalarda gündüz düğmeleriyle
-   aynı sabit ÖSYM mavisi kullanılır. İnce kontur beyaz zeminde formu korur. */
-.sfec-brand-logo {
-  filter: brightness(0) saturate(100%) invert(89%) sepia(18%) saturate(749%) hue-rotate(167deg) brightness(104%) contrast(95%) drop-shadow(0 0 1px rgba(11, 79, 108, 0.72));
-}
-
-.sfec-hosgeldin-kapi {
-  display: inline-block;
-  flex: none;
-  background-color: var(--sfec-marka-mavi);
-  -webkit-mask: url("/istanbul-universitesi-kapi.png") center / contain no-repeat;
-  mask: url("/istanbul-universitesi-kapi.png") center / contain no-repeat;
-}
-
-:root[data-theme="koyu"] {
   color-scheme: dark;
   --background: #08090b;
   --foreground: #c2e9f8;
@@ -92,15 +23,19 @@
   --sfec-shell-bg: #0b0c0f;
   --sfec-panel-shadow: 0 16px 34px rgba(0, 0, 0, 0.45);
   --sfec-hero-bg: linear-gradient(135deg, #111316 0%, #191a1d 62%, #0c0d10 100%);
-  /* Üst navigatör — piano black karakterini koruyan çok koyu füme. */
+  /* Üst navigatör — piano black karakteri. */
   --sfec-nav-bg: linear-gradient(135deg, #08090b 0%, #181a1e 50%, #08090b 100%);
-  /* Gece yazıları ve düğmeler gündüz düğmelerindeki aynı serin ÖSYM mavisidir. */
   --sfec-marka-mavi: #c2e9f8;
   --sfec-marka-kirmizi: #c2e9f8;
   --sfec-marka-kirmizi-vurgu: #78c9e8;
+  --z-header: 100;
+  --z-mobile-nav: 110;
+  --z-dropdown: 200;
+  --z-modal: 400;
+  --z-required: 450;
+  --z-loading: 500;
+  --mobile-nav-height: 64px;
 
-  /* Koyu modda düşük opaklıklı pastel tonlar arka planla neredeyse
-     görünmez oluyordu — daha parlak/doygun mor-mavi tonlara geçiliyor. */
   --sfec-ai-bg: linear-gradient(135deg, rgba(167,139,250,0.30) 0%, rgba(96,165,250,0.20) 55%, rgba(45,212,191,0.14) 100%);
   --sfec-ai-border: rgba(167,139,250,0.6);
   --sfec-ai-glow-1: rgba(167,139,250,0.4);
@@ -108,6 +43,8 @@
   --sfec-ai-accent-text: #c2e9f8;
   --sfec-ai-chip-bg: linear-gradient(135deg, rgba(167,139,250,0.3), rgba(96,165,250,0.28));
 
+  /* Görev ve plan takvimleri aynı işlevi paylaşır ama farklı birer sayfa gibi
+     algılansın: görevler serin mavi, planlar lila/şeftali cam yüzey kullanır. */
   --sfec-gorev-sayfa-bg: linear-gradient(145deg, rgba(194,233,248,0.15), rgba(120,201,232,0.06));
   --sfec-gorev-sayfa-border: rgba(120,201,232,0.56);
   --sfec-gorev-takvim-bg: rgba(194,233,248,0.09);
@@ -120,9 +57,19 @@
   --sfec-oyun-deneme: #fb6a3d;
 }
 
-.sfec-loading-overlay {
-  background: color-mix(in srgb, var(--sfec-bg0) 82%, transparent);
-  backdrop-filter: blur(3px);
+/* Bulgu 10 — logo artık tek (koyu) zemine göre ayarlı; ışık temasıyla
+   çakışan drop-shadow kaldırıldı (kontur artık gerekmiyor, çamurlaşmaya
+   sebep oluyordu). Filtre logoyu sabit ÖSYM mavisine boyuyor. */
+.sfec-brand-logo {
+  filter: brightness(0) saturate(100%) invert(89%) sepia(18%) saturate(749%) hue-rotate(167deg) brightness(104%) contrast(95%);
+}
+
+.sfec-hosgeldin-kapi {
+  display: inline-block;
+  flex: none;
+  background-color: var(--sfec-marka-mavi);
+  -webkit-mask: url("/istanbul-universitesi-kapi.png") center / contain no-repeat;
+  mask: url("/istanbul-universitesi-kapi.png") center / contain no-repeat;
 }
 
 @theme inline {
@@ -225,10 +172,6 @@ body {
 }
 
 .sfec-dashboard-header {
-  box-shadow: 0 4px 20px rgba(11, 79, 108, 0.08);
-}
-
-html[data-theme="koyu"] .sfec-dashboard-header {
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.55);
 }
 

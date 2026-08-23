@@ -8,7 +8,6 @@ import {
 } from "lucide-react";
 import { BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, SEAFOAM, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 import { signOut } from "@/app/dashboard/actions";
-import { TemaButonu } from "@/components/TemaDenetimi";
 import { BildirimAyarlari } from "@/components/dashboard/BildirimAyarlari";
 import { MesajlarimIkonu } from "@/components/dashboard/MesajlarimIkonu";
 import type { KurumTuru, UserRole } from "@/lib/types";
@@ -111,11 +110,6 @@ export function MobilMenu({ ad, role, kurumTuru, okunmamisMesajSayisi, moderator
                 <ShieldCheck size={16} color={SEAFOAM} /> Moderatör paneli
               </Link>
             )}
-
-            <div className="flex items-center justify-between rounded-xl px-2.5 py-1.5">
-              <span style={{ color: TEXT }} className="text-[13px] font-semibold">Tema</span>
-              <TemaButonu />
-            </div>
 
             <div className="flex items-center justify-between rounded-xl px-2.5 py-1.5">
               <span style={{ color: TEXT }} className="text-[13px] font-semibold">Bildirimler</span>
