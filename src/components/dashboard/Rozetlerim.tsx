@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Trophy, BookOpen, PenLine, ClipboardList, BookText, X } from "lucide-react";
+import {
+  Trophy, BookOpen, PenLine, ClipboardList, BookText, X,
+  Zap, Snowflake, Flame, Crosshair, Wind, Megaphone, Focus,
+  CloudLightning, Sparkles, Shield, Waves, BrickWall, Orbit,
+  CloudSnow, ShieldCheck, FlameKindling, Dumbbell, Crown,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type { RozetSeviye } from "@/lib/types";
 import { ROZET_SEVIYE_ETIKET, dokuzOnSinifMi } from "@/lib/types";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
@@ -39,14 +45,40 @@ type EtiketKategorisi = keyof OyunEtiketiSayaclari;
 
 interface OyunEtiketi {
   ad: string;
-  emoji: string;
+  sroSkill: string;
+  zorluk: string;
+  Icon: LucideIcon;
   hedef: number;
 }
 
-const OYUN_KATEGORILERI: Record<EtiketKategorisi, { ad: string; birim: string; renk: string }> = {
-  konu: { ad: "Konu tayfası", birim: "konu çalışması", renk: "var(--sfec-oyun-konu)" },
-  soru: { ad: "Soru tayfası", birim: "çözülmüş soru", renk: "var(--sfec-oyun-soru)" },
-  deneme: { ad: "Deneme tayfası", birim: "deneme", renk: "var(--sfec-oyun-deneme)" },
+const OYUN_KATEGORILERI: Record<EtiketKategorisi, {
+  ad: string;
+  turkceAd: string;
+  birim: string;
+  renk: string;
+  Icon: LucideIcon;
+}> = {
+  konu: {
+    ad: "LIGHTNING MASTERY",
+    turkceAd: "Konu Yıldırımı",
+    birim: "konu çalışması",
+    renk: "var(--sfec-oyun-konu)",
+    Icon: Zap,
+  },
+  soru: {
+    ad: "COLD MASTERY",
+    turkceAd: "Soru Ayazı",
+    birim: "çözülmüş soru",
+    renk: "var(--sfec-oyun-soru)",
+    Icon: Snowflake,
+  },
+  deneme: {
+    ad: "FIRE MASTERY",
+    turkceAd: "Deneme Ateşi",
+    birim: "deneme",
+    renk: "var(--sfec-oyun-deneme)",
+    Icon: Flame,
+  },
 };
 
 // 21 eğlence etiketi: her veri türüne eşit 7 kademe. Mevcut bronz/gümüş/
@@ -54,31 +86,31 @@ const OYUN_KATEGORILERI: Record<EtiketKategorisi, { ad: string; birim: string; r
 // oyunlaştırır. Eşikler yükseldikçe kartın doluluk ve renk yoğunluğu artar.
 const OYUN_ETIKETLERI: Record<EtiketKategorisi, OyunEtiketi[]> = {
   konu: [
-    { ad: "Not Koklayıcısı", emoji: "🕵️", hedef: 5 },
-    { ad: "Sayfa Kemirgeni", emoji: "🐹", hedef: 15 },
-    { ad: "Konu Korsanı", emoji: "🏴‍☠️", hedef: 30 },
-    { ad: "Müfredat Madencisi", emoji: "⛏️", hedef: 50 },
-    { ad: "Bilgi Blenderı", emoji: "🌪️", hedef: 80 },
-    { ad: "Konu Canavarı", emoji: "👾", hedef: 120 },
-    { ad: "Ansiklopediyle Akraba", emoji: "🧠", hedef: 200 },
+    { ad: "Konuya İlk Çarpılma", sroSkill: "Thunder Force", zorluk: "Kıvılcım", Icon: Zap, hedef: 5 },
+    { ad: "Notları Del Geç", sroSkill: "Piercing Force", zorluk: "Akım", Icon: Crosshair, hedef: 15 },
+    { ad: "Müfredatta Rüzgâr", sroSkill: "Wind Walk", zorluk: "Voltaj", Icon: Wind, hedef: 30 },
+    { ad: "Konuyu Kükret", sroSkill: "Lion Shout", zorluk: "Yüksek Voltaj", Icon: Megaphone, hedef: 50 },
+    { ad: "Dikkat +9", sroSkill: "Concentration", zorluk: "Fırtına", Icon: Focus, hedef: 80 },
+    { ad: "Müfredat Çarpması", sroSkill: "Thunderbolt Force", zorluk: "Gök Gürültüsü", Icon: CloudLightning, hedef: 120 },
+    { ad: "Konu Semalarının Efendisi", sroSkill: "Heaven’s Force", zorluk: "İlahi Şimşek", Icon: Sparkles, hedef: 200 },
   ],
   soru: [
-    { ad: "Şık Avcısı", emoji: "🎯", hedef: 20 },
-    { ad: "Kalem Isıtan", emoji: "✏️", hedef: 100 },
-    { ad: "Test Tazısı", emoji: "🐕", hedef: 250 },
-    { ad: "Soru Öğütücü", emoji: "⚙️", hedef: 500 },
-    { ad: "Optik Ninja", emoji: "🥷", hedef: 1000 },
-    { ad: "Şıkların Efendisi", emoji: "👑", hedef: 2000 },
-    { ad: "Soru Galaksisi Fatihi", emoji: "🚀", hedef: 5000 },
+    { ad: "Şıkları Serinlet", sroSkill: "Cold Force", zorluk: "Kırağı", Icon: Snowflake, hedef: 20 },
+    { ad: "Yanlışa Buz Muhafızı", sroSkill: "Frost Guard", zorluk: "Serin", Icon: Shield, hedef: 100 },
+    { ad: "Teste Soğuk Duş", sroSkill: "Cold Wave", zorluk: "Ayaz", Icon: Waves, hedef: 250 },
+    { ad: "Çeldirene Duvar", sroSkill: "Frost Wall", zorluk: "Buzul", Icon: BrickWall, hedef: 500 },
+    { ad: "Şıklar Dondu", sroSkill: "Frost Nova", zorluk: "Kutup", Icon: Orbit, hedef: 1000 },
+    { ad: "Optikte Tipi", sroSkill: "Snow Storm", zorluk: "Kar Fırtınası", Icon: CloudSnow, hedef: 2000 },
+    { ad: "Yanlış Geçirmez", sroSkill: "Snow Shield", zorluk: "Mutlak Sıfır", Icon: ShieldCheck, hedef: 5000 },
   ],
   deneme: [
-    { ad: "Kronometre Çırağı", emoji: "⏱️", hedef: 3 },
-    { ad: "Optik Form Cambazı", emoji: "🤹", hedef: 10 },
-    { ad: "Deneme Korsanı", emoji: "🦜", hedef: 20 },
-    { ad: "Net Peşinde Koşan", emoji: "🏃", hedef: 35 },
-    { ad: "Sınav Maratoncusu", emoji: "🏅", hedef: 50 },
-    { ad: "Deneme Delisi", emoji: "🤪", hedef: 75 },
-    { ad: "Yüzlük Deneme Efsanesi", emoji: "💯", hedef: 100 },
+    { ad: "Optiğe İlk Köz", sroSkill: "Fire Force", zorluk: "Köz", Icon: FlameKindling, hedef: 3 },
+    { ad: "Heyecana Ateş Kalkanı", sroSkill: "Fire Shield", zorluk: "Kıvılcım", Icon: Shield, hedef: 10 },
+    { ad: "Netler Isınıyor", sroSkill: "Flame Body", zorluk: "Alev", Icon: Dumbbell, hedef: 20 },
+    { ad: "Süreyi Yakmadan Çık", sroSkill: "Fire Protection", zorluk: "Hararet", Icon: ShieldCheck, hedef: 35 },
+    { ad: "Kronometre Alev Aldı", sroSkill: "Fire Wall", zorluk: "Yangın", Icon: BrickWall, hedef: 50 },
+    { ad: "Net Tsunamisi", sroSkill: "Flame Wave", zorluk: "Alev Dalgası", Icon: Waves, hedef: 75 },
+    { ad: "100 Deneme, Hâlâ Yanıyor", sroSkill: "Flame Devil Force", zorluk: "Güneş", Icon: Crown, hedef: 100 },
   ],
 };
 
@@ -172,6 +204,7 @@ function RozetKurallariModal({ onKapat, dokuzOnMu }: { onKapat: () => void; doku
 
 function OyunEtiketiKarti({ etiket, sayac, kategori }: { etiket: OyunEtiketi; sayac: number; kategori: EtiketKategorisi }) {
   const meta = OYUN_KATEGORILERI[kategori];
+  const Icon = etiket.Icon;
   const ilerleme = Math.min(100, Math.round((sayac / etiket.hedef) * 100));
   const acildi = sayac >= etiket.hedef;
   const renkYogunlugu = Math.round(7 + ilerleme * 0.25);
@@ -184,16 +217,29 @@ function OyunEtiketiKarti({ etiket, sayac, kategori }: { etiket: OyunEtiketi; sa
         border: `1px solid color-mix(in srgb, ${meta.renk} ${20 + Math.round(ilerleme * 0.55)}%, var(--sfec-border))`,
       }}>
       <div className="flex items-start gap-3">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-2xl"
+        <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl"
           style={{
             background: `color-mix(in srgb, ${meta.renk} ${12 + Math.round(ilerleme * 0.38)}%, transparent)`,
             filter: acildi ? "none" : `grayscale(${Math.max(0, 75 - ilerleme)}%)`,
           }} aria-hidden="true">
-          {etiket.emoji}
+          <Icon size={24} color={meta.renk} strokeWidth={2.3} />
+          <span className="absolute -bottom-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[9px] font-black"
+            style={{ background: meta.renk, color: "var(--sfec-bg0)", border: `2px solid var(--sfec-bg1)` }}>
+            {OYUN_ETIKETLERI[kategori].indexOf(etiket) + 1}
+          </span>
         </div>
         <div className="min-w-0 flex-1 text-right">
+          <div className="mb-1 flex flex-wrap justify-end gap-1">
+            <span className="rounded-full px-2 py-0.5 text-[8px] font-black uppercase tracking-wide"
+              style={{ color: meta.renk, background: `color-mix(in srgb, ${meta.renk} 12%, transparent)` }}>
+              {etiket.zorluk}
+            </span>
+          </div>
           <div className="text-sm font-extrabold leading-tight" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>
             {etiket.ad}
+          </div>
+          <div className="mt-0.5 text-[9px] font-semibold" style={{ color: TEXT_MUTED }}>
+            {etiket.sroSkill}
           </div>
           <div className="mt-1 text-[10px] font-bold uppercase tracking-wide" style={{ color: acildi ? meta.renk : TEXT_MUTED }}>
             {acildi ? "Açıldı" : `${sayac.toLocaleString("tr-TR")} / ${etiket.hedef.toLocaleString("tr-TR")}`}
@@ -279,10 +325,10 @@ export function Rozetlerim({ durum, oyunSayaclari, sinifSeviyesi }: {
           <div>
             <div className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: TEXT_MUTED }}>Rozetlerden bağımsız · tamamen eğlencelik</div>
             <h2 id="oyun-etiketleri-baslik" className="mt-1 text-xl font-extrabold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>
-              Oyun etiketleri
+              SRO usulü skill ağaçları
             </h2>
             <p className="mt-1 max-w-2xl text-xs leading-relaxed" style={{ color: TEXT_MUTED }}>
-              7 konu + 7 soru + 7 deneme etiketi. Giriş yaptıkça renkleri koyulaşır; hedefe ulaşınca tamamen açılır.
+              Lightning konuya, Cold soruya, Fire denemeye güç verir. Her mastery 7 ayrı zorluk kademesinde ilerler.
             </p>
           </div>
           <div className="rounded-full px-3.5 py-2 text-xs font-extrabold" style={{ background: MINT, color: MINT_ON }}>
@@ -293,12 +339,20 @@ export function Rozetlerim({ durum, oyunSayaclari, sinifSeviyesi }: {
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
           {(Object.keys(OYUN_ETIKETLERI) as EtiketKategorisi[]).map((kategori) => {
             const meta = OYUN_KATEGORILERI[kategori];
+            const MasteryIcon = meta.Icon;
             return (
               <div key={kategori} className="rounded-3xl p-3" style={{ background: BG1_ALT, border: `1px solid ${BORDER}` }}>
                 <div className="mb-3 flex items-center justify-between gap-2 px-1">
-                  <div>
-                    <h3 className="text-sm font-extrabold" style={{ color: meta.renk, fontFamily: "var(--font-baloo)" }}>{meta.ad}</h3>
-                    <p className="text-[10px] font-semibold" style={{ color: TEXT_MUTED }}>7 farklı kademe</p>
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl"
+                      style={{ color: meta.renk, background: `color-mix(in srgb, ${meta.renk} 15%, transparent)`, border: `1px solid color-mix(in srgb, ${meta.renk} 35%, transparent)` }}>
+                      <MasteryIcon size={21} strokeWidth={2.4} />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black tracking-wide" style={{ color: meta.renk, fontFamily: "var(--font-baloo)" }}>{meta.ad}</h3>
+                      <p className="text-[10px] font-bold" style={{ color: TEXT }}>{meta.turkceAd}</p>
+                      <p className="text-[9px] font-semibold" style={{ color: TEXT_MUTED }}>7 farklı skill · 7 zorluk</p>
+                    </div>
                   </div>
                   <span className="rounded-full px-2.5 py-1 text-[10px] font-bold" style={{ color: meta.renk, background: `color-mix(in srgb, ${meta.renk} 12%, transparent)` }}>
                     {oyunSayaclari[kategori].toLocaleString("tr-TR")} {meta.birim}

@@ -55,9 +55,9 @@
   --sfec-plan-sayfa-border: rgba(124,58,237,0.34);
   --sfec-plan-takvim-bg: rgba(199,182,255,0.17);
 
-  --sfec-oyun-konu: #087f9c;
-  --sfec-oyun-soru: #7c3aed;
-  --sfec-oyun-deneme: #d95f0b;
+  --sfec-oyun-konu: #a76b00;
+  --sfec-oyun-soru: #1677b8;
+  --sfec-oyun-deneme: #d84b24;
 }
 
 /* Şeffaf PNG logonun lacivert bölümleri piano-black zeminde kaybolmasın.
@@ -119,9 +119,9 @@ html[data-theme="koyu"] .sfec-brand-logo {
   --sfec-plan-sayfa-border: rgba(192,132,252,0.55);
   --sfec-plan-takvim-bg: rgba(126,34,206,0.15);
 
-  --sfec-oyun-konu: #38bdf8;
-  --sfec-oyun-soru: #c084fc;
-  --sfec-oyun-deneme: #fb923c;
+  --sfec-oyun-konu: #facc15;
+  --sfec-oyun-soru: #67e8f9;
+  --sfec-oyun-deneme: #fb6a3d;
 }
 
 .sfec-loading-overlay {
