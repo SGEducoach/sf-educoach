@@ -8,6 +8,7 @@ import { telefonGecerliMi, okulNoGecerliMi, rastgeleSifre, adNormalize, hedefBol
 import { duyuruGonder as duyuruGonderTemel } from "@/lib/push-send";
 import type { DuyuruAliciTuru } from "@/lib/push-send";
 import { DUYURU_MIN_UZUNLUK, duyuruGonderimIzniKontrol } from "@/lib/duyuru-guvenligi";
+import { requireDershaneMudur } from "@/lib/dershane-auth";
 import type { SinifSeviyesi } from "@/lib/types";
 
 const DUYURU_MAKS_UZUNLUK = 500;
@@ -30,19 +31,6 @@ async function requireAdmin() {
   return { supabase, user, admin: createAdminClient() };
 }
 
-// DERSHANE MODU: müdür kendi kurumu dershane ise öğretmen/öğrenci CRUD
-// yapabilir (bkz. migration 0051 üstündeki not) — admin'inkiyle aynı
-// desen: service-role client, sadece rol+kurum tur'u doğrulanınca döner.
-async function requireDershaneMudur() {
-  const { supabase, user } = await requireUser();
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  if (profile?.role !== "mudur") return { supabase, user, admin: null, schoolId: null as string | null };
-  const { data: teacher } = await supabase.from("teachers").select("school_id").eq("id", user.id).single();
-  if (!teacher) return { supabase, user, admin: null, schoolId: null };
-  const { data: school } = await supabase.from("schools").select("tur").eq("id", teacher.school_id).single();
-  if (school?.tur !== "dershane") return { supabase, user, admin: null, schoolId: null };
-  return { supabase, user, admin: createAdminClient(), schoolId: teacher.school_id as string };
-}
 
 export async function signOut() {
   const { supabase } = await requireUser();
@@ -253,6 +241,86 @@ export async function dershaneRosterTekEkle(input: {
   }
   revalidatePath("/dashboard");
   return { error: null };
+}
+
+// ============ DERSHANE MODU: müdür roster ekleme (toplu, .xlsx) ============
+// Şablon: src/app/api/dershane/roster-sablonu (GET) — Sınıf Öğretmeni
+// (bilgi amaçlı, yok sayılır) / Telefon / Ad Soyad / Veli Telefonu / Alan
+// / Sınıf / Hafta İçi-Sonu. Satırlar sırayla işlenir (admin'in
+// ogrencileriTopluEkle'sindeki aynı desen) — bir satırın hatası diğerlerini
+// engellemez, satır numarasıyla birlikte raporlanır.
+export interface TopluRosterSonuc {
+  satir: number;
+  ad: string;
+  hata: string | null;
+}
+
+const PROGRAM_ETIKET_TERS: Record<string, "haftaici" | "haftasonu"> = {
+  "hafta içi": "haftaici", "haftaiçi": "haftaici", "hafta ici": "haftaici", "haftaici": "haftaici",
+  "hafta sonu": "haftasonu", "haftasonu": "haftasonu",
+};
+
+export async function dershaneRosterTopluEkle(formData: FormData): Promise<{ error: string | null; sonuclar: TopluRosterSonuc[] }> {
+  const { user, admin, schoolId } = await requireDershaneMudur();
+  if (!admin || !schoolId) return { error: "Bu işlem için dershane müdürü yetkisi gerekiyor.", sonuclar: [] };
+
+  const dosya = formData.get("dosya") as File | null;
+  if (!dosya) return { error: "Dosya seçilmedi.", sonuclar: [] };
+
+  const ExcelJS = (await import("exceljs")).default;
+  const workbook = new ExcelJS.Workbook();
+  try {
+    await workbook.xlsx.load(await dosya.arrayBuffer());
+  } catch {
+    return { error: "Dosya okunamadı — .xlsx formatında olduğundan emin olun.", sonuclar: [] };
+  }
+  const sheet = workbook.worksheets[0];
+  if (!sheet) return { error: "Sayfa bulunamadı.", sonuclar: [] };
+
+  const { data: siniflarHam } = await admin.from("classes").select("id, seviye, sube").eq("school_id", schoolId);
+  const sinifMap = new Map((siniflarHam ?? []).map((s) => [`${s.seviye}-${s.sube}`, s.id]));
+
+  type Satir = { no: number; telefon: string; ad: string; veliTelefon: string; alan: string; sinif: string; program: string };
+  const satirlar: Satir[] = [];
+  sheet.eachRow((row, rowNumber) => {
+    if (rowNumber === 1) return; // başlık
+    const deger = (i: number) => String(row.getCell(i).value ?? "").trim();
+    if (!deger(2) && !deger(3)) return; // tamamen boş satır — atla
+    satirlar.push({ no: rowNumber, telefon: deger(2), ad: deger(3), veliTelefon: deger(4), alan: deger(5).toUpperCase(), sinif: deger(6), program: deger(7) });
+  });
+
+  if (satirlar.length === 0) return { error: "Şablonda doldurulmuş satır bulunamadı.", sonuclar: [] };
+  if (satirlar.length > 200) return { error: "Tek seferde en fazla 200 öğrenci yüklenebilir.", sonuclar: [] };
+
+  const sonuclar: TopluRosterSonuc[] = [];
+  let basariliSayisi = 0;
+
+  for (const satir of satirlar) {
+    const ad = adNormalize(satir.ad);
+    if (!ad) { sonuclar.push({ satir: satir.no, ad: satir.ad, hata: "Ad Soyad gerekli." }); continue; }
+    if (!telefonGecerliMi(satir.telefon)) { sonuclar.push({ satir: satir.no, ad, hata: "Telefon numarası geçersiz." }); continue; }
+    if (satir.veliTelefon && !telefonGecerliMi(satir.veliTelefon)) { sonuclar.push({ satir: satir.no, ad, hata: "Veli telefon numarası geçersiz." }); continue; }
+    if (!["SAY", "EA", "SOZ", "SÖZ"].includes(satir.alan)) { sonuclar.push({ satir: satir.no, ad, hata: "Alan SAY, EA veya SÖZ olmalı." }); continue; }
+    const classId = sinifMap.get(satir.sinif);
+    if (!classId) { sonuclar.push({ satir: satir.no, ad, hata: `Sınıf "${satir.sinif}" bulunamadı — önce Şubeler bölümünden oluşturun.` }); continue; }
+    const program = PROGRAM_ETIKET_TERS[satir.program.toLocaleLowerCase("tr-TR")];
+    if (!program) { sonuclar.push({ satir: satir.no, ad, hata: 'Hafta İçi/Sonu "Hafta İçi" veya "Hafta Sonu" olmalı.' }); continue; }
+    void program; // program şu an pending kayıtta tutulmuyor, class_id üzerinden zaten biliniyor
+
+    const { error } = await admin.from("pending_dershane_ogrenciler").insert({
+      school_id: schoolId, class_id: classId, ad, telefon: satir.telefon,
+      veli_telefon: satir.veliTelefon || null, ayt_alan: satir.alan === "SÖZ" ? "SOZ" : satir.alan, created_by: user.id,
+    });
+    if (error) {
+      sonuclar.push({ satir: satir.no, ad, hata: error.code === "23505" ? "Bu telefon numarasıyla zaten bir kayıt var." : error.message });
+      continue;
+    }
+    sonuclar.push({ satir: satir.no, ad, hata: null });
+    basariliSayisi++;
+  }
+
+  if (basariliSayisi > 0) revalidatePath("/dashboard");
+  return { error: null, sonuclar };
 }
 
 // ============ DERSHANE MODU: müdür öğretmen ekleme ============

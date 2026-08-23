@@ -4,6 +4,7 @@ import { ogretmenDuyuruGonder, gonderilenDuyurularGetir } from "@/app/dashboard/
 import { DuyuruFormu } from "@/components/dashboard/DuyuruFormu";
 import { YapayZekaAnaliziPromosu } from "@/components/dashboard/YapayZekaAnaliziPromosu";
 import { DershaneRosterEkleFormu } from "@/components/dashboard/DershaneRosterEkleFormu";
+import { DershaneRosterTopluEkleFormu } from "@/components/dashboard/DershaneRosterTopluEkleFormu";
 import { DershaneOgretmenEkleFormu } from "@/components/dashboard/DershaneOgretmenEkleFormu";
 import { DershaneKullaniciListesi } from "@/components/dashboard/DershaneKullaniciListesi";
 import { DershaneSinifEkleFormu } from "@/components/dashboard/DershaneSinifEkleFormu";
@@ -75,7 +76,12 @@ export async function DershaneMudurPaneli({ siniflar, aktifBolum }: {
       )}
       {kategori === "ogretmen"
         ? <DershaneOgretmenEkleFormu siniflar={siniflar} />
-        : <DershaneRosterEkleFormu siniflar={siniflar} />}
+        : (
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            <DershaneRosterEkleFormu siniflar={siniflar} />
+            <DershaneRosterTopluEkleFormu />
+          </div>
+        )}
       <DershaneKullaniciListesi kullanicilar={filtrelenmis} kategori={kategori} />
     </div>
   );
