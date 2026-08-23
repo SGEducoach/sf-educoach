@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { rastgeleSifre } from "@/lib/validators";
+import { adNormalize, rastgeleSifre, telefonGecerliMi } from "@/lib/validators";
 import type { UserRole } from "@/lib/types";
 
 export interface ModeratorKullanici {
@@ -51,14 +51,20 @@ async function hedefOkuldaMi(admin: ReturnType<typeof createAdminClient>, school
   return !!student || !!teacher || !!parent?.length;
 }
 
+// Moderatör kendi hesabını (öğretmen/müdür olarak school_moderators
+// üzerinden yetkilendiği için kendi satırı bu listede de çıkabiliyordu)
+// artık burada hiç görmüyor — "kendini silip pasifleştirme" riskini kökten
+// kaldırmak için kendi bilgilerini yönetmek isterse ayrı "Profilim"
+// sayfasına yönlendiriliyor (bkz. profil-actions.ts, ModeratorProfilim.tsx).
 export async function moderatorKullanicilariGetir(targetSchoolId?: string): Promise<{ okulAdi: string; kullanicilar: ModeratorKullanici[] }> {
-  const { admin, schoolId, okulAdi } = await requireModerator(targetSchoolId);
+  const { user, admin, schoolId, okulAdi } = await requireModerator(targetSchoolId);
   const [{ data: students }, { data: teachers }, { data: parents }] = await Promise.all([
     admin.from("students").select("id, okul_no, classes(seviye, sube)").eq("school_id", schoolId),
     admin.from("teachers").select("id, brans, classes(seviye, sube)").eq("school_id", schoolId),
     admin.from("parent_students").select("parent_id, students!inner(school_id)").eq("students.school_id", schoolId),
   ]);
-  const ids = [...new Set([...(students ?? []).map(x => x.id), ...(teachers ?? []).map(x => x.id), ...(parents ?? []).map(x => x.parent_id)])];
+  const ids = [...new Set([...(students ?? []).map(x => x.id), ...(teachers ?? []).map(x => x.id), ...(parents ?? []).map(x => x.parent_id)])]
+    .filter((id) => id !== user.id);
   if (!ids.length) return { okulAdi, kullanicilar: [] };
   const { data: profiles } = await admin.from("profiles").select("id, ad, role, aktif").in("id", ids).neq("role", "admin");
   const studentMap = new Map((students ?? []).map(s => [s.id, s]));
@@ -117,6 +123,42 @@ export async function moderatorHesapSil(targetId: string, targetSchoolId?: strin
   const { error } = await admin.auth.admin.deleteUser(targetId);
   if (error) return { error: error.message };
   await admin.from("admin_audit_log").insert({ actor_id: user.id, eylem: "moderator_hesap_sil", detay: { hedef_id: targetId, school_id: schoolId } });
+  revalidatePath("/moderator");
+  return { error: null };
+}
+
+// ============ Moderatörün KENDİ profili ("Profilim") ============
+// targetSchoolId hiçbir zaman kabul edilmiyor — bu action'lar her zaman
+// oturumdaki kullanıcının kendi kaydını düzenler, admin-override
+// (/moderator?okul=...) görüntülemesinde de moderatörün KENDİ okulu
+// yerine hedef okula bakmaya çalışmaz (requireModerator(undefined) çağrılır,
+// yani admin'in kendi school_moderators satırı aranır — yoksa zaten
+// /dashboard'a düşer, bu sayfa admin-override sırasında hiç gösterilmiyor).
+export async function moderatorKendiBilgileriniGetir(): Promise<{ error: string | null; ad: string; email: string; telefon: string }> {
+  const { user, admin } = await requireModerator();
+  const { data, error } = await admin.from("profiles").select("ad, email, telefon").eq("id", user.id).maybeSingle();
+  if (error || !data) return { error: error?.message ?? "Profil bulunamadı.", ad: "", email: "", telefon: "" };
+  return { error: null, ad: data.ad, email: data.email ?? "", telefon: data.telefon ?? "" };
+}
+
+export async function moderatorKendiBilgileriniGuncelle(input: { ad: string; email: string; telefon: string }): Promise<{ error: string | null }> {
+  const { user, admin } = await requireModerator();
+  const ad = adNormalize(input.ad);
+  const email = input.email.trim().toLowerCase();
+  const telefon = input.telefon.trim();
+  if (!ad) return { error: "Ad soyad gerekli." };
+  if (!email || !email.includes("@")) return { error: "Geçerli bir e-posta girin." };
+  if (telefon && !telefonGecerliMi(telefon)) return { error: "Telefon 10-11 rakam olmalı." };
+
+  const { data: mevcut } = await admin.from("profiles").select("email").eq("id", user.id).maybeSingle();
+
+  const { error: authError } = await admin.auth.admin.updateUserById(user.id, { email, email_confirm: true });
+  if (authError) return { error: authError.message };
+  const { error: profileError } = await admin.from("profiles").update({ ad, email, telefon: telefon || null }).eq("id", user.id);
+  if (profileError) {
+    if (mevcut?.email) await admin.auth.admin.updateUserById(user.id, { email: mevcut.email, email_confirm: true });
+    return { error: profileError.message };
+  }
   revalidatePath("/moderator");
   return { error: null };
 }

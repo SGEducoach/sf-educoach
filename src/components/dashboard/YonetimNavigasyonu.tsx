@@ -1,12 +1,13 @@
 import Link from "next/link";
-import { LayoutDashboard, Medal } from "lucide-react";
+import { CircleUserRound, LayoutDashboard, Medal } from "lucide-react";
 import { BG1, BORDER, MINT, MINT_BG, TEXT, TEXT_MUTED } from "@/lib/theme";
 
-export function YonetimNavigasyonu({ tur, aktif }: { tur: "yonetici" | "moderator"; aktif: "panel" | "rozetler" }) {
+export function YonetimNavigasyonu({ tur, aktif }: { tur: "yonetici" | "moderator"; aktif: "panel" | "rozetler" | "profil" }) {
   const kok = tur === "yonetici" ? "/yonetici" : "/moderator";
   const ogeler = [
     { id: "panel" as const, href: kok, etiket: tur === "yonetici" ? "Yönetim paneli" : "Moderatör paneli", Icon: LayoutDashboard },
     { id: "rozetler" as const, href: `${kok}/rozetler`, etiket: "Rozetler", Icon: Medal },
+    { id: "profil" as const, href: `${kok}/profil`, etiket: "Profilim", Icon: CircleUserRound },
   ];
   return (
     <nav aria-label={tur === "yonetici" ? "Yönetici bölümleri" : "Moderatör bölümleri"} className="flex flex-wrap gap-2 rounded-2xl p-2" style={{ background: BG1, border: `1px solid ${BORDER}` }}>

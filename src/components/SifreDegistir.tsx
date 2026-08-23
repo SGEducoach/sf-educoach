@@ -6,9 +6,13 @@ import { createClient } from "@/lib/supabase/client";
 import { BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH, LILAC } from "@/lib/theme";
 import { sifreGecerliMi, SIFRE_IPUCU } from "@/lib/validators";
 
-// Admin kendi şifresini burada değiştirir — supabase.auth.updateUser
-// tarayıcıdan doğrudan çağrılıyor, yeni şifre hiçbir sunucu action'ından ya
-// da script'ten geçmiyor (ekrana da geri yazılmıyor).
+// Paylaşılan bileşen — admin ve moderatör "Profilim" sayfalarında kendi
+// şifrelerini burada değiştirir (bkz. src/components/yonetici/AdminProfilim.tsx,
+// src/components/moderator/ModeratorProfilim.tsx). Role özel bir mantığı
+// yok: supabase.auth.updateUser tarayıcıdan doğrudan çağrılıyor, yeni
+// şifre hiçbir sunucu action'ından ya da script'ten geçmiyor (ekrana da
+// geri yazılmıyor) — bu yüzden herhangi bir oturum açmış kullanıcı için
+// aynen çalışır.
 export function SifreDegistir() {
   const supabase = createClient();
   const [acik, setAcik] = useState(false);

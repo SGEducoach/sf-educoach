@@ -10,7 +10,7 @@ import { ModeratorlerListesi } from "@/components/yonetici/ModeratorlerListesi";
 import { PlatformIstatistikleri } from "@/components/yonetici/PlatformIstatistikleri";
 import { KonuAnlatimYonetimi } from "@/components/yonetici/KonuAnlatimYonetimi";
 import { KurallarYonetimi } from "@/components/yonetici/KurallarYonetimi";
-import { SifreDegistir } from "@/components/yonetici/SifreDegistir";
+import { AdminProfilim } from "@/components/yonetici/AdminProfilim";
 import { YoneticiGirisForm } from "@/components/yonetici/YoneticiGirisForm";
 import { YoneticiYetkileri } from "@/components/yonetici/YoneticiYetkileri";
 import { dashboardMenusu } from "@/lib/dashboard-navigation";
@@ -85,7 +85,6 @@ export default async function YoneticiPage({
         <main id="ana-icerik" className="sfec-dashboard-main min-h-[calc(100dvh-10.25rem)] min-w-0 w-full flex-1 flex flex-col gap-6">
           {aktifBolum === "ozet" && (
             <>
-              <SifreDegistir />
               <section className="sfec-section"><PlatformIstatistikleri /></section>
               <YoneticiYetkileri />
             </>
@@ -105,6 +104,7 @@ export default async function YoneticiPage({
           {aktifBolum === "moderatorler" && <section className="sfec-section"><ModeratorlerListesi /></section>}
           {aktifBolum === "icerik" && <section className="sfec-section"><KonuAnlatimYonetimi /></section>}
           {aktifBolum === "kurallar" && <KurallarYonetimi />}
+          {aktifBolum === "profil" && <section className="sfec-section"><AdminProfilim /></section>}
         </main>
       </div>
     </div>

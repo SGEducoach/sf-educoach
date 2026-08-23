@@ -1,0 +1,31 @@
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { Header } from "@/components/dashboard/Header";
+import { ModeratorProfilim } from "@/components/moderator/ModeratorProfilim";
+import { YonetimNavigasyonu } from "@/components/dashboard/YonetimNavigasyonu";
+import type { UserRole } from "@/lib/types";
+
+// Moderatörün kendi hesabını yönettiği sayfa — admin-override
+// (/moderator?okul=...) burayı desteklemiyor (rozetler sayfasıyla aynı
+// kapsam sınırı): admin başka bir okulun moderatörünün kişisel bilgilerini
+// buradan düzenleyemez, bu bilerek böyle.
+export default async function ModeratorProfilPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+  const [{ data: profil }, { data: yetki }] = await Promise.all([
+    supabase.from("profiles").select("ad, role").eq("id", user.id).maybeSingle(),
+    supabase.from("school_moderators").select("school_id").eq("profile_id", user.id).maybeSingle(),
+  ]);
+  if (!profil || !yetki) redirect("/dashboard");
+
+  return (
+    <div className="flex min-h-screen flex-col">
+      <Header ad={profil.ad} role={profil.role as UserRole} moderatorMu rolEtiketi="Moderatör" mobilNavigasyon={false} />
+      <main id="ana-icerik" className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 px-4 py-7 pb-24 sm:px-6">
+        <YonetimNavigasyonu tur="moderator" aktif="profil" />
+        <ModeratorProfilim />
+      </main>
+    </div>
+  );
+}

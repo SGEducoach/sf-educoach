@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  BarChart3, BookOpen, BookOpenCheck, Bot, CalendarDays, CalendarPlus2, ClipboardCheck, ClipboardList, FileCheck2, FileSpreadsheet, GraduationCap, Home,
+  BarChart3, BookOpen, BookOpenCheck, Bot, CalendarDays, CalendarPlus2, CircleUserRound, ClipboardCheck, ClipboardList, FileCheck2, FileSpreadsheet, GraduationCap, Home,
   LogOut, Medal, Megaphone, Menu, PenLine, School, ScrollText, ShieldCheck, UserPlus, Users, X,
 } from "lucide-react";
 import { BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, SEAFOAM, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
@@ -44,6 +44,7 @@ const IKONLAR: Record<DashboardIkonu, typeof Home> = {
   moderator: ShieldCheck,
   icerik: BookOpen,
   kural: ScrollText,
+  profil: CircleUserRound,
 };
 
 // Telefon genişliğinde header'daki ikon sırası (moderatör/tema/bildirim/
