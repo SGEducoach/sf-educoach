@@ -8,6 +8,7 @@ import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, PEACH
 import { GOREV_TURU_ETIKET, GOREV_DURUMU_ETIKET } from "@/lib/types";
 import type { GorevTuru, GorevDurumu, AytAlan } from "@/lib/types";
 import { KonuCalismaForm, SoruCozumuForm, DenemeForm } from "@/components/dashboard/OgrenciVeriGirisi";
+import { MaskotKonusmaBalonu } from "@/components/dashboard/MaskotKonusmaBalonu";
 import { planEkle } from "@/app/dashboard/gorev-actions";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
 import { saatiDakikayaCevir } from "@/lib/saat-araligi";
@@ -51,6 +52,9 @@ function gunAdi(tarihISO: string) {
 function gunSayisi(tarihISO: string) {
   return new Date(`${tarihISO}T00:00:00`).getDate();
 }
+function uzunTarih(tarihISO: string) {
+  return new Date(`${tarihISO}T00:00:00`).toLocaleDateString("tr-TR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
+}
 
 // Haftalık görev takvimi — mobilde tek günlük kart listesi + üstte yatay
 // kaydırılabilir gün şeridi (7 sütunlu masaüstü tablo yerine, dar ekranda da
@@ -84,6 +88,7 @@ export function Gorevlerim({ gorevler, haftaBaslangic, aytAlan, dokuzOnMu, dersL
     setSeciliGun(gunler.includes(bugun) ? bugun : gunler[0]);
   }
   const [acikGorev, setAcikGorev] = useState<GorevSatiri | null>(null);
+  const [detayGorev, setDetayGorev] = useState<GorevSatiri | null>(null);
   const [planModalAcik, setPlanModalAcik] = useState(false);
   const [haftalikGorunum, setHaftalikGorunum] = useState(false);
 
@@ -161,7 +166,7 @@ export function Gorevlerim({ gorevler, haftaBaslangic, aytAlan, dokuzOnMu, dersL
           gorevler={gorevler}
           bugun={bugun}
           onGunSec={(gun) => { setSeciliGun(gun); setPlanModalAcik(true); }}
-          onGorevAc={(gorev) => setAcikGorev(gorev)}
+          onGorevAc={(gorev) => setDetayGorev(gorev)}
         />
       ) : gunGorevleri.length === 0 ? (
         <p style={{ color: TEXT_MUTED }} className="text-sm py-4 text-center">Bu gün için görev yok.</p>
@@ -174,7 +179,9 @@ export function Gorevlerim({ gorevler, haftaBaslangic, aytAlan, dokuzOnMu, dersL
               : g.tur === "konu" && g.hedefDakika ? `${g.hedefDakika} dk`
               : null;
             return (
-              <div key={g.atamaId} className="rounded-2xl p-3.5 flex items-start justify-between gap-3 flex-wrap" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
+              <button key={g.atamaId} type="button" onClick={() => setDetayGorev(g)}
+                className="sfec-btn w-full rounded-2xl p-3.5 flex items-start justify-between gap-3 flex-wrap text-left"
+                style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
                 <div className="flex items-start gap-2.5 min-w-0">
                   <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ background: renk.bg }}>
                     <Icon size={14} color={renk.renk} />
@@ -195,14 +202,9 @@ export function Gorevlerim({ gorevler, haftaBaslangic, aytAlan, dokuzOnMu, dersL
                 </div>
                 <div className="flex flex-col items-end gap-1.5 shrink-0">
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: renk.bg, color: renk.renk }}>{GOREV_DURUMU_ETIKET[g.durum]}</span>
-                  {g.durum === "bekliyor" && (
-                    <button type="button" onClick={() => setAcikGorev(g)}
-                      className="sfec-btn text-xs font-bold px-3 py-1.5 rounded-full" style={{ background: MINT, color: MINT_ON }}>
-                      Tamamla
-                    </button>
-                  )}
+                  <span className="text-xs font-bold px-3 py-1.5 rounded-full" style={{ background: MINT_BG, color: MINT }}>Detayı gör</span>
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
@@ -213,6 +215,18 @@ export function Gorevlerim({ gorevler, haftaBaslangic, aytAlan, dokuzOnMu, dersL
         style={{ background: "transparent", color: TEXT_MUTED, border: `2px dashed ${BORDER_STRONG}` }}>
         <Plus size={14} /> Plan ekle
       </button>
+
+      {detayGorev && createPortal(
+        <GorevDetayBalonu
+          gorev={detayGorev}
+          onKapat={() => setDetayGorev(null)}
+          onTamamla={() => {
+            setDetayGorev(null);
+            setAcikGorev(detayGorev);
+          }}
+        />,
+        document.body,
+      )}
 
       {acikGorev && createPortal(
         <GorevTamamlamaModal
@@ -237,6 +251,69 @@ export function Gorevlerim({ gorevler, haftaBaslangic, aytAlan, dokuzOnMu, dersL
         document.body,
       )}
     </div>
+  );
+}
+
+function GorevDetayBalonu({ gorev, onKapat, onTamamla }: {
+  gorev: GorevSatiri;
+  onKapat: () => void;
+  onTamamla: () => void;
+}) {
+  const Icon = TUR_IKON[gorev.tur];
+  const durumRengi = DURUM_RENK[gorev.durum];
+  const hedef = gorev.tur === "soru" && gorev.hedefSoruSayisi
+    ? `${gorev.hedefSoruSayisi} soru`
+    : gorev.tur === "konu" && gorev.hedefDakika
+      ? `${gorev.hedefDakika} dakika`
+      : "Belirtilmedi";
+  const saat = gorev.baslangicSaat
+    ? `${gorev.baslangicSaat.slice(0, 5)}${gorev.bitisSaat ? `–${gorev.bitisSaat.slice(0, 5)}` : ""}`
+    : "Belirtilmedi";
+
+  const detaylar = [
+    ["Görev türü", GOREV_TURU_ETIKET[gorev.tur]],
+    ["Ders", gorev.ders],
+    ["Konu", gorev.konu || "Belirtilmedi"],
+    ["Tarih", uzunTarih(gorev.tarih)],
+    ["Son tarih", uzunTarih(gorev.sonTarih)],
+    ["Saat", saat],
+    ["Hedef", hedef],
+    ["Açıklama", gorev.aciklama || "Not eklenmemiş"],
+  ];
+
+  return (
+    <MaskotKonusmaBalonu onKapat={onKapat} ariaLabel="Plan ayrıntıları">
+      <div className="pr-9">
+        <span className="mb-1 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: MINT }}>
+          <Icon size={13} aria-hidden="true" /> Einstein’dan plan özeti
+        </span>
+        <h2 className="text-base font-extrabold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>
+          {GOREV_TURU_ETIKET[gorev.tur]} · {gorev.ders}
+        </h2>
+      </div>
+
+      <div className="mt-3 flex flex-col gap-1.5">
+        {detaylar.map(([etiket, deger]) => (
+          <div key={etiket} className="grid grid-cols-[5rem_minmax(0,1fr)] gap-2 rounded-xl px-2.5 py-2"
+            style={{ background: BG1_ALT, border: `1px solid ${BORDER}` }}>
+            <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: TEXT_MUTED }}>{etiket}</span>
+            <span className="break-words text-xs font-semibold" style={{ color: TEXT }}>{deger}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-3 flex items-center justify-between gap-2">
+        <span className="rounded-full px-2.5 py-1 text-[10px] font-bold" style={{ background: durumRengi.bg, color: durumRengi.renk }}>
+          {GOREV_DURUMU_ETIKET[gorev.durum]}
+        </span>
+        {gorev.durum === "bekliyor" && (
+          <button type="button" onClick={onTamamla}
+            className="sfec-btn rounded-full px-4 py-2 text-xs font-bold" style={{ background: MINT, color: MINT_ON }}>
+            Görevi tamamla
+          </button>
+        )}
+      </div>
+    </MaskotKonusmaBalonu>
   );
 }
 
@@ -295,9 +372,9 @@ function HaftalikZamanPlani({ gunler, gorevler, bugun, onGunSec, onGorevAc }: {
                       const Icon = TUR_IKON[g.tur];
                       const durumRengi = DURUM_RENK[g.durum];
                       return (
-                        <button key={g.atamaId} type="button" disabled={g.durum !== "bekliyor"} onClick={() => onGorevAc(g)}
+                        <button key={g.atamaId} type="button" onClick={() => onGorevAc(g)}
                           title={`${g.baslangicSaat?.slice(0, 5)}–${g.bitisSaat?.slice(0, 5)} ${GOREV_TURU_ETIKET[g.tur]} · ${g.ders}`}
-                          className="sfec-btn absolute left-1 right-1 overflow-hidden rounded-xl px-2 py-1 text-left disabled:cursor-default"
+                          className="sfec-btn absolute left-1 right-1 overflow-hidden rounded-xl px-2 py-1 text-left"
                           style={{
                             top: (baslangic / 60) * SAAT_YUKSEKLIGI,
                             height: yukseklik,
