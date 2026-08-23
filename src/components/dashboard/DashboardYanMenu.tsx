@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
-  BarChart3, BookOpenCheck, Bot, CalendarDays, ClipboardCheck, ClipboardList,
+  BarChart3, BookOpenCheck, Bot, CalendarDays, CalendarPlus2, ClipboardCheck, ClipboardList,
   Home, Megaphone, Medal, PenLine, UserPlus,
 } from "lucide-react";
 import type { UserRole } from "@/lib/types";
@@ -13,6 +13,7 @@ import { SeFuSlogan } from "@/components/SeFuWordmark";
 const IKONLAR: Record<DashboardIkonu, typeof Home> = {
   "ana-sayfa": Home,
   gorev: ClipboardList,
+  plan: CalendarPlus2,
   veri: PenLine,
   analiz: BarChart3,
   ai: Bot,

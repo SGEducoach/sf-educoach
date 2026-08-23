@@ -26,7 +26,10 @@ export interface GorevSatiri {
   bitisSaat: string | null;
   aciklama: string | null;
   durum: GorevDurumu;
+  kaynak: "gorev" | "plan";
 }
+
+type TakvimGorunumu = "gorevler" | "planlar";
 
 const TUR_IKON: Record<GorevTuru, typeof BookOpen> = { konu: BookOpen, soru: PenLine, deneme: ClipboardList };
 const DURUM_RENK: Record<GorevDurumu, { bg: string; renk: string }> = {
@@ -62,8 +65,9 @@ function uzunTarih(tarihISO: string) {
 // veri giriş formu (Konu/Soru/Deneme) bir modal içinde açılıp gorevAtamaId
 // ile ilişkilendiriliyor; böylece rozet/analiz sistemleri görev kaynaklı
 // girişleri de otomatik sayıyor (bkz. yenilikler_1.txt §5, Faz 3 planı).
-export function Gorevlerim({ gorevler, haftaBaslangic, aytAlan, dokuzOnMu, dersListesi, konuOnerileri, konuSayaclari }: {
+export function Gorevlerim({ gorevler, gorunum, haftaBaslangic, aytAlan, dokuzOnMu, dersListesi, konuOnerileri, konuSayaclari }: {
   gorevler: GorevSatiri[];
+  gorunum: TakvimGorunumu;
   haftaBaslangic: string;
   aytAlan: AytAlan;
   dokuzOnMu: boolean;
@@ -91,9 +95,11 @@ export function Gorevlerim({ gorevler, haftaBaslangic, aytAlan, dokuzOnMu, dersL
   const [detayGorev, setDetayGorev] = useState<GorevSatiri | null>(null);
   const [planModalAcik, setPlanModalAcik] = useState(false);
   const [haftalikGorunum, setHaftalikGorunum] = useState(false);
+  const planSayfasi = gorunum === "planlar";
+  const gorunenKayitlar = gorevler.filter((g) => g.kaynak === (planSayfasi ? "plan" : "gorev"));
 
   const gunlukGorevSayisi = new Map<string, number>();
-  for (const g of gorevler) gunlukGorevSayisi.set(g.tarih, (gunlukGorevSayisi.get(g.tarih) ?? 0) + 1);
+  for (const g of gorunenKayitlar) gunlukGorevSayisi.set(g.tarih, (gunlukGorevSayisi.get(g.tarih) ?? 0) + 1);
 
   function haftaGuncelle(haftaISO: string) {
     const params = new URLSearchParams(searchParams.toString());
@@ -105,7 +111,7 @@ export function Gorevlerim({ gorevler, haftaBaslangic, aytAlan, dokuzOnMu, dersL
     haftaGuncelle(tarihEkle(haftaBaslangic, yon * 7));
   }
 
-  const gunGorevleri = gorevler
+  const gunGorevleri = gorunenKayitlar
     .filter((g) => g.tarih === seciliGun)
     .sort((a, b) => (a.baslangicSaat ?? "99:99").localeCompare(b.baslangicSaat ?? "99:99"));
 
@@ -113,7 +119,9 @@ export function Gorevlerim({ gorevler, haftaBaslangic, aytAlan, dokuzOnMu, dersL
     <div className="sfec-fade rounded-3xl p-5 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
-          <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Görevlerim</span>
+          <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">
+            {planSayfasi ? "Planlarım" : "Görevlerim"}
+          </span>
           <button type="button" onClick={() => setHaftalikGorunum((acik) => !acik)}
             aria-pressed={haftalikGorunum}
             className="sfec-btn inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold"
@@ -163,13 +171,19 @@ export function Gorevlerim({ gorevler, haftaBaslangic, aytAlan, dokuzOnMu, dersL
       {haftalikGorunum ? (
         <HaftalikZamanPlani
           gunler={gunler}
-          gorevler={gorevler}
+          gorevler={gorunenKayitlar}
           bugun={bugun}
-          onGunSec={(gun) => { setSeciliGun(gun); setPlanModalAcik(true); }}
+          planSayfasi={planSayfasi}
+          onGunSec={(gun) => {
+            setSeciliGun(gun);
+            if (planSayfasi) setPlanModalAcik(true);
+          }}
           onGorevAc={(gorev) => setDetayGorev(gorev)}
         />
       ) : gunGorevleri.length === 0 ? (
-        <p style={{ color: TEXT_MUTED }} className="text-sm py-4 text-center">Bu gün için görev yok.</p>
+        <p style={{ color: TEXT_MUTED }} className="text-sm py-4 text-center">
+          {planSayfasi ? "Bu gün için plan yok." : "Bu gün için görev yok."}
+        </p>
       ) : (
         <div className="flex flex-col gap-2.5 mb-2.5">
           {gunGorevleri.map((g) => {
@@ -210,11 +224,13 @@ export function Gorevlerim({ gorevler, haftaBaslangic, aytAlan, dokuzOnMu, dersL
         </div>
       )}
 
-      <button type="button" onClick={() => setPlanModalAcik(true)}
-        className="sfec-btn w-full flex items-center justify-center gap-1.5 text-xs font-bold py-2.5 rounded-2xl"
-        style={{ background: "transparent", color: TEXT_MUTED, border: `2px dashed ${BORDER_STRONG}` }}>
-        <Plus size={14} /> Plan ekle
-      </button>
+      {planSayfasi && (
+        <button type="button" onClick={() => setPlanModalAcik(true)}
+          className="sfec-btn w-full flex items-center justify-center gap-1.5 text-xs font-bold py-2.5 rounded-2xl"
+          style={{ background: "transparent", color: TEXT_MUTED, border: `2px dashed ${BORDER_STRONG}` }}>
+          <Plus size={14} /> Plan ekle
+        </button>
+      )}
 
       {detayGorev && createPortal(
         <GorevDetayBalonu
@@ -241,7 +257,7 @@ export function Gorevlerim({ gorevler, haftaBaslangic, aytAlan, dokuzOnMu, dersL
         document.body,
       )}
 
-      {planModalAcik && createPortal(
+      {planSayfasi && planModalAcik && createPortal(
         <PlanEkleModal
           tarih={seciliGun}
           dersListesi={dersListesi}
@@ -282,10 +298,10 @@ function GorevDetayBalonu({ gorev, onKapat, onTamamla }: {
   ];
 
   return (
-    <MaskotKonusmaBalonu onKapat={onKapat} ariaLabel="Plan ayrıntıları">
+    <MaskotKonusmaBalonu onKapat={onKapat} ariaLabel={gorev.kaynak === "plan" ? "Plan ayrıntıları" : "Görev ayrıntıları"}>
       <div className="pr-9">
         <span className="mb-1 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: MINT }}>
-          <Icon size={13} aria-hidden="true" /> Einstein’dan plan özeti
+          <Icon size={13} aria-hidden="true" /> Einstein’dan {gorev.kaynak === "plan" ? "plan" : "görev"} özeti
         </span>
         <h2 className="text-base font-extrabold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>
           {GOREV_TURU_ETIKET[gorev.tur]} · {gorev.ders}
@@ -309,7 +325,7 @@ function GorevDetayBalonu({ gorev, onKapat, onTamamla }: {
         {gorev.durum === "bekliyor" && (
           <button type="button" onClick={onTamamla}
             className="sfec-btn rounded-full px-4 py-2 text-xs font-bold" style={{ background: MINT, color: MINT_ON }}>
-            Görevi tamamla
+            {gorev.kaynak === "plan" ? "Planı tamamla" : "Görevi tamamla"}
           </button>
         )}
       </div>
@@ -317,10 +333,11 @@ function GorevDetayBalonu({ gorev, onKapat, onTamamla }: {
   );
 }
 
-function HaftalikZamanPlani({ gunler, gorevler, bugun, onGunSec, onGorevAc }: {
+function HaftalikZamanPlani({ gunler, gorevler, bugun, planSayfasi, onGunSec, onGorevAc }: {
   gunler: string[];
   gorevler: GorevSatiri[];
   bugun: string;
+  planSayfasi: boolean;
   onGunSec: (gun: string) => void;
   onGorevAc: (gorev: GorevSatiri) => void;
 }) {
@@ -331,7 +348,7 @@ function HaftalikZamanPlani({ gunler, gorevler, bugun, onGunSec, onGorevAc }: {
           <div className="ml-10 grid grid-cols-7 gap-2 mb-2">
             {gunler.map((gun, gunIndex) => (
               <button key={gun} type="button" onClick={() => onGunSec(gun)}
-                title="Bu güne plan ekle"
+                title={planSayfasi ? "Bu güne plan ekle" : "Günü seç"}
                 className="sfec-btn rounded-2xl px-2 py-2 text-center"
                 style={{
                   color: TEXT,
@@ -400,7 +417,7 @@ function HaftalikZamanPlani({ gunler, gorevler, bugun, onGunSec, onGorevAc }: {
         </div>
       </div>
       <p className="px-4 pb-3 pt-1 text-[10px]" style={{ color: TEXT_MUTED }}>
-        Her gün 05.00’dan ertesi gün 05.00’a kadar gösterilir. Saati belirtilmeyen görevler günlük görünümde yer alır.
+        Her gün 05.00’dan ertesi gün 05.00’a kadar gösterilir. Saati belirtilmeyen {planSayfasi ? "planlar" : "görevler"} günlük görünümde yer alır.
       </p>
     </div>
   );
@@ -427,7 +444,9 @@ function GorevTamamlamaModal({ gorev, aytAlan, dokuzOnMu, dersListesi, konuOneri
       style={{ background: "rgba(0,0,0,0.55)" }} onClick={onKapat}>
       <div className="sfec-fade w-full max-w-md rounded-3xl p-5 max-h-[85vh] overflow-y-auto" style={{ background: BG1, border: `2px solid ${BORDER}` }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold">{GOREV_TURU_ETIKET[gorev.tur]} görevini tamamla</span>
+          <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold">
+            {GOREV_TURU_ETIKET[gorev.tur]} {gorev.kaynak === "plan" ? "planını" : "görevini"} tamamla
+          </span>
           <button type="button" onClick={onKapat} className="sfec-btn w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.06)" }}>
             <X size={13} color={TEXT_MUTED} />
           </button>

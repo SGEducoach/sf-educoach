@@ -3,6 +3,7 @@ import type { UserRole } from "@/lib/types";
 export type DashboardBolumu =
   | "ozet"
   | "gorevler"
+  | "planlar"
   | "veri-girisi"
   | "analiz"
   | "yapay-zeka"
@@ -13,7 +14,7 @@ export type DashboardBolumu =
   | "onaylar"
   | "dersler";
 
-export type DashboardIkonu = "ana-sayfa" | "gorev" | "veri" | "analiz" | "ai" | "rozet" | "takvim" | "duyuru" | "talep" | "onay" | "ders";
+export type DashboardIkonu = "ana-sayfa" | "gorev" | "plan" | "veri" | "analiz" | "ai" | "rozet" | "takvim" | "duyuru" | "talep" | "onay" | "ders";
 
 export interface DashboardMenuOgesi {
   bolum: DashboardBolumu;
@@ -26,6 +27,7 @@ const OGRENCI_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "ozet", href: "/dashboard", etiket: "Ana sayfa", ikon: "ana-sayfa" },
   { bolum: "rozetler", href: "/dashboard/rozetler", etiket: "Rozetlerim", ikon: "rozet" },
   { bolum: "gorevler", href: "/dashboard/gorevler", etiket: "Görevlerim", ikon: "gorev" },
+  { bolum: "planlar", href: "/dashboard/planlar", etiket: "Plan yap", ikon: "plan" },
   { bolum: "veri-girisi", href: "/dashboard/veri-girisi", etiket: "Veri girişi", ikon: "veri" },
   { bolum: "analiz", href: "/dashboard/analiz", etiket: "Analiz / Rapor", ikon: "analiz" },
   { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Yapay Zekâ Analizi", ikon: "ai" },
@@ -64,6 +66,6 @@ export function dashboardMenusu(role: UserRole): DashboardMenuOgesi[] {
 }
 
 export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
-  "gorevler", "veri-girisi", "analiz", "yapay-zeka", "rozetler", "tg-denemeleri",
+  "gorevler", "planlar", "veri-girisi", "analiz", "yapay-zeka", "rozetler", "tg-denemeleri",
   "duyurular", "talepler", "onaylar", "dersler",
 ]);

@@ -180,7 +180,7 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
   const haftaBitis = tarihEkle(haftaBaslangic, 6);
   const { data: gorevAtamalariHam } = await supabase
     .from("gorev_atamalari")
-    .select("id, durum, gorevler!inner(tur, ders, konu, hedef_soru_sayisi, hedef_dakika, tarih, son_tarih, baslangic_saat, bitis_saat, aciklama)")
+    .select("id, durum, gorevler!inner(tur, ders, konu, hedef_soru_sayisi, hedef_dakika, tarih, son_tarih, baslangic_saat, bitis_saat, aciklama, olusturan_ogrenci_id)")
     .eq("student_id", userId)
     .gte("gorevler.tarih", haftaBaslangic)
     .lte("gorevler.tarih", haftaBitis);
@@ -191,6 +191,7 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
       tur: GorevSatiri["tur"]; ders: string; konu: string | null;
       hedef_soru_sayisi: number | null; hedef_dakika: number | null;
       tarih: string; son_tarih: string; baslangic_saat: string | null; bitis_saat: string | null; aciklama: string | null;
+      olusturan_ogrenci_id: string | null;
     } | null;
   };
   const gorevlerimListesi: GorevSatiri[] = ((gorevAtamalariHam as unknown as GorevAtamaRow[]) ?? [])
@@ -208,6 +209,7 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
       bitisSaat: g.gorevler!.bitis_saat,
       aciklama: g.gorevler!.aciklama,
       durum: g.durum,
+      kaynak: g.gorevler!.olusturan_ogrenci_id ? "plan" : "gorev",
     }));
 
   return (
@@ -243,13 +245,14 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
           <OzetIstatistikKarti Icon={CalendarCheck2} etiket="Konu çalışma" deger={`${analiz.buHaftaKonuDakika} dk`} aciklama="Son 7 gün" />
           <OzetIstatistikKarti Icon={ListChecks} etiket="Çözülen soru" deger={String(analiz.buHaftaSoru)} aciklama="Son 7 gün" />
           <OzetIstatistikKarti Icon={Target} etiket="Son deneme neti" deger={analiz.sonDenemeNet === null ? "—" : String(analiz.sonDenemeNet)} aciklama="En güncel sonuç" />
-          <OzetIstatistikKarti Icon={BarChart3} etiket="Bekleyen görev" deger={String(gorevlerimListesi.filter((g) => g.durum === "bekliyor").length)} aciklama="Bu hafta" />
+          <OzetIstatistikKarti Icon={BarChart3} etiket="Bekleyen görev" deger={String(gorevlerimListesi.filter((g) => g.kaynak === "gorev" && g.durum === "bekliyor").length)} aciklama="Bu hafta" />
         </section>
       </>}
 
-      {aktifBolum === "gorevler" && <section className="print:hidden">
+      {(aktifBolum === "gorevler" || aktifBolum === "planlar") && <section className="print:hidden">
         <Gorevlerim
           gorevler={gorevlerimListesi}
+          gorunum={aktifBolum === "planlar" ? "planlar" : "gorevler"}
           haftaBaslangic={haftaBaslangic}
           aytAlan={s.ayt_alan}
           dokuzOnMu={dokuzOnMu}
