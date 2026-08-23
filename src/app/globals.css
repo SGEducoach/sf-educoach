@@ -371,6 +371,59 @@ select option {
   animation: sfecGlowBreathe 3.2s ease-in-out infinite;
 }
 
+/* Skill ağacı sayacının yanındaki çizgi-roman patlama balonu. Yıldız şekli
+   içerikten ayrı tutulur; logo ve yazı kesilmeden kart sınırını aşabilir. */
+.sfec-sadece-sefu-balonu {
+  position: relative;
+  z-index: 2;
+  isolation: isolate;
+  display: inline-flex;
+  min-height: 3.25rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.65rem 1.15rem;
+  color: #102f3b;
+  font-family: var(--font-baloo);
+  font-size: 0.7rem;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+  transform: translateY(-0.5rem) rotate(-4deg);
+  filter: drop-shadow(0 7px 10px rgba(11, 79, 108, 0.2));
+}
+
+.sfec-sadece-sefu-balonu::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -0.6rem -0.85rem;
+  background: linear-gradient(135deg, #ffd966 0%, #79d8ee 52%, #ff9d72 100%);
+  clip-path: polygon(
+    50% 0%, 58% 12%, 72% 3%, 77% 18%, 94% 14%, 90% 32%,
+    100% 42%, 88% 52%, 97% 67%, 79% 70%, 78% 89%, 60% 82%,
+    50% 100%, 39% 84%, 22% 91%, 21% 72%, 3% 68%, 13% 52%,
+    0% 41%, 15% 31%, 7% 15%, 25% 18%, 30% 3%, 43% 13%
+  );
+}
+
+html[data-theme="koyu"] .sfec-sadece-sefu-balonu {
+  color: #160b03;
+  filter: drop-shadow(0 8px 12px rgba(244, 114, 22, 0.28));
+}
+
+html[data-theme="koyu"] .sfec-sadece-sefu-balonu::before {
+  background: linear-gradient(135deg, #ffc14f 0%, #ff8c3d 52%, #f47216 100%);
+}
+
+@media (max-width: 639px) {
+  .sfec-sadece-sefu-balonu {
+    min-height: 3rem;
+    padding: 0.6rem 0.95rem;
+    transform: translateX(0.15rem) rotate(-3deg);
+  }
+}
+
 /* TG Denemeleri haber değişimi: yeni afiş haber sitelerindeki manşetler gibi
    sağdan yumuşakça içeri kayar. Hareket azaltma tercihi olanlarda kapatılır. */
 @keyframes sfecTgHaberGir {

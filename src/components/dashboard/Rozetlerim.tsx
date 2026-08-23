@@ -322,19 +322,27 @@ export function Rozetlerim({ durum, oyunSayaclari, sinifSeviyesi, baslik = "Roze
       </div>
 
       <section className="mt-7" aria-labelledby="oyun-etiketleri-baslik">
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-3 rounded-2xl p-4"
+        <div className="relative mb-4 flex flex-wrap items-center justify-between gap-5 overflow-visible rounded-2xl p-4 sm:p-5"
           style={{ background: BG0, border: `1px solid ${BORDER}` }}>
-          <div>
+          <div className="min-w-0 flex-1">
             <div className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: TEXT_MUTED }}>Rozetlerden bağımsız · tamamen eğlencelik</div>
-            <h2 id="oyun-etiketleri-baslik" className="mt-1 text-xl font-extrabold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>
-              SRO usulü skill ağaçları
+            <h2 id="oyun-etiketleri-baslik" className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xl font-extrabold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>
+              <SeFuLogo className="h-9 w-auto max-w-[5rem] sm:h-10 sm:max-w-[5.5rem]" alt="SeFu" />
+              <span>Usulü Skill Ağaçları</span>
             </h2>
             <p className="mt-1 max-w-2xl text-xs leading-relaxed" style={{ color: TEXT_MUTED }}>
               Lightning konuya, Cold soruya, Fire denemeye güç verir. Her mastery 7 ayrı zorluk kademesinde ilerler.
             </p>
           </div>
-          <div className="rounded-full px-3.5 py-2 text-xs font-extrabold" style={{ background: MINT, color: MINT_ON }}>
-            {kazanilanEtiketSayisi} / 21 açıldı
+          <div className="flex flex-wrap items-center justify-end gap-3 sm:flex-nowrap">
+            <div className="sfec-sadece-sefu-balonu" aria-label="Sadece SeFu Koç'ta">
+              <span>Sadece</span>
+              <SeFuLogo className="h-6 w-auto max-w-[3.8rem]" alt="SeFu" />
+              <span>Koç&apos;ta</span>
+            </div>
+            <div className="relative z-[1] shrink-0 rounded-full px-3.5 py-2 text-xs font-extrabold" style={{ background: MINT, color: MINT_ON }}>
+              {kazanilanEtiketSayisi} / 21 açıldı
+            </div>
           </div>
         </div>
 
