@@ -587,6 +587,26 @@ function GorevVerBolumu({ ogrenciler, konuOnerileri }: {
 
   const tumuSeciliMi = ogrenciler.length > 0 && secili.size === ogrenciler.length;
 
+  // Deneme görevinde "Ders" alanı anlamsız — TYT/AYT birden çok dersi birden
+  // kapsıyor, tek bir ders seçmek yanıltıcı. Sadece Branş Denemesi (9-10.
+  // sınıf, tek ders) seçilince Ders tekrar anlamlı olduğu için aktifleşiyor.
+  // "Konu" alanı deneme türünde bu amaçla "Deneme Türü" seçiciye dönüşüyor —
+  // bu yüzden görsel sırada da Deneme Türü, Ders'ten ÖNCE geliyor (Ders'in
+  // aktif/pasif durumunu o belirliyor).
+  const dersPasif = tur === "deneme" && konu !== "BRANS";
+
+  function turDegistir(yeni: GorevTuru) {
+    setTur(yeni);
+    setKonu("");
+    if (yeni === "deneme") setDers("Genel");
+    else if (ders === "Genel") setDers(BRANS_LISTESI[0]);
+  }
+
+  function denemeTuruDegistir(yeni: string) {
+    setKonu(yeni);
+    setDers(yeni === "BRANS" ? BRANS_LISTESI[0] : "Genel");
+  }
+
   function ogrenciToggle(id: string) {
     setSecili((s) => {
       const yeni = new Set(s);
@@ -664,30 +684,56 @@ function GorevVerBolumu({ ogrenciler, konuOnerileri }: {
           <div className="grid grid-cols-2 gap-3">
             <label className="flex flex-col gap-1">
               <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Tür</span>
-              <select value={tur} onChange={(e) => setTur(e.target.value as GorevTuru)}
+              <select value={tur} onChange={(e) => turDegistir(e.target.value as GorevTuru)}
                 className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
                 <option value="konu">Konu Çalışma</option>
                 <option value="soru">Soru Çözümü</option>
                 <option value="deneme">Deneme</option>
               </select>
             </label>
-            <label className="flex flex-col gap-1">
-              <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Ders</span>
-              <select value={ders} onChange={(e) => { setDers(e.target.value); setKonu(""); }}
-                className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
-                {BRANS_LISTESI.map((d) => <option key={d} value={d}>{d}</option>)}
-              </select>
-            </label>
+            {tur === "deneme" ? (
+              <label className="flex flex-col gap-1">
+                <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Deneme Türü</span>
+                <select value={konu} onChange={(e) => denemeTuruDegistir(e.target.value)}
+                  className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
+                  <option value="">Seçiniz</option>
+                  <option value="TYT">TYT</option>
+                  <option value="AYT">AYT</option>
+                  <option value="BRANS">Branş</option>
+                </select>
+              </label>
+            ) : (
+              <label className="flex flex-col gap-1">
+                <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Ders</span>
+                <select value={ders} onChange={(e) => { setDers(e.target.value); setKonu(""); }}
+                  className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
+                  {BRANS_LISTESI.map((d) => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </label>
+            )}
           </div>
 
-          <label className="flex flex-col gap-1">
-            <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Konu (opsiyonel)</span>
-            <select value={konu} onChange={(e) => setKonu(e.target.value)}
-              className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
-              <option value="">Seçiniz (opsiyonel)</option>
-              {dersKonulari.map((k) => <option key={k.konu} value={k.konu}>{k.konu}</option>)}
-            </select>
-          </label>
+          {tur === "deneme" ? (
+            <label className="flex flex-col gap-1">
+              <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Ders{dersPasif ? " (branş denemesinde seçilir)" : ""}</span>
+              <select value={ders} disabled={dersPasif} onChange={(e) => setDers(e.target.value)}
+                className="text-sm px-2.5 py-1.5 rounded-xl outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
+                {dersPasif
+                  ? <option value="Genel">Genel (deneme geneli)</option>
+                  : BRANS_LISTESI.map((d) => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </label>
+          ) : (
+            <label className="flex flex-col gap-1">
+              <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Konu (opsiyonel)</span>
+              <select value={konu} onChange={(e) => setKonu(e.target.value)}
+                className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
+                <option value="">Seçiniz (opsiyonel)</option>
+                {dersKonulari.map((k) => <option key={k.konu} value={k.konu}>{k.konu}</option>)}
+              </select>
+            </label>
+          )}
 
           {tur === "soru" && (
             <label className="flex flex-col gap-1">
