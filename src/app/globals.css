@@ -60,14 +60,10 @@
   --sfec-oyun-deneme: #d84b24;
 }
 
-/* Şeffaf PNG logonun lacivert bölümleri piano-black zeminde kaybolmasın.
-   Gündüz orijinal renkler korunur; gece logo tek renk ÖSYM turuncusuna döner. */
+/* Logo tema değiştirirken renk değiştirmez: bütün sayfalarda gündüz düğmeleriyle
+   aynı sabit ÖSYM mavisi kullanılır. İnce kontur beyaz zeminde formu korur. */
 .sfec-brand-logo {
-  filter: none;
-}
-
-html[data-theme="koyu"] .sfec-brand-logo {
-  filter: brightness(0) saturate(100%) invert(55%) sepia(97%) saturate(3155%) hue-rotate(352deg) brightness(101%) contrast(91%);
+  filter: brightness(0) saturate(100%) invert(89%) sepia(18%) saturate(749%) hue-rotate(167deg) brightness(104%) contrast(95%) drop-shadow(0 0 1px rgba(11, 79, 108, 0.72));
 }
 
 .sfec-hosgeldin-kapi {
