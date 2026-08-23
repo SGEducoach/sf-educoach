@@ -35,6 +35,15 @@ const DURUM_RENK: Record<GorevDurumu, { bg: string; renk: string }> = {
 };
 const SAAT_YUKSEKLIGI = 36;
 const GUN_YUKSEKLIGI = SAAT_YUKSEKLIGI * 24;
+const CIZELGE_BASLANGIC_DAKIKA = 5 * 60;
+
+function cizelgedekiDakika(saat: string | null) {
+  const dakika = saatiDakikayaCevir(saat);
+  if (dakika === null) return null;
+  return dakika >= CIZELGE_BASLANGIC_DAKIKA
+    ? dakika - CIZELGE_BASLANGIC_DAKIKA
+    : dakika + (24 * 60 - CIZELGE_BASLANGIC_DAKIKA);
+}
 
 function gunAdi(tarihISO: string) {
   return new Date(`${tarihISO}T00:00:00`).toLocaleDateString("tr-TR", { weekday: "short" });
@@ -242,7 +251,7 @@ function HaftalikZamanPlani({ gunler, gorevler, bugun, onGunSec, onGorevAc }: {
     <div className="mb-3 overflow-hidden rounded-3xl" style={{ background: BG0, border: `2px solid ${BORDER}`, boxShadow: `inset 0 0 0 1px ${BORDER_STRONG}` }}>
       <div className="overflow-x-auto overscroll-x-contain">
         <div className="min-w-[70rem] p-2.5">
-          <div className="grid grid-cols-7 gap-2 mb-2">
+          <div className="ml-10 grid grid-cols-7 gap-2 mb-2">
             {gunler.map((gun, gunIndex) => (
               <button key={gun} type="button" onClick={() => onGunSec(gun)}
                 title="Bu güne plan ekle"
@@ -258,36 +267,38 @@ function HaftalikZamanPlani({ gunler, gorevler, bugun, onGunSec, onGorevAc }: {
             ))}
           </div>
 
-          <div className="grid grid-cols-7 gap-2" aria-label="Haftalık 24 saatlik çalışma planı">
-            {gunler.map((gun, gunIndex) => {
-              const gununGorevleri = gorevler
-                .filter((g) => g.tarih === gun)
-                .sort((a, b) => (a.baslangicSaat ?? "99:99").localeCompare(b.baslangicSaat ?? "99:99"));
-              const zamanliGorevler = gununGorevleri.filter((g) => saatiDakikayaCevir(g.baslangicSaat) !== null && saatiDakikayaCevir(g.bitisSaat) !== null);
-              const saatsizGorevler = gununGorevleri.filter((g) => !zamanliGorevler.includes(g));
-              const sutunArkaPlan = gunIndex % 2 === 0 ? MINT_BG : PEACH_BG;
-              const sutunVurgu = gunIndex % 2 === 0 ? MINT : PEACH;
+          <div className="flex" aria-label="Haftalık 05.00–05.00 çalışma planı">
+            <div className="relative w-10 shrink-0" style={{ height: GUN_YUKSEKLIGI }} aria-hidden="true">
+              <span className="absolute left-0 top-0 -translate-y-1/2 text-[9px] font-bold" style={{ color: TEXT_MUTED }}>05.00</span>
+              <span className="absolute bottom-0 left-0 translate-y-1/2 text-[9px] font-bold" style={{ color: TEXT_MUTED }}>05.00</span>
+            </div>
+            <div className="grid min-w-0 flex-1 grid-cols-7 gap-2">
+              {gunler.map((gun, gunIndex) => {
+                const gununGorevleri = gorevler
+                  .filter((g) => g.tarih === gun)
+                  .sort((a, b) => (a.baslangicSaat ?? "99:99").localeCompare(b.baslangicSaat ?? "99:99"));
+                const zamanliGorevler = gununGorevleri.filter((g) => cizelgedekiDakika(g.baslangicSaat) !== null && saatiDakikayaCevir(g.bitisSaat) !== null);
+                const sutunArkaPlan = gunIndex % 2 === 0 ? MINT_BG : PEACH_BG;
+                const sutunVurgu = gunIndex % 2 === 0 ? MINT : PEACH;
+                const sutunDolu = zamanliGorevler.length > 0;
 
-              return (
-                <div key={gun} className="min-w-0">
-                  {saatsizGorevler.length > 0 && (
-                    <div className="mb-2 flex min-h-14 flex-col gap-1 rounded-xl p-1.5" style={{ background: sutunArkaPlan, border: `1px solid ${BORDER_STRONG}` }}>
-                      <span className="px-1 text-[9px] font-bold uppercase" style={{ color: TEXT_MUTED }}>Saati belirtilmemiş</span>
-                      {saatsizGorevler.map((g) => (
-                        <button key={g.atamaId} type="button" onClick={() => g.durum === "bekliyor" && onGorevAc(g)}
-                          className="sfec-btn truncate rounded-lg px-2 py-1 text-left text-[10px] font-bold"
-                          style={{ background: BG1, color: TEXT, border: `1px solid ${sutunVurgu}` }}>
-                          {GOREV_TURU_ETIKET[g.tur]} · {g.ders}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  <div className="relative overflow-hidden rounded-2xl" style={{ height: GUN_YUKSEKLIGI, background: sutunArkaPlan, border: `1px solid ${BORDER_STRONG}` }}
-                    aria-label={`${gunAdi(gun)} günü 24 saatlik plan alanı`}>
+                return (
+                  <div key={gun} className="relative overflow-hidden rounded-2xl"
+                    style={{
+                      height: GUN_YUKSEKLIGI,
+                      background: sutunDolu ? sutunArkaPlan : "transparent",
+                      border: `1px solid ${sutunDolu ? BORDER_STRONG : "transparent"}`,
+                    }}
+                    aria-label={`${gunAdi(gun)} günü 05.00–05.00 plan alanı`}>
                     {zamanliGorevler.map((g) => {
-                      const baslangic = saatiDakikayaCevir(g.baslangicSaat) ?? 0;
-                      const bitis = saatiDakikayaCevir(g.bitisSaat) ?? baslangic;
-                      const yukseklik = Math.max(((bitis - baslangic) / 60) * SAAT_YUKSEKLIGI, 30);
+                      const baslangic = cizelgedekiDakika(g.baslangicSaat) ?? 0;
+                      const baslangicSaatDakika = saatiDakikayaCevir(g.baslangicSaat) ?? 0;
+                      const bitisSaatDakika = saatiDakikayaCevir(g.bitisSaat) ?? baslangicSaatDakika;
+                      const sure = bitisSaatDakika > baslangicSaatDakika
+                        ? bitisSaatDakika - baslangicSaatDakika
+                        : bitisSaatDakika + 24 * 60 - baslangicSaatDakika;
+                      const kalanYukseklik = GUN_YUKSEKLIGI - (baslangic / 60) * SAAT_YUKSEKLIGI;
+                      const yukseklik = Math.min(Math.max((sure / 60) * SAAT_YUKSEKLIGI, 30), Math.max(kalanYukseklik, 1));
                       const Icon = TUR_IKON[g.tur];
                       const durumRengi = DURUM_RENK[g.durum];
                       return (
@@ -312,14 +323,14 @@ function HaftalikZamanPlani({ gunler, gorevler, bugun, onGunSec, onGorevAc }: {
                       );
                     })}
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
       <p className="px-4 pb-3 pt-1 text-[10px]" style={{ color: TEXT_MUTED }}>
-        Günler 24 saat üzerinden gösterilir; boş zamanlar özellikle boş bırakılır. Başlığa dokunarak o güne plan ekleyebilirsiniz.
+        Her gün 05.00’dan ertesi gün 05.00’a kadar gösterilir. Saati belirtilmeyen görevler günlük görünümde yer alır.
       </p>
     </div>
   );
