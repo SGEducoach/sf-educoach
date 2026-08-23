@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { Resend } from "resend";
 import webpush from "web-push";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { KATEGORI_GERIYE_DONUK_SINIR } from "@/lib/types";
@@ -23,6 +22,13 @@ export const maxDuration = 60;
 // aynı, çünkü backdating penceresi kapandığında telafi de imkânsızlaşıyor).
 // Bir öğrenci aynı anda birden fazla kategoride geride kalmışsa, her biri
 // için AYRI bildirim gidiyor.
+//
+// Kullanıcı kararı (24 Ağustos 2026): bildirimler artık SADECE web push
+// üzerinden gidiyor, e-posta (Resend) tamamen kaldırıldı — hem gerçek
+// ölçekte Resend'in ücretsiz günlük kotasını aşma riski hem de sandbox
+// modda gerçek kullanıcılara ulaşmama riski ortadan kalktı. Bir kullanıcının
+// e-postası olmaması artık hatırlatmayı hiç engellemiyor; push aboneliği
+// yoksa zaten pushGonder() sessizce hiçbir şey göndermiyor.
 type KategoriAnahtar = "konu" | "soru" | "deneme";
 
 const KATEGORI_TANIM: Record<KategoriAnahtar, {
@@ -88,7 +94,6 @@ export async function GET(request: Request) {
 
   try {
     const admin = createAdminClient();
-    const resend = new Resend(process.env.RESEND_API_KEY);
     const now = new Date();
     const bugunHaftaSonu = bugunHaftaSonuMu();
     let gonderilen = 0;
@@ -103,12 +108,12 @@ export async function GET(request: Request) {
       { data: pushAbonelikleri },
     ] = await Promise.all([
       admin.from("students").select(
-        "id, created_at, yurt_ogrencisi, son_hatirlatma_konu_deadline, son_hatirlatma_soru_deadline, son_hatirlatma_deneme_deadline, profiles!students_id_fkey(ad, email)",
+        "id, created_at, yurt_ogrencisi, son_hatirlatma_konu_deadline, son_hatirlatma_soru_deadline, son_hatirlatma_deneme_deadline, profiles!students_id_fkey(ad)",
       ),
       admin.from("konu_calismalar").select("student_id, created_at"),
       admin.from("soru_cozumleri").select("student_id, created_at"),
       admin.from("denemeler").select("student_id, created_at").eq("kaynak", "ogrenci"),
-      admin.from("parent_students").select("student_id, parent_id, profiles!parent_students_parent_id_fkey(email)"),
+      admin.from("parent_students").select("student_id, parent_id"),
       admin.from("push_subscriptions").select("id, profile_id, endpoint, p256dh, auth"),
     ]);
 
@@ -124,12 +129,13 @@ export async function GET(request: Request) {
     for (const row of sorular ?? []) enSonTarih(sonGirisMap.soru, row.student_id, row.created_at);
     for (const row of denemeler ?? []) enSonTarih(sonGirisMap.deneme, row.student_id, row.created_at);
 
-    // student_id -> [{parent_id, email}]
-    type VeliBaglanti = { student_id: string; parent_id: string; profiles: { email: string | null } | null };
-    const veliMap = new Map<string, { id: string; email: string | null }[]>();
+    // student_id -> [parent_id] — bildirimler artık sadece web push
+    // üzerinden gidiyor (kullanıcı kararı), veli e-postasına gerek kalmadı.
+    type VeliBaglanti = { student_id: string; parent_id: string };
+    const veliMap = new Map<string, string[]>();
     for (const row of (veliBaglantilari as unknown as VeliBaglanti[]) ?? []) {
       const liste = veliMap.get(row.student_id) ?? [];
-      liste.push({ id: row.parent_id, email: row.profiles?.email ?? null });
+      liste.push(row.parent_id);
       veliMap.set(row.student_id, liste);
     }
 
@@ -160,10 +166,9 @@ export async function GET(request: Request) {
     }
 
     for (const s of students ?? []) {
-      const profile = (s as unknown as { profiles: { ad: string; email: string | null } | null }).profiles;
-      if (!profile?.email) continue;
+      const profile = (s as unknown as { profiles: { ad: string } | null }).profiles;
+      if (!profile) continue;
       const veliler = veliMap.get(s.id) ?? [];
-      const veliEmailler = veliler.map((v) => v.email).filter((e): e is string => Boolean(e));
       const yurtOgrencisi = (s as unknown as { yurt_ogrencisi: boolean }).yurt_ogrencisi;
 
       for (const kategoriKey of Object.keys(KATEGORI_TANIM) as KategoriAnahtar[]) {
@@ -190,32 +195,10 @@ export async function GET(request: Request) {
         const veliBaslik = tanim.veliBaslik(gecenGun);
         const veliGovde = tanim.veliGovde(profile.ad, gecenGun);
 
-        try {
-          await resend.emails.send({
-            from: "SeFu Koç <onboarding@resend.dev>",
-            to: profile.email,
-            subject: ogrenciBaslik,
-            html: `<p>Merhaba ${profile.ad},</p><p>${ogrenciGovde}</p>`,
-          });
-        } catch (e) {
-          detaylar.push(`${profile.ad} (${kategoriKey}): öğrenci e-posta HATASI - ${e instanceof Error ? e.message : String(e)}`);
-        }
-        if (veliEmailler.length > 0) {
-          try {
-            await resend.emails.send({
-              from: "SeFu Koç <onboarding@resend.dev>",
-              to: veliEmailler,
-              subject: veliBaslik,
-              html: `<p>Merhaba,</p><p>${veliGovde}</p>`,
-            });
-          } catch (e) {
-            detaylar.push(`${profile.ad} (${kategoriKey}): veli e-posta HATASI - ${e instanceof Error ? e.message : String(e)}`);
-          }
-        }
-        detaylar.push(`${profile.ad} (${kategoriKey}): hatırlatma gönderildi (${gecenGun} gün, ${veliler.length} veli)`);
-
         await pushGonder(s.id, ogrenciBaslik, ogrenciGovde);
-        for (const veli of veliler) await pushGonder(veli.id, veliBaslik, veliGovde);
+        for (const veliId of veliler) await pushGonder(veliId, veliBaslik, veliGovde);
+
+        detaylar.push(`${profile.ad} (${kategoriKey}): hatırlatma push ile gönderildi (${gecenGun} gün, ${veliler.length} veli)`);
 
         gonderilen++;
         await admin.from("students").update({ [tanim.deadlineKolonu]: new Date(now.getTime() + esikMs).toISOString() }).eq("id", s.id);
