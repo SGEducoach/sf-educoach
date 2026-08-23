@@ -6,6 +6,7 @@ import { BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "
 import { pushAbonelikAc } from "@/lib/push-subscribe";
 import type { UserRole } from "@/lib/types";
 import { MaskotKonusmaBalonu } from "@/components/dashboard/MaskotKonusmaBalonu";
+import { SeFuLogo } from "@/components/SeFuWordmark";
 
 const HATIRLATMA_ANAHTAR = "sfec_hatirlatma_kapatildi_v1";
 const BILDIRIM_ANAHTAR = "sfec_bildirim_softask_kapatildi_v1";
@@ -67,9 +68,15 @@ export function HosgeldinPopuplari({ role }: { role: UserRole }) {
               <Smartphone size={18} color={MINT} />
             </div>
             <p style={{ color: TEXT }} className="text-sm leading-relaxed mb-1">
-              SeFu Koç&apos;tan en iyi şekilde yararlanmak için telefonunuzun ana ekranına eklemeyi ve bildirimleri açmayı unutmayınız.
+              <span className="mr-1 inline-flex align-middle">
+                <SeFuLogo className="h-6 w-auto max-w-20" />
+              </span>
+              &apos;tan en iyi şekilde yararlanmak için telefonunuzun ana ekranına eklemeyi ve bildirimleri açmayı unutmayınız.
             </p>
-            <p style={{ color: TEXT_MUTED }} className="text-xs text-right mb-4 font-semibold">SEFU KOÇ EKİBİ</p>
+            <p style={{ color: TEXT_MUTED }} className="mb-4 flex items-center justify-end gap-1.5 text-xs font-semibold">
+              <SeFuLogo className="h-6 w-auto max-w-20" />
+              <span>EKİBİ</span>
+            </p>
           </>
         )}
 

@@ -1,4 +1,17 @@
+import Image from "next/image";
 import { SEFU_MAVI, SEFU_KIRMIZI, SEFU_KIRMIZI_VURGU } from "@/lib/theme";
+
+export function SeFuLogo({ className, alt = "SeFu Koç" }: { className?: string; alt?: string }) {
+  return (
+    <Image
+      src="/logo.png"
+      alt={alt}
+      width={800}
+      height={395}
+      className={["sfec-brand-logo object-contain", className].filter(Boolean).join(" ")}
+    />
+  );
+}
 
 // Marka adı — ÖSYM mavisi (kullanıcı kararı). `as` ile h1/span arasında
 // seçim yapılabiliyor — bazı sayfalarda bu isim sayfanın tek H1'i (login/

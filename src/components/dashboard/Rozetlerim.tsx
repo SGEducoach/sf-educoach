@@ -6,6 +6,7 @@ import { Trophy, BookOpen, PenLine, ClipboardList, BookText, X } from "lucide-re
 import type { RozetSeviye } from "@/lib/types";
 import { ROZET_SEVIYE_ETIKET, dokuzOnSinifMi } from "@/lib/types";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
+import { SeFuLogo } from "@/components/SeFuWordmark";
 
 // Rozet sistemi v2: 3 bağımsız kategori (konu/soru/deneme) + bunlardan
 // türetilen "genel" (SEFU KOÇ) rozeti. Hepsi CANLI durum — kalıcı değil,
@@ -90,7 +91,10 @@ function RozetKurallariModal({ onKapat, dokuzOnMu }: { onKapat: () => void; doku
         </div>
 
         <div className="rounded-2xl p-3.5" style={{ background: "rgba(255,196,107,0.1)", border: "1px solid rgba(255,196,107,0.3)" }}>
-          <div style={{ color: "#FFC46B" }} className="text-xs font-bold mb-1">🏆 SEFU KOÇ</div>
+          <div className="mb-1 flex items-center gap-2">
+            <span aria-hidden="true">🏆</span>
+            <SeFuLogo className="h-6 w-auto max-w-24 object-left" />
+          </div>
           <p style={{ color: TEXT_MUTED }} className="text-xs leading-relaxed">
             Yukarıdaki 3 kategoriden kaçı Altın seviyesindeyse: <strong>1 kategori Altın → Bronz · 2 kategori Altın → Gümüş · 3 kategori Altın → Altın</strong>.
           </p>
@@ -138,7 +142,10 @@ export function Rozetlerim({ durum, sinifSeviyesi }: { durum: RozetDurum; sinifS
         style={{ background: "linear-gradient(135deg, rgba(255,196,107,0.18), rgba(255,196,107,0.05))", border: `1px solid rgba(255,196,107,0.35)` }}>
         <span className="text-3xl">{durum.genel === "yok" ? "🏆" : SEVIYE_EMOJI[durum.genel]}</span>
         <div className="flex flex-col">
-          <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-sm font-bold">SEFU KOÇ {ROZET_SEVIYE_ETIKET[durum.genel]}</span>
+          <span className="flex items-center gap-2">
+            <SeFuLogo className="h-7 w-auto max-w-28 object-left" />
+            <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-sm font-bold">{ROZET_SEVIYE_ETIKET[durum.genel]}</span>
+          </span>
           <span style={{ color: TEXT_MUTED }} className="text-[11px]">3 kategorinin üçünde de altına ulaşınca kazanılır</span>
         </div>
       </div>
