@@ -2,23 +2,34 @@
 
 import { useState } from "react";
 import { UserPlus } from "lucide-react";
-import { dershaneRosterTekEkle } from "@/app/dashboard/actions";
-import { telefonSanitize, TELEFON_IPUCU } from "@/lib/validators";
+import { dershaneOgrenciKesinKaydet } from "@/app/dashboard/actions";
+import {
+  kullaniciAdiGecerliMi,
+  kullaniciAdiSanitize,
+  telefonSanitize,
+  KULLANICI_ADI_IPUCU,
+  TELEFON_IPUCU,
+} from "@/lib/validators";
 import { AYT_ALAN_ETIKET } from "@/lib/types";
 import type { AytAlan } from "@/lib/types";
 import { BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 
-// DERSHANE MODU — müdürün tek tek öğrenci roster'a eklemesi. Toplu
-// .xlsx yükleme/indirme henüz yok (sonraki fazda) — şimdilik bu form
-// tek tek ekleme için kullanılıyor.
+// DERSHANE MODU — müdür/moderatörün tekli kesin öğrenci kaydı. Bu form
+// doğrudan aktif hesap açar; yanındaki Excel yükleme formu ön kayıt üretir.
 export function DershaneRosterEkleFormu({ siniflar }: { siniflar: { id: string; seviye: string; sube: string }[] }) {
   const [ad, setAd] = useState("");
+  const [kullaniciAdi, setKullaniciAdi] = useState("");
   const [telefon, setTelefon] = useState("");
   const [veliTelefon, setVeliTelefon] = useState("");
   const [classId, setClassId] = useState(siniflar[0]?.id ?? "");
   const [aytAlan, setAytAlan] = useState<AytAlan>("SAY");
   const [hata, setHata] = useState<string | null>(null);
-  const [basari, setBasari] = useState<string | null>(null);
+  const [sonuc, setSonuc] = useState<{
+    ad: string;
+    kullaniciAdi: string;
+    sifre: string;
+    aktarilanDenemeSayisi: number;
+  } | null>(null);
   const [yukleniyor, setYukleniyor] = useState(false);
 
   // Müdür yeni bir şube ekleyip sayfa yenilendiğinde (router.refresh) bu
@@ -35,13 +46,26 @@ export function DershaneRosterEkleFormu({ siniflar }: { siniflar: { id: string; 
   async function ekle(e: React.FormEvent) {
     e.preventDefault();
     setHata(null);
-    setBasari(null);
+    setSonuc(null);
+    if (!kullaniciAdiGecerliMi(kullaniciAdi)) return setHata(`Kullanıcı adı geçersiz. ${KULLANICI_ADI_IPUCU}`);
     setYukleniyor(true);
-    const sonuc = await dershaneRosterTekEkle({ ad, telefon, veliTelefon: veliTelefon || undefined, classId, aytAlan });
+    const yanit = await dershaneOgrenciKesinKaydet({
+      ad,
+      kullaniciAdi,
+      telefon,
+      veliTelefon: veliTelefon || undefined,
+      classId,
+      aytAlan,
+    });
     setYukleniyor(false);
-    if (sonuc.error) return setHata(sonuc.error);
-    setBasari(`${ad} eklendi — öğrenci kendi telefonuyla /signup üzerinden kaydını tamamlayabilir.`);
-    setAd(""); setTelefon(""); setVeliTelefon("");
+    if (yanit.error || !yanit.sifre || !yanit.kullaniciAdi) return setHata(yanit.error ?? "Öğrenci hesabı oluşturulamadı.");
+    setSonuc({
+      ad,
+      kullaniciAdi: yanit.kullaniciAdi,
+      sifre: yanit.sifre,
+      aktarilanDenemeSayisi: yanit.aktarilanDenemeSayisi,
+    });
+    setAd(""); setKullaniciAdi(""); setTelefon(""); setVeliTelefon("");
   }
 
   return (
@@ -51,12 +75,26 @@ export function DershaneRosterEkleFormu({ siniflar }: { siniflar: { id: string; 
           <UserPlus size={18} color={MINT} />
         </div>
         <div>
-          <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold">Öğrenci ekle</h2>
+          <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold">Öğrenci kesin kaydı</h2>
           <p style={{ color: TEXT_MUTED }} className="text-xs">
-            Öğrenci, girdiğiniz telefon numarasıyla /signup üzerinden kendi kaydını tamamlar.
+            Aktif öğrenci hesabı hemen oluşturulur; kullanıcı adı ve geçici şifreyi öğrenciye iletin.
           </p>
         </div>
       </div>
+
+      {sonuc && (
+        <div className="rounded-2xl p-4 text-xs" style={{ background: MINT_BG, border: `2px solid ${BORDER_STRONG}`, color: TEXT }}>
+          <div className="mb-2 font-bold" style={{ color: MINT }}>{sonuc.ad} kesin kayıtla eklendi.</div>
+          <div>Kullanıcı adı: <strong className="font-mono">{sonuc.kullaniciAdi}</strong></div>
+          <div>Geçici şifre: <strong className="font-mono text-sm">{sonuc.sifre}</strong></div>
+          {sonuc.aktarilanDenemeSayisi > 0 && (
+            <div className="mt-2 font-semibold" style={{ color: MINT }}>
+              {sonuc.aktarilanDenemeSayisi} bekleyen PDF denemesi hesaba aktarıldı.
+            </div>
+          )}
+          <div className="mt-2" style={{ color: TEXT_MUTED }}>Bu bilgiler güvenlik nedeniyle yalnızca şimdi gösterilir.</div>
+        </div>
+      )}
 
       <form onSubmit={ekle} className="flex flex-col gap-3">
         <label className="flex flex-col gap-1">
@@ -65,11 +103,18 @@ export function DershaneRosterEkleFormu({ siniflar }: { siniflar: { id: string; 
             className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
         </label>
         <label className="flex flex-col gap-1">
+          <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Kullanıcı Adı</span>
+          <input required value={kullaniciAdi} autoComplete="off" placeholder="En az 6 karakter"
+            onChange={(e) => setKullaniciAdi(kullaniciAdiSanitize(e.target.value))}
+            className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+          <span style={{ color: TEXT_MUTED }} className="text-[10px]">{KULLANICI_ADI_IPUCU}</span>
+        </label>
+        <label className="flex flex-col gap-1">
           <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Telefon</span>
           <input required value={telefon} inputMode="numeric" placeholder="5xxxxxxxxx"
             onChange={(e) => setTelefon(telefonSanitize(e.target.value))}
             className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
-          <span style={{ color: TEXT_MUTED }} className="text-[10px]">Öğrenci kaydını tamamlarken bu telefonu kullanacak. {TELEFON_IPUCU}</span>
+          <span style={{ color: TEXT_MUTED }} className="text-[10px]">{TELEFON_IPUCU}</span>
         </label>
         <label className="flex flex-col gap-1">
           <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Veli Telefonu (opsiyonel)</span>
@@ -96,12 +141,10 @@ export function DershaneRosterEkleFormu({ siniflar }: { siniflar: { id: string; 
         </div>
 
         {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
-        {basari && <div style={{ color: MINT }} className="text-xs font-semibold">{basari}</div>}
-
         <button type="submit" disabled={yukleniyor || !classId}
           className="sfec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60"
           style={{ background: MINT, color: MINT_ON }}>
-          {yukleniyor ? "Ekleniyor..." : "Öğrenci ekle"}
+          {yukleniyor ? "Kesin kayıt oluşturuluyor..." : "Kesin kaydı oluştur"}
         </button>
       </form>
     </div>

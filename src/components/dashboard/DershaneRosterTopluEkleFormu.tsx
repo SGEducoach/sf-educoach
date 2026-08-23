@@ -6,7 +6,7 @@ import { Download, Upload } from "lucide-react";
 import { dershaneRosterTopluEkle, type TopluRosterSonuc } from "@/app/dashboard/actions";
 import { BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 
-// DERSHANE MODU (Faz D4) — toplu öğrenci roster yükleme. Şablon
+// DERSHANE MODU (Faz D4) — toplu öğrenci ön kayıt listesi yükleme. Şablon
 // /api/dershane/roster-sablonu'ndan (gerçek .xlsx, Alan/Sınıf/Hafta
 // İçi-Sonu kolonlarında açılır menü doğrulamalı) indirilir, doldurulup
 // buradan geri yüklenir. Satır satır sonuç raporu gösterilir.
@@ -44,8 +44,10 @@ export function DershaneRosterTopluEkleFormu() {
           <Upload size={18} color={MINT} />
         </div>
         <div>
-          <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold">Toplu öğrenci yükle</h2>
-          <p style={{ color: TEXT_MUTED }} className="text-xs">Önce şablonu indirin, doldurun, sonra geri yükleyin.</p>
+          <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold">Toplu öğrenci ön kaydı</h2>
+          <p style={{ color: TEXT_MUTED }} className="text-xs">
+            Listeyle eklenenler ön kayıt olur; öğrenci daha sonra telefonuyla kaydını tamamlar.
+          </p>
         </div>
       </div>
 
@@ -63,14 +65,14 @@ export function DershaneRosterTopluEkleFormu() {
         <button type="submit" disabled={yukleniyor}
           className="sfec-btn w-fit text-sm font-bold px-4 py-2.5 rounded-xl disabled:opacity-60"
           style={{ background: MINT, color: MINT_ON }}>
-          {yukleniyor ? "Yükleniyor..." : "Yükle"}
+          {yukleniyor ? "Ön kayıtlar yükleniyor..." : "Ön kayıt listesini yükle"}
         </button>
       </form>
 
       {sonuclar && (
         <div className="flex flex-col gap-2">
           <div style={{ color: TEXT }} className="text-xs font-bold">
-            {basariliSayisi}/{sonuclar.length} satır eklendi.
+            {basariliSayisi}/{sonuclar.length} ön kayıt eklendi.
           </div>
           <div className="max-h-64 overflow-y-auto rounded-xl" style={{ border: `2px solid ${BORDER}` }}>
             <table className="w-full text-xs">
@@ -79,7 +81,7 @@ export function DershaneRosterTopluEkleFormu() {
                   <tr key={s.satir} style={{ borderBottom: `1px solid ${BORDER}` }}>
                     <td className="px-2 py-1.5" style={{ color: TEXT_MUTED }}>Satır {s.satir}</td>
                     <td className="px-2 py-1.5" style={{ color: TEXT }}>{s.ad}</td>
-                    <td className="px-2 py-1.5" style={{ color: s.hata ? BLUSH : MINT }}>{s.hata ?? "Eklendi"}</td>
+                    <td className="px-2 py-1.5" style={{ color: s.hata ? BLUSH : MINT }}>{s.hata ?? "Ön kayıt eklendi"}</td>
                   </tr>
                 ))}
               </tbody>

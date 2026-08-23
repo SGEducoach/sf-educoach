@@ -4,11 +4,21 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { telefonGecerliMi, okulNoGecerliMi, rastgeleSifre, adNormalize, hedefBolumNormalize, TELEFON_IPUCU } from "@/lib/validators";
+import {
+  telefonGecerliMi,
+  okulNoGecerliMi,
+  kullaniciAdiGecerliMi,
+  rastgeleSifre,
+  adNormalize,
+  hedefBolumNormalize,
+  KULLANICI_ADI_IPUCU,
+  TELEFON_IPUCU,
+} from "@/lib/validators";
 import { duyuruGonder as duyuruGonderTemel } from "@/lib/push-send";
 import type { DuyuruAliciTuru } from "@/lib/push-send";
 import { DUYURU_MIN_UZUNLUK, duyuruGonderimIzniKontrol } from "@/lib/duyuru-guvenligi";
 import { requireDershaneMudur } from "@/lib/dershane-auth";
+import { bekleyenPdfSonuclariniOgrenciyeAktar } from "@/lib/deneme-sonucu-kaydet";
 import type { SinifSeviyesi } from "@/lib/types";
 
 const DUYURU_MAKS_UZUNLUK = 500;
@@ -213,34 +223,112 @@ export async function ogrenciEkleManuel(input: {
   return { error: null, sifre };
 }
 
-// ============ DERSHANE MODU: müdür roster ekleme (tek) ============
-// Öğrenci henüz bir auth hesabına sahip değil — müdür sadece bir "ön kayıt"
-// bırakıyor (bkz. migration 0051, pending_dershane_ogrenciler). Gerçek
-// hesap, öğrenci telefonuyla kendi kaydını tamamlayınca açılır
-// (bkz. src/app/signup/dershane-actions.ts, dershaneKayitTamamla).
-export async function dershaneRosterTekEkle(input: {
-  ad: string; telefon: string; veliTelefon?: string; classId: string; aytAlan: "SAY" | "EA" | "SOZ";
-}) {
-  const { user, admin, schoolId } = await requireDershaneMudur();
-  if (!admin || !schoolId) return { error: "Bu işlem için dershane müdürü yetkisi gerekiyor." };
+// ============ DERSHANE MODU: müdür/moderatör kesin öğrenci kaydı ============
+// Tekli form doğrudan Auth + profiles + students kaydı oluşturur. Toplu
+// Excel listesi ise aşağıdaki dershaneRosterTopluEkle akışında ön kayıt
+// olarak kalır; öğrenci kendi kaydını daha sonra tamamlayabilir.
+export async function dershaneOgrenciKesinKaydet(input: {
+  ad: string;
+  kullaniciAdi: string;
+  telefon: string;
+  veliTelefon?: string;
+  classId: string;
+  aytAlan: "SAY" | "EA" | "SOZ";
+}): Promise<{
+  error: string | null;
+  sifre: string | null;
+  kullaniciAdi: string | null;
+  aktarilanDenemeSayisi: number;
+}> {
+  const { supabase, user, admin, schoolId } = await requireDershaneMudur();
+  const bosSonuc = { sifre: null, kullaniciAdi: null, aktarilanDenemeSayisi: 0 };
+  if (!admin || !schoolId) return { error: "Bu işlem için dershane müdürü yetkisi gerekiyor.", ...bosSonuc };
 
   const ad = adNormalize(input.ad);
+  const kullaniciAdi = input.kullaniciAdi.trim();
   const telefon = input.telefon.trim();
-  if (!ad) return { error: "Ad Soyad gerekli." };
-  if (!telefonGecerliMi(telefon)) return { error: "Telefon numarası geçersiz. " + TELEFON_IPUCU };
-  if (input.veliTelefon && !telefonGecerliMi(input.veliTelefon.trim())) return { error: "Veli telefon numarası geçersiz. " + TELEFON_IPUCU };
-  if (!input.classId) return { error: "Sınıf seçin." };
+  const veliTelefon = input.veliTelefon?.trim() || null;
+  if (!ad) return { error: "Ad Soyad gerekli.", ...bosSonuc };
+  if (!kullaniciAdiGecerliMi(kullaniciAdi)) return { error: `Kullanıcı adı geçersiz. ${KULLANICI_ADI_IPUCU}`, ...bosSonuc };
+  if (!telefonGecerliMi(telefon)) return { error: "Telefon numarası geçersiz. " + TELEFON_IPUCU, ...bosSonuc };
+  if (veliTelefon && !telefonGecerliMi(veliTelefon)) return { error: "Veli telefon numarası geçersiz. " + TELEFON_IPUCU, ...bosSonuc };
+  if (!input.classId) return { error: "Sınıf seçin.", ...bosSonuc };
 
-  const { error } = await admin.from("pending_dershane_ogrenciler").insert({
-    school_id: schoolId, class_id: input.classId, ad, telefon,
-    veli_telefon: input.veliTelefon?.trim() || null, ayt_alan: input.aytAlan, created_by: user.id,
+  const [sinifYaniti, mevcutYaniti, onKayitYaniti] = await Promise.all([
+    admin.from("classes").select("id").eq("id", input.classId).eq("school_id", schoolId).maybeSingle(),
+    admin.from("students").select("id").eq("school_id", schoolId).eq("okul_no", kullaniciAdi).maybeSingle(),
+    admin.from("pending_dershane_ogrenciler")
+      .select("id, ad")
+      .eq("school_id", schoolId)
+      .eq("telefon", telefon)
+      .is("kullanildi_at", null)
+      .maybeSingle(),
+  ]);
+  const sorguHatasi = sinifYaniti.error ?? mevcutYaniti.error ?? onKayitYaniti.error;
+  if (sorguHatasi) return { error: "Öğrenci bilgileri doğrulanamadı. Lütfen tekrar deneyin.", ...bosSonuc };
+  if (!sinifYaniti.data) return { error: "Seçilen sınıf bu dershaneye ait değil.", ...bosSonuc };
+  if (mevcutYaniti.data) return { error: "Bu kullanıcı adı dershanede zaten kullanılıyor.", ...bosSonuc };
+
+  const sifre = rastgeleSifre();
+  const email = `${crypto.randomUUID()}@ogrenci.sgeducoach.internal`;
+  const { data: created, error: hesapHatasi } = await admin.auth.admin.createUser({
+    email,
+    password: sifre,
+    email_confirm: true,
+    user_metadata: {
+      role: "ogrenci",
+      ad,
+      telefon,
+      veli_telefon: veliTelefon,
+      school_id: schoolId,
+      class_id: input.classId,
+      okul_no: kullaniciAdi,
+      ayt_alan: input.aytAlan,
+      hedef_bolum: "Belirtilmedi",
+      gecici_sifre: true,
+      admin_ekledi: true,
+    },
   });
-  if (error) {
-    if (error.code === "23505") return { error: "Bu telefon numarasıyla zaten bir kayıt var." };
-    return { error: error.message };
+  if (hesapHatasi || !created.user) {
+    const mesaj = hesapHatasi?.message ?? "Öğrenci hesabı oluşturulamadı.";
+    const kullaniciAdiHatasi = mesaj.includes("okul_no") || mesaj.toLocaleLowerCase("tr-TR").includes("duplicate");
+    return { error: kullaniciAdiHatasi ? "Bu kullanıcı adı dershanede zaten kullanılıyor." : mesaj, ...bosSonuc };
   }
+
+  let aktarilanDenemeSayisi = 0;
+  const onKayit = onKayitYaniti.data;
+  if (onKayit) {
+    const aktarim = await bekleyenPdfSonuclariniOgrenciyeAktar(admin, {
+      schoolId,
+      pendingId: onKayit.id,
+      studentId: created.user.id,
+      ad: onKayit.ad,
+    });
+    aktarilanDenemeSayisi = aktarim.aktarilan;
+    if (aktarim.error || aktarim.atlanan > 0) {
+      console.error("Kesin kayıtta bekleyen PDF sonuçları tam aktarılamadı:", {
+        error: aktarim.error,
+        atlanan: aktarim.atlanan,
+        pendingId: onKayit.id,
+      });
+    }
+    const { error: onKayitGuncellemeHatasi } = await admin.from("pending_dershane_ogrenciler")
+      .update({ kullanildi_at: new Date().toISOString() })
+      .eq("id", onKayit.id)
+      .is("kullanildi_at", null);
+    if (onKayitGuncellemeHatasi) console.error("Kesin kayda dönüşen ön kayıt güncellenemedi:", onKayitGuncellemeHatasi);
+  }
+
+  await auditLogYaz(supabase, user.id, "dershane_ogrenci_kesin_kayit", {
+    ogrenci_id: created.user.id,
+    school_id: schoolId,
+    class_id: input.classId,
+    on_kayittan_donustu: !!onKayit,
+    aktarilan_deneme_sayisi: aktarilanDenemeSayisi,
+  });
   revalidatePath("/dashboard");
-  return { error: null };
+  revalidatePath("/moderator");
+  return { error: null, sifre, kullaniciAdi, aktarilanDenemeSayisi };
 }
 
 // ============ DERSHANE MODU: müdür roster ekleme (toplu, .xlsx) ============
