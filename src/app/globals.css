@@ -122,6 +122,29 @@ body {
   background: var(--sfec-shell-bg);
 }
 
+/* Geniş masaüstünde haftalık çizelgenin yedi günü aynı anda sığsın. Sayfa
+   çerçevesi ekranın iki yanına yaklaşır; güvenli alan ve küçük bir nefes payı
+   korunur. Dar ekranlarda bileşenlerin kendi yatay kaydırması çalışmaya devam
+   eder, içerik ekranın dışında kesilmez. */
+.sfec-dashboard-header > .mx-auto,
+.sfec-dashboard-shell > .mx-auto {
+  max-width: none;
+  padding-left: max(0.75rem, env(safe-area-inset-left));
+  padding-right: max(0.75rem, env(safe-area-inset-right));
+}
+
+.sfec-dashboard-shell > .mx-auto {
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .sfec-dashboard-header > .mx-auto,
+  .sfec-dashboard-shell > .mx-auto {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+}
+
 .sfec-dashboard-header {
   box-shadow: 0 4px 20px rgba(11, 79, 108, 0.08);
 }
