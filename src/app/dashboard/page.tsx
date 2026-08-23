@@ -233,7 +233,7 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
               <Bilgi etiket="Sınıf" deger={s.classes ? `${s.classes.seviye}-${s.classes.sube}` : "—"} />
               <Bilgi etiket="Okul No" deger={s.okul_no} />
               <Bilgi etiket="AYT Alanı" deger={AYT_ALAN_ETIKET[s.ayt_alan]} />
-              <Bilgi etiket="Hedef" deger={s.hedef_bolum || "Belirlenmedi"} />
+              <Bilgi etiket="Hedef" deger={s.hedef_bolum ? s.hedef_bolum.toLocaleUpperCase("tr-TR") : "Belirlenmedi"} />
             </div>
           </div>
         </section>

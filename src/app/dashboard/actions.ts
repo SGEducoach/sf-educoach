@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { telefonGecerliMi, okulNoGecerliMi, rastgeleSifre, adNormalize } from "@/lib/validators";
+import { telefonGecerliMi, okulNoGecerliMi, rastgeleSifre, adNormalize, hedefBolumNormalize } from "@/lib/validators";
 import { duyuruGonder as duyuruGonderTemel } from "@/lib/push-send";
 import type { DuyuruAliciTuru } from "@/lib/push-send";
 import { DUYURU_MIN_UZUNLUK, duyuruGonderimIzniKontrol } from "@/lib/duyuru-guvenligi";
@@ -193,13 +193,14 @@ export async function ogrenciEkleManuel(input: {
   if (input.telefon && !telefonGecerliMi(input.telefon)) return { error: "Telefon numarası geçersiz.", sifre: null };
   if (!input.schoolId) return { error: "Okul seçin.", sifre: null };
   if (!input.classId) return { error: "Sınıf seçin.", sifre: null };
+  const hedefBolum = hedefBolumNormalize(input.hedefBolum);
 
   const sifre = rastgeleSifre();
   const { data: created, error } = await admin.auth.admin.createUser({
     email, password: sifre, email_confirm: true,
     user_metadata: {
       role: "ogrenci", ad, telefon: input.telefon || null, school_id: input.schoolId, class_id: input.classId,
-      okul_no: input.okulNo, ayt_alan: input.aytAlan, hedef_bolum: input.hedefBolum,
+      okul_no: input.okulNo, ayt_alan: input.aytAlan, hedef_bolum: hedefBolum,
       admin_ekledi: true, // izinli öğrenci listesi kontrolünden muaf (bkz. migration 0026)
     },
   });

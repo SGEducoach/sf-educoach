@@ -492,7 +492,7 @@ function OgrenciEkleFormu({ schoolId, siniflar }: { schoolId: string; siniflar: 
             {(Object.keys(AYT_ALAN_ETIKET) as AytAlan[]).map((a) => <option key={a} value={a}>{AYT_ALAN_ETIKET[a]}</option>)}
           </select>
         )}
-        <input value={hedefBolum} onChange={(e) => setHedefBolum(e.target.value)} placeholder="Hedef bölüm (ops.)"
+        <input value={hedefBolum} onChange={(e) => setHedefBolum(e.target.value.toLocaleUpperCase("tr-TR"))} autoCapitalize="characters" placeholder="Hedef bölüm (ops.)"
           className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
         {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
         <button type="submit" disabled={pending}

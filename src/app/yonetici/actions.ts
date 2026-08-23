@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { rastgeleSifre, adNormalize, telefonGecerliMi, okulNoGecerliMi } from "@/lib/validators";
+import { rastgeleSifre, adNormalize, hedefBolumNormalize, telefonGecerliMi, okulNoGecerliMi } from "@/lib/validators";
 import { getAnthropicClient } from "@/lib/anthropic";
 import { KONU_ANLATIMI_SISTEM_PROMPTU, icerikTemizle } from "@/lib/konu-anlatimi";
 import { duyuruGonder, pushGonderProfile } from "@/lib/push-send";
@@ -875,7 +875,7 @@ export async function ogrenciListesiDisaAktar(schoolId: string): Promise<{ error
   };
   const satirlar = ((data as unknown as Row[]) ?? []).map((r) => ({
     ad: r.profiles?.ad ?? "—", okulNo: r.okul_no, sinifAdi: r.classes ? `${r.classes.seviye}-${r.classes.sube}` : null,
-    aytAlan: r.ayt_alan, hedefBolum: r.hedef_bolum, email: r.profiles?.email ?? null, telefon: r.profiles?.telefon ?? null,
+    aytAlan: r.ayt_alan, hedefBolum: hedefBolumNormalize(r.hedef_bolum), email: r.profiles?.email ?? null, telefon: r.profiles?.telefon ?? null,
   }));
   return { error: null, satirlar };
 }

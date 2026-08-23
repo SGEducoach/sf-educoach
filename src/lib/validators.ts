@@ -26,6 +26,14 @@ export function adNormalize(v: string) {
     .toLocaleLowerCase("tr-TR")
     .replace(/(^|[\s'-])([a-zçğıöşü])/g, (_, ayirici: string, harf: string) => ayirici + harf.toLocaleUpperCase("tr-TR"));
 }
+
+export function hedefBolumNormalize(v: string) {
+  return v
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLocaleUpperCase("tr-TR");
+}
+
 const OZEL_KARAKTER_REGEX = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?~`]/;
 
 export function sifreGecerliMi(v: string) {

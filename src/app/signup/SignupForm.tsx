@@ -13,7 +13,7 @@ import {
 } from "@/lib/theme";
 import { KURUM_ETIKET } from "@/lib/kurum";
 import {
-  telefonSanitize, telefonGecerliMi, okulNoSanitize, sifreGecerliMi, SIFRE_IPUCU, TELEFON_IPUCU, adNormalize, rastgeleSifre,
+  telefonSanitize, telefonGecerliMi, okulNoSanitize, sifreGecerliMi, SIFRE_IPUCU, TELEFON_IPUCU, adNormalize, hedefBolumNormalize, rastgeleSifre,
 } from "@/lib/validators";
 import { YukleniyorOverlay } from "@/components/YukleniyorOverlay";
 import { SeFuMarkaAdi, SeFuSlogan } from "@/components/SeFuWordmark";
@@ -217,7 +217,7 @@ function OgrenciKayit({ kurumTuru, schools, classes, router, supabase }: {
       options: {
         data: {
           role: "ogrenci", ad: adNormalize(ad), telefon, okul_no: okulNo,
-          school_id: schoolId, class_id: classId, ayt_alan: aytAlan, hedef_bolum: hedefBolum,
+          school_id: schoolId, class_id: classId, ayt_alan: aytAlan, hedef_bolum: hedefBolumNormalize(hedefBolum),
           gecici_sifre: true,
         },
       },
@@ -316,7 +316,7 @@ function OgrenciKayit({ kurumTuru, schools, classes, router, supabase }: {
           </label>
         </>
       )}
-      <label className="flex flex-col gap-1"><Etiket>Hedef Bölüm</Etiket><Girdi required value={hedefBolum} onChange={(e) => setHedefBolum(e.target.value)} /></label>
+      <label className="flex flex-col gap-1"><Etiket>Hedef Bölüm</Etiket><Girdi required value={hedefBolum} autoCapitalize="characters" onChange={(e) => setHedefBolum(e.target.value.toLocaleUpperCase("tr-TR"))} /></label>
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
       <button type="submit" className="sfec-btn text-sm font-bold py-2.5 rounded-xl" style={{ background: MINT, color: MINT_ON }}>Devam et</button>
     </form>

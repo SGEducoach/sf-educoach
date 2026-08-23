@@ -66,7 +66,7 @@ async function OgrenciSayfasi({ admin, userId, ad }: { admin: AdminClient; userI
       <Bilgi icon={School} etiket="Okul" deger={okul?.ad ?? "—"} />
       <Bilgi icon={Users} etiket="Sınıf" deger={sinif ? `${sinif.seviye}-${sinif.sube}` : "—"} />
       <Bilgi icon={UserRound} etiket="Okul no" deger={ogrenci.okul_no} />
-      <Bilgi icon={CheckCircle2} etiket="Hedef" deger={ogrenci.hedef_bolum || "—"} />
+      <Bilgi icon={CheckCircle2} etiket="Hedef" deger={ogrenci.hedef_bolum ? ogrenci.hedef_bolum.toLocaleUpperCase("tr-TR") : "—"} />
     </section>
     <AnalizPaneli veri={analiz} ogrenciAdi={ad} />
     <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
