@@ -125,7 +125,7 @@ export function AdminPanel({
                 <Building2 size={14} color={TEXT_MUTED} />
                 <select
                   value={gorunecekOkulId ?? ""}
-                  onChange={(e) => router.push(`/yonetici?okul=${e.target.value}`)}
+                  onChange={(e) => router.push(`/yonetici/okullar?okul=${e.target.value}`)}
                   className="text-xs font-bold px-3 py-1.5 rounded-full outline-none"
                   style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
                   {okullar.map((o) => (
@@ -188,7 +188,7 @@ export function AdminPanel({
             </div>
 
             <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <OgretmenEkleFormu schoolId={gorunenOkul.id} />
+              <OgretmenEkleFormu schoolId={gorunenOkul.id} okullar={okullar} />
               <OgrenciEkleFormu schoolId={gorunenOkul.id} siniflar={siniflar} />
             </div>
 
@@ -380,21 +380,28 @@ function OlusturulanHesap({ email, sifre }: { email: string; sifre: string }) {
   );
 }
 
-function OgretmenEkleFormu({ schoolId }: { schoolId: string }) {
+function OgretmenEkleFormu({ schoolId, okullar }: { schoolId: string; okullar: OkulSatiri[] }) {
   const [ad, setAd] = useState("");
   const [email, setEmail] = useState("");
   const [telefon, setTelefon] = useState("");
   const [brans, setBrans] = useState<string>(BRANS_LISTESI[0]);
   const [mudur, setMudur] = useState(false);
+  const [hedefOkulId, setHedefOkulId] = useState(schoolId);
   const [hata, setHata] = useState<string | null>(null);
   const [sonuc, setSonuc] = useState<{ email: string; sifre: string } | null>(null);
   const [pending, startTransition] = useTransition();
+
+  // Üstteki okul seçici değişirse (başka bir okula geçilirse) müdür hedefi
+  // de varsayılan olarak onu takip etsin — render sırasında senkronize
+  // etme deseni (bkz. DershaneRosterEkleFormu'daki aynı çözüm).
+  const [sonSchoolId, setSonSchoolId] = useState(schoolId);
+  if (schoolId !== sonSchoolId) { setSonSchoolId(schoolId); setHedefOkulId(schoolId); }
 
   function ekle(e: React.FormEvent) {
     e.preventDefault();
     setHata(null);
     startTransition(async () => {
-      const res = await ogretmenEkleManuel({ ad, email, telefon, schoolId, brans, mudur });
+      const res = await ogretmenEkleManuel({ ad, email, telefon, schoolId: mudur ? hedefOkulId : schoolId, brans, mudur });
       if (res.error) return setHata(res.error);
       setSonuc({ email: email.trim().toLowerCase(), sifre: res.sifre! });
       setAd(""); setEmail(""); setTelefon("");
@@ -425,6 +432,15 @@ function OgretmenEkleFormu({ schoolId }: { schoolId: string }) {
           <input type="checkbox" checked={mudur} onChange={(e) => setMudur(e.target.checked)} />
           <span style={{ color: TEXT_MUTED }} className="text-[11px] font-semibold">Müdür olarak ekle (okul kodu + şifre ile giriş yapar)</span>
         </label>
+        {mudur && (
+          <label className="flex flex-col gap-1">
+            <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Hangi kuruma atansın?</span>
+            <select value={hedefOkulId} onChange={(e) => setHedefOkulId(e.target.value)} required
+              className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+              {okullar.map((o) => <option key={o.id} value={o.id}>{o.ad}{!o.aktif ? " (Pasif)" : ""}</option>)}
+            </select>
+          </label>
+        )}
         {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
         <button type="submit" disabled={pending}
           className="sfec-btn text-xs font-bold py-2 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
