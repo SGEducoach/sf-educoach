@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Header } from "@/components/dashboard/Header";
+import { DashboardYanMenu } from "@/components/dashboard/DashboardYanMenu";
 import { AdminPanel } from "@/components/dashboard/AdminPanel";
 import { KullaniciArama } from "@/components/yonetici/KullaniciArama";
 import { VeliTalepleri } from "@/components/yonetici/VeliTalepleri";
@@ -12,17 +13,23 @@ import { KurallarYonetimi } from "@/components/yonetici/KurallarYonetimi";
 import { SifreDegistir } from "@/components/yonetici/SifreDegistir";
 import { YoneticiGirisForm } from "@/components/yonetici/YoneticiGirisForm";
 import { YoneticiYetkileri } from "@/components/yonetici/YoneticiYetkileri";
-import { YonetimNavigasyonu } from "@/components/dashboard/YonetimNavigasyonu";
+import { dashboardMenusu } from "@/lib/dashboard-navigation";
+import type { DashboardBolumu } from "@/lib/dashboard-navigation";
 import { sinifSiraKarsilastir } from "@/lib/types";
 
 // SeFu Koç'un tek kontrol noktası — bilerek /dashboard'dan ayrı, kendi
 // bağımsız girişi olan, hiçbir yerden link verilmeyen bir adres. Normal
 // giriş/rol seçimi akışının hiçbir parçası değil: sadece bu URL'yi bilen
 // (ve admin hesabı olan) kişi buraya ulaşabilir.
+//
+// Diğer roller gibi (bkz. dashboard/page.tsx) tek sayfa üst üste dizilmiş
+// bölümler yerine artık sol menü + aktif bölüm mantığıyla çalışıyor —
+// ?bolum= (veya /yonetici/[bolum] catch-all, bkz. dashboard-navigation.ts
+// YONETICI_ROUTE_BOLUMLERI) hangi bölümün gösterileceğini belirler.
 export default async function YoneticiPage({
   searchParams,
 }: {
-  searchParams: Promise<{ okul?: string }>;
+  searchParams: Promise<{ okul?: string; bolum?: string }>;
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -36,6 +43,8 @@ export default async function YoneticiPage({
   if (!profile || profile.role !== "admin") redirect("/");
 
   const params = await searchParams;
+  const aktifBolum = (params.bolum ?? "ozet") as DashboardBolumu;
+  if (!dashboardMenusu("admin").some((oge) => oge.bolum === aktifBolum)) redirect("/yonetici");
 
   const { data: okullar } = await supabase.from("schools").select("id, ad, okul_kodu, tur, aktif").order("ad");
   const okulListesi = (okullar ?? []) as { id: string; ad: string; okul_kodu: string; tur: "okul" | "dershane"; aktif: boolean }[];
@@ -69,27 +78,35 @@ export default async function YoneticiPage({
   }));
 
   return (
-    <div style={{ minHeight: "100vh", width: "100%" }} className="flex-1 flex flex-col">
-      <Header ad={profile.ad} role="admin" />
-      <main id="ana-icerik" className="max-w-6xl mx-auto px-4 sm:px-6 py-7 pb-24 lg:pb-7 w-full flex-1 flex flex-col gap-6">
-        <YonetimNavigasyonu tur="yonetici" aktif="panel" />
-        <SifreDegistir />
-        <section id="istatistikler" className="sfec-section"><PlatformIstatistikleri /></section>
-        <YoneticiYetkileri />
-        <section id="kullanicilar" className="sfec-section"><KullaniciArama /></section>
-        <VeliTalepleri />
-        <section id="pdf-eslesme" className="sfec-section"><PdfEslesmeYonetimi /></section>
-        <section id="okullar" className="sfec-section"><AdminPanel
-          okullar={okulListesi}
-          gorunecekOkulId={gorunecekOkulId}
-          siniflar={((siniflar ?? []) as { id: string; seviye: string; sube: string }[]).sort(sinifSiraKarsilastir)}
-          ogretmenListesi={ogretmenListesi}
-          islemKayitlari={kayitListesi}
-        /></section>
-        <section id="moderatorler" className="sfec-section"><ModeratorlerListesi /></section>
-        <section id="icerik" className="sfec-section"><KonuAnlatimYonetimi /></section>
-        <KurallarYonetimi />
-      </main>
+    <div className="sfec-dashboard-shell min-h-dvh w-full flex-1 flex flex-col">
+      <Header ad={profile.ad} role="admin" aktifBolum={aktifBolum} />
+      <div className="mx-auto flex min-h-[calc(100dvh-6.75rem)] w-full max-w-[100rem] flex-1 items-stretch gap-6 px-4 py-6 sm:px-6 lg:py-7">
+        <DashboardYanMenu role="admin" aktifBolum={aktifBolum} />
+        <main id="ana-icerik" className="sfec-dashboard-main min-h-[calc(100dvh-10.25rem)] min-w-0 w-full flex-1 flex flex-col gap-6">
+          {aktifBolum === "ozet" && (
+            <>
+              <SifreDegistir />
+              <section className="sfec-section"><PlatformIstatistikleri /></section>
+              <YoneticiYetkileri />
+            </>
+          )}
+          {aktifBolum === "kullanicilar" && <section className="sfec-section"><KullaniciArama /></section>}
+          {aktifBolum === "talepler" && <VeliTalepleri />}
+          {aktifBolum === "pdf-eslesme" && <section className="sfec-section"><PdfEslesmeYonetimi /></section>}
+          {aktifBolum === "okullar" && (
+            <section className="sfec-section"><AdminPanel
+              okullar={okulListesi}
+              gorunecekOkulId={gorunecekOkulId}
+              siniflar={((siniflar ?? []) as { id: string; seviye: string; sube: string }[]).sort(sinifSiraKarsilastir)}
+              ogretmenListesi={ogretmenListesi}
+              islemKayitlari={kayitListesi}
+            /></section>
+          )}
+          {aktifBolum === "moderatorler" && <section className="sfec-section"><ModeratorlerListesi /></section>}
+          {aktifBolum === "icerik" && <section className="sfec-section"><KonuAnlatimYonetimi /></section>}
+          {aktifBolum === "kurallar" && <KurallarYonetimi />}
+        </main>
+      </div>
     </div>
   );
 }

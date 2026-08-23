@@ -15,11 +15,19 @@ export type DashboardBolumu =
   | "dersler"
   | "ogretmenler"
   | "ogrenciler"
-  | "denemeler";
+  | "denemeler"
+  // YÖNETİCİ (admin) paneline özel — bkz. ADMIN_MENUSU
+  | "kullanicilar"
+  | "pdf-eslesme"
+  | "okullar"
+  | "moderatorler"
+  | "icerik"
+  | "kurallar";
 
 export type DashboardIkonu =
   | "ana-sayfa" | "gorev" | "plan" | "veri" | "analiz" | "ai" | "rozet" | "takvim" | "duyuru" | "talep" | "onay" | "ders"
-  | "ogretmen" | "ogrenci" | "deneme";
+  | "ogretmen" | "ogrenci" | "deneme"
+  | "kullanici" | "eslestir" | "okul" | "moderator" | "icerik" | "kural";
 
 export interface DashboardMenuOgesi {
   bolum: DashboardBolumu;
@@ -78,15 +86,42 @@ const DERSHANE_MUDUR_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "TG Denemeler", ikon: "takvim" },
 ];
 
+// Admin (yönetici) paneli de artık diğer roller gibi tek bir sol menü +
+// aktif bölüm mantığıyla çalışıyor (bkz. src/app/yonetici/page.tsx) —
+// önceden tek bir sayfada üst üste dizilmiş bölümlerdi. "talepler" ve
+// "rozetler" diğer rollerle aynı bölüm adını (ve ikonunu) kasıtlı olarak
+// paylaşıyor, aynı kavram (veli talebi / rozet görüntüleme) sadece kapsamı
+// platform genelinde.
+const ADMIN_MENUSU: DashboardMenuOgesi[] = [
+  { bolum: "ozet", href: "/yonetici", etiket: "Genel bakış", ikon: "ana-sayfa" },
+  { bolum: "kullanicilar", href: "/yonetici/kullanicilar", etiket: "Kullanıcılar", ikon: "kullanici" },
+  { bolum: "talepler", href: "/yonetici/talepler", etiket: "Veli talepleri", ikon: "talep" },
+  { bolum: "pdf-eslesme", href: "/yonetici/pdf-eslesme", etiket: "PDF Eşleştirme", ikon: "eslestir" },
+  { bolum: "okullar", href: "/yonetici/okullar", etiket: "Okullar & Duyuru", ikon: "okul" },
+  { bolum: "moderatorler", href: "/yonetici/moderatorler", etiket: "Moderatörler", ikon: "moderator" },
+  { bolum: "icerik", href: "/yonetici/icerik", etiket: "Konu anlatımları", ikon: "icerik" },
+  { bolum: "kurallar", href: "/yonetici/kurallar", etiket: "Kurallar", ikon: "kural" },
+  { bolum: "rozetler", href: "/yonetici/rozetler", etiket: "Rozetler", ikon: "rozet" },
+];
+
 export function dashboardMenusu(role: UserRole, kurumTuru?: KurumTuru): DashboardMenuOgesi[] {
   if (role === "ogrenci") return OGRENCI_MENUSU;
   if (role === "veli") return VELI_MENUSU;
   if (role === "ogretmen") return OGRETMEN_MENUSU;
   if (role === "mudur") return kurumTuru === "dershane" ? DERSHANE_MUDUR_MENUSU : MUDUR_MENUSU;
+  if (role === "admin") return ADMIN_MENUSU;
   return [];
 }
 
 export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
   "gorevler", "planlar", "veri-girisi", "analiz", "yapay-zeka", "rozetler", "tg-denemeleri",
   "duyurular", "talepler", "onaylar", "dersler", "ogretmenler", "ogrenciler", "denemeler",
+]);
+
+// /yonetici/[bolum] catch-all için — "rozetler" burada YOK, çünkü admin'in
+// kendi çok-okullu rozet sayfası (/yonetici/rozetler) zaten ayrı, kendi
+// mantığı olan bir route (bkz. o dosyadaki okul seçici) — literal route
+// dinamik [bolum]'dan her zaman önceliklidir, çakışma olmaz.
+export const YONETICI_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
+  "kullanicilar", "talepler", "pdf-eslesme", "okullar", "moderatorler", "icerik", "kurallar",
 ]);

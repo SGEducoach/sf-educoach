@@ -1,8 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
-  BarChart3, BookOpenCheck, Bot, CalendarDays, CalendarPlus2, ClipboardCheck, ClipboardList,
-  FileSpreadsheet, GraduationCap, Home, Megaphone, Medal, PenLine, UserPlus, Users,
+  BarChart3, BookOpen, BookOpenCheck, Bot, CalendarDays, CalendarPlus2, ClipboardCheck, ClipboardList,
+  FileCheck2, FileSpreadsheet, GraduationCap, Home, Megaphone, Medal, PenLine, School, ScrollText,
+  ShieldCheck, UserPlus, Users,
 } from "lucide-react";
 import type { KurumTuru, UserRole } from "@/lib/types";
 import type { DashboardBolumu, DashboardIkonu } from "@/lib/dashboard-navigation";
@@ -26,6 +27,12 @@ const IKONLAR: Record<DashboardIkonu, typeof Home> = {
   ogretmen: GraduationCap,
   ogrenci: Users,
   deneme: FileSpreadsheet,
+  kullanici: Users,
+  eslestir: FileCheck2,
+  okul: School,
+  moderator: ShieldCheck,
+  icerik: BookOpen,
+  kural: ScrollText,
 };
 
 export function DashboardYanMenu({ role, kurumTuru, aktifBolum }: { role: UserRole; kurumTuru?: KurumTuru; aktifBolum: DashboardBolumu }) {
@@ -36,6 +43,7 @@ export function DashboardYanMenu({ role, kurumTuru, aktifBolum }: { role: UserRo
     veli: "Veli takip alanı",
     ogretmen: "Öğretmen çalışma alanı",
     mudur: kurumTuru === "dershane" ? "Dershane yönetim alanı" : "Okul yönetim alanı",
+    admin: "Platform yönetimi",
   };
 
   return (

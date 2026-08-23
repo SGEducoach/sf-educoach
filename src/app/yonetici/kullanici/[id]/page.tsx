@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { analizVerisiGetir } from "@/lib/analiz";
 import { AnalizPaneli } from "@/components/dashboard/AnalizPaneli";
 import { Header } from "@/components/dashboard/Header";
+import { DashboardYanMenu } from "@/components/dashboard/DashboardYanMenu";
 import { BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, TEXT, TEXT_MUTED } from "@/lib/theme";
 import type { UserRole } from "@/lib/types";
 
@@ -25,25 +26,28 @@ export default async function KullaniciGoruntulemeSayfasi({ params }: { params: 
   const role = profil.role as UserRole;
 
   return (
-    <div className="flex min-h-screen w-full flex-1 flex-col">
-      <Header ad={yonetici.ad} role="admin" mobilNavigasyon={false} />
-      <main id="ana-icerik" className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6">
-        <Link href="/yonetici#kullanicilar" className="sfec-btn inline-flex min-h-11 w-fit items-center gap-1.5 rounded-full px-3 text-xs font-bold"
-          style={{ background: BG1, color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}><ArrowLeft size={15} /> Kullanıcılara dön</Link>
-        <section className="rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-          <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: BG1_ALT }}><UserRound size={21} color={MINT} /></div>
-            <div className="min-w-0">
-              <h1 className="text-xl font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>{profil.ad}</h1>
-              <p className="mt-1 text-xs" style={{ color: TEXT_MUTED }}>{ROL_ETIKET[role]} · {profil.aktif ? "Aktif hesap" : "Pasif hesap"}</p>
-              <p className="mt-1 break-all text-xs" style={{ color: TEXT_MUTED }}>{[profil.email, profil.telefon].filter(Boolean).join(" · ") || "İletişim bilgisi yok"}</p>
+    <div className="sfec-dashboard-shell min-h-dvh w-full flex-1 flex flex-col">
+      <Header ad={yonetici.ad} role="admin" aktifBolum="kullanicilar" />
+      <div className="mx-auto flex min-h-[calc(100dvh-6.75rem)] w-full max-w-[100rem] flex-1 items-stretch gap-6 px-4 py-6 sm:px-6 lg:py-7">
+        <DashboardYanMenu role="admin" aktifBolum="kullanicilar" />
+        <main id="ana-icerik" className="sfec-dashboard-main min-h-[calc(100dvh-10.25rem)] min-w-0 w-full max-w-4xl flex-1 flex flex-col gap-6">
+          <Link href="/yonetici/kullanicilar" className="sfec-btn inline-flex min-h-11 w-fit items-center gap-1.5 rounded-full px-3 text-xs font-bold"
+            style={{ background: BG1, color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}><ArrowLeft size={15} /> Kullanıcılara dön</Link>
+          <section className="rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+            <div className="flex items-start gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: BG1_ALT }}><UserRound size={21} color={MINT} /></div>
+              <div className="min-w-0">
+                <h1 className="text-xl font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>{profil.ad}</h1>
+                <p className="mt-1 text-xs" style={{ color: TEXT_MUTED }}>{ROL_ETIKET[role]} · {profil.aktif ? "Aktif hesap" : "Pasif hesap"}</p>
+                <p className="mt-1 break-all text-xs" style={{ color: TEXT_MUTED }}>{[profil.email, profil.telefon].filter(Boolean).join(" · ") || "İletişim bilgisi yok"}</p>
+              </div>
             </div>
-          </div>
-        </section>
-        {role === "ogrenci" && <OgrenciSayfasi admin={admin} userId={id} ad={profil.ad} />}
-        {(role === "ogretmen" || role === "mudur") && <OgretmenSayfasi admin={admin} userId={id} />}
-        {role === "veli" && <VeliSayfasi admin={admin} userId={id} />}
-      </main>
+          </section>
+          {role === "ogrenci" && <OgrenciSayfasi admin={admin} userId={id} ad={profil.ad} />}
+          {(role === "ogretmen" || role === "mudur") && <OgretmenSayfasi admin={admin} userId={id} />}
+          {role === "veli" && <VeliSayfasi admin={admin} userId={id} />}
+        </main>
+      </div>
     </div>
   );
 }
