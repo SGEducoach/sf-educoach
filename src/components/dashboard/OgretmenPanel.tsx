@@ -42,6 +42,14 @@ interface BekleyenOnaySatiri {
   ogrenciAd: string;
 }
 
+// Okul numarası sahibi öğrenciler numara sırasına göre dizilir (metin
+// olarak saklanan okul_no'yu sayısal karşılaştırır, örn. "9" "10"dan önce
+// gelir); numeric:true, dershanenin ileride alfasayısal kullanıcı adı
+// kullanması durumunda da doğal sırayla (a1, a2, a10 gibi) çalışmaya devam eder.
+function ogrencilerOkulNoSirali(ogrenciler: OgrenciSatiri[]): OgrenciSatiri[] {
+  return [...ogrenciler].sort((a, b) => a.okul_no.localeCompare(b.okul_no, "tr", { numeric: true }));
+}
+
 export function OgretmenPanel({
   role, bekleyenTalepler, ogrenciler, sinifAdi, siniflar, gorunecekSinifId, kendiSinifId, kendiSinifiMi,
   ogretmenDersleri, bekleyenOnaylar, konuOnerileri, aktifBolum,
@@ -228,7 +236,7 @@ export function OgretmenPanel({
           <p style={{ color: TEXT_MUTED }} className="text-sm py-4 text-center">Bu sınıfta kayıtlı öğrenci yok.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {ogrenciler.map((o) => (
+            {ogrencilerOkulNoSirali(ogrenciler).map((o) => (
               <div key={o.id} className="rounded-xl flex items-center justify-between gap-2 pr-1.5" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
                 <button onClick={() => router.push(`/dashboard?sinif=${gorunecekSinifId}&ogrenci=${o.id}`)}
                   className="sfec-btn flex-1 min-w-0 px-3.5 py-2.5 flex items-center justify-between text-left">
@@ -275,8 +283,8 @@ function YurtOgrencisiButonu({ ogrenciId, yurtOgrencisi }: { ogrenciId: string; 
     <button type="button" onClick={degistir} disabled={pending}
       title={yurt ? "Yurt öğrencisi (kaldırmak için tıkla)" : "Yurt öğrencisi olarak işaretle"}
       className="sfec-btn shrink-0 w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-60"
-      style={{ background: yurt ? MINT_BG : "rgba(255,255,255,0.06)", border: `2px solid ${yurt ? MINT : BORDER_STRONG}` }}>
-      <BedDouble size={13} color={yurt ? MINT : TEXT_MUTED} />
+      style={{ background: yurt ? MINT : "rgba(255,255,255,0.06)", border: `2px solid ${yurt ? MINT : BORDER_STRONG}` }}>
+      <BedDouble size={13} color={yurt ? MINT_ON : TEXT_MUTED} />
     </button>
   );
 }
