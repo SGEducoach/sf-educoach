@@ -1,10 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import type { RozetOgrencisi } from "@/lib/rozet-gorunumu";
 import { BG1_ALT, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
 
+// Bulgu 05 — önceden gerçek bir <form method="get"> tam sayfa (tarayıcı)
+// yönlendirmesi yapıyordu: eski sayfa kapanıp yenisinin HTML'i sunucudan
+// gelene kadar kısa bir beyaz ekran oluşuyordu. router.push ile sayfa hiç
+// kapanmadan, sadece arama parametreleri güncellenip veri tazeleniyor.
 export function RozetOgrenciSecici({ action, ogrenciler, siniflar, seciliSinifId, seciliOgrenciId, gizliAlanlar }: {
   action: string;
   ogrenciler: RozetOgrencisi[];
@@ -13,15 +18,22 @@ export function RozetOgrenciSecici({ action, ogrenciler, siniflar, seciliSinifId
   seciliOgrenciId?: string;
   gizliAlanlar: Record<string, string>;
 }) {
+  const router = useRouter();
   const [sinifId, setSinifId] = useState(seciliSinifId);
   const filtreliOgrenciler = useMemo(() => sinifId === "tumu" ? ogrenciler : ogrenciler.filter((ogrenci) => ogrenci.sinifId === sinifId), [ogrenciler, sinifId]);
   const seciliGecerli = filtreliOgrenciler.some((ogrenci) => ogrenci.id === seciliOgrenciId);
   const [ogrenciId, setOgrenciId] = useState(seciliGecerli ? seciliOgrenciId : filtreliOgrenciler[0]?.id);
   const etkinOgrenciId = filtreliOgrenciler.some((ogrenci) => ogrenci.id === ogrenciId) ? ogrenciId : filtreliOgrenciler[0]?.id;
 
+  function git(e: React.FormEvent) {
+    e.preventDefault();
+    if (!etkinOgrenciId) return;
+    const params = new URLSearchParams({ ...gizliAlanlar, sinif: sinifId, ogrenci: etkinOgrenciId });
+    router.push(`${action}?${params.toString()}`);
+  }
+
   return (
-    <form action={action} method="get" className="mt-5 grid grid-cols-1 gap-2 lg:grid-cols-[minmax(150px,0.55fr)_minmax(0,1fr)_auto]">
-      {Object.entries(gizliAlanlar).map(([ad, deger]) => <input key={ad} type="hidden" name={ad} value={deger} />)}
+    <form onSubmit={git} className="mt-5 grid grid-cols-1 gap-2 lg:grid-cols-[minmax(150px,0.55fr)_minmax(0,1fr)_auto]">
       <label>
         <span className="sr-only">Sınıf seçin</span>
         <select name="sinif" value={sinifId} onChange={(event) => { setSinifId(event.target.value); setOgrenciId(undefined); }}

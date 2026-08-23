@@ -536,52 +536,61 @@ function PlanEkleModal({ tarih, dersListesi, konuOnerileri, onKapat }: {
           <div style={{ color: MINT }} className="text-sm font-semibold py-6 text-center">✓ {basari}</div>
         ) : (
           <form onSubmit={gonder} className="flex flex-col gap-3">
-            <div className="grid grid-cols-2 gap-3">
+            {/* Bulgu 06 — ilgili alanlar ortak bir çerçeve altında: ne
+                çalışılacağı bir arada, ne zaman yapılacağı bir arada. */}
+            <div className="rounded-2xl p-3 flex flex-col gap-3" style={{ border: `2px solid ${BORDER}` }}>
+              <span style={{ color: TEXT_MUTED }} className="text-[10px] font-bold uppercase tracking-wide">Ne çalışılacak</span>
+              <div className="grid grid-cols-2 gap-3">
+                <label className="flex flex-col gap-1">
+                  <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Tür</span>
+                  <select value={tur} onChange={(e) => setTur(e.target.value as GorevTuru)}
+                    className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+                    <option value="konu">Konu Çalışma</option>
+                    <option value="soru">Soru Çözümü</option>
+                    <option value="deneme">Deneme</option>
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Ders</span>
+                  <select value={ders} onChange={(e) => { setDers(e.target.value); setKonu(""); }}
+                    className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+                    {dersListesi.map((d) => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </label>
+              </div>
+
               <label className="flex flex-col gap-1">
-                <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Tür</span>
-                <select value={tur} onChange={(e) => setTur(e.target.value as GorevTuru)}
+                <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Konu (opsiyonel)</span>
+                <select value={konu} onChange={(e) => setKonu(e.target.value)}
                   className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
-                  <option value="konu">Konu Çalışma</option>
-                  <option value="soru">Soru Çözümü</option>
-                  <option value="deneme">Deneme</option>
+                  <option value="">Seçiniz (opsiyonel)</option>
+                  {dersKonulari.map((k) => <option key={k.konu} value={k.konu}>{k.konu}</option>)}
                 </select>
               </label>
-              <label className="flex flex-col gap-1">
-                <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Ders</span>
-                <select value={ders} onChange={(e) => { setDers(e.target.value); setKonu(""); }}
-                  className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
-                  {dersListesi.map((d) => <option key={d} value={d}>{d}</option>)}
-                </select>
-              </label>
+
+              {tur === "soru" && (
+                <label className="flex flex-col gap-1">
+                  <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Hedef soru sayısı (opsiyonel)</span>
+                  <input type="number" min={1} value={hedefSoru} onChange={(e) => setHedefSoru(e.target.value)}
+                    className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+                </label>
+              )}
             </div>
 
-            <label className="flex flex-col gap-1">
-              <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Konu (opsiyonel)</span>
-              <select value={konu} onChange={(e) => setKonu(e.target.value)}
-                className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
-                <option value="">Seçiniz (opsiyonel)</option>
-                {dersKonulari.map((k) => <option key={k.konu} value={k.konu}>{k.konu}</option>)}
-              </select>
-            </label>
-
-            {tur === "soru" && (
-              <label className="flex flex-col gap-1">
-                <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Hedef soru sayısı (opsiyonel)</span>
-                <input type="number" min={1} value={hedefSoru} onChange={(e) => setHedefSoru(e.target.value)}
-                  className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
-              </label>
-            )}
-            <div className="grid grid-cols-2 gap-3">
-              <label className="flex flex-col gap-1">
-                <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Başlangıç saati *</span>
-                <input type="time" required value={baslangicSaat} onChange={(e) => setBaslangicSaat(e.target.value)}
-                  className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
-              </label>
-              <label className="flex flex-col gap-1">
-                <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Bitiş saati *</span>
-                <input type="time" required value={bitisSaat} onChange={(e) => setBitisSaat(e.target.value)}
-                  className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
-              </label>
+            <div className="rounded-2xl p-3 flex flex-col gap-3" style={{ border: `2px solid ${BORDER}` }}>
+              <span style={{ color: TEXT_MUTED }} className="text-[10px] font-bold uppercase tracking-wide">Ne zaman</span>
+              <div className="grid grid-cols-2 gap-3">
+                <label className="flex flex-col gap-1">
+                  <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Başlangıç saati *</span>
+                  <input type="time" required value={baslangicSaat} onChange={(e) => setBaslangicSaat(e.target.value)}
+                    className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Bitiş saati *</span>
+                  <input type="time" required value={bitisSaat} onChange={(e) => setBitisSaat(e.target.value)}
+                    className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+                </label>
+              </div>
             </div>
 
             <label className="flex flex-col gap-1">

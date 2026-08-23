@@ -255,7 +255,7 @@ export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, onB
   function submit(formData: FormData) {
     setHata(null);
     if (!konu.trim()) return setHata("Konu seçin veya yazın.");
-    if (!yayinevi.trim()) return setHata("Yayınevi girin.");
+    if (!yayinevi.trim()) return setHata("Yayınevi girin (MEB veya okul kitabıysa öyle yazabilirsin).");
     formData.set("ders", ders);
     formData.set("konu", konu);
     formData.set("hedefeYakinlik", hedefeYakinlik);
@@ -333,7 +333,7 @@ export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, onB
       </label>
       <p style={{ color: TEXT_MUTED }} className="text-[11px] -mt-1">Bu, şu an bitirdiğin <strong>tek oturumun</strong> süresi — haftalık/günlük toplam değil. Birden fazla çalışman varsa her birini ayrı ayrı gir.</p>
       <label className="flex flex-col gap-1"><Etiket>Yayınevi</Etiket>
-        <Girdi placeholder="örn. Palme" value={yayinevi} onChange={(e) => setYayinevi(e.target.value)} required />
+        <Girdi placeholder="örn. Palme, MEB, Okul kitabı" value={yayinevi} onChange={(e) => setYayinevi(e.target.value)} required />
       </label>
       <p style={{ color: TEXT_MUTED }} className="text-[11px] -mt-1">Konuyu okuduktan/çalıştıktan sonra ne kadar hakim olduğunu aşağıdan işaretle:</p>
       <SecenekSecici baslik="Konuya hakimiyet" value={hedefeYakinlik} onChange={setHedefeYakinlik}
@@ -379,7 +379,7 @@ export function SoruCozumuForm({ dersListesi, konuOnerileri, onBasari, prefillDe
 
   function submit(formData: FormData) {
     setHata(null);
-    if (!yayinevi.trim()) return setHata("Yayınevi girin.");
+    if (!yayinevi.trim()) return setHata("Yayınevi girin (MEB veya okul kitabıysa öyle yazabilirsin).");
     formData.set("ders", ders);
     formData.set("konu", konu);
     formData.set("yayinevi", yayinevi.trim());
@@ -432,7 +432,7 @@ export function SoruCozumuForm({ dersListesi, konuOnerileri, onBasari, prefillDe
         {toplamSoru > 0 && <> En fazla <strong>{sureUstSiniri} dakika</strong> (soru başına ~2 dk).</>}
       </p>
       <label className="flex flex-col gap-1"><Etiket>Yayınevi</Etiket>
-        <Girdi placeholder="örn. Palme" value={yayinevi} onChange={(e) => setYayinevi(e.target.value)} required />
+        <Girdi placeholder="örn. Palme, MEB, Okul kitabı" value={yayinevi} onChange={(e) => setYayinevi(e.target.value)} required />
       </label>
       {net !== null && (
         <div style={{ color: MINT }} className="text-xs font-bold">Net: {net}</div>
@@ -512,7 +512,7 @@ export function DenemeForm({ aytAlan, dokuzOnMu, onBasari, gorevAtamaId }: {
     e.preventDefault();
     setHata(null);
     setBenzerUyari(false);
-    if (!yayinevi.trim()) return setHata("Yayınevi girin.");
+    if (!yayinevi.trim()) return setHata("Yayınevi girin (MEB veya okul kitabıysa öyle yazabilirsin).");
     kaydet(false);
   }
 
@@ -535,7 +535,7 @@ export function DenemeForm({ aytAlan, dokuzOnMu, onBasari, gorevAtamaId }: {
           </label>
         )}
         <label className="flex flex-col gap-1"><Etiket>Yayınevi</Etiket>
-          <Girdi placeholder="örn. Palme" value={yayinevi} onChange={(e) => setYayinevi(e.target.value)} required />
+          <Girdi placeholder="örn. Palme, MEB, Okul kitabı" value={yayinevi} onChange={(e) => setYayinevi(e.target.value)} required />
         </label>
       </div>
 
