@@ -4,6 +4,7 @@ import { Header } from "@/components/dashboard/Header";
 import { AdminPanel } from "@/components/dashboard/AdminPanel";
 import { KullaniciArama } from "@/components/yonetici/KullaniciArama";
 import { VeliTalepleri } from "@/components/yonetici/VeliTalepleri";
+import { PdfEslesmeYonetimi } from "@/components/yonetici/PdfEslesmeYonetimi";
 import { PlatformIstatistikleri } from "@/components/yonetici/PlatformIstatistikleri";
 import { KonuAnlatimYonetimi } from "@/components/yonetici/KonuAnlatimYonetimi";
 import { KurallarYonetimi } from "@/components/yonetici/KurallarYonetimi";
@@ -76,6 +77,7 @@ export default async function YoneticiPage({
         <YoneticiYetkileri />
         <section id="kullanicilar" className="sfec-section"><KullaniciArama /></section>
         <VeliTalepleri />
+        <section id="pdf-eslesme" className="sfec-section"><PdfEslesmeYonetimi /></section>
         <section id="okullar" className="sfec-section"><AdminPanel
           okullar={okulListesi}
           gorunecekOkulId={gorunecekOkulId}

@@ -1,4 +1,3 @@
-import { FileSpreadsheet } from "lucide-react";
 import { moderatorKullanicilariGetir } from "@/app/moderator/actions";
 import { ogretmenDuyuruGonder, gonderilenDuyurularGetir } from "@/app/dashboard/actions";
 import { DuyuruFormu } from "@/components/dashboard/DuyuruFormu";
@@ -8,8 +7,9 @@ import { DershaneRosterTopluEkleFormu } from "@/components/dashboard/DershaneRos
 import { DershaneOgretmenEkleFormu } from "@/components/dashboard/DershaneOgretmenEkleFormu";
 import { DershaneKullaniciListesi } from "@/components/dashboard/DershaneKullaniciListesi";
 import { DershaneSinifEkleFormu } from "@/components/dashboard/DershaneSinifEkleFormu";
+import { DershaneDenemePdfFormu } from "@/components/dashboard/DershaneDenemePdfFormu";
 import type { DashboardBolumu } from "@/lib/dashboard-navigation";
-import { BG1, BORDER, MINT_BG, MINT, TEXT, TEXT_MUTED } from "@/lib/theme";
+import { BG1, BORDER, TEXT_MUTED } from "@/lib/theme";
 
 // DERSHANE MODU (Faz D3) — dershane müdürünün tam paneli. Menü sırası
 // DERSHANE_MUDUR_MENUSU ile birebir (bkz. dashboard-navigation.ts):
@@ -47,17 +47,7 @@ export async function DershaneMudurPaneli({ siniflar, aktifBolum }: {
   }
 
   if (aktifBolum === "denemeler") {
-    return (
-      <div className="sfec-fade rounded-3xl p-8 text-center flex flex-col items-center gap-3" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl" style={{ background: MINT_BG }}>
-          <FileSpreadsheet size={22} color={MINT} />
-        </div>
-        <p style={{ color: TEXT }} className="text-sm font-bold">Toplu PDF deneme aktarımı yakında</p>
-        <p style={{ color: TEXT_MUTED }} className="text-xs max-w-md">
-          Deneme sonuç PDF&apos;ini yükleyip öğrencilerle otomatik eşleştirme (ad-soyad ile, belirsiz eşleşmeler site yöneticisi tarafından revize edilir) — bu bölüm bir sonraki fazda açılacak.
-        </p>
-      </div>
-    );
+    return <section className="sfec-section"><DershaneDenemePdfFormu /></section>;
   }
 
   // ogretmenler / ogrenciler — moderatör altyapısı yeniden kullanılıyor
