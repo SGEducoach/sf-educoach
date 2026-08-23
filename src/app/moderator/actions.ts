@@ -15,6 +15,7 @@ export interface ModeratorKullanici {
   detay: string;
   kategori: "ogrenci" | "ogretmen" | "veli";
   sinif: string | null;
+  yurtOgrencisi: boolean;
 }
 
 // targetSchoolId: admin'in /yonetici → "Moderatörler" listesinden bir okula
@@ -59,7 +60,7 @@ async function hedefOkuldaMi(admin: ReturnType<typeof createAdminClient>, school
 export async function moderatorKullanicilariGetir(targetSchoolId?: string): Promise<{ okulAdi: string; kullanicilar: ModeratorKullanici[] }> {
   const { user, admin, schoolId, okulAdi } = await requireModerator(targetSchoolId);
   const [{ data: students }, { data: teachers }, { data: parents }] = await Promise.all([
-    admin.from("students").select("id, okul_no, classes(seviye, sube)").eq("school_id", schoolId),
+    admin.from("students").select("id, okul_no, yurt_ogrencisi, classes(seviye, sube)").eq("school_id", schoolId),
     admin.from("teachers").select("id, brans, classes(seviye, sube)").eq("school_id", schoolId),
     admin.from("parent_students").select("parent_id, students!inner(school_id)").eq("students.school_id", schoolId),
   ]);
@@ -72,13 +73,14 @@ export async function moderatorKullanicilariGetir(targetSchoolId?: string): Prom
   return {
     okulAdi,
     kullanicilar: ((profiles ?? []) as { id: string; ad: string; role: UserRole; aktif: boolean }[]).map(p => {
-      const s = studentMap.get(p.id) as { okul_no: string; classes: { seviye: string; sube: string } | null } | undefined;
+      const s = studentMap.get(p.id) as { okul_no: string; yurt_ogrencisi: boolean; classes: { seviye: string; sube: string } | null } | undefined;
       const t = teacherMap.get(p.id) as { brans: string; classes: { seviye: string; sube: string } | null } | undefined;
       const sinif = s?.classes ? `${s.classes.seviye}-${s.classes.sube}` : t?.classes ? `${t.classes.seviye}-${t.classes.sube}` : null;
       return {
         id: p.id, ad: p.ad, role: p.role, aktif: p.aktif, sinif,
         kategori: s ? "ogrenci" as const : t ? "ogretmen" as const : "veli" as const,
         detay: s ? `Öğrenci · #${s.okul_no}${sinif ? ` · ${sinif}` : ""}` : t ? `${p.role === "mudur" ? "Müdür" : "Öğretmen"} · ${t.brans}${sinif ? ` · ${sinif}` : ""}` : "Veli",
+        yurtOgrencisi: s?.yurt_ogrencisi ?? false,
       };
     }).sort((a, b) => a.ad.localeCompare(b.ad, "tr")),
   };
@@ -91,6 +93,22 @@ export async function moderatorAktiflikDegistir(targetId: string, aktif: boolean
   if (error) return { error: error.message };
   await admin.from("profiles").update({ aktif }).eq("id", targetId).neq("role", "admin");
   await admin.from("admin_audit_log").insert({ actor_id: user.id, eylem: aktif ? "moderator_hesap_aktiflestir" : "moderator_hesap_pasiflestir", detay: { hedef_id: targetId, school_id: schoolId } });
+  revalidatePath("/moderator");
+  return { error: null };
+}
+
+// Yurt öğrencisi işareti — hafta içi telefonuna erişemeyen öğrenciler için
+// rozet eşikleri ve "sisteme girmedi" hatırlatmaları hafta sonuna göre
+// esnetiliyor (bkz. migration 0053). targetId===user.id kontrolüne gerek
+// yok — moderatör zaten hiçbir zaman kendi kaydında öğrenci rolünde olmaz.
+export async function moderatorYurtDurumuDegistir(targetId: string, yurtOgrencisi: boolean, targetSchoolId?: string) {
+  const { user, admin, schoolId } = await requireModerator(targetSchoolId);
+  if (!(await hedefOkuldaMi(admin, schoolId, targetId))) return { error: "Bu kullanıcı için yetkiniz yok." };
+  const { data: profil } = await admin.from("profiles").select("role").eq("id", targetId).maybeSingle();
+  if (!profil || profil.role !== "ogrenci") return { error: "Bu işlem yalnızca öğrenciler için yapılabilir." };
+  const { error } = await admin.from("students").update({ yurt_ogrencisi: yurtOgrencisi }).eq("id", targetId);
+  if (error) return { error: error.message };
+  await admin.from("admin_audit_log").insert({ actor_id: user.id, eylem: yurtOgrencisi ? "moderator_yurt_ogrencisi_isaretle" : "moderator_yurt_ogrencisi_kaldir", detay: { hedef_id: targetId, school_id: schoolId } });
   revalidatePath("/moderator");
   return { error: null };
 }

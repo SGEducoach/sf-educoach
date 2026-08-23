@@ -2,11 +2,11 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { UserPlus, Check, Users, Eye, Plus, X, BookMarked, ClipboardCheck, ArrowRightLeft, ChevronDown, ChevronUp, CalendarPlus } from "lucide-react";
+import { UserPlus, Check, Users, Eye, Plus, X, BookMarked, BedDouble, ClipboardCheck, ArrowRightLeft, ChevronDown, ChevronUp, CalendarPlus } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, SKY, SKY_BG, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 import {
   veliTalepOnayla, sinifEkle, ogretmenDuyuruGonder, gonderilenDuyurularGetir,
-  ogretmenDersEkle, ogretmenDersSil, ogrenciSinifTasi, soruCozumuOnayla,
+  ogretmenDersEkle, ogretmenDersSil, ogrenciSinifTasi, ogrenciYurtDurumuGuncelle, soruCozumuOnayla,
 } from "@/app/dashboard/actions";
 import { gorevVer } from "@/app/dashboard/gorev-actions";
 import { DuyuruFormu } from "@/components/dashboard/DuyuruFormu";
@@ -18,6 +18,7 @@ interface OgrenciSatiri {
   id: string;
   ad: string;
   okul_no: string;
+  yurtOgrencisi: boolean;
 }
 interface SinifSatiri {
   id: string;
@@ -235,7 +236,10 @@ export function OgretmenPanel({
                   <span style={{ color: TEXT_MUTED }} className="text-xs shrink-0 ml-2">#{o.okul_no}</span>
                 </button>
                 {kendiSinifiMi && (
-                  <OgrenciTasiButonu ogrenciId={o.id} kendiSinifId={kendiSinifId} siniflar={siniflar} />
+                  <>
+                    <YurtOgrencisiButonu ogrenciId={o.id} yurtOgrencisi={o.yurtOgrencisi} />
+                    <OgrenciTasiButonu ogrenciId={o.id} kendiSinifId={kendiSinifId} siniflar={siniflar} />
+                  </>
                 )}
               </div>
             ))}
@@ -250,6 +254,33 @@ export function OgretmenPanel({
 // "Öğrenci ekle/çıkar" — kullanıcı kararı: sınıf transferi. Sadece kendi
 // sınıfınızdaki bir öğrenciyi aynı okuldaki başka bir sınıfa taşıyabilirsiniz
 // (bkz. migration 0045, students_update_sinif_ogretmeni policy).
+// Yurt öğrencisi işareti — sadece sınıf öğretmeni (kendiSinifiMi) kendi
+// öğrencisini işaretleyebilir. Hafta içi telefonuna erişemeyen öğrenciler
+// için rozet eşikleri ve "sisteme girmedi" hatırlatmaları hafta sonuna
+// göre esnetiliyor (bkz. migration 0053).
+function YurtOgrencisiButonu({ ogrenciId, yurtOgrencisi }: { ogrenciId: string; yurtOgrencisi: boolean }) {
+  const router = useRouter();
+  const [yurt, setYurt] = useState(yurtOgrencisi);
+  const [pending, startTransition] = useTransition();
+
+  function degistir() {
+    const yeni = !yurt;
+    startTransition(async () => {
+      const res = await ogrenciYurtDurumuGuncelle(ogrenciId, yeni);
+      if (!res.error) { setYurt(yeni); router.refresh(); }
+    });
+  }
+
+  return (
+    <button type="button" onClick={degistir} disabled={pending}
+      title={yurt ? "Yurt öğrencisi (kaldırmak için tıkla)" : "Yurt öğrencisi olarak işaretle"}
+      className="sfec-btn shrink-0 w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-60"
+      style={{ background: yurt ? MINT_BG : "rgba(255,255,255,0.06)", border: `2px solid ${yurt ? MINT : BORDER_STRONG}` }}>
+      <BedDouble size={13} color={yurt ? MINT : TEXT_MUTED} />
+    </button>
+  );
+}
+
 function OgrenciTasiButonu({ ogrenciId, kendiSinifId, siniflar }: {
   ogrenciId: string; kendiSinifId: string | null; siniflar: SinifSatiri[];
 }) {

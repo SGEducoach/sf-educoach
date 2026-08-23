@@ -5,6 +5,15 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { KATEGORI_GERIYE_DONUK_SINIR } from "@/lib/types";
 import { bugununTarihiTR } from "@/lib/tarih";
 
+// Yurt öğrencisi hafta içi telefonuna erişemiyor — bugün hafta sonu
+// (Cmt/Paz) değilse konu/soru hatırlatmaları onlar için bastırılıyor
+// (bkz. migration 0053). Deneme hatırlatması zaten haftalık bir eşik
+// kullandığından (7 gün) hafta sonu toplu girişle uyumlu, dokunulmadı.
+function bugunHaftaSonuMu(): boolean {
+  const gun = new Date(`${bugununTarihiTR()}T12:00:00Z`).getUTCDay();
+  return gun === 0 || gun === 6;
+}
+
 export const maxDuration = 60;
 
 // Vercel Cron bu route'u çağırır (vercel.json'daki schedule'a göre).
@@ -81,6 +90,7 @@ export async function GET(request: Request) {
     const admin = createAdminClient();
     const resend = new Resend(process.env.RESEND_API_KEY);
     const now = new Date();
+    const bugunHaftaSonu = bugunHaftaSonuMu();
     let gonderilen = 0;
     const detaylar: string[] = [];
 
@@ -93,7 +103,7 @@ export async function GET(request: Request) {
       { data: pushAbonelikleri },
     ] = await Promise.all([
       admin.from("students").select(
-        "id, created_at, son_hatirlatma_konu_deadline, son_hatirlatma_soru_deadline, son_hatirlatma_deneme_deadline, profiles!students_id_fkey(ad, email)",
+        "id, created_at, yurt_ogrencisi, son_hatirlatma_konu_deadline, son_hatirlatma_soru_deadline, son_hatirlatma_deneme_deadline, profiles!students_id_fkey(ad, email)",
       ),
       admin.from("konu_calismalar").select("student_id, created_at"),
       admin.from("soru_cozumleri").select("student_id, created_at"),
@@ -154,8 +164,15 @@ export async function GET(request: Request) {
       if (!profile?.email) continue;
       const veliler = veliMap.get(s.id) ?? [];
       const veliEmailler = veliler.map((v) => v.email).filter((e): e is string => Boolean(e));
+      const yurtOgrencisi = (s as unknown as { yurt_ogrencisi: boolean }).yurt_ogrencisi;
 
       for (const kategoriKey of Object.keys(KATEGORI_TANIM) as KategoriAnahtar[]) {
+        // Yurt öğrencisi hafta içi telefonuna erişemiyor — konu/soru
+        // hatırlatması sadece hafta sonu değerlendiriliyor (bkz. yukarıdaki
+        // bugunHaftaSonuMu). Deneme zaten haftalık bir eşik kullanıyor,
+        // dokunulmadı.
+        if (yurtOgrencisi && kategoriKey !== "deneme" && !bugunHaftaSonu) continue;
+
         const tanim = KATEGORI_TANIM[kategoriKey];
         const esikMs = KATEGORI_GERIYE_DONUK_SINIR[kategoriKey] * 24 * 3600 * 1000;
 

@@ -656,6 +656,24 @@ export async function ogrenciSinifTasi(studentId: string, yeniSinifId: string) {
   return { error: null };
 }
 
+// Yurt öğrencisi işareti — sınıf öğretmeni kendi sınıfındaki bir öğrenciyi
+// işaretleyebilir (aynı students_update_sinif_ogretmeni RLS politikası,
+// migration 0045 — yeni bir politika gerekmedi). Admin ve okul moderatörü
+// için aynı işlem yonetici/actions.ts ve moderator/actions.ts'te service-role
+// ile ayrıca var (bkz. migration 0053 — rozet eşikleri ve hatırlatma
+// cron'u bu bayrağa göre hafta sonuna esnetiliyor).
+export async function ogrenciYurtDurumuGuncelle(studentId: string, yurtOgrencisi: boolean) {
+  const { supabase, user } = await requireUser();
+  const { error } = await supabase.from("students").update({ yurt_ogrencisi: yurtOgrencisi }).eq("id", studentId);
+  if (error) {
+    if (error.message?.includes("row-level security")) return { error: "Bu öğrenciyi işaretleme yetkiniz yok (kendi sınıfınızda olmalı)." };
+    return { error: error.message };
+  }
+  await auditLogYaz(supabase, user.id, yurtOgrencisi ? "yurt_ogrencisi_isaretle" : "yurt_ogrencisi_kaldir", { ogrenci_id: studentId });
+  revalidatePath("/dashboard");
+  return { error: null };
+}
+
 // Soru çözümü "gördüm" onayı — RLS (soru_cozumleri_update_ogretmen_onay)
 // sadece kendi sınıfındaki öğrencinin kaydına izin veriyor.
 export async function soruCozumuOnayla(id: string) {

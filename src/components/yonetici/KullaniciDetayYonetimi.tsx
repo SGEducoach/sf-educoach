@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { Link2, Save, Trash2, UserRoundCog } from "lucide-react";
+import { BedDouble, Link2, Save, Trash2, UserRoundCog } from "lucide-react";
 import {
   kullaniciProfilGuncelle,
   yonetimOkullariGetir,
@@ -12,6 +12,7 @@ import {
   ogrenciYonetimKayitlari,
   ogrenciYonetimKaydiGuncelle,
   ogrenciYonetimKaydiSil,
+  ogrenciYurtDurumuGuncelle,
   type KullaniciSonuc,
   type OgrenciYonetimKaydi,
   type VeliBaglantisi,
@@ -24,11 +25,22 @@ export function KullaniciDetayYonetimi({ kullanici }: { kullanici: KullaniciSonu
   const [email, setEmail] = useState(kullanici.email ?? "");
   const [telefon, setTelefon] = useState(kullanici.telefon ?? "");
   const [okulNo, setOkulNo] = useState(kullanici.okulNo ?? "");
+  const [yurt, setYurt] = useState(kullanici.yurtOgrencisi ?? false);
   const [mesaj, setMesaj] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [yurtPending, startYurtTransition] = useTransition();
   const [okullar, setOkullar] = useState<YonetimOkulu[]>([]);
   const [schoolId, setSchoolId] = useState(kullanici.okulId ?? "");
   const [classId, setClassId] = useState(kullanici.sinifId ?? "");
+
+  function yurtDegistir() {
+    const yeni = !yurt;
+    startYurtTransition(async () => {
+      const res = await ogrenciYurtDurumuGuncelle(kullanici.id, yeni);
+      setMesaj(res.error ?? (yeni ? "Yurt öğrencisi olarak işaretlendi." : "Yurt öğrencisi işareti kaldırıldı."));
+      if (!res.error) setYurt(yeni);
+    });
+  }
 
   useEffect(() => {
     if (kullanici.role === "ogrenci" || kullanici.role === "ogretmen" || kullanici.role === "mudur") yonetimOkullariGetir().then((r) => setOkullar(r.okullar));
@@ -59,9 +71,19 @@ export function KullaniciDetayYonetimi({ kullanici }: { kullanici: KullaniciSonu
         <Alan etiket="Telefon" value={telefon} onChange={setTelefon} />
         {kullanici.role === "ogrenci" && <Alan etiket="Okul numarası" value={okulNo} onChange={setOkulNo} />}
       </div>
-      <button type="button" onClick={profilKaydet} disabled={pending} className="sfec-btn self-start rounded-full px-3 py-1.5 text-[11px] font-bold" style={{ background: MINT, color: MINT_ON }}>
-        <span className="flex items-center gap-1"><Save size={11} /> {pending ? "Kaydediliyor..." : "Profili kaydet"}</span>
-      </button>
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="button" onClick={profilKaydet} disabled={pending} className="sfec-btn self-start rounded-full px-3 py-1.5 text-[11px] font-bold" style={{ background: MINT, color: MINT_ON }}>
+          <span className="flex items-center gap-1"><Save size={11} /> {pending ? "Kaydediliyor..." : "Profili kaydet"}</span>
+        </button>
+        {kullanici.role === "ogrenci" && (
+          <button type="button" onClick={yurtDegistir} disabled={yurtPending}
+            title="Hafta içi telefonuna erişemeyen öğrenciler için rozet eşikleri ve hatırlatmalar hafta sonuna göre esnetilir"
+            className="sfec-btn self-start flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-bold disabled:opacity-60"
+            style={{ background: yurt ? MINT : BG1, color: yurt ? MINT_ON : TEXT_MUTED, border: `2px solid ${yurt ? MINT : BORDER_STRONG}` }}>
+            <BedDouble size={11} /> {yurt ? "Yurt öğrencisi ✓" : "Yurt öğrencisi işaretle"}
+          </button>
+        )}
+      </div>
       {(kullanici.role === "ogrenci" || kullanici.role === "ogretmen" || kullanici.role === "mudur") && <div className="flex flex-wrap items-end gap-2">
         <label className="flex min-w-48 flex-1 flex-col gap-1"><span className="text-[10px] font-semibold" style={{ color: TEXT_MUTED }}>Okul</span><select value={schoolId} onChange={(e) => { setSchoolId(e.target.value); setClassId(""); }} className="rounded-lg px-2.5 py-2 text-xs" style={{ background: BG1, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>{okullar.map((o) => <option key={o.id} value={o.id}>{o.ad}</option>)}</select></label>
         {kullanici.role === "ogrenci" && <label className="flex flex-col gap-1"><span className="text-[10px] font-semibold" style={{ color: TEXT_MUTED }}>Sınıf</span><select value={classId} onChange={(e) => setClassId(e.target.value)} className="rounded-lg px-2.5 py-2 text-xs" style={{ background: BG1, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}><option value="">Sınıf seçin</option>{okullar.find((o) => o.id === schoolId)?.siniflar.map((s) => <option key={s.id} value={s.id}>{s.ad}</option>)}</select></label>}

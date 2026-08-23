@@ -400,7 +400,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, secilenSinifId, secilen
 
   const [{ data: ogrenciler }, { data: talepler }, { data: ogretmenDersleriHam }, { data: bekleyenOnaylarHam }] = await Promise.all([
     gorunecekSinifId
-      ? supabase.from("students").select("id, okul_no, profiles!students_id_fkey(ad)").eq("class_id", gorunecekSinifId)
+      ? supabase.from("students").select("id, okul_no, yurt_ogrencisi, profiles!students_id_fkey(ad)").eq("class_id", gorunecekSinifId)
       : Promise.resolve({ data: [] }),
     teacher.class_id
       ? supabase.from("veli_link_requests").select("*, students!inner(class_id, profiles!students_id_fkey(ad))").eq("students.class_id", teacher.class_id).eq("durum", "bekliyor")
@@ -421,9 +421,9 @@ async function OgretmenIcerik({ userId, role, kurumTuru, secilenSinifId, secilen
       : Promise.resolve({ data: [] }),
   ]);
 
-  type OgrenciRow = { id: string; okul_no: string; profiles: { ad: string } | null };
+  type OgrenciRow = { id: string; okul_no: string; yurt_ogrencisi: boolean; profiles: { ad: string } | null };
   const ogrenciListesi = ((ogrenciler as unknown as OgrenciRow[]) ?? []).map((o) => ({
-    id: o.id, okul_no: o.okul_no, ad: o.profiles?.ad ?? "İsimsiz",
+    id: o.id, okul_no: o.okul_no, ad: o.profiles?.ad ?? "İsimsiz", yurtOgrencisi: o.yurt_ogrencisi,
   }));
 
   type TalepRow = {

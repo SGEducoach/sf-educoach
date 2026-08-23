@@ -2,8 +2,8 @@
 
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import { KeyRound, LayoutDashboard, Search, ShieldCheck, Trash2, UserCheck, UserX } from "lucide-react";
-import { moderatorAktiflikDegistir, moderatorHesapSil, moderatorSifreSifirla, type ModeratorKullanici } from "@/app/moderator/actions";
+import { BedDouble, KeyRound, LayoutDashboard, Search, ShieldCheck, Trash2, UserCheck, UserX } from "lucide-react";
+import { moderatorAktiflikDegistir, moderatorHesapSil, moderatorSifreSifirla, moderatorYurtDurumuDegistir, type ModeratorKullanici } from "@/app/moderator/actions";
 import { BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 
 export function ModeratorPanel({ okulAdi, kullanicilar, schoolId, geriDonusHref = "/dashboard", geriDonusEtiketi = "Ana sayfaya dön" }: {
@@ -77,6 +77,14 @@ export function ModeratorPanel({ okulAdi, kullanicilar, schoolId, geriDonusHref 
           <button disabled={pending} onClick={() => startTransition(async () => { const r = await moderatorAktiflikDegistir(k.id, !k.aktif, schoolId); setMesaj(r.error ? `Hata: ${r.error}` : "İşlem tamamlandı."); })} className="sfec-btn flex-1 rounded-lg px-2 py-2 text-[11px] font-bold" style={{ color: k.aktif ? BLUSH : MINT, border: `2px solid ${BORDER_STRONG}` }}>{k.aktif ? <UserX className="mr-1 inline" size={12}/> : <UserCheck className="mr-1 inline" size={12}/>} {k.aktif ? "Pasifleştir" : "Aktifleştir"}</button>
           <button disabled={pending} onClick={() => { if (!window.confirm(`${k.ad} hesabı kalıcı olarak silinsin mi?`)) return; startTransition(async () => { const r = await moderatorHesapSil(k.id, schoolId); setMesaj(r.error ? `Hata: ${r.error}` : "Hesap silindi."); }); }} className="sfec-btn rounded-lg px-3 py-2 text-[11px] font-bold" style={{ color: BLUSH, border: `2px solid ${BORDER_STRONG}` }}><Trash2 className="mr-1 inline" size={12}/>Sil</button>
         </div>
+        {k.kategori === "ogrenci" && (
+          <button disabled={pending} title="Hafta içi telefonuna erişemeyen öğrenciler için rozet eşikleri ve hatırlatmalar hafta sonuna göre esnetilir"
+            onClick={() => startTransition(async () => { const r = await moderatorYurtDurumuDegistir(k.id, !k.yurtOgrencisi, schoolId); setMesaj(r.error ? `Hata: ${r.error}` : "İşlem tamamlandı."); })}
+            className="sfec-btn mt-2 flex w-full items-center justify-center gap-1 rounded-lg px-2 py-2 text-[11px] font-bold"
+            style={{ background: k.yurtOgrencisi ? MINT : "transparent", color: k.yurtOgrencisi ? MINT_ON : TEXT_MUTED, border: `2px solid ${k.yurtOgrencisi ? MINT : BORDER_STRONG}` }}>
+            <BedDouble size={12}/> {k.yurtOgrencisi ? "Yurt öğrencisi ✓" : "Yurt öğrencisi işaretle"}
+          </button>
+        )}
       </div>)}
       {gosterilenler.length === 0 && <div className="col-span-full rounded-2xl p-6 text-center text-sm" style={{ color: TEXT_MUTED, background: BG1, border: `2px solid ${BORDER}` }}>Bu filtrelere uygun kullanıcı bulunamadı.</div>}
     </div>

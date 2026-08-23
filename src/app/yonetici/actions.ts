@@ -49,6 +49,7 @@ export interface KullaniciSonuc {
   sinifId: string | null;
   okulNo: string | null;
   brans: string | null;
+  yurtOgrencisi: boolean | null;
 }
 
 // Okul/sınıf sınırı olmadan tüm öğrenci/öğretmen/veli/müdür hesaplarında
@@ -82,14 +83,14 @@ if (rolFiltre !== "hepsi") {
 
   const [ogrenciDetay, ogretmenDetay] = await Promise.all([
     ogrenciIdleri.length
-      ? supabase.from("students").select("id, okul_no, school_id, class_id, schools(ad), classes(seviye, sube)").in("id", ogrenciIdleri)
+      ? supabase.from("students").select("id, okul_no, school_id, class_id, yurt_ogrencisi, schools(ad), classes(seviye, sube)").in("id", ogrenciIdleri)
       : Promise.resolve({ data: [] }),
     ogretmenIdleri.length
       ? supabase.from("teachers").select("id, brans, school_id, schools(ad)").in("id", ogretmenIdleri)
       : Promise.resolve({ data: [] }),
   ]);
 
-  type OgrenciRow = { id: string; okul_no: string; school_id: string; class_id: string; schools: { ad: string } | null; classes: { seviye: string; sube: string } | null };
+  type OgrenciRow = { id: string; okul_no: string; school_id: string; class_id: string; yurt_ogrencisi: boolean; schools: { ad: string } | null; classes: { seviye: string; sube: string } | null };
   type OgretmenRow = { id: string; brans: string; school_id: string; schools: { ad: string } | null };
   const ogrenciMap = new Map(((ogrenciDetay.data as unknown as OgrenciRow[]) ?? []).map((o) => [o.id, o]));
   const ogretmenMap = new Map(((ogretmenDetay.data as unknown as OgretmenRow[]) ?? []).map((o) => [o.id, o]));
@@ -105,6 +106,7 @@ if (rolFiltre !== "hepsi") {
       sinifId: o?.class_id ?? null,
       okulNo: o?.okul_no ?? null,
       brans: t?.brans ?? null,
+      yurtOgrencisi: o?.yurt_ogrencisi ?? null,
     };
   });
 
@@ -230,6 +232,22 @@ export async function kullaniciProfilGuncelle(input: {
     if (ogrenciError) return { error: ogrenciError.message };
   }
   await auditLogYaz(supabase, user.id, "kullanici_profil_guncelle", { hedef_id: input.userId });
+  revalidatePath("/yonetici");
+  return { error: null };
+}
+
+// Yurt öğrencisi işareti — hafta içi telefonuna erişemeyen öğrenciler için
+// rozet eşikleri ve "sisteme girmedi" hatırlatmaları hafta sonuna göre
+// esnetiliyor (bkz. migration 0053). Aynı işlemi okul moderatörü
+// (moderator/actions.ts) ve sınıf öğretmeni (dashboard/actions.ts,
+// kendi sınıfı için RLS üzerinden) de yapabiliyor.
+export async function ogrenciYurtDurumuGuncelle(studentId: string, yurtOgrencisi: boolean): Promise<{ error: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const { data: profil } = await admin.from("profiles").select("role").eq("id", studentId).maybeSingle();
+  if (!profil || profil.role !== "ogrenci") return { error: "Bu işlem yalnızca öğrenciler için yapılabilir." };
+  const { error } = await admin.from("students").update({ yurt_ogrencisi: yurtOgrencisi }).eq("id", studentId);
+  if (error) return { error: error.message };
+  await auditLogYaz(supabase, user.id, yurtOgrencisi ? "yurt_ogrencisi_isaretle" : "yurt_ogrencisi_kaldir", { hedef_id: studentId });
   revalidatePath("/yonetici");
   return { error: null };
 }
