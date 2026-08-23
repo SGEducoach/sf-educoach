@@ -348,10 +348,8 @@ select option {
   z-index: 1;
   left: max(2px, env(safe-area-inset-left));
   bottom: max(4px, env(safe-area-inset-bottom));
-  /* İki katına çıkarıldı (134-187px -> 268-374px) — max-height de birlikte
-     büyütülmedi eskiden bu genişliğe hiç ulaşılamazdı (object-fit: contain,
-     auto height ile max-height çarpışıyordu). */
-  width: clamp(268px, 84vw, 374px);
+  /* Konuşma balonunun önünü kapatmaması için önceki ölçünün %70'i. */
+  width: clamp(188px, 58.8vw, 262px);
   height: auto;
   max-height: 78dvh;
   object-fit: contain;
@@ -387,7 +385,7 @@ select option {
 
 @media (max-height: 620px) {
   .sfec-mascot-stage { min-height: 0; }
-  .sfec-mascot-character { width: 230px; max-height: 80dvh; }
+  .sfec-mascot-character { width: 161px; max-height: 80dvh; }
   .sfec-mascot-bubble { width: min(78vw, 330px); max-height: calc(100dvh - 116px); padding: 12px; }
 }
 
