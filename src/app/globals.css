@@ -80,28 +80,28 @@ html[data-theme="koyu"] .sfec-brand-logo {
 
 :root[data-theme="koyu"] {
   color-scheme: dark;
-  --background: #000000;
-  --foreground: #f47216;
-  --sfec-bg0: #000000;
-  --sfec-bg1: #0d0d0d;
-  --sfec-bg1-alt: #17120e;
-  --sfec-border: #6b3512;
-  --sfec-border-strong: #f47216;
-  --sfec-text: #f47216;
-  --sfec-text-muted: #f7a05f;
-  --sfec-mint: #f47216;
-  --sfec-mint-on: #1a0c02;
-  --sfec-mint-bg: rgba(244, 114, 22, 0.18);
-  --sfec-seafoam: #f47216;
-  --sfec-shell-bg: #050505;
+  --background: #08090b;
+  --foreground: #eb6a32;
+  --sfec-bg0: #08090b;
+  --sfec-bg1: #111316;
+  --sfec-bg1-alt: #191a1d;
+  --sfec-border: #664033;
+  --sfec-border-strong: #eb6a32;
+  --sfec-text: #eb6a32;
+  --sfec-text-muted: #dc906f;
+  --sfec-mint: #eb6a32;
+  --sfec-mint-on: #1d0d08;
+  --sfec-mint-bg: rgba(235, 106, 50, 0.18);
+  --sfec-seafoam: #eb6a32;
+  --sfec-shell-bg: #0b0c0f;
   --sfec-panel-shadow: 0 16px 34px rgba(0, 0, 0, 0.45);
-  --sfec-hero-bg: linear-gradient(135deg, #101010 0%, #17120e 62%, #0a0a0a 100%);
-  /* Üst navigatör — piano black. */
-  --sfec-nav-bg: linear-gradient(135deg, #000000 0%, #161616 50%, #000000 100%);
-  /* Gece bütün marka yazıları ÖSYM logosundan ölçülen turuncudur. */
-  --sfec-marka-mavi: #f47216;
-  --sfec-marka-kirmizi: #f47216;
-  --sfec-marka-kirmizi-vurgu: #ff9a4f;
+  --sfec-hero-bg: linear-gradient(135deg, #111316 0%, #191a1d 62%, #0c0d10 100%);
+  /* Üst navigatör — piano black karakterini koruyan çok koyu füme. */
+  --sfec-nav-bg: linear-gradient(135deg, #08090b 0%, #181a1e 50%, #08090b 100%);
+  /* Gece marka ve arayüz yazıları, ÖSYM turuncusunun biraz daha soğuk tonudur. */
+  --sfec-marka-mavi: #eb6a32;
+  --sfec-marka-kirmizi: #eb6a32;
+  --sfec-marka-kirmizi-vurgu: #f18a61;
 
   /* Koyu modda düşük opaklıklı pastel tonlar arka planla neredeyse
      görünmez oluyordu — daha parlak/doygun mor-mavi tonlara geçiliyor. */
@@ -109,7 +109,7 @@ html[data-theme="koyu"] .sfec-brand-logo {
   --sfec-ai-border: rgba(167,139,250,0.6);
   --sfec-ai-glow-1: rgba(167,139,250,0.4);
   --sfec-ai-glow-2: rgba(96,165,250,0.3);
-  --sfec-ai-accent-text: #f47216;
+  --sfec-ai-accent-text: #eb6a32;
   --sfec-ai-chip-bg: linear-gradient(135deg, rgba(167,139,250,0.3), rgba(96,165,250,0.28));
 
   --sfec-gorev-sayfa-bg: linear-gradient(145deg, rgba(244,114,22,0.17), rgba(120,53,15,0.07));
