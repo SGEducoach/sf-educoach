@@ -23,7 +23,6 @@ import type { GorevSatiri } from "@/components/dashboard/Gorevlerim";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
 import { DashboardYanMenu } from "@/components/dashboard/DashboardYanMenu";
 import { TgDenemeleri } from "@/components/dashboard/TgDenemeleri";
-import { tgDenemeHaberleriniGetir } from "@/lib/tg-denemeleri-drive";
 import { dashboardMenusu } from "@/lib/dashboard-navigation";
 import type { DashboardBolumu } from "@/lib/dashboard-navigation";
 
@@ -64,8 +63,6 @@ export default async function DashboardPage({
   const params = await searchParams;
   const aktifBolum = (params.bolum ?? "ozet") as DashboardBolumu;
   if (!dashboardMenusu(role).some((oge) => oge.bolum === aktifBolum)) redirect("/dashboard");
-  const bugun = bugununTarihiTR();
-  const tgDenemeleriVerisi = aktifBolum === "tg-denemeleri" ? await tgDenemeHaberleriniGetir(bugun) : null;
   const donem = (["haftalik", "aylik", "tum"].includes(params.donem ?? "") ? params.donem : "tum") as RaporDonemi;
   const { data: moderatorYetkisi } = (role === "ogretmen" || role === "mudur")
     ? await supabase.from("school_moderators").select("school_id").eq("profile_id", user.id).maybeSingle()
@@ -92,7 +89,7 @@ export default async function DashboardPage({
         <DashboardYanMenu role={role} aktifBolum={aktifBolum} />
         <main id="ana-icerik" className="sfec-dashboard-main min-h-[calc(100dvh-10.25rem)] min-w-0 w-full flex-1 flex flex-col gap-6">
           {aktifBolum === "tg-denemeleri" ? (
-            <TgDenemeleri bugun={bugun} {...tgDenemeleriVerisi!} />
+            <TgDenemeleri bugun={bugununTarihiTR()} />
           ) : (
             <>
               {role === "ogrenci" && <OgrenciIcerik userId={user.id} ad={profile.ad} donem={donem} haftaBaslangic={haftaninPazartesisi(params.hafta)} aktifBolum={aktifBolum} />}
