@@ -33,7 +33,7 @@ const DURUM_RENK: Record<GorevDurumu, { bg: string; renk: string }> = {
   tamamlandi: { bg: MINT_BG, renk: MINT },
   tamamlanmadi: { bg: BLUSH_BG, renk: BLUSH },
 };
-const SAAT_YUKSEKLIGI = 36;
+const SAAT_YUKSEKLIGI = 56;
 const GUN_YUKSEKLIGI = SAAT_YUKSEKLIGI * 24;
 const CIZELGE_BASLANGIC_DAKIKA = 5 * 60;
 
@@ -250,7 +250,7 @@ function HaftalikZamanPlani({ gunler, gorevler, bugun, onGunSec, onGorevAc }: {
   return (
     <div className="mb-3 overflow-hidden rounded-3xl" style={{ background: BG0, border: `2px solid ${BORDER}`, boxShadow: `inset 0 0 0 1px ${BORDER_STRONG}` }}>
       <div className="overflow-x-auto overscroll-x-contain">
-        <div className="min-w-[70rem] p-2.5">
+        <div className="min-w-[84rem] p-2.5">
           <div className="ml-10 grid grid-cols-7 gap-2 mb-2">
             {gunler.map((gun, gunIndex) => (
               <button key={gun} type="button" onClick={() => onGunSec(gun)}
@@ -278,17 +278,10 @@ function HaftalikZamanPlani({ gunler, gorevler, bugun, onGunSec, onGorevAc }: {
                   .filter((g) => g.tarih === gun)
                   .sort((a, b) => (a.baslangicSaat ?? "99:99").localeCompare(b.baslangicSaat ?? "99:99"));
                 const zamanliGorevler = gununGorevleri.filter((g) => cizelgedekiDakika(g.baslangicSaat) !== null && saatiDakikayaCevir(g.bitisSaat) !== null);
-                const sutunArkaPlan = gunIndex % 2 === 0 ? MINT_BG : PEACH_BG;
                 const sutunVurgu = gunIndex % 2 === 0 ? MINT : PEACH;
-                const sutunDolu = zamanliGorevler.length > 0;
 
                 return (
-                  <div key={gun} className="relative overflow-hidden rounded-2xl"
-                    style={{
-                      height: GUN_YUKSEKLIGI,
-                      background: sutunDolu ? sutunArkaPlan : "transparent",
-                      border: `1px solid ${sutunDolu ? BORDER_STRONG : "transparent"}`,
-                    }}
+                  <div key={gun} className="relative overflow-hidden" style={{ height: GUN_YUKSEKLIGI }}
                     aria-label={`${gunAdi(gun)} günü 05.00–05.00 plan alanı`}>
                     {zamanliGorevler.map((g) => {
                       const baslangic = cizelgedekiDakika(g.baslangicSaat) ?? 0;
@@ -304,7 +297,7 @@ function HaftalikZamanPlani({ gunler, gorevler, bugun, onGunSec, onGorevAc }: {
                       return (
                         <button key={g.atamaId} type="button" disabled={g.durum !== "bekliyor"} onClick={() => onGorevAc(g)}
                           title={`${g.baslangicSaat?.slice(0, 5)}–${g.bitisSaat?.slice(0, 5)} ${GOREV_TURU_ETIKET[g.tur]} · ${g.ders}`}
-                          className="sfec-btn absolute left-1.5 right-1.5 overflow-hidden rounded-xl px-2 py-1.5 text-left disabled:cursor-default"
+                          className="sfec-btn absolute left-1 right-1 overflow-hidden rounded-xl px-2 py-1 text-left disabled:cursor-default"
                           style={{
                             top: (baslangic / 60) * SAAT_YUKSEKLIGI,
                             height: yukseklik,
@@ -313,12 +306,12 @@ function HaftalikZamanPlani({ gunler, gorevler, bugun, onGunSec, onGorevAc }: {
                             border: `2px solid ${sutunVurgu}`,
                             boxShadow: `0 4px 12px ${BORDER}`,
                           }}>
-                          <span className="flex items-center gap-1 text-[9px] font-extrabold leading-tight" style={{ color: sutunVurgu }}>
+                          <span className="flex items-center gap-1 whitespace-nowrap text-[9px] font-extrabold leading-tight" style={{ color: sutunVurgu }}>
                             <Icon size={10} /> {g.baslangicSaat?.slice(0, 5)}–{g.bitisSaat?.slice(0, 5)}
                           </span>
-                          <span className="mt-0.5 block truncate text-[10px] font-bold leading-tight">{GOREV_TURU_ETIKET[g.tur]} · {g.ders}</span>
-                          {yukseklik >= 48 && g.konu && <span className="mt-0.5 block truncate text-[9px] leading-tight" style={{ color: TEXT_MUTED }}>{g.konu}</span>}
-                          {yukseklik >= 65 && <span className="mt-1 inline-block rounded-full px-1.5 py-0.5 text-[8px] font-bold" style={{ background: durumRengi.bg, color: durumRengi.renk }}>{GOREV_DURUMU_ETIKET[g.durum]}</span>}
+                          <span className="mt-0.5 block whitespace-normal break-words text-[10px] font-bold leading-[1.15]">{GOREV_TURU_ETIKET[g.tur]} · {g.ders}</span>
+                          {yukseklik >= 84 && g.konu && <span className="mt-1 block whitespace-normal break-words text-[9px] leading-[1.15]" style={{ color: TEXT_MUTED }}>{g.konu}</span>}
+                          {yukseklik >= 112 && <span className="mt-1 inline-block rounded-full px-1.5 py-0.5 text-[8px] font-bold" style={{ background: durumRengi.bg, color: durumRengi.renk }}>{GOREV_DURUMU_ETIKET[g.durum]}</span>}
                         </button>
                       );
                     })}
