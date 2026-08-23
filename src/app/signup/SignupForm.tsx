@@ -338,7 +338,7 @@ function DershaneOgrenciTamamlaForm({ schools }: { schools: School[] }) {
   const [telefon, setTelefon] = useState("");
   const [hata, setHata] = useState<string | null>(null);
   const [yukleniyor, setYukleniyor] = useState(false);
-  const [sonuc, setSonuc] = useState<{ ad: string; sifre: string } | null>(null);
+  const [sonuc, setSonuc] = useState<{ ad: string; sifre: string; aktarilanDenemeSayisi: number } | null>(null);
 
   async function tamamla(e: React.FormEvent) {
     e.preventDefault();
@@ -350,7 +350,11 @@ function DershaneOgrenciTamamlaForm({ schools }: { schools: School[] }) {
     const yanit = await dershaneKayitTamamla({ schoolId, telefon, kullaniciAdi });
     setYukleniyor(false);
     if (yanit.error || !yanit.sifre) return setHata(yanit.error ?? "Kayıt tamamlanamadı.");
-    setSonuc({ ad: yanit.ad ?? "Öğrenci", sifre: yanit.sifre });
+    setSonuc({
+      ad: yanit.ad ?? "Öğrenci",
+      sifre: yanit.sifre,
+      aktarilanDenemeSayisi: yanit.aktarilanDenemeSayisi ?? 0,
+    });
   }
 
   if (sonuc) {
@@ -365,6 +369,11 @@ function DershaneOgrenciTamamlaForm({ schools }: { schools: School[] }) {
           <div style={{ color: MINT, fontFamily: "monospace" }} className="text-2xl font-bold tracking-widest">{sonuc.sifre}</div>
         </div>
         <p style={{ color: TEXT_MUTED }} className="text-xs">Giriş yapmak için kullanıcı adınızı ve bu şifreyi kullanın.</p>
+        {sonuc.aktarilanDenemeSayisi > 0 && (
+          <p className="rounded-xl px-3 py-2 text-xs font-semibold" style={{ background: MINT_BG, color: MINT }}>
+            Daha önce yüklenen {sonuc.aktarilanDenemeSayisi} deneme sonucunuz hesabınıza aktarıldı.
+          </p>
+        )}
         <Link href="/login" style={{ color: MINT }} className="text-sm font-semibold">Girişe git</Link>
       </div>
     );

@@ -6,6 +6,7 @@
 // kontrolü "telefon, o dershanenin ön-kayıt listesinde var mı" sorgusudur.
 import { createAdminClient } from "@/lib/supabase/admin";
 import { rastgeleSifre } from "@/lib/validators";
+import { bekleyenPdfSonuclariniOgrenciyeAktar } from "@/lib/deneme-sonucu-kaydet";
 
 export async function dershaneKayitTamamla(input: {
   schoolId: string; telefon: string; kullaniciAdi: string;
@@ -48,7 +49,25 @@ export async function dershaneKayitTamamla(input: {
     return { error: hesapHatasi.message, sifre: null };
   }
 
+  let aktarilanDenemeSayisi = 0;
+  if (created.user?.id) {
+    const aktarim = await bekleyenPdfSonuclariniOgrenciyeAktar(admin, {
+      schoolId: input.schoolId,
+      pendingId: pending.id,
+      studentId: created.user.id,
+      ad: pending.ad,
+    });
+    aktarilanDenemeSayisi = aktarim.aktarilan;
+    if (aktarim.error || aktarim.atlanan > 0) {
+      console.error("Ön kayıt PDF deneme sonuçları tam aktarılamadı:", {
+        error: aktarim.error,
+        atlanan: aktarim.atlanan,
+        pendingId: pending.id,
+      });
+    }
+  }
+
   await admin.from("pending_dershane_ogrenciler").update({ kullanildi_at: new Date().toISOString() }).eq("id", pending.id);
 
-  return { error: null, sifre, ad: pending.ad, userId: created.user?.id ?? null };
+  return { error: null, sifre, ad: pending.ad, userId: created.user?.id ?? null, aktarilanDenemeSayisi };
 }

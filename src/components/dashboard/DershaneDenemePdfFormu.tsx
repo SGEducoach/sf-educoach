@@ -14,7 +14,12 @@ export function DershaneDenemePdfFormu() {
   const [tarih, setTarih] = useState("");
   const [tur, setTur] = useState<"TYT" | "AYT" | "BRANS">("TYT");
   const [hata, setHata] = useState<string | null>(null);
-  const [sonuc, setSonuc] = useState<{ toplam: number; otomatikEslesen: number; bekleyen: number } | null>(null);
+  const [sonuc, setSonuc] = useState<{
+    toplam: number;
+    otomatikEslesen: number;
+    kayitBekleyen: number;
+    incelemeBekleyen: number;
+  } | null>(null);
   const [yukleniyor, setYukleniyor] = useState(false);
 
   async function yukle(e: React.FormEvent) {
@@ -36,7 +41,12 @@ export function DershaneDenemePdfFormu() {
     const yanit = await denemePdfIceriAktar(formData);
     setYukleniyor(false);
     if (yanit.error) return setHata(yanit.error);
-    setSonuc({ toplam: yanit.toplam, otomatikEslesen: yanit.otomatikEslesen, bekleyen: yanit.bekleyen });
+    setSonuc({
+      toplam: yanit.toplam,
+      otomatikEslesen: yanit.otomatikEslesen,
+      kayitBekleyen: yanit.kayitBekleyen,
+      incelemeBekleyen: yanit.incelemeBekleyen,
+    });
     if (dosyaRef.current) dosyaRef.current.value = "";
   }
 
@@ -84,7 +94,9 @@ export function DershaneDenemePdfFormu() {
         {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
         {sonuc && (
           <div className="rounded-xl px-3 py-2 text-xs font-semibold" style={{ background: MINT_BG, color: MINT }}>
-            {sonuc.toplam} öğrenci bulundu — {sonuc.otomatikEslesen} otomatik eşleşti, {sonuc.bekleyen} satır site yöneticisinin incelemesine düştü.
+            {sonuc.toplam} öğrenci bulundu — {sonuc.otomatikEslesen} aktif öğrenciye işlendi
+            {sonuc.kayitBekleyen > 0 && `, ${sonuc.kayitBekleyen} ön kayıt sonucu öğrenci hesabını açınca otomatik işlenmek üzere saklandı`}
+            {sonuc.incelemeBekleyen > 0 && `, ${sonuc.incelemeBekleyen} sonuç site yöneticisinin incelemesine bırakıldı`}.
           </div>
         )}
 

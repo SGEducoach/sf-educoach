@@ -11,19 +11,12 @@ import { getAnthropicClient } from "@/lib/anthropic";
 import { adNormalize } from "@/lib/validators";
 import { TYT_DERSLERI, AYT_DERSLERI, BRANS_DENEMESI_DERSLERI, dersSoruSayisi } from "@/lib/types";
 import type { DenemeTuru } from "@/lib/types";
+import { ogretmenDenemeSonucuKaydet } from "@/lib/deneme-sonucu-kaydet";
 
 function gecerliDersler(tur: DenemeTuru): string[] {
   if (tur === "TYT") return [...TYT_DERSLERI];
   if (tur === "BRANS") return [...BRANS_DENEMESI_DERSLERI];
   return [...new Set(Object.values(AYT_DERSLERI).flat())];
-}
-
-// AYT_DERSLERI bazı dersleri sınav yapısına özgü alt-adlarla tutuyor
-// ("Tarih-1", "Felsefe Grubu") — deneme_ders_sonuclari'nda düz ders
-// adlarıyla saklamak için normalize ediyoruz (bkz. mufredat-konulari.ts'
-// teki aynı desen).
-function dersAdiNormalize(ad: string): string {
-  return ad.trim().replace(/-\d$/, "").replace(/^Felsefe Grubu$/i, "Felsefe");
 }
 
 interface PdfOgrenciSonucu {
@@ -133,39 +126,60 @@ function hataOzeti(hata: unknown): string {
   return hata instanceof Error ? `${hata.name}: ${hata.message}` : String(hata);
 }
 
+const BOS_SONUC = {
+  toplam: 0,
+  otomatikEslesen: 0,
+  kayitBekleyen: 0,
+  incelemeBekleyen: 0,
+  bekleyen: 0,
+} as const;
+
 export async function denemePdfIceriAktar(formData: FormData): Promise<{
-  error: string | null; toplam: number; otomatikEslesen: number; bekleyen: number;
+  error: string | null;
+  toplam: number;
+  otomatikEslesen: number;
+  kayitBekleyen: number;
+  incelemeBekleyen: number;
+  bekleyen: number;
 }> {
   const { user, admin, schoolId } = await requireDershaneMudur();
-  if (!admin || !schoolId) return { error: "Bu işlem için dershane müdürü yetkisi gerekiyor.", toplam: 0, otomatikEslesen: 0, bekleyen: 0 };
+  if (!admin || !schoolId) return { error: "Bu işlem için dershane müdürü yetkisi gerekiyor.", ...BOS_SONUC };
+  const adminClient = admin;
 
   const dosya = formData.get("dosya") as File | null;
   const yayinevi = String(formData.get("yayinevi") ?? "").trim();
   const tarih = String(formData.get("tarih") ?? "").trim();
   const tur = String(formData.get("tur") ?? "") as DenemeTuru;
 
-  if (!dosya) return { error: "PDF dosyası seçilmedi.", toplam: 0, otomatikEslesen: 0, bekleyen: 0 };
-  if (!yayinevi) return { error: "Yayınevi gerekli.", toplam: 0, otomatikEslesen: 0, bekleyen: 0 };
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(tarih)) return { error: "Uygulama tarihi gerekli.", toplam: 0, otomatikEslesen: 0, bekleyen: 0 };
-  if (!["TYT", "AYT", "BRANS"].includes(tur)) return { error: "Tür seçin.", toplam: 0, otomatikEslesen: 0, bekleyen: 0 };
+  if (!dosya) return { error: "PDF dosyası seçilmedi.", ...BOS_SONUC };
+  if (!yayinevi) return { error: "Yayınevi gerekli.", ...BOS_SONUC };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(tarih)) return { error: "Uygulama tarihi gerekli.", ...BOS_SONUC };
+  if (!["TYT", "AYT", "BRANS"].includes(tur)) return { error: "Tür seçin.", ...BOS_SONUC };
 
   const base64 = Buffer.from(await dosya.arrayBuffer()).toString("base64");
   const dersler = gecerliDersler(tur);
 
-  // Önce kurum kadrosunu alıyoruz. Claude, PDF'teki herkesi çıkarmak yerine
-  // yalnızca bu kurumda kayıtlı öğrencileri arar; kalabalık sıralama sayfaları
-  // böylece gereksiz ve çok büyük bir JSON yanıtına dönüşmez.
-  const { data: ogrencilerHam } = await admin
-    .from("students")
-    .select("id, profiles!students_id_fkey(ad)")
-    .eq("school_id", schoolId);
+  // Hem aktif öğrencileri hem de müdürün eklediği fakat hesabını henüz
+  // tamamlamamış ön kayıtları hedef listesine alıyoruz. Böylece sonuç PDF'i
+  // öğrenci ilk kez giriş yapmadan önce de güvenle yüklenebilir.
+  const [{ data: ogrencilerHam, error: ogrenciHatasi }, { data: onKayitlarHam, error: onKayitHatasi }] = await Promise.all([
+    admin.from("students").select("id, profiles!students_id_fkey(ad)").eq("school_id", schoolId),
+    admin.from("pending_dershane_ogrenciler").select("id, ad").eq("school_id", schoolId).is("kullanildi_at", null),
+  ]);
+  if (ogrenciHatasi || onKayitHatasi) {
+    console.error("PDF hedef öğrenci listesi alınamadı:", ogrenciHatasi ?? onKayitHatasi);
+    return { error: "Kurum öğrenci listesi alınamadı. Lütfen tekrar deneyin.", ...BOS_SONUC };
+  }
   type OgrenciRow = { id: string; profiles: { ad: string } | null };
   const ogrenciler = ((ogrencilerHam ?? []) as unknown as OgrenciRow[])
     .filter((o) => o.profiles)
     .map((o) => ({ id: o.id, ad: o.profiles!.ad.trim(), adNorm: adNormalize(o.profiles!.ad) }));
-  const hedefOgrenciAdlari = [...new Set(ogrenciler.map((o) => o.ad).filter(Boolean))];
+  const onKayitlar = (onKayitlarHam ?? [])
+    .map((o) => ({ id: o.id as string, ad: String(o.ad).trim(), adNorm: adNormalize(String(o.ad)) }))
+    .filter((o) => o.ad);
+  const hedefOgrenciAdlari = [...new Set([...ogrenciler, ...onKayitlar].map((o) => o.ad).filter(Boolean))];
   if (hedefOgrenciAdlari.length === 0) {
-    return { error: "Kurumda PDF sonucu eşleştirilecek öğrenci bulunamadı.", toplam: 0, otomatikEslesen: 0, bekleyen: 0 };
+    return { error: "Kurumda PDF sonucu eşleştirilecek aktif veya ön kayıtlı öğrenci bulunamadı.", ...BOS_SONUC };
   }
 
   let ayristirilan: PdfOgrenciSonucu[] | null = null;
@@ -238,54 +252,91 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
     const mesaj = e instanceof PdfAyristirmaHatasi
       ? e.kullaniciMesaji
       : "PDF işleme sırasında beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.";
-    return { error: mesaj, toplam: 0, otomatikEslesen: 0, bekleyen: 0 };
+    return { error: mesaj, ...BOS_SONUC };
   }
 
   if (ayristirilan.length === 0) {
-    return { error: "PDF'te öğrenci sonucu bulunamadı.", toplam: 0, otomatikEslesen: 0, bekleyen: 0 };
+    return { error: "PDF'te kurum listenizle eşleşen öğrenci sonucu bulunamadı.", ...BOS_SONUC };
   }
 
   let otomatikEslesen = 0;
-  let bekleyen = 0;
+  let kayitBekleyen = 0;
+  let incelemeBekleyen = 0;
+
+  async function eslesmeKuyrugunaYaz(satir: PdfOgrenciSonucu): Promise<boolean> {
+    const { data: mevcut, error: aramaHatasi } = await adminClient
+      .from("pdf_deneme_eslesme_bekleyenler")
+      .select("id")
+      .eq("school_id", schoolId)
+      .eq("ad_soyad_ham", satir.ad_soyad)
+      .eq("yayinevi", yayinevi)
+      .eq("tarih", tarih)
+      .eq("tur", tur)
+      .eq("durum", "bekliyor")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (aramaHatasi) {
+      console.error("PDF eşleştirme kuyruğu aranamadı:", aramaHatasi);
+      return false;
+    }
+
+    if (mevcut) {
+      const { error } = await adminClient.from("pdf_deneme_eslesme_bekleyenler")
+        .update({ ders_sonuclari: satir.ders_sonuclari, olusturan_mudur_id: user.id })
+        .eq("id", mevcut.id);
+      if (error) console.error("PDF eşleştirme kuyruğu güncellenemedi:", error);
+      return !error;
+    }
+
+    const { error } = await adminClient.from("pdf_deneme_eslesme_bekleyenler").insert({
+      school_id: schoolId,
+      ad_soyad_ham: satir.ad_soyad,
+      ders_sonuclari: satir.ders_sonuclari,
+      yayinevi,
+      tarih,
+      tur,
+      olusturan_mudur_id: user.id,
+    });
+    if (error) console.error("PDF eşleştirme kuyruğuna yazılamadı:", error);
+    return !error;
+  }
 
   for (const satir of ayristirilan) {
     const adNorm = adNormalize(satir.ad_soyad);
     const eslesenler = ogrenciler.filter((o) => o.adNorm === adNorm);
+    const eslesenOnKayitlar = onKayitlar.filter((o) => o.adNorm === adNorm);
 
-    if (eslesenler.length === 1) {
-      const studentId = eslesenler[0].id;
-      const { data: mevcutDeneme } = await admin
-        .from("denemeler")
-        .select("id")
-        .eq("student_id", studentId).eq("tarih", tarih).eq("tur", tur).eq("kaynak", "ogretmen")
-        .maybeSingle();
-
-      let denemeId = mevcutDeneme?.id as string | undefined;
-      if (!denemeId) {
-        const { data: yeniDeneme, error: olusturmaHatasi } = await admin
-          .from("denemeler")
-          .insert({ student_id: studentId, tarih, tur, hedefe_yakinlik: "belirsiz", zorluk: "orta", yayinevi, kaynak: "ogretmen" })
-          .select("id").single();
-        if (olusturmaHatasi || !yeniDeneme) { bekleyen++; continue; }
-        denemeId = yeniDeneme.id as string;
-      }
-
-      let satirBasarili = true;
-      for (const ds of satir.ders_sonuclari) {
-        const { error } = await admin.from("deneme_ders_sonuclari")
-          .upsert({ deneme_id: denemeId, ders: dersAdiNormalize(ds.ders), dogru: ds.dogru, yanlis: ds.yanlis }, { onConflict: "deneme_id,ders" });
-        if (error) satirBasarili = false;
-      }
-      if (satirBasarili) otomatikEslesen++; else bekleyen++;
-    } else {
-      await admin.from("pdf_deneme_eslesme_bekleyenler").insert({
-        school_id: schoolId, ad_soyad_ham: satir.ad_soyad, ders_sonuclari: satir.ders_sonuclari,
-        yayinevi, tarih, tur, olusturan_mudur_id: user.id,
+    if (eslesenler.length === 1 && eslesenOnKayitlar.length === 0) {
+      const sonuc = await ogretmenDenemeSonucuKaydet(admin, {
+        studentId: eslesenler[0].id,
+        tarih,
+        tur,
+        yayinevi,
+        dersSonuclari: satir.ders_sonuclari,
       });
-      bekleyen++;
+      if (!sonuc.error) {
+        otomatikEslesen++;
+      } else {
+        console.error("PDF deneme sonucu aktif öğrenciye kaydedilemedi:", sonuc.error);
+        if (await eslesmeKuyrugunaYaz(satir)) incelemeBekleyen++;
+      }
+    } else if (eslesenler.length === 0 && eslesenOnKayitlar.length === 1) {
+      // Sonuç şimdilik kuyrukta kalır; bu ön kayıt kendi hesabını açtığında
+      // ders sonuçları otomatik olarak öğrencinin deneme kaydına dönüştürülür.
+      if (await eslesmeKuyrugunaYaz(satir)) kayitBekleyen++;
+    } else {
+      if (await eslesmeKuyrugunaYaz(satir)) incelemeBekleyen++;
     }
   }
 
   revalidatePath("/dashboard");
-  return { error: null, toplam: ayristirilan.length, otomatikEslesen, bekleyen };
+  return {
+    error: null,
+    toplam: ayristirilan.length,
+    otomatikEslesen,
+    kayitBekleyen,
+    incelemeBekleyen,
+    bekleyen: kayitBekleyen + incelemeBekleyen,
+  };
 }
