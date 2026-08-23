@@ -246,9 +246,11 @@ export async function dershaneRosterTekEkle(input: {
 // ============ DERSHANE MODU: müdür roster ekleme (toplu, .xlsx) ============
 // Şablon: src/app/api/dershane/roster-sablonu (GET) — Sınıf Öğretmeni
 // (bilgi amaçlı, yok sayılır) / Telefon / Ad Soyad / Veli Telefonu / Alan
-// / Sınıf / Hafta İçi-Sonu. Satırlar sırayla işlenir (admin'in
-// ogrencileriTopluEkle'sindeki aynı desen) — bir satırın hatası diğerlerini
-// engellemez, satır numarasıyla birlikte raporlanır.
+// / Sınıf (seviye) / Şube / Hafta İçi-Sonu — Sınıf ve Şube kullanıcı
+// isteğiyle ayrı kolonlara bölündü (önceden "11-A" gibi tek bir kolondu).
+// Satırlar sırayla işlenir (admin'in ogrencileriTopluEkle'sindeki aynı
+// desen) — bir satırın hatası diğerlerini engellemez, satır numarasıyla
+// birlikte raporlanır.
 export interface TopluRosterSonuc {
   satir: number;
   ad: string;
@@ -280,13 +282,16 @@ export async function dershaneRosterTopluEkle(formData: FormData): Promise<{ err
   const { data: siniflarHam } = await admin.from("classes").select("id, seviye, sube").eq("school_id", schoolId);
   const sinifMap = new Map((siniflarHam ?? []).map((s) => [`${s.seviye}-${s.sube}`, s.id]));
 
-  type Satir = { no: number; telefon: string; ad: string; veliTelefon: string; alan: string; sinif: string; program: string };
+  type Satir = { no: number; telefon: string; ad: string; veliTelefon: string; alan: string; seviye: string; sube: string; program: string };
   const satirlar: Satir[] = [];
   sheet.eachRow((row, rowNumber) => {
     if (rowNumber === 1) return; // başlık
     const deger = (i: number) => String(row.getCell(i).value ?? "").trim();
     if (!deger(2) && !deger(3)) return; // tamamen boş satır — atla
-    satirlar.push({ no: rowNumber, telefon: deger(2), ad: deger(3), veliTelefon: deger(4), alan: deger(5).toUpperCase(), sinif: deger(6), program: deger(7) });
+    satirlar.push({
+      no: rowNumber, telefon: deger(2), ad: deger(3), veliTelefon: deger(4), alan: deger(5).toUpperCase(),
+      seviye: deger(6), sube: deger(7).toLocaleUpperCase("tr-TR"), program: deger(8),
+    });
   });
 
   if (satirlar.length === 0) return { error: "Şablonda doldurulmuş satır bulunamadı.", sonuclar: [] };
@@ -301,8 +306,9 @@ export async function dershaneRosterTopluEkle(formData: FormData): Promise<{ err
     if (!telefonGecerliMi(satir.telefon)) { sonuclar.push({ satir: satir.no, ad, hata: "Telefon numarası geçersiz." }); continue; }
     if (satir.veliTelefon && !telefonGecerliMi(satir.veliTelefon)) { sonuclar.push({ satir: satir.no, ad, hata: "Veli telefon numarası geçersiz." }); continue; }
     if (!["SAY", "EA", "SOZ", "SÖZ"].includes(satir.alan)) { sonuclar.push({ satir: satir.no, ad, hata: "Alan SAY, EA veya SÖZ olmalı." }); continue; }
-    const classId = sinifMap.get(satir.sinif);
-    if (!classId) { sonuclar.push({ satir: satir.no, ad, hata: `Sınıf "${satir.sinif}" bulunamadı — önce Şubeler bölümünden oluşturun.` }); continue; }
+    const sinifEtiketi = `${satir.seviye}-${satir.sube}`;
+    const classId = sinifMap.get(sinifEtiketi);
+    if (!classId) { sonuclar.push({ satir: satir.no, ad, hata: `Sınıf "${sinifEtiketi}" bulunamadı — önce Şubeler bölümünden oluşturun.` }); continue; }
     const program = PROGRAM_ETIKET_TERS[satir.program.toLocaleLowerCase("tr-TR")];
     if (!program) { sonuclar.push({ satir: satir.no, ad, hata: 'Hafta İçi/Sonu "Hafta İçi" veya "Hafta Sonu" olmalı.' }); continue; }
     void program; // program şu an pending kayıtta tutulmuyor, class_id üzerinden zaten biliniyor
