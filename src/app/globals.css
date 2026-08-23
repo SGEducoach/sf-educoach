@@ -272,6 +272,20 @@ select option {
   animation: sfecGlowBreathe 3.2s ease-in-out infinite;
 }
 
+/* TG Denemeleri haber değişimi: yeni afiş haber sitelerindeki manşetler gibi
+   sağdan yumuşakça içeri kayar. Hareket azaltma tercihi olanlarda kapatılır. */
+@keyframes sfecTgHaberGir {
+  from { opacity: 0; transform: translateX(28px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.sfec-tg-haber-gir {
+  animation: sfecTgHaberGir 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sfec-tg-haber-gir { animation: none; }
+}
+
 /* Recharts'in eksen bazlı hover katmanı tüm grafik alanını karartmasın. */
 .recharts-tooltip-cursor,
 .recharts-active-bar {

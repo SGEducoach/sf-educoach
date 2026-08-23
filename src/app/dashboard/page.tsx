@@ -21,6 +21,7 @@ import { Gorevlerim } from "@/components/dashboard/Gorevlerim";
 import type { GorevSatiri } from "@/components/dashboard/Gorevlerim";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
 import { DashboardYanMenu } from "@/components/dashboard/DashboardYanMenu";
+import { TgDenemeleri } from "@/components/dashboard/TgDenemeleri";
 import { dashboardMenusu } from "@/lib/dashboard-navigation";
 import type { DashboardBolumu } from "@/lib/dashboard-navigation";
 
@@ -86,11 +87,17 @@ export default async function DashboardPage({
       <div className="mx-auto flex min-h-[calc(100dvh-6.75rem)] w-full max-w-[100rem] flex-1 items-stretch gap-6 px-4 py-6 sm:px-6 lg:py-7">
         <DashboardYanMenu role={role} aktifBolum={aktifBolum} />
         <main id="ana-icerik" className="sfec-dashboard-main min-h-[calc(100dvh-10.25rem)] min-w-0 w-full flex-1 flex flex-col gap-6">
-          {role === "ogrenci" && <OgrenciIcerik userId={user.id} ad={profile.ad} donem={donem} haftaBaslangic={haftaninPazartesisi(params.hafta)} aktifBolum={aktifBolum} />}
-          {(role === "ogretmen" || role === "mudur") && (
-            <OgretmenIcerik userId={user.id} role={role} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} donem={donem} aktifBolum={aktifBolum} />
+          {aktifBolum === "tg-denemeleri" ? (
+            <TgDenemeleri bugun={bugununTarihiTR()} />
+          ) : (
+            <>
+              {role === "ogrenci" && <OgrenciIcerik userId={user.id} ad={profile.ad} donem={donem} haftaBaslangic={haftaninPazartesisi(params.hafta)} aktifBolum={aktifBolum} />}
+              {(role === "ogretmen" || role === "mudur") && (
+                <OgretmenIcerik userId={user.id} role={role} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} donem={donem} aktifBolum={aktifBolum} />
+              )}
+              {role === "veli" && <VeliIcerik userId={user.id} ad={profile.ad} secilenOgrenciId={params.ogrenci} donem={donem} aktifBolum={aktifBolum} />}
+            </>
           )}
-          {role === "veli" && <VeliIcerik userId={user.id} secilenOgrenciId={params.ogrenci} donem={donem} aktifBolum={aktifBolum} />}
         </main>
       </div>
     </div>
@@ -217,7 +224,7 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
                   <Sparkles size={13} color={MINT} /> Öğrenci paneli
                 </div>
                 <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="truncate text-2xl sm:text-3xl font-extrabold">
-                  Hoş geldin, {ad.split(" ")[0]}
+                  Hoş geldin {ad.split(" ")[0]}
                 </h1>
                 <p className="mt-1 text-sm" style={{ color: TEXT_MUTED }}>{s.schools?.ad ?? "Okul bilgisi bekleniyor"}</p>
               </div>
@@ -397,7 +404,7 @@ async function OgretmenIcerik({ userId, role, secilenSinifId, secilenOgrenciId, 
   );
 }
 
-async function VeliIcerik({ userId, secilenOgrenciId, donem, aktifBolum }: { userId: string; secilenOgrenciId?: string; donem: RaporDonemi; aktifBolum: DashboardBolumu }) {
+async function VeliIcerik({ userId, ad, secilenOgrenciId, donem, aktifBolum }: { userId: string; ad: string; secilenOgrenciId?: string; donem: RaporDonemi; aktifBolum: DashboardBolumu }) {
   const supabase = await createClient();
   const { data: links } = await supabase
     .from("parent_students")
@@ -414,7 +421,7 @@ async function VeliIcerik({ userId, secilenOgrenciId, donem, aktifBolum }: { use
     <div className="flex flex-col gap-6">
       <div className="sfec-fade rounded-3xl p-6 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-bold mb-4 flex items-center gap-2">
-          Hoş geldiniz!
+          Hoş geldin {ad}
           <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full" style={{ background: "linear-gradient(135deg, #7C3AED, #2563EB)" }}>
             <Sparkles size={13} color="#fff" />
           </span>

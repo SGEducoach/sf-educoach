@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  BarChart3, BookOpenCheck, Bot, ClipboardCheck, ClipboardList, Home,
+  BarChart3, BookOpenCheck, Bot, CalendarDays, ClipboardCheck, ClipboardList, Home,
   LogOut, Medal, Megaphone, Menu, PenLine, ShieldCheck, UserPlus, X,
 } from "lucide-react";
 import { BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, SEAFOAM, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
@@ -30,6 +30,7 @@ const IKONLAR: Record<DashboardIkonu, typeof Home> = {
   analiz: BarChart3,
   ai: Bot,
   rozet: Medal,
+  takvim: CalendarDays,
   duyuru: Megaphone,
   talep: UserPlus,
   onay: ClipboardCheck,

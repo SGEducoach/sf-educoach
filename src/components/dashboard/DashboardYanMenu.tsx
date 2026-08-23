@@ -1,12 +1,13 @@
 import Link from "next/link";
 import {
-  BarChart3, BookOpenCheck, Bot, ClipboardCheck, ClipboardList,
+  BarChart3, BookOpenCheck, Bot, CalendarDays, ClipboardCheck, ClipboardList,
   Home, Megaphone, Medal, PenLine, UserPlus,
 } from "lucide-react";
 import type { UserRole } from "@/lib/types";
 import type { DashboardBolumu, DashboardIkonu } from "@/lib/dashboard-navigation";
 import { dashboardMenusu } from "@/lib/dashboard-navigation";
 import { BG1, BORDER, MINT, MINT_BG, TEXT, TEXT_MUTED } from "@/lib/theme";
+import { SeFuSlogan } from "@/components/SeFuWordmark";
 
 const IKONLAR: Record<DashboardIkonu, typeof Home> = {
   "ana-sayfa": Home,
@@ -15,6 +16,7 @@ const IKONLAR: Record<DashboardIkonu, typeof Home> = {
   analiz: BarChart3,
   ai: Bot,
   rozet: Medal,
+  takvim: CalendarDays,
   duyuru: Megaphone,
   talep: UserPlus,
   onay: ClipboardCheck,
@@ -55,8 +57,8 @@ export function DashboardYanMenu({ role, aktifBolum }: { role: UserRole; aktifBo
             </Link>
           );
         })}
-        <div className="mt-auto px-3 pt-5 text-[10px] leading-relaxed" style={{ color: TEXT_MUTED, borderTop: `1px solid ${BORDER}` }}>
-          Sen Geliş, Farkın Duyulur
+        <div className="mt-auto px-3 pt-5 text-[12px] italic leading-relaxed" style={{ borderTop: `1px solid ${BORDER}` }}>
+          <SeFuSlogan />
         </div>
       </nav>
     </aside>
