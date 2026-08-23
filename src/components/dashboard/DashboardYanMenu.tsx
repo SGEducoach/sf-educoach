@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import {
   BarChart3, BookOpenCheck, Bot, CalendarDays, ClipboardCheck, ClipboardList,
@@ -38,7 +39,13 @@ export function DashboardYanMenu({ role, aktifBolum }: { role: UserRole; aktifBo
       <nav aria-label="Dashboard bölümleri" className="sfec-dashboard-sidebar sticky top-28 min-h-[calc(100dvh-8.75rem)] rounded-3xl p-4 flex flex-col gap-1.5"
         style={{ background: BG1, border: `1px solid ${BORDER}` }}>
         <div className="px-3 pt-1 pb-4 mb-2" style={{ borderBottom: `1px solid ${BORDER}` }}>
-          <div className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: TEXT_MUTED }}>SeFu Koç</div>
+          <Image
+            src="/logo.png"
+            alt="SeFu Koç"
+            width={800}
+            height={395}
+            className="sfec-brand-logo h-12 w-auto max-w-full object-contain object-left"
+          />
           <div className="mt-1 text-sm font-extrabold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>
             {rolBasligi[role] ?? "Çalışma alanı"}
           </div>
