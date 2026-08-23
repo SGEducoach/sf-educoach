@@ -334,15 +334,8 @@ export function Rozetlerim({ durum, oyunSayaclari, sinifSeviyesi, baslik = "Roze
               Lightning konuya, Cold soruya, Fire denemeye güç verir. Her mastery 7 ayrı zorluk kademesinde ilerler.
             </p>
           </div>
-          <div className="flex flex-wrap items-center justify-end gap-3 sm:flex-nowrap">
-            <div className="sfec-sadece-sefu-balonu" aria-label="Sadece SeFu Koç'ta">
-              <span>Sadece</span>
-              <SeFuLogo className="h-6 w-auto max-w-[3.8rem]" alt="SeFu" />
-              <span>Koç&apos;ta</span>
-            </div>
-            <div className="relative z-[1] shrink-0 rounded-full px-3.5 py-2 text-xs font-extrabold" style={{ background: MINT, color: MINT_ON }}>
-              {kazanilanEtiketSayisi} / 21 Açıldı
-            </div>
+          <div className="shrink-0 rounded-full px-3.5 py-2 text-xs font-extrabold" style={{ background: MINT, color: MINT_ON }}>
+            {kazanilanEtiketSayisi} / 21 Açıldı
           </div>
         </div>
 
