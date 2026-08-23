@@ -255,6 +255,63 @@ export async function dershaneRosterTekEkle(input: {
   return { error: null };
 }
 
+// ============ DERSHANE MODU: müdür öğretmen ekleme ============
+// Öğretmen/veli her yerde ortak (okulla aynı e-posta+şifre girişi) —
+// admin'in ogretmenEkleManuel'iyle aynı desen, sadece requireDershaneMudur
+// ile korunuyor ve schoolId müdürün kendi okulundan geliyor (input'tan
+// alınmıyor — başka bir okula ekleme yapılamasın diye).
+// classId opsiyonel: sınıf öğretmenliği burada, YARATMA anında atanabiliyor
+// (teachers_class_id_guard trigger'ı sadece UPDATE'i admin'e kısıtlıyor,
+// INSERT'i etkilemiyor — bkz. schema.sql).
+export async function dershaneOgretmenEkle(input: {
+  ad: string; email: string; telefon: string; brans: string; classId?: string;
+}) {
+  const { supabase, user, admin, schoolId } = await requireDershaneMudur();
+  if (!admin || !schoolId) return { error: "Bu işlem için dershane müdürü yetkisi gerekiyor.", sifre: null };
+
+  const ad = adNormalize(input.ad);
+  const email = input.email.trim().toLowerCase();
+  if (!ad) return { error: "Ad Soyad gerekli.", sifre: null };
+  if (!email) return { error: "E-posta gerekli.", sifre: null };
+  if (!telefonGecerliMi(input.telefon)) return { error: "Telefon numarası geçersiz. " + TELEFON_IPUCU, sifre: null };
+  if (!input.brans) return { error: "Branş seçin.", sifre: null };
+
+  const sifre = rastgeleSifre();
+  const { error } = await admin.auth.admin.createUser({
+    email, password: sifre, email_confirm: true,
+    user_metadata: {
+      role: "ogretmen", ad, telefon: input.telefon, school_id: schoolId, brans: input.brans,
+      class_id: input.classId || undefined,
+    },
+  });
+  if (error) return { error: manuelEklemeHatasi(error.message), sifre: null };
+
+  await auditLogYaz(supabase, user.id, "dershane_ogretmen_ekle", { email, school_id: schoolId });
+  revalidatePath("/dashboard");
+  return { error: null, sifre };
+}
+
+// ============ DERSHANE MODU: müdür şube (sınıf) ekleme ============
+// Okulda sınıf ekleme admin-only (classes_insert_admin RLS) — dershanede
+// müdür kendi şubelerini kendi kurabiliyor. `program` (haftaiçi/haftasonu,
+// migration 0051) sadece burada toplanıyor, okul şubelerinde kullanılmıyor.
+export async function dershaneSinifEkle(input: { seviye: "9" | "10" | "11" | "12"; sube: string; program: "haftaici" | "haftasonu" }) {
+  const { supabase, user, admin, schoolId } = await requireDershaneMudur();
+  if (!admin || !schoolId) return { error: "Bu işlem için dershane müdürü yetkisi gerekiyor." };
+
+  const sube = input.sube.trim().toLocaleUpperCase("tr-TR");
+  if (!sube) return { error: "Şube adı gerekli." };
+
+  const { error } = await admin.from("classes").insert({ school_id: schoolId, seviye: input.seviye, sube, program: input.program });
+  if (error) {
+    if (error.code === "23505") return { error: "Bu seviye ve şube zaten var." };
+    return { error: error.message };
+  }
+  await auditLogYaz(supabase, user.id, "dershane_sinif_ekle", { school_id: schoolId, seviye: input.seviye, sube });
+  revalidatePath("/dashboard");
+  return { error: null };
+}
+
 // ============ Admin: toplu öğrenci ekleme ============
 // Bir sınıfın tüm listesini tek tek "Öğrenci ekle" formuyla girmek yerine
 // satır satır (Ad Soyad, Okul No) yapıştırıp tek seferde hesap açar.

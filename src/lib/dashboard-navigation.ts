@@ -1,4 +1,4 @@
-import type { UserRole } from "@/lib/types";
+import type { KurumTuru, UserRole } from "@/lib/types";
 
 export type DashboardBolumu =
   | "ozet"
@@ -12,9 +12,14 @@ export type DashboardBolumu =
   | "duyurular"
   | "talepler"
   | "onaylar"
-  | "dersler";
+  | "dersler"
+  | "ogretmenler"
+  | "ogrenciler"
+  | "denemeler";
 
-export type DashboardIkonu = "ana-sayfa" | "gorev" | "plan" | "veri" | "analiz" | "ai" | "rozet" | "takvim" | "duyuru" | "talep" | "onay" | "ders";
+export type DashboardIkonu =
+  | "ana-sayfa" | "gorev" | "plan" | "veri" | "analiz" | "ai" | "rozet" | "takvim" | "duyuru" | "talep" | "onay" | "ders"
+  | "ogretmen" | "ogrenci" | "deneme";
 
 export interface DashboardMenuOgesi {
   bolum: DashboardBolumu;
@@ -59,15 +64,29 @@ const MUDUR_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "TG Denemeler", ikon: "takvim" },
 ];
 
-export function dashboardMenusu(role: UserRole): DashboardMenuOgesi[] {
+// DERSHANE MODU (Faz D3) — dershane müdürü okul müdüründen tamamen farklı
+// bir menü görüyor: gözlemci değil, kendi kurumunda öğretmen/öğrenci
+// CRUD'u yapabilen bir yönetici (bkz. src/app/dashboard/actions.ts
+// requireDershaneMudur). "duyurular"/"tg-denemeleri"/"yapay-zeka" mevcut,
+// paylaşılan bölümler — yeniden tanımlanmadı.
+const DERSHANE_MUDUR_MENUSU: DashboardMenuOgesi[] = [
+  { bolum: "ogretmenler", href: "/dashboard/ogretmenler", etiket: "Öğretmenler", ikon: "ogretmen" },
+  { bolum: "ogrenciler", href: "/dashboard/ogrenciler", etiket: "Öğrenciler", ikon: "ogrenci" },
+  { bolum: "denemeler", href: "/dashboard/denemeler", etiket: "Denemeler", ikon: "deneme" },
+  { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Yapay Zekâ Analizi", ikon: "ai" },
+  { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Duyurular", ikon: "duyuru" },
+  { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "TG Denemeler", ikon: "takvim" },
+];
+
+export function dashboardMenusu(role: UserRole, kurumTuru?: KurumTuru): DashboardMenuOgesi[] {
   if (role === "ogrenci") return OGRENCI_MENUSU;
   if (role === "veli") return VELI_MENUSU;
   if (role === "ogretmen") return OGRETMEN_MENUSU;
-  if (role === "mudur") return MUDUR_MENUSU;
+  if (role === "mudur") return kurumTuru === "dershane" ? DERSHANE_MUDUR_MENUSU : MUDUR_MENUSU;
   return [];
 }
 
 export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
   "gorevler", "planlar", "veri-girisi", "analiz", "yapay-zeka", "rozetler", "tg-denemeleri",
-  "duyurular", "talepler", "onaylar", "dersler",
+  "duyurular", "talepler", "onaylar", "dersler", "ogretmenler", "ogrenciler", "denemeler",
 ]);

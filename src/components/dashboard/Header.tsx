@@ -5,7 +5,7 @@ import { BORDER, BORDER_STRONG, MINT, MINT_BG, NAV_BG, TEXT, TEXT_MUTED } from "
 import { signOut } from "@/app/dashboard/actions";
 import { MesajlarimIkonu } from "@/components/dashboard/MesajlarimIkonu";
 import { BildirimAyarlari } from "@/components/dashboard/BildirimAyarlari";
-import type { UserRole } from "@/lib/types";
+import type { KurumTuru, UserRole } from "@/lib/types";
 import { MobilMenu } from "@/components/dashboard/MobilMenu";
 import { OturumZamanAsimi } from "@/components/OturumZamanAsimi";
 import { TemaButonu } from "@/components/TemaDenetimi";
@@ -20,7 +20,7 @@ const rolEtiket: Record<UserRole, string> = {
   admin: "Yönetici",
 };
 
-export function Header({ ad, role, okunmamisMesajSayisi = 0, mobilNavigasyon = true, moderatorMu = false, rolEtiketi, aktifBolum = "ozet" }: { ad: string; role: UserRole; okunmamisMesajSayisi?: number; mobilNavigasyon?: boolean; moderatorMu?: boolean; rolEtiketi?: string; aktifBolum?: DashboardBolumu }) {
+export function Header({ ad, role, kurumTuru, okunmamisMesajSayisi = 0, mobilNavigasyon = true, moderatorMu = false, rolEtiketi, aktifBolum = "ozet" }: { ad: string; role: UserRole; kurumTuru?: KurumTuru; okunmamisMesajSayisi?: number; mobilNavigasyon?: boolean; moderatorMu?: boolean; rolEtiketi?: string; aktifBolum?: DashboardBolumu }) {
   return (
     <>
     <OturumZamanAsimi aktif={role === "admin" || moderatorMu} />
@@ -60,7 +60,7 @@ export function Header({ ad, role, okunmamisMesajSayisi = 0, mobilNavigasyon = t
             </form>
           </div>
 
-          <MobilMenu ad={ad} role={role} okunmamisMesajSayisi={okunmamisMesajSayisi} moderatorMu={moderatorMu} rolEtiketi={rolEtiketi} aktifBolum={aktifBolum} navigasyonGoster={mobilNavigasyon} />
+          <MobilMenu ad={ad} role={role} kurumTuru={kurumTuru} okunmamisMesajSayisi={okunmamisMesajSayisi} moderatorMu={moderatorMu} rolEtiketi={rolEtiketi} aktifBolum={aktifBolum} navigasyonGoster={mobilNavigasyon} />
         </div>
       </div>
     </header>

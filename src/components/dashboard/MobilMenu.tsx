@@ -3,15 +3,15 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  BarChart3, BookOpenCheck, Bot, CalendarDays, CalendarPlus2, ClipboardCheck, ClipboardList, Home,
-  LogOut, Medal, Megaphone, Menu, PenLine, ShieldCheck, UserPlus, X,
+  BarChart3, BookOpenCheck, Bot, CalendarDays, CalendarPlus2, ClipboardCheck, ClipboardList, FileSpreadsheet, GraduationCap, Home,
+  LogOut, Medal, Megaphone, Menu, PenLine, ShieldCheck, UserPlus, Users, X,
 } from "lucide-react";
 import { BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, SEAFOAM, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 import { signOut } from "@/app/dashboard/actions";
 import { TemaButonu } from "@/components/TemaDenetimi";
 import { BildirimAyarlari } from "@/components/dashboard/BildirimAyarlari";
 import { MesajlarimIkonu } from "@/components/dashboard/MesajlarimIkonu";
-import type { UserRole } from "@/lib/types";
+import type { KurumTuru, UserRole } from "@/lib/types";
 import type { DashboardBolumu, DashboardIkonu } from "@/lib/dashboard-navigation";
 import { dashboardMenusu } from "@/lib/dashboard-navigation";
 
@@ -36,6 +36,9 @@ const IKONLAR: Record<DashboardIkonu, typeof Home> = {
   talep: UserPlus,
   onay: ClipboardCheck,
   ders: BookOpenCheck,
+  ogretmen: GraduationCap,
+  ogrenci: Users,
+  deneme: FileSpreadsheet,
 };
 
 // Telefon genişliğinde header'daki ikon sırası (moderatör/tema/bildirim/
@@ -46,9 +49,10 @@ const IKONLAR: Record<DashboardIkonu, typeof Home> = {
 // bir ara genişlik oluşmaz. Renkler
 // header gibi tema değişkenlerine bağlı — açık modda beyaz metin/koyu panel
 // kullanmak (eskiden olduğu gibi) gündüz de "gece" görünümü veriyordu.
-export function MobilMenu({ ad, role, okunmamisMesajSayisi, moderatorMu, rolEtiketi, aktifBolum = "ozet", navigasyonGoster = true }: {
+export function MobilMenu({ ad, role, kurumTuru, okunmamisMesajSayisi, moderatorMu, rolEtiketi, aktifBolum = "ozet", navigasyonGoster = true }: {
   ad: string;
   role: UserRole;
+  kurumTuru?: KurumTuru;
   okunmamisMesajSayisi: number;
   moderatorMu: boolean;
   rolEtiketi?: string;
@@ -56,7 +60,7 @@ export function MobilMenu({ ad, role, okunmamisMesajSayisi, moderatorMu, rolEtik
   navigasyonGoster?: boolean;
 }) {
   const [acik, setAcik] = useState(false);
-  const menu = navigasyonGoster ? dashboardMenusu(role) : [];
+  const menu = navigasyonGoster ? dashboardMenusu(role, kurumTuru) : [];
 
   return (
     <div className="relative lg:hidden">

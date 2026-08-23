@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Header } from "@/components/dashboard/Header";
 import { OgretmenPanel } from "@/components/dashboard/OgretmenPanel";
-import { DershaneRosterEkleFormu } from "@/components/dashboard/DershaneRosterEkleFormu";
+import { DershaneMudurPaneli } from "@/components/dashboard/DershaneMudurPaneli";
 import { OgrenciVeriGirisi } from "@/components/dashboard/OgrenciVeriGirisi";
 import { Rozetlerim } from "@/components/dashboard/Rozetlerim";
 import { YapayZekaAnaliziPromosu } from "@/components/dashboard/YapayZekaAnaliziPromosu";
@@ -16,7 +16,7 @@ import { analizVerisiGetir } from "@/lib/analiz";
 import type { RaporDonemi } from "@/lib/analiz";
 import { AYT_ALAN_ETIKET, sinifSiraKarsilastir, dokuzOnSinifMi, TYT_DERSLERI, AYT_DERSLERI } from "@/lib/types";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
-import type { AytAlan, UserRole } from "@/lib/types";
+import type { AytAlan, KurumTuru, UserRole } from "@/lib/types";
 import { BG1, BG1_ALT, BORDER, BORDER_STRONG, TEXT, TEXT_MUTED, MINT, MINT_BG } from "@/lib/theme";
 import { Gorevlerim } from "@/components/dashboard/Gorevlerim";
 import type { GorevSatiri } from "@/components/dashboard/Gorevlerim";
@@ -62,9 +62,26 @@ export default async function DashboardPage({
   const role = profile.role as UserRole;
   // Admin artık normal akışta hiç görünmez — tek kontrol noktası /yonetici'dir.
   if (role === "admin") redirect("/yonetici");
+
+  // DERSHANE MODU (Faz D3): müdürün menüsü kendi kurumunun tur'una göre
+  // tamamen değişiyor (bkz. dashboard-navigation.ts DERSHANE_MUDUR_MENUSU) —
+  // bu yüzden aktifBolum doğrulamasından ÖNCE bilinmesi gerekiyor.
+  let kurumTuru: KurumTuru | undefined;
+  if (role === "mudur") {
+    const { data: mudurTeacher } = await supabase.from("teachers").select("school_id").eq("id", user.id).single();
+    if (mudurTeacher) {
+      const { data: mudurOkulu } = await supabase.from("schools").select("tur").eq("id", mudurTeacher.school_id).single();
+      kurumTuru = mudurOkulu?.tur as KurumTuru | undefined;
+    }
+  }
+
   const params = await searchParams;
-  const aktifBolum = (params.bolum ?? "ozet") as DashboardBolumu;
-  if (!dashboardMenusu(role).some((oge) => oge.bolum === aktifBolum)) redirect("/dashboard");
+  // Dershane müdürünün menüsünde "ozet" yok (bkz. DERSHANE_MUDUR_MENUSU) —
+  // bolum parametresi verilmediğinde varsayılan, doğrulamayı geçecek bir
+  // bölüm olmalı, aksi halde /dashboard'a redirect sonsuz döngüye girer.
+  const varsayilanBolum: DashboardBolumu = role === "mudur" && kurumTuru === "dershane" ? "ogretmenler" : "ozet";
+  const aktifBolum = (params.bolum ?? varsayilanBolum) as DashboardBolumu;
+  if (!dashboardMenusu(role, kurumTuru).some((oge) => oge.bolum === aktifBolum)) redirect("/dashboard");
   const donem = (["haftalik", "aylik", "tum"].includes(params.donem ?? "") ? params.donem : "tum") as RaporDonemi;
   const { data: moderatorYetkisi } = (role === "ogretmen" || role === "mudur")
     ? await supabase.from("school_moderators").select("school_id").eq("profile_id", user.id).maybeSingle()
@@ -84,11 +101,11 @@ export default async function DashboardPage({
 
   return (
     <div className="sfec-dashboard-shell min-h-dvh w-full flex-1 flex flex-col">
-      <Header ad={profile.ad} role={role} okunmamisMesajSayisi={okunmamisMesajSayisi} moderatorMu={!!moderatorYetkisi} rolEtiketi={moderatorYetkisi ? "Moderatör" : undefined} aktifBolum={aktifBolum} />
+      <Header ad={profile.ad} role={role} kurumTuru={kurumTuru} okunmamisMesajSayisi={okunmamisMesajSayisi} moderatorMu={!!moderatorYetkisi} rolEtiketi={moderatorYetkisi ? "Moderatör" : undefined} aktifBolum={aktifBolum} />
       <ZorunluSifreDegisikligiKapisi gecici={profile.gecici_sifre} />
       <HosgeldinPopuplari role={role} />
       <div className="mx-auto flex min-h-[calc(100dvh-6.75rem)] w-full max-w-[100rem] flex-1 items-stretch gap-6 px-4 py-6 sm:px-6 lg:py-7">
-        <DashboardYanMenu role={role} aktifBolum={aktifBolum} />
+        <DashboardYanMenu role={role} kurumTuru={kurumTuru} aktifBolum={aktifBolum} />
         <main id="ana-icerik" className="sfec-dashboard-main min-h-[calc(100dvh-10.25rem)] min-w-0 w-full flex-1 flex flex-col gap-6">
           {aktifBolum === "tg-denemeleri" ? (
             <TgDenemeleri bugun={bugununTarihiTR()} />
@@ -96,7 +113,7 @@ export default async function DashboardPage({
             <>
               {role === "ogrenci" && <OgrenciIcerik userId={user.id} ad={profile.ad} donem={donem} haftaBaslangic={haftaninPazartesisi(params.hafta)} aktifBolum={aktifBolum} />}
               {(role === "ogretmen" || role === "mudur") && (
-                <OgretmenIcerik userId={user.id} role={role} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} donem={donem} aktifBolum={aktifBolum} />
+                <OgretmenIcerik userId={user.id} role={role} kurumTuru={kurumTuru} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} donem={donem} aktifBolum={aktifBolum} />
               )}
               {role === "veli" && <VeliIcerik userId={user.id} ad={profile.ad} secilenOgrenciId={params.ogrenci} donem={donem} aktifBolum={aktifBolum} />}
             </>
@@ -298,8 +315,8 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
   );
 }
 
-async function OgretmenIcerik({ userId, role, secilenSinifId, secilenOgrenciId, donem, aktifBolum }: {
-  userId: string; role: "ogretmen" | "mudur"; secilenSinifId?: string; secilenOgrenciId?: string; donem: RaporDonemi; aktifBolum: DashboardBolumu;
+async function OgretmenIcerik({ userId, role, kurumTuru, secilenSinifId, secilenOgrenciId, donem, aktifBolum }: {
+  userId: string; role: "ogretmen" | "mudur"; kurumTuru?: KurumTuru; secilenSinifId?: string; secilenOgrenciId?: string; donem: RaporDonemi; aktifBolum: DashboardBolumu;
 }) {
   const supabase = await createClient();
   const { data: teacher } = await supabase
@@ -321,20 +338,8 @@ async function OgretmenIcerik({ userId, role, secilenSinifId, secilenOgrenciId, 
     return <RozetGoruntulemePaneli gorunum={gorunum} action="/dashboard/rozetler" kapsam={`${gorunum.kurumAdi ?? "Kurum"} · Yalnız bu kurumdaki öğrenciler`} />;
   }
 
-  // DERSHANE MODU (Faz D2): dershane müdürü, okul müdüründen farklı bir
-  // panel görüyor — bkz. src/components/dashboard/DershaneRosterEkleFormu.tsx
-  // (Faz D3'te tam 6 sekmeli panelle değişecek geçici bir ekran).
-  if (role === "mudur") {
-    const { data: kurum } = await supabase.from("schools").select("tur").eq("id", teacher.school_id).single();
-    if (kurum?.tur === "dershane") {
-      const { data: dershaneSiniflari } = await supabase
-        .from("classes")
-        .select("id, seviye, sube")
-        .eq("school_id", teacher.school_id);
-      return <DershaneRosterEkleFormu siniflar={((dershaneSiniflari ?? []) as { id: string; seviye: string; sube: string }[]).sort(sinifSiraKarsilastir)} />;
-    }
-  }
-
+  // "Öğrenci profili görüntüle" (analiz sayfası, ?ogrenci=) hem okul hem
+  // dershane müdürü için ORTAK — dershane dalına geçmeden önce ele alınır.
   if (secilenOgrenciId) {
     const { data: ogrenci } = await supabase
       .from("students")
@@ -348,9 +353,16 @@ async function OgretmenIcerik({ userId, role, secilenSinifId, secilenOgrenciId, 
     if (o) {
       const analiz = await analizVerisiGetir(supabase, secilenOgrenciId, donem);
       const ogrenciAdi = o.profiles?.ad ?? "İsimsiz";
+      // Dershane müdürünün "ozet" bölümü yok (bkz. DERSHANE_MUDUR_MENUSU) —
+      // varsayılan geri dönüş hedefi ona göre değişiyor, aksi halde
+      // /dashboard'a dönüş aktifBolum doğrulamasında geçersiz kalıp
+      // yönlendirme döngüsüne girerdi.
+      const geriDonusHref = secilenSinifId
+        ? `/dashboard?sinif=${secilenSinifId}`
+        : kurumTuru === "dershane" ? "/dashboard/ogrenciler" : "/dashboard";
       return (
         <div className="flex flex-col gap-4">
-          <Link href={secilenSinifId ? `/dashboard?sinif=${secilenSinifId}` : "/dashboard"}
+          <Link href={geriDonusHref}
             className="sfec-btn inline-flex items-center gap-1 text-xs font-bold w-fit px-3 py-1.5 rounded-full print:hidden"
             style={{ background: BG1_ALT, color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
             <ChevronLeft size={14} /> Listeye dön
@@ -360,6 +372,21 @@ async function OgretmenIcerik({ userId, role, secilenSinifId, secilenOgrenciId, 
         </div>
       );
     }
+  }
+
+  // DERSHANE MODU (Faz D3): dershane müdürü tamamen ayrı bir panel görüyor
+  // — bkz. src/components/dashboard/DershaneMudurPaneli.tsx.
+  if (role === "mudur" && kurumTuru === "dershane") {
+    const { data: dershaneSiniflari } = await supabase
+      .from("classes")
+      .select("id, seviye, sube")
+      .eq("school_id", teacher.school_id);
+    return (
+      <DershaneMudurPaneli
+        siniflar={((dershaneSiniflari ?? []) as { id: string; seviye: string; sube: string }[]).sort(sinifSiraKarsilastir)}
+        aktifBolum={aktifBolum}
+      />
+    );
   }
 
   const { data: siniflar } = await supabase

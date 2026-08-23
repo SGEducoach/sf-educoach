@@ -2,9 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   BarChart3, BookOpenCheck, Bot, CalendarDays, CalendarPlus2, ClipboardCheck, ClipboardList,
-  Home, Megaphone, Medal, PenLine, UserPlus,
+  FileSpreadsheet, GraduationCap, Home, Megaphone, Medal, PenLine, UserPlus, Users,
 } from "lucide-react";
-import type { UserRole } from "@/lib/types";
+import type { KurumTuru, UserRole } from "@/lib/types";
 import type { DashboardBolumu, DashboardIkonu } from "@/lib/dashboard-navigation";
 import { dashboardMenusu } from "@/lib/dashboard-navigation";
 import { BG1, BORDER, MINT, MINT_BG, TEXT, TEXT_MUTED } from "@/lib/theme";
@@ -23,16 +23,19 @@ const IKONLAR: Record<DashboardIkonu, typeof Home> = {
   talep: UserPlus,
   onay: ClipboardCheck,
   ders: BookOpenCheck,
+  ogretmen: GraduationCap,
+  ogrenci: Users,
+  deneme: FileSpreadsheet,
 };
 
-export function DashboardYanMenu({ role, aktifBolum }: { role: UserRole; aktifBolum: DashboardBolumu }) {
-  const menu = dashboardMenusu(role);
+export function DashboardYanMenu({ role, kurumTuru, aktifBolum }: { role: UserRole; kurumTuru?: KurumTuru; aktifBolum: DashboardBolumu }) {
+  const menu = dashboardMenusu(role, kurumTuru);
   if (menu.length === 0) return null;
   const rolBasligi: Partial<Record<UserRole, string>> = {
     ogrenci: "Öğrenci çalışma alanı",
     veli: "Veli takip alanı",
     ogretmen: "Öğretmen çalışma alanı",
-    mudur: "Okul yönetim alanı",
+    mudur: kurumTuru === "dershane" ? "Dershane yönetim alanı" : "Okul yönetim alanı",
   };
 
   return (

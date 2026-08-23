@@ -8,11 +8,9 @@ import { AYT_ALAN_ETIKET } from "@/lib/types";
 import type { AytAlan } from "@/lib/types";
 import { BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 
-// DERSHANE MODU — Faz D2 için geçici (stopgap) tek-tek roster ekleme
-// ekranı. Faz D3'te tam Müdür paneli (6 sekme, toplu .xlsx yükleme,
-// moderatör listesiyle birleşik görünüm) bunun yerini alacak — bu
-// arada müdür↔öğrenci kayıt akışının uçtan uca çalıştığını doğrulamak
-// için asgari bir arayüz.
+// DERSHANE MODU — müdürün tek tek öğrenci roster'a eklemesi. Toplu
+// .xlsx yükleme/indirme henüz yok (sonraki fazda) — şimdilik bu form
+// tek tek ekleme için kullanılıyor.
 export function DershaneRosterEkleFormu({ siniflar }: { siniflar: { id: string; seviye: string; sube: string }[] }) {
   const [ad, setAd] = useState("");
   const [telefon, setTelefon] = useState("");
@@ -22,6 +20,17 @@ export function DershaneRosterEkleFormu({ siniflar }: { siniflar: { id: string; 
   const [hata, setHata] = useState<string | null>(null);
   const [basari, setBasari] = useState<string | null>(null);
   const [yukleniyor, setYukleniyor] = useState(false);
+
+  // Müdür yeni bir şube ekleyip sayfa yenilendiğinde (router.refresh) bu
+  // bileşen yeniden mount OLMUYOR — sadece siniflar prop'u değişiyor. classId
+  // ilk mount'ta boşsa (henüz şube yoktu) sonradan gelen ilk şubeyi otomatik
+  // seçmesi için render sırasında düzeltiyoruz (bkz. bu oturumdaki
+  // Gorevlerim.tsx'teki aynı desen).
+  const [sonSiniflarUzunlugu, setSonSiniflarUzunlugu] = useState(siniflar.length);
+  if (siniflar.length !== sonSiniflarUzunlugu) {
+    setSonSiniflarUzunlugu(siniflar.length);
+    if (!classId && siniflar[0]) setClassId(siniflar[0].id);
+  }
 
   async function ekle(e: React.FormEvent) {
     e.preventDefault();
@@ -42,9 +51,9 @@ export function DershaneRosterEkleFormu({ siniflar }: { siniflar: { id: string; 
           <UserPlus size={18} color={MINT} />
         </div>
         <div>
-          <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold">Öğrenci ekle (dershane)</h2>
+          <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold">Öğrenci ekle</h2>
           <p style={{ color: TEXT_MUTED }} className="text-xs">
-            Tam müdür paneli (toplu .xlsx yükleme, öğretmen ekleme, denemeler vb.) yakında — şimdilik tek tek roster ekleyebilirsiniz.
+            Öğrenci, girdiğiniz telefon numarasıyla /signup üzerinden kendi kaydını tamamlar.
           </p>
         </div>
       </div>
