@@ -5,6 +5,7 @@ import { AdminPanel } from "@/components/dashboard/AdminPanel";
 import { KullaniciArama } from "@/components/yonetici/KullaniciArama";
 import { VeliTalepleri } from "@/components/yonetici/VeliTalepleri";
 import { PdfEslesmeYonetimi } from "@/components/yonetici/PdfEslesmeYonetimi";
+import { ModeratorlerListesi } from "@/components/yonetici/ModeratorlerListesi";
 import { PlatformIstatistikleri } from "@/components/yonetici/PlatformIstatistikleri";
 import { KonuAnlatimYonetimi } from "@/components/yonetici/KonuAnlatimYonetimi";
 import { KurallarYonetimi } from "@/components/yonetici/KurallarYonetimi";
@@ -85,6 +86,7 @@ export default async function YoneticiPage({
           ogretmenListesi={ogretmenListesi}
           islemKayitlari={kayitListesi}
         /></section>
+        <section id="moderatorler" className="sfec-section"><ModeratorlerListesi /></section>
         <section id="icerik" className="sfec-section"><KonuAnlatimYonetimi /></section>
         <KurallarYonetimi />
       </main>

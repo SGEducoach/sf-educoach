@@ -17,10 +17,25 @@ export interface ModeratorKullanici {
   sinif: string | null;
 }
 
-async function requireModerator() {
+// targetSchoolId: admin'in /yonetici → "Moderatörler" listesinden bir okula
+// tıklayıp o okulun moderatör panelini GÖRÜNTÜLEMESİ için (bkz. /moderator
+// ?okul=...). Sadece gerçekten admin olan çağıran için onurlandırılır —
+// admin değilse bu parametre yok sayılır ve normal akış (kendi
+// school_moderators satırı) çalışır, yani sahte bir okul id'si göndermek
+// yetki yükseltmeye yaramaz.
+async function requireModerator(targetSchoolId?: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+  if (targetSchoolId) {
+    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
+    if (profile?.role === "admin") {
+      const admin = createAdminClient();
+      const { data: okul } = await admin.from("schools").select("ad").eq("id", targetSchoolId).maybeSingle();
+      if (!okul) redirect("/yonetici");
+      return { user, admin, schoolId: targetSchoolId, okulAdi: okul.ad };
+    }
+  }
   const { data: yetki } = await supabase.from("school_moderators").select("school_id, schools(ad)").eq("profile_id", user.id).maybeSingle();
   if (!yetki) redirect("/dashboard");
   const okul = yetki.schools as unknown as { ad: string } | null;
@@ -36,8 +51,8 @@ async function hedefOkuldaMi(admin: ReturnType<typeof createAdminClient>, school
   return !!student || !!teacher || !!parent?.length;
 }
 
-export async function moderatorKullanicilariGetir(): Promise<{ okulAdi: string; kullanicilar: ModeratorKullanici[] }> {
-  const { admin, schoolId, okulAdi } = await requireModerator();
+export async function moderatorKullanicilariGetir(targetSchoolId?: string): Promise<{ okulAdi: string; kullanicilar: ModeratorKullanici[] }> {
+  const { admin, schoolId, okulAdi } = await requireModerator(targetSchoolId);
   const [{ data: students }, { data: teachers }, { data: parents }] = await Promise.all([
     admin.from("students").select("id, okul_no, classes(seviye, sube)").eq("school_id", schoolId),
     admin.from("teachers").select("id, brans, classes(seviye, sube)").eq("school_id", schoolId),
@@ -63,8 +78,8 @@ export async function moderatorKullanicilariGetir(): Promise<{ okulAdi: string; 
   };
 }
 
-export async function moderatorAktiflikDegistir(targetId: string, aktif: boolean) {
-  const { user, admin, schoolId } = await requireModerator();
+export async function moderatorAktiflikDegistir(targetId: string, aktif: boolean, targetSchoolId?: string) {
+  const { user, admin, schoolId } = await requireModerator(targetSchoolId);
   if (targetId === user.id || !(await hedefOkuldaMi(admin, schoolId, targetId))) return { error: "Bu kullanıcı için yetkiniz yok." };
   const { error } = await admin.auth.admin.updateUserById(targetId, { ban_duration: aktif ? "none" : "87600h" });
   if (error) return { error: error.message };
@@ -74,8 +89,8 @@ export async function moderatorAktiflikDegistir(targetId: string, aktif: boolean
   return { error: null };
 }
 
-export async function moderatorSifreSifirla(targetId: string) {
-  const { user, admin, schoolId } = await requireModerator();
+export async function moderatorSifreSifirla(targetId: string, targetSchoolId?: string) {
+  const { user, admin, schoolId } = await requireModerator(targetSchoolId);
   if (targetId === user.id || !(await hedefOkuldaMi(admin, schoolId, targetId))) return { error: "Bu kullanıcı için yetkiniz yok.", sifre: null };
   const sifre = rastgeleSifre();
   const { error } = await admin.auth.admin.updateUserById(targetId, { password: sifre });
@@ -85,8 +100,8 @@ export async function moderatorSifreSifirla(targetId: string) {
   return { error: null, sifre };
 }
 
-export async function moderatorHesapSil(targetId: string) {
-  const { user, admin, schoolId } = await requireModerator();
+export async function moderatorHesapSil(targetId: string, targetSchoolId?: string) {
+  const { user, admin, schoolId } = await requireModerator(targetSchoolId);
   if (targetId === user.id || !(await hedefOkuldaMi(admin, schoolId, targetId))) return { error: "Bu kullanıcı için yetkiniz yok." };
   const { data: profil } = await admin.from("profiles").select("role").eq("id", targetId).maybeSingle();
   if (!profil || profil.role === "admin") return { error: "Bu hesap silinemez." };
