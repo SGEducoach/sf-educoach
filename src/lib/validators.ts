@@ -21,9 +21,14 @@ export function okulNoGecerliMi(v: string) {
 // da tek boşluğa indirip baş/son boşlukları kırpıyor.
 export function adNormalize(v: string) {
   return v
+    .normalize("NFC")
     .trim()
     .replace(/\s+/g, " ")
     .toLocaleLowerCase("tr-TR")
+    // Bazı kaynaklar İ harfini "i + birleştirilen nokta" olarak gönderiyor.
+    // Türkçe büyük harfe çevrilince çift noktalı İ oluşmaması için temizle.
+    .replace(/([iı])\u0307/g, "$1")
+    .normalize("NFC")
     .replace(/(^|[\s'-])([a-zçğıöşü])/g, (_, ayirici: string, harf: string) => ayirici + harf.toLocaleUpperCase("tr-TR"));
 }
 
