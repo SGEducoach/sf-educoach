@@ -21,6 +21,9 @@ import { BG1, BG1_ALT, BORDER, BORDER_STRONG, TEXT, TEXT_MUTED, MINT, MINT_BG } 
 import { Gorevlerim } from "@/components/dashboard/Gorevlerim";
 import type { GorevSatiri } from "@/components/dashboard/Gorevlerim";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
+import { DashboardYanMenu } from "@/components/dashboard/DashboardYanMenu";
+import { dashboardMenusu } from "@/lib/dashboard-navigation";
+import type { DashboardBolumu } from "@/lib/dashboard-navigation";
 
 // Görevlerim takvimi haftalık gösteriliyor — verilen tarihin (veya bugünün,
 // Türkiye saatine göre) içinde bulunduğu haftanın Pazartesi'sini döndürür.
@@ -39,7 +42,7 @@ function haftaninPazartesisi(tarihISO?: string): string {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sinif?: string; ogrenci?: string; donem?: string; okul?: string; hafta?: string }>;
+  searchParams: Promise<{ sinif?: string; ogrenci?: string; donem?: string; okul?: string; hafta?: string; ders?: string; bolum?: string }>;
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -57,6 +60,8 @@ export default async function DashboardPage({
   // Admin artık normal akışta hiç görünmez — tek kontrol noktası /yonetici'dir.
   if (role === "admin") redirect("/yonetici");
   const params = await searchParams;
+  const aktifBolum = (params.bolum ?? "ozet") as DashboardBolumu;
+  if (!dashboardMenusu(role).some((oge) => oge.bolum === aktifBolum)) redirect("/dashboard");
   const donem = (["haftalik", "aylik", "tum"].includes(params.donem ?? "") ? params.donem : "tum") as RaporDonemi;
   const { data: moderatorYetkisi } = (role === "ogretmen" || role === "mudur")
     ? await supabase.from("school_moderators").select("school_id").eq("profile_id", user.id).maybeSingle()
@@ -76,21 +81,24 @@ export default async function DashboardPage({
 
   return (
     <div style={{ minHeight: "100vh", width: "100%" }} className="flex-1 flex flex-col">
-      <Header ad={profile.ad} role={role} okunmamisMesajSayisi={okunmamisMesajSayisi} moderatorMu={!!moderatorYetkisi} rolEtiketi={moderatorYetkisi ? "Moderatör" : undefined} />
+      <Header ad={profile.ad} role={role} okunmamisMesajSayisi={okunmamisMesajSayisi} moderatorMu={!!moderatorYetkisi} rolEtiketi={moderatorYetkisi ? "Moderatör" : undefined} aktifBolum={aktifBolum} />
       <ZorunluSifreDegisikligiKapisi gecici={profile.gecici_sifre} />
       <HosgeldinPopuplari role={role} />
-      <main id="ana-icerik" className="max-w-6xl mx-auto px-4 sm:px-6 py-7 pb-24 lg:pb-7 w-full flex-1 flex flex-col gap-6">
-        {role === "ogrenci" && <OgrenciIcerik userId={user.id} ad={profile.ad} donem={donem} haftaBaslangic={haftaninPazartesisi(params.hafta)} />}
-        {(role === "ogretmen" || role === "mudur") && (
-          <OgretmenIcerik userId={user.id} role={role} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} donem={donem} />
-        )}
-        {role === "veli" && <VeliIcerik userId={user.id} secilenOgrenciId={params.ogrenci} donem={donem} />}
-      </main>
+      <div className="mx-auto flex w-full max-w-[90rem] flex-1 items-start gap-6 px-4 py-7 sm:px-6">
+        <DashboardYanMenu role={role} aktifBolum={aktifBolum} />
+        <main id="ana-icerik" className="min-w-0 w-full flex-1 flex flex-col gap-6">
+          {role === "ogrenci" && <OgrenciIcerik userId={user.id} ad={profile.ad} donem={donem} haftaBaslangic={haftaninPazartesisi(params.hafta)} aktifBolum={aktifBolum} />}
+          {(role === "ogretmen" || role === "mudur") && (
+            <OgretmenIcerik userId={user.id} role={role} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} donem={donem} aktifBolum={aktifBolum} />
+          )}
+          {role === "veli" && <VeliIcerik userId={user.id} secilenOgrenciId={params.ogrenci} donem={donem} aktifBolum={aktifBolum} />}
+        </main>
+      </div>
     </div>
   );
 }
 
-async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic }: { userId: string; ad: string; donem: RaporDonemi; haftaBaslangic: string }) {
+async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: { userId: string; ad: string; donem: RaporDonemi; haftaBaslangic: string; aktifBolum: DashboardBolumu }) {
   const supabase = await createClient();
   const { data: student } = await supabase
     .from("students")
@@ -220,7 +228,7 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic }: { userId: st
 
   return (
     <div className="flex flex-col gap-6">
-      <div id="ozet" className="sfec-section sfec-fade rounded-3xl p-6 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+      {aktifBolum === "ozet" && <div className="sfec-fade rounded-3xl p-6 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-bold mb-4 flex items-center gap-2">
           Hoş geldin!
           <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full" style={{ background: "linear-gradient(135deg, #7C3AED, #2563EB)" }}>
@@ -233,9 +241,9 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic }: { userId: st
           <Bilgi etiket="Sınıf" deger={s.classes ? `${s.classes.seviye}-${s.classes.sube}` : "—"} />
           <Bilgi etiket="AYT Alanı" deger={AYT_ALAN_ETIKET[s.ayt_alan]} />
         </div>
-      </div>
+      </div>}
 
-      <section id="gorevlerim" className="sfec-section print:hidden">
+      {aktifBolum === "gorevler" && <section className="print:hidden">
         <Gorevlerim
           gorevler={gorevlerimListesi}
           haftaBaslangic={haftaBaslangic}
@@ -245,28 +253,28 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic }: { userId: st
           konuOnerileri={konuOnerileri}
           konuSayaclari={konuSayaclari}
         />
-      </section>
+      </section>}
 
-      <section className="sfec-section print:hidden"><YapayZekaAnaliziPromosu /></section>
+      {aktifBolum === "ozet" && <section className="print:hidden"><YapayZekaAnaliziPromosu /></section>}
 
-      <Rozetlerim durum={rozetDurum} sinifSeviyesi={s.classes?.seviye ?? null} />
+      {aktifBolum === "rozetler" && <Rozetlerim durum={rozetDurum} sinifSeviyesi={s.classes?.seviye ?? null} />}
 
-      <section id="zayif-konular" className="sfec-section"><ZayifKonular konular={zayifKonular} /></section>
+      {aktifBolum === "konular" && <section><ZayifKonular konular={zayifKonular} /></section>}
 
-      <div id="veri-girisi" className="sfec-section print:hidden">
+      {aktifBolum === "veri-girisi" && <div className="print:hidden">
         <OgrenciVeriGirisi aytAlan={s.ayt_alan} konuOnerileri={konuOnerileri} sinifSeviyesi={s.classes?.seviye ?? null} konuSayaclari={konuSayaclari} />
-      </div>
+      </div>}
 
-      <div id="analiz" className="sfec-section">
+      {aktifBolum === "analiz" && <div>
         <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-lg font-bold mb-3 print:hidden">Analiz / Rapor</h2>
         <AnalizPaneli veri={analiz} ogrenciAdi={ad} />
-      </div>
+      </div>}
     </div>
   );
 }
 
-async function OgretmenIcerik({ userId, role, secilenSinifId, secilenOgrenciId, donem }: {
-  userId: string; role: "ogretmen" | "mudur"; secilenSinifId?: string; secilenOgrenciId?: string; donem: RaporDonemi;
+async function OgretmenIcerik({ userId, role, secilenSinifId, secilenOgrenciId, donem, aktifBolum }: {
+  userId: string; role: "ogretmen" | "mudur"; secilenSinifId?: string; secilenOgrenciId?: string; donem: RaporDonemi; aktifBolum: DashboardBolumu;
 }) {
   const supabase = await createClient();
   const { data: teacher } = await supabase
@@ -388,11 +396,12 @@ async function OgretmenIcerik({ userId, role, secilenSinifId, secilenOgrenciId, 
       ogretmenDersleri={ogretmenDersleri}
       bekleyenOnaylar={bekleyenOnaylar}
       konuOnerileri={MUFREDAT_KONULARI}
+      aktifBolum={aktifBolum}
     />
   );
 }
 
-async function VeliIcerik({ userId, secilenOgrenciId, donem }: { userId: string; secilenOgrenciId?: string; donem: RaporDonemi }) {
+async function VeliIcerik({ userId, secilenOgrenciId, donem, aktifBolum }: { userId: string; secilenOgrenciId?: string; donem: RaporDonemi; aktifBolum: DashboardBolumu }) {
   const supabase = await createClient();
   const { data: links } = await supabase
     .from("parent_students")
@@ -407,7 +416,7 @@ async function VeliIcerik({ userId, secilenOgrenciId, donem }: { userId: string;
 
   return (
     <div className="flex flex-col gap-6">
-      <div id="ozet" className="sfec-section sfec-fade rounded-3xl p-6 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+      <div className="sfec-fade rounded-3xl p-6 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-bold mb-4 flex items-center gap-2">
           Hoş geldiniz!
           <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full" style={{ background: "linear-gradient(135deg, #7C3AED, #2563EB)" }}>
@@ -421,7 +430,7 @@ async function VeliIcerik({ userId, secilenOgrenciId, donem }: { userId: string;
             {cocuklar.map((c, i) => {
               const secili = c.students?.id === seciliId;
               return (
-                <Link key={i} href={`/dashboard?ogrenci=${c.students?.id}`}
+                <Link key={i} href={`${aktifBolum === "analiz" ? "/dashboard/analiz" : "/dashboard"}?ogrenci=${c.students?.id}`}
                   className="sfec-btn rounded-xl px-3.5 py-2.5 text-sm font-semibold"
                   style={{ color: secili ? MINT : TEXT, background: secili ? MINT_BG : "rgba(255,255,255,0.04)", border: `1px solid ${secili ? MINT : "transparent"}` }}>
                   {c.students?.profiles?.ad} <span style={{ color: TEXT_MUTED }} className="font-normal">· #{c.students?.okul_no}</span>
@@ -432,7 +441,7 @@ async function VeliIcerik({ userId, secilenOgrenciId, donem }: { userId: string;
         )}
       </div>
 
-      {seciliCocuk?.students && <section id="analiz" className="sfec-section"><AnalizPaneli veri={await analizVerisiGetir(supabase, seciliCocuk.students.id, donem)} ogrenciAdi={seciliCocuk.students.profiles?.ad} /></section>}
+      {aktifBolum === "analiz" && seciliCocuk?.students && <section><AnalizPaneli veri={await analizVerisiGetir(supabase, seciliCocuk.students.id, donem)} ogrenciAdi={seciliCocuk.students.profiles?.ad} /></section>}
     </div>
   );
 }

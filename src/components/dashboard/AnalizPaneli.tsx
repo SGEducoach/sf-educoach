@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip,
   ResponsiveContainer, BarChart, Bar, Legend,
@@ -41,6 +41,7 @@ const HEDEF_RENK: Record<HedefeYakinlik, string> = { yakin: MINT, belirsiz: BUTT
 
 export function AnalizPaneli({ veri, ogrenciAdi }: { veri: AnalizVerisi; ogrenciAdi?: string }) {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const denemeChartData = veri.denemeTrend.map((d) => ({ tarih: tarihFormat(d.tarih), [d.tur]: d.net }));
   const konuChartData = veri.konuCalismaGunluk.map((c) => ({ gun: tarihFormat(c.tarih), dakika: c.dakika }));
@@ -60,13 +61,13 @@ export function AnalizPaneli({ veri, ogrenciAdi }: { veri: AnalizVerisi; ogrenci
   function donemDegistir(donem: RaporDonemi) {
     const params = new URLSearchParams(searchParams.toString());
     params.set("donem", donem);
-    router.push(`/dashboard?${params.toString()}`);
+    router.push(`${pathname}?${params.toString()}`);
   }
 
   function dersDegistir(ders: string) {
     const params = new URLSearchParams(searchParams.toString());
     if (ders) params.set("ders", ders); else params.delete("ders");
-    router.push(`/dashboard?${params.toString()}`);
+    router.push(`${pathname}?${params.toString()}`);
   }
 
   const raporTarihi = new Date().toLocaleDateString("tr-TR", { day: "2-digit", month: "long", year: "numeric" });

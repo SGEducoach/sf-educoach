@@ -12,6 +12,7 @@ import { gorevVer } from "@/app/dashboard/gorev-actions";
 import { DuyuruFormu } from "@/components/dashboard/DuyuruFormu";
 import { BRANS_LISTESI, type GorevTuru, type SinifSeviyesi, type VeliLinkRequest } from "@/lib/types";
 import { bugununTarihiTR } from "@/lib/tarih";
+import type { DashboardBolumu } from "@/lib/dashboard-navigation";
 
 interface OgrenciSatiri {
   id: string;
@@ -42,7 +43,7 @@ interface BekleyenOnaySatiri {
 
 export function OgretmenPanel({
   role, bekleyenTalepler, ogrenciler, sinifAdi, siniflar, gorunecekSinifId, kendiSinifId, kendiSinifiMi,
-  ogretmenDersleri, bekleyenOnaylar, konuOnerileri,
+  ogretmenDersleri, bekleyenOnaylar, konuOnerileri, aktifBolum,
 }: {
   role: "ogretmen" | "mudur";
   bekleyenTalepler: (VeliLinkRequest & { ogrenci_ad: string })[];
@@ -55,6 +56,7 @@ export function OgretmenPanel({
   ogretmenDersleri: OgretmenDersiSatiri[];
   bekleyenOnaylar: BekleyenOnaySatiri[];
   konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
+  aktifBolum: DashboardBolumu;
 }) {
   const router = useRouter();
   const [uretilenKodlar, setUretilenKodlar] = useState<Record<string, string>>({});
@@ -99,7 +101,7 @@ export function OgretmenPanel({
 
   return (
     <div className="flex flex-col gap-6">
-      {duyuruMumkunMu && (
+      {aktifBolum === "duyurular" && duyuruMumkunMu && (
         <section id="duyurular" className="sfec-section"><DuyuruFormu
           baslik={role === "mudur" ? "Okula duyuru gönder" : "Sınıfınıza duyuru gönder"}
           aciklama={role === "mudur"
@@ -112,7 +114,7 @@ export function OgretmenPanel({
         /></section>
       )}
 
-      {kendiSinifId && (
+      {aktifBolum === "talepler" && kendiSinifId && (
         <div id="veli-talepleri" className="sfec-section sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
           <div className="flex items-center gap-2 mb-4">
             <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: MINT_BG }}>
@@ -157,15 +159,29 @@ export function OgretmenPanel({
         </div>
       )}
 
-      {role === "ogretmen" && kendiSinifId && <BekleyenOnaylarBolumu onaylar={bekleyenOnaylar} />}
+      {aktifBolum === "onaylar" && role === "ogretmen" && kendiSinifId && <BekleyenOnaylarBolumu onaylar={bekleyenOnaylar} />}
 
-      {role === "ogretmen" && gorevVerilebilirMi && ogrenciler.length > 0 && (
+      {aktifBolum === "gorevler" && role === "ogretmen" && (
+        <div className="sfec-fade rounded-2xl p-3 flex items-center justify-between gap-3 flex-wrap" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+          <div>
+            <div className="text-sm font-bold" style={{ color: TEXT }}>Görev verilecek sınıf</div>
+            <div className="text-[11px]" style={{ color: TEXT_MUTED }}>Yalnızca ders verdiğiniz sınıflara görev gönderebilirsiniz.</div>
+          </div>
+          <select value={gorunecekSinifId ?? ""} onChange={(e) => router.push(`/dashboard/gorevler?sinif=${e.target.value}`)}
+            className="text-xs font-bold px-3 py-2 rounded-xl outline-none"
+            style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
+            {siniflar.map((s) => <option key={s.id} value={s.id}>{s.seviye}-{s.sube}{s.id === kendiSinifId ? " (sınıfınız)" : ""}</option>)}
+          </select>
+        </div>
+      )}
+
+      {aktifBolum === "gorevler" && role === "ogretmen" && gorevVerilebilirMi && ogrenciler.length > 0 && (
         <GorevVerBolumu ogrenciler={ogrenciler} konuOnerileri={konuOnerileri} />
       )}
 
-      {role === "ogretmen" && <DerslerimBolumu dersler={ogretmenDersleri} siniflar={siniflar} />}
+      {aktifBolum === "dersler" && role === "ogretmen" && <DerslerimBolumu dersler={ogretmenDersleri} siniflar={siniflar} />}
 
-      <div id="siniflar" className="sfec-section sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+      {aktifBolum === "ozet" && <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: kendiSinifiMi ? MINT_BG : SKY_BG }}>
@@ -211,7 +227,7 @@ export function OgretmenPanel({
             ))}
           </div>
         )}
-      </div>
+      </div>}
 
     </div>
   );

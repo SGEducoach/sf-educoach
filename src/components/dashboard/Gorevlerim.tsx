@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { createPortal } from "react-dom";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, BookOpen, PenLine, ClipboardList, X, Clock, Plus } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, PEACH, PEACH_BG, BLUSH, BLUSH_BG, TEXT, TEXT_MUTED } from "@/lib/theme";
 import { GOREV_TURU_ETIKET, GOREV_DURUMU_ETIKET } from "@/lib/types";
@@ -56,6 +56,7 @@ export function Gorevlerim({ gorevler, haftaBaslangic, aytAlan, dokuzOnMu, dersL
   konuSayaclari?: Record<string, { tamamlanan: number; toplam: number }>;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const gunler = Array.from({ length: 7 }, (_, i) => tarihEkle(haftaBaslangic, i));
   const bugun = bugununTarihiTR();
@@ -79,7 +80,7 @@ export function Gorevlerim({ gorevler, haftaBaslangic, aytAlan, dokuzOnMu, dersL
   function haftaGuncelle(haftaISO: string) {
     const params = new URLSearchParams(searchParams.toString());
     params.set("hafta", haftaISO);
-    router.push(`/dashboard?${params.toString()}`);
+    router.push(`${pathname}?${params.toString()}`);
   }
 
   function haftaDegistir(yon: -1 | 1) {
