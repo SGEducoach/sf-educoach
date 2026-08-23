@@ -257,10 +257,12 @@ function OyunEtiketiKarti({ etiket, sayac, kategori }: { etiket: OyunEtiketi; sa
   );
 }
 
-export function Rozetlerim({ durum, oyunSayaclari, sinifSeviyesi }: {
+export function Rozetlerim({ durum, oyunSayaclari, sinifSeviyesi, baslik = "Rozetlerim", altBaslik = "Disiplin rozetleri + 21 oyun etiketi" }: {
   durum: RozetDurum;
   oyunSayaclari: OyunEtiketiSayaclari;
   sinifSeviyesi?: string | null;
+  baslik?: string;
+  altBaslik?: string;
 }) {
   const [kurallarAcik, setKurallarAcik] = useState(false);
   const dokuzOnMu = dokuzOnSinifMi(sinifSeviyesi);
@@ -275,8 +277,8 @@ export function Rozetlerim({ durum, oyunSayaclari, sinifSeviyesi }: {
             <Trophy size={13} color="#FFC46B" />
           </div>
           <div>
-            <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="block text-[15px] font-bold">Rozetlerim</span>
-            <span className="text-[10px] font-semibold" style={{ color: TEXT_MUTED }}>Disiplin rozetleri + 21 oyun etiketi</span>
+            <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="block text-[15px] font-bold">{baslik}</span>
+            <span className="text-[10px] font-semibold" style={{ color: TEXT_MUTED }}>{altBaslik}</span>
           </div>
         </div>
         <button type="button" onClick={() => setKurallarAcik(true)} title="Rozet kuralları"

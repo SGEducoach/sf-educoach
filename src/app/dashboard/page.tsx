@@ -25,6 +25,8 @@ import { DashboardYanMenu } from "@/components/dashboard/DashboardYanMenu";
 import { TgDenemeleri } from "@/components/dashboard/TgDenemeleri";
 import { dashboardMenusu } from "@/lib/dashboard-navigation";
 import type { DashboardBolumu } from "@/lib/dashboard-navigation";
+import { RozetGoruntulemePaneli } from "@/components/dashboard/RozetGoruntulemePaneli";
+import { kurumRozetGorunumuGetir, veliRozetGorunumuGetir } from "@/lib/rozet-gorunumu";
 
 // Görevlerim takvimi haftalık gösteriliyor — verilen tarihin (veya bugünün,
 // Türkiye saatine göre) içinde bulunduğu haftanın Pazartesi'sini döndürür.
@@ -314,6 +316,11 @@ async function OgretmenIcerik({ userId, role, secilenSinifId, secilenOgrenciId, 
     );
   }
 
+  if (aktifBolum === "rozetler") {
+    const gorunum = await kurumRozetGorunumuGetir(teacher.school_id, secilenOgrenciId, secilenSinifId);
+    return <RozetGoruntulemePaneli gorunum={gorunum} action="/dashboard/rozetler" kapsam={`${gorunum.kurumAdi ?? "Kurum"} · Yalnız bu kurumdaki öğrenciler`} />;
+  }
+
   // DERSHANE MODU (Faz D2): dershane müdürü, okul müdüründen farklı bir
   // panel görüyor — bkz. src/components/dashboard/DershaneRosterEkleFormu.tsx
   // (Faz D3'te tam 6 sekmeli panelle değişecek geçici bir ekran).
@@ -439,6 +446,11 @@ async function OgretmenIcerik({ userId, role, secilenSinifId, secilenOgrenciId, 
 }
 
 async function VeliIcerik({ userId, ad, secilenOgrenciId, donem, aktifBolum }: { userId: string; ad: string; secilenOgrenciId?: string; donem: RaporDonemi; aktifBolum: DashboardBolumu }) {
+  if (aktifBolum === "rozetler") {
+    const gorunum = await veliRozetGorunumuGetir(userId);
+    return <RozetGoruntulemePaneli gorunum={gorunum} action="/dashboard/rozetler" kapsam="Hesabınıza bağlı öğrencinin rozetleri" seciciGoster={false} />;
+  }
+
   const supabase = await createClient();
   const { data: links } = await supabase
     .from("parent_students")

@@ -10,6 +10,7 @@ import { KurallarYonetimi } from "@/components/yonetici/KurallarYonetimi";
 import { SifreDegistir } from "@/components/yonetici/SifreDegistir";
 import { YoneticiGirisForm } from "@/components/yonetici/YoneticiGirisForm";
 import { YoneticiYetkileri } from "@/components/yonetici/YoneticiYetkileri";
+import { YonetimNavigasyonu } from "@/components/dashboard/YonetimNavigasyonu";
 import { sinifSiraKarsilastir } from "@/lib/types";
 
 // SeFu Koç'un tek kontrol noktası — bilerek /dashboard'dan ayrı, kendi
@@ -69,6 +70,7 @@ export default async function YoneticiPage({
     <div style={{ minHeight: "100vh", width: "100%" }} className="flex-1 flex flex-col">
       <Header ad={profile.ad} role="admin" />
       <main id="ana-icerik" className="max-w-6xl mx-auto px-4 sm:px-6 py-7 pb-24 lg:pb-7 w-full flex-1 flex flex-col gap-6">
+        <YonetimNavigasyonu tur="yonetici" aktif="panel" />
         <SifreDegistir />
         <section id="istatistikler" className="sfec-section"><PlatformIstatistikleri /></section>
         <YoneticiYetkileri />
