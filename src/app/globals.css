@@ -18,6 +18,9 @@
   --sfec-mint-on: #0b3b4d;
   --sfec-mint-bg: rgba(194, 233, 248, 0.38);
   --sfec-seafoam: #78c9e8;
+  --sfec-shell-bg: #f3f7f9;
+  --sfec-panel-shadow: 0 12px 30px rgba(11, 79, 108, 0.08);
+  --sfec-hero-bg: linear-gradient(135deg, #ffffff 0%, #f5fbfd 58%, #e8f6fb 100%);
   /* Üst navigatör — Honda HR-V "sedefli gün ışığı beyazı"ndan ilhamla
      hafif sıcak, incimsi bir beyaz gradyan. */
   --sfec-nav-bg: linear-gradient(135deg, #ffffff 0%, #f4f2ec 45%, #ffffff 100%);
@@ -69,6 +72,9 @@ html[data-theme="koyu"] .sfec-brand-logo {
   --sfec-mint-on: #1a0c02;
   --sfec-mint-bg: rgba(244, 114, 22, 0.18);
   --sfec-seafoam: #f47216;
+  --sfec-shell-bg: #050505;
+  --sfec-panel-shadow: 0 16px 34px rgba(0, 0, 0, 0.45);
+  --sfec-hero-bg: linear-gradient(135deg, #101010 0%, #17120e 62%, #0a0a0a 100%);
   /* Üst navigatör — piano black. */
   --sfec-nav-bg: linear-gradient(135deg, #000000 0%, #161616 50%, #000000 100%);
   /* Gece bütün marka yazıları ÖSYM logosundan ölçülen turuncudur. */
@@ -99,8 +105,63 @@ html[data-theme="koyu"] .sfec-brand-logo {
 }
 
 body {
+  min-height: 100dvh;
   background: var(--background);
   color: var(--foreground);
+}
+
+.sfec-dashboard-shell {
+  background: var(--sfec-shell-bg);
+}
+
+.sfec-dashboard-header {
+  box-shadow: 0 4px 20px rgba(11, 79, 108, 0.08);
+}
+
+html[data-theme="koyu"] .sfec-dashboard-header {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.55);
+}
+
+.sfec-dashboard-main > * {
+  min-height: 100%;
+}
+
+.sfec-dashboard-sidebar,
+.sfec-dashboard-stat,
+.sfec-dashboard-hero {
+  box-shadow: var(--sfec-panel-shadow);
+}
+
+.sfec-dashboard-hero {
+  position: relative;
+  overflow: hidden;
+  background: var(--sfec-hero-bg);
+  border: 1px solid var(--sfec-border);
+}
+
+.sfec-dashboard-hero::after {
+  content: "";
+  position: absolute;
+  width: 280px;
+  height: 280px;
+  right: -110px;
+  top: -150px;
+  border-radius: 999px;
+  background: var(--sfec-mint-bg);
+  filter: blur(4px);
+  pointer-events: none;
+}
+
+.sfec-dashboard-stat {
+  min-height: 158px;
+  background: var(--sfec-bg1);
+  border: 1px solid var(--sfec-border);
+}
+
+@media (min-width: 1024px) {
+  .sfec-dashboard-shell main {
+    padding-bottom: 1rem;
+  }
 }
 
 button:not(:disabled),

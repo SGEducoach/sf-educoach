@@ -1,11 +1,10 @@
 import Link from "next/link";
-import { ChevronLeft, Sparkles } from "lucide-react";
+import { BarChart3, CalendarCheck2, ChevronLeft, CircleUserRound, ListChecks, Sparkles, Target } from "lucide-react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Header } from "@/components/dashboard/Header";
 import { OgretmenPanel } from "@/components/dashboard/OgretmenPanel";
 import { OgrenciVeriGirisi } from "@/components/dashboard/OgrenciVeriGirisi";
-import { ZayifKonular } from "@/components/dashboard/ZayifKonular";
 import { Rozetlerim } from "@/components/dashboard/Rozetlerim";
 import { YapayZekaAnaliziPromosu } from "@/components/dashboard/YapayZekaAnaliziPromosu";
 import type { RozetDurum } from "@/components/dashboard/Rozetlerim";
@@ -80,13 +79,13 @@ export default async function DashboardPage({
   }
 
   return (
-    <div style={{ minHeight: "100vh", width: "100%" }} className="flex-1 flex flex-col">
+    <div className="sfec-dashboard-shell min-h-dvh w-full flex-1 flex flex-col">
       <Header ad={profile.ad} role={role} okunmamisMesajSayisi={okunmamisMesajSayisi} moderatorMu={!!moderatorYetkisi} rolEtiketi={moderatorYetkisi ? "Moderatör" : undefined} aktifBolum={aktifBolum} />
       <ZorunluSifreDegisikligiKapisi gecici={profile.gecici_sifre} />
       <HosgeldinPopuplari role={role} />
-      <div className="mx-auto flex w-full max-w-[90rem] flex-1 items-start gap-6 px-4 py-7 sm:px-6">
+      <div className="mx-auto flex min-h-[calc(100dvh-6.75rem)] w-full max-w-[100rem] flex-1 items-stretch gap-6 px-4 py-6 sm:px-6 lg:py-7">
         <DashboardYanMenu role={role} aktifBolum={aktifBolum} />
-        <main id="ana-icerik" className="min-w-0 w-full flex-1 flex flex-col gap-6">
+        <main id="ana-icerik" className="sfec-dashboard-main min-h-[calc(100dvh-10.25rem)] min-w-0 w-full flex-1 flex flex-col gap-6">
           {role === "ogrenci" && <OgrenciIcerik userId={user.id} ad={profile.ad} donem={donem} haftaBaslangic={haftaninPazartesisi(params.hafta)} aktifBolum={aktifBolum} />}
           {(role === "ogretmen" || role === "mudur") && (
             <OgretmenIcerik userId={user.id} role={role} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} donem={donem} aktifBolum={aktifBolum} />
@@ -121,29 +120,6 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
   }
 
   const analiz = await analizVerisiGetir(supabase, userId, donem);
-
-  // Zayıf konular: "hedefe yakınlık" alanı "uzak" olarak işaretlenen
-  // konu_calismalar kayıtları — ders+konu bazında tekilleştirip en son
-  // 10 tanesini gösteriyoruz (bkz. ZayifKonular bileşeni, madde 1).
-  const { data: zayifKonularHam } = await supabase
-    .from("konu_calismalar")
-    .select("ders, konu, tarih")
-    .eq("student_id", userId)
-    .eq("hedefe_yakinlik", "uzak")
-    .order("tarih", { ascending: false })
-    .limit(50);
-
-  type ZayifRow = { ders: string; konu: string; tarih: string };
-  const gorulenler = new Set<string>();
-  const zayifKonular: { ders: string; konu: string; seviye: string | null }[] = [];
-  for (const r of (zayifKonularHam as ZayifRow[]) ?? []) {
-    const anahtar = `${r.ders}|${r.konu}`;
-    if (gorulenler.has(anahtar)) continue;
-    gorulenler.add(anahtar);
-    const resmiEslesme = MUFREDAT_KONULARI.find((k) => k.ders === r.ders && k.konu === r.konu);
-    zayifKonular.push({ ders: r.ders, konu: r.konu, seviye: resmiEslesme?.seviye ?? null });
-    if (zayifKonular.length >= 10) break;
-  }
 
   // Konu girişi sırasında öneri (datalist): resmî müfredat listesi (188 konu,
   // sınıf etiketli) + öğrencilerin serbest girip daha önce ürettirdiği ek
@@ -227,21 +203,41 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
     }));
 
   return (
-    <div className="flex flex-col gap-6">
-      {aktifBolum === "ozet" && <div className="sfec-fade rounded-3xl p-6 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-        <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-bold mb-4 flex items-center gap-2">
-          Hoş geldin!
-          <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full" style={{ background: "linear-gradient(135deg, #7C3AED, #2563EB)" }}>
-            <Sparkles size={13} color="#fff" />
-          </span>
-        </h1>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <Bilgi etiket="Okul No" deger={s.okul_no} />
-          <Bilgi etiket="Okul" deger={s.schools?.ad ?? "—"} />
-          <Bilgi etiket="Sınıf" deger={s.classes ? `${s.classes.seviye}-${s.classes.sube}` : "—"} />
-          <Bilgi etiket="AYT Alanı" deger={AYT_ALAN_ETIKET[s.ayt_alan]} />
-        </div>
-      </div>}
+    <div className="min-h-full flex flex-col gap-6">
+      {aktifBolum === "ozet" && <>
+        <section className="sfec-dashboard-hero sfec-fade rounded-3xl p-6 sm:p-8 print:hidden">
+          <div className="relative z-10 flex min-h-36 items-center justify-between gap-6 flex-wrap">
+            <div className="flex items-center gap-4 sm:gap-5 min-w-0">
+              <div className="flex h-16 w-16 sm:h-20 sm:w-20 shrink-0 items-center justify-center rounded-3xl"
+                style={{ background: MINT_BG, border: `2px solid ${BORDER_STRONG}` }}>
+                <CircleUserRound size={36} color={MINT} strokeWidth={1.8} />
+              </div>
+              <div className="min-w-0">
+                <div className="mb-1 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: TEXT_MUTED }}>
+                  <Sparkles size={13} color={MINT} /> Öğrenci paneli
+                </div>
+                <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="truncate text-2xl sm:text-3xl font-extrabold">
+                  Hoş geldin, {ad.split(" ")[0]}
+                </h1>
+                <p className="mt-1 text-sm" style={{ color: TEXT_MUTED }}>{s.schools?.ad ?? "Okul bilgisi bekleniyor"}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 sm:min-w-80">
+              <Bilgi etiket="Sınıf" deger={s.classes ? `${s.classes.seviye}-${s.classes.sube}` : "—"} />
+              <Bilgi etiket="Okul No" deger={s.okul_no} />
+              <Bilgi etiket="AYT Alanı" deger={AYT_ALAN_ETIKET[s.ayt_alan]} />
+              <Bilgi etiket="Hedef" deger={s.hedef_bolum || "Belirlenmedi"} />
+            </div>
+          </div>
+        </section>
+
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 print:hidden" aria-label="Haftalık öğrenci özeti">
+          <OzetIstatistikKarti Icon={CalendarCheck2} etiket="Konu çalışma" deger={`${analiz.buHaftaKonuDakika} dk`} aciklama="Son 7 gün" />
+          <OzetIstatistikKarti Icon={ListChecks} etiket="Çözülen soru" deger={String(analiz.buHaftaSoru)} aciklama="Son 7 gün" />
+          <OzetIstatistikKarti Icon={Target} etiket="Son deneme neti" deger={analiz.sonDenemeNet === null ? "—" : String(analiz.sonDenemeNet)} aciklama="En güncel sonuç" />
+          <OzetIstatistikKarti Icon={BarChart3} etiket="Bekleyen görev" deger={String(gorevlerimListesi.filter((g) => g.durum === "bekliyor").length)} aciklama="Bu hafta" />
+        </section>
+      </>}
 
       {aktifBolum === "gorevler" && <section className="print:hidden">
         <Gorevlerim
@@ -259,7 +255,7 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
 
       {aktifBolum === "rozetler" && <Rozetlerim durum={rozetDurum} sinifSeviyesi={s.classes?.seviye ?? null} />}
 
-      {aktifBolum === "konular" && <section><ZayifKonular konular={zayifKonular} /></section>}
+      {aktifBolum === "yapay-zeka" && <section className="min-h-full"><YapayZekaAnaliziPromosu sayfa /></section>}
 
       {aktifBolum === "veri-girisi" && <div className="print:hidden">
         <OgrenciVeriGirisi aytAlan={s.ayt_alan} konuOnerileri={konuOnerileri} sinifSeviyesi={s.classes?.seviye ?? null} konuSayaclari={konuSayaclari} />
@@ -448,9 +444,29 @@ async function VeliIcerik({ userId, secilenOgrenciId, donem, aktifBolum }: { use
 
 function Bilgi({ etiket, deger }: { etiket: string; deger: string }) {
   return (
-    <div className="rounded-xl px-3 py-2.5" style={{ background: "rgba(255,255,255,0.04)" }}>
+    <div className="rounded-2xl px-3.5 py-3" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
       <div style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide mb-0.5">{etiket}</div>
-      <div style={{ color: MINT }} className="text-sm font-bold">{deger}</div>
+      <div style={{ color: TEXT }} className="text-sm font-bold truncate" title={deger}>{deger}</div>
+    </div>
+  );
+}
+
+function OzetIstatistikKarti({ Icon, etiket, deger, aciklama }: {
+  Icon: typeof Target;
+  etiket: string;
+  deger: string;
+  aciklama: string;
+}) {
+  return (
+    <div className="sfec-dashboard-stat sfec-fade rounded-3xl p-5">
+      <div className="mb-5 flex items-start justify-between gap-3">
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: MINT_BG }}>
+          <Icon size={20} color={TEXT} aria-hidden="true" />
+        </div>
+        <span className="rounded-full px-2.5 py-1 text-[10px] font-bold" style={{ background: BG1_ALT, color: TEXT_MUTED }}>{aciklama}</span>
+      </div>
+      <div className="text-[11px] font-bold uppercase tracking-[0.11em]" style={{ color: TEXT_MUTED }}>{etiket}</div>
+      <div className="mt-1 text-2xl font-extrabold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>{deger}</div>
     </div>
   );
 }

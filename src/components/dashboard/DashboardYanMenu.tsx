@@ -1,6 +1,6 @@
 import Link from "next/link";
 import {
-  BarChart3, BookOpenCheck, BookMarked, ClipboardCheck, ClipboardList,
+  BarChart3, BookOpenCheck, Bot, ClipboardCheck, ClipboardList,
   Home, Megaphone, Medal, PenLine, UserPlus,
 } from "lucide-react";
 import type { UserRole } from "@/lib/types";
@@ -13,7 +13,7 @@ const IKONLAR: Record<DashboardIkonu, typeof Home> = {
   gorev: ClipboardList,
   veri: PenLine,
   analiz: BarChart3,
-  konu: BookMarked,
+  ai: Bot,
   rozet: Medal,
   duyuru: Megaphone,
   talep: UserPlus,
@@ -24,26 +24,40 @@ const IKONLAR: Record<DashboardIkonu, typeof Home> = {
 export function DashboardYanMenu({ role, aktifBolum }: { role: UserRole; aktifBolum: DashboardBolumu }) {
   const menu = dashboardMenusu(role);
   if (menu.length === 0) return null;
+  const rolBasligi: Partial<Record<UserRole, string>> = {
+    ogrenci: "Öğrenci çalışma alanı",
+    veli: "Veli takip alanı",
+    ogretmen: "Öğretmen çalışma alanı",
+    mudur: "Okul yönetim alanı",
+  };
 
   return (
-    <aside className="hidden lg:block w-60 shrink-0 print:hidden">
-      <nav aria-label="Dashboard bölümleri" className="sticky top-28 rounded-3xl p-3 flex flex-col gap-1"
-        style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-        <div className="px-3 pb-2 mb-1 text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: TEXT_MUTED }}>
-          Menü
+    <aside className="hidden lg:block w-64 xl:w-72 shrink-0 self-stretch print:hidden">
+      <nav aria-label="Dashboard bölümleri" className="sfec-dashboard-sidebar sticky top-28 min-h-[calc(100dvh-8.75rem)] rounded-3xl p-4 flex flex-col gap-1.5"
+        style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+        <div className="px-3 pt-1 pb-4 mb-2" style={{ borderBottom: `1px solid ${BORDER}` }}>
+          <div className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: TEXT_MUTED }}>SeFu Koç</div>
+          <div className="mt-1 text-sm font-extrabold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>
+            {rolBasligi[role] ?? "Çalışma alanı"}
+          </div>
         </div>
         {menu.map((oge) => {
           const Ikon = IKONLAR[oge.ikon];
           const aktif = oge.bolum === aktifBolum;
           return (
             <Link key={oge.href} href={oge.href} aria-current={aktif ? "page" : undefined}
-              className="sfec-btn flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-bold"
-              style={{ background: aktif ? MINT_BG : "transparent", color: aktif ? MINT : TEXT }}>
-              <Ikon size={17} color={aktif ? MINT : TEXT_MUTED} aria-hidden="true" />
+              className="sfec-btn flex min-h-12 items-center gap-3 rounded-2xl px-3.5 py-3 text-sm font-bold"
+              style={{ background: aktif ? MINT_BG : "transparent", color: TEXT, border: `1px solid ${aktif ? MINT : "transparent"}` }}>
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl" style={{ background: aktif ? BG1 : "transparent" }}>
+                <Ikon size={17} color={aktif ? TEXT : TEXT_MUTED} aria-hidden="true" />
+              </span>
               <span>{oge.etiket}</span>
             </Link>
           );
         })}
+        <div className="mt-auto px-3 pt-5 text-[10px] leading-relaxed" style={{ color: TEXT_MUTED, borderTop: `1px solid ${BORDER}` }}>
+          Sen Geliş, Farkın Duyulur
+        </div>
       </nav>
     </aside>
   );

@@ -24,11 +24,11 @@ export function Header({ ad, role, okunmamisMesajSayisi = 0, mobilNavigasyon = t
   return (
     <>
     <OturumZamanAsimi aktif={role === "admin" || moderatorMu} />
-    <header className="sticky top-0 z-[100] isolate print:hidden" style={{
+    <header className="sfec-dashboard-header sticky top-0 z-[100] isolate print:hidden" style={{
       background: NAV_BG,
       borderBottom: `2px solid ${BORDER_STRONG}`,
     }}>
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-4 pb-4 sm:pt-5 sm:pb-5 relative">
+      <div className="max-w-[100rem] mx-auto px-4 sm:px-6 py-3.5 sm:py-4 relative">
         <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <Link href="/dashboard" title="Ana sayfaya dön" className="shrink-0">

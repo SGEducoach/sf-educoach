@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  BarChart3, BookOpenCheck, BookMarked, ClipboardCheck, ClipboardList, Home,
+  BarChart3, BookOpenCheck, Bot, ClipboardCheck, ClipboardList, Home,
   LogOut, Medal, Megaphone, Menu, PenLine, ShieldCheck, UserPlus, X,
 } from "lucide-react";
 import { BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, SEAFOAM, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
@@ -28,7 +28,7 @@ const IKONLAR: Record<DashboardIkonu, typeof Home> = {
   gorev: ClipboardList,
   veri: PenLine,
   analiz: BarChart3,
-  konu: BookMarked,
+  ai: Bot,
   rozet: Medal,
   duyuru: Megaphone,
   talep: UserPlus,
@@ -84,8 +84,8 @@ export function MobilMenu({ ad, role, okunmamisMesajSayisi, moderatorMu, rolEtik
                   return (
                     <Link key={oge.href} href={oge.href} aria-current={aktif ? "page" : undefined} onClick={() => setAcik(false)}
                       className="sfec-btn flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-[13px] font-semibold"
-                      style={{ color: aktif ? MINT : TEXT, background: aktif ? MINT_BG : "transparent" }}>
-                      <Ikon size={16} color={aktif ? MINT : TEXT_MUTED} aria-hidden="true" /> {oge.etiket}
+                      style={{ color: TEXT, background: aktif ? MINT_BG : "transparent", border: `1px solid ${aktif ? MINT : "transparent"}` }}>
+                      <Ikon size={16} color={aktif ? TEXT : TEXT_MUTED} aria-hidden="true" /> {oge.etiket}
                     </Link>
                   );
                 })}

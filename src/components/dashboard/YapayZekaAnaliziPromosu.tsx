@@ -23,12 +23,12 @@ const SPARKLE_KONUMLARI = [
   { top: "82%", left: "8%", boyut: 13, gecikme: "1.6s", Icon: Wand2, renk: "#2563EB" },
 ] as const;
 
-export function YapayZekaAnaliziPromosu() {
+export function YapayZekaAnaliziPromosu({ sayfa = false }: { sayfa?: boolean }) {
   const [mascotAcik, setMascotAcik] = useState(false);
 
   return (
     <div
-      className="sfec-fade relative overflow-hidden rounded-3xl p-5 sm:p-6"
+      className={`sfec-fade relative overflow-hidden rounded-3xl p-5 sm:p-7 ${sayfa ? "flex min-h-[calc(100dvh-11rem)] items-center justify-center" : ""}`}
       style={{ background: "var(--sfec-ai-bg)", border: "2px solid var(--sfec-ai-border)" }}
     >
       {/* Yumuşak nefes alan arka plan parıltıları */}
@@ -55,9 +55,15 @@ export function YapayZekaAnaliziPromosu() {
         <Sparkles size={10} color="#C4B5FD" /> Claude Opus 5 ile
       </div>
 
-      <div className="relative flex flex-col items-center gap-4 text-center">
+      <div className={`relative flex flex-col items-center text-center ${sayfa ? "max-w-3xl gap-6 py-10" : "gap-4"}`}>
+        {sayfa && (
+          <div className="flex h-20 w-20 items-center justify-center rounded-3xl"
+            style={{ background: "var(--sfec-ai-chip-bg)", border: "1px solid var(--sfec-ai-border)" }}>
+            <Wand2 size={36} color="var(--sfec-ai-accent-text)" />
+          </div>
+        )}
         <div className="flex items-center gap-2 flex-wrap justify-center">
-          <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[16px] font-bold">
+          <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className={sayfa ? "text-2xl sm:text-3xl font-extrabold" : "text-[16px] font-bold"}>
             Yapay Zeka Analizi
           </span>
           <span
@@ -67,10 +73,29 @@ export function YapayZekaAnaliziPromosu() {
             <Sparkles size={9} /> Yakında
           </span>
         </div>
-        <p style={{ color: TEXT_MUTED }} className="text-[12px] leading-relaxed max-w-md">
+        <p style={{ color: TEXT_MUTED }} className={`${sayfa ? "text-sm sm:text-base max-w-2xl" : "text-[12px] max-w-md"} leading-relaxed`}>
           Deneme sonuçların, konu çalışman ve soru performansın yapay zekayla analiz edilsin. Güçlü/zayıf yönlerin ve
           sana özel çalışma önerilerin tek dokunuşla önünde olsun.
         </p>
+
+        {sayfa && (
+          <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-3">
+            {[
+              [Sparkles, "Kişisel analiz", "Çalışma alışkanlıklarına özel değerlendirme"],
+              [Zap, "Hızlı içgörü", "Gelişime açık alanları tek ekranda görme"],
+              [Rocket, "Akıllı öneri", "Sana uygun çalışma adımlarını planlama"],
+            ].map(([Icon, baslik, aciklama]) => {
+              const OzellikIkonu = Icon as typeof Sparkles;
+              return (
+                <div key={String(baslik)} className="rounded-2xl p-4 text-left" style={{ background: "var(--sfec-bg1)", border: "1px solid var(--sfec-ai-border)" }}>
+                  <OzellikIkonu size={18} color="var(--sfec-ai-accent-text)" />
+                  <div className="mt-3 text-sm font-bold" style={{ color: TEXT }}>{String(baslik)}</div>
+                  <div className="mt-1 text-[11px] leading-relaxed" style={{ color: TEXT_MUTED }}>{String(aciklama)}</div>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         <button
           type="button"

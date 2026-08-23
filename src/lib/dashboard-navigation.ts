@@ -5,14 +5,14 @@ export type DashboardBolumu =
   | "gorevler"
   | "veri-girisi"
   | "analiz"
-  | "konular"
+  | "yapay-zeka"
   | "rozetler"
   | "duyurular"
   | "talepler"
   | "onaylar"
   | "dersler";
 
-export type DashboardIkonu = "ana-sayfa" | "gorev" | "veri" | "analiz" | "konu" | "rozet" | "duyuru" | "talep" | "onay" | "ders";
+export type DashboardIkonu = "ana-sayfa" | "gorev" | "veri" | "analiz" | "ai" | "rozet" | "duyuru" | "talep" | "onay" | "ders";
 
 export interface DashboardMenuOgesi {
   bolum: DashboardBolumu;
@@ -26,7 +26,7 @@ const OGRENCI_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "gorevler", href: "/dashboard/gorevler", etiket: "Görevlerim", ikon: "gorev" },
   { bolum: "veri-girisi", href: "/dashboard/veri-girisi", etiket: "Veri girişi", ikon: "veri" },
   { bolum: "analiz", href: "/dashboard/analiz", etiket: "Analiz / Rapor", ikon: "analiz" },
-  { bolum: "konular", href: "/dashboard/konular", etiket: "Zayıf konular", ikon: "konu" },
+  { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Yapay Zekâ Analizi", ikon: "ai" },
   { bolum: "rozetler", href: "/dashboard/rozetler", etiket: "Rozetlerim", ikon: "rozet" },
 ];
 
@@ -59,6 +59,6 @@ export function dashboardMenusu(role: UserRole): DashboardMenuOgesi[] {
 }
 
 export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
-  "gorevler", "veri-girisi", "analiz", "konular", "rozetler",
+  "gorevler", "veri-girisi", "analiz", "yapay-zeka", "rozetler",
   "duyurular", "talepler", "onaylar", "dersler",
 ]);
