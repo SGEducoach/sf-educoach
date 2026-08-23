@@ -83,9 +83,10 @@ export function MobilMenu({ ad, role, okunmamisMesajSayisi, moderatorMu, rolEtik
                 {menu.map((oge) => {
                   const Ikon = IKONLAR[oge.ikon];
                   const aktif = oge.bolum === aktifBolum;
+                  const tgBolumu = oge.bolum === "tg-denemeleri";
                   return (
                     <Link key={oge.href} href={oge.href} aria-current={aktif ? "page" : undefined} onClick={() => setAcik(false)}
-                      className="sfec-btn flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-[13px] font-semibold"
+                      className={`sfec-btn flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-[13px] font-semibold ${tgBolumu ? "sfec-menu-tg" : ""}`}
                       style={{ color: TEXT, background: aktif ? MINT_BG : "transparent", border: `1px solid ${aktif ? MINT : "transparent"}` }}>
                       <Ikon size={16} color={aktif ? TEXT : TEXT_MUTED} aria-hidden="true" /> {oge.etiket}
                     </Link>

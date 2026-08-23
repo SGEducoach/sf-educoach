@@ -31,13 +31,13 @@ const OGRENCI_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "veri-girisi", href: "/dashboard/veri-girisi", etiket: "Veri girişi", ikon: "veri" },
   { bolum: "analiz", href: "/dashboard/analiz", etiket: "Analiz / Rapor", ikon: "analiz" },
   { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Yapay Zekâ Analizi", ikon: "ai" },
-  { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "TG Denemeleri", ikon: "takvim" },
+  { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "TG Denemeler", ikon: "takvim" },
 ];
 
 const VELI_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "ozet", href: "/dashboard", etiket: "Çocuklarım", ikon: "ana-sayfa" },
   { bolum: "analiz", href: "/dashboard/analiz", etiket: "Analiz / Rapor", ikon: "analiz" },
-  { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "TG Denemeleri", ikon: "takvim" },
+  { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "TG Denemeler", ikon: "takvim" },
 ];
 
 const OGRETMEN_MENUSU: DashboardMenuOgesi[] = [
@@ -47,14 +47,14 @@ const OGRETMEN_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "dersler", href: "/dashboard/dersler", etiket: "Derslerim", ikon: "ders" },
   { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Duyurular", ikon: "duyuru" },
   { bolum: "talepler", href: "/dashboard/talepler", etiket: "Veli talepleri", ikon: "talep" },
-  { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "TG Denemeleri", ikon: "takvim" },
+  { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "TG Denemeler", ikon: "takvim" },
 ];
 
 const MUDUR_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "ozet", href: "/dashboard", etiket: "Sınıflar", ikon: "ana-sayfa" },
   { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Duyurular", ikon: "duyuru" },
   { bolum: "talepler", href: "/dashboard/talepler", etiket: "Veli talepleri", ikon: "talep" },
-  { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "TG Denemeleri", ikon: "takvim" },
+  { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "TG Denemeler", ikon: "takvim" },
 ];
 
 export function dashboardMenusu(role: UserRole): DashboardMenuOgesi[] {

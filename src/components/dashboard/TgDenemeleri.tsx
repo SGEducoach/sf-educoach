@@ -44,7 +44,7 @@ export function TgDenemeleri({ bugun }: { bugun: string }) {
             <CalendarDays size={14} color={MINT} aria-hidden="true" /> Türkiye geneli sınav haberleri
           </div>
           <h1 id="tg-denemeleri-baslik" className="text-2xl font-extrabold sm:text-3xl" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>
-            TG Denemeleri
+            TG Denemeler
           </h1>
           <p className="mt-1 max-w-2xl text-sm" style={{ color: TEXT_MUTED }}>
             Genel takvimler ve yaklaşan deneme afişleri. Dokunmadığınızda haberler 5 saniyede bir ilerler.

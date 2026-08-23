@@ -116,7 +116,7 @@ export function Gorevlerim({ gorevler, gorunum, haftaBaslangic, aytAlan, dokuzOn
     .sort((a, b) => (a.baslangicSaat ?? "99:99").localeCompare(b.baslangicSaat ?? "99:99"));
 
   return (
-    <div className="sfec-fade rounded-3xl p-5 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+    <div className={`sfec-calisma-takvimi sfec-fade rounded-3xl p-5 print:hidden ${planSayfasi ? "sfec-calisma-takvimi--plan" : ""}`}>
       <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
           <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">
@@ -342,7 +342,7 @@ function HaftalikZamanPlani({ gunler, gorevler, bugun, planSayfasi, onGunSec, on
   onGorevAc: (gorev: GorevSatiri) => void;
 }) {
   return (
-    <div className="mb-3 overflow-hidden rounded-3xl" style={{ background: BG0, border: `2px solid ${BORDER}`, boxShadow: `inset 0 0 0 1px ${BORDER_STRONG}` }}>
+    <div className="mb-3 overflow-hidden rounded-3xl">
       <div className="overflow-x-auto overscroll-x-contain">
         <div className="min-w-[84rem] p-2.5">
           <div className="ml-10 grid grid-cols-7 gap-2 mb-2">
@@ -352,8 +352,10 @@ function HaftalikZamanPlani({ gunler, gorevler, bugun, planSayfasi, onGunSec, on
                 className="sfec-btn rounded-2xl px-2 py-2 text-center"
                 style={{
                   color: TEXT,
-                  background: gunIndex % 2 === 0 ? MINT_BG : PEACH_BG,
-                  border: `2px solid ${gun === bugun ? MINT : BORDER_STRONG}`,
+                  background: planSayfasi
+                    ? `color-mix(in srgb, var(--sfec-plan-sayfa-border) ${gunIndex % 2 === 0 ? 19 : 10}%, var(--sfec-bg1))`
+                    : gunIndex % 2 === 0 ? MINT_BG : PEACH_BG,
+                  border: `2px solid ${gun === bugun ? (planSayfasi ? "var(--sfec-plan-sayfa-border)" : MINT) : (planSayfasi ? "var(--sfec-plan-sayfa-border)" : BORDER_STRONG)}`,
                 }}>
                 <span className="block text-[10px] font-bold uppercase tracking-wide">{gunAdi(gun)}</span>
                 <span className="block text-sm font-extrabold">{gunSayisi(gun)}</span>
@@ -361,18 +363,21 @@ function HaftalikZamanPlani({ gunler, gorevler, bugun, planSayfasi, onGunSec, on
             ))}
           </div>
 
-          <div className="flex" aria-label="Haftalık 05.00–05.00 çalışma planı">
-            <div className="relative w-10 shrink-0" style={{ height: GUN_YUKSEKLIGI }} aria-hidden="true">
-              <span className="absolute left-0 top-0 -translate-y-1/2 text-[9px] font-bold" style={{ color: TEXT_MUTED }}>05.00</span>
-              <span className="absolute bottom-0 left-0 translate-y-1/2 text-[9px] font-bold" style={{ color: TEXT_MUTED }}>05.00</span>
-            </div>
-            <div className="grid min-w-0 flex-1 grid-cols-7 gap-2">
+          <div className="sfec-takvim-ic-cerceve rounded-[1.4rem] p-2.5">
+            <div className="flex" aria-label="Haftalık 05.00–05.00 çalışma planı">
+              <div className="relative w-10 shrink-0" style={{ height: GUN_YUKSEKLIGI }} aria-hidden="true">
+                <span className="absolute left-0 top-0 -translate-y-1/2 text-[9px] font-bold" style={{ color: TEXT_MUTED }}>05.00</span>
+                <span className="absolute bottom-0 left-0 translate-y-1/2 text-[9px] font-bold" style={{ color: TEXT_MUTED }}>05.00</span>
+              </div>
+              <div className="grid min-w-0 flex-1 grid-cols-7 gap-2">
               {gunler.map((gun, gunIndex) => {
                 const gununGorevleri = gorevler
                   .filter((g) => g.tarih === gun)
                   .sort((a, b) => (a.baslangicSaat ?? "99:99").localeCompare(b.baslangicSaat ?? "99:99"));
                 const zamanliGorevler = gununGorevleri.filter((g) => cizelgedekiDakika(g.baslangicSaat) !== null && saatiDakikayaCevir(g.bitisSaat) !== null);
-                const sutunVurgu = gunIndex % 2 === 0 ? MINT : PEACH;
+                const sutunVurgu = planSayfasi
+                  ? gunIndex % 2 === 0 ? "var(--sfec-plan-sayfa-border)" : "#e879a8"
+                  : gunIndex % 2 === 0 ? MINT : PEACH;
 
                 return (
                   <div key={gun} className="relative overflow-hidden" style={{ height: GUN_YUKSEKLIGI }}
@@ -412,6 +417,7 @@ function HaftalikZamanPlani({ gunler, gorevler, bugun, planSayfasi, onGunSec, on
                   </div>
                 );
               })}
+              </div>
             </div>
           </div>
         </div>

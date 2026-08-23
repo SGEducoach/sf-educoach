@@ -54,9 +54,10 @@ export function DashboardYanMenu({ role, aktifBolum }: { role: UserRole; aktifBo
         {menu.map((oge) => {
           const Ikon = IKONLAR[oge.ikon];
           const aktif = oge.bolum === aktifBolum;
+          const tgBolumu = oge.bolum === "tg-denemeleri";
           return (
             <Link key={oge.href} href={oge.href} aria-current={aktif ? "page" : undefined}
-              className="sfec-btn flex min-h-12 items-center gap-3 rounded-2xl px-3.5 py-3 text-sm font-bold"
+              className={`sfec-btn flex min-h-12 items-center gap-3 rounded-2xl px-3.5 py-3 text-sm font-bold ${tgBolumu ? "sfec-menu-tg" : ""}`}
               style={{ background: aktif ? MINT_BG : "transparent", color: TEXT, border: `1px solid ${aktif ? MINT : "transparent"}` }}>
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl" style={{ background: aktif ? BG1 : "transparent" }}>
                 <Ikon size={17} color={aktif ? TEXT : TEXT_MUTED} aria-hidden="true" />
@@ -65,7 +66,7 @@ export function DashboardYanMenu({ role, aktifBolum }: { role: UserRole; aktifBo
             </Link>
           );
         })}
-        <div className="mt-auto px-3 pt-5 text-[12px] italic leading-relaxed" style={{ borderTop: `1px solid ${BORDER}` }}>
+        <div className="mt-2 px-3 pt-4 text-[12px] italic leading-relaxed" style={{ borderTop: `1px solid ${BORDER}` }}>
           <SeFuSlogan />
         </div>
       </nav>

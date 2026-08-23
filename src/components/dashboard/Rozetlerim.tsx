@@ -29,6 +29,59 @@ export interface RozetDurum {
   genel: RozetSeviye;
 }
 
+export interface OyunEtiketiSayaclari {
+  konu: number;
+  soru: number;
+  deneme: number;
+}
+
+type EtiketKategorisi = keyof OyunEtiketiSayaclari;
+
+interface OyunEtiketi {
+  ad: string;
+  emoji: string;
+  hedef: number;
+}
+
+const OYUN_KATEGORILERI: Record<EtiketKategorisi, { ad: string; birim: string; renk: string }> = {
+  konu: { ad: "Konu tayfası", birim: "konu çalışması", renk: "var(--sfec-oyun-konu)" },
+  soru: { ad: "Soru tayfası", birim: "çözülmüş soru", renk: "var(--sfec-oyun-soru)" },
+  deneme: { ad: "Deneme tayfası", birim: "deneme", renk: "var(--sfec-oyun-deneme)" },
+};
+
+// 21 eğlence etiketi: her veri türüne eşit 7 kademe. Mevcut bronz/gümüş/
+// altın sistemiyle bağlantılı değildir; yalnızca tüm zamanlardaki girişleri
+// oyunlaştırır. Eşikler yükseldikçe kartın doluluk ve renk yoğunluğu artar.
+const OYUN_ETIKETLERI: Record<EtiketKategorisi, OyunEtiketi[]> = {
+  konu: [
+    { ad: "Not Koklayıcısı", emoji: "🕵️", hedef: 5 },
+    { ad: "Sayfa Kemirgeni", emoji: "🐹", hedef: 15 },
+    { ad: "Konu Korsanı", emoji: "🏴‍☠️", hedef: 30 },
+    { ad: "Müfredat Madencisi", emoji: "⛏️", hedef: 50 },
+    { ad: "Bilgi Blenderı", emoji: "🌪️", hedef: 80 },
+    { ad: "Konu Canavarı", emoji: "👾", hedef: 120 },
+    { ad: "Ansiklopediyle Akraba", emoji: "🧠", hedef: 200 },
+  ],
+  soru: [
+    { ad: "Şık Avcısı", emoji: "🎯", hedef: 20 },
+    { ad: "Kalem Isıtan", emoji: "✏️", hedef: 100 },
+    { ad: "Test Tazısı", emoji: "🐕", hedef: 250 },
+    { ad: "Soru Öğütücü", emoji: "⚙️", hedef: 500 },
+    { ad: "Optik Ninja", emoji: "🥷", hedef: 1000 },
+    { ad: "Şıkların Efendisi", emoji: "👑", hedef: 2000 },
+    { ad: "Soru Galaksisi Fatihi", emoji: "🚀", hedef: 5000 },
+  ],
+  deneme: [
+    { ad: "Kronometre Çırağı", emoji: "⏱️", hedef: 3 },
+    { ad: "Optik Form Cambazı", emoji: "🤹", hedef: 10 },
+    { ad: "Deneme Korsanı", emoji: "🦜", hedef: 20 },
+    { ad: "Net Peşinde Koşan", emoji: "🏃", hedef: 35 },
+    { ad: "Sınav Maratoncusu", emoji: "🏅", hedef: 50 },
+    { ad: "Deneme Delisi", emoji: "🤪", hedef: 75 },
+    { ad: "Yüzlük Deneme Efsanesi", emoji: "💯", hedef: 100 },
+  ],
+};
+
 function RozetKurallariModal({ onKapat, dokuzOnMu }: { onKapat: () => void; dokuzOnMu: boolean }) {
   useEffect(() => {
     const oncekiTasima = document.body.style.overflow;
@@ -117,9 +170,56 @@ function RozetKurallariModal({ onKapat, dokuzOnMu }: { onKapat: () => void; doku
   );
 }
 
-export function Rozetlerim({ durum, sinifSeviyesi }: { durum: RozetDurum; sinifSeviyesi?: string | null }) {
+function OyunEtiketiKarti({ etiket, sayac, kategori }: { etiket: OyunEtiketi; sayac: number; kategori: EtiketKategorisi }) {
+  const meta = OYUN_KATEGORILERI[kategori];
+  const ilerleme = Math.min(100, Math.round((sayac / etiket.hedef) * 100));
+  const acildi = sayac >= etiket.hedef;
+  const renkYogunlugu = Math.round(7 + ilerleme * 0.25);
+
+  return (
+    <div className="rounded-2xl p-3.5 transition-[background,border-color] duration-300"
+      aria-label={`${etiket.ad}: ${sayac}/${etiket.hedef} ${meta.birim}`}
+      style={{
+        background: `color-mix(in srgb, ${meta.renk} ${renkYogunlugu}%, var(--sfec-bg1))`,
+        border: `1px solid color-mix(in srgb, ${meta.renk} ${20 + Math.round(ilerleme * 0.55)}%, var(--sfec-border))`,
+      }}>
+      <div className="flex items-start gap-3">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-2xl"
+          style={{
+            background: `color-mix(in srgb, ${meta.renk} ${12 + Math.round(ilerleme * 0.38)}%, transparent)`,
+            filter: acildi ? "none" : `grayscale(${Math.max(0, 75 - ilerleme)}%)`,
+          }} aria-hidden="true">
+          {etiket.emoji}
+        </div>
+        <div className="min-w-0 flex-1 text-right">
+          <div className="text-sm font-extrabold leading-tight" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>
+            {etiket.ad}
+          </div>
+          <div className="mt-1 text-[10px] font-bold uppercase tracking-wide" style={{ color: acildi ? meta.renk : TEXT_MUTED }}>
+            {acildi ? "Açıldı" : `${sayac.toLocaleString("tr-TR")} / ${etiket.hedef.toLocaleString("tr-TR")}`}
+          </div>
+        </div>
+      </div>
+      <div className="mt-3 h-2 overflow-hidden rounded-full" style={{ background: `color-mix(in srgb, ${meta.renk} 10%, var(--sfec-bg0))` }}>
+        <div className="h-full rounded-full transition-[width] duration-500" style={{ width: `${ilerleme}%`, background: meta.renk }} />
+      </div>
+      <div className="mt-1.5 flex items-center justify-between text-[9px] font-semibold" style={{ color: TEXT_MUTED }}>
+        <span>{meta.birim}</span>
+        <span>%{ilerleme}</span>
+      </div>
+    </div>
+  );
+}
+
+export function Rozetlerim({ durum, oyunSayaclari, sinifSeviyesi }: {
+  durum: RozetDurum;
+  oyunSayaclari: OyunEtiketiSayaclari;
+  sinifSeviyesi?: string | null;
+}) {
   const [kurallarAcik, setKurallarAcik] = useState(false);
   const dokuzOnMu = dokuzOnSinifMi(sinifSeviyesi);
+  const kazanilanEtiketSayisi = (Object.keys(OYUN_ETIKETLERI) as EtiketKategorisi[])
+    .reduce((toplam, kategori) => toplam + OYUN_ETIKETLERI[kategori].filter((etiket) => oyunSayaclari[kategori] >= etiket.hedef).length, 0);
 
   return (
     <div className="sfec-fade rounded-3xl p-5 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
@@ -128,7 +228,10 @@ export function Rozetlerim({ durum, sinifSeviyesi }: { durum: RozetDurum; sinifS
           <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(255,196,107,0.15)" }}>
             <Trophy size={13} color="#FFC46B" />
           </div>
-          <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Rozetlerim</span>
+          <div>
+            <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="block text-[15px] font-bold">Rozetlerim</span>
+            <span className="text-[10px] font-semibold" style={{ color: TEXT_MUTED }}>Disiplin rozetleri + 21 oyun etiketi</span>
+          </div>
         </div>
         <button type="button" onClick={() => setKurallarAcik(true)} title="Rozet kuralları"
           className="sfec-btn w-7 h-7 rounded-full flex items-center justify-center"
@@ -136,6 +239,8 @@ export function Rozetlerim({ durum, sinifSeviyesi }: { durum: RozetDurum; sinifS
           <BookText size={13} color={TEXT_MUTED} />
         </button>
       </div>
+
+      <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: TEXT_MUTED }}>Disiplin rozetleri</div>
 
       {/* SEFU KOÇ — en belirgin, en dikkat çekici olan */}
       <div className="rounded-2xl p-4 mb-3 flex items-center gap-3"
@@ -167,6 +272,48 @@ export function Rozetlerim({ durum, sinifSeviyesi }: { durum: RozetDurum; sinifS
           );
         })}
       </div>
+
+      <section className="mt-7" aria-labelledby="oyun-etiketleri-baslik">
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3 rounded-2xl p-4"
+          style={{ background: BG0, border: `1px solid ${BORDER}` }}>
+          <div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: TEXT_MUTED }}>Rozetlerden bağımsız · tamamen eğlencelik</div>
+            <h2 id="oyun-etiketleri-baslik" className="mt-1 text-xl font-extrabold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>
+              Oyun etiketleri
+            </h2>
+            <p className="mt-1 max-w-2xl text-xs leading-relaxed" style={{ color: TEXT_MUTED }}>
+              7 konu + 7 soru + 7 deneme etiketi. Giriş yaptıkça renkleri koyulaşır; hedefe ulaşınca tamamen açılır.
+            </p>
+          </div>
+          <div className="rounded-full px-3.5 py-2 text-xs font-extrabold" style={{ background: MINT, color: MINT_ON }}>
+            {kazanilanEtiketSayisi} / 21 açıldı
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+          {(Object.keys(OYUN_ETIKETLERI) as EtiketKategorisi[]).map((kategori) => {
+            const meta = OYUN_KATEGORILERI[kategori];
+            return (
+              <div key={kategori} className="rounded-3xl p-3" style={{ background: BG1_ALT, border: `1px solid ${BORDER}` }}>
+                <div className="mb-3 flex items-center justify-between gap-2 px-1">
+                  <div>
+                    <h3 className="text-sm font-extrabold" style={{ color: meta.renk, fontFamily: "var(--font-baloo)" }}>{meta.ad}</h3>
+                    <p className="text-[10px] font-semibold" style={{ color: TEXT_MUTED }}>7 farklı kademe</p>
+                  </div>
+                  <span className="rounded-full px-2.5 py-1 text-[10px] font-bold" style={{ color: meta.renk, background: `color-mix(in srgb, ${meta.renk} 12%, transparent)` }}>
+                    {oyunSayaclari[kategori].toLocaleString("tr-TR")} {meta.birim}
+                  </span>
+                </div>
+                <div className="flex flex-col gap-2.5">
+                  {OYUN_ETIKETLERI[kategori].map((etiket) => (
+                    <OyunEtiketiKarti key={etiket.ad} etiket={etiket} sayac={oyunSayaclari[kategori]} kategori={kategori} />
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
 
       {kurallarAcik && <RozetKurallariModal onKapat={() => setKurallarAcik(false)} dokuzOnMu={dokuzOnMu} />}
     </div>

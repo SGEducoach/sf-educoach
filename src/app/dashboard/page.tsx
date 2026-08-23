@@ -8,7 +8,7 @@ import { DershaneRosterEkleFormu } from "@/components/dashboard/DershaneRosterEk
 import { OgrenciVeriGirisi } from "@/components/dashboard/OgrenciVeriGirisi";
 import { Rozetlerim } from "@/components/dashboard/Rozetlerim";
 import { YapayZekaAnaliziPromosu } from "@/components/dashboard/YapayZekaAnaliziPromosu";
-import type { RozetDurum } from "@/components/dashboard/Rozetlerim";
+import type { OyunEtiketiSayaclari, RozetDurum } from "@/components/dashboard/Rozetlerim";
 import { AnalizPaneli } from "@/components/dashboard/AnalizPaneli";
 import { HosgeldinPopuplari } from "@/components/dashboard/HosgeldinPopuplari";
 import { ZorunluSifreDegisikligiKapisi } from "@/components/dashboard/ZorunluSifreDegisikligiKapisi";
@@ -148,6 +148,22 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
   const { data: rozetDurumHam } = await supabase.rpc("ogrenci_rozet_durumu", { p_student_id: userId });
   const rozetDurum = (rozetDurumHam as RozetDurum | null) ?? { konu: "yok", soru: "yok", deneme: "yok", genel: "yok" };
 
+  // Eğlence etiketleri mevcut rozet RPC'sinden tamamen bağımsızdır. Yalnızca
+  // Rozetlerim sayfası açıldığında tüm zamanlardaki gerçek girişler sayılır:
+  // konu = kayıt adedi, soru = doğru+yanlış+boş toplamı, deneme = kayıt adedi.
+  const oyunEtiketiSayaclari: OyunEtiketiSayaclari = { konu: 0, soru: 0, deneme: 0 };
+  if (aktifBolum === "rozetler") {
+    const [konuSonucu, soruSonucu, denemeSonucu] = await Promise.all([
+      supabase.from("konu_calismalar").select("id", { count: "exact", head: true }).eq("student_id", userId),
+      supabase.from("soru_cozumleri").select("dogru, yanlis, bos").eq("student_id", userId),
+      supabase.from("denemeler").select("id", { count: "exact", head: true }).eq("student_id", userId),
+    ]);
+    oyunEtiketiSayaclari.konu = konuSonucu.count ?? 0;
+    oyunEtiketiSayaclari.soru = ((soruSonucu.data as { dogru: number; yanlis: number; bos: number }[] | null) ?? [])
+      .reduce((toplam, kayit) => toplam + kayit.dogru + kayit.yanlis + kayit.bos, 0);
+    oyunEtiketiSayaclari.deneme = denemeSonucu.count ?? 0;
+  }
+
   // Konu tamamlama sayacı (§1, yenilikler_1.txt): payda = müfredattaki ders
   // başına konu sayısı (MUFREDAT_KONULARI), pay = öğrencinin "hakimim"
   // (hedefe_yakinlik='yakin') işaretlediği FARKLI konu sayısı — aynı konuyu
@@ -264,7 +280,7 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
 
       {aktifBolum === "ozet" && <section className="print:hidden"><YapayZekaAnaliziPromosu /></section>}
 
-      {aktifBolum === "rozetler" && <Rozetlerim durum={rozetDurum} sinifSeviyesi={s.classes?.seviye ?? null} />}
+      {aktifBolum === "rozetler" && <Rozetlerim durum={rozetDurum} oyunSayaclari={oyunEtiketiSayaclari} sinifSeviyesi={s.classes?.seviye ?? null} />}
 
       {aktifBolum === "yapay-zeka" && <section className="min-h-full"><YapayZekaAnaliziPromosu sayfa /></section>}
 

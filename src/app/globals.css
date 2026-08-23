@@ -45,6 +45,19 @@
   --sfec-ai-glow-2: rgba(37,99,235,0.20);
   --sfec-ai-accent-text: #0b4f6c;
   --sfec-ai-chip-bg: linear-gradient(135deg, rgba(124,58,237,0.16), rgba(37,99,235,0.16));
+
+  /* Görev ve plan takvimleri aynı işlevi paylaşır ama farklı birer sayfa gibi
+     algılansın: görevler serin mavi, planlar lila/şeftali cam yüzey kullanır. */
+  --sfec-gorev-sayfa-bg: linear-gradient(145deg, rgba(194,233,248,0.30), rgba(120,201,232,0.08));
+  --sfec-gorev-sayfa-border: rgba(66,153,187,0.46);
+  --sfec-gorev-takvim-bg: rgba(194,233,248,0.24);
+  --sfec-plan-sayfa-bg: linear-gradient(145deg, rgba(199,182,255,0.24), rgba(255,177,153,0.13));
+  --sfec-plan-sayfa-border: rgba(124,58,237,0.34);
+  --sfec-plan-takvim-bg: rgba(199,182,255,0.17);
+
+  --sfec-oyun-konu: #087f9c;
+  --sfec-oyun-soru: #7c3aed;
+  --sfec-oyun-deneme: #d95f0b;
 }
 
 /* Şeffaf PNG logonun lacivert bölümleri piano-black zeminde kaybolmasın.
@@ -98,6 +111,17 @@ html[data-theme="koyu"] .sfec-brand-logo {
   --sfec-ai-glow-2: rgba(96,165,250,0.3);
   --sfec-ai-accent-text: #f47216;
   --sfec-ai-chip-bg: linear-gradient(135deg, rgba(167,139,250,0.3), rgba(96,165,250,0.28));
+
+  --sfec-gorev-sayfa-bg: linear-gradient(145deg, rgba(244,114,22,0.17), rgba(120,53,15,0.07));
+  --sfec-gorev-sayfa-border: rgba(251,146,60,0.56);
+  --sfec-gorev-takvim-bg: rgba(244,114,22,0.10);
+  --sfec-plan-sayfa-bg: linear-gradient(145deg, rgba(126,34,206,0.24), rgba(88,28,135,0.09));
+  --sfec-plan-sayfa-border: rgba(192,132,252,0.55);
+  --sfec-plan-takvim-bg: rgba(126,34,206,0.15);
+
+  --sfec-oyun-konu: #38bdf8;
+  --sfec-oyun-soru: #c084fc;
+  --sfec-oyun-deneme: #fb923c;
 }
 
 .sfec-loading-overlay {
@@ -120,6 +144,50 @@ body {
 
 .sfec-dashboard-shell {
   background: var(--sfec-shell-bg);
+}
+
+.sfec-calisma-takvimi {
+  background: var(--sfec-gorev-sayfa-bg);
+  border: 2px solid var(--sfec-gorev-sayfa-border);
+  box-shadow: 0 18px 42px color-mix(in srgb, var(--sfec-gorev-sayfa-border) 18%, transparent);
+}
+
+.sfec-calisma-takvimi--plan {
+  background: var(--sfec-plan-sayfa-bg);
+  border-color: var(--sfec-plan-sayfa-border);
+  box-shadow: 0 18px 42px color-mix(in srgb, var(--sfec-plan-sayfa-border) 22%, transparent);
+}
+
+.sfec-takvim-ic-cerceve {
+  background: var(--sfec-gorev-takvim-bg);
+  border: 1px solid var(--sfec-gorev-sayfa-border);
+  backdrop-filter: blur(10px);
+}
+
+.sfec-calisma-takvimi--plan .sfec-takvim-ic-cerceve {
+  background: var(--sfec-plan-takvim-bg);
+  border-color: var(--sfec-plan-sayfa-border);
+}
+
+.sfec-menu-tg {
+  position: relative;
+  margin-top: auto;
+}
+
+.sfec-menu-tg::before {
+  content: "";
+  position: absolute;
+  left: 0.75rem;
+  right: 0.75rem;
+  top: -0.55rem;
+  height: 1px;
+  background: var(--sfec-border);
+}
+
+@media (max-width: 1023px) {
+  .sfec-menu-tg {
+    margin-top: 0.75rem;
+  }
 }
 
 /* Geniş masaüstünde haftalık çizelgenin yedi günü aynı anda sığsın. Sayfa
