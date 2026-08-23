@@ -122,10 +122,6 @@ html[data-theme="koyu"] .sfec-dashboard-header {
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.55);
 }
 
-.sfec-dashboard-main > * {
-  min-height: 100%;
-}
-
 .sfec-dashboard-sidebar,
 .sfec-dashboard-stat,
 .sfec-dashboard-hero {
