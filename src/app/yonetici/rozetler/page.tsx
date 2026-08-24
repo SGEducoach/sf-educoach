@@ -20,7 +20,7 @@ export default async function YoneticiRozetlerPage({ searchParams }: {
   const { data: okullar } = await supabase.from("schools").select("id, ad").eq("aktif", true).order("ad");
   const okulListesi = (okullar ?? []) as { id: string; ad: string }[];
   const okulId = okulListesi.some((okul) => okul.id === params.okul) ? params.okul! : okulListesi[0]?.id;
-  const gorunum = okulId ? await kurumRozetGorunumuGetir(okulId, params.ogrenci, params.sinif) : null;
+  const gorunum = okulId ? await kurumRozetGorunumuGetir(supabase, okulId, params.ogrenci, params.sinif) : null;
 
   return (
     <div className="sfec-dashboard-shell min-h-dvh w-full flex-1 flex flex-col">

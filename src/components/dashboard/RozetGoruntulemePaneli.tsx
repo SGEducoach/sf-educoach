@@ -45,6 +45,7 @@ export function RozetGoruntulemePaneli({ gorunum, action, kapsam, gizliAlanlar =
         <Rozetlerim
           durum={gorunum.durum}
           oyunSayaclari={gorunum.oyunSayaclari}
+          dogrulukSeviyesi={gorunum.dogrulukSeviyesi}
           sinifSeviyesi={gorunum.seciliOgrenci.sinifSeviyesi}
           baslik={`${gorunum.seciliOgrenci.ad} · Rozetler`}
           altBaslik={`${gorunum.seciliOgrenci.sinifAdi} · #${gorunum.seciliOgrenci.okulNo} · Disiplin rozetleri ve SRO skill ağaçları`}

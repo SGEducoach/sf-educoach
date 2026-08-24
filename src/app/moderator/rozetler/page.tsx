@@ -18,7 +18,7 @@ export default async function ModeratorRozetlerPage({ searchParams }: {
   ]);
   if (!profil || !yetki) redirect("/dashboard");
   const params = await searchParams;
-  const gorunum = await kurumRozetGorunumuGetir(yetki.school_id, params.ogrenci, params.sinif);
+  const gorunum = await kurumRozetGorunumuGetir(supabase, yetki.school_id, params.ogrenci, params.sinif);
 
   return (
     <div className="flex min-h-screen flex-col">

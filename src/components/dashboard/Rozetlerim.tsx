@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-  Trophy, BookOpen, PenLine, ClipboardList, BookText, X,
+  Trophy, BookOpen, PenLine, ClipboardList, BookText, X, Percent,
   Zap, Snowflake, Flame, Crosshair, Wind, Megaphone, Focus,
   CloudLightning, Sparkles, Shield, Waves, BrickWall, Orbit,
   CloudSnow, ShieldCheck, FlameKindling, Dumbbell, Crown,
@@ -11,7 +11,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import type { RozetSeviye } from "@/lib/types";
 import { ROZET_SEVIYE_ETIKET, dokuzOnSinifMi } from "@/lib/types";
-import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
+import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, LILAC, LILAC_BG } from "@/lib/theme";
 import { SeFuLogo } from "@/components/SeFuWordmark";
 
 // Rozet sistemi v2: 3 bağımsız kategori (konu/soru/deneme) + bunlardan
@@ -185,6 +185,13 @@ function RozetKurallariModal({ onKapat, dokuzOnMu }: { onKapat: () => void; doku
           </p>
         </div>
 
+        <div className="rounded-2xl p-3.5" style={{ background: LILAC_BG, border: `1px solid color-mix(in srgb, ${LILAC} 35%, transparent)` }}>
+          <div style={{ color: LILAC }} className="text-xs font-bold mb-1">🎯 Doğruluk Rozeti</div>
+          <p style={{ color: TEXT_MUTED }} className="text-xs leading-relaxed">
+            Yukarıdaki 3 kategoriden BAĞIMSIZ — giriş sıklığı değil, Konu Hakimiyeti&apos;ndeki ortalama doğruluk skoruna bakar (en az <strong>5 konuda</strong> veri gerekir). Ortalama: <strong>%40+ Bronz · %60+ Gümüş · %80+ Altın</strong>. SEFU KOÇ rozetini hiç etkilemez.
+          </p>
+        </div>
+
         <p style={{ color: TEXT_MUTED }} className="text-[10px] leading-relaxed italic">
           Not: Rozetler kalıcı değil — düzenli girişi kesersen seviye düşebilir/sıfırlanabilir.
         </p>
@@ -257,9 +264,14 @@ function OyunEtiketiKarti({ etiket, sayac, kategori }: { etiket: OyunEtiketi; sa
   );
 }
 
-export function Rozetlerim({ durum, oyunSayaclari, sinifSeviyesi, baslik = "Rozetlerim", altBaslik = "Disiplin Rozetleri + 21 Oyun Etiketi" }: {
+export function Rozetlerim({ durum, oyunSayaclari, dogrulukSeviyesi = "yok", sinifSeviyesi, baslik = "Rozetlerim", altBaslik = "Disiplin Rozetleri + 21 Oyun Etiketi" }: {
   durum: RozetDurum;
   oyunSayaclari: OyunEtiketiSayaclari;
+  // Analiz Motoru Faz D — Katman 2'nin (bileşik mastery skoru) rozet
+  // sistemine EKLENMESİ. BİLEREK "durum"un dışında, ayrı bir prop —
+  // "genel" (SEFU KOÇ) rozetinin hesabına HİÇ katılmıyor, mevcut hacim
+  // bazlı seviyeleri geriye dönük düşürmüyor (kullanıcı kararı, 25.08.2026).
+  dogrulukSeviyesi?: RozetSeviye;
   sinifSeviyesi?: string | null;
   baslik?: string;
   altBaslik?: string;
@@ -319,6 +331,26 @@ export function Rozetlerim({ durum, oyunSayaclari, sinifSeviyesi, baslik = "Roze
             </div>
           );
         })}
+      </div>
+
+      {/* Analiz Motoru Faz D — Doğruluk Rozeti: yukarıdaki 3 kategoriden
+          (konu/soru/deneme, SADECE giriş sıklığına bakar) BAĞIMSIZ, ayrı
+          bir gösterge. Konu Hakimiyeti'ndeki bileşik mastery skorunun
+          ortalamasına dayanır — "genel" (SEFU KOÇ) rozetini ETKİLEMEZ. */}
+      <div className="mt-2.5 rounded-2xl p-3.5 flex items-center gap-3" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}`, opacity: dogrulukSeviyesi === "yok" ? 0.7 : 1 }}>
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: LILAC_BG }}>
+          <Percent size={16} color={LILAC} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span style={{ color: TEXT }} className="text-xs font-bold">Doğruluk Rozeti</span>
+            <span className="text-base leading-none">{SEVIYE_EMOJI[dogrulukSeviyesi]}</span>
+            <span style={{ color: dogrulukSeviyesi === "yok" ? TEXT_MUTED : LILAC }} className="text-[10px] font-semibold">{ROZET_SEVIYE_ETIKET[dogrulukSeviyesi]}</span>
+          </div>
+          <p style={{ color: TEXT_MUTED }} className="text-[10px] mt-0.5 leading-relaxed">
+            Konu Hakimiyeti&apos;ndeki ortalama doğruluk skoruna dayanır — yukarıdaki SEFU KOÇ rozetini etkilemez.
+          </p>
+        </div>
       </div>
 
       <section className="mt-7" aria-labelledby="oyun-etiketleri-baslik">

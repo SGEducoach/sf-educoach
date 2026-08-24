@@ -13,7 +13,7 @@
 // güvenilir kabul edilir. Eksik sinyaller ağırlıklardan tamamen çıkarılır
 // (kalan ağırlıklar aralarında yeniden normalize edilir) — örn. hiç soru
 // çözümü yoksa sadece kalıcı+oturum kullanılır.
-import type { HedefeYakinlik } from "@/lib/types";
+import type { HedefeYakinlik, RozetSeviye } from "@/lib/types";
 
 // ============ Katman 1: sinyal normalizasyonu ============
 
@@ -112,6 +112,30 @@ export function bilesikMasterySkoruHesapla(girdi: MasterySkoruGirdisi): MasteryS
   const skor = Math.max(0, Math.min(100, agirlikliOrtalama * 100 - ceza));
 
   return { skor: Math.round(skor), kaynaklar: bilesenler.map((b) => b.kaynak) };
+}
+
+// ============ Katman 2 eki: Doğruluk rozeti (Faz D) ============
+//
+// Kullanıcı kararı (25.08.2026, açık soru 3 — rozet seviyeleri değişince
+// ne olacak): "en işe yarar çözümü seç". Karar: mevcut hacim bazlı rozet
+// sistemine (konu/soru/deneme/genel — SADECE giriş SIKLIĞINA bakar,
+// DOĞRULUĞA hiç bakmaz) bu katmanın (bileşik mastery skoru) doğruluk
+// sinyalini EKLE ama mevcut seviyeleri GERİYE DÖNÜK DÜŞÜRME. Bu yüzden
+// TAMAMEN BAĞIMSIZ, 4. bir gösterge — "genel" rozetin altın-sayısı
+// hesabına HİÇ katılmıyor (bkz. Rozetlerim.tsx'teki ayrı kart, "genel"i
+// etkilemediği açıkça belirtiliyor).
+const DOGRULUK_ROZET_MIN_KONU_SAYISI = 5;
+
+export function dogrulukRozetSeviyesiHesapla(masterySkorlari: number[]): RozetSeviye {
+  // Az sayıda konuda veri varken bir öğrenci "şanslı" birkaç yüksek skorla
+  // Altın'a ulaşmasın diye anlamlı bir örneklem şartı — diğer 3 kategorinin
+  // de kendi hacim eşikleri var, bu tutarlı bir ilke.
+  if (masterySkorlari.length < DOGRULUK_ROZET_MIN_KONU_SAYISI) return "yok";
+  const ortalama = masterySkorlari.reduce((t, s) => t + s, 0) / masterySkorlari.length;
+  if (ortalama >= 80) return "altin";
+  if (ortalama >= 60) return "gumus";
+  if (ortalama >= 40) return "bronz";
+  return "yok";
 }
 
 // ============ Katman 3: trend ve momentum ============

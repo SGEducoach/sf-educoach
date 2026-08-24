@@ -15,6 +15,7 @@ import { ZorunluSifreDegisikligiKapisi } from "@/components/dashboard/ZorunluSif
 import { analizVerisiGetir } from "@/lib/analiz";
 import type { RaporDonemi } from "@/lib/analiz";
 import { kohortKarsilastirmasiGetir } from "@/lib/analiz-kohort";
+import { dogrulukRozetSeviyesiHesapla } from "@/lib/analiz-motoru";
 import { ogrencininZayifKonulariGetir, konuHaritasiGetir } from "@/lib/konu-raporu";
 import { konuHakimiyetiGetir, konuHakimiyetiOzetiGetir, tamGorunumMu, gerekYokHaritasiGetir } from "@/lib/konu-hakimiyeti";
 import { KonuHakimiyetiEkrani } from "@/components/dashboard/KonuHakimiyetiEkrani";
@@ -263,12 +264,22 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
   // Faz H2 — Konu Hakimiyeti: kendi sekmesinde VE Analiz/Rapor'da (özet
   // kartı + donut grafiği) gerekiyor, diğer sekmelerde gereksiz sorguyu
   // atlıyoruz (aynı dokuzOnMu'ya bağlı olduğu için de student sorgusundan
-  // sonra, mufredatAltKonulari ile aynı gerekçeyle).
+  // sonra, mufredatAltKonulari ile aynı gerekçeyle). Analiz Motoru Faz D —
+  // "rozetler" sekmesi de eklendi: Doğruluk Rozeti (bkz. aşağı) bu veriden
+  // türetiliyor.
   const dershaneMi = s.schools?.tur === "dershane";
   const konuHakimiyetiTamGorunum = tamGorunumMu(s.classes?.seviye ?? null, dershaneMi);
-  const konuHakimiyetiSatirlari = (aktifBolum === "konu-hakimiyeti" || aktifBolum === "analiz")
+  const konuHakimiyetiSatirlari = (aktifBolum === "konu-hakimiyeti" || aktifBolum === "analiz" || aktifBolum === "rozetler")
     ? await konuHakimiyetiGetir(supabase, userId, s.classes?.seviye ?? null, s.ayt_alan, dokuzOnMu, dershaneMi)
     : [];
+  // Analiz Motoru Faz D — Katman 2'nin (bileşik mastery skoru) rozet
+  // sistemine EK/bağımsız bir gösterge olarak eklenmesi (bkz. analiz-motoru.ts,
+  // dogrulukRozetSeviyesiHesapla). "rozetler" dışındaki sekmelerde
+  // konuHakimiyetiSatirlari boş olduğundan bu her zaman "yok" döner —
+  // zararsız, kullanılmıyor.
+  const dogrulukSeviyesi = dogrulukRozetSeviyesiHesapla(
+    konuHakimiyetiSatirlari.map((satir) => satir.masterySkoru).filter((skor): skor is number => skor !== null),
+  );
 
   type GorevAtamaRow = {
     id: string; durum: GorevSatiri["durum"];
@@ -350,7 +361,7 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
 
       {aktifBolum === "ozet" && <section className="print:hidden"><KonuHaritasiRaporu mod="kendi" konular={zayifKonular} /></section>}
 
-      {aktifBolum === "rozetler" && <Rozetlerim durum={rozetDurum} oyunSayaclari={oyunEtiketiSayaclari} sinifSeviyesi={s.classes?.seviye ?? null} />}
+      {aktifBolum === "rozetler" && <Rozetlerim durum={rozetDurum} oyunSayaclari={oyunEtiketiSayaclari} dogrulukSeviyesi={dogrulukSeviyesi} sinifSeviyesi={s.classes?.seviye ?? null} />}
 
       {aktifBolum === "yapay-zeka" && <section className="min-h-full"><KonuHaritasiRaporu mod="kendi" konular={zayifKonular} /></section>}
 
@@ -389,7 +400,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, secilenSinifId, secilen
   }
 
   if (aktifBolum === "rozetler") {
-    const gorunum = await kurumRozetGorunumuGetir(teacher.school_id, secilenOgrenciId, secilenSinifId);
+    const gorunum = await kurumRozetGorunumuGetir(supabase, teacher.school_id, secilenOgrenciId, secilenSinifId);
     return <RozetGoruntulemePaneli gorunum={gorunum} action="/dashboard/rozetler" kapsam={`${gorunum.kurumAdi ?? "Kurum"} · Yalnız bu kurumdaki öğrenciler`} />;
   }
 
@@ -555,12 +566,13 @@ async function OgretmenIcerik({ userId, role, kurumTuru, secilenSinifId, secilen
 }
 
 async function VeliIcerik({ userId, ad, secilenOgrenciId, donem, aktifBolum }: { userId: string; ad: string; secilenOgrenciId?: string; donem: RaporDonemi; aktifBolum: DashboardBolumu }) {
+  const supabase = await createClient();
+
   if (aktifBolum === "rozetler") {
-    const gorunum = await veliRozetGorunumuGetir(userId);
+    const gorunum = await veliRozetGorunumuGetir(supabase, userId);
     return <RozetGoruntulemePaneli gorunum={gorunum} action="/dashboard/rozetler" kapsam="Hesabınıza bağlı öğrencinin rozetleri" seciciGoster={false} />;
   }
 
-  const supabase = await createClient();
   const { data: links } = await supabase
     .from("parent_students")
     .select("students(id, okul_no, profiles!students_id_fkey(ad))")
