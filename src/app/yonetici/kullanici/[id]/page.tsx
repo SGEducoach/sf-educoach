@@ -59,7 +59,7 @@ async function OgrenciSayfasi({ admin, userId, ad }: { admin: AdminClient; userI
     admin.from("students").select("okul_no, ayt_alan, hedef_bolum, schools(ad), classes(seviye, sube)").eq("id", userId).maybeSingle(),
     admin.from("konu_calismalar").select("id, tarih, ders, konu, sure_dakika").eq("student_id", userId).order("tarih", { ascending: false }).limit(5),
     admin.from("soru_cozumleri").select("id, tarih, ders, dogru, yanlis, sure_dakika").eq("student_id", userId).order("tarih", { ascending: false }).limit(5),
-    admin.from("denemeler").select("id, tarih, tur, sure_dakika").eq("student_id", userId).order("tarih", { ascending: false }).limit(5),
+    admin.from("denemeler").select("id, tarih, tur").eq("student_id", userId).order("tarih", { ascending: false }).limit(5),
   ]);
   if (!ogrenci) return <BosKart metin="Öğrenci profili bulunamadı." />;
   const analiz = await analizVerisiGetir(admin as Parameters<typeof analizVerisiGetir>[0], userId, "tum");
@@ -76,7 +76,7 @@ async function OgrenciSayfasi({ admin, userId, ad }: { admin: AdminClient; userI
     <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
       <KayitListesi baslik="Son konu çalışmaları" satirlar={(konular ?? []).map((r) => `${r.tarih} · ${r.ders} · ${r.konu} · ${r.sure_dakika} dk`)} />
       <KayitListesi baslik="Son soru çözümleri" satirlar={(sorular ?? []).map((r) => `${r.tarih} · ${r.ders} · ${r.dogru}D/${r.yanlis}Y · ${r.sure_dakika} dk`)} />
-      <KayitListesi baslik="Son denemeler" satirlar={(denemeler ?? []).map((r) => `${r.tarih} · ${r.tur} · ${r.sure_dakika} dk`)} />
+      <KayitListesi baslik="Son denemeler" satirlar={(denemeler ?? []).map((r) => `${r.tarih} · ${r.tur}`)} />
     </section>
   </>;
 }

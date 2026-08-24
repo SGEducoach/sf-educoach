@@ -126,7 +126,7 @@ function OgrenciEkYonetim({ studentId }: { studentId: string }) {
     if (!window.confirm("Bu öğrenci kaydı kalıcı olarak silinsin mi?")) return;
     startTransition(async () => { const r = await ogrenciYonetimKaydiSil(k.id, k.tur); if (r.error) return setHata(r.error); yukle(); });
   }
-  function kayitGuncelle(k: OgrenciYonetimKaydi, degerler: { tarih: string; sureDakika: number; ders: string; konu?: string; dogru?: number; yanlis?: number }) {
+  function kayitGuncelle(k: OgrenciYonetimKaydi, degerler: { tarih: string; sureDakika?: number; ders: string; konu?: string; dogru?: number; yanlis?: number }) {
     startTransition(async () => { const r = await ogrenciYonetimKaydiGuncelle({ id: k.id, tur: k.tur, ...degerler }); if (r.error) return setHata(r.error); yukle(); });
   }
 
@@ -143,9 +143,11 @@ function OgrenciEkYonetim({ studentId }: { studentId: string }) {
   </>;
 }
 
-function KayitSatiri({ kayit, disabled, onSave, onDelete }: { kayit: OgrenciYonetimKaydi; disabled: boolean; onSave: (k: OgrenciYonetimKaydi, degerler: { tarih: string; sureDakika: number; ders: string; konu?: string; dogru?: number; yanlis?: number }) => void; onDelete: () => void }) {
+function KayitSatiri({ kayit, disabled, onSave, onDelete }: { kayit: OgrenciYonetimKaydi; disabled: boolean; onSave: (k: OgrenciYonetimKaydi, degerler: { tarih: string; sureDakika?: number; ders: string; konu?: string; dogru?: number; yanlis?: number }) => void; onDelete: () => void }) {
   const [tarih, setTarih] = useState(kayit.tarih);
-  const [sure, setSure] = useState(String(kayit.sureDakika));
+  // Deneme süresi artık takip edilmiyor (kullanıcı kararı) — bu alan sadece
+  // konu/soru kayıtlarında gösteriliyor, deneme'de üretilmiyor/gönderilmiyor.
+  const [sure, setSure] = useState(String(kayit.sureDakika ?? ""));
   const [ders, setDers] = useState(kayit.ders);
   const [konu, setKonu] = useState(kayit.konu ?? "");
   const [dogru, setDogru] = useState(String(kayit.dogru ?? 0));
@@ -158,6 +160,10 @@ function KayitSatiri({ kayit, disabled, onSave, onDelete }: { kayit: OgrenciYone
       {kayit.tur === "soru" && <><input type="number" min={0} value={dogru} onChange={(e) => setDogru(e.target.value)} placeholder="Doğru" style={{ border: `2px solid ${BORDER_STRONG}` }} /><input type="number" min={0} value={yanlis} onChange={(e) => setYanlis(e.target.value)} placeholder="Yanlış" style={{ border: `2px solid ${BORDER_STRONG}` }} /></>}
     </div>
     <input type="date" value={tarih} onChange={(e) => setTarih(e.target.value)} className="rounded px-2 py-1 text-xs" style={{ color: TEXT, border: `2px solid ${BORDER_STRONG}` }} />
-    <div className="flex items-center gap-1"><input type="number" min={1} max={480} value={sure} onChange={(e) => setSure(e.target.value)} className="w-20 rounded px-2 py-1 text-xs" style={{ color: TEXT, border: `2px solid ${BORDER_STRONG}` }} /><button type="button" disabled={disabled} onClick={() => onSave(kayit, { tarih, sureDakika: Number(sure), ders, konu, dogru: Number(dogru), yanlis: Number(yanlis) })} title="Kaydet" style={{ color: MINT }}><Save size={14} /></button><button type="button" disabled={disabled} onClick={onDelete} title="Sil" style={{ color: BLUSH }}><Trash2 size={14} /></button></div>
+    <div className="flex items-center gap-1">
+      {kayit.tur !== "deneme" && <input type="number" min={1} max={480} value={sure} onChange={(e) => setSure(e.target.value)} className="w-20 rounded px-2 py-1 text-xs" style={{ color: TEXT, border: `2px solid ${BORDER_STRONG}` }} />}
+      <button type="button" disabled={disabled} onClick={() => onSave(kayit, { tarih, sureDakika: kayit.tur === "deneme" ? undefined : Number(sure), ders, konu, dogru: Number(dogru), yanlis: Number(yanlis) })} title="Kaydet" style={{ color: MINT }}><Save size={14} /></button>
+      <button type="button" disabled={disabled} onClick={onDelete} title="Sil" style={{ color: BLUSH }}><Trash2 size={14} /></button>
+    </div>
   </div>;
 }

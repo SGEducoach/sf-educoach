@@ -466,7 +466,7 @@ export function DenemeForm({ aytAlan, dokuzOnMu, onBasari, gorevAtamaId }: {
   const [pending, startTransition] = useTransition();
 
   const efektifTur: DenemeTuru = dokuzOnMu ? "BRANS" : tur;
-  const dersler = dokuzOnMu ? [brans] : (tur === "TYT" ? TYT_DERSLERI : AYT_DERSLERI[aytAlan]);
+  const dersler = efektifTur === "BRANS" ? [brans] : (efektifTur === "TYT" ? TYT_DERSLERI : AYT_DERSLERI[aytAlan]);
 
   // Doğru+yanlış toplamı, dersin sınavdaki resmi/branş soru sayısını aşamaz
   // — eksik girilirse kalanı cevaplanmamış (boş) sayılır, bu zaten net
@@ -499,7 +499,7 @@ export function DenemeForm({ aytAlan, dokuzOnMu, onBasari, gorevAtamaId }: {
       if (res.error) { setHata(res.error); setBenzerUyari(false); }
       else if (res.benzerUyari) { setBenzerUyari(true); }
       else {
-        onBasari(dokuzOnMu ? `${brans} Branş Denemesi kaydedildi.` : `${tur} denemesi kaydedildi.`, res.verimlilikSorulsunMu);
+        onBasari(efektifTur === "BRANS" ? `${brans} Branş Denemesi kaydedildi.` : `${tur} denemesi kaydedildi.`, res.verimlilikSorulsunMu);
         setSonuclar({});
         setYayinevi("");
         setTarih(bugununTarihi());
@@ -531,20 +531,41 @@ export function DenemeForm({ aytAlan, dokuzOnMu, onBasari, gorevAtamaId }: {
             <Secim value={tur} onChange={(e) => { setTur(e.target.value as DenemeTuru); setSonuclar({}); }}>
               <option value="TYT">TYT</option>
               <option value="AYT">AYT ({aytAlan})</option>
+              <option value="BRANS">Branş</option>
             </Secim>
           </label>
         )}
+        {/* 11-12. sınıfta da Branş Denemesi girilebiliyor (örn. tek dersten
+            deneme çözülmüş olabilir) — bu durumda hangi dersten olduğunu
+            seçtiren ikinci alan, TYT/AYT'de Yayınevi'nin durduğu yerde açılır. */}
+        {!dokuzOnMu && tur === "BRANS" ? (
+          <label className="flex flex-col gap-1"><Etiket>Branş</Etiket>
+            <Secim value={brans} onChange={(e) => { setBrans(e.target.value); setSonuclar({}); }}>
+              {BRANS_DENEMESI_DERSLERI.map((b) => <option key={b} value={b}>{b}</option>)}
+            </Secim>
+          </label>
+        ) : (
+          <label className="flex flex-col gap-1"><Etiket>Yayınevi</Etiket>
+            <Girdi placeholder="örn. Palme, MEB, Okul kitabı" value={yayinevi} onChange={(e) => setYayinevi(e.target.value)} required />
+          </label>
+        )}
+      </div>
+      {!dokuzOnMu && tur === "BRANS" && (
         <label className="flex flex-col gap-1"><Etiket>Yayınevi</Etiket>
           <Girdi placeholder="örn. Palme, MEB, Okul kitabı" value={yayinevi} onChange={(e) => setYayinevi(e.target.value)} required />
         </label>
-      </div>
+      )}
 
       <div className="rounded-2xl p-3 flex flex-col gap-2" style={{ background: BG1_ALT, border: `2px solid ${BORDER}` }}>
-        <Etiket>{dokuzOnMu ? "Branş sonucu" : "Ders bazlı sonuçlar"}</Etiket>
+        <Etiket>{efektifTur === "BRANS" ? "Branş sonucu" : "Ders bazlı sonuçlar"}</Etiket>
         {dersler.map((d) => {
           const maks = dersSoruSayisi(efektifTur, d);
           return (
-            <div key={d} className="grid grid-cols-[1fr_auto_auto] gap-2 items-center">
+            // D/Y kutuları sabit genişlikte (auto DEĞİL) — Türkçe/Matematik
+            // gibi iki basamaklı soru sayısı olan derslerde değer girilince
+            // kutunun genişleyip satırın kaymasını önler; her satır aynı
+            // hizada kalır (bkz. kullanıcı bulgusu, 24.08.2026).
+            <div key={d} className="grid grid-cols-[1fr_56px_56px] gap-2 items-center">
               <span style={{ color: TEXT }} className="text-xs font-semibold">{d} {maks !== undefined && <span style={{ color: TEXT_MUTED }} className="font-normal">(max {maks})</span>}</span>
               <Girdi type="number" min={0} max={maks} placeholder="D" value={sonuclar[d]?.dogru ?? ""} onChange={(e) => alanGuncelle(d, "dogru", e.target.value)} />
               <Girdi type="number" min={0} max={maks} placeholder="Y" value={sonuclar[d]?.yanlis ?? ""} onChange={(e) => alanGuncelle(d, "yanlis", e.target.value)} />
@@ -561,7 +582,7 @@ export function DenemeForm({ aytAlan, dokuzOnMu, onBasari, gorevAtamaId }: {
       {benzerUyari && (
         <div className="rounded-2xl p-3 flex flex-col gap-2" style={{ background: "rgba(255,196,107,0.12)", border: "2px solid rgba(255,196,107,0.35)" }}>
           <span style={{ color: TEXT }} className="text-xs font-semibold">
-            Bu tarih için zaten {dokuzOnMu ? `${brans} branşında` : `bir ${tur} denemesi için`} kendi girdiğin bir kayıt var. Yine de eklemek istiyor musun?
+            Bu tarih için zaten {efektifTur === "BRANS" ? `${brans} branşında` : `bir ${tur} denemesi için`} kendi girdiğin bir kayıt var. Yine de eklemek istiyor musun?
           </span>
           <div className="flex gap-2">
             <button type="button" onClick={() => setBenzerUyari(false)} disabled={pending}

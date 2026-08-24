@@ -324,7 +324,10 @@ export async function ogrenciVeliBaglantisiSil(studentId: string, parentId: stri
 
 export type OgrenciKayitTuru = "konu" | "soru" | "deneme";
 export interface OgrenciYonetimKaydi {
-  id: string; tur: OgrenciKayitTuru; tarih: string; ders: string; aciklama: string; sureDakika: number;
+  id: string; tur: OgrenciKayitTuru; tarih: string; ders: string; aciklama: string;
+  // Deneme süresi artık hiçbir yerde toplanmıyor/gösterilmiyor (kullanıcı
+  // kararı) — sadece konu/soru kayıtlarında hâlâ anlamlı olduğu için opsiyonel.
+  sureDakika?: number;
   konu?: string; dogru?: number; yanlis?: number;
 }
 
@@ -333,22 +336,24 @@ export async function ogrenciYonetimKayitlari(studentId: string): Promise<{ erro
   const [konular, sorular, denemeler] = await Promise.all([
     admin.from("konu_calismalar").select("id, tarih, ders, konu, sure_dakika").eq("student_id", studentId).order("tarih", { ascending: false }).limit(30),
     admin.from("soru_cozumleri").select("id, tarih, ders, dogru, yanlis, sure_dakika").eq("student_id", studentId).order("tarih", { ascending: false }).limit(30),
-    admin.from("denemeler").select("id, tarih, tur, sure_dakika").eq("student_id", studentId).order("tarih", { ascending: false }).limit(30),
+    admin.from("denemeler").select("id, tarih, tur").eq("student_id", studentId).order("tarih", { ascending: false }).limit(30),
   ]);
   const hata = konular.error ?? sorular.error ?? denemeler.error;
   if (hata) return { error: hata.message, kayitlar: [] };
   const kayitlar: OgrenciYonetimKaydi[] = [
     ...(konular.data ?? []).map((r) => ({ id: r.id, tur: "konu" as const, tarih: r.tarih, ders: r.ders, aciklama: r.konu, sureDakika: r.sure_dakika, konu: r.konu })),
     ...(sorular.data ?? []).map((r) => ({ id: r.id, tur: "soru" as const, tarih: r.tarih, ders: r.ders, aciklama: `${r.dogru} doğru / ${r.yanlis} yanlış`, sureDakika: r.sure_dakika, dogru: r.dogru, yanlis: r.yanlis })),
-    ...(denemeler.data ?? []).map((r) => ({ id: r.id, tur: "deneme" as const, tarih: r.tarih, ders: r.tur, aciklama: `${r.tur} denemesi`, sureDakika: r.sure_dakika })),
+    ...(denemeler.data ?? []).map((r) => ({ id: r.id, tur: "deneme" as const, tarih: r.tarih, ders: r.tur, aciklama: `${r.tur} denemesi` })),
   ].sort((a, b) => b.tarih.localeCompare(a.tarih));
   return { error: null, kayitlar };
 }
 
-export async function ogrenciYonetimKaydiGuncelle(input: { id: string; tur: OgrenciKayitTuru; tarih: string; sureDakika: number; ders: string; konu?: string; dogru?: number; yanlis?: number }): Promise<{ error: string | null }> {
+export async function ogrenciYonetimKaydiGuncelle(input: { id: string; tur: OgrenciKayitTuru; tarih: string; sureDakika?: number; ders: string; konu?: string; dogru?: number; yanlis?: number }): Promise<{ error: string | null }> {
   const { supabase, user, admin } = await requireAdmin();
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input.tarih)) return { error: "Tarih geçersiz." };
-  if (!Number.isInteger(input.sureDakika) || input.sureDakika < 1 || input.sureDakika > 480) return { error: "Süre 1-480 dakika arasında olmalı." };
+  if (input.tur !== "deneme" && (!Number.isInteger(input.sureDakika) || input.sureDakika! < 1 || input.sureDakika! > 480)) {
+    return { error: "Süre 1-480 dakika arasında olmalı." };
+  }
   const ders = input.ders.trim();
   if (!ders) return { error: "Ders veya deneme türü boş olamaz." };
   let error: { message: string } | null = null;
@@ -361,7 +366,8 @@ export async function ogrenciYonetimKaydiGuncelle(input: { id: string; tur: Ogre
     ({ error } = await admin.from("soru_cozumleri").update({ tarih: input.tarih, sure_dakika: input.sureDakika, ders, dogru: input.dogru, yanlis: input.yanlis }).eq("id", input.id));
   } else {
     if (ders !== "TYT" && ders !== "AYT") return { error: "Deneme türü TYT veya AYT olmalı." };
-    ({ error } = await admin.from("denemeler").update({ tarih: input.tarih, sure_dakika: input.sureDakika, tur: ders }).eq("id", input.id));
+    // Deneme süresi artık kaydedilmiyor — sure_dakika bu update'te bilerek atlanıyor.
+    ({ error } = await admin.from("denemeler").update({ tarih: input.tarih, tur: ders }).eq("id", input.id));
   }
   if (error) return { error: error.message };
   await auditLogYaz(supabase, user.id, "ogrenci_kaydi_guncelle", { kayit_id: input.id, tur: input.tur });
