@@ -18,6 +18,8 @@ import {
   type VeliBaglantisi,
   type YonetimOkulu,
 } from "@/app/yonetici/actions";
+import { AYT_ALAN_ETIKET } from "@/lib/types";
+import type { AytAlan } from "@/lib/types";
 import { BG0, BG1, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 
 export function KullaniciDetayYonetimi({ kullanici }: { kullanici: KullaniciSonuc }) {
@@ -26,6 +28,11 @@ export function KullaniciDetayYonetimi({ kullanici }: { kullanici: KullaniciSonu
   const [telefon, setTelefon] = useState(kullanici.telefon ?? "");
   const [okulNo, setOkulNo] = useState(kullanici.okulNo ?? "");
   const [yurt, setYurt] = useState(kullanici.yurtOgrencisi ?? false);
+  // Öğrenci kendi yazdığı için yazım hatası/anlamsız metin girmiş olabilir
+  // (bkz. kullanıcı bulgusu, 24.08.2026: "HEDEFE ULAŞILDI" gibi) — tek
+  // düzeltme yolu burası, öğrencinin kendi profilinden düzenleme imkânı yok.
+  const [hedefBolum, setHedefBolum] = useState(kullanici.hedefBolum ?? "");
+  const [aytAlan, setAytAlan] = useState<AytAlan>(kullanici.aytAlan ?? "SAY");
   const [mesaj, setMesaj] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [yurtPending, startYurtTransition] = useTransition();
@@ -49,7 +56,12 @@ export function KullaniciDetayYonetimi({ kullanici }: { kullanici: KullaniciSonu
   function profilKaydet() {
     setMesaj(null);
     startTransition(async () => {
-      const res = await kullaniciProfilGuncelle({ userId: kullanici.id, ad, email, telefon, okulNo: kullanici.role === "ogrenci" ? okulNo : undefined });
+      const res = await kullaniciProfilGuncelle({
+        userId: kullanici.id, ad, email, telefon,
+        okulNo: kullanici.role === "ogrenci" ? okulNo : undefined,
+        hedefBolum: kullanici.role === "ogrenci" ? hedefBolum : undefined,
+        aytAlan: kullanici.role === "ogrenci" ? aytAlan : undefined,
+      });
       setMesaj(res.error ?? "Profil güncellendi.");
     });
   }
@@ -70,6 +82,16 @@ export function KullaniciDetayYonetimi({ kullanici }: { kullanici: KullaniciSonu
         <Alan etiket="E-posta" value={email} onChange={setEmail} type="email" />
         <Alan etiket="Telefon" value={telefon} onChange={setTelefon} />
         {kullanici.role === "ogrenci" && <Alan etiket="Okul numarası" value={okulNo} onChange={setOkulNo} />}
+        {kullanici.role === "ogrenci" && <Alan etiket="Hedef bölüm" value={hedefBolum} onChange={setHedefBolum} />}
+        {kullanici.role === "ogrenci" && (
+          <label className="flex flex-col gap-1">
+            <span className="text-[10px] font-semibold" style={{ color: TEXT_MUTED }}>AYT alanı</span>
+            <select value={aytAlan} onChange={(e) => setAytAlan(e.target.value as AytAlan)}
+              className="rounded-lg px-2.5 py-2 text-xs outline-none" style={{ background: BG1, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
+              {(Object.keys(AYT_ALAN_ETIKET) as AytAlan[]).map((a) => <option key={a} value={a}>{AYT_ALAN_ETIKET[a]}</option>)}
+            </select>
+          </label>
+        )}
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <button type="button" onClick={profilKaydet} disabled={pending} className="sfec-btn self-start rounded-full px-3 py-1.5 text-[11px] font-bold" style={{ background: MINT, color: MINT_ON }}>

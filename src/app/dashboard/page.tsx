@@ -125,13 +125,76 @@ export default async function DashboardPage({
   );
 }
 
+// Eğlence etiketleri mevcut rozet RPC'sinden tamamen bağımsızdır. Yalnızca
+// Rozetlerim sayfası açıldığında tüm zamanlardaki gerçek girişler sayılır:
+// konu = kayıt adedi, soru = doğru+yanlış+boş toplamı, deneme = kayıt adedi.
+async function oyunEtiketiSayaclariGetir(
+  supabase: Awaited<ReturnType<typeof createClient>>, userId: string, aktifBolum: DashboardBolumu,
+): Promise<OyunEtiketiSayaclari> {
+  if (aktifBolum !== "rozetler") return { konu: 0, soru: 0, deneme: 0 };
+  const [konuSonucu, soruSonucu, denemeSonucu] = await Promise.all([
+    supabase.from("konu_calismalar").select("id", { count: "exact", head: true }).eq("student_id", userId),
+    supabase.from("soru_cozumleri").select("dogru, yanlis, bos").eq("student_id", userId),
+    supabase.from("denemeler").select("id", { count: "exact", head: true }).eq("student_id", userId),
+  ]);
+  return {
+    konu: konuSonucu.count ?? 0,
+    soru: ((soruSonucu.data as { dogru: number; yanlis: number; bos: number }[] | null) ?? [])
+      .reduce((toplam, kayit) => toplam + kayit.dogru + kayit.yanlis + kayit.bos, 0),
+    deneme: denemeSonucu.count ?? 0,
+  };
+}
+
 async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: { userId: string; ad: string; donem: RaporDonemi; haftaBaslangic: string; aktifBolum: DashboardBolumu }) {
   const supabase = await createClient();
-  const { data: student } = await supabase
-    .from("students")
-    .select("okul_no, ayt_alan, hedef_bolum, schools(ad), classes(seviye, sube)")
-    .eq("id", userId)
-    .single();
+
+  // Kullanıcı bulgusu (24.08.2026): "önce kutular geliyor içerik geç
+  // geliyor" — bu fonksiyon önceden ~7 sorguyu SIRAYLA (her biri bir
+  // öncekinin bitmesini bekleyerek) çalıştırıyordu, hiçbiri birbirine
+  // muhtaç değilken. loading.tsx tüm sayfayı TEK bir iskelet arkasında
+  // tutuyor (bkz. DashboardIskeleti) — o yüzden toplam bekleme, tüm
+  // sorguların TOPLAMI kadar sürüyordu. Aşağıda birbirinden bağımsız
+  // sorgular tek Promise.all'da paralel çalışıyor — toplam süre artık
+  // en YAVAŞ sorgu kadar (toplamı değil).
+  const haftaBitis = tarihEkle(haftaBaslangic, 6);
+  const [
+    { data: student },
+    analiz,
+    { data: konuOnerileriHam },
+    { data: rozetDurumHam },
+    { data: tamamlananKonularHam },
+    oyunEtiketiSayaclari,
+    zayifKonular,
+    { data: gorevAtamalariHam },
+  ] = await Promise.all([
+    supabase.from("students").select("okul_no, ayt_alan, hedef_bolum, schools(ad), classes(seviye, sube)").eq("id", userId).single(),
+    analizVerisiGetir(supabase, userId, donem),
+    // Konu girişi sırasında öneri (datalist): resmî müfredat listesi (188
+    // konu, sınıf etiketli) + öğrencilerin serbest girip daha önce
+    // ürettirdiği ek konular — böylece hem baştan kapsamlı hem zamanla
+    // organik olarak büyüyor.
+    supabase.from("konu_anlatimlari").select("ders, konu, seviye").order("konu"),
+    // Rozetler CANLI hesaplanıyor (bkz. migration 0029) — kalıcı bir
+    // "kazanıldı" tablosu yok, her yüklemede güncel durum tazeleniyor.
+    supabase.rpc("ogrenci_rozet_durumu", { p_student_id: userId }),
+    // Konu tamamlama sayacı (§1, yenilikler_1.txt): payda = müfredattaki
+    // ders başına konu sayısı (MUFREDAT_KONULARI), pay = öğrencinin
+    // "hakimim" (hedefe_yakinlik='yakin') işaretlediği FARKLI konu sayısı
+    // — aynı konuyu birden fazla kez çalışmış olsa bile bir kez sayılır.
+    supabase.from("konu_calismalar").select("ders, konu").eq("student_id", userId).eq("hedefe_yakinlik", "yakin"),
+    oyunEtiketiSayaclariGetir(supabase, userId, aktifBolum),
+    // Konu bilme/bilmeme göstergesi (Faz K3) — sadece "ozet" ve
+    // "yapay-zeka" sekmelerinde gösteriliyor, gereksiz sorguyu diğer
+    // sekmelerde atlıyoruz.
+    (aktifBolum === "ozet" || aktifBolum === "yapay-zeka") ? ogrencininZayifKonulariGetir(supabase, userId) : Promise.resolve([]),
+    // Görevlerim (Faz 3, §5): görüntülenen haftanın (Pzt-Paz) görevleri —
+    // gorev_atamalari + gorevler join'i.
+    supabase.from("gorev_atamalari")
+      .select("id, durum, gorevler!inner(tur, ders, konu, hedef_soru_sayisi, hedef_dakika, tarih, son_tarih, baslangic_saat, bitis_saat, aciklama, olusturan_ogrenci_id)")
+      .eq("student_id", userId)
+      .gte("gorevler.tarih", haftaBaslangic)
+      .lte("gorevler.tarih", haftaBitis),
+  ]);
 
   type Row = {
     okul_no: string; ayt_alan: AytAlan; hedef_bolum: string;
@@ -147,15 +210,6 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
     );
   }
 
-  const analiz = await analizVerisiGetir(supabase, userId, donem);
-
-  // Konu girişi sırasında öneri (datalist): resmî müfredat listesi (188 konu,
-  // sınıf etiketli) + öğrencilerin serbest girip daha önce ürettirdiği ek
-  // konular — böylece hem baştan kapsamlı hem zamanla organik olarak büyüyor.
-  const { data: konuOnerileriHam } = await supabase
-    .from("konu_anlatimlari")
-    .select("ders, konu, seviye")
-    .order("konu");
   const uretilenKonular = (konuOnerileriHam as { ders: string; konu: string; seviye: string | null }[]) ?? [];
   const konuOneriAnahtarlari = new Set(MUFREDAT_KONULARI.map((k) => `${k.ders}|${k.konu}`));
   const konuOnerileri = [
@@ -163,36 +217,8 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
     ...uretilenKonular.filter((k) => !konuOneriAnahtarlari.has(`${k.ders}|${k.konu}`)),
   ];
 
-  // Rozetler CANLI hesaplanıyor (bkz. migration 0029) — kalıcı bir "kazanıldı"
-  // tablosu yok, her yüklemede güncel durum tazeleniyor.
-  const { data: rozetDurumHam } = await supabase.rpc("ogrenci_rozet_durumu", { p_student_id: userId });
   const rozetDurum = (rozetDurumHam as RozetDurum | null) ?? { konu: "yok", soru: "yok", deneme: "yok", genel: "yok" };
 
-  // Eğlence etiketleri mevcut rozet RPC'sinden tamamen bağımsızdır. Yalnızca
-  // Rozetlerim sayfası açıldığında tüm zamanlardaki gerçek girişler sayılır:
-  // konu = kayıt adedi, soru = doğru+yanlış+boş toplamı, deneme = kayıt adedi.
-  const oyunEtiketiSayaclari: OyunEtiketiSayaclari = { konu: 0, soru: 0, deneme: 0 };
-  if (aktifBolum === "rozetler") {
-    const [konuSonucu, soruSonucu, denemeSonucu] = await Promise.all([
-      supabase.from("konu_calismalar").select("id", { count: "exact", head: true }).eq("student_id", userId),
-      supabase.from("soru_cozumleri").select("dogru, yanlis, bos").eq("student_id", userId),
-      supabase.from("denemeler").select("id", { count: "exact", head: true }).eq("student_id", userId),
-    ]);
-    oyunEtiketiSayaclari.konu = konuSonucu.count ?? 0;
-    oyunEtiketiSayaclari.soru = ((soruSonucu.data as { dogru: number; yanlis: number; bos: number }[] | null) ?? [])
-      .reduce((toplam, kayit) => toplam + kayit.dogru + kayit.yanlis + kayit.bos, 0);
-    oyunEtiketiSayaclari.deneme = denemeSonucu.count ?? 0;
-  }
-
-  // Konu tamamlama sayacı (§1, yenilikler_1.txt): payda = müfredattaki ders
-  // başına konu sayısı (MUFREDAT_KONULARI), pay = öğrencinin "hakimim"
-  // (hedefe_yakinlik='yakin') işaretlediği FARKLI konu sayısı — aynı konuyu
-  // birden fazla kez çalışmış olsa bile bir kez sayılır.
-  const { data: tamamlananKonularHam } = await supabase
-    .from("konu_calismalar")
-    .select("ders, konu")
-    .eq("student_id", userId)
-    .eq("hedefe_yakinlik", "yakin");
   const tamamlananSet = new Set<string>();
   for (const r of (tamamlananKonularHam as { ders: string; konu: string }[] | null) ?? []) {
     tamamlananSet.add(`${r.ders}|${r.konu}`);
@@ -206,16 +232,12 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
     konuSayaclari[ders] = { tamamlanan, toplam };
   }
 
-  // Konu bilme/bilmeme göstergesi (Faz K3) — sadece "ozet" ve "yapay-zeka"
-  // sekmelerinde gösteriliyor, gereksiz sorguyu diğer sekmelerde atlıyoruz.
-  const zayifKonular = (aktifBolum === "ozet" || aktifBolum === "yapay-zeka")
-    ? await ogrencininZayifKonulariGetir(supabase, userId)
-    : [];
-
   // Faz K4 — 9-10-11. sınıf müfredat üst başlık/alt başlık hiyerarşisi:
   // sadece "veri-girisi" sekmesinde ve sadece ilgili sınıf seviyesinde
-  // gerekiyor, tablo küçük (herkese açık select, RLS: true) olduğu için
-  // tek sorguda hepsi çekiliyor, client tarafında ders+üst başlık ile filtrelenir.
+  // gerekiyor. Öğrencinin sınıf seviyesi yukarıdaki Promise.all'daki
+  // `student` sorgusunun sonucuna muhtaç olduğu için BİLEREK ayrı/sıralı
+  // kalıyor — ama küçük ve dar kapsamlı bir sorgu, toplam süreye
+  // önceki haliyle kıyasla ihmal edilebilir bir katkısı var.
   let mufredatAltKonulari: { ders: string; ustKonu: string; altBaslik: string }[] = [];
   if (aktifBolum === "veri-girisi" && maarifHiyerarsiSinifMi(s.classes?.seviye ?? null)) {
     const { data: altKonularHam } = await supabase.from("mufredat_alt_konular").select("ders, ust_konu, alt_baslik").order("sira");
@@ -227,16 +249,6 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
   const dersListesi = dokuzOnMu
     ? [...TYT_DERSLERI]
     : [...TYT_DERSLERI, ...AYT_DERSLERI[s.ayt_alan].filter((d) => !TYT_DERSLERI.includes(d as typeof TYT_DERSLERI[number]))];
-
-  // Görevlerim (Faz 3, §5): görüntülenen haftanın (Pzt-Paz) görevleri —
-  // gorev_atamalari + gorevler join'i.
-  const haftaBitis = tarihEkle(haftaBaslangic, 6);
-  const { data: gorevAtamalariHam } = await supabase
-    .from("gorev_atamalari")
-    .select("id, durum, gorevler!inner(tur, ders, konu, hedef_soru_sayisi, hedef_dakika, tarih, son_tarih, baslangic_saat, bitis_saat, aciklama, olusturan_ogrenci_id)")
-    .eq("student_id", userId)
-    .gte("gorevler.tarih", haftaBaslangic)
-    .lte("gorevler.tarih", haftaBitis);
 
   type GorevAtamaRow = {
     id: string; durum: GorevSatiri["durum"];

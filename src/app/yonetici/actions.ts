@@ -51,6 +51,8 @@ export interface KullaniciSonuc {
   okulNo: string | null;
   brans: string | null;
   yurtOgrencisi: boolean | null;
+  aytAlan: AytAlan | null;
+  hedefBolum: string | null;
 }
 
 // Okul/sınıf sınırı olmadan tüm öğrenci/öğretmen/veli/müdür hesaplarında
@@ -84,14 +86,17 @@ if (rolFiltre !== "hepsi") {
 
   const [ogrenciDetay, ogretmenDetay] = await Promise.all([
     ogrenciIdleri.length
-      ? supabase.from("students").select("id, okul_no, school_id, class_id, yurt_ogrencisi, schools(ad), classes(seviye, sube)").in("id", ogrenciIdleri)
+      ? supabase.from("students").select("id, okul_no, school_id, class_id, yurt_ogrencisi, ayt_alan, hedef_bolum, schools(ad), classes(seviye, sube)").in("id", ogrenciIdleri)
       : Promise.resolve({ data: [] }),
     ogretmenIdleri.length
       ? supabase.from("teachers").select("id, brans, school_id, schools(ad)").in("id", ogretmenIdleri)
       : Promise.resolve({ data: [] }),
   ]);
 
-  type OgrenciRow = { id: string; okul_no: string; school_id: string; class_id: string; yurt_ogrencisi: boolean; schools: { ad: string } | null; classes: { seviye: string; sube: string } | null };
+  type OgrenciRow = {
+    id: string; okul_no: string; school_id: string; class_id: string; yurt_ogrencisi: boolean;
+    ayt_alan: AytAlan; hedef_bolum: string; schools: { ad: string } | null; classes: { seviye: string; sube: string } | null;
+  };
   type OgretmenRow = { id: string; brans: string; school_id: string; schools: { ad: string } | null };
   const ogrenciMap = new Map(((ogrenciDetay.data as unknown as OgrenciRow[]) ?? []).map((o) => [o.id, o]));
   const ogretmenMap = new Map(((ogretmenDetay.data as unknown as OgretmenRow[]) ?? []).map((o) => [o.id, o]));
@@ -108,6 +113,8 @@ if (rolFiltre !== "hepsi") {
       okulNo: o?.okul_no ?? null,
       brans: t?.brans ?? null,
       yurtOgrencisi: o?.yurt_ogrencisi ?? null,
+      aytAlan: o?.ayt_alan ?? null,
+      hedefBolum: o?.hedef_bolum ?? null,
     };
   });
 
@@ -208,6 +215,11 @@ export async function ogrenciSinifTasi(studentId: string, classId: string): Prom
 
 export async function kullaniciProfilGuncelle(input: {
   userId: string; ad: string; email: string; telefon: string; okulNo?: string;
+  // Öğrenci kendi "Hedef Bölüm" alanını serbest metin olarak yazıyor
+  // (bkz. SignupForm) — hiç doğrulama yok, yazım hatası/anlamsız metin
+  // (örn. "hedefe ulaşıldı") girmesi mümkün. Bunu düzeltebilecek TEK yer
+  // burası (öğrencinin kendi profilinden düzenleme imkânı yok).
+  hedefBolum?: string; aytAlan?: AytAlan;
 }): Promise<{ error: string | null }> {
   const { supabase, user, admin } = await requireAdmin();
   const ad = adNormalize(input.ad);
@@ -231,6 +243,13 @@ export async function kullaniciProfilGuncelle(input: {
   if (mevcut.role === "ogrenci" && input.okulNo !== undefined) {
     const { error: ogrenciError } = await admin.from("students").update({ okul_no: input.okulNo }).eq("id", input.userId);
     if (ogrenciError) return { error: ogrenciError.message };
+  }
+  if (mevcut.role === "ogrenci" && (input.hedefBolum !== undefined || input.aytAlan !== undefined)) {
+    const guncelleme: Record<string, string> = {};
+    if (input.hedefBolum !== undefined) guncelleme.hedef_bolum = hedefBolumNormalize(input.hedefBolum);
+    if (input.aytAlan !== undefined) guncelleme.ayt_alan = input.aytAlan;
+    const { error: hedefError } = await admin.from("students").update(guncelleme).eq("id", input.userId);
+    if (hedefError) return { error: hedefError.message };
   }
   await auditLogYaz(supabase, user.id, "kullanici_profil_guncelle", { hedef_id: input.userId });
   revalidatePath("/yonetici");
