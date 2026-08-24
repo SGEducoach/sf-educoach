@@ -14,7 +14,7 @@ import { HosgeldinPopuplari } from "@/components/dashboard/HosgeldinPopuplari";
 import { ZorunluSifreDegisikligiKapisi } from "@/components/dashboard/ZorunluSifreDegisikligiKapisi";
 import { analizVerisiGetir } from "@/lib/analiz";
 import type { RaporDonemi } from "@/lib/analiz";
-import { ogrencininZayifKonulariGetir } from "@/lib/konu-raporu";
+import { ogrencininZayifKonulariGetir, konuHaritasiGetir } from "@/lib/konu-raporu";
 import { AYT_ALAN_ETIKET, sinifSiraKarsilastir, dokuzOnSinifMi, TYT_DERSLERI, AYT_DERSLERI } from "@/lib/types";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
 import type { AytAlan, KurumTuru, UserRole } from "@/lib/types";
@@ -345,6 +345,26 @@ async function OgretmenIcerik({ userId, role, kurumTuru, secilenSinifId, secilen
     return <RozetGoruntulemePaneli gorunum={gorunum} action="/dashboard/rozetler" kapsam={`${gorunum.kurumAdi ?? "Kurum"} · Yalnız bu kurumdaki öğrenciler`} />;
   }
 
+  // Konu bilme/bilmeme göstergesi (Faz K3) — müdür (okul) OKULUN geneline,
+  // öğretmen sadece kendi sınıfına (kendiSinifiMi ile aynı gerekçe: branş
+  // öğretmeninin sınıf öğretmeni OLMADIĞI bir sınıfa dair veri sızmasın)
+  // bakar. Dershane müdürü ayrı bileşende (DershaneMudurPaneli) ele alınıyor.
+  if (aktifBolum === "yapay-zeka" && !(role === "mudur" && kurumTuru === "dershane")) {
+    if (role === "mudur") {
+      const { satirlar, error } = await konuHaritasiGetir(supabase, { schoolId: teacher.school_id });
+      return <KonuHaritasiRaporu mod="rapor" satirlar={satirlar} kapsamEtiketi="Okulunuz" hata={error} />;
+    }
+    if (!teacher.class_id) {
+      return (
+        <div className="sfec-fade rounded-3xl p-6 text-center" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+          <p style={{ color: TEXT_MUTED }} className="text-sm">Bu rapor sadece bir sınıfın öğretmeni içindir.</p>
+        </div>
+      );
+    }
+    const { satirlar, error } = await konuHaritasiGetir(supabase, { classId: teacher.class_id });
+    return <KonuHaritasiRaporu mod="rapor" satirlar={satirlar} kapsamEtiketi="Sınıfınız" hata={error} />;
+  }
+
   // "Öğrenci profili görüntüle" (analiz sayfası, ?ogrenci=) hem okul hem
   // dershane müdürü için ORTAK — dershane dalına geçmeden önce ele alınır.
   if (secilenOgrenciId) {
@@ -392,6 +412,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, secilenSinifId, secilen
       <DershaneMudurPaneli
         siniflar={((dershaneSiniflari ?? []) as { id: string; seviye: string; sube: string }[]).sort(sinifSiraKarsilastir)}
         aktifBolum={aktifBolum}
+        schoolId={teacher.school_id}
       />
     );
   }

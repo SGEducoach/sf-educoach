@@ -1,7 +1,9 @@
 import { moderatorKullanicilariGetir } from "@/app/moderator/actions";
 import { ogretmenDuyuruGonder, gonderilenDuyurularGetir } from "@/app/dashboard/actions";
 import { DuyuruFormu } from "@/components/dashboard/DuyuruFormu";
-import { YapayZekaAnaliziPromosu } from "@/components/dashboard/YapayZekaAnaliziPromosu";
+import { KonuHaritasiRaporu } from "@/components/dashboard/KonuHaritasiRaporu";
+import { konuHaritasiGetir } from "@/lib/konu-raporu";
+import { createClient } from "@/lib/supabase/server";
 import { DershaneRosterEkleFormu } from "@/components/dashboard/DershaneRosterEkleFormu";
 import { DershaneRosterTopluEkleFormu } from "@/components/dashboard/DershaneRosterTopluEkleFormu";
 import { DershaneOgretmenEkleFormu } from "@/components/dashboard/DershaneOgretmenEkleFormu";
@@ -15,9 +17,10 @@ import { BG1, BORDER, TEXT_MUTED } from "@/lib/theme";
 // DERSHANE_MUDUR_MENUSU ile birebir (bkz. dashboard-navigation.ts):
 // öğretmenler, öğrenciler, denemeler, tg-denemeleri (page.tsx üst
 // seviyede, buraya hiç düşmez), yapay-zeka, duyurular.
-export async function DershaneMudurPaneli({ siniflar, aktifBolum }: {
+export async function DershaneMudurPaneli({ siniflar, aktifBolum, schoolId }: {
   siniflar: { id: string; seviye: string; sube: string }[];
   aktifBolum: DashboardBolumu;
+  schoolId: string;
 }) {
   if (aktifBolum === "duyurular") {
     const kapsamSecenekleri = [
@@ -43,7 +46,9 @@ export async function DershaneMudurPaneli({ siniflar, aktifBolum }: {
   }
 
   if (aktifBolum === "yapay-zeka") {
-    return <section className="min-h-full"><YapayZekaAnaliziPromosu sayfa /></section>;
+    const supabase = await createClient();
+    const { satirlar, error } = await konuHaritasiGetir(supabase, { schoolId });
+    return <section className="min-h-full"><KonuHaritasiRaporu mod="rapor" satirlar={satirlar} kapsamEtiketi="Dershaneniz" hata={error} /></section>;
   }
 
   if (aktifBolum === "denemeler") {
