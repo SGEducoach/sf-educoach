@@ -6,21 +6,22 @@ import { CalendarDays, ChevronLeft, ChevronRight, ExternalLink, Pause, Play } fr
 import { TG_DENEME_HABERLERI } from "@/lib/tg-denemeleri";
 import { BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
 
-const GECIS_SURESI = 5_000;
+const GECIS_SURESI = 10_000;
 
 export function TgDenemeleri({ bugun }: { bugun: string }) {
   const [aktif, setAktif] = useState(0);
   const [otomatik, setOtomatik] = useState(true);
-  const [etkilesimde, setEtkilesimde] = useState(false);
   const dokunmaBaslangici = useRef<number | null>(null);
   const haberler = TG_DENEME_HABERLERI.slice(0, 10);
   const haber = haberler[aktif];
 
+  // Kullanıcı kararı: fare üzerine gelince akış durmasın — tek durdurma
+  // yolu "Otomatik akışı durdur" butonu (otomatik state'i).
   useEffect(() => {
-    if (!otomatik || etkilesimde || haberler.length < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!otomatik || haberler.length < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const zamanlayici = window.setTimeout(() => setAktif((mevcut) => (mevcut + 1) % haberler.length), GECIS_SURESI);
     return () => window.clearTimeout(zamanlayici);
-  }, [aktif, etkilesimde, haberler.length, otomatik]);
+  }, [aktif, haberler.length, otomatik]);
 
   function git(index: number) {
     setAktif((index + haberler.length) % haberler.length);
@@ -47,75 +48,74 @@ export function TgDenemeleri({ bugun }: { bugun: string }) {
             TG Denemeler
           </h1>
           <p className="mt-1 max-w-2xl text-sm" style={{ color: TEXT_MUTED }}>
-            Genel takvimler ve yaklaşan deneme afişleri. Dokunmadığınızda haberler 5 saniyede bir ilerler.
+            Genel takvimler ve yaklaşan deneme afişleri. Otomatik akış açıkken haberler 10 saniyede bir ilerler.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setOtomatik((deger) => !deger)}
-          className="sfec-btn inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-bold"
-          style={{ background: otomatik ? MINT_BG : BG1, color: TEXT, border: `1px solid ${otomatik ? MINT : BORDER_STRONG}` }}
-          aria-pressed={!otomatik}
-        >
-          {otomatik ? <Pause size={14} aria-hidden="true" /> : <Play size={14} aria-hidden="true" />}
-          {otomatik ? "Otomatik akışı durdur" : "Otomatik akışı başlat"}
-        </button>
-      </div>
-
-      {/* Haber akışı imleçleri (manuel ileri/geri + nokta göstergeleri) —
-          kullanıcı isteğiyle üstteki duyuru/başlık bloğunun hemen altına
-          taşındı, önceden sağ paneldeki kart içeriğinin en altındaydı. */}
-      <div className="flex items-center justify-between gap-3 px-1">
-        <button type="button" onClick={() => git(aktif - 1)} aria-label="Önceki haber" className="sfec-btn flex h-11 w-11 items-center justify-center rounded-full" style={{ background: BG1_ALT, color: TEXT, border: `1px solid ${BORDER_STRONG}` }}>
-          <ChevronLeft size={19} aria-hidden="true" />
-        </button>
-        <div className="flex flex-wrap justify-center gap-1.5" aria-label="Haber seçimi">
-          {haberler.map((oge, index) => (
-            <button
-              key={oge.id}
-              type="button"
-              onClick={() => git(index)}
-              aria-label={`${index + 1}. habere git: ${oge.baslik}`}
-              aria-current={index === aktif ? "true" : undefined}
-              className="sfec-btn h-2.5 rounded-full"
-              style={{ width: index === aktif ? 24 : 10, background: index === aktif ? MINT : BORDER_STRONG }}
-            />
-          ))}
-        </div>
-        <button type="button" onClick={() => git(aktif + 1)} aria-label="Sonraki haber" className="sfec-btn flex h-11 w-11 items-center justify-center rounded-full" style={{ background: BG1_ALT, color: TEXT, border: `1px solid ${BORDER_STRONG}` }}>
-          <ChevronRight size={19} aria-hidden="true" />
-        </button>
       </div>
 
       <div
         className="relative overflow-hidden rounded-[1.75rem]"
         style={{ background: BG1, border: `1px solid ${BORDER}`, boxShadow: "var(--sfec-card-shadow)" }}
-        onMouseEnter={() => setEtkilesimde(true)}
-        onMouseLeave={() => setEtkilesimde(false)}
-        onFocusCapture={() => setEtkilesimde(true)}
-        onBlurCapture={(olay) => {
-          if (!olay.currentTarget.contains(olay.relatedTarget as Node | null)) setEtkilesimde(false);
-        }}
         onTouchStart={(olay) => { dokunmaBaslangici.current = olay.changedTouches[0]?.clientX ?? null; }}
         onTouchEnd={(olay) => dokunmaBitti(olay.changedTouches[0]?.clientX ?? 0)}
       >
         <div className="grid min-h-[32rem] lg:grid-cols-[minmax(0,1fr)_19rem]" aria-live="polite">
-          <div className="relative flex min-h-[28rem] items-center justify-center overflow-hidden p-4 sm:p-6 lg:min-h-[42rem]" style={{ background: BG1_ALT }}>
-            <Image
-              key={haber.id}
-              src={haber.gorsel}
-              alt={haber.alt}
-              width={haber.genislik}
-              height={haber.yukseklik}
-              sizes="(min-width: 1024px) 60vw, 100vw"
-              className="sfec-tg-haber-gir max-h-[72dvh] w-auto max-w-full rounded-2xl object-contain shadow-2xl"
-              preload={aktif === 0}
-            />
-            {gecti && (
-              <div className="absolute bottom-8 right-7 rotate-[-9deg] rounded-xl border-[5px] border-white bg-red-700 px-5 py-2 text-2xl font-black tracking-[0.16em] text-white shadow-[0_8px_24px_rgba(0,0,0,0.55)] sm:bottom-10 sm:right-10 sm:text-3xl" aria-label="Bu denemenin tarihi geçti">
-                GEÇTİ
+          <div className="flex flex-col">
+            <div className="relative flex min-h-[28rem] items-center justify-center overflow-hidden p-4 sm:p-6 lg:min-h-[42rem]" style={{ background: BG1_ALT }}>
+              <Image
+                key={haber.id}
+                src={haber.gorsel}
+                alt={haber.alt}
+                width={haber.genislik}
+                height={haber.yukseklik}
+                sizes="(min-width: 1024px) 60vw, 100vw"
+                className="sfec-tg-haber-gir max-h-[72dvh] w-auto max-w-full rounded-2xl object-contain shadow-2xl"
+                preload={aktif === 0}
+              />
+              {gecti && (
+                <div className="absolute bottom-8 right-7 rotate-[-9deg] rounded-xl border-[5px] border-white bg-red-700 px-5 py-2 text-2xl font-black tracking-[0.16em] text-white shadow-[0_8px_24px_rgba(0,0,0,0.55)] sm:bottom-10 sm:right-10 sm:text-3xl" aria-label="Bu denemenin tarihi geçti">
+                  GEÇTİ
+                </div>
+              )}
+            </div>
+
+            {/* Haber akışı imleçleri — önizleme çerçevesinin genişliğiyle
+                sınırlı (kart genelinde değil), hemen altında. "Süreyi durdur"
+                (otomatik akış aç/kapa) butonu kullanıcı isteğiyle geçiş
+                butonlarının sağına alındı — akışı durduran TEK kontrol bu,
+                fare üzerine gelmek artık akışı durdurmuyor. */}
+            <div className="flex items-center gap-2 border-t px-4 py-3 sm:px-6" style={{ borderColor: BORDER }}>
+              <button type="button" onClick={() => git(aktif - 1)} aria-label="Önceki haber" className="sfec-btn flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: BG1_ALT, color: TEXT, border: `1px solid ${BORDER_STRONG}` }}>
+                <ChevronLeft size={19} aria-hidden="true" />
+              </button>
+              <div className="flex flex-1 flex-wrap justify-center gap-1.5" aria-label="Haber seçimi">
+                {haberler.map((oge, index) => (
+                  <button
+                    key={oge.id}
+                    type="button"
+                    onClick={() => git(index)}
+                    aria-label={`${index + 1}. habere git: ${oge.baslik}`}
+                    aria-current={index === aktif ? "true" : undefined}
+                    className="sfec-btn h-2.5 rounded-full"
+                    style={{ width: index === aktif ? 24 : 10, background: index === aktif ? MINT : BORDER_STRONG }}
+                  />
+                ))}
               </div>
-            )}
+              <button type="button" onClick={() => git(aktif + 1)} aria-label="Sonraki haber" className="sfec-btn flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: BG1_ALT, color: TEXT, border: `1px solid ${BORDER_STRONG}` }}>
+                <ChevronRight size={19} aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setOtomatik((deger) => !deger)}
+                aria-label={otomatik ? "Otomatik akışı durdur" : "Otomatik akışı başlat"}
+                title={otomatik ? "Otomatik akışı durdur" : "Otomatik akışı başlat"}
+                aria-pressed={!otomatik}
+                className="sfec-btn flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
+                style={{ background: otomatik ? MINT_BG : BG1_ALT, color: TEXT, border: `1px solid ${otomatik ? MINT : BORDER_STRONG}` }}
+              >
+                {otomatik ? <Pause size={17} aria-hidden="true" /> : <Play size={17} aria-hidden="true" />}
+              </button>
+            </div>
           </div>
 
           <aside className="flex flex-col border-t p-5 sm:p-6 lg:border-l lg:border-t-0" style={{ borderColor: BORDER }}>
