@@ -18,7 +18,11 @@
 
 do $$
 declare
-  v_satirlar jsonb := '[
+  -- Not: JSON metninde çok sayıda kesme işareti ("Newton'un", "Türkiye'nin"
+  -- gibi) geçtiğinden tek tırnaklı literal yerine dolar-tırnak ($json$...$json$)
+  -- kullanılıyor — aksi halde her kesme işareti string'i erken kapatıp
+  -- "unterminated quoted identifier" hatası veriyordu (0057'nin ilk hali).
+  v_satirlar jsonb := $json$[
     {"ders": "Fizik", "ust": "Fizik Bilimi ve Kariyer Keşfi", "altlar": ["Fiziğin tanımı ve alt dalları", "Bilimsel yöntem ve model kavramı", "Fizikle ilgili meslek ve kariyer alanları", "Fiziğin günlük hayattaki uygulamaları"]},
     {"ders": "Fizik", "ust": "Temel-Türetilmiş Nicelikler, Vektörler, Hareket", "altlar": ["Temel ve türetilmiş büyüklükler, birim sistemleri", "Skaler ve vektörel büyüklükler", "Vektörlerin bileşenlerine ayrılması ve toplanması", "Konum, yer değiştirme ve alınan yol"]},
     {"ders": "Fizik", "ust": "Akışkanlar (Basınç, Kaldırma Kuvveti)", "altlar": ["Katı basıncı", "Sıvı basıncı ve Pascal prensibi", "Açık hava basıncı", "Kaldırma kuvveti ve Arşimet prensibi"]},
@@ -108,7 +112,7 @@ declare
     {"ders": "Din Kültürü", "ust": "İslam Medeniyeti", "altlar": ["İslam medeniyetinin oluşumu", "İslam medeniyetinin bilim ve kültüre katkıları", "İslam medeniyetinde önemli merkezler", "İslam medeniyetinin günümüze etkileri"]},
     {"ders": "Din Kültürü", "ust": "Kötülük Problemi ve Dinî-Felsefi Yaklaşımlar", "altlar": ["Kötülük probleminin tanımı", "Kötülüğe dini yaklaşımlar", "Kötülüğe felsefi yaklaşımlar", "Sınav ve imtihan anlayışı"]},
     {"ders": "Din Kültürü", "ust": "Diğer Dinler: Yahudilik ve Hristiyanlık", "altlar": ["Yahudiliğin temel inanç esasları", "Hristiyanlığın temel inanç esasları", "Bu dinlerin kutsal kitapları ve ibadetleri", "İslam'ın diğer semavi dinlerle ortak ve farklı yönleri"]}
-  ]'::jsonb;
+  ]$json$::jsonb;
   v_grup jsonb;
   v_alt text;
   v_sira int;
