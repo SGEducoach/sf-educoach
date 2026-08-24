@@ -292,23 +292,21 @@ export async function denemeEkle(
   }
 
   // Benzerlik uyarısı: öğrenci aynı tarih+tür için kendi girişini tekrar mı
-  // ekliyor? (BRANS'ta ayrıca aynı branş mı, çünkü aynı gün farklı branşlar
-  // girilebilir.) `zorla` true ise (kullanıcı uyarıyı görüp devam ettiyse)
-  // bu kontrol atlanır.
+  // ekliyor? `zorla` true ise (kullanıcı uyarıyı görüp devam ettiyse) bu
+  // kontrol atlanır.
+  // (24.08.2026: BRANS artık TYT/AYT ile aynı yapıda — TEK dersten değil,
+  // TYT_DERSLERI'nin TAMAMINDAN oluşan tek bir deneme kaydı. Önceki "aynı
+  // branş mı" özel kontrolü [dersSonuclari[0]'a bakan] bu yüzden kaldırıldı
+  // — artık diğer türlerle birebir aynı, sadece tarih+tür bazlı kontrol var.)
   if (!zorla) {
     const { data: kendiKayitlari } = await supabase
       .from("denemeler")
-      .select("id, deneme_ders_sonuclari(ders)")
+      .select("id")
       .eq("student_id", user.id)
       .eq("tarih", tarih)
       .eq("tur", tur)
       .eq("kaynak", "ogrenci");
-    type BenzerKayit = { id: string; deneme_ders_sonuclari: { ders: string }[] };
-    const benzerVarMi = tur !== "BRANS"
-      ? (kendiKayitlari?.length ?? 0) > 0
-      : ((kendiKayitlari as BenzerKayit[] | null) ?? []).some((k) =>
-          k.deneme_ders_sonuclari?.some((s) => s.ders === dersSonuclari[0]?.ders));
-    if (benzerVarMi) {
+    if ((kendiKayitlari?.length ?? 0) > 0) {
       return { error: null, verimlilikSorulsunMu: false, benzerUyari: true };
     }
   }

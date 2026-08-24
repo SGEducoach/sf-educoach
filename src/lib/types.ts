@@ -302,15 +302,20 @@ const AYT_SORU_SAYISI: Record<string, number> = {
   "Felsefe Grubu": 12, "Din Kültürü": 6,
 };
 
-// 9-10. sınıf Branş Denemesi — örnek PDF'lerden çıkarılan dağılım (120 soru,
-// 4 ana branş, her biri 30 soru). Sosyal Bilimler ve Fen Bilimleri kendi
-// alt derslerine (Tarih/Coğrafya/Din Kültürü/Felsefe, Fizik/Kimya/Biyoloji)
-// yalnızca konu çalışma ve soru çözümü menülerinde ayrılır — deneme
-// girişinde tek bir branş skoru olarak kaydedilir (bkz. TYT_DERSLERI, bu
-// alt dersleri zaten içeriyor).
-export const BRANS_DENEMESI_DERSLERI = ["Türk Dili ve Edebiyatı", "Sosyal Bilimler", "Matematik", "Fen Bilimleri"] as const;
+// 9-10-11. sınıf Branş Denemesi — kullanıcı isteğiyle (24.08.2026) yuvarlak/
+// pratik bir dağılıma geçildi: Türkçe 30, Matematik 30, Fen 30 (Fizik/Kimya/
+// Biyoloji'ye 10'ar), Sosyal 30 (Tarih 10, Coğrafya 10, Felsefe 5, Din
+// Kültürü 5) — toplam 120 soru. Dersler artık TYT_DERSLERI'nin AYNISI
+// (Türk Dili ve Edebiyatı/Sosyal Bilimler/Fen Bilimleri gibi BİRLEŞİK
+// branş kavramı kaldırıldı) — bu sayede Branş'ın giriş formu TYT/AYT ile
+// BİREBİR aynı yapıda: tek yayınevi alanı + ders başına D/Y girişi (bkz.
+// OgrenciVeriGirisi.tsx DenemeForm, kullanıcı isteği "ikisinin de giriş
+// şekilleri aynı olsun"). Tanım TYT_DERSLERI'ye ihtiyaç duyduğundan aşağıda,
+// o tanımlandıktan hemen sonra (bkz. "export const BRANS_DENEMESI_DERSLERI").
 const BRANS_SORU_SAYISI: Record<string, number> = {
-  "Türk Dili ve Edebiyatı": 30, "Sosyal Bilimler": 30, "Matematik": 30, "Fen Bilimleri": 30,
+  "Türkçe": 30, "Matematik": 30,
+  "Fizik": 10, "Kimya": 10, "Biyoloji": 10,
+  "Tarih": 10, "Coğrafya": 10, "Felsefe": 5, "Din Kültürü": 5,
 };
 
 export function dersSoruSayisi(tur: DenemeTuru, ders: string): number | undefined {
@@ -348,6 +353,10 @@ export const BRANS_LISTESI = [
 export const TYT_DERSLERI = [
   "Türkçe", "Matematik", "Fizik", "Kimya", "Biyoloji", "Tarih", "Coğrafya", "Felsefe", "Din Kültürü",
 ] as const;
+
+// Branş Denemesi'nin ders listesi TYT ile birebir aynı (bkz. BRANS_SORU_SAYISI
+// yukarıda) — sadece soru sayısı dağılımı farklı (yuvarlak/pratik değerler).
+export const BRANS_DENEMESI_DERSLERI = TYT_DERSLERI;
 
 export const AYT_DERSLERI: Record<AytAlan, readonly string[]> = {
   SAY: ["Matematik", "Fizik", "Kimya", "Biyoloji"],

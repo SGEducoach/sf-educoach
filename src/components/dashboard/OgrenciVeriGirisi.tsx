@@ -153,7 +153,7 @@ export function OgrenciVeriGirisi({ aytAlan, konuOnerileri, sinifSeviyesi, konuS
 
         {sekme === "konu" && <KonuCalismaForm dersListesi={dersListesi} konuOnerileri={konuOnerileri} konuSayaclari={konuSayaclari} sinifSeviyesi={sinifSeviyesi} mufredatAltKonulari={mufredatAltKonulari} gerekYokListesi={gerekYokListesi} onBasari={basariGoster} />}
         {sekme === "soru" && <SoruCozumuForm dersListesi={dersListesi} konuOnerileri={konuOnerileri} onBasari={basariGoster} />}
-        {sekme === "deneme" && <DenemeForm aytAlan={aytAlan} dokuzOnMu={dokuzOnMu} onBasari={basariGoster} />}
+        {sekme === "deneme" && <DenemeForm aytAlan={aytAlan} sinifSeviyesi={sinifSeviyesi} onBasari={basariGoster} />}
       </div>
 
       {verimlilikSor && <HaftalikVerimlilikModal onKapat={() => setVerimlilikSor(false)} />}
@@ -566,11 +566,24 @@ export function SoruCozumuForm({ dersListesi, konuOnerileri, onBasari, prefillDe
 // Matematik/Fen Bilimleri) SADECE birini seçip o branşın tek sonucunu
 // girer (bkz. 9_10_sinif_ekleme_senaryosu.pdf 7.1 "Ürün kararı") — 11-12
 // TYT/AYT akışı (birden çok ders aynı anda) değişmeden kalıyor.
-export function DenemeForm({ aytAlan, dokuzOnMu, onBasari, gorevAtamaId }: {
-  aytAlan: AytAlan; dokuzOnMu: boolean; onBasari: (m: string, s: boolean) => void; gorevAtamaId?: string;
+export function DenemeForm({ aytAlan, sinifSeviyesi, onBasari, gorevAtamaId }: {
+  aytAlan: AytAlan; sinifSeviyesi?: string | null; onBasari: (m: string, s: boolean) => void; gorevAtamaId?: string;
 }) {
-  const [tur, setTur] = useState<DenemeTuru>("TYT");
-  const [brans, setBrans] = useState<string>(BRANS_DENEMESI_DERSLERI[0]);
+  // Sınıf seviyesine göre hangi deneme türleri girilebilir — kullanıcı
+  // isteği (24.08.2026): Branş Denemesi sadece 9-10-11. sınıf, TYT/AYT
+  // sadece 11-12. sınıf. 11. sınıf GEÇİŞ sınıfı — ikisi de mümkün.
+  // classes.seviye çıplak "9"/"10"/"11"/"12" tutuluyor (bkz. konu-hakimiyeti.ts
+  // ogrenciSinifNumarasi ile aynı format notu) — sınıfsız/tanınmayan bir
+  // değer güvenli varsayılan olarak 12 (TYT/AYT) kabul edilir.
+  const sinifNoHam = sinifSeviyesi ? Number(sinifSeviyesi) : 12;
+  const sinifNo = Number.isFinite(sinifNoHam) ? sinifNoHam : 12;
+  const bransMumkun = sinifNo === 9 || sinifNo === 10 || sinifNo === 11;
+  const tytAytMumkun = sinifNo >= 11;
+  const turSecenekleri: DenemeTuru[] = [
+    ...(tytAytMumkun ? (["TYT", "AYT"] as const) : []),
+    ...(bransMumkun ? (["BRANS"] as const) : []),
+  ];
+  const [tur, setTur] = useState<DenemeTuru>(turSecenekleri[0] ?? "TYT");
   const [sonuclar, setSonuclar] = useState<Record<string, { dogru: string; yanlis: string }>>({});
   const [yayinevi, setYayinevi] = useState("");
   const [hedefeYakinlik, setHedefeYakinlik] = useState<HedefeYakinlik>("belirsiz");
@@ -580,14 +593,16 @@ export function DenemeForm({ aytAlan, dokuzOnMu, onBasari, gorevAtamaId }: {
   const [benzerUyari, setBenzerUyari] = useState(false);
   const [pending, startTransition] = useTransition();
 
-  const efektifTur: DenemeTuru = dokuzOnMu ? "BRANS" : tur;
-  const dersler = efektifTur === "BRANS" ? [brans] : (efektifTur === "TYT" ? TYT_DERSLERI : AYT_DERSLERI[aytAlan]);
+  // Branş Denemesi'nin ders listesi artık TYT ile birebir aynı (kullanıcı
+  // isteği: "ikisinin de giriş şekilleri aynı olsun yayınevi ve net girişi")
+  // — sadece soru sayısı dağılımı farklı (bkz. dersSoruSayisi, types.ts).
+  const dersler = tur === "BRANS" ? [...BRANS_DENEMESI_DERSLERI] : (tur === "TYT" ? TYT_DERSLERI : AYT_DERSLERI[aytAlan]);
 
   // Doğru+yanlış toplamı, dersin sınavdaki resmi/branş soru sayısını aşamaz
   // — eksik girilirse kalanı cevaplanmamış (boş) sayılır, bu zaten net
   // hesabını etkilemiyor.
   function alanGuncelle(ders: string, alan: "dogru" | "yanlis", deger: string) {
-    const maks = dersSoruSayisi(efektifTur, ders);
+    const maks = dersSoruSayisi(tur, ders);
     setSonuclar((s) => {
       const mevcutDiger = Number(s[ders]?.[alan === "dogru" ? "yanlis" : "dogru"] ?? "0");
       let sayi = deger === "" ? 0 : Number(deger);
@@ -610,11 +625,11 @@ export function DenemeForm({ aytAlan, dokuzOnMu, onBasari, gorevAtamaId }: {
       yanlis: Number(sonuclar[d]?.yanlis ?? 0),
     }));
     startTransition(async () => {
-      const res = await denemeEkle(efektifTur, yayinevi.trim(), hedefeYakinlik, zorluk, dersSonuclari, tarih, zorla, gorevAtamaId);
+      const res = await denemeEkle(tur, yayinevi.trim(), hedefeYakinlik, zorluk, dersSonuclari, tarih, zorla, gorevAtamaId);
       if (res.error) { setHata(res.error); setBenzerUyari(false); }
       else if (res.benzerUyari) { setBenzerUyari(true); }
       else {
-        onBasari(efektifTur === "BRANS" ? `${brans} Branş Denemesi kaydedildi.` : `${tur} denemesi kaydedildi.`, res.verimlilikSorulsunMu);
+        onBasari(`${tur === "BRANS" ? "Branş" : tur} denemesi kaydedildi.`, res.verimlilikSorulsunMu);
         setSonuclar({});
         setYayinevi("");
         setTarih(bugununTarihi());
@@ -634,47 +649,29 @@ export function DenemeForm({ aytAlan, dokuzOnMu, onBasari, gorevAtamaId }: {
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
       <GecmisTarihSecici tarih={tarih} setTarih={setTarih} geriyeMaksGun={KATEGORI_GERIYE_DONUK_SINIR.deneme} />
+      {/* Kullanıcı isteği: TYT/AYT ve Branş'ın giriş şekli birebir aynı —
+          tek Yayınevi alanı + (varsa) tür seçici, ikisi de aynı 2 sütunlu
+          satırda. Sadece TEK tür mümkünse (9-10. sınıf → sadece Branş)
+          seçici hiç gösterilmiyor, Yayınevi tek başına geniş alanı kaplıyor. */}
       <div className="grid grid-cols-2 gap-3">
-        {dokuzOnMu ? (
-          <label className="flex flex-col gap-1"><Etiket>Branş</Etiket>
-            <Secim value={brans} onChange={(e) => { setBrans(e.target.value); setSonuclar({}); }}>
-              {BRANS_DENEMESI_DERSLERI.map((b) => <option key={b} value={b}>{b}</option>)}
-            </Secim>
-          </label>
-        ) : (
+        {turSecenekleri.length > 1 && (
           <label className="flex flex-col gap-1"><Etiket>Deneme türü</Etiket>
             <Secim value={tur} onChange={(e) => { setTur(e.target.value as DenemeTuru); setSonuclar({}); }}>
-              <option value="TYT">TYT</option>
-              <option value="AYT">AYT ({aytAlan})</option>
-              <option value="BRANS">Branş</option>
+              {turSecenekleri.map((t) => (
+                <option key={t} value={t}>{t === "AYT" ? `AYT (${aytAlan})` : t === "BRANS" ? "Branş" : "TYT"}</option>
+              ))}
             </Secim>
           </label>
         )}
-        {/* 11-12. sınıfta da Branş Denemesi girilebiliyor (örn. tek dersten
-            deneme çözülmüş olabilir) — bu durumda hangi dersten olduğunu
-            seçtiren ikinci alan, TYT/AYT'de Yayınevi'nin durduğu yerde açılır. */}
-        {!dokuzOnMu && tur === "BRANS" ? (
-          <label className="flex flex-col gap-1"><Etiket>Branş</Etiket>
-            <Secim value={brans} onChange={(e) => { setBrans(e.target.value); setSonuclar({}); }}>
-              {BRANS_DENEMESI_DERSLERI.map((b) => <option key={b} value={b}>{b}</option>)}
-            </Secim>
-          </label>
-        ) : (
-          <label className="flex flex-col gap-1"><Etiket>Yayınevi</Etiket>
-            <Girdi placeholder="örn. Palme, MEB, Okul kitabı" value={yayinevi} onChange={(e) => setYayinevi(e.target.value)} required />
-          </label>
-        )}
-      </div>
-      {!dokuzOnMu && tur === "BRANS" && (
-        <label className="flex flex-col gap-1"><Etiket>Yayınevi</Etiket>
+        <label className={`flex flex-col gap-1 ${turSecenekleri.length > 1 ? "" : "col-span-2"}`}><Etiket>Yayınevi</Etiket>
           <Girdi placeholder="örn. Palme, MEB, Okul kitabı" value={yayinevi} onChange={(e) => setYayinevi(e.target.value)} required />
         </label>
-      )}
+      </div>
 
       <div className="rounded-2xl p-3 flex flex-col gap-2" style={{ background: BG1_ALT, border: `2px solid ${BORDER}` }}>
-        <Etiket>{efektifTur === "BRANS" ? "Branş sonucu" : "Ders bazlı sonuçlar"}</Etiket>
+        <Etiket>Ders bazlı sonuçlar</Etiket>
         {dersler.map((d) => {
-          const maks = dersSoruSayisi(efektifTur, d);
+          const maks = dersSoruSayisi(tur, d);
           return (
             // D/Y kutuları sabit genişlikte (auto DEĞİL) — Türkçe/Matematik
             // gibi iki basamaklı soru sayısı olan derslerde değer girilince
@@ -697,7 +694,7 @@ export function DenemeForm({ aytAlan, dokuzOnMu, onBasari, gorevAtamaId }: {
       {benzerUyari && (
         <div className="rounded-2xl p-3 flex flex-col gap-2" style={{ background: "rgba(255,196,107,0.12)", border: "2px solid rgba(255,196,107,0.35)" }}>
           <span style={{ color: TEXT }} className="text-xs font-semibold">
-            Bu tarih için zaten {efektifTur === "BRANS" ? `${brans} branşında` : `bir ${tur} denemesi için`} kendi girdiğin bir kayıt var. Yine de eklemek istiyor musun?
+            Bu tarih için zaten bir {tur === "BRANS" ? "Branş" : tur} denemesi için kendi girdiğin bir kayıt var. Yine de eklemek istiyor musun?
           </span>
           <div className="flex gap-2">
             <button type="button" onClick={() => setBenzerUyari(false)} disabled={pending}

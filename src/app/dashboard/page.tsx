@@ -339,7 +339,7 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
           gorunum={aktifBolum === "planlar" ? "planlar" : "gorevler"}
           haftaBaslangic={haftaBaslangic}
           aytAlan={s.ayt_alan}
-          dokuzOnMu={dokuzOnMu}
+          sinifSeviyesi={s.classes?.seviye ?? null}
           dersListesi={dersListesi}
           konuOnerileri={konuOnerileri}
           konuSayaclari={konuSayaclari}

@@ -65,12 +65,15 @@ function uzunTarih(tarihISO: string) {
 // veri giriş formu (Konu/Soru/Deneme) bir modal içinde açılıp gorevAtamaId
 // ile ilişkilendiriliyor; böylece rozet/analiz sistemleri görev kaynaklı
 // girişleri de otomatik sayıyor (bkz. yenilikler_1.txt §5, Faz 3 planı).
-export function Gorevlerim({ gorevler, gorunum, haftaBaslangic, aytAlan, dokuzOnMu, dersListesi, konuOnerileri, konuSayaclari, gerekYokListesi }: {
+export function Gorevlerim({ gorevler, gorunum, haftaBaslangic, aytAlan, sinifSeviyesi, dersListesi, konuOnerileri, konuSayaclari, gerekYokListesi }: {
   gorevler: GorevSatiri[];
   gorunum: TakvimGorunumu;
   haftaBaslangic: string;
   aytAlan: AytAlan;
-  dokuzOnMu: boolean;
+  // Deneme tamamlama formunda (DenemeForm) TYT/AYT/Branş erişilebilirliği
+  // için — 9-10-11-12 tam ayrımı gerekiyor (bkz. OgrenciVeriGirisi.tsx
+  // DenemeForm, kullanıcı isteği 24.08.2026).
+  sinifSeviyesi?: string | null;
   dersListesi: string[];
   konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
   konuSayaclari?: Record<string, { tamamlanan: number; toplam: number }>;
@@ -251,7 +254,7 @@ export function Gorevlerim({ gorevler, gorunum, haftaBaslangic, aytAlan, dokuzOn
         <GorevTamamlamaModal
           gorev={acikGorev}
           aytAlan={aytAlan}
-          dokuzOnMu={dokuzOnMu}
+          sinifSeviyesi={sinifSeviyesi}
           dersListesi={dersListesi}
           konuOnerileri={konuOnerileri}
           konuSayaclari={konuSayaclari}
@@ -433,10 +436,10 @@ function HaftalikZamanPlani({ gunler, gorevler, bugun, planSayfasi, onGunSec, on
   );
 }
 
-function GorevTamamlamaModal({ gorev, aytAlan, dokuzOnMu, dersListesi, konuOnerileri, konuSayaclari, onKapat }: {
+function GorevTamamlamaModal({ gorev, aytAlan, sinifSeviyesi, dersListesi, konuOnerileri, konuSayaclari, onKapat }: {
   gorev: GorevSatiri;
   aytAlan: AytAlan;
-  dokuzOnMu: boolean;
+  sinifSeviyesi?: string | null;
   dersListesi: string[];
   konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
   konuSayaclari?: Record<string, { tamamlanan: number; toplam: number }>;
@@ -472,7 +475,7 @@ function GorevTamamlamaModal({ gorev, aytAlan, dokuzOnMu, dersListesi, konuOneri
             prefillDers={gorev.ders} prefillKonu={gorev.konu ?? undefined} gorevAtamaId={gorev.atamaId}
             onBasari={(m) => basariGoster(m)} />
         ) : (
-          <DenemeForm aytAlan={aytAlan} dokuzOnMu={dokuzOnMu} gorevAtamaId={gorev.atamaId}
+          <DenemeForm aytAlan={aytAlan} sinifSeviyesi={sinifSeviyesi} gorevAtamaId={gorev.atamaId}
             onBasari={(m) => basariGoster(m)} />
         )}
       </div>
