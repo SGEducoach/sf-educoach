@@ -16,7 +16,14 @@
 -- niteliksiz referansı (fonksiyonun geri kalanında hiçbiri kasıtlı
 -- olarak PL/pgSQL değişkenine işaret etmiyor) otomatik olarak sütun
 -- lehine çözer. İmza ve mantık aynı, sadece bu tek satır eklendi.
-create or replace function public.konu_zayiflik_raporu(p_class_id uuid default null, p_school_id uuid default null)
+--
+-- Not: Postgres, OUT parametreleriyle (returns table) tanımlı bir
+-- fonksiyonun dönüş sütunlarını "create or replace" ile değiştirmeye
+-- izin vermiyor — sütun listesi birebir aynı bile olsa önce DROP
+-- gerekiyor ("cannot change return type of existing function").
+drop function if exists public.konu_zayiflik_raporu(uuid, uuid);
+
+create function public.konu_zayiflik_raporu(p_class_id uuid default null, p_school_id uuid default null)
 returns table (
   ders text,
   konu text,
