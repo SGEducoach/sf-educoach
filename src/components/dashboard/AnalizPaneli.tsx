@@ -10,7 +10,7 @@ import { Sparkles, Clock, Target, TrendingUp, Printer, ListChecks } from "lucide
 import type { AnalizVerisi, RaporDonemi } from "@/lib/analiz";
 import { RAPOR_DONEMI_ETIKET } from "@/lib/analiz";
 import { HEDEFE_YAKINLIK_ETIKET, VERIMLILIK_ETIKET } from "@/lib/types";
-import type { HedefeYakinlik } from "@/lib/types";
+import type { AytAlan, HedefeYakinlik } from "@/lib/types";
 import { satirTytdeGosterilsinMi, satirAytdeGosterilsinMi } from "@/lib/konu-hakimiyeti";
 import type { KonuHakimiyetiSatiri } from "@/lib/konu-hakimiyeti";
 import {
@@ -42,8 +42,8 @@ function IstatKart({ icon: Icon, etiket, deger, altYazi, renk, bg }: {
 
 const HEDEF_RENK: Record<HedefeYakinlik, string> = { yakin: MINT, belirsiz: BUTTER, uzak: BLUSH };
 
-export function AnalizPaneli({ veri, ogrenciAdi, konuHakimiyetiSatirlari = [], konuHakimiyetiTamGorunum = false }: {
-  veri: AnalizVerisi; ogrenciAdi?: string; konuHakimiyetiSatirlari?: KonuHakimiyetiSatiri[]; konuHakimiyetiTamGorunum?: boolean;
+export function AnalizPaneli({ veri, ogrenciAdi, konuHakimiyetiSatirlari = [], konuHakimiyetiTamGorunum = false, konuHakimiyetiAytAlan = "SAY" }: {
+  veri: AnalizVerisi; ogrenciAdi?: string; konuHakimiyetiSatirlari?: KonuHakimiyetiSatiri[]; konuHakimiyetiTamGorunum?: boolean; konuHakimiyetiAytAlan?: AytAlan;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -231,7 +231,7 @@ export function AnalizPaneli({ veri, ogrenciAdi, konuHakimiyetiSatirlari = [], k
           )}
         </div>
 
-        <KonuHakimiyetKarti satirlar={konuHakimiyetiSatirlari} tamGorunum={konuHakimiyetiTamGorunum} />
+        <KonuHakimiyetKarti satirlar={konuHakimiyetiSatirlari} tamGorunum={konuHakimiyetiTamGorunum} aytAlan={konuHakimiyetiAytAlan} />
       </div>
 
       {verimlilikChartData.length > 0 && (
@@ -260,14 +260,14 @@ function BosDurum() {
 // Konu Hakimiyeti kartı — genel (tüm dersler) veya tek bir ders seçilip
 // donut grafiğinde o kapsamın hakim/toplam oranı gösterilir. Görsel dil
 // KonuHakimiyetiEkrani.tsx'teki donutla birebir aynı (bkz. o dosya).
-function KonuHakimiyetKarti({ satirlar, tamGorunum }: { satirlar: KonuHakimiyetiSatiri[]; tamGorunum: boolean }) {
+function KonuHakimiyetKarti({ satirlar, tamGorunum, aytAlan }: { satirlar: KonuHakimiyetiSatiri[]; tamGorunum: boolean; aytAlan: AytAlan }) {
   // Tam görünüm (12. sınıf/dershane) — önce TYT/AYT, sonra o kapsamdaki
   // ders seçilir (bkz. KonuHakimiyetiEkrani.tsx'teki aynı mantık).
   const [seciliSinav, setSeciliSinav] = useState<"TYT" | "AYT">("TYT");
   const [seciliDers, setSeciliDers] = useState<string>("genel");
   const sinavaGoreSatirlar = !tamGorunum
     ? satirlar
-    : satirlar.filter(seciliSinav === "TYT" ? satirTytdeGosterilsinMi : satirAytdeGosterilsinMi);
+    : satirlar.filter((s) => (seciliSinav === "TYT" ? satirTytdeGosterilsinMi(s) : satirAytdeGosterilsinMi(s, aytAlan)));
   const dersler = useMemo(() => Array.from(new Set(sinavaGoreSatirlar.map((s) => s.ders))).sort((a, b) => a.localeCompare(b, "tr")), [sinavaGoreSatirlar]);
   const gorunenSatirlar = seciliDers === "genel" ? sinavaGoreSatirlar : sinavaGoreSatirlar.filter((s) => s.ders === seciliDers);
   const hakimSayisi = gorunenSatirlar.filter((s) => s.hakimiyetSeviyesi === "yakin").length;

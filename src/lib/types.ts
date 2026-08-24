@@ -364,6 +364,23 @@ export const AYT_DERSLERI: Record<AytAlan, readonly string[]> = {
   SOZ: ["Edebiyat", "Tarih-1", "Coğrafya-1", "Tarih-2", "Coğrafya-2", "Felsefe Grubu", "Din Kültürü"],
 };
 
+// Konu Hakimiyeti'nin (Faz H, tam görünüm — 12. sınıf/dershane) AYT
+// sekmesinde bir öğrencinin GERÇEKTEN hangi dersleri göreceğini belirlemek
+// için — AYT_DERSLERI'NDEN BİLEREK FARKLI: o, deneme GİRİŞİNDE gerçek sınav
+// bölümü granülaritesini (Tarih-1/Tarih-2, Coğrafya-1/Coğrafya-2, Felsefe
+// Grubu) korumak zorunda; ama MUFREDAT_KONULARI'ndeki (ve dolayısıyla Konu
+// Hakimiyeti'ndeki) konular hep düz "Tarih"/"Coğrafya"/"Felsefe" ders
+// adıyla tutuluyor — "Tarih-1" gibi bir adla asla eşleşmezler. Bu harita
+// o granüler adları müfredat ders adlarına indirgiyor; kullanıcı geri
+// bildirimi: "bir SAY öğrencisi AYT İnkılap Tarihi görmesin" — SAY'ın AYT
+// kapsamında Tarih/Coğrafya/Felsefe/Din Kültürü/Edebiyat hiç yok, ama
+// TYT_DERSLERI'nin unconditional dahil edilmesi yüzünden önceden sızıyordu.
+export const AYT_MUFREDAT_DERSLERI: Record<AytAlan, readonly string[]> = {
+  SAY: ["Matematik", "Fizik", "Kimya", "Biyoloji"],
+  EA: ["Matematik", "Edebiyat", "Tarih", "Coğrafya"],
+  SOZ: ["Edebiyat", "Tarih", "Coğrafya", "Felsefe", "Din Kültürü"],
+};
+
 // ============ Rozet sistemi v2 (kategori bazlı, canlı durum) ============
 // Her kategori kendi ödül eşiklerine sahip; genel "SEFU KOÇ" rozeti bu
 // üçünün kaç tanesinin altın olduğuna göre türetiliyor (bkz. migration

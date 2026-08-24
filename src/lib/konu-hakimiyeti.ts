@@ -4,7 +4,7 @@
 // diye ayrı bir tablodan (ogrenci_konu_hakimiyeti, migration 0055) besleniyor.
 import type { createClient } from "@/lib/supabase/server";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
-import { TYT_DERSLERI, AYT_DERSLERI, dokuzOnSinifMi } from "@/lib/types";
+import { TYT_DERSLERI, AYT_DERSLERI, AYT_MUFREDAT_DERSLERI, dokuzOnSinifMi } from "@/lib/types";
 import type { AytAlan, HedefeYakinlik, OgrenmeSekli, TekrarDurumu } from "@/lib/types";
 
 type SupabaseC = Awaited<ReturnType<typeof createClient>>;
@@ -77,8 +77,15 @@ export function satirTytdeGosterilsinMi(satir: KonuHakimiyetiSatiri): boolean {
   const sinifNo = seviyeSinifNumarasi(satir.seviye);
   return sinifNo === null || sinifNo <= 10;
 }
-export function satirAytdeGosterilsinMi(satir: KonuHakimiyetiSatiri): boolean {
-  return satir.ders !== "Türkçe";
+// Kullanıcı geri bildirimi (24.08.2026): "bir SAY öğrencisi AYT İnkılap
+// Tarihi görmesin" — AYT sekmesi öğrencinin GERÇEK alanına (SAY/EA/SÖZ)
+// göre daraltılmalı, sadece Türkçe'yi dışlamak yetmiyordu (TYT_DERSLERI
+// unconditional dahil edildiğinden Tarih/Coğrafya/Felsefe/Din Kültürü/
+// Edebiyat alan fark etmeksizin sızıyordu). AYT_MUFREDAT_DERSLERI ile
+// (bkz. types.ts) dersin bu alanın GERÇEK AYT kapsamında olup olmadığı
+// kontrol ediliyor.
+export function satirAytdeGosterilsinMi(satir: KonuHakimiyetiSatiri, aytAlan: AytAlan): boolean {
+  return AYT_MUFREDAT_DERSLERI[aytAlan].includes(satir.ders);
 }
 
 // Maarif Modeli Türkçe'de ayrı konu başlığı vermiyor (tema/beceri bazlı,
@@ -188,7 +195,7 @@ export async function konuHakimiyetiGetir(
 export async function konuHakimiyetiOzetiGetir(
   supabase: SupabaseC,
   studentId: string,
-): Promise<{ satirlar: KonuHakimiyetiSatiri[]; tamGorunum: boolean }> {
+): Promise<{ satirlar: KonuHakimiyetiSatiri[]; tamGorunum: boolean; aytAlan: AytAlan }> {
   const { data } = await supabase
     .from("students")
     .select("ayt_alan, classes(seviye), schools(tur)")
@@ -196,11 +203,11 @@ export async function konuHakimiyetiOzetiGetir(
     .single();
   type Row = { ayt_alan: AytAlan; classes: { seviye: string } | null; schools: { tur: string } | null };
   const s = data as unknown as Row | null;
-  if (!s) return { satirlar: [], tamGorunum: false };
+  if (!s) return { satirlar: [], tamGorunum: false, aytAlan: "SAY" };
   const dokuzOnMu = dokuzOnSinifMi(s.classes?.seviye ?? null);
   const dershaneMi = s.schools?.tur === "dershane";
   const satirlar = await konuHakimiyetiGetir(supabase, studentId, s.classes?.seviye ?? null, s.ayt_alan, dokuzOnMu, dershaneMi);
-  return { satirlar, tamGorunum: tamGorunumMu(s.classes?.seviye ?? null, dershaneMi) };
+  return { satirlar, tamGorunum: tamGorunumMu(s.classes?.seviye ?? null, dershaneMi), aytAlan: s.ayt_alan };
 }
 
 // "Gerek yok" onayı (Faz H3, Plan Yap + Konu Çalışma girişi) için —

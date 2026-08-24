@@ -358,12 +358,12 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
       </div>}
 
       {aktifBolum === "konu-hakimiyeti" && <div className="print:hidden">
-        <KonuHakimiyetiEkrani satirlar={konuHakimiyetiSatirlari} tamGorunum={konuHakimiyetiTamGorunum} />
+        <KonuHakimiyetiEkrani satirlar={konuHakimiyetiSatirlari} tamGorunum={konuHakimiyetiTamGorunum} aytAlan={s.ayt_alan} />
       </div>}
 
       {aktifBolum === "analiz" && <div>
         <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-lg font-bold mb-3 print:hidden">Analiz / Rapor</h2>
-        <AnalizPaneli veri={analiz} ogrenciAdi={ad} konuHakimiyetiSatirlari={konuHakimiyetiSatirlari} konuHakimiyetiTamGorunum={konuHakimiyetiTamGorunum} />
+        <AnalizPaneli veri={analiz} ogrenciAdi={ad} konuHakimiyetiSatirlari={konuHakimiyetiSatirlari} konuHakimiyetiTamGorunum={konuHakimiyetiTamGorunum} konuHakimiyetiAytAlan={s.ayt_alan} />
       </div>}
     </div>
   );
@@ -446,7 +446,8 @@ async function OgretmenIcerik({ userId, role, kurumTuru, secilenSinifId, secilen
           </Link>
           <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-bold print:hidden">{ogrenciAdi}</h1>
           <AnalizPaneli veri={analiz} ogrenciAdi={ogrenciAdi}
-            konuHakimiyetiSatirlari={konuHakimiyetiOzeti.satirlar} konuHakimiyetiTamGorunum={konuHakimiyetiOzeti.tamGorunum} />
+            konuHakimiyetiSatirlari={konuHakimiyetiOzeti.satirlar} konuHakimiyetiTamGorunum={konuHakimiyetiOzeti.tamGorunum}
+            konuHakimiyetiAytAlan={konuHakimiyetiOzeti.aytAlan} />
         </div>
       );
     }
@@ -618,7 +619,8 @@ async function VeliAnalizBolumu({ supabase, studentId, donem, ogrenciAdi }: {
   return (
     <section className="flex flex-col gap-4">
       <AnalizPaneli veri={analiz} ogrenciAdi={ogrenciAdi}
-        konuHakimiyetiSatirlari={konuHakimiyetiOzeti.satirlar} konuHakimiyetiTamGorunum={konuHakimiyetiOzeti.tamGorunum} />
+        konuHakimiyetiSatirlari={konuHakimiyetiOzeti.satirlar} konuHakimiyetiTamGorunum={konuHakimiyetiOzeti.tamGorunum}
+        konuHakimiyetiAytAlan={konuHakimiyetiOzeti.aytAlan} />
     </section>
   );
 }

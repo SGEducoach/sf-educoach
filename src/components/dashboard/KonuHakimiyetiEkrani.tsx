@@ -10,12 +10,12 @@ import { ChevronDown, ChevronUp, ListChecks, Layers } from "lucide-react";
 import {
   HAKIMIYET_SEVIYESI_ETIKET, OGRENME_SEKLI_ETIKET, OGRENME_SEKLI_LISTESI, TEKRAR_DURUMU_ETIKET,
 } from "@/lib/types";
-import type { HedefeYakinlik, OgrenmeSekli, TekrarDurumu } from "@/lib/types";
+import type { AytAlan, HedefeYakinlik, OgrenmeSekli, TekrarDurumu } from "@/lib/types";
 import { Etiket, SecenekSecici } from "@/components/dashboard/OgrenciVeriGirisi";
 import { konuHakimiyetiKaydet } from "@/app/dashboard/konu-hakimiyeti-actions";
 import { satirTytdeGosterilsinMi, satirAytdeGosterilsinMi } from "@/lib/konu-hakimiyeti";
 import type { KonuHakimiyetiSatiri } from "@/lib/konu-hakimiyeti";
-import { BG0, BG1, BG1_ALT, BLUSH, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, BUTTER, BUTTER_BG, PEACH, PEACH_BG, TEXT, TEXT_MUTED } from "@/lib/theme";
+import { BG0, BG1, BG1_ALT, BLUSH, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, BUTTER, BUTTER_BG, PEACH, PEACH_BG, SKY, SKY_BG, TEXT, TEXT_MUTED } from "@/lib/theme";
 
 const HAKIMIYET_RENK: Record<HedefeYakinlik, string> = { yakin: MINT, belirsiz: BUTTER, uzak: PEACH };
 // Kullanıcı geri bildirimi: durum rozeti öncesinde sadece renkli metindi,
@@ -23,7 +23,7 @@ const HAKIMIYET_RENK: Record<HedefeYakinlik, string> = { yakin: MINT, belirsiz: 
 // belirgin bir "chip" oluyor (Hepsini İşaretle butonlarıyla aynı görsel dil).
 const HAKIMIYET_BG: Record<HedefeYakinlik, string> = { yakin: MINT_BG, belirsiz: BUTTER_BG, uzak: PEACH_BG };
 
-export function KonuHakimiyetiEkrani({ satirlar, tamGorunum }: { satirlar: KonuHakimiyetiSatiri[]; tamGorunum: boolean }) {
+export function KonuHakimiyetiEkrani({ satirlar, tamGorunum, aytAlan }: { satirlar: KonuHakimiyetiSatiri[]; tamGorunum: boolean; aytAlan: AytAlan }) {
   // Tam görünüm (12. sınıf/dershane) — kullanıcı isteği: "iki seçim
   // kutucuğu olsun önce tyt/ayt seçilsin sonra da dersler". Maarif modunda
   // (9-10-11. sınıf, dershane değil) bu seçici hiç gösterilmiyor, sınav
@@ -31,7 +31,7 @@ export function KonuHakimiyetiEkrani({ satirlar, tamGorunum }: { satirlar: KonuH
   const [seciliSinav, setSeciliSinav] = useState<"TYT" | "AYT">("TYT");
   const sinavaGoreSatirlar = !tamGorunum
     ? satirlar
-    : satirlar.filter(seciliSinav === "TYT" ? satirTytdeGosterilsinMi : satirAytdeGosterilsinMi);
+    : satirlar.filter((s) => (seciliSinav === "TYT" ? satirTytdeGosterilsinMi(s) : satirAytdeGosterilsinMi(s, aytAlan)));
 
   const dersler = useMemo(() => Array.from(new Set(sinavaGoreSatirlar.map((s) => s.ders))), [sinavaGoreSatirlar]);
   const [seciliDers, setSeciliDers] = useState<string>("tum");
@@ -147,6 +147,11 @@ function UstBaslikGrubu({ ders, ustKonu, satirlar }: { ders: string; ustKonu: st
   // "Yeterli" olan gruplar yine listenin altına iniyor (bkz. ustBasliklar
   // sıralaması, KonuHakimiyetiEkrani).
   const coklu = satirlar.length > 1 || satirlar[0]?.konu !== ustKonu;
+  // Kullanıcı isteği: konunun hangi sınıfa ait olduğu görünmüyordu — grup
+  // içindeki tüm alt konular aynı üst başlıktan geldiği için hep aynı
+  // seviyeyi taşır (MUFREDAT_KONULARI'nin kendi "seviye" alanı), tek
+  // seferde üst başlık satırında gösteriliyor.
+  const seviye = satirlar[0]?.seviye;
 
   return (
     <div className="rounded-2xl overflow-hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
@@ -154,6 +159,11 @@ function UstBaslikGrubu({ ders, ustKonu, satirlar }: { ders: string; ustKonu: st
         {coklu && <Layers size={13} color={TEXT_MUTED} className="shrink-0" />}
         <span style={{ color: TEXT }} className="text-sm font-bold truncate">{ustKonu}</span>
         <span style={{ color: TEXT_MUTED }} className="text-[11px] shrink-0">· {ders}</span>
+        {seviye && (
+          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0" style={{ background: SKY_BG, color: SKY }}>
+            {seviye}
+          </span>
+        )}
       </div>
       <div className="flex flex-col divide-y" style={{ borderColor: BORDER }}>
         {satirlar.map((s) => <KonuSatiri key={s.konu} satir={s} />)}
