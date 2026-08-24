@@ -14,9 +14,13 @@ import type { HedefeYakinlik, OgrenmeSekli, TekrarDurumu } from "@/lib/types";
 import { Etiket, SecenekSecici } from "@/components/dashboard/OgrenciVeriGirisi";
 import { konuHakimiyetiKaydet, konuHakimiyetiTopluKaydet } from "@/app/dashboard/konu-hakimiyeti-actions";
 import type { KonuHakimiyetiSatiri } from "@/lib/konu-hakimiyeti";
-import { BG0, BG1, BG1_ALT, BLUSH, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, BUTTER, PEACH, TEXT, TEXT_MUTED } from "@/lib/theme";
+import { BG0, BG1, BG1_ALT, BLUSH, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, BUTTER, BUTTER_BG, PEACH, PEACH_BG, TEXT, TEXT_MUTED } from "@/lib/theme";
 
 const HAKIMIYET_RENK: Record<HedefeYakinlik, string> = { yakin: MINT, belirsiz: BUTTER, uzak: PEACH };
+// Kullanıcı geri bildirimi: durum rozeti öncesinde sadece renkli metindi,
+// satır zeminiyle neredeyse aynı tondaydı — artık renkli dolgu + kenarlıkla
+// belirgin bir "chip" oluyor (Hepsini İşaretle butonlarıyla aynı görsel dil).
+const HAKIMIYET_BG: Record<HedefeYakinlik, string> = { yakin: MINT_BG, belirsiz: BUTTER_BG, uzak: PEACH_BG };
 
 export function KonuHakimiyetiEkrani({ satirlar }: { satirlar: KonuHakimiyetiSatiri[] }) {
   const dersler = useMemo(() => Array.from(new Set(satirlar.map((s) => s.ders))), [satirlar]);
@@ -35,7 +39,17 @@ export function KonuHakimiyetiEkrani({ satirlar }: { satirlar: KonuHakimiyetiSat
       if (mevcut) mevcut.satirlar.push(s);
       else map.set(anahtar, { ders: s.ders, ustKonu: s.ustKonu, satirlar: [s] });
     }
-    return Array.from(map.values());
+    const gruplar = Array.from(map.values());
+    // Kullanıcı isteği: tamamen "Yeterli" işaretlenmiş (hakim olunan) üst
+    // başlıklar listenin en altına atılsın — öğrenci hâlâ çalışması gereken
+    // konulara odaklansın. Kısmen hakim olunan gruplar (en az bir alt konu
+    // hâlâ Orta/Yetersiz/işaretlenmemiş) yerinde, müfredat sırasında kalır.
+    const tamamenHakimMi = (g: { satirlar: KonuHakimiyetiSatiri[] }) =>
+      g.satirlar.every((s) => s.hakimiyetSeviyesi === "yakin");
+    return gruplar
+      .map((g, sira) => ({ g, sira, hakim: tamamenHakimMi(g) }))
+      .sort((a, b) => (a.hakim === b.hakim ? a.sira - b.sira : a.hakim ? 1 : -1))
+      .map((x) => x.g);
   }, [gorunenSatirlar]);
 
   const donutVeri = toplam > 0
@@ -179,7 +193,8 @@ function KonuSatiri({ satir }: { satir: KonuHakimiyetiSatiri }) {
         <span style={{ color: TEXT }} className="text-xs font-semibold">{satir.konu}</span>
         <span className="flex items-center gap-1.5 shrink-0">
           {satir.hakimiyetSeviyesi ? (
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: BG1_ALT, color: HAKIMIYET_RENK[satir.hakimiyetSeviyesi] }}>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+              style={{ background: HAKIMIYET_BG[satir.hakimiyetSeviyesi], color: HAKIMIYET_RENK[satir.hakimiyetSeviyesi], border: `1px solid ${HAKIMIYET_RENK[satir.hakimiyetSeviyesi]}` }}>
               {HAKIMIYET_SEVIYESI_ETIKET[satir.hakimiyetSeviyesi]}
             </span>
           ) : (
