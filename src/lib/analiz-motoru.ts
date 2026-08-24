@@ -421,3 +421,85 @@ export function hedefIcgorusu(tur: "TYT" | "AYT", sonuc: HedefProjeksiyonuSonucu
   if (sonuc.gerekenHaftalikIvme !== null) return `${tur} hedefine ulaşmak için haftada ortalama +${sonuc.gerekenHaftalikIvme} net'lik bir ivme gerekiyor.`;
   return null;
 }
+
+// ============ Katman 6: kohort karşılaştırması ============
+//
+// Faz A5 — kullanıcı kararı (25.08.2026, açık soru 2): "öğretmen tarafı
+// yeterli" — bu katmanın çıktısı SADECE öğretmen/müdür/admin görünümünde
+// gösterilir, ÖĞRENCİYE HİÇ GÖSTERİLMEZ (motivasyon riski — bir öğrencinin
+// "sınıfının en altındasın" görmesi ters tepebilir). Bkz. AnalizPaneli'nin
+// ogretmenGorunumu prop'u — bu katman student-facing hiçbir kod yolunda
+// ÇAĞRILMAZ bile (veri çekme fonksiyonu da sadece öğretmen/admin çağrı
+// noktalarından import edilir, bkz. src/lib/analiz-kohort.ts).
+//
+// k-anonymity: konu_zayiflik_raporu RPC'sinde (migration 0058) kurulan
+// AYNI eşik (≥3) — kohort 3'ten küçükse (kendisi hariç) persentil
+// hesaplanmaz, tek bir sınıf arkadaşının notu ifşa olmasın.
+const KOHORT_MIN_BUYUKLUK = 3;
+
+export interface PersentilSonucu {
+  // 0-100 — kendi değerinin kohortun yüzde kaçının ÜSTÜNDE olduğu.
+  // Kohort yetersizse (< KOHORT_MIN_BUYUKLUK) null — gösterilmemeli.
+  persentil: number | null;
+  kohortBuyuklugu: number;
+}
+
+export function persentilHesapla(kendiDeger: number, digerDegerler: number[]): PersentilSonucu {
+  if (digerDegerler.length < KOHORT_MIN_BUYUKLUK) {
+    return { persentil: null, kohortBuyuklugu: digerDegerler.length };
+  }
+  const altindaOlanSayisi = digerDegerler.filter((d) => d < kendiDeger).length;
+  return { persentil: Math.round((altindaOlanSayisi / digerDegerler.length) * 100), kohortBuyuklugu: digerDegerler.length };
+}
+
+// ============ Katman 7: erken uyarı / risk skoru ============
+//
+// Faz A5 — Katman 6 ile AYNI gerekçeyle SADECE öğretmen/müdür/admin
+// görünümünde gösterilir. Girdiler YENİ bir sorgu GEREKTİRMEZ — hepsi
+// zaten hesaplanmış sinyallerin (Katman 3'ün trendleri, Konu Hakimiyeti'nin
+// "bayat" bayrağı, AnalizVerisi'ndeki tarih listeleri) çağıran tarafta
+// türetilmesi.
+export type RiskDuzeyi = "dusuk" | "orta" | "yuksek";
+
+export interface RiskGirdisi {
+  // En son HERHANGİ bir veri girişinden (konu/soru/deneme) bu yana geçen
+  // gün — hiç veri yoksa null (bu durumda aktivite sinyali atlanır, "hiç
+  // veri yok" zaten başka göstergelerde belli).
+  sonAktiviteGunFarki: number | null;
+  denemeTrendYonu: TrendYonu | null;
+  verimlilikTrendYonu: TrendYonu | null;
+  // Konu Hakimiyeti'nde BEYAN EDİLMİŞ konular arasında 90+ gündür
+  // güncellenmemiş ("bayat") olanların oranı, 0-1. Hiç beyan yoksa null.
+  bayatKonuOrani: number | null;
+}
+
+export interface RiskSonucu {
+  duzey: RiskDuzeyi;
+  puan: number;
+  // Arayüzde "neden bu seviye" şeffaflığı için — hangi sinyaller katkı verdi.
+  nedenler: string[];
+}
+
+const RISK_AKTIVITE_ORTA_GUN = 7;
+const RISK_AKTIVITE_YUKSEK_GUN = 14;
+const RISK_BAYAT_ORANI_ESIGI = 0.5;
+
+export function riskSkoruHesapla(girdi: RiskGirdisi): RiskSonucu {
+  let puan = 0;
+  const nedenler: string[] = [];
+
+  if (girdi.sonAktiviteGunFarki !== null) {
+    const gun = Math.round(girdi.sonAktiviteGunFarki);
+    if (girdi.sonAktiviteGunFarki > RISK_AKTIVITE_YUKSEK_GUN) { puan += 2; nedenler.push(`${gun} gündür hiç veri girişi yok`); }
+    else if (girdi.sonAktiviteGunFarki > RISK_AKTIVITE_ORTA_GUN) { puan += 1; nedenler.push(`${gun} gündür veri girişi yok`); }
+  }
+  if (girdi.denemeTrendYonu === "dusen") { puan += 2; nedenler.push("deneme net trendi düşüyor"); }
+  if (girdi.verimlilikTrendYonu === "dusen") { puan += 1; nedenler.push("verimlilik algısı düşüyor"); }
+  if (girdi.bayatKonuOrani !== null && girdi.bayatKonuOrani > RISK_BAYAT_ORANI_ESIGI) {
+    puan += 1;
+    nedenler.push(`konu hakimiyeti beyanlarının %${Math.round(girdi.bayatKonuOrani * 100)}'i 90+ gündür güncellenmemiş`);
+  }
+
+  const duzey: RiskDuzeyi = puan >= 4 ? "yuksek" : puan >= 2 ? "orta" : "dusuk";
+  return { duzey, puan, nedenler };
+}

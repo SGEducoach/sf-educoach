@@ -14,6 +14,7 @@ import { HosgeldinPopuplari } from "@/components/dashboard/HosgeldinPopuplari";
 import { ZorunluSifreDegisikligiKapisi } from "@/components/dashboard/ZorunluSifreDegisikligiKapisi";
 import { analizVerisiGetir } from "@/lib/analiz";
 import type { RaporDonemi } from "@/lib/analiz";
+import { kohortKarsilastirmasiGetir } from "@/lib/analiz-kohort";
 import { ogrencininZayifKonulariGetir, konuHaritasiGetir } from "@/lib/konu-raporu";
 import { konuHakimiyetiGetir, konuHakimiyetiOzetiGetir, tamGorunumMu, gerekYokHaritasiGetir } from "@/lib/konu-hakimiyeti";
 import { KonuHakimiyetiEkrani } from "@/components/dashboard/KonuHakimiyetiEkrani";
@@ -425,9 +426,10 @@ async function OgretmenIcerik({ userId, role, kurumTuru, secilenSinifId, secilen
     const o = ogrenci as unknown as OgrenciRow | null;
 
     if (o) {
-      const [analiz, konuHakimiyetiOzeti] = await Promise.all([
+      const [analiz, konuHakimiyetiOzeti, kohort] = await Promise.all([
         analizVerisiGetir(supabase, secilenOgrenciId, donem),
         konuHakimiyetiOzetiGetir(supabase, secilenOgrenciId),
+        kohortKarsilastirmasiGetir(supabase, secilenOgrenciId),
       ]);
       const ogrenciAdi = o.profiles?.ad ?? "İsimsiz";
       // Dershane müdürünün "ozet" bölümü yok (bkz. DERSHANE_MUDUR_MENUSU) —
@@ -447,7 +449,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, secilenSinifId, secilen
           <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-bold print:hidden">{ogrenciAdi}</h1>
           <AnalizPaneli veri={analiz} ogrenciAdi={ogrenciAdi}
             konuHakimiyetiSatirlari={konuHakimiyetiOzeti.satirlar} konuHakimiyetiTamGorunum={konuHakimiyetiOzeti.tamGorunum}
-            konuHakimiyetiAytAlan={konuHakimiyetiOzeti.aytAlan} />
+            konuHakimiyetiAytAlan={konuHakimiyetiOzeti.aytAlan} ogretmenGorunumu kohortKarsilastirma={kohort} />
         </div>
       );
     }

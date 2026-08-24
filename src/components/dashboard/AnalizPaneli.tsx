@@ -6,15 +6,16 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip,
   ResponsiveContainer, BarChart, Bar, Legend, PieChart, Pie, Cell,
 } from "recharts";
-import { Sparkles, Clock, Target, TrendingUp, TrendingDown, Minus, Printer, ListChecks, Gauge, Lightbulb, Flag } from "lucide-react";
+import { Sparkles, Clock, Target, TrendingUp, TrendingDown, Minus, Printer, ListChecks, Gauge, Lightbulb, Flag, ShieldAlert } from "lucide-react";
 import type { AnalizVerisi, RaporDonemi } from "@/lib/analiz";
 import { RAPOR_DONEMI_ETIKET } from "@/lib/analiz";
 import { HEDEFE_YAKINLIK_ETIKET, VERIMLILIK_ETIKET } from "@/lib/types";
 import type { AytAlan, HedefeYakinlik } from "@/lib/types";
 import { satirTytdeGosterilsinMi, satirAytdeGosterilsinMi } from "@/lib/konu-hakimiyeti";
 import type { KonuHakimiyetiSatiri } from "@/lib/konu-hakimiyeti";
-import { oncelikSiralamasiOlustur, icgoruMetinleriOlustur } from "@/lib/analiz-motoru";
-import type { TrendSonucu, HizDogrulukKategorisi, OncelikSatiri } from "@/lib/analiz-motoru";
+import { oncelikSiralamasiOlustur, icgoruMetinleriOlustur, riskSkoruHesapla } from "@/lib/analiz-motoru";
+import type { TrendSonucu, HizDogrulukKategorisi, OncelikSatiri, RiskDuzeyi, RiskSonucu } from "@/lib/analiz-motoru";
+import type { KohortKarsilastirmaSatiri } from "@/lib/analiz-kohort";
 import { hedefNetGuncelle } from "@/app/dashboard/veri-actions";
 import {
   BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, TEXT, TEXT_MUTED, MINT, MINT_BG, MINT_ON,
@@ -47,6 +48,7 @@ const HEDEF_RENK: Record<HedefeYakinlik, string> = { yakin: MINT, belirsiz: BUTT
 
 export function AnalizPaneli({
   veri, ogrenciAdi, konuHakimiyetiSatirlari = [], konuHakimiyetiTamGorunum = false, konuHakimiyetiAytAlan = "SAY", hedefDuzenlenebilir = false,
+  ogretmenGorunumu = false, kohortKarsilastirma = [],
 }: {
   veri: AnalizVerisi; ogrenciAdi?: string; konuHakimiyetiSatirlari?: KonuHakimiyetiSatiri[]; konuHakimiyetiTamGorunum?: boolean; konuHakimiyetiAytAlan?: AytAlan;
   // Analiz Motoru Faz A4 — hedef net'i öğrenci KENDİ girer; AnalizPaneli 4
@@ -55,6 +57,12 @@ export function AnalizPaneli({
   // (bkz. dashboard/page.tsx) — başka birinin verisine bakarken düzenleme
   // kontrolü hiç gösterilmez.
   hedefDuzenlenebilir?: boolean;
+  // Analiz Motoru Faz A5 — Katman 6 (kohort) + Katman 7 (risk skoru).
+  // Kullanıcı kararı (25.08.2026, açık soru 2): "öğretmen tarafı yeterli" —
+  // bu SADECE öğretmen/müdür/admin çağrı noktalarından true geçilir,
+  // öğrencinin/velinin kendi görünümünde HİÇ gösterilmez (motivasyon riski).
+  ogretmenGorunumu?: boolean;
+  kohortKarsilastirma?: KohortKarsilastirmaSatiri[];
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -86,6 +94,21 @@ export function AnalizPaneli({
     oncelikSiralamasi,
     hedefProjeksiyonlari: veri.hedefProjeksiyonlari,
   }), [veri.denemeTrendYonu, veri.dersTrendYonu, veri.dersHizDogruluk, oncelikSiralamasi, veri.hedefProjeksiyonlari]);
+
+  // Analiz Motoru Faz A5 — Katman 7 (risk skoru) girdisi: Konu Hakimiyeti'nde
+  // BEYAN EDİLMİŞ konular arasında bayatlamış (90+ gün) olanların oranı.
+  // Hiç beyan yoksa (henüz bu konuda veri girmemiş) null — "bayatlamış"
+  // kavramı henüz anlamlı değil.
+  const bayatKonuOrani = useMemo(() => {
+    const beyanEdilmis = konuHakimiyetiSatirlari.filter((s) => s.hakimiyetSeviyesi !== null);
+    return beyanEdilmis.length > 0 ? beyanEdilmis.filter((s) => s.bayat).length / beyanEdilmis.length : null;
+  }, [konuHakimiyetiSatirlari]);
+  const riskSonucu = useMemo(() => riskSkoruHesapla({
+    sonAktiviteGunFarki: veri.sonAktiviteGunFarki,
+    denemeTrendYonu: veri.denemeTrendYonu.yon,
+    verimlilikTrendYonu: veri.verimlilikTrendYonu.yon,
+    bayatKonuOrani,
+  }), [veri.sonAktiviteGunFarki, veri.denemeTrendYonu.yon, veri.verimlilikTrendYonu.yon, bayatKonuOrani]);
 
   // Ders bazlı ortalama net grafiğinde tekil ders seçilince o dersin
   // net trendi gösteriliyor (§1, yenilikler_1.txt). Dropdown, gerçekten
@@ -131,6 +154,8 @@ export function AnalizPaneli({
           <Printer size={13} /> Yazdır / PDF olarak kaydet
         </button>
       </div>
+
+      {ogretmenGorunumu && <OgretmenGorunumuKarti risk={riskSonucu} kohort={kohortKarsilastirma} />}
 
       <IcgorulerKarti icgoruler={icgoruler} oncelikSiralamasi={hicVeriYok ? [] : oncelikSiralamasi.slice(0, 3)}
         hedefNetTyt={veri.hedefNetTyt} hedefNetAyt={veri.hedefNetAyt} duzenlenebilir={hedefDuzenlenebilir} />
@@ -297,6 +322,60 @@ export function AnalizPaneli({
 
 function BosDurum() {
   return <p style={{ color: TEXT_MUTED }} className="text-sm py-10 text-center">Henüz veri yok.</p>;
+}
+
+const RISK_ETIKET: Record<RiskDuzeyi, string> = { dusuk: "Düşük", orta: "Orta", yuksek: "Yüksek" };
+const RISK_RENK: Record<RiskDuzeyi, string> = { dusuk: MINT, orta: BUTTER, yuksek: BLUSH };
+const RISK_BG: Record<RiskDuzeyi, string> = { dusuk: MINT_BG, orta: BUTTER_BG, yuksek: BLUSH_BG };
+
+// Analiz Motoru Faz A5 — Katman 6 (kohort karşılaştırması) + Katman 7
+// (risk skoru) vitrin bileşeni. Kullanıcı kararı (25.08.2026, açık soru
+// 2): "öğretmen tarafı yeterli" — bu kart SADECE ogretmenGorunumu true
+// iken render edilir (öğrenci/veli görünümünde hiç çağrılmaz bile, bkz.
+// AnalizPaneli). Bu yüzden içerik boş olsa (risk düşük + kohort verisi
+// yok) bile kart GİZLENMİYOR — "risk: düşük" göstermek de bir bilgi
+// (öğretmen için güvence), IcgorulerKarti'nin aksine burada "hiçbir şey
+// yoksa gizle" mantığı uygulanmıyor.
+function OgretmenGorunumuKarti({ risk, kohort }: { risk: RiskSonucu; kohort: KohortKarsilastirmaSatiri[] }) {
+  return (
+    <div className="sfec-fade rounded-3xl p-5 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
+        <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style={{ background: RISK_BG[risk.duzey] }}>
+          <ShieldAlert size={14} color={RISK_RENK[risk.duzey]} />
+        </div>
+        <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Öğretmen Görünümü</span>
+        <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold ml-auto">öğrenciye gösterilmez</span>
+      </div>
+      <div className="flex items-center gap-2 mb-1">
+        <span style={{ color: TEXT_MUTED }} className="text-xs font-semibold">Erken uyarı riski:</span>
+        <span className="text-[11px] font-bold px-2.5 py-1 rounded-full" style={{ background: RISK_BG[risk.duzey], color: RISK_RENK[risk.duzey] }}>
+          {RISK_ETIKET[risk.duzey]}
+        </span>
+      </div>
+      {risk.nedenler.length > 0 && (
+        <ul className="mt-2 flex flex-col gap-1" style={{ margin: 0, padding: 0, listStyle: "none" }}>
+          {risk.nedenler.map((n, i) => (
+            <li key={i} className="text-xs flex items-start gap-1.5" style={{ color: TEXT_MUTED }}>
+              <span className="mt-0.5 shrink-0">•</span><span>{n}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {kohort.length > 0 && (
+        <div className="mt-3 pt-3 flex flex-col gap-1.5" style={{ borderTop: `1px solid ${BORDER}` }}>
+          <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Sınıf içi karşılaştırma</span>
+          {kohort.map((k) => (
+            <div key={k.tur} className="text-xs" style={{ color: TEXT }}>
+              <span className="font-semibold">{k.tur}</span> · son net {k.kendiNet}
+              {k.persentil.persentil !== null
+                ? <> — sınıfının <span className="font-semibold">%{k.persentil.persentil}</span>&apos;inin üzerinde ({k.persentil.kohortBuyuklugu} sınıf arkadaşıyla karşılaştırıldı)</>
+                : <span style={{ color: TEXT_MUTED }}> — karşılaştırma için sınıfta yeterli veri yok</span>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // Analiz Motoru Faz A3 — Katman 8+9'un vitrin bileşeni. "Yapay Zeka

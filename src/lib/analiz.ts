@@ -48,6 +48,14 @@ export interface AnalizVerisi {
   hedefNetTyt: number | null;
   hedefNetAyt: number | null;
   hedefProjeksiyonlari: { tur: "TYT" | "AYT"; sonuc: HedefProjeksiyonuSonucu }[];
+  // Analiz Motoru Faz A5 — Katman 7'nin (risk skoru, SADECE öğretmen/
+  // müdür/admin görünümünde kullanılır — bkz. analiz-motoru.ts) girdisi.
+  // Haftalık verimlilik puanının trendi Katman 3'ün AYNI regresyon
+  // motoruyla, yeni bir sinyale (verimlilik) uygulanması. Son aktivite
+  // gün farkı, zaten çekilmiş üç aktivite listesinin (deneme/konu/soru)
+  // en son tarihinden türetilir — YENİ bir sorgu gerekmez.
+  verimlilikTrendYonu: TrendSonucu;
+  sonAktiviteGunFarki: number | null;
 }
 
 const VERIMLILIK_PUAN: Record<VerimlilikDuzeyi, number> = {
@@ -74,6 +82,16 @@ export async function analizVerisiGetir(
   // Faz A4 — hedef net, tarih aralığı filtresi UYGULANMAZ (profil alanı,
   // aktivite kaydı değil).
   const hedefQuery = supabase.from("students").select("hedef_net_tyt, hedef_net_ayt").eq("id", studentId).single();
+  // Faz A5, Katman 7 girdisi — en son aktivite tarihi, donem filtresinden
+  // BAĞIMSIZ (hedefQuery ile aynı gerekçe): "Haftalık" rapor görünümünde
+  // bir öğrencinin son 7 günde veri girmemiş olması, denemeTrend/konuCalisma/
+  // soruCozumu listeleri o pencereye göre filtrelendiğinde "hiç aktivite
+  // yok → null → risk cezası YOK" gibi YANLIŞ bir sonuca yol açardı — oysa
+  // "erken uyarı" tam olarak bu durumu yakalamalı. Bu yüzden üç ayrı, hafif
+  // (sadece en son tarih) sorgu HER ZAMAN tüm zamanlar üzerinden çalışır.
+  const sonDenemeTarihiQuery = supabase.from("denemeler").select("tarih").eq("student_id", studentId).order("tarih", { ascending: false }).limit(1);
+  const sonKonuTarihiQuery = supabase.from("konu_calismalar").select("tarih").eq("student_id", studentId).order("tarih", { ascending: false }).limit(1);
+  const sonSoruTarihiQuery = supabase.from("soru_cozumleri").select("tarih").eq("student_id", studentId).order("tarih", { ascending: false }).limit(1);
 
   if (baslangic) {
     denemeQuery = denemeQuery.gte("tarih", baslangic);
@@ -88,7 +106,13 @@ export async function analizVerisiGetir(
     { data: sorular },
     { data: verimlilikler },
     { data: hedefSatiri },
-  ] = await Promise.all([denemeQuery, konuQuery, soruQuery, verimlilikQuery, hedefQuery]);
+    { data: sonDenemeTarihiSatir },
+    { data: sonKonuTarihiSatir },
+    { data: sonSoruTarihiSatir },
+  ] = await Promise.all([
+    denemeQuery, konuQuery, soruQuery, verimlilikQuery, hedefQuery,
+    sonDenemeTarihiQuery, sonKonuTarihiQuery, sonSoruTarihiQuery,
+  ]);
 
   type DenemeRow = { id: string; tarih: string; tur: "TYT" | "AYT"; hedefe_yakinlik: HedefeYakinlik; deneme_ders_sonuclari: { dogru: number; yanlis: number }[] };
   type KonuRow = { tarih: string; sure_dakika: number; hedefe_yakinlik: HedefeYakinlik };
@@ -233,6 +257,26 @@ export async function analizVerisiGetir(
     });
   }
 
+  // Faz A5, Katman 7 girdisi — haftalık verimlilik puanının trendi.
+  // verimlilikListesi zaten created_at'e göre artan sıralı (verimlilikQuery
+  // .order("created_at")).
+  const verimlilikNoktalari: RegresyonNoktasi[] = haftalikVerimlilik.map((v) => ({
+    gunOffset: tarihGunFarki(v.tarih, haftalikVerimlilik[0]?.tarih ?? v.tarih),
+    deger: v.puan,
+  }));
+  const verimlilikTrendYonu = trendHesapla(verimlilikNoktalari);
+
+  // Faz A5, Katman 7 girdisi — en son HERHANGİ bir aktivite (deneme/konu/
+  // soru) tarihinden bugüne gün farkı (yukarıdaki donem'den BAĞIMSIZ üç
+  // sorgudan — bkz. yukarıdaki not).
+  const sonAktiviteTarihleri = [sonDenemeTarihiSatir, sonKonuTarihiSatir, sonSoruTarihiSatir]
+    .map((satir) => (satir as { tarih: string }[] | null)?.[0]?.tarih)
+    .filter((t): t is string => t !== undefined);
+  const sonAktiviteTarihi = sonAktiviteTarihleri.length > 0
+    ? sonAktiviteTarihleri.reduce((en, t) => (t > en ? t : en))
+    : null;
+  const sonAktiviteGunFarki = sonAktiviteTarihi === null ? null : (Date.now() - new Date(sonAktiviteTarihi).getTime()) / (1000 * 3600 * 24);
+
   const bugun = new Date();
   const buHaftaBaslangic = new Date(bugun);
   buHaftaBaslangic.setDate(bugun.getDate() - 6);
@@ -264,5 +308,7 @@ export async function analizVerisiGetir(
     hedefNetTyt,
     hedefNetAyt,
     hedefProjeksiyonlari,
+    verimlilikTrendYonu,
+    sonAktiviteGunFarki,
   };
 }
