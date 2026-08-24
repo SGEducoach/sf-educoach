@@ -845,6 +845,81 @@
   "seviye": "TYT"
  },
  {
+  "ders": "Türkçe (Maarif)",
+  "konu": "Okuma Kültürü ve Metin Türleri",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Türkçe (Maarif)",
+  "konu": "Dinleme/İzleme Becerileri",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Türkçe (Maarif)",
+  "konu": "Konuşma Becerileri",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Türkçe (Maarif)",
+  "konu": "Yazma Becerileri",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Türkçe (Maarif)",
+  "konu": "Söz Varlığı ve Dil Bilgisi Uygulamaları",
+  "seviye": "9. Sınıf"
+ },
+ {
+  "ders": "Türkçe (Maarif)",
+  "konu": "Metin Türleri: Bilgilendirici ve Öyküleyici",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Türkçe (Maarif)",
+  "konu": "Şiir İncelemesi",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Türkçe (Maarif)",
+  "konu": "Anlatım Biçimleri ve Düşünceyi Geliştirme Yolları",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Türkçe (Maarif)",
+  "konu": "Yazılı ve Sözlü Anlatım Uygulamaları",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Türkçe (Maarif)",
+  "konu": "Dil Bilgisi ve Anlatım Bozuklukları",
+  "seviye": "10. Sınıf"
+ },
+ {
+  "ders": "Türkçe (Maarif)",
+  "konu": "Eleştirel Okuma ve Metin Çözümleme",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Türkçe (Maarif)",
+  "konu": "Tartışmacı ve Bilgilendirici Metinler",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Türkçe (Maarif)",
+  "konu": "Sözlü Anlatım ve Tartışma Teknikleri",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Türkçe (Maarif)",
+  "konu": "Yazılı Anlatım: Deneme ve Eleştiri",
+  "seviye": "11. Sınıf"
+ },
+ {
+  "ders": "Türkçe (Maarif)",
+  "konu": "İleri Dil Bilgisi ve Anlatım Bozuklukları",
+  "seviye": "11. Sınıf"
+ },
+ {
   "ders": "Edebiyat",
   "konu": "Güzel Sanatlar ve Edebiyat",
   "seviye": "AYT"

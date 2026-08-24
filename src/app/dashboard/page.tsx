@@ -170,7 +170,7 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
     gerekYokSeti,
     { data: gorevAtamalariHam },
   ] = await Promise.all([
-    supabase.from("students").select("okul_no, ayt_alan, hedef_bolum, schools(ad), classes(seviye, sube)").eq("id", userId).single(),
+    supabase.from("students").select("okul_no, ayt_alan, hedef_bolum, schools(ad, tur), classes(seviye, sube)").eq("id", userId).single(),
     analizVerisiGetir(supabase, userId, donem),
     // Konu girişi sırasında öneri (datalist): resmî müfredat listesi (188
     // konu, sınıf etiketli) + öğrencilerin serbest girip daha önce
@@ -207,7 +207,7 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
 
   type Row = {
     okul_no: string; ayt_alan: AytAlan; hedef_bolum: string;
-    schools: { ad: string } | null; classes: { seviye: string; sube: string } | null;
+    schools: { ad: string; tur: string } | null; classes: { seviye: string; sube: string } | null;
   };
   const s = student as unknown as Row | null;
 
@@ -262,8 +262,9 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
   // Faz H2 — Konu Hakimiyeti: sadece kendi sekmesinde, gereksiz sorguyu
   // diğer sekmelerde atlıyoruz (aynı dokuzOnMu'ya bağlı olduğu için de
   // student sorgusundan sonra, mufredatAltKonulari ile aynı gerekçeyle).
+  const dershaneMi = s.schools?.tur === "dershane";
   const konuHakimiyetiSatirlari = aktifBolum === "konu-hakimiyeti"
-    ? await konuHakimiyetiGetir(supabase, userId, s.classes?.seviye ?? null, s.ayt_alan, dokuzOnMu)
+    ? await konuHakimiyetiGetir(supabase, userId, s.classes?.seviye ?? null, s.ayt_alan, dokuzOnMu, dershaneMi)
     : [];
 
   type GorevAtamaRow = {
@@ -604,15 +605,16 @@ async function VeliIcerik({ userId, ad, secilenOgrenciId, donem, aktifBolum }: {
 async function VeliKonuHakimiyetiOzeti({ supabase, studentId }: { supabase: Awaited<ReturnType<typeof createClient>>; studentId: string }) {
   const { data: cocuk } = await supabase
     .from("students")
-    .select("ayt_alan, classes(seviye)")
+    .select("ayt_alan, classes(seviye), schools(tur)")
     .eq("id", studentId)
     .single();
-  type CocukRow = { ayt_alan: AytAlan; classes: { seviye: string } | null };
+  type CocukRow = { ayt_alan: AytAlan; classes: { seviye: string } | null; schools: { tur: string } | null };
   const c = cocuk as unknown as CocukRow | null;
   if (!c) return null;
 
   const dokuzOnMuCocuk = dokuzOnSinifMi(c.classes?.seviye ?? null);
-  const satirlar = await konuHakimiyetiGetir(supabase, studentId, c.classes?.seviye ?? null, c.ayt_alan, dokuzOnMuCocuk);
+  const dershaneMiCocuk = c.schools?.tur === "dershane";
+  const satirlar = await konuHakimiyetiGetir(supabase, studentId, c.classes?.seviye ?? null, c.ayt_alan, dokuzOnMuCocuk, dershaneMiCocuk);
   const hakimSayisi = satirlar.filter((s) => s.hakimiyetSeviyesi === "yakin").length;
   if (satirlar.length === 0) return null;
 
