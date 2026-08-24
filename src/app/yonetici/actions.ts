@@ -11,6 +11,7 @@ import { duyuruGonder, pushGonderProfile } from "@/lib/push-send";
 import { DUYURU_MIN_UZUNLUK, duyuruGonderimIzniKontrol } from "@/lib/duyuru-guvenligi";
 import { dersSoruSayisi, sinifSiraKarsilastir } from "@/lib/types";
 import type { AytAlan, DenemeTuru, DenemeZorlugu, UserRole } from "@/lib/types";
+import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
 
 const DUYURU_MAKS_UZUNLUK = 500;
 
@@ -1002,4 +1003,86 @@ export async function adminGonderilenDuyurularGetir(): Promise<{ error: string |
       createdAt: d.created_at as string, aliciSayisi: aliciSayilari.get(d.id as string) ?? 0,
     })),
   };
+}
+
+// ============ Faz K4 — Müfredat hiyerarşisi (üst başlık → alt başlık) ============
+// Üst başlıklar statik (MUFREDAT_KONULARI, 9./10./11. Sınıf seviyeli
+// kayıtlar) — sadece alt başlıklar DB'de (mufredat_alt_konular, migration
+// 0054). Türkçe kasıtlı olarak dışarıda: bütün seviyelerde düz TYT
+// müfredatı olarak kalıyor (bkz. plan, Faz K4 revizyonu — Maarif Modeli
+// Türkçe için ayrı konu başlığı vermiyor).
+const MAARIF_SEVIYELER = ["9. Sınıf", "10. Sınıf", "11. Sınıf"];
+
+export async function mufredatDersleriGetir(): Promise<string[]> {
+  const dersler = new Set(
+    MUFREDAT_KONULARI.filter((k) => MAARIF_SEVIYELER.includes(k.seviye) && k.ders !== "Türkçe").map((k) => k.ders),
+  );
+  return Array.from(dersler).sort((a, b) => a.localeCompare(b, "tr"));
+}
+
+export interface MufredatUstBaslikSatiri {
+  ders: string;
+  konu: string;
+  seviye: string;
+  altBaslikSayisi: number;
+}
+
+export async function mufredatUstBasliklariGetir(ders: string): Promise<{ error: string | null; satirlar: MufredatUstBaslikSatiri[] }> {
+  const { supabase } = await requireAdmin();
+  const ustBasliklar = MUFREDAT_KONULARI.filter((k) => k.ders === ders && MAARIF_SEVIYELER.includes(k.seviye));
+  const { data, error } = await supabase.from("mufredat_alt_konular").select("ust_konu").eq("ders", ders);
+  if (error) return { error: error.message, satirlar: [] };
+
+  const sayilar = new Map<string, number>();
+  for (const r of (data ?? []) as { ust_konu: string }[]) sayilar.set(r.ust_konu, (sayilar.get(r.ust_konu) ?? 0) + 1);
+
+  const satirlar = ustBasliklar
+    .map((k) => ({ ders: k.ders, konu: k.konu, seviye: k.seviye, altBaslikSayisi: sayilar.get(k.konu) ?? 0 }))
+    .sort((a, b) => a.seviye.localeCompare(b.seviye, "tr", { numeric: true }) || a.konu.localeCompare(b.konu, "tr"));
+  return { error: null, satirlar };
+}
+
+export interface MufredatAltKonuSatiri { id: string; altBaslik: string; sira: number; }
+
+export async function mufredatAltKonularGetir(ders: string, ustKonu: string): Promise<{ error: string | null; satirlar: MufredatAltKonuSatiri[] }> {
+  const { supabase } = await requireAdmin();
+  const { data, error } = await supabase
+    .from("mufredat_alt_konular")
+    .select("id, alt_baslik, sira")
+    .eq("ders", ders).eq("ust_konu", ustKonu)
+    .order("sira");
+  if (error) return { error: error.message, satirlar: [] };
+  return {
+    error: null,
+    satirlar: ((data ?? []) as { id: string; alt_baslik: string; sira: number }[]).map((r) => ({ id: r.id, altBaslik: r.alt_baslik, sira: r.sira })),
+  };
+}
+
+export async function mufredatAltKonuEkle(ders: string, ustKonu: string, altBaslik: string): Promise<{ error: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const temiz = altBaslik.trim();
+  if (!temiz) return { error: "Alt başlık boş olamaz." };
+
+  const { data: mevcut } = await supabase
+    .from("mufredat_alt_konular")
+    .select("sira")
+    .eq("ders", ders).eq("ust_konu", ustKonu)
+    .order("sira", { ascending: false })
+    .limit(1);
+  const sonrakiSira = ((mevcut?.[0]?.sira as number | undefined) ?? -1) + 1;
+
+  const { error } = await admin.from("mufredat_alt_konular").insert({ ders, ust_konu: ustKonu, alt_baslik: temiz, sira: sonrakiSira });
+  if (error) return { error: error.message };
+  await auditLogYaz(supabase, user.id, "mufredat_alt_konu_ekle", { ders, ust_konu: ustKonu, alt_baslik: temiz });
+  revalidatePath("/yonetici");
+  return { error: null };
+}
+
+export async function mufredatAltKonuSil(id: string): Promise<{ error: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const { error } = await admin.from("mufredat_alt_konular").delete().eq("id", id);
+  if (error) return { error: error.message };
+  await auditLogYaz(supabase, user.id, "mufredat_alt_konu_sil", { id });
+  revalidatePath("/yonetici");
+  return { error: null };
 }

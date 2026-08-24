@@ -7,7 +7,7 @@ import type {
 } from "@/lib/types";
 import {
   TYT_DERSLERI, AYT_DERSLERI, BRANS_DENEMESI_DERSLERI, TAKIP_SORUSU, VERIMLILIK_ETIKET, netHesapla, dersSoruSayisi,
-  SURE_UST_SINIR, KATEGORI_GERIYE_DONUK_SINIR, dokuzOnSinifMi,
+  SURE_UST_SINIR, KATEGORI_GERIYE_DONUK_SINIR, dokuzOnSinifMi, maarifHiyerarsiSinifMi,
 } from "@/lib/types";
 import {
   BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, SKY, SKY_BG, TEXT, TEXT_MUTED, BLUSH,
@@ -97,11 +97,12 @@ function SecenekSecici<T extends string>({ baslik, secenekler, value, onChange }
   );
 }
 
-export function OgrenciVeriGirisi({ aytAlan, konuOnerileri, sinifSeviyesi, konuSayaclari }: {
+export function OgrenciVeriGirisi({ aytAlan, konuOnerileri, sinifSeviyesi, konuSayaclari, mufredatAltKonulari }: {
   aytAlan: AytAlan;
   konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
   sinifSeviyesi?: string | null;
   konuSayaclari?: Record<string, { tamamlanan: number; toplam: number }>;
+  mufredatAltKonulari?: { ders: string; ustKonu: string; altBaslik: string }[];
 }) {
   const [sekme, setSekme] = useState<Sekme>("konu");
   const [verimlilikSor, setVerimlilikSor] = useState(false);
@@ -149,7 +150,7 @@ export function OgrenciVeriGirisi({ aytAlan, konuOnerileri, sinifSeviyesi, konuS
           })}
         </div>
 
-        {sekme === "konu" && <KonuCalismaForm dersListesi={dersListesi} konuOnerileri={konuOnerileri} konuSayaclari={konuSayaclari} onBasari={basariGoster} />}
+        {sekme === "konu" && <KonuCalismaForm dersListesi={dersListesi} konuOnerileri={konuOnerileri} konuSayaclari={konuSayaclari} sinifSeviyesi={sinifSeviyesi} mufredatAltKonulari={mufredatAltKonulari} onBasari={basariGoster} />}
         {sekme === "soru" && <SoruCozumuForm dersListesi={dersListesi} konuOnerileri={konuOnerileri} onBasari={basariGoster} />}
         {sekme === "deneme" && <DenemeForm aytAlan={aytAlan} dokuzOnMu={dokuzOnMu} onBasari={basariGoster} />}
       </div>
@@ -184,9 +185,11 @@ function KonuOneriDropdown({ oneriler, aktif, onSec }: {
 // Akış: önce ders+konu seçilir (eksik olduğun konuyu SEN bulursun), "Konuyu
 // oku" ile o an AI anlatımı gösterilir; süre ve konuya hakimiyet — yani
 // konuyu ne kadar anladığın — bunu OKUDUKTAN/çalıştıktan SONRA girilir.
-export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, onBasari, prefillDers, prefillKonu, gorevAtamaId }: {
+export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, sinifSeviyesi, mufredatAltKonulari, onBasari, prefillDers, prefillKonu, gorevAtamaId }: {
   dersListesi: string[]; konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
   konuSayaclari?: Record<string, { tamamlanan: number; toplam: number }>;
+  sinifSeviyesi?: string | null;
+  mufredatAltKonulari?: { ders: string; ustKonu: string; altBaslik: string }[];
   onBasari: (m: string, s: boolean) => void;
   prefillDers?: string; prefillKonu?: string; gorevAtamaId?: string;
 }) {
@@ -194,6 +197,11 @@ export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, onB
   const [konu, setKonu] = useState(prefillKonu ?? "");
   const [aramaMetni, setAramaMetni] = useState(prefillKonu ?? "");
   const [oneriAcik, setOneriAcik] = useState(false);
+  // Faz K4 — 9-10-11. sınıf, Türkçe hariç: serbest metin yerine üst
+  // başlık→alt başlık gruplu seçici gösteriliyor (bkz. altta ustBasliklar/
+  // altBasliklar). Türkçe bütün seviyelerde düz TYT müfredatı olarak kalıyor.
+  const hiyerarsiAktif = maarifHiyerarsiSinifMi(sinifSeviyesi) && !!ders && ders !== "Türkçe";
+  const [ustBaslik, setUstBaslik] = useState("");
   const [hedefeYakinlik, setHedefeYakinlik] = useState<HedefeYakinlik>("belirsiz");
   // Konu bilme/bilmeme göstergesi — "Konuya hakimiyet" seçimine göre
   // farklı bir 2. aşama takip sorusu geliyor (bkz. TAKIP_SORUSU,
@@ -221,6 +229,17 @@ export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, onB
   );
   const seciliKonuSeviyesi = konuOnerileri.find((o) => o.ders === ders && o.konu === konu)?.seviye;
 
+  // Faz K4 — üst başlıklar: konuOnerileri zaten MUFREDAT_KONULARI'ni içeriyor
+  // (bkz. dashboard/page.tsx), o yüzden seviye etiketi "{sinifSeviyesi}. Sınıf"
+  // ile eşleşenler üst başlık adayı. Alt başlıklar seçilen üst başlığa göre
+  // mufredatAltKonulari'ndan filtrelenir.
+  const ustBasliklar = hiyerarsiAktif
+    ? konuOnerileri.filter((o) => o.ders === ders && o.seviye === `${sinifSeviyesi}. Sınıf`)
+    : [];
+  const altBasliklar = hiyerarsiAktif && ustBaslik
+    ? (mufredatAltKonulari ?? []).filter((a) => a.ders === ders && a.ustKonu === ustBaslik)
+    : [];
+
   // Konu seçilince kutuya yazılır ve üstte rozet gösterilir; "Konuyu oku"ya
   // basılınca kutu temizlenir (okuma o an açık), oku kapatılınca ise seçili
   // konu (ve rozet) tamamen sıfırlanır — yeni bir arama için hazır olunur.
@@ -232,22 +251,35 @@ export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, onB
     setAnlatimSeviye(null);
   }
 
+  // Faz K4 — üst başlık seçilince: altında kayıtlı alt başlık varsa konu
+  // boş bırakılır (kullanıcı 2. seçiciden birini seçmeli), yoksa üst
+  // başlığın kendisi doğrudan konu olarak kullanılır (yaprak seçim).
+  function ustBaslikSec(secilenUstBaslik: string) {
+    setUstBaslik(secilenUstBaslik);
+    const altlar = (mufredatAltKonulari ?? []).filter((a) => a.ders === ders && a.ustKonu === secilenUstBaslik);
+    if (altlar.length === 0) { setKonu(secilenUstBaslik); setAramaMetni(secilenUstBaslik); }
+    else { setKonu(""); setAramaMetni(""); }
+    setAnlatim(null);
+    setAnlatimSeviye(null);
+  }
+
   function konuyuOku() {
     if (!ders || !konu.trim()) return setAnlatimHata("Önce ders ve konu girin.");
     const aciliyor = !anlatimAcik;
     setAnlatimAcik(aciliyor);
 
     if (!aciliyor) {
-      // Kapatılıyor: seçili konuyu (ve rozeti) sıfırla, arama kutusu boş kalsın.
-      setKonu("");
-      setAramaMetni("");
+      // Kapatılıyor: serbest metin modunda seçili konuyu (ve rozeti)
+      // sıfırla, arama kutusu boş kalsın — hiyerarşi modunda ise
+      // üst başlık/alt başlık seçimi kalıcı (panel kapansa da bozulmasın).
+      if (!hiyerarsiAktif) { setKonu(""); setAramaMetni(""); }
       setAnlatim(null);
       setAnlatimSeviye(null);
       setAnlatimHata(null);
       return;
     }
 
-    setAramaMetni("");
+    if (!hiyerarsiAktif) setAramaMetni("");
     if (anlatim || anlatimYukleniyor) return;
     setAnlatimYukleniyor(true);
     setAnlatimHata(null);
@@ -274,7 +306,7 @@ export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, onB
       const res = await konuCalismaEkle(formData);
       if (res.error) return setHata(res.error);
       onBasari("Konu çalışması kaydedildi.", res.verimlilikSorulsunMu);
-      setKonu(""); setAramaMetni(""); setAnlatim(null); setAnlatimSeviye(null); setAnlatimAcik(false); setHedefeYakinlik("belirsiz"); setTakipCevabi(TAKIP_SORUSU.belirsiz.secenekler[0][0]); setYayinevi(""); setTarih(bugununTarihi());
+      setKonu(""); setAramaMetni(""); setUstBaslik(""); setAnlatim(null); setAnlatimSeviye(null); setAnlatimAcik(false); setHedefeYakinlik("belirsiz"); setTakipCevabi(TAKIP_SORUSU.belirsiz.secenekler[0][0]); setYayinevi(""); setTarih(bugununTarihi());
     });
   }
 
@@ -290,37 +322,64 @@ export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, onB
             </span>
           )}
         </div>
-        <Secim value={ders} onChange={(e) => { setDers(e.target.value); setKonu(""); setAramaMetni(""); setAnlatim(null); setAnlatimAcik(false); }} required>
+        <Secim value={ders} onChange={(e) => { setDers(e.target.value); setKonu(""); setAramaMetni(""); setUstBaslik(""); setAnlatim(null); setAnlatimAcik(false); }} required>
           <option value="" disabled>Seçiniz</option>
           {dersListesi.map((d) => <option key={d} value={d}>{d}</option>)}
         </Secim>
       </label>
 
-      <label className="flex flex-col gap-1 relative">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <Etiket>Konu</Etiket>
-          {seciliKonuSeviyesi && (
-            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: SKY_BG, color: SKY }}>{seciliKonuSeviyesi}</span>
+      {hiyerarsiAktif ? (
+        <>
+          <label className="flex flex-col gap-1"><Etiket>Ünite</Etiket>
+            <Secim value={ustBaslik} onChange={(e) => ustBaslikSec(e.target.value)}>
+              <option value="" disabled>Seçiniz</option>
+              {ustBasliklar.map((u) => <option key={u.konu} value={u.konu}>{u.konu}</option>)}
+            </Secim>
+          </label>
+          {altBasliklar.length > 0 && (
+            <label className="flex flex-col gap-1"><Etiket>Konu</Etiket>
+              <Secim value={konu} onChange={(e) => { setKonu(e.target.value); setAramaMetni(e.target.value); setAnlatim(null); setAnlatimSeviye(null); }}>
+                <option value="" disabled>Seçiniz</option>
+                {altBasliklar.map((a) => <option key={a.altBaslik} value={a.altBaslik}>{a.altBaslik}</option>)}
+              </Secim>
+            </label>
           )}
           {konu && (
-            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: MINT_BG, color: MINT }}>{konu}</span>
+            <button type="button" onClick={konuyuOku}
+              className="sfec-btn self-start flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-xl"
+              style={{ background: SKY_BG, color: SKY, border: `1px solid rgba(143,198,255,0.3)` }}>
+              {anlatimYukleniyor ? <Loader2 size={13} className="animate-spin" /> : anlatimAcik ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+              Konuyu oku
+            </button>
           )}
-        </div>
-        <div className="flex gap-2">
-          <Girdi placeholder="örn. Türev - Zincir Kuralı" value={aramaMetni} autoComplete="off"
-            onFocus={() => setOneriAcik(true)}
-            onBlur={() => setTimeout(() => setOneriAcik(false), 120)}
-            onChange={(e) => { setAramaMetni(e.target.value); setKonu(e.target.value); setOneriAcik(true); setAnlatim(null); setAnlatimSeviye(null); }}
-            disabled={!ders} />
-          <button type="button" onClick={konuyuOku} disabled={!ders || !konu.trim()}
-            className="sfec-btn shrink-0 flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"
-            style={{ background: SKY_BG, color: SKY, border: `1px solid rgba(143,198,255,0.3)` }}>
-            {anlatimYukleniyor ? <Loader2 size={13} className="animate-spin" /> : anlatimAcik ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-            Konuyu oku
-          </button>
-        </div>
-        <KonuOneriDropdown oneriler={oneriler} aktif={oneriAcik && !!ders} onSec={konuSec} />
-      </label>
+        </>
+      ) : (
+        <label className="flex flex-col gap-1 relative">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <Etiket>Konu</Etiket>
+            {seciliKonuSeviyesi && (
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: SKY_BG, color: SKY }}>{seciliKonuSeviyesi}</span>
+            )}
+            {konu && (
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: MINT_BG, color: MINT }}>{konu}</span>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Girdi placeholder="örn. Türev - Zincir Kuralı" value={aramaMetni} autoComplete="off"
+              onFocus={() => setOneriAcik(true)}
+              onBlur={() => setTimeout(() => setOneriAcik(false), 120)}
+              onChange={(e) => { setAramaMetni(e.target.value); setKonu(e.target.value); setOneriAcik(true); setAnlatim(null); setAnlatimSeviye(null); }}
+              disabled={!ders} />
+            <button type="button" onClick={konuyuOku} disabled={!ders || !konu.trim()}
+              className="sfec-btn shrink-0 flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"
+              style={{ background: SKY_BG, color: SKY, border: `1px solid rgba(143,198,255,0.3)` }}>
+              {anlatimYukleniyor ? <Loader2 size={13} className="animate-spin" /> : anlatimAcik ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+              Konuyu oku
+            </button>
+          </div>
+          <KonuOneriDropdown oneriler={oneriler} aktif={oneriAcik && !!ders} onSec={konuSec} />
+        </label>
+      )}
 
       {anlatimAcik && (
         <div className="rounded-2xl p-3.5" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>

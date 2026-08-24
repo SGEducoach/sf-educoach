@@ -19,6 +19,16 @@ export function dokuzOnSinifMi(seviye: string | null | undefined): boolean {
   return seviye === "9" || seviye === "10";
 }
 
+// Konu bilme/bilmeme göstergesi (Faz K4) — müfredat üst başlık/alt başlık
+// hiyerarşisi 9-10-11. sınıf için geçerli (12. sınıf TYT/AYT'ye tam
+// girdiği için düz liste kalıyor). BİLEREK dokuzOnSinifMi'den bağımsız
+// bir fonksiyon: o hâlâ sadece TYT/AYT↔Branş Denemesi ayrımı için
+// kullanılıyor (11. sınıf gerçek TYT/AYT'ye girer, Branş Denemesi'ne
+// değil) — iki kontrol farklı amaçlara hizmet ediyor, birleştirilmedi.
+export function maarifHiyerarsiSinifMi(seviye: string | null | undefined): boolean {
+  return seviye === "9" || seviye === "10" || seviye === "11";
+}
+
 // classes.seviye bir text sütun olduğu için DB'nin kendi .order("seviye")'si
 // alfabetik sıralar ("10" < "11" < "12" < "9") — 9-10 eklenene kadar 11/12
 // tesadüfen doğru sıradaydı. Sınıf listesi gösterilen her yerde (kayıt formu,

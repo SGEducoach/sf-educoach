@@ -15,7 +15,7 @@ import { ZorunluSifreDegisikligiKapisi } from "@/components/dashboard/ZorunluSif
 import { analizVerisiGetir } from "@/lib/analiz";
 import type { RaporDonemi } from "@/lib/analiz";
 import { ogrencininZayifKonulariGetir, konuHaritasiGetir } from "@/lib/konu-raporu";
-import { AYT_ALAN_ETIKET, sinifSiraKarsilastir, dokuzOnSinifMi, TYT_DERSLERI, AYT_DERSLERI } from "@/lib/types";
+import { AYT_ALAN_ETIKET, sinifSiraKarsilastir, dokuzOnSinifMi, maarifHiyerarsiSinifMi, TYT_DERSLERI, AYT_DERSLERI } from "@/lib/types";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
 import type { AytAlan, KurumTuru, UserRole } from "@/lib/types";
 import { BG1, BG1_ALT, BORDER, BORDER_STRONG, TEXT, TEXT_MUTED, MINT, MINT_BG } from "@/lib/theme";
@@ -212,6 +212,17 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
     ? await ogrencininZayifKonulariGetir(supabase, userId)
     : [];
 
+  // Faz K4 — 9-10-11. sınıf müfredat üst başlık/alt başlık hiyerarşisi:
+  // sadece "veri-girisi" sekmesinde ve sadece ilgili sınıf seviyesinde
+  // gerekiyor, tablo küçük (herkese açık select, RLS: true) olduğu için
+  // tek sorguda hepsi çekiliyor, client tarafında ders+üst başlık ile filtrelenir.
+  let mufredatAltKonulari: { ders: string; ustKonu: string; altBaslik: string }[] = [];
+  if (aktifBolum === "veri-girisi" && maarifHiyerarsiSinifMi(s.classes?.seviye ?? null)) {
+    const { data: altKonularHam } = await supabase.from("mufredat_alt_konular").select("ders, ust_konu, alt_baslik").order("sira");
+    mufredatAltKonulari = ((altKonularHam as { ders: string; ust_konu: string; alt_baslik: string }[]) ?? [])
+      .map((r) => ({ ders: r.ders, ustKonu: r.ust_konu, altBaslik: r.alt_baslik }));
+  }
+
   const dokuzOnMu = dokuzOnSinifMi(s.classes?.seviye ?? null);
   const dersListesi = dokuzOnMu
     ? [...TYT_DERSLERI]
@@ -311,7 +322,7 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
       {aktifBolum === "yapay-zeka" && <section className="min-h-full"><KonuHaritasiRaporu mod="kendi" konular={zayifKonular} /></section>}
 
       {aktifBolum === "veri-girisi" && <div className="print:hidden">
-        <OgrenciVeriGirisi aytAlan={s.ayt_alan} konuOnerileri={konuOnerileri} sinifSeviyesi={s.classes?.seviye ?? null} konuSayaclari={konuSayaclari} />
+        <OgrenciVeriGirisi aytAlan={s.ayt_alan} konuOnerileri={konuOnerileri} sinifSeviyesi={s.classes?.seviye ?? null} konuSayaclari={konuSayaclari} mufredatAltKonulari={mufredatAltKonulari} />
       </div>}
 
       {aktifBolum === "analiz" && <div>

@@ -9,6 +9,7 @@ import { PdfEslesmeYonetimi } from "@/components/yonetici/PdfEslesmeYonetimi";
 import { ModeratorlerListesi } from "@/components/yonetici/ModeratorlerListesi";
 import { PlatformIstatistikleri } from "@/components/yonetici/PlatformIstatistikleri";
 import { KonuAnlatimYonetimi } from "@/components/yonetici/KonuAnlatimYonetimi";
+import { MufredatHiyerarsiYonetimi } from "@/components/yonetici/MufredatHiyerarsiYonetimi";
 import { KurallarYonetimi } from "@/components/yonetici/KurallarYonetimi";
 import { AdminProfilim } from "@/components/yonetici/AdminProfilim";
 import { YoneticiGirisForm } from "@/components/yonetici/YoneticiGirisForm";
@@ -102,7 +103,12 @@ export default async function YoneticiPage({
             /></section>
           )}
           {aktifBolum === "moderatorler" && <section className="sfec-section"><ModeratorlerListesi /></section>}
-          {aktifBolum === "icerik" && <section className="sfec-section"><KonuAnlatimYonetimi /></section>}
+          {aktifBolum === "icerik" && (
+            <section className="sfec-section flex flex-col gap-5">
+              <KonuAnlatimYonetimi />
+              <MufredatHiyerarsiYonetimi />
+            </section>
+          )}
           {aktifBolum === "kurallar" && <KurallarYonetimi />}
           {aktifBolum === "profil" && <section className="sfec-section"><AdminProfilim /></section>}
         </main>
