@@ -339,3 +339,17 @@ export async function haftalikVerimlilikEkle(duzey: VerimlilikDuzeyi) {
   return { error: null };
 }
 
+// Analiz Motoru Faz A4 — öğrenci kendi hedef net'ini kendi girer (kullanıcı
+// kararı, 25.08.2026, açık soru 1). Admin de hedef_bolum deseniyle tutarlı
+// olarak düzeltebilir (bkz. yonetici/actions.ts kullaniciProfilGuncelle).
+export async function hedefNetGuncelle(hedefNetTyt: number | null, hedefNetAyt: number | null): Promise<{ error: string | null }> {
+  const { supabase, user } = await requireStudent();
+  for (const [etiket, deger, maks] of [["TYT", hedefNetTyt, 120], ["AYT", hedefNetAyt, 160]] as const) {
+    if (deger !== null && (deger < 0 || deger > maks)) return { error: `${etiket} hedef net 0-${maks} arasında olmalı.` };
+  }
+  const { error } = await supabase.from("students").update({ hedef_net_tyt: hedefNetTyt, hedef_net_ayt: hedefNetAyt }).eq("id", user.id);
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard");
+  return { error: null };
+}
+

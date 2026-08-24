@@ -53,6 +53,8 @@ export interface KullaniciSonuc {
   yurtOgrencisi: boolean | null;
   aytAlan: AytAlan | null;
   hedefBolum: string | null;
+  hedefNetTyt: number | null;
+  hedefNetAyt: number | null;
 }
 
 // Okul/sınıf sınırı olmadan tüm öğrenci/öğretmen/veli/müdür hesaplarında
@@ -86,7 +88,7 @@ if (rolFiltre !== "hepsi") {
 
   const [ogrenciDetay, ogretmenDetay] = await Promise.all([
     ogrenciIdleri.length
-      ? supabase.from("students").select("id, okul_no, school_id, class_id, yurt_ogrencisi, ayt_alan, hedef_bolum, schools(ad), classes(seviye, sube)").in("id", ogrenciIdleri)
+      ? supabase.from("students").select("id, okul_no, school_id, class_id, yurt_ogrencisi, ayt_alan, hedef_bolum, hedef_net_tyt, hedef_net_ayt, schools(ad), classes(seviye, sube)").in("id", ogrenciIdleri)
       : Promise.resolve({ data: [] }),
     ogretmenIdleri.length
       ? supabase.from("teachers").select("id, brans, school_id, schools(ad)").in("id", ogretmenIdleri)
@@ -95,7 +97,8 @@ if (rolFiltre !== "hepsi") {
 
   type OgrenciRow = {
     id: string; okul_no: string; school_id: string; class_id: string; yurt_ogrencisi: boolean;
-    ayt_alan: AytAlan; hedef_bolum: string; schools: { ad: string } | null; classes: { seviye: string; sube: string } | null;
+    ayt_alan: AytAlan; hedef_bolum: string; hedef_net_tyt: number | null; hedef_net_ayt: number | null;
+    schools: { ad: string } | null; classes: { seviye: string; sube: string } | null;
   };
   type OgretmenRow = { id: string; brans: string; school_id: string; schools: { ad: string } | null };
   const ogrenciMap = new Map(((ogrenciDetay.data as unknown as OgrenciRow[]) ?? []).map((o) => [o.id, o]));
@@ -115,6 +118,8 @@ if (rolFiltre !== "hepsi") {
       yurtOgrencisi: o?.yurt_ogrencisi ?? null,
       aytAlan: o?.ayt_alan ?? null,
       hedefBolum: o?.hedef_bolum ?? null,
+      hedefNetTyt: o?.hedef_net_tyt ?? null,
+      hedefNetAyt: o?.hedef_net_ayt ?? null,
     };
   });
 
@@ -220,6 +225,10 @@ export async function kullaniciProfilGuncelle(input: {
   // (örn. "hedefe ulaşıldı") girmesi mümkün. Bunu düzeltebilecek TEK yer
   // burası (öğrencinin kendi profilinden düzenleme imkânı yok).
   hedefBolum?: string; aytAlan?: AytAlan;
+  // Analiz Motoru Faz A4 — hedef net'i normalde öğrenci kendi girer
+  // (bkz. dashboard/veri-actions.ts hedefNetGuncelle), ama hedef_bolum'la
+  // aynı gerekçeyle admin de düzeltebilsin (kullanıcı kararı, 25.08.2026).
+  hedefNetTyt?: number | null; hedefNetAyt?: number | null;
 }): Promise<{ error: string | null }> {
   const { supabase, user, admin } = await requireAdmin();
   const ad = adNormalize(input.ad);
@@ -244,10 +253,18 @@ export async function kullaniciProfilGuncelle(input: {
     const { error: ogrenciError } = await admin.from("students").update({ okul_no: input.okulNo }).eq("id", input.userId);
     if (ogrenciError) return { error: ogrenciError.message };
   }
-  if (mevcut.role === "ogrenci" && (input.hedefBolum !== undefined || input.aytAlan !== undefined)) {
-    const guncelleme: Record<string, string> = {};
+  if (mevcut.role === "ogrenci" && (input.hedefBolum !== undefined || input.aytAlan !== undefined || input.hedefNetTyt !== undefined || input.hedefNetAyt !== undefined)) {
+    const guncelleme: Record<string, string | number | null> = {};
     if (input.hedefBolum !== undefined) guncelleme.hedef_bolum = hedefBolumNormalize(input.hedefBolum);
     if (input.aytAlan !== undefined) guncelleme.ayt_alan = input.aytAlan;
+    if (input.hedefNetTyt !== undefined) {
+      if (input.hedefNetTyt !== null && (input.hedefNetTyt < 0 || input.hedefNetTyt > 120)) return { error: "TYT hedef net 0-120 arasında olmalı." };
+      guncelleme.hedef_net_tyt = input.hedefNetTyt;
+    }
+    if (input.hedefNetAyt !== undefined) {
+      if (input.hedefNetAyt !== null && (input.hedefNetAyt < 0 || input.hedefNetAyt > 160)) return { error: "AYT hedef net 0-160 arasında olmalı." };
+      guncelleme.hedef_net_ayt = input.hedefNetAyt;
+    }
     const { error: hedefError } = await admin.from("students").update(guncelleme).eq("id", input.userId);
     if (hedefError) return { error: hedefError.message };
   }

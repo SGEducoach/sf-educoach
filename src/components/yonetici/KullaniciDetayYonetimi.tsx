@@ -33,6 +33,11 @@ export function KullaniciDetayYonetimi({ kullanici }: { kullanici: KullaniciSonu
   // düzeltme yolu burası, öğrencinin kendi profilinden düzenleme imkânı yok.
   const [hedefBolum, setHedefBolum] = useState(kullanici.hedefBolum ?? "");
   const [aytAlan, setAytAlan] = useState<AytAlan>(kullanici.aytAlan ?? "SAY");
+  // Analiz Motoru Faz A4 — normalde öğrenci kendi girer (Analiz Paneli'nden),
+  // ama hedef_bolum'la aynı gerekçeyle (öğrencinin kendi yazdığı bir alan,
+  // saçma/yanlış değer girebilir) admin de düzeltebilsin.
+  const [hedefNetTyt, setHedefNetTyt] = useState(kullanici.hedefNetTyt !== null ? String(kullanici.hedefNetTyt) : "");
+  const [hedefNetAyt, setHedefNetAyt] = useState(kullanici.hedefNetAyt !== null ? String(kullanici.hedefNetAyt) : "");
   const [mesaj, setMesaj] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [yurtPending, startYurtTransition] = useTransition();
@@ -61,6 +66,8 @@ export function KullaniciDetayYonetimi({ kullanici }: { kullanici: KullaniciSonu
         okulNo: kullanici.role === "ogrenci" ? okulNo : undefined,
         hedefBolum: kullanici.role === "ogrenci" ? hedefBolum : undefined,
         aytAlan: kullanici.role === "ogrenci" ? aytAlan : undefined,
+        hedefNetTyt: kullanici.role === "ogrenci" ? (hedefNetTyt.trim() === "" ? null : Number(hedefNetTyt)) : undefined,
+        hedefNetAyt: kullanici.role === "ogrenci" ? (hedefNetAyt.trim() === "" ? null : Number(hedefNetAyt)) : undefined,
       });
       setMesaj(res.error ?? "Profil güncellendi.");
     });
@@ -83,6 +90,8 @@ export function KullaniciDetayYonetimi({ kullanici }: { kullanici: KullaniciSonu
         <Alan etiket="Telefon" value={telefon} onChange={setTelefon} />
         {kullanici.role === "ogrenci" && <Alan etiket="Okul numarası" value={okulNo} onChange={setOkulNo} />}
         {kullanici.role === "ogrenci" && <Alan etiket="Hedef bölüm" value={hedefBolum} onChange={setHedefBolum} />}
+        {kullanici.role === "ogrenci" && <Alan etiket="Hedef net (TYT)" value={hedefNetTyt} onChange={setHedefNetTyt} type="number" />}
+        {kullanici.role === "ogrenci" && <Alan etiket="Hedef net (AYT)" value={hedefNetAyt} onChange={setHedefNetAyt} type="number" />}
         {kullanici.role === "ogrenci" && (
           <label className="flex flex-col gap-1">
             <span className="text-[10px] font-semibold" style={{ color: TEXT_MUTED }}>AYT alanı</span>

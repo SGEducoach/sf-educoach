@@ -1,12 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip,
   ResponsiveContainer, BarChart, Bar, Legend, PieChart, Pie, Cell,
 } from "recharts";
-import { Sparkles, Clock, Target, TrendingUp, TrendingDown, Minus, Printer, ListChecks, Gauge, Lightbulb } from "lucide-react";
+import { Sparkles, Clock, Target, TrendingUp, TrendingDown, Minus, Printer, ListChecks, Gauge, Lightbulb, Flag } from "lucide-react";
 import type { AnalizVerisi, RaporDonemi } from "@/lib/analiz";
 import { RAPOR_DONEMI_ETIKET } from "@/lib/analiz";
 import { HEDEFE_YAKINLIK_ETIKET, VERIMLILIK_ETIKET } from "@/lib/types";
@@ -15,6 +15,7 @@ import { satirTytdeGosterilsinMi, satirAytdeGosterilsinMi } from "@/lib/konu-hak
 import type { KonuHakimiyetiSatiri } from "@/lib/konu-hakimiyeti";
 import { oncelikSiralamasiOlustur, icgoruMetinleriOlustur } from "@/lib/analiz-motoru";
 import type { TrendSonucu, HizDogrulukKategorisi, OncelikSatiri } from "@/lib/analiz-motoru";
+import { hedefNetGuncelle } from "@/app/dashboard/veri-actions";
 import {
   BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, TEXT, TEXT_MUTED, MINT, MINT_BG, MINT_ON,
   SKY, SKY_BG, BUTTER, BUTTER_BG, BLUSH, BLUSH_BG, LILAC,
@@ -44,8 +45,16 @@ function IstatKart({ icon: Icon, etiket, deger, altYazi, renk, bg }: {
 
 const HEDEF_RENK: Record<HedefeYakinlik, string> = { yakin: MINT, belirsiz: BUTTER, uzak: BLUSH };
 
-export function AnalizPaneli({ veri, ogrenciAdi, konuHakimiyetiSatirlari = [], konuHakimiyetiTamGorunum = false, konuHakimiyetiAytAlan = "SAY" }: {
+export function AnalizPaneli({
+  veri, ogrenciAdi, konuHakimiyetiSatirlari = [], konuHakimiyetiTamGorunum = false, konuHakimiyetiAytAlan = "SAY", hedefDuzenlenebilir = false,
+}: {
   veri: AnalizVerisi; ogrenciAdi?: string; konuHakimiyetiSatirlari?: KonuHakimiyetiSatiri[]; konuHakimiyetiTamGorunum?: boolean; konuHakimiyetiAytAlan?: AytAlan;
+  // Analiz Motoru Faz A4 — hedef net'i öğrenci KENDİ girer; AnalizPaneli 4
+  // farklı bağlamda (öğrenci/öğretmen-müdür/veli/admin) kullanıldığından bu
+  // SADECE öğrencinin kendi dashboard'ından render edilirken true geçilir
+  // (bkz. dashboard/page.tsx) — başka birinin verisine bakarken düzenleme
+  // kontrolü hiç gösterilmez.
+  hedefDuzenlenebilir?: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -68,7 +77,8 @@ export function AnalizPaneli({ veri, ogrenciAdi, konuHakimiyetiSatirlari = [], k
     dersTrendleri: veri.dersTrendYonu,
     hizDogruluk: veri.dersHizDogruluk,
     oncelikSiralamasi,
-  }), [veri.denemeTrendYonu, veri.dersTrendYonu, veri.dersHizDogruluk, oncelikSiralamasi]);
+    hedefProjeksiyonlari: veri.hedefProjeksiyonlari,
+  }), [veri.denemeTrendYonu, veri.dersTrendYonu, veri.dersHizDogruluk, oncelikSiralamasi, veri.hedefProjeksiyonlari]);
 
   // Ders bazlı ortalama net grafiğinde tekil ders seçilince o dersin
   // net trendi gösteriliyor (§1, yenilikler_1.txt). Dropdown, gerçekten
@@ -115,7 +125,8 @@ export function AnalizPaneli({ veri, ogrenciAdi, konuHakimiyetiSatirlari = [], k
         </button>
       </div>
 
-      <IcgorulerKarti icgoruler={icgoruler} oncelikSiralamasi={oncelikSiralamasi.slice(0, 3)} />
+      <IcgorulerKarti icgoruler={icgoruler} oncelikSiralamasi={oncelikSiralamasi.slice(0, 3)}
+        hedefNetTyt={veri.hedefNetTyt} hedefNetAyt={veri.hedefNetAyt} duzenlenebilir={hedefDuzenlenebilir} />
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
         <IstatKart icon={TrendingUp} etiket="Son deneme neti" deger={veri.sonDenemeNet ?? "—"} renk={MINT} bg={MINT_BG} />
@@ -286,8 +297,14 @@ function BosDurum() {
 // fiilî karşılığı — ama tamamen kural bazlı, hiçbir LLM çağrısı yok.
 // Hiç içerik yoksa (yeterli veri henüz birikmemiş) kart hiç render
 // edilmiyor, boş bir kutu göstermiyoruz.
-function IcgorulerKarti({ icgoruler, oncelikSiralamasi }: { icgoruler: string[]; oncelikSiralamasi: OncelikSatiri[] }) {
-  if (icgoruler.length === 0 && oncelikSiralamasi.length === 0) return null;
+function IcgorulerKarti({ icgoruler, oncelikSiralamasi, hedefNetTyt, hedefNetAyt, duzenlenebilir }: {
+  icgoruler: string[]; oncelikSiralamasi: OncelikSatiri[];
+  hedefNetTyt: number | null; hedefNetAyt: number | null; duzenlenebilir: boolean;
+}) {
+  // Düzenlenebilir DEĞİLSE (öğretmen/veli/admin görünümü) ve hiç içerik
+  // yoksa kart tamamen gizleniyor. Düzenlenebilirse (öğrencinin kendi
+  // görünümü) hedef belirleme her zaman sunuluyor — henüz veri yoksa bile.
+  if (!duzenlenebilir && icgoruler.length === 0 && oncelikSiralamasi.length === 0) return null;
   return (
     <div className="sfec-fade rounded-3xl p-5 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <div className="flex items-center gap-2 mb-3">
@@ -306,6 +323,11 @@ function IcgorulerKarti({ icgoruler, oncelikSiralamasi }: { icgoruler: string[];
           ))}
         </ul>
       )}
+      {icgoruler.length === 0 && duzenlenebilir && (
+        <p style={{ color: TEXT_MUTED }} className="text-sm">
+          Yeterli veri biriktikçe (deneme/konu/soru girişleri) burada sana özel içgörüler görünecek.
+        </p>
+      )}
       {oncelikSiralamasi.length > 0 && (
         <div className={`flex flex-col gap-1.5 ${icgoruler.length > 0 ? "mt-4 pt-3" : ""}`} style={icgoruler.length > 0 ? { borderTop: `1px solid ${BORDER}` } : undefined}>
           <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide mb-0.5">Öncelik sıralaması</span>
@@ -317,6 +339,72 @@ function IcgorulerKarti({ icgoruler, oncelikSiralamasi }: { icgoruler: string[];
           ))}
         </div>
       )}
+      {duzenlenebilir && (
+        <div className="mt-4 pt-3" style={{ borderTop: `1px solid ${BORDER}` }}>
+          <HedefDuzenleyici hedefNetTyt={hedefNetTyt} hedefNetAyt={hedefNetAyt} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Analiz Motoru Faz A4 — öğrenci kendi hedef net'ini burada (Analiz
+// Paneli'nin İçgörüler kartı içinde) girer/düzenler. Sadece öğrencinin
+// kendi görünümünde render edilir (bkz. hedefDuzenlenebilir).
+function HedefDuzenleyici({ hedefNetTyt, hedefNetAyt }: { hedefNetTyt: number | null; hedefNetAyt: number | null }) {
+  const router = useRouter();
+  const [acik, setAcik] = useState(false);
+  const [tyt, setTyt] = useState(hedefNetTyt !== null ? String(hedefNetTyt) : "");
+  const [ayt, setAyt] = useState(hedefNetAyt !== null ? String(hedefNetAyt) : "");
+  const [hata, setHata] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  function kaydet() {
+    setHata(null);
+    startTransition(async () => {
+      const res = await hedefNetGuncelle(tyt.trim() === "" ? null : Number(tyt), ayt.trim() === "" ? null : Number(ayt));
+      if (res.error) setHata(res.error);
+      else { setAcik(false); router.refresh(); }
+    });
+  }
+
+  if (!acik) {
+    return (
+      <button type="button" onClick={() => setAcik(true)}
+        className="sfec-btn text-[11px] font-bold px-3 py-1.5 rounded-full inline-flex items-center gap-1.5"
+        style={{ background: BG1_ALT, color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
+        <Flag size={12} />
+        {hedefNetTyt === null && hedefNetAyt === null
+          ? "Hedef net belirle"
+          : `Hedefin: ${hedefNetTyt !== null ? `TYT ${hedefNetTyt}` : ""}${hedefNetTyt !== null && hedefNetAyt !== null ? " · " : ""}${hedefNetAyt !== null ? `AYT ${hedefNetAyt}` : ""} (düzenle)`}
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="grid grid-cols-2 gap-2">
+        <label className="flex flex-col gap-1"><span className="text-[10px] font-semibold" style={{ color: TEXT_MUTED }}>Hedef net (TYT)</span>
+          <input type="number" min={0} max={120} value={tyt} onChange={(e) => setTyt(e.target.value)}
+            className="rounded-lg px-2.5 py-1.5 text-xs outline-none" style={{ background: BG0, color: TEXT, border: `2px solid ${BORDER_STRONG}` }} />
+        </label>
+        <label className="flex flex-col gap-1"><span className="text-[10px] font-semibold" style={{ color: TEXT_MUTED }}>Hedef net (AYT)</span>
+          <input type="number" min={0} max={160} value={ayt} onChange={(e) => setAyt(e.target.value)}
+            className="rounded-lg px-2.5 py-1.5 text-xs outline-none" style={{ background: BG0, color: TEXT, border: `2px solid ${BORDER_STRONG}` }} />
+        </label>
+      </div>
+      {hata && <p style={{ color: BLUSH }} className="text-[11px] font-semibold">{hata}</p>}
+      <div className="flex gap-2">
+        <button type="button" onClick={() => setAcik(false)} disabled={pending}
+          className="sfec-btn flex-1 text-xs font-bold py-1.5 rounded-xl disabled:opacity-60"
+          style={{ background: "transparent", color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
+          Vazgeç
+        </button>
+        <button type="button" onClick={kaydet} disabled={pending}
+          className="sfec-btn flex-1 text-xs font-bold py-1.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+          {pending ? "Kaydediliyor..." : "Kaydet"}
+        </button>
+      </div>
     </div>
   );
 }

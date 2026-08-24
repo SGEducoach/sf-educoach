@@ -307,14 +307,22 @@ export interface IcgoruGirdisi {
   dersTrendleri: Record<string, TrendSonucu>;
   hizDogruluk: { ders: string; kategori: HizDogrulukKategorisi }[];
   oncelikSiralamasi: OncelikSatiri[];
+  // Faz A4 — sadece hedef net GİRİLMİŞSE dolu gelir (bkz. hedefProjeksiyonuHesapla).
+  hedefProjeksiyonlari?: { tur: "TYT" | "AYT"; sonuc: HedefProjeksiyonuSonucu }[];
 }
 
 // En fazla 4 cümle döner — hepsi birden gösterilirse "AI konuşuyormuş"
 // hissi yerine liste okuma hissi verir; en aksiyona dönüştürülebilir
-// (öncelik + en belirgin trend + en belirgin hız-doğruluk uyarısı) 3-4
-// cümle seçiliyor.
+// (hedef projeksiyonu + öncelik + en belirgin trend + en belirgin
+// hız-doğruluk uyarısı) seçiliyor. Hedef projeksiyonu EN MOTİVE EDİCİ/
+// somut bilgi olduğundan varsa listenin BAŞINA alınır.
 export function icgoruMetinleriOlustur(girdi: IcgoruGirdisi): string[] {
   const metinler: string[] = [];
+
+  for (const { tur, sonuc } of girdi.hedefProjeksiyonlari ?? []) {
+    const metin = hedefIcgorusu(tur, sonuc);
+    if (metin) metinler.push(metin);
+  }
 
   const oncelik = oncelikIcgorusu(girdi.oncelikSiralamasi[0]);
   if (oncelik) metinler.push(oncelik);
@@ -345,4 +353,59 @@ export function icgoruMetinleriOlustur(girdi: IcgoruGirdisi): string[] {
   }
 
   return metinler.slice(0, 4);
+}
+
+// ============ Katman 5: hedefe uzaklık ve projeksiyon ============
+//
+// Faz A4 — kullanıcı kararı (25.08.2026, açık soru 1): hedef net alanını
+// ÖĞRENCİ KENDİ girer (migration 0061 — students.hedef_net_tyt/
+// hedef_net_ayt). TYT ve AYT AYRI tutulur — farklı ölçekte puanlanıyor
+// ve ayrı deneme trendleri var (Katman 3, bkz. AnalizVerisi.denemeTrendYonuTur).
+//
+// "Kalan gün" (kaç hafta kaldı) burada Katman 8'deki gibi ATLANAMAZ —
+// orada sadece SIRALAMA için gerekliydi (etkisizdi), burada "haftada
+// ne kadar ivme gerekiyor" hesabının PAYDASI, gerçekten gerekli. Tam bir
+// admin-ayarlanabilir tarih mekanizması kurmak (yeni tablo/UI) tek bir
+// yıllık değer için aşırı mühendislik — bu yüzden BİLİNÇLİ OLARAK basit
+// bir sabit kullanılıyor. Her yıl (YKS tarihi ÖSYM tarafından
+// açıklandığında) bu satırın güncellenmesi yeterli.
+const YKS_TARIHI_TAHMINI = "2027-06-20"; // TAHMİNİ — ÖSYM takvimi açıklanınca güncellenmeli
+
+function kalanHaftaSayisiHesapla(): number {
+  const gunFarki = (new Date(YKS_TARIHI_TAHMINI).getTime() - Date.now()) / (1000 * 3600 * 24);
+  return Math.max(1, gunFarki / 7); // sıfıra bölme/negatif süre riskini önlemek için en az 1 hafta
+}
+
+export interface HedefProjeksiyonuGirdisi {
+  guncelNet: number | null; // o türün (TYT/AYT) en son deneme neti
+  hedefNet: number | null; // öğrencinin kendi belirlediği hedef
+  haftalikEgim: number | null; // Katman 3'ten (o türe özel trend, TrendSonucu.haftalikDegisim)
+}
+
+export interface HedefProjeksiyonuSonucu {
+  kalanNet: number | null; // hedef - guncel (negatif/0 ise hedefe ulaşılmış)
+  gerekenHaftalikIvme: number | null; // kalanNet / kalan hafta sayısı
+  tahminiHaftaSayisi: number | null; // kalanNet / haftalık eğim (eğim pozitifse)
+}
+
+export function hedefProjeksiyonuHesapla(girdi: HedefProjeksiyonuGirdisi): HedefProjeksiyonuSonucu {
+  if (girdi.guncelNet === null || girdi.hedefNet === null) {
+    return { kalanNet: null, gerekenHaftalikIvme: null, tahminiHaftaSayisi: null };
+  }
+  const kalanNet = Math.round((girdi.hedefNet - girdi.guncelNet) * 100) / 100;
+  if (kalanNet <= 0) return { kalanNet, gerekenHaftalikIvme: 0, tahminiHaftaSayisi: 0 };
+
+  const gerekenHaftalikIvme = Math.round((kalanNet / kalanHaftaSayisiHesapla()) * 100) / 100;
+  const tahminiHaftaSayisi = girdi.haftalikEgim !== null && girdi.haftalikEgim > 0 ? Math.round(kalanNet / girdi.haftalikEgim) : null;
+
+  return { kalanNet, gerekenHaftalikIvme, tahminiHaftaSayisi };
+}
+
+// Katman 9'un bir parçası — hedef projeksiyonunu Türkçe cümleye döker.
+export function hedefIcgorusu(tur: "TYT" | "AYT", sonuc: HedefProjeksiyonuSonucu): string | null {
+  if (sonuc.kalanNet === null) return null;
+  if (sonuc.kalanNet <= 0) return `${tur} hedefine zaten ulaştın, hatta üstündesin! 🎉 Hedefini güncellemek isteyebilirsin.`;
+  if (sonuc.tahminiHaftaSayisi !== null) return `Bu tempoyla ${tur} hedefine yaklaşık ${sonuc.tahminiHaftaSayisi} haftada ulaşabilirsin.`;
+  if (sonuc.gerekenHaftalikIvme !== null) return `${tur} hedefine ulaşmak için haftada ortalama +${sonuc.gerekenHaftalikIvme} net'lik bir ivme gerekiyor.`;
+  return null;
 }

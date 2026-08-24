@@ -2,8 +2,8 @@ import type { createClient } from "@/lib/supabase/server";
 import { netHesapla } from "@/lib/types";
 import type { HedefeYakinlik, VerimlilikDuzeyi } from "@/lib/types";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
-import { trendHesapla, hizDogrulukKategorisiBelirle } from "@/lib/analiz-motoru";
-import type { TrendSonucu, HizDogrulukKategorisi, RegresyonNoktasi } from "@/lib/analiz-motoru";
+import { trendHesapla, hizDogrulukKategorisiBelirle, hedefProjeksiyonuHesapla } from "@/lib/analiz-motoru";
+import type { TrendSonucu, HizDogrulukKategorisi, RegresyonNoktasi, HedefProjeksiyonuSonucu } from "@/lib/analiz-motoru";
 
 // Analiz Motoru Faz A2 — iki "tarih" string'i (YYYY-MM-DD) arasındaki gün
 // farkı; regresyon noktalarının x eksenini (gunOffset) üretmek için.
@@ -40,6 +40,14 @@ export interface AnalizVerisi {
   denemeTrendYonu: TrendSonucu;
   dersTrendYonu: Record<string, TrendSonucu>;
   dersHizDogruluk: { ders: string; ortSureDakika: number; dogrulukOrani: number; kategori: HizDogrulukKategorisi }[];
+  // Analiz Motoru Faz A4 — Katman 5: hedefe uzaklık/projeksiyon. TYT/AYT
+  // ayrı trend (denemeTrendYonu'nun TYT+AYT'yi KARIŞTIRAN hâlinden farklı
+  // olarak, sadece o türün kendi denemeleri) + öğrencinin (varsa) kendi
+  // belirlediği hedef net'ten türetilen projeksiyon.
+  denemeTrendYonuTur: Record<"TYT" | "AYT", TrendSonucu>;
+  hedefNetTyt: number | null;
+  hedefNetAyt: number | null;
+  hedefProjeksiyonlari: { tur: "TYT" | "AYT"; sonuc: HedefProjeksiyonuSonucu }[];
 }
 
 const VERIMLILIK_PUAN: Record<VerimlilikDuzeyi, number> = {
@@ -63,6 +71,9 @@ export async function analizVerisiGetir(
   let konuQuery = supabase.from("konu_calismalar").select("tarih, sure_dakika, hedefe_yakinlik").eq("student_id", studentId);
   let soruQuery = supabase.from("soru_cozumleri").select("tarih, sure_dakika, ders, dogru, yanlis").eq("student_id", studentId);
   let verimlilikQuery = supabase.from("haftalik_verimlilikler").select("created_at, duzey").eq("student_id", studentId).order("created_at");
+  // Faz A4 — hedef net, tarih aralığı filtresi UYGULANMAZ (profil alanı,
+  // aktivite kaydı değil).
+  const hedefQuery = supabase.from("students").select("hedef_net_tyt, hedef_net_ayt").eq("id", studentId).single();
 
   if (baslangic) {
     denemeQuery = denemeQuery.gte("tarih", baslangic);
@@ -76,7 +87,8 @@ export async function analizVerisiGetir(
     { data: konular },
     { data: sorular },
     { data: verimlilikler },
-  ] = await Promise.all([denemeQuery, konuQuery, soruQuery, verimlilikQuery]);
+    { data: hedefSatiri },
+  ] = await Promise.all([denemeQuery, konuQuery, soruQuery, verimlilikQuery, hedefQuery]);
 
   type DenemeRow = { id: string; tarih: string; tur: "TYT" | "AYT"; hedefe_yakinlik: HedefeYakinlik; deneme_ders_sonuclari: { dogru: number; yanlis: number }[] };
   type KonuRow = { tarih: string; sure_dakika: number; hedefe_yakinlik: HedefeYakinlik };
@@ -86,6 +98,9 @@ export async function analizVerisiGetir(
   const konuListesi = (konular as unknown as KonuRow[]) ?? [];
   const soruListesi = (sorular as unknown as SoruRow[]) ?? [];
   const verimlilikListesi = (verimlilikler as unknown as { created_at: string; duzey: VerimlilikDuzeyi }[]) ?? [];
+  const hedefRow = hedefSatiri as { hedef_net_tyt: number | null; hedef_net_ayt: number | null } | null;
+  const hedefNetTyt = hedefRow?.hedef_net_tyt ?? null;
+  const hedefNetAyt = hedefRow?.hedef_net_ayt ?? null;
 
   const denemeTrend = denemeListesi.map((d) => ({
     tarih: d.tarih,
@@ -156,6 +171,36 @@ export async function analizVerisiGetir(
     dersTrendYonu[ders] = trendHesapla(noktalar);
   }
 
+  // Faz A4, Katman 5 — TYT/AYT AYRI trend (denemeTrendYonu'nun aksine,
+  // ikisini KARIŞTIRMAZ) — hedef projeksiyonu için şart, farklı türlerin
+  // netleri farklı ölçekte.
+  const denemeTrendYonuTur = { TYT: { yon: null, haftalikDegisim: null } as TrendSonucu, AYT: { yon: null, haftalikDegisim: null } as TrendSonucu };
+  const sonNetTur: Record<"TYT" | "AYT", number | null> = { TYT: null, AYT: null };
+  for (const tur of ["TYT", "AYT"] as const) {
+    const turListesi = denemeTrend.filter((d) => d.tur === tur);
+    if (turListesi.length === 0) continue;
+    sonNetTur[tur] = turListesi[turListesi.length - 1].net;
+    const noktalar: RegresyonNoktasi[] = turListesi.map((d) => ({
+      gunOffset: tarihGunFarki(d.tarih, turListesi[0].tarih),
+      deger: d.net,
+    }));
+    denemeTrendYonuTur[tur] = trendHesapla(noktalar);
+  }
+
+  const hedefProjeksiyonlari: AnalizVerisi["hedefProjeksiyonlari"] = [];
+  if (hedefNetTyt !== null) {
+    hedefProjeksiyonlari.push({
+      tur: "TYT",
+      sonuc: hedefProjeksiyonuHesapla({ guncelNet: sonNetTur.TYT, hedefNet: hedefNetTyt, haftalikEgim: denemeTrendYonuTur.TYT.haftalikDegisim }),
+    });
+  }
+  if (hedefNetAyt !== null) {
+    hedefProjeksiyonlari.push({
+      tur: "AYT",
+      sonuc: hedefProjeksiyonuHesapla({ guncelNet: sonNetTur.AYT, hedefNet: hedefNetAyt, haftalikEgim: denemeTrendYonuTur.AYT.haftalikDegisim }),
+    });
+  }
+
   // Faz A2, Katman 4 — ders bazlı hız-doğruluk matrisi. Referans "genel
   // ortalama süre/soru", öğrencinin TÜM derslerdeki toplamından çıkarılır.
   const dersSureMap = new Map<string, { toplamSure: number; toplamDogru: number; toplamYanlis: number }>();
@@ -215,5 +260,9 @@ export async function analizVerisiGetir(
     denemeTrendYonu,
     dersTrendYonu,
     dersHizDogruluk,
+    denemeTrendYonuTur,
+    hedefNetTyt,
+    hedefNetAyt,
+    hedefProjeksiyonlari,
   };
 }
