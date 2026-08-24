@@ -62,6 +62,31 @@ export function TgDenemeleri({ bugun }: { bugun: string }) {
         </button>
       </div>
 
+      {/* Haber akışı imleçleri (manuel ileri/geri + nokta göstergeleri) —
+          kullanıcı isteğiyle üstteki duyuru/başlık bloğunun hemen altına
+          taşındı, önceden sağ paneldeki kart içeriğinin en altındaydı. */}
+      <div className="flex items-center justify-between gap-3 px-1">
+        <button type="button" onClick={() => git(aktif - 1)} aria-label="Önceki haber" className="sfec-btn flex h-11 w-11 items-center justify-center rounded-full" style={{ background: BG1_ALT, color: TEXT, border: `1px solid ${BORDER_STRONG}` }}>
+          <ChevronLeft size={19} aria-hidden="true" />
+        </button>
+        <div className="flex flex-wrap justify-center gap-1.5" aria-label="Haber seçimi">
+          {haberler.map((oge, index) => (
+            <button
+              key={oge.id}
+              type="button"
+              onClick={() => git(index)}
+              aria-label={`${index + 1}. habere git: ${oge.baslik}`}
+              aria-current={index === aktif ? "true" : undefined}
+              className="sfec-btn h-2.5 rounded-full"
+              style={{ width: index === aktif ? 24 : 10, background: index === aktif ? MINT : BORDER_STRONG }}
+            />
+          ))}
+        </div>
+        <button type="button" onClick={() => git(aktif + 1)} aria-label="Sonraki haber" className="sfec-btn flex h-11 w-11 items-center justify-center rounded-full" style={{ background: BG1_ALT, color: TEXT, border: `1px solid ${BORDER_STRONG}` }}>
+          <ChevronRight size={19} aria-hidden="true" />
+        </button>
+      </div>
+
       <div
         className="relative overflow-hidden rounded-[1.75rem]"
         style={{ background: BG1, border: `1px solid ${BORDER}`, boxShadow: "var(--sfec-card-shadow)" }}
@@ -112,28 +137,6 @@ export function TgDenemeleri({ bugun }: { bugun: string }) {
                   Takvimi PDF olarak aç <ExternalLink size={13} aria-hidden="true" />
                 </a>
               )}
-            </div>
-
-            <div className="flex items-center justify-between gap-3">
-              <button type="button" onClick={() => git(aktif - 1)} aria-label="Önceki haber" className="sfec-btn flex h-11 w-11 items-center justify-center rounded-full" style={{ background: BG1_ALT, color: TEXT, border: `1px solid ${BORDER_STRONG}` }}>
-                <ChevronLeft size={19} aria-hidden="true" />
-              </button>
-              <div className="flex flex-wrap justify-center gap-1.5" aria-label="Haber seçimi">
-                {haberler.map((oge, index) => (
-                  <button
-                    key={oge.id}
-                    type="button"
-                    onClick={() => git(index)}
-                    aria-label={`${index + 1}. habere git: ${oge.baslik}`}
-                    aria-current={index === aktif ? "true" : undefined}
-                    className="sfec-btn h-2.5 rounded-full"
-                    style={{ width: index === aktif ? 24 : 10, background: index === aktif ? MINT : BORDER_STRONG }}
-                  />
-                ))}
-              </div>
-              <button type="button" onClick={() => git(aktif + 1)} aria-label="Sonraki haber" className="sfec-btn flex h-11 w-11 items-center justify-center rounded-full" style={{ background: BG1_ALT, color: TEXT, border: `1px solid ${BORDER_STRONG}` }}>
-                <ChevronRight size={19} aria-hidden="true" />
-              </button>
             </div>
           </aside>
         </div>
