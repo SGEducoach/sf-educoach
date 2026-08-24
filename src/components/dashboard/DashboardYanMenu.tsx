@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {
   BarChart3, BookOpen, BookOpenCheck, Bot, CalendarDays, CalendarPlus2, CircleUserRound, ClipboardCheck, ClipboardList,
-  FileCheck2, FileSpreadsheet, GraduationCap, Home, Megaphone, Medal, PenLine, School, ScrollText,
+  FileCheck2, FileSpreadsheet, GraduationCap, Home, ListChecks, Megaphone, Medal, PenLine, School, ScrollText,
   ShieldCheck, UserPlus, Users,
 } from "lucide-react";
 import type { KurumTuru, UserRole } from "@/lib/types";
@@ -15,6 +15,7 @@ const IKONLAR: Record<DashboardIkonu, typeof Home> = {
   gorev: ClipboardList,
   plan: CalendarPlus2,
   veri: PenLine,
+  hakimiyet: ListChecks,
   analiz: BarChart3,
   ai: Bot,
   rozet: Medal,

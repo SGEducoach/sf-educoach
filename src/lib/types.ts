@@ -207,6 +207,34 @@ export const HEDEFE_YAKINLIK_ETIKET: Record<HedefeYakinlik, string> = {
   uzak: "Uzak",
 };
 
+// Konu Hakimiyeti (Faz H) — öğrencinin müfredat konuları için KALICI
+// hakimiyet beyanı, konu_calismalar.hedefe_yakinlik'ten (bir çalışma
+// oturumunun o anki değerlendirmesi) BAĞIMSIZ. Ölçek tipi aynı
+// (hedefe_yakinlik reuse ediliyor, bkz. migration 0055) ama etiketler
+// bu ekrana özel — Konu Çalışma'daki "Yetersiz/Orta/Yeterli" ile aynı
+// anlamı taşıyor.
+export const HAKIMIYET_SEVIYESI_ETIKET: Record<HedefeYakinlik, string> = {
+  uzak: "Yetersiz",
+  belirsiz: "Orta",
+  yakin: "Yeterli",
+};
+
+export type OgrenmeSekli = "derste" | "video" | "kitap" | "dershane";
+export const OGRENME_SEKLI_ETIKET: Record<OgrenmeSekli, string> = {
+  derste: "Derste",
+  video: "Video",
+  kitap: "Kitap",
+  dershane: "Dershane",
+};
+export const OGRENME_SEKLI_LISTESI: OgrenmeSekli[] = ["derste", "video", "kitap", "dershane"];
+
+export type TekrarDurumu = "tekrar_edebilirim" | "yuzeysel_bakarim" | "gerek_yok";
+export const TEKRAR_DURUMU_ETIKET: Record<TekrarDurumu, string> = {
+  tekrar_edebilirim: "Tekrar edebilirim",
+  yuzeysel_bakarim: "Yüzeysel bakarım",
+  gerek_yok: "Gerek yok",
+};
+
 // Konu bilme/bilmeme göstergesi — "Konuya hakimiyet" (hedefe_yakinlik)
 // seçiminden HEMEN SONRA, seçilen değere özel 2. aşama bir takip sorusu
 // soruluyor (bkz. KonuCalismaForm, Faz K2). Her kod, hangi 1. aşama

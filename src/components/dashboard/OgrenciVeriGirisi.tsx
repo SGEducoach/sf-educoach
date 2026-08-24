@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import { BookOpen, PenLine, ClipboardList, Sparkles, Loader2, ChevronDown, ChevronUp, CalendarClock } from "lucide-react";
 import type {
   AytAlan, DenemeTuru, DenemeZorlugu, HedefeYakinlik, TakipCevabi, VerimlilikDuzeyi,
@@ -66,7 +66,7 @@ function GecmisTarihSecici({ tarih, setTarih, geriyeMaksGun }: { tarih: string; 
 
 type Sekme = "konu" | "soru" | "deneme";
 
-function Etiket({ children }: { children: React.ReactNode }) {
+export function Etiket({ children }: { children: React.ReactNode }) {
   return <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">{children}</span>;
 }
 function Girdi(props: React.InputHTMLAttributes<HTMLInputElement>) {
@@ -78,7 +78,7 @@ function Secim({ children, ...props }: React.SelectHTMLAttributes<HTMLSelectElem
 
 // Genel 3-seçenekli buton grubu — Konu Çalışma/Soru Çözümü/Deneme'de aynı
 // hedefe_yakinlik (ya da zorluk) alanı farklı başlık/etiketlerle gösteriliyor.
-function SecenekSecici<T extends string>({ baslik, secenekler, value, onChange }: {
+export function SecenekSecici<T extends string>({ baslik, secenekler, value, onChange }: {
   baslik: string; secenekler: [T, string][]; value: T; onChange: (v: T) => void;
 }) {
   return (
@@ -97,12 +97,13 @@ function SecenekSecici<T extends string>({ baslik, secenekler, value, onChange }
   );
 }
 
-export function OgrenciVeriGirisi({ aytAlan, konuOnerileri, sinifSeviyesi, konuSayaclari, mufredatAltKonulari }: {
+export function OgrenciVeriGirisi({ aytAlan, konuOnerileri, sinifSeviyesi, konuSayaclari, mufredatAltKonulari, gerekYokListesi }: {
   aytAlan: AytAlan;
   konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
   sinifSeviyesi?: string | null;
   konuSayaclari?: Record<string, { tamamlanan: number; toplam: number }>;
   mufredatAltKonulari?: { ders: string; ustKonu: string; altBaslik: string }[];
+  gerekYokListesi?: string[];
 }) {
   const [sekme, setSekme] = useState<Sekme>("konu");
   const [verimlilikSor, setVerimlilikSor] = useState(false);
@@ -150,7 +151,7 @@ export function OgrenciVeriGirisi({ aytAlan, konuOnerileri, sinifSeviyesi, konuS
           })}
         </div>
 
-        {sekme === "konu" && <KonuCalismaForm dersListesi={dersListesi} konuOnerileri={konuOnerileri} konuSayaclari={konuSayaclari} sinifSeviyesi={sinifSeviyesi} mufredatAltKonulari={mufredatAltKonulari} onBasari={basariGoster} />}
+        {sekme === "konu" && <KonuCalismaForm dersListesi={dersListesi} konuOnerileri={konuOnerileri} konuSayaclari={konuSayaclari} sinifSeviyesi={sinifSeviyesi} mufredatAltKonulari={mufredatAltKonulari} gerekYokListesi={gerekYokListesi} onBasari={basariGoster} />}
         {sekme === "soru" && <SoruCozumuForm dersListesi={dersListesi} konuOnerileri={konuOnerileri} onBasari={basariGoster} />}
         {sekme === "deneme" && <DenemeForm aytAlan={aytAlan} dokuzOnMu={dokuzOnMu} onBasari={basariGoster} />}
       </div>
@@ -185,11 +186,15 @@ function KonuOneriDropdown({ oneriler, aktif, onSec }: {
 // Akış: önce ders+konu seçilir (eksik olduğun konuyu SEN bulursun), "Konuyu
 // oku" ile o an AI anlatımı gösterilir; süre ve konuya hakimiyet — yani
 // konuyu ne kadar anladığın — bunu OKUDUKTAN/çalıştıktan SONRA girilir.
-export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, sinifSeviyesi, mufredatAltKonulari, onBasari, prefillDers, prefillKonu, gorevAtamaId }: {
+export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, sinifSeviyesi, mufredatAltKonulari, gerekYokListesi, onBasari, prefillDers, prefillKonu, gorevAtamaId }: {
   dersListesi: string[]; konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
   konuSayaclari?: Record<string, { tamamlanan: number; toplam: number }>;
   sinifSeviyesi?: string | null;
   mufredatAltKonulari?: { ders: string; ustKonu: string; altBaslik: string }[];
+  // Konu Hakimiyeti'nde (Faz H) "gerek yok" işaretlenmiş "ders|konu"
+  // çiftleri — bu konu tekrar seçilip kaydedilmeye çalışılınca "hakimsin,
+  // yine de çalışacak mısın?" onayı çıkar (bkz. gonderOncesiOnayGerekliMi).
+  gerekYokListesi?: string[];
   onBasari: (m: string, s: boolean) => void;
   prefillDers?: string; prefillKonu?: string; gorevAtamaId?: string;
 }) {
@@ -291,6 +296,24 @@ export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, sin
     });
   }
 
+  // Konu Hakimiyeti (Faz H3) — daha önce "gerek yok" (tekrar durumu)
+  // işaretlenmiş bir konu tekrar kaydedilmeye çalışılırsa, gönderim önce
+  // bir onaya takılır. formData zaten submit içinde dolduruluyor, "Evet"
+  // tıklanınca aynı FormData ref'ten tekrar kullanılıyor.
+  const [onayGerekli, setOnayGerekli] = useState(false);
+  const bekleyenFormData = useRef<FormData | null>(null);
+
+  function kaydet(formData: FormData) {
+    startTransition(async () => {
+      const res = await konuCalismaEkle(formData);
+      if (res.error) return setHata(res.error);
+      onBasari("Konu çalışması kaydedildi.", res.verimlilikSorulsunMu);
+      setKonu(""); setAramaMetni(""); setUstBaslik(""); setAnlatim(null); setAnlatimSeviye(null); setAnlatimAcik(false); setHedefeYakinlik("belirsiz"); setTakipCevabi(TAKIP_SORUSU.belirsiz.secenekler[0][0]); setYayinevi(""); setTarih(bugununTarihi());
+      setOnayGerekli(false);
+      bekleyenFormData.current = null;
+    });
+  }
+
   function submit(formData: FormData) {
     setHata(null);
     if (!konu.trim()) return setHata("Konu seçin veya yazın.");
@@ -302,12 +325,13 @@ export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, sin
     formData.set("yayinevi", yayinevi.trim());
     formData.set("tarih", tarih);
     if (gorevAtamaId) formData.set("gorevAtamaId", gorevAtamaId);
-    startTransition(async () => {
-      const res = await konuCalismaEkle(formData);
-      if (res.error) return setHata(res.error);
-      onBasari("Konu çalışması kaydedildi.", res.verimlilikSorulsunMu);
-      setKonu(""); setAramaMetni(""); setUstBaslik(""); setAnlatim(null); setAnlatimSeviye(null); setAnlatimAcik(false); setHedefeYakinlik("belirsiz"); setTakipCevabi(TAKIP_SORUSU.belirsiz.secenekler[0][0]); setYayinevi(""); setTarih(bugununTarihi());
-    });
+
+    if (gerekYokListesi?.includes(`${ders}|${konu}`)) {
+      bekleyenFormData.current = formData;
+      setOnayGerekli(true);
+      return;
+    }
+    kaydet(formData);
   }
 
   return (
@@ -412,9 +436,27 @@ export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, sin
       <SecenekSecici baslik={TAKIP_SORUSU[hedefeYakinlik].baslik} value={takipCevabi} onChange={setTakipCevabi}
         secenekler={TAKIP_SORUSU[hedefeYakinlik].secenekler} />
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
-      <button type="submit" disabled={pending} className="sfec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
-        {pending ? "Kaydediliyor..." : "Kaydet"}
-      </button>
+      {onayGerekli ? (
+        <div className="rounded-2xl p-3 flex flex-col gap-2" style={{ background: "rgba(255,196,107,0.12)", border: "2px solid rgba(255,196,107,0.35)" }}>
+          <span style={{ color: TEXT }} className="text-xs font-semibold">Bu konuya hakimsin, yine de çalışmayı kaydetmek istiyor musun?</span>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => { setOnayGerekli(false); bekleyenFormData.current = null; }} disabled={pending}
+              className="sfec-btn flex-1 text-xs font-bold py-2 rounded-xl disabled:opacity-60"
+              style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
+              Hayır
+            </button>
+            <button type="button" onClick={() => bekleyenFormData.current && kaydet(bekleyenFormData.current)} disabled={pending}
+              className="sfec-btn flex-1 text-xs font-bold py-2 rounded-xl disabled:opacity-60"
+              style={{ background: MINT, color: MINT_ON }}>
+              Evet, yine de kaydet
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button type="submit" disabled={pending} className="sfec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+          {pending ? "Kaydediliyor..." : "Kaydet"}
+        </button>
+      )}
       <YukleniyorOverlay visible={pending} mesaj={anlatimYukleniyor ? undefined : "Kaydediliyor..."} />
     </form>
   );

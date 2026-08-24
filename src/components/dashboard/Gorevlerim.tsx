@@ -65,7 +65,7 @@ function uzunTarih(tarihISO: string) {
 // veri giriş formu (Konu/Soru/Deneme) bir modal içinde açılıp gorevAtamaId
 // ile ilişkilendiriliyor; böylece rozet/analiz sistemleri görev kaynaklı
 // girişleri de otomatik sayıyor (bkz. yenilikler_1.txt §5, Faz 3 planı).
-export function Gorevlerim({ gorevler, gorunum, haftaBaslangic, aytAlan, dokuzOnMu, dersListesi, konuOnerileri, konuSayaclari }: {
+export function Gorevlerim({ gorevler, gorunum, haftaBaslangic, aytAlan, dokuzOnMu, dersListesi, konuOnerileri, konuSayaclari, gerekYokListesi }: {
   gorevler: GorevSatiri[];
   gorunum: TakvimGorunumu;
   haftaBaslangic: string;
@@ -74,6 +74,9 @@ export function Gorevlerim({ gorevler, gorunum, haftaBaslangic, aytAlan, dokuzOn
   dersListesi: string[];
   konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
   konuSayaclari?: Record<string, { tamamlanan: number; toplam: number }>;
+  // Konu Hakimiyeti (Faz H3) — "gerek yok" işaretli "ders|konu" çiftleri,
+  // Plan Yap'ta tekrar seçilince onay istenmesi için (bkz. PlanEkleModal).
+  gerekYokListesi?: string[];
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -262,6 +265,7 @@ export function Gorevlerim({ gorevler, gorunum, haftaBaslangic, aytAlan, dokuzOn
           tarih={seciliGun}
           dersListesi={dersListesi}
           konuOnerileri={konuOnerileri}
+          gerekYokListesi={gerekYokListesi}
           onKapat={() => setPlanModalAcik(false)}
         />,
         document.body,
@@ -479,10 +483,11 @@ function GorevTamamlamaModal({ gorev, aytAlan, dokuzOnMu, dersListesi, konuOneri
 // Öğrencinin kendi planını eklediği form — öğretmen görevinden farklı
 // olarak saat aralığı ZORUNLU; sunucu tarafı aynı gün çakışan bir saat
 // aralığına izin vermiyor (bkz. planEkle, gorev-actions.ts).
-function PlanEkleModal({ tarih, dersListesi, konuOnerileri, onKapat }: {
+function PlanEkleModal({ tarih, dersListesi, konuOnerileri, gerekYokListesi, onKapat }: {
   tarih: string;
   dersListesi: string[];
   konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
+  gerekYokListesi?: string[];
   onKapat: () => void;
 }) {
   const [tur, setTur] = useState<GorevTuru>("konu");
@@ -497,6 +502,22 @@ function PlanEkleModal({ tarih, dersListesi, konuOnerileri, onKapat }: {
   const [pending, startTransition] = useTransition();
 
   const dersKonulari = konuOnerileri.filter((k) => k.ders === ders);
+  // Konu Hakimiyeti (Faz H3) — daha önce "gerek yok" (tekrar durumu)
+  // işaretlenmiş bir konu tekrar planlanmaya çalışılırsa gönderim önce
+  // bir onaya takılır.
+  const [onayGerekli, setOnayGerekli] = useState(false);
+
+  function kaydet() {
+    startTransition(async () => {
+      const res = await planEkle({
+        tur, ders, konu: konu || undefined,
+        hedefSoruSayisi: hedefSoru ? Number(hedefSoru) : undefined,
+        tarih, baslangicSaat, bitisSaat, aciklama: aciklama || undefined,
+      });
+      if (res.error) setHata(res.error);
+      else { setBasari("Plan eklendi."); setTimeout(onKapat, 1000); }
+    });
+  }
 
   function gonder(e: React.FormEvent) {
     e.preventDefault();
@@ -508,15 +529,11 @@ function PlanEkleModal({ tarih, dersListesi, konuOnerileri, onKapat }: {
     if (baslangicDakika === null || bitisDakika === null || bitisDakika <= baslangicDakika) {
       return setHata("Bitiş saati başlangıçtan sonra olmalı.");
     }
-    startTransition(async () => {
-      const res = await planEkle({
-        tur, ders, konu: konu || undefined,
-        hedefSoruSayisi: hedefSoru ? Number(hedefSoru) : undefined,
-        tarih, baslangicSaat, bitisSaat, aciklama: aciklama || undefined,
-      });
-      if (res.error) setHata(res.error);
-      else { setBasari("Plan eklendi."); setTimeout(onKapat, 1000); }
-    });
+    if (konu && gerekYokListesi?.includes(`${ders}|${konu}`)) {
+      setOnayGerekli(true);
+      return;
+    }
+    kaydet();
   }
 
   const tarihEtiket = new Date(`${tarih}T00:00:00`).toLocaleDateString("tr-TR", { weekday: "long", day: "2-digit", month: "long" });
@@ -600,10 +617,28 @@ function PlanEkleModal({ tarih, dersListesi, konuOnerileri, onKapat }: {
             </label>
 
             {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
-            <button type="submit" disabled={pending}
-              className="sfec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
-              {pending ? "Ekleniyor..." : "Plan ekle"}
-            </button>
+            {onayGerekli ? (
+              <div className="rounded-2xl p-3 flex flex-col gap-2" style={{ background: "rgba(255,196,107,0.12)", border: "2px solid rgba(255,196,107,0.35)" }}>
+                <span style={{ color: TEXT }} className="text-xs font-semibold">Bu konuya hakimsin, yine de çalışmayı planlamak istiyor musun?</span>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setOnayGerekli(false)} disabled={pending}
+                    className="sfec-btn flex-1 text-xs font-bold py-2 rounded-xl disabled:opacity-60"
+                    style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
+                    Hayır
+                  </button>
+                  <button type="button" onClick={kaydet} disabled={pending}
+                    className="sfec-btn flex-1 text-xs font-bold py-2 rounded-xl disabled:opacity-60"
+                    style={{ background: MINT, color: MINT_ON }}>
+                    Evet, yine de planla
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button type="submit" disabled={pending}
+                className="sfec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+                {pending ? "Ekleniyor..." : "Plan ekle"}
+              </button>
+            )}
           </form>
         )}
       </div>

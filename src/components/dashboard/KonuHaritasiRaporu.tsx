@@ -136,6 +136,15 @@ function KonuHaritasiSatirGorunumu({ satir }: { satir: KonuHaritasiSatiri }) {
   const belirsizYuzde = toplam > 0 ? Math.round((satir.belirsizSayisi / toplam) * 100) : 0;
   const yakinYuzde = Math.max(0, 100 - uzakYuzde - belirsizYuzde);
 
+  // Faz H4 — öğrencinin BİZZAT beyan ettiği hakimiyet dağılımı (Konu
+  // Hakimiyeti), loglardan çıkarımın (yukarıdaki) yanına ikinci çubuk
+  // olarak ekleniyor. Beyan verisi olmayan bir konu için ikinci çubuk
+  // hiç gösterilmiyor.
+  const beyanToplam = satir.beyanUzakSayisi + satir.beyanBelirsizSayisi + satir.beyanYakinSayisi;
+  const beyanUzakYuzde = beyanToplam > 0 ? Math.round((satir.beyanUzakSayisi / beyanToplam) * 100) : 0;
+  const beyanBelirsizYuzde = beyanToplam > 0 ? Math.round((satir.beyanBelirsizSayisi / beyanToplam) * 100) : 0;
+  const beyanYakinYuzde = Math.max(0, 100 - beyanUzakYuzde - beyanBelirsizYuzde);
+
   return (
     <div className="rounded-2xl p-3.5" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
       <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -149,7 +158,8 @@ function KonuHaritasiSatirGorunumu({ satir }: { satir: KonuHaritasiSatiri }) {
       </div>
       {/* Yetersiz/Orta/Yeterli dağılım çubuğu — AnalizPaneli'ndeki hedefeYakinlikDagilimi
           çubuklarıyla aynı görsel dil (bkz. AnalizPaneli.tsx). */}
-      <div className="mt-2.5 h-2 rounded-full overflow-hidden flex" style={{ background: BORDER }}>
+      <div style={{ color: TEXT_MUTED }} className="mt-2.5 text-[10px] font-semibold uppercase tracking-wide">Çalışma girişlerinden çıkarım</div>
+      <div className="mt-1 h-2 rounded-full overflow-hidden flex" style={{ background: BORDER }}>
         {uzakYuzde > 0 && <div style={{ width: `${uzakYuzde}%`, background: PEACH }} />}
         {belirsizYuzde > 0 && <div style={{ width: `${belirsizYuzde}%`, background: BUTTER }} />}
         {yakinYuzde > 0 && <div style={{ width: `${yakinYuzde}%`, background: MINT }} />}
@@ -160,6 +170,20 @@ function KonuHaritasiSatirGorunumu({ satir }: { satir: KonuHaritasiSatiri }) {
           <> — &quot;Yetersiz&quot; diyenlerin çoğu: <strong style={{ color: TEXT }}>{TAKIP_CEVABI_ETIKET[satir.enSikUzakTakipCevabi]}</strong></>
         )}
       </div>
+
+      {beyanToplam > 0 && (
+        <>
+          <div style={{ color: TEXT_MUTED }} className="mt-3 text-[10px] font-semibold uppercase tracking-wide">Öğrencinin kendi beyanı (Konu Hakimiyeti)</div>
+          <div className="mt-1 h-2 rounded-full overflow-hidden flex" style={{ background: BORDER }}>
+            {beyanUzakYuzde > 0 && <div style={{ width: `${beyanUzakYuzde}%`, background: PEACH }} />}
+            {beyanBelirsizYuzde > 0 && <div style={{ width: `${beyanBelirsizYuzde}%`, background: BUTTER }} />}
+            {beyanYakinYuzde > 0 && <div style={{ width: `${beyanYakinYuzde}%`, background: MINT }} />}
+          </div>
+          <div style={{ color: TEXT_MUTED }} className="mt-1.5 text-[11px]">
+            Yetersiz %{beyanUzakYuzde} · Orta %{beyanBelirsizYuzde} · Yeterli %{beyanYakinYuzde}
+          </div>
+        </>
+      )}
     </div>
   );
 }

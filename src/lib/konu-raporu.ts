@@ -51,6 +51,12 @@ export interface KonuHaritasiSatiri {
   yakinSayisi: number;
   uzakOrani: number | null;
   enSikUzakTakipCevabi: TakipCevabi | null;
+  // Faz H4 — Konu Hakimiyeti'nde öğrencinin BİZZAT beyan ettiği hakimiyet
+  // dağılımı (ogrenci_konu_hakimiyeti), loglardan çıkarım (yukarıdaki
+  // uzak/belirsiz/yakin) ile YAN YANA — migration 0055'te aynı RPC'ye eklendi.
+  beyanUzakSayisi: number;
+  beyanBelirsizSayisi: number;
+  beyanYakinSayisi: number;
 }
 
 // Sınıf VEYA okul kapsamlı agrege rapor — yetki kontrolü RPC'nin
@@ -70,11 +76,13 @@ export async function konuHaritasiGetir(
     ders: string; konu: string; ogrenci_sayisi: number;
     uzak_sayisi: number; belirsiz_sayisi: number; yakin_sayisi: number;
     uzak_orani: number | null; en_sik_uzak_takip_cevabi: TakipCevabi | null;
+    beyan_uzak_sayisi: number; beyan_belirsiz_sayisi: number; beyan_yakin_sayisi: number;
   };
   const satirlar = ((data as Row[]) ?? []).map((r) => ({
     ders: r.ders, konu: r.konu, ogrenciSayisi: r.ogrenci_sayisi,
     uzakSayisi: r.uzak_sayisi, belirsizSayisi: r.belirsiz_sayisi, yakinSayisi: r.yakin_sayisi,
     uzakOrani: r.uzak_orani, enSikUzakTakipCevabi: r.en_sik_uzak_takip_cevabi,
+    beyanUzakSayisi: r.beyan_uzak_sayisi, beyanBelirsizSayisi: r.beyan_belirsiz_sayisi, beyanYakinSayisi: r.beyan_yakin_sayisi,
   }));
   return { error: null, satirlar };
 }

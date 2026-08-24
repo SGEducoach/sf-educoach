@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   BarChart3, BookOpen, BookOpenCheck, Bot, CalendarDays, CalendarPlus2, CircleUserRound, ClipboardCheck, ClipboardList, FileCheck2, FileSpreadsheet, GraduationCap, Home,
-  LogOut, Medal, Megaphone, Menu, PenLine, School, ScrollText, ShieldCheck, UserPlus, Users, X,
+  ListChecks, LogOut, Medal, Megaphone, Menu, PenLine, School, ScrollText, ShieldCheck, UserPlus, Users, X,
 } from "lucide-react";
 import { BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, SEAFOAM, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 import { signOut } from "@/app/dashboard/actions";
@@ -27,6 +27,7 @@ const IKONLAR: Record<DashboardIkonu, typeof Home> = {
   gorev: ClipboardList,
   plan: CalendarPlus2,
   veri: PenLine,
+  hakimiyet: ListChecks,
   analiz: BarChart3,
   ai: Bot,
   rozet: Medal,

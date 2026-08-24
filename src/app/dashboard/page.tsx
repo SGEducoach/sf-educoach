@@ -15,6 +15,8 @@ import { ZorunluSifreDegisikligiKapisi } from "@/components/dashboard/ZorunluSif
 import { analizVerisiGetir } from "@/lib/analiz";
 import type { RaporDonemi } from "@/lib/analiz";
 import { ogrencininZayifKonulariGetir, konuHaritasiGetir } from "@/lib/konu-raporu";
+import { konuHakimiyetiGetir, gerekYokHaritasiGetir } from "@/lib/konu-hakimiyeti";
+import { KonuHakimiyetiEkrani } from "@/components/dashboard/KonuHakimiyetiEkrani";
 import { AYT_ALAN_ETIKET, sinifSiraKarsilastir, dokuzOnSinifMi, maarifHiyerarsiSinifMi, TYT_DERSLERI, AYT_DERSLERI } from "@/lib/types";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
 import type { AytAlan, KurumTuru, UserRole } from "@/lib/types";
@@ -165,6 +167,7 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
     { data: tamamlananKonularHam },
     oyunEtiketiSayaclari,
     zayifKonular,
+    gerekYokSeti,
     { data: gorevAtamalariHam },
   ] = await Promise.all([
     supabase.from("students").select("okul_no, ayt_alan, hedef_bolum, schools(ad), classes(seviye, sube)").eq("id", userId).single(),
@@ -187,6 +190,11 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
     // "yapay-zeka" sekmelerinde gösteriliyor, gereksiz sorguyu diğer
     // sekmelerde atlıyoruz.
     (aktifBolum === "ozet" || aktifBolum === "yapay-zeka") ? ogrencininZayifKonulariGetir(supabase, userId) : Promise.resolve([]),
+    // Konu Hakimiyeti (Faz H3) — "gerek yok" onayı Plan Yap ve Konu
+    // Çalışma girişinde de gerekiyor, ikisi de bu sekmelerde.
+    (aktifBolum === "gorevler" || aktifBolum === "planlar" || aktifBolum === "veri-girisi")
+      ? gerekYokHaritasiGetir(supabase, userId)
+      : Promise.resolve(new Set<string>()),
     // Görevlerim (Faz 3, §5): görüntülenen haftanın (Pzt-Paz) görevleri —
     // gorev_atamalari + gorevler join'i.
     supabase.from("gorev_atamalari")
@@ -195,6 +203,7 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
       .gte("gorevler.tarih", haftaBaslangic)
       .lte("gorevler.tarih", haftaBitis),
   ]);
+  const gerekYokListesi = Array.from(gerekYokSeti);
 
   type Row = {
     okul_no: string; ayt_alan: AytAlan; hedef_bolum: string;
@@ -249,6 +258,13 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
   const dersListesi = dokuzOnMu
     ? [...TYT_DERSLERI]
     : [...TYT_DERSLERI, ...AYT_DERSLERI[s.ayt_alan].filter((d) => !TYT_DERSLERI.includes(d as typeof TYT_DERSLERI[number]))];
+
+  // Faz H2 — Konu Hakimiyeti: sadece kendi sekmesinde, gereksiz sorguyu
+  // diğer sekmelerde atlıyoruz (aynı dokuzOnMu'ya bağlı olduğu için de
+  // student sorgusundan sonra, mufredatAltKonulari ile aynı gerekçeyle).
+  const konuHakimiyetiSatirlari = aktifBolum === "konu-hakimiyeti"
+    ? await konuHakimiyetiGetir(supabase, userId, s.classes?.seviye ?? null, s.ayt_alan, dokuzOnMu)
+    : [];
 
   type GorevAtamaRow = {
     id: string; durum: GorevSatiri["durum"];
@@ -324,6 +340,7 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
           dersListesi={dersListesi}
           konuOnerileri={konuOnerileri}
           konuSayaclari={konuSayaclari}
+          gerekYokListesi={gerekYokListesi}
         />
       </section>}
 
@@ -334,7 +351,11 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
       {aktifBolum === "yapay-zeka" && <section className="min-h-full"><KonuHaritasiRaporu mod="kendi" konular={zayifKonular} /></section>}
 
       {aktifBolum === "veri-girisi" && <div className="print:hidden">
-        <OgrenciVeriGirisi aytAlan={s.ayt_alan} konuOnerileri={konuOnerileri} sinifSeviyesi={s.classes?.seviye ?? null} konuSayaclari={konuSayaclari} mufredatAltKonulari={mufredatAltKonulari} />
+        <OgrenciVeriGirisi aytAlan={s.ayt_alan} konuOnerileri={konuOnerileri} sinifSeviyesi={s.classes?.seviye ?? null} konuSayaclari={konuSayaclari} mufredatAltKonulari={mufredatAltKonulari} gerekYokListesi={gerekYokListesi} />
+      </div>}
+
+      {aktifBolum === "konu-hakimiyeti" && <div className="print:hidden">
+        <KonuHakimiyetiEkrani satirlar={konuHakimiyetiSatirlari} />
       </div>}
 
       {aktifBolum === "analiz" && <div>
@@ -568,7 +589,37 @@ async function VeliIcerik({ userId, ad, secilenOgrenciId, donem, aktifBolum }: {
         )}
       </div>
 
-      {aktifBolum === "analiz" && seciliCocuk?.students && <section><AnalizPaneli veri={await analizVerisiGetir(supabase, seciliCocuk.students.id, donem)} ogrenciAdi={seciliCocuk.students.profiles?.ad} /></section>}
+      {aktifBolum === "analiz" && seciliCocuk?.students && (
+        <section className="flex flex-col gap-4">
+          <VeliKonuHakimiyetiOzeti supabase={supabase} studentId={seciliCocuk.students.id} />
+          <AnalizPaneli veri={await analizVerisiGetir(supabase, seciliCocuk.students.id, donem)} ogrenciAdi={seciliCocuk.students.profiles?.ad} />
+        </section>
+      )}
+    </div>
+  );
+}
+
+// Faz H4 — veli, çocuğunun Konu Hakimiyeti verisini ayrı bir ekrana
+// gitmeden, Analiz/Rapor sekmesinde tek satırlık bir özetle görür.
+async function VeliKonuHakimiyetiOzeti({ supabase, studentId }: { supabase: Awaited<ReturnType<typeof createClient>>; studentId: string }) {
+  const { data: cocuk } = await supabase
+    .from("students")
+    .select("ayt_alan, classes(seviye)")
+    .eq("id", studentId)
+    .single();
+  type CocukRow = { ayt_alan: AytAlan; classes: { seviye: string } | null };
+  const c = cocuk as unknown as CocukRow | null;
+  if (!c) return null;
+
+  const dokuzOnMuCocuk = dokuzOnSinifMi(c.classes?.seviye ?? null);
+  const satirlar = await konuHakimiyetiGetir(supabase, studentId, c.classes?.seviye ?? null, c.ayt_alan, dokuzOnMuCocuk);
+  const hakimSayisi = satirlar.filter((s) => s.hakimiyetSeviyesi === "yakin").length;
+  if (satirlar.length === 0) return null;
+
+  return (
+    <div className="rounded-2xl px-4 py-3 flex items-center gap-2" style={{ background: BG1_ALT, border: `1px solid ${BORDER}` }}>
+      <span style={{ color: TEXT_MUTED }} className="text-xs">Konu Hakimiyeti:</span>
+      <span style={{ color: TEXT }} className="text-sm font-bold">{hakimSayisi}/{satirlar.length} konuya hakim</span>
     </div>
   );
 }
