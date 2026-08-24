@@ -72,6 +72,13 @@ export function AnalizPaneli({
   // zaten prop olarak geliyor) ve Katman 3/4'ün çıktısını (veri.*) girdi
   // alan, YENİ bir sorgu gerektirmeyen saf dönüşümler.
   const oncelikSiralamasi = useMemo(() => oncelikSiralamasiOlustur(konuHakimiyetiSatirlari), [konuHakimiyetiSatirlari]);
+  // Kullanıcı bulgusu (25.08.2026) — hiçbir konuda verisi olmayan bir
+  // öğrenci için TÜM konular eşit (masterySkoru=null) zayıflıkta sayılır;
+  // "ilk 3" listesi bu durumda yanıltıcı bir kesinlik verir (sadece ders
+  // ağırlığına göre sıralanmış, gerçek bir öncelik değil) — bu yüzden
+  // gösterilmiyor, yerine icgoruMetinleriOlustur'un ürettiği genel/nötr
+  // mesaj tek başına kalıyor.
+  const hicVeriYok = oncelikSiralamasi.length > 0 && oncelikSiralamasi.every((s) => s.masterySkoru === null);
   const icgoruler = useMemo(() => icgoruMetinleriOlustur({
     denemeTrend: veri.denemeTrendYonu,
     dersTrendleri: veri.dersTrendYonu,
@@ -125,7 +132,7 @@ export function AnalizPaneli({
         </button>
       </div>
 
-      <IcgorulerKarti icgoruler={icgoruler} oncelikSiralamasi={oncelikSiralamasi.slice(0, 3)}
+      <IcgorulerKarti icgoruler={icgoruler} oncelikSiralamasi={hicVeriYok ? [] : oncelikSiralamasi.slice(0, 3)}
         hedefNetTyt={veri.hedefNetTyt} hedefNetAyt={veri.hedefNetAyt} duzenlenebilir={hedefDuzenlenebilir} />
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">

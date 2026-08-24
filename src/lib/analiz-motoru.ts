@@ -296,8 +296,20 @@ function hizDogrulukIcgorusu(satir: { ders: string; kategori: HizDogrulukKategor
   return null; // "hizli-dogru" zaten iyi durumda, özel bir uyarı gerekmiyor
 }
 
-function oncelikIcgorusu(ilkSatir: OncelikSatiri | undefined): string | null {
-  if (!ilkSatir) return null;
+// Kullanıcı bulgusu (25.08.2026): hiçbir konuda verisi olmayan (yeni
+// kayıt olmuş) bir öğrenciye tek bir konu (örn. "Matematik") önerilmesi
+// yanıltıcı — bu durumda TÜM konular masterySkoru=null olduğundan eşit
+// zayıflıkta sayılıyor ve sıralama sadece ders sınav ağırlığına göre
+// belirleniyor (Matematik en yüksek ağırlığa sahip olduğundan HEP
+// kazanıyor) — bu, gerçek bir öncelik değil, yapay bir sonuç. Bu yüzden
+// "gerçekten hiç veri yok" durumu AYRICA tespit edilip genel/nötr bir
+// mesaja dönüştürülüyor.
+function oncelikIcgorusu(oncelikSiralamasi: OncelikSatiri[]): string | null {
+  if (oncelikSiralamasi.length === 0) return null;
+  if (oncelikSiralamasi.every((s) => s.masterySkoru === null)) {
+    return "Henüz hiçbir konuda veri girmemişsin — hangi dersten başlarsan başla iyi bir ilk adım olur, seni bekleyen tüm derslerden birini seçip başlayabilirsin! 🚀";
+  }
+  const ilkSatir = oncelikSiralamasi[0];
   const seviyeIfade = ilkSatir.masterySkoru === null ? "hiç çalışmadığın" : `hakimiyet skorun ${ilkSatir.masterySkoru}/100 olan`;
   return `Şimdi en çok "${ilkSatir.konu}" (${ilkSatir.ders}) konusuna odaklanmanı öneririz — ${seviyeIfade} bir konu.`;
 }
@@ -324,7 +336,7 @@ export function icgoruMetinleriOlustur(girdi: IcgoruGirdisi): string[] {
     if (metin) metinler.push(metin);
   }
 
-  const oncelik = oncelikIcgorusu(girdi.oncelikSiralamasi[0]);
+  const oncelik = oncelikIcgorusu(girdi.oncelikSiralamasi);
   if (oncelik) metinler.push(oncelik);
 
   const genelTrend = trendIcgorusu("Genel deneme netin", girdi.denemeTrend);
