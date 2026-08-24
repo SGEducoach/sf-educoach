@@ -6,14 +6,15 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip,
   ResponsiveContainer, BarChart, Bar, Legend, PieChart, Pie, Cell,
 } from "recharts";
-import { Sparkles, Clock, Target, TrendingUp, TrendingDown, Minus, Printer, ListChecks, Gauge } from "lucide-react";
+import { Sparkles, Clock, Target, TrendingUp, TrendingDown, Minus, Printer, ListChecks, Gauge, Lightbulb } from "lucide-react";
 import type { AnalizVerisi, RaporDonemi } from "@/lib/analiz";
 import { RAPOR_DONEMI_ETIKET } from "@/lib/analiz";
 import { HEDEFE_YAKINLIK_ETIKET, VERIMLILIK_ETIKET } from "@/lib/types";
 import type { AytAlan, HedefeYakinlik } from "@/lib/types";
 import { satirTytdeGosterilsinMi, satirAytdeGosterilsinMi } from "@/lib/konu-hakimiyeti";
 import type { KonuHakimiyetiSatiri } from "@/lib/konu-hakimiyeti";
-import type { TrendSonucu, HizDogrulukKategorisi } from "@/lib/analiz-motoru";
+import { oncelikSiralamasiOlustur, icgoruMetinleriOlustur } from "@/lib/analiz-motoru";
+import type { TrendSonucu, HizDogrulukKategorisi, OncelikSatiri } from "@/lib/analiz-motoru";
 import {
   BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, TEXT, TEXT_MUTED, MINT, MINT_BG, MINT_ON,
   SKY, SKY_BG, BUTTER, BUTTER_BG, BLUSH, BLUSH_BG, LILAC,
@@ -56,6 +57,18 @@ export function AnalizPaneli({ veri, ogrenciAdi, konuHakimiyetiSatirlari = [], k
 
   const hedefToplam = veri.hedefeYakinlikDagilimi.yakin + veri.hedefeYakinlikDagilimi.belirsiz + veri.hedefeYakinlikDagilimi.uzak;
   const konuHakimiyetHakimSayisi = konuHakimiyetiSatirlari.filter((s) => s.hakimiyetSeviyesi === "yakin").length;
+
+  // Analiz Motoru Faz A3 — Katman 8 (öncelik motoru) + Katman 9 (kural
+  // bazlı içgörü metni). Katman 2'nin çıktısını (konuHakimiyetiSatirlari,
+  // zaten prop olarak geliyor) ve Katman 3/4'ün çıktısını (veri.*) girdi
+  // alan, YENİ bir sorgu gerektirmeyen saf dönüşümler.
+  const oncelikSiralamasi = useMemo(() => oncelikSiralamasiOlustur(konuHakimiyetiSatirlari), [konuHakimiyetiSatirlari]);
+  const icgoruler = useMemo(() => icgoruMetinleriOlustur({
+    denemeTrend: veri.denemeTrendYonu,
+    dersTrendleri: veri.dersTrendYonu,
+    hizDogruluk: veri.dersHizDogruluk,
+    oncelikSiralamasi,
+  }), [veri.denemeTrendYonu, veri.dersTrendYonu, veri.dersHizDogruluk, oncelikSiralamasi]);
 
   // Ders bazlı ortalama net grafiğinde tekil ders seçilince o dersin
   // net trendi gösteriliyor (§1, yenilikler_1.txt). Dropdown, gerçekten
@@ -101,6 +114,8 @@ export function AnalizPaneli({ veri, ogrenciAdi, konuHakimiyetiSatirlari = [], k
           <Printer size={13} /> Yazdır / PDF olarak kaydet
         </button>
       </div>
+
+      <IcgorulerKarti icgoruler={icgoruler} oncelikSiralamasi={oncelikSiralamasi.slice(0, 3)} />
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
         <IstatKart icon={TrendingUp} etiket="Son deneme neti" deger={veri.sonDenemeNet ?? "—"} renk={MINT} bg={MINT_BG} />
@@ -264,6 +279,46 @@ export function AnalizPaneli({ veri, ogrenciAdi, konuHakimiyetiSatirlari = [], k
 
 function BosDurum() {
   return <p style={{ color: TEXT_MUTED }} className="text-sm py-10 text-center">Henüz veri yok.</p>;
+}
+
+// Analiz Motoru Faz A3 — Katman 8+9'un vitrin bileşeni. "Yapay Zeka
+// Analizi" vaadinin (bkz. plan, silinmiş YapayZekaAnaliziPromosu.tsx)
+// fiilî karşılığı — ama tamamen kural bazlı, hiçbir LLM çağrısı yok.
+// Hiç içerik yoksa (yeterli veri henüz birikmemiş) kart hiç render
+// edilmiyor, boş bir kutu göstermiyoruz.
+function IcgorulerKarti({ icgoruler, oncelikSiralamasi }: { icgoruler: string[]; oncelikSiralamasi: OncelikSatiri[] }) {
+  if (icgoruler.length === 0 && oncelikSiralamasi.length === 0) return null;
+  return (
+    <div className="sfec-fade rounded-3xl p-5 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style={{ background: "rgba(199,182,255,0.15)" }}>
+          <Lightbulb size={14} color={LILAC} />
+        </div>
+        <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">İçgörüler</span>
+      </div>
+      {icgoruler.length > 0 && (
+        <ul className="flex flex-col gap-2" style={{ margin: 0, padding: 0, listStyle: "none" }}>
+          {icgoruler.map((metin, i) => (
+            <li key={i} className="text-sm flex items-start gap-2" style={{ color: TEXT }}>
+              <span style={{ color: LILAC }} className="mt-0.5 shrink-0">•</span>
+              <span>{metin}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {oncelikSiralamasi.length > 0 && (
+        <div className={`flex flex-col gap-1.5 ${icgoruler.length > 0 ? "mt-4 pt-3" : ""}`} style={icgoruler.length > 0 ? { borderTop: `1px solid ${BORDER}` } : undefined}>
+          <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide mb-0.5">Öncelik sıralaması</span>
+          {oncelikSiralamasi.map((s, i) => (
+            <div key={`${s.ders}|${s.konu}`} className="flex items-center justify-between gap-2 text-xs">
+              <span style={{ color: TEXT }} className="truncate">{i + 1}. {s.konu} <span style={{ color: TEXT_MUTED }}>· {s.ders}</span></span>
+              {s.masterySkoru !== null && <span style={{ color: TEXT_MUTED }} className="shrink-0">{s.masterySkoru}/100</span>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // Analiz Motoru Faz A2, Katman 3 — doğrusal regresyonla çıkarılan net

@@ -207,3 +207,142 @@ export function hizDogrulukKategorisiBelirle(girdi: HizDogrulukGirdisi): HizDogr
   if (!hizli && dogru) return "yavas-dogru"; // hız çalışması gerekir
   return "yavas-hatali"; // temel eksik
 }
+
+// ============ Katman 8: öncelik motoru ============
+//
+// Faz A3 — "şimdi hangi konuya odaklanmalıyım" sıralı önerisi. Katman
+// 2'nin (masterySkoru) çıktısını doğrudan girdi alır — YENİ bir veri
+// sorgusu GEREKMEZ, tamamen türetilmiş/saf bir dönüşümdür.
+//
+// BİLİNÇLİ SADELEŞTİRME: rapordaki formül "kalan_gun_orani"na (YKS'ye
+// kaç gün kaldı) da bölüyordu. Bu faktör BİLEREK dışarıda bırakıldı —
+// aynı öğrencinin TÜM konularına AYNI sabit çarpan uygulanacağından,
+// sıralamayı hiç DEĞİŞTİRMEZ (sadece zamanla tüm skorları birlikte
+// şişirir); motorun tek çıktısı sıralı bir liste olduğu için bu faktörü
+// eklemek YKS tarihi ayarı gibi ek karmaşıklık katar ama sonucu
+// değiştirmez. Mutlak "ne kadar acil" göstergesi istenirse (örn. sayısal
+// bir gösterge, sıralamadan bağımsız) o zaman eklenmeli.
+const DERS_SINAV_AGIRLIGI: Record<string, number> = {
+  "Türkçe": 40, "Matematik": 80, "Fizik": 21, "Kimya": 20, "Biyoloji": 19,
+  "Tarih": 15, "Coğrafya": 11, "Felsefe": 17, "Din Kültürü": 11, "Edebiyat": 24,
+};
+const VARSAYILAN_DERS_AGIRLIGI = 10;
+
+function dersAgirligiGetir(ders: string): number {
+  return DERS_SINAV_AGIRLIGI[ders] ?? VARSAYILAN_DERS_AGIRLIGI;
+}
+
+// "Hazırlık" (9. sınıf ÖNCESİ ek/zenginleştirme materyali, bkz.
+// konu-hakimiyeti.ts'teki tam-görünüm filtresiyle aynı gerekçe) çekirdek
+// YKS müfredatı değil — gerçek veriyle doğrulanırken bu konuların, sırf
+// MUFREDAT_KONULARI JSON'ında en başta durdukları için (aynı skordaki
+// diğer konularla eşitlik bozulurken stabil sıralama JSON sırasını
+// koruyor) "en öncelikli" görünmesi tespit edildi. Küçük bir çarpanla
+// bilinçli olarak geriye itiliyor.
+function seviyeAgirlikCarpaniGetir(seviye: string): number {
+  return seviye === "Hazırlık" ? 0.3 : 1;
+}
+
+// 0 gün -> 1.0 (henüz unutma etkisi yok), 90+ gün -> 2.0 (tavan) — mevcut
+// bayatlama eşikleriyle (90/180 gün) aynı 90 günlük referans noktası.
+function unutmaCarpaniHesapla(gunFarki: number | null): number {
+  if (gunFarki === null) return 1;
+  const oran = Math.min(1, Math.max(0, gunFarki) / 90);
+  return 1 + oran;
+}
+
+export interface OncelikSatiri {
+  ders: string;
+  ustKonu: string;
+  konu: string;
+  oncelikSkoru: number;
+  masterySkoru: number | null;
+}
+
+export function oncelikSiralamasiOlustur(
+  satirlar: { ders: string; ustKonu: string; konu: string; seviye: string; masterySkoru: number | null; guncellenmeTarihi: string | null }[],
+): OncelikSatiri[] {
+  const simdi = Date.now();
+  return satirlar
+    .map((s) => {
+      const zayiflik = s.masterySkoru === null ? 100 : 100 - s.masterySkoru;
+      const gunFarki = s.guncellenmeTarihi === null ? null : (simdi - new Date(s.guncellenmeTarihi).getTime()) / (1000 * 3600 * 24);
+      const oncelikSkoru = Math.round(
+        zayiflik * dersAgirligiGetir(s.ders) * seviyeAgirlikCarpaniGetir(s.seviye) * unutmaCarpaniHesapla(gunFarki),
+      );
+      return { ders: s.ders, ustKonu: s.ustKonu, konu: s.konu, oncelikSkoru, masterySkoru: s.masterySkoru };
+    })
+    .sort((a, b) => b.oncelikSkoru - a.oncelikSkoru);
+}
+
+// ============ Katman 9: kural bazlı içgörü metni ============
+//
+// Önceki katmanların sayısal çıktısını Türkçe cümlelere döken TAMAMEN
+// deterministik bir şablon motoru — if/else + string birleştirme, HİÇBİR
+// LLM çağrısı yok. Ton, platformun mevcut samimi/teşvik edici diliyle
+// tutarlı (kullanıcı kararı, 25.08.2026 — "algoritma senin").
+
+function trendIcgorusu(dersEtiketi: string, trend: TrendSonucu): string | null {
+  if (trend.yon === null || trend.haftalikDegisim === null) return null;
+  if (trend.yon === "yukselen") return `${dersEtiketi} son haftalarda ortalama haftada +${trend.haftalikDegisim} net artıyor — bu tempoyu koru! 🎉`;
+  if (trend.yon === "dusen") return `${dersEtiketi} son haftalarda haftada ${Math.abs(trend.haftalikDegisim)} net geriliyor — bir sonraki çalışma planına bu dersi eklemek iyi olabilir.`;
+  return null; // "durgun" — özel bir uyarı gerektirmiyor, gürültü olmasın diye eklenmiyor
+}
+
+function hizDogrulukIcgorusu(satir: { ders: string; kategori: HizDogrulukKategorisi }): string | null {
+  if (satir.kategori === "hizli-hatali") return `${satir.ders}'te hızlısın ama hata oranın yüksek — dikkatsizlik olabilir, sorulara biraz daha yavaş yaklaşmayı dene.`;
+  if (satir.kategori === "yavas-hatali") return `${satir.ders}'te hem yavaş hem hata oranın yüksek — temel konu eksikleri olabilir, konu tekrarına öncelik ver.`;
+  if (satir.kategori === "yavas-dogru") return `${satir.ders}'te doğru çözüyorsun ama yavaşsın — kronometreli pratik hızını artırabilir.`;
+  return null; // "hizli-dogru" zaten iyi durumda, özel bir uyarı gerekmiyor
+}
+
+function oncelikIcgorusu(ilkSatir: OncelikSatiri | undefined): string | null {
+  if (!ilkSatir) return null;
+  const seviyeIfade = ilkSatir.masterySkoru === null ? "hiç çalışmadığın" : `hakimiyet skorun ${ilkSatir.masterySkoru}/100 olan`;
+  return `Şimdi en çok "${ilkSatir.konu}" (${ilkSatir.ders}) konusuna odaklanmanı öneririz — ${seviyeIfade} bir konu.`;
+}
+
+export interface IcgoruGirdisi {
+  denemeTrend: TrendSonucu;
+  dersTrendleri: Record<string, TrendSonucu>;
+  hizDogruluk: { ders: string; kategori: HizDogrulukKategorisi }[];
+  oncelikSiralamasi: OncelikSatiri[];
+}
+
+// En fazla 4 cümle döner — hepsi birden gösterilirse "AI konuşuyormuş"
+// hissi yerine liste okuma hissi verir; en aksiyona dönüştürülebilir
+// (öncelik + en belirgin trend + en belirgin hız-doğruluk uyarısı) 3-4
+// cümle seçiliyor.
+export function icgoruMetinleriOlustur(girdi: IcgoruGirdisi): string[] {
+  const metinler: string[] = [];
+
+  const oncelik = oncelikIcgorusu(girdi.oncelikSiralamasi[0]);
+  if (oncelik) metinler.push(oncelik);
+
+  const genelTrend = trendIcgorusu("Genel deneme netin", girdi.denemeTrend);
+  if (genelTrend) metinler.push(genelTrend);
+
+  // En belirgin (mutlak değeri en büyük) TEK ders trendi — hepsini
+  // eklemek gürültü olur.
+  const dersTrendGirdileri = Object.entries(girdi.dersTrendleri)
+    .filter(([, t]) => t.haftalikDegisim !== null)
+    .sort((a, b) => Math.abs(b[1].haftalikDegisim ?? 0) - Math.abs(a[1].haftalikDegisim ?? 0));
+  if (dersTrendGirdileri.length > 0) {
+    const [ders, trend] = dersTrendGirdileri[0];
+    const metin = trendIcgorusu(`${ders} netin`, trend);
+    if (metin) metinler.push(metin);
+  }
+
+  // En "acil" hız-doğruluk uyarısı — yavas-hatali > hizli-hatali > yavas-dogru
+  // önceliğiyle (temel eksik, en ciddi sinyal).
+  const oncelikSirasi: HizDogrulukKategorisi[] = ["yavas-hatali", "hizli-hatali", "yavas-dogru"];
+  for (const kategori of oncelikSirasi) {
+    const satir = girdi.hizDogruluk.find((h) => h.kategori === kategori);
+    if (satir) {
+      const metin = hizDogrulukIcgorusu(satir);
+      if (metin) { metinler.push(metin); break; }
+    }
+  }
+
+  return metinler.slice(0, 4);
+}
