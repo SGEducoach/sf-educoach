@@ -12,7 +12,7 @@ import {
 } from "@/lib/types";
 import type { HedefeYakinlik, OgrenmeSekli, TekrarDurumu } from "@/lib/types";
 import { Etiket, SecenekSecici } from "@/components/dashboard/OgrenciVeriGirisi";
-import { konuHakimiyetiKaydet, konuHakimiyetiTopluKaydet } from "@/app/dashboard/konu-hakimiyeti-actions";
+import { konuHakimiyetiKaydet } from "@/app/dashboard/konu-hakimiyeti-actions";
 import type { KonuHakimiyetiSatiri } from "@/lib/konu-hakimiyeti";
 import { BG0, BG1, BG1_ALT, BLUSH, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, BUTTER, BUTTER_BG, PEACH, PEACH_BG, TEXT, TEXT_MUTED } from "@/lib/theme";
 
@@ -115,49 +115,20 @@ export function KonuHakimiyetiEkrani({ satirlar }: { satirlar: KonuHakimiyetiSat
 }
 
 function UstBaslikGrubu({ ders, ustKonu, satirlar }: { ders: string; ustKonu: string; satirlar: KonuHakimiyetiSatiri[] }) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
-  const [hata, setHata] = useState<string | null>(null);
+  // Kullanıcı isteği: "hepsini işaretle" toplu işaretleme kaldırıldı —
+  // bazı üst başlıklarda görünüp bazılarında görünmemesi kafa karıştırıcı
+  // bulundu. Her alt konu artık sadece tek tek işaretleniyor; tamamen
+  // "Yeterli" olan gruplar yine listenin altına iniyor (bkz. ustBasliklar
+  // sıralaması, KonuHakimiyetiEkrani).
   const coklu = satirlar.length > 1 || satirlar[0]?.konu !== ustKonu;
-
-  function topluIsaretle(seviye: HedefeYakinlik) {
-    setHata(null);
-    startTransition(async () => {
-      const res = await konuHakimiyetiTopluKaydet({
-        ders, konular: satirlar.map((s) => s.konu), hakimiyetSeviyesi: seviye,
-        ogrenmeSekli: [], tekrarDurumu: "tekrar_edebilirim",
-      });
-      if (res.error) setHata(res.error);
-      else router.refresh();
-    });
-  }
 
   return (
     <div className="rounded-2xl overflow-hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-      <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3" style={{ background: BG1_ALT }}>
-        <div className="flex items-center gap-1.5 min-w-0">
-          {coklu && <Layers size={13} color={TEXT_MUTED} className="shrink-0" />}
-          <span style={{ color: TEXT }} className="text-sm font-bold truncate">{ustKonu}</span>
-          <span style={{ color: TEXT_MUTED }} className="text-[11px] shrink-0">· {ders}</span>
-        </div>
-        {coklu && (
-          <div className="flex items-center gap-1.5 shrink-0">
-            <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Hepsini işaretle:</span>
-            {(["uzak", "belirsiz", "yakin"] as const).map((s) => (
-              <button key={s} type="button" disabled={pending} onClick={() => topluIsaretle(s)}
-                className="sfec-btn text-[10px] font-bold px-2.5 py-1 rounded-full disabled:opacity-60"
-                style={{ background: BG0, color: HAKIMIYET_RENK[s], border: `1px solid ${HAKIMIYET_RENK[s]}` }}>
-                {HAKIMIYET_SEVIYESI_ETIKET[s]}
-              </button>
-            ))}
-          </div>
-        )}
+      <div className="flex flex-wrap items-center gap-1.5 px-4 py-3" style={{ background: BG1_ALT }}>
+        {coklu && <Layers size={13} color={TEXT_MUTED} className="shrink-0" />}
+        <span style={{ color: TEXT }} className="text-sm font-bold truncate">{ustKonu}</span>
+        <span style={{ color: TEXT_MUTED }} className="text-[11px] shrink-0">· {ders}</span>
       </div>
-      {hata && (
-        <div className="px-4 pt-2" style={{ background: BG1_ALT }}>
-          <p style={{ color: BLUSH }} className="text-[11px] font-semibold">{hata}</p>
-        </div>
-      )}
       <div className="flex flex-col divide-y" style={{ borderColor: BORDER }}>
         {satirlar.map((s) => <KonuSatiri key={s.konu} satir={s} />)}
       </div>
