@@ -92,6 +92,7 @@ export interface KonuCalisma {
   konu: string;
   sure_dakika: number;
   hedefe_yakinlik: HedefeYakinlik;
+  takip_cevabi: TakipCevabi | null;
   yayinevi: string;
   created_at: string;
 }
@@ -195,6 +196,38 @@ export const HEDEFE_YAKINLIK_ETIKET: Record<HedefeYakinlik, string> = {
   belirsiz: "Belirsiz",
   uzak: "Uzak",
 };
+
+// Konu bilme/bilmeme göstergesi — "Konuya hakimiyet" (hedefe_yakinlik)
+// seçiminden HEMEN SONRA, seçilen değere özel 2. aşama bir takip sorusu
+// soruluyor (bkz. KonuCalismaForm, Faz K2). Her kod, hangi 1. aşama
+// seçeneğinden geldiğini önekinden taşıyor (az_/orta_/yeterli_) — DB'de
+// tek bir konu_calismalar.takip_cevabi sütununda saklanıyor, migration
+// 0054'teki CHECK constraint bu 10 kodla sınırlı.
+export type TakipCevabi =
+  | "az_hic" | "az_az" | "az_orta" | "az_yuksek"
+  | "orta_evet" | "orta_biraz" | "orta_hayir"
+  | "yeterli_hizli_dogru" | "yeterli_dogru_yavas" | "yeterli_hizli_hata";
+
+export const TAKIP_SORUSU: Record<HedefeYakinlik, { baslik: string; secenekler: [TakipCevabi, string][] }> = {
+  uzak: {
+    baslik: "Bu konudaki soruları ne kadar çözüyorsun?",
+    secenekler: [["az_hic", "Hiç"], ["az_az", "Az"], ["az_orta", "Orta"], ["az_yuksek", "Yüksek"]],
+  },
+  belirsiz: {
+    baslik: "Bu konuyu tekrar etmen gerekiyor mu?",
+    secenekler: [["orta_evet", "Evet, kesinlikle"], ["orta_biraz", "Biraz tekrar iyi olur"], ["orta_hayir", "Hayır, gerek yok"]],
+  },
+  yakin: {
+    baslik: "Bu konudaki sorularda hızın ve doğruluğun nasıl?",
+    secenekler: [["yeterli_hizli_dogru", "Hızlı ve doğru"], ["yeterli_dogru_yavas", "Doğru ama yavaş"], ["yeterli_hizli_hata", "Hızlı ama hatalı"]],
+  },
+};
+
+// TAKIP_SORUSU'nun düz kod→etiket sözlüğü — "Konu Haritası" raporunda
+// (Faz K3) en sık seçilen takip_cevabi kodunu insan-okunur göstermek için.
+export const TAKIP_CEVABI_ETIKET: Record<TakipCevabi, string> = Object.fromEntries(
+  Object.values(TAKIP_SORUSU).flatMap((s) => s.secenekler),
+) as Record<TakipCevabi, string>;
 
 export const VERIMLILIK_ETIKET: Record<VerimlilikDuzeyi, string> = {
   cok_dusuk: "Çok Düşük",

@@ -8,8 +8,8 @@ import { getAnthropicClient } from "@/lib/anthropic";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
 import { KONU_ANLATIMI_SISTEM_PROMPTU, icerikTemizle } from "@/lib/konu-anlatimi";
 import { pushGonderProfile } from "@/lib/push-send";
-import { SURE_UST_SINIR, KATEGORI_GERIYE_DONUK_SINIR, dersSoruSayisi } from "@/lib/types";
-import type { DenemeTuru, DenemeZorlugu, HedefeYakinlik, VerimlilikDuzeyi } from "@/lib/types";
+import { SURE_UST_SINIR, KATEGORI_GERIYE_DONUK_SINIR, TAKIP_SORUSU, dersSoruSayisi } from "@/lib/types";
+import type { DenemeTuru, DenemeZorlugu, HedefeYakinlik, TakipCevabi, VerimlilikDuzeyi } from "@/lib/types";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
 
 const SEVIYE_ETIKET: Record<string, string> = { bronz: "Bronz 🥉", gumus: "Gümüş 🥈", altin: "Altın 🥇" };
@@ -174,6 +174,7 @@ export async function konuCalismaEkle(formData: FormData) {
   const konu = String(formData.get("konu") ?? "").trim();
   const sureDakika = Number(formData.get("sureDakika"));
   const hedefeYakinlik = String(formData.get("hedefeYakinlik")) as HedefeYakinlik;
+  const takipCevabi = String(formData.get("takipCevabi") ?? "") as TakipCevabi;
   const yayinevi = String(formData.get("yayinevi") ?? "").trim();
   const gorevAtamaId = String(formData.get("gorevAtamaId") ?? "").trim() || null;
   const { tarih, error: tarihHatasi } = tarihDogrula(formData.get("tarih"), KATEGORI_GERIYE_DONUK_SINIR.konu);
@@ -181,14 +182,20 @@ export async function konuCalismaEkle(formData: FormData) {
   if (!ders || !konu || !sureDakika || sureDakika <= 0 || !hedefeYakinlik || !yayinevi) {
     return { error: "Lütfen tüm alanları doldurun.", verimlilikSorulsunMu: false };
   }
+  // takipCevabi, 1. aşama (hedefeYakinlik) seçimine özel bir soru setinden
+  // geliyor (bkz. TAKIP_SORUSU, konu bilme/bilmeme göstergesi) — eşleşme
+  // kontrolü hem eksik gönderimi hem de sette olmayan bir kodu yakalıyor.
+  if (!TAKIP_SORUSU[hedefeYakinlik]?.secenekler.some(([kod]) => kod === takipCevabi)) {
+    return { error: "Lütfen ikinci soruyu da işaretle.", verimlilikSorulsunMu: false };
+  }
   if (tarihHatasi) return { error: tarihHatasi, verimlilikSorulsunMu: false };
   if (sureDakika > SURE_UST_SINIR) {
     return { error: `Süre en fazla ${SURE_UST_SINIR} dakika olabilir (tek oturum için) — haftalık/günlük toplamı buraya girme.`, verimlilikSorulsunMu: false };
   }
 
   const { error } = await supabase.from("konu_calismalar").insert({
-    student_id: user.id, ders, konu, sure_dakika: sureDakika, hedefe_yakinlik: hedefeYakinlik, yayinevi, tarih,
-    gorev_atama_id: gorevAtamaId,
+    student_id: user.id, ders, konu, sure_dakika: sureDakika, hedefe_yakinlik: hedefeYakinlik,
+    takip_cevabi: takipCevabi, yayinevi, tarih, gorev_atama_id: gorevAtamaId,
   });
   if (error) return { error: error.message, verimlilikSorulsunMu: false };
   if (gorevAtamaId) await gorevTamamlaIsaretle(supabase, gorevAtamaId, user.id);

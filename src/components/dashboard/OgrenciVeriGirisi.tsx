@@ -3,10 +3,10 @@
 import { useMemo, useState, useTransition } from "react";
 import { BookOpen, PenLine, ClipboardList, Sparkles, Loader2, ChevronDown, ChevronUp, CalendarClock } from "lucide-react";
 import type {
-  AytAlan, DenemeTuru, DenemeZorlugu, HedefeYakinlik, VerimlilikDuzeyi,
+  AytAlan, DenemeTuru, DenemeZorlugu, HedefeYakinlik, TakipCevabi, VerimlilikDuzeyi,
 } from "@/lib/types";
 import {
-  TYT_DERSLERI, AYT_DERSLERI, BRANS_DENEMESI_DERSLERI, VERIMLILIK_ETIKET, netHesapla, dersSoruSayisi,
+  TYT_DERSLERI, AYT_DERSLERI, BRANS_DENEMESI_DERSLERI, TAKIP_SORUSU, VERIMLILIK_ETIKET, netHesapla, dersSoruSayisi,
   SURE_UST_SINIR, KATEGORI_GERIYE_DONUK_SINIR, dokuzOnSinifMi,
 } from "@/lib/types";
 import {
@@ -195,6 +195,13 @@ export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, onB
   const [aramaMetni, setAramaMetni] = useState(prefillKonu ?? "");
   const [oneriAcik, setOneriAcik] = useState(false);
   const [hedefeYakinlik, setHedefeYakinlik] = useState<HedefeYakinlik>("belirsiz");
+  // Konu bilme/bilmeme göstergesi — "Konuya hakimiyet" seçimine göre
+  // farklı bir 2. aşama takip sorusu geliyor (bkz. TAKIP_SORUSU,
+  // src/lib/types.ts). hedefeYakinlik'in ilk seçeneğiyle aynı desende
+  // (SecenekSecici zaten hep bir varsayılan değerle başlıyor, zorunlu
+  // tıklama istemiyor) — hedefeYakinlik her değiştiğinde YENİ soru
+  // setinin ilk seçeneğine sıfırlanıyor.
+  const [takipCevabi, setTakipCevabi] = useState<TakipCevabi>(TAKIP_SORUSU.belirsiz.secenekler[0][0]);
   const [yayinevi, setYayinevi] = useState("");
   const [tarih, setTarih] = useState(bugununTarihi());
   const [hata, setHata] = useState<string | null>(null);
@@ -259,6 +266,7 @@ export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, onB
     formData.set("ders", ders);
     formData.set("konu", konu);
     formData.set("hedefeYakinlik", hedefeYakinlik);
+    formData.set("takipCevabi", takipCevabi);
     formData.set("yayinevi", yayinevi.trim());
     formData.set("tarih", tarih);
     if (gorevAtamaId) formData.set("gorevAtamaId", gorevAtamaId);
@@ -266,7 +274,7 @@ export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, onB
       const res = await konuCalismaEkle(formData);
       if (res.error) return setHata(res.error);
       onBasari("Konu çalışması kaydedildi.", res.verimlilikSorulsunMu);
-      setKonu(""); setAramaMetni(""); setAnlatim(null); setAnlatimSeviye(null); setAnlatimAcik(false); setHedefeYakinlik("belirsiz"); setYayinevi(""); setTarih(bugununTarihi());
+      setKonu(""); setAramaMetni(""); setAnlatim(null); setAnlatimSeviye(null); setAnlatimAcik(false); setHedefeYakinlik("belirsiz"); setTakipCevabi(TAKIP_SORUSU.belirsiz.secenekler[0][0]); setYayinevi(""); setTarih(bugununTarihi());
     });
   }
 
@@ -336,8 +344,14 @@ export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, onB
         <Girdi placeholder="örn. Palme, MEB, Okul kitabı" value={yayinevi} onChange={(e) => setYayinevi(e.target.value)} required />
       </label>
       <p style={{ color: TEXT_MUTED }} className="text-[11px] -mt-1">Konuyu okuduktan/çalıştıktan sonra ne kadar hakim olduğunu aşağıdan işaretle:</p>
-      <SecenekSecici baslik="Konuya hakimiyet" value={hedefeYakinlik} onChange={setHedefeYakinlik}
+      <SecenekSecici baslik="Konuya hakimiyet" value={hedefeYakinlik}
+        onChange={(v) => { setHedefeYakinlik(v); setTakipCevabi(TAKIP_SORUSU[v].secenekler[0][0]); }}
         secenekler={[["uzak", "Yetersiz"], ["belirsiz", "Orta"], ["yakin", "Yeterli"]]} />
+      {/* Konu bilme/bilmeme göstergesi — 1. aşamada seçilen düzeye özel
+          2. aşama takip sorusu (bkz. TAKIP_SORUSU, src/lib/types.ts).
+          Sınıf/kurum bazlı "Konu Haritası" raporunun girdisi (Faz K3). */}
+      <SecenekSecici baslik={TAKIP_SORUSU[hedefeYakinlik].baslik} value={takipCevabi} onChange={setTakipCevabi}
+        secenekler={TAKIP_SORUSU[hedefeYakinlik].secenekler} />
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
       <button type="submit" disabled={pending} className="sfec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
         {pending ? "Kaydediliyor..." : "Kaydet"}

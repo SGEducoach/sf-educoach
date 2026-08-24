@@ -7,13 +7,14 @@ import { OgretmenPanel } from "@/components/dashboard/OgretmenPanel";
 import { DershaneMudurPaneli } from "@/components/dashboard/DershaneMudurPaneli";
 import { OgrenciVeriGirisi } from "@/components/dashboard/OgrenciVeriGirisi";
 import { Rozetlerim } from "@/components/dashboard/Rozetlerim";
-import { YapayZekaAnaliziPromosu } from "@/components/dashboard/YapayZekaAnaliziPromosu";
+import { KonuHaritasiRaporu } from "@/components/dashboard/KonuHaritasiRaporu";
 import type { OyunEtiketiSayaclari, RozetDurum } from "@/components/dashboard/Rozetlerim";
 import { AnalizPaneli } from "@/components/dashboard/AnalizPaneli";
 import { HosgeldinPopuplari } from "@/components/dashboard/HosgeldinPopuplari";
 import { ZorunluSifreDegisikligiKapisi } from "@/components/dashboard/ZorunluSifreDegisikligiKapisi";
 import { analizVerisiGetir } from "@/lib/analiz";
 import type { RaporDonemi } from "@/lib/analiz";
+import { ogrencininZayifKonulariGetir } from "@/lib/konu-raporu";
 import { AYT_ALAN_ETIKET, sinifSiraKarsilastir, dokuzOnSinifMi, TYT_DERSLERI, AYT_DERSLERI } from "@/lib/types";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
 import type { AytAlan, KurumTuru, UserRole } from "@/lib/types";
@@ -205,6 +206,12 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
     konuSayaclari[ders] = { tamamlanan, toplam };
   }
 
+  // Konu bilme/bilmeme göstergesi (Faz K3) — sadece "ozet" ve "yapay-zeka"
+  // sekmelerinde gösteriliyor, gereksiz sorguyu diğer sekmelerde atlıyoruz.
+  const zayifKonular = (aktifBolum === "ozet" || aktifBolum === "yapay-zeka")
+    ? await ogrencininZayifKonulariGetir(supabase, userId)
+    : [];
+
   const dokuzOnMu = dokuzOnSinifMi(s.classes?.seviye ?? null);
   const dersListesi = dokuzOnMu
     ? [...TYT_DERSLERI]
@@ -297,11 +304,11 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
         />
       </section>}
 
-      {aktifBolum === "ozet" && <section className="print:hidden"><YapayZekaAnaliziPromosu /></section>}
+      {aktifBolum === "ozet" && <section className="print:hidden"><KonuHaritasiRaporu mod="kendi" konular={zayifKonular} /></section>}
 
       {aktifBolum === "rozetler" && <Rozetlerim durum={rozetDurum} oyunSayaclari={oyunEtiketiSayaclari} sinifSeviyesi={s.classes?.seviye ?? null} />}
 
-      {aktifBolum === "yapay-zeka" && <section className="min-h-full"><YapayZekaAnaliziPromosu sayfa /></section>}
+      {aktifBolum === "yapay-zeka" && <section className="min-h-full"><KonuHaritasiRaporu mod="kendi" konular={zayifKonular} /></section>}
 
       {aktifBolum === "veri-girisi" && <div className="print:hidden">
         <OgrenciVeriGirisi aytAlan={s.ayt_alan} konuOnerileri={konuOnerileri} sinifSeviyesi={s.classes?.seviye ?? null} konuSayaclari={konuSayaclari} />
