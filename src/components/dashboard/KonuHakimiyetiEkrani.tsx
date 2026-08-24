@@ -14,7 +14,7 @@ import type { HedefeYakinlik, OgrenmeSekli, TekrarDurumu } from "@/lib/types";
 import { Etiket, SecenekSecici } from "@/components/dashboard/OgrenciVeriGirisi";
 import { konuHakimiyetiKaydet, konuHakimiyetiTopluKaydet } from "@/app/dashboard/konu-hakimiyeti-actions";
 import type { KonuHakimiyetiSatiri } from "@/lib/konu-hakimiyeti";
-import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, BUTTER, PEACH, TEXT, TEXT_MUTED } from "@/lib/theme";
+import { BG0, BG1, BG1_ALT, BLUSH, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, BUTTER, PEACH, TEXT, TEXT_MUTED } from "@/lib/theme";
 
 const HAKIMIYET_RENK: Record<HedefeYakinlik, string> = { yakin: MINT, belirsiz: BUTTER, uzak: PEACH };
 
@@ -103,15 +103,18 @@ export function KonuHakimiyetiEkrani({ satirlar }: { satirlar: KonuHakimiyetiSat
 function UstBaslikGrubu({ ders, ustKonu, satirlar }: { ders: string; ustKonu: string; satirlar: KonuHakimiyetiSatiri[] }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [hata, setHata] = useState<string | null>(null);
   const coklu = satirlar.length > 1 || satirlar[0]?.konu !== ustKonu;
 
   function topluIsaretle(seviye: HedefeYakinlik) {
+    setHata(null);
     startTransition(async () => {
-      await konuHakimiyetiTopluKaydet({
+      const res = await konuHakimiyetiTopluKaydet({
         ders, konular: satirlar.map((s) => s.konu), hakimiyetSeviyesi: seviye,
         ogrenmeSekli: [], tekrarDurumu: "tekrar_edebilirim",
       });
-      router.refresh();
+      if (res.error) setHata(res.error);
+      else router.refresh();
     });
   }
 
@@ -136,6 +139,11 @@ function UstBaslikGrubu({ ders, ustKonu, satirlar }: { ders: string; ustKonu: st
           </div>
         )}
       </div>
+      {hata && (
+        <div className="px-4 pt-2" style={{ background: BG1_ALT }}>
+          <p style={{ color: BLUSH }} className="text-[11px] font-semibold">{hata}</p>
+        </div>
+      )}
       <div className="flex flex-col divide-y" style={{ borderColor: BORDER }}>
         {satirlar.map((s) => <KonuSatiri key={s.konu} satir={s} />)}
       </div>
@@ -150,15 +158,18 @@ function KonuSatiri({ satir }: { satir: KonuHakimiyetiSatiri }) {
   const [ogrenmeSekli, setOgrenmeSekli] = useState<OgrenmeSekli[]>(satir.ogrenmeSekli);
   const [tekrarDurumu, setTekrarDurumu] = useState<TekrarDurumu>(satir.tekrarDurumu ?? "tekrar_edebilirim");
   const [pending, startTransition] = useTransition();
+  const [hata, setHata] = useState<string | null>(null);
 
   function sekilToggle(s: OgrenmeSekli) {
     setOgrenmeSekli((liste) => (liste.includes(s) ? liste.filter((x) => x !== s) : [...liste, s]));
   }
 
   function kaydet() {
+    setHata(null);
     startTransition(async () => {
       const res = await konuHakimiyetiKaydet({ ders: satir.ders, konu: satir.konu, hakimiyetSeviyesi: hakimiyet, ogrenmeSekli, tekrarDurumu });
-      if (!res.error) { setAcik(false); router.refresh(); }
+      if (res.error) setHata(res.error);
+      else { setAcik(false); router.refresh(); }
     });
   }
 
@@ -212,6 +223,7 @@ function KonuSatiri({ satir }: { satir: KonuHakimiyetiSatiri }) {
             style={{ background: MINT, color: MINT_ON }}>
             {pending ? "Kaydediliyor..." : "Kaydet"}
           </button>
+          {hata && <p style={{ color: BLUSH }} className="text-[11px] font-semibold">{hata}</p>}
         </div>
       )}
     </div>
