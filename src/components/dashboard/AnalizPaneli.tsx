@@ -6,16 +6,17 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip,
   ResponsiveContainer, BarChart, Bar, Legend, PieChart, Pie, Cell,
 } from "recharts";
-import { Sparkles, Clock, Target, TrendingUp, Printer, ListChecks } from "lucide-react";
+import { Sparkles, Clock, Target, TrendingUp, TrendingDown, Minus, Printer, ListChecks, Gauge } from "lucide-react";
 import type { AnalizVerisi, RaporDonemi } from "@/lib/analiz";
 import { RAPOR_DONEMI_ETIKET } from "@/lib/analiz";
 import { HEDEFE_YAKINLIK_ETIKET, VERIMLILIK_ETIKET } from "@/lib/types";
 import type { AytAlan, HedefeYakinlik } from "@/lib/types";
 import { satirTytdeGosterilsinMi, satirAytdeGosterilsinMi } from "@/lib/konu-hakimiyeti";
 import type { KonuHakimiyetiSatiri } from "@/lib/konu-hakimiyeti";
+import type { TrendSonucu, HizDogrulukKategorisi } from "@/lib/analiz-motoru";
 import {
   BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, TEXT, TEXT_MUTED, MINT, MINT_BG, MINT_ON,
-  SKY, SKY_BG, BUTTER, BUTTER_BG, BLUSH, LILAC,
+  SKY, SKY_BG, BUTTER, BUTTER_BG, BLUSH, BLUSH_BG, LILAC,
 } from "@/lib/theme";
 
 function tarihFormat(iso: string) {
@@ -115,7 +116,10 @@ export function AnalizPaneli({ veri, ogrenciAdi, konuHakimiyetiSatirlari = [], k
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-          <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold mb-4 block">Deneme net trendi</span>
+          <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
+            <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Deneme net trendi</span>
+            <TrendRozeti trend={veri.denemeTrendYonu} />
+          </div>
           {denemeChartData.length === 0 ? (
             <BosDurum />
           ) : (
@@ -169,7 +173,10 @@ export function AnalizPaneli({ veri, ogrenciAdi, konuHakimiyetiSatirlari = [], k
 
         <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
           <div className="flex items-center justify-between gap-2 mb-4 flex-wrap print:hidden">
-            <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Ders bazlı {seciliDers ? "net trendi" : "ortalama net"}</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Ders bazlı {seciliDers ? "net trendi" : "ortalama net"}</span>
+              {seciliDers && <TrendRozeti trend={veri.dersTrendYonu[seciliDers] ?? { yon: null, haftalikDegisim: null }} />}
+            </div>
             {dersSecenekleri.length > 0 && (
               <select value={seciliDers ?? ""} onChange={(e) => dersDegistir(e.target.value)}
                 className="text-xs font-semibold px-2.5 py-1.5 rounded-xl outline-none"
@@ -232,6 +239,8 @@ export function AnalizPaneli({ veri, ogrenciAdi, konuHakimiyetiSatirlari = [], k
         </div>
 
         <KonuHakimiyetKarti satirlar={konuHakimiyetiSatirlari} tamGorunum={konuHakimiyetiTamGorunum} aytAlan={konuHakimiyetiAytAlan} />
+
+        <HizDogrulukKarti satirlar={veri.dersHizDogruluk} />
       </div>
 
       {verimlilikChartData.length > 0 && (
@@ -255,6 +264,75 @@ export function AnalizPaneli({ veri, ogrenciAdi, konuHakimiyetiSatirlari = [], k
 
 function BosDurum() {
   return <p style={{ color: TEXT_MUTED }} className="text-sm py-10 text-center">Henüz veri yok.</p>;
+}
+
+// Analiz Motoru Faz A2, Katman 3 — doğrusal regresyonla çıkarılan net
+// trendi (genel veya tek ders) için küçük bir yön rozeti. Trend hesaplanamıyorsa
+// (2'den az veri noktası) hiçbir şey göstermez.
+function TrendRozeti({ trend }: { trend: TrendSonucu }) {
+  if (trend.yon === null) return null;
+  const Icon = trend.yon === "yukselen" ? TrendingUp : trend.yon === "dusen" ? TrendingDown : Minus;
+  const renk = trend.yon === "yukselen" ? MINT : trend.yon === "dusen" ? BLUSH : TEXT_MUTED;
+  const bg = trend.yon === "yukselen" ? MINT_BG : trend.yon === "dusen" ? BLUSH_BG : BG1_ALT;
+  const etiket = trend.yon === "yukselen" ? "Yükseliyor" : trend.yon === "dusen" ? "Düşüyor" : "Durgun";
+  const degisim = trend.haftalikDegisim;
+  return (
+    <span className="text-[11px] font-bold px-2.5 py-1 rounded-full inline-flex items-center gap-1 shrink-0" style={{ background: bg, color: renk }}>
+      <Icon size={12} />
+      {etiket}{degisim !== null && Math.abs(degisim) >= 0.05 && ` (${degisim > 0 ? "+" : ""}${degisim} net/hafta)`}
+    </span>
+  );
+}
+
+const HIZ_DOGRULUK_ETIKET: Record<HizDogrulukKategorisi, string> = {
+  "hizli-dogru": "Hızlı ve doğru",
+  "hizli-hatali": "Hızlı ama hatalı — dikkatsizlik olabilir",
+  "yavas-dogru": "Doğru ama yavaş — hız çalış",
+  "yavas-hatali": "Yavaş ve hatalı — temel eksik olabilir",
+};
+const HIZ_DOGRULUK_RENK: Record<HizDogrulukKategorisi, string> = {
+  "hizli-dogru": MINT, "hizli-hatali": BUTTER, "yavas-dogru": SKY, "yavas-hatali": BLUSH,
+};
+const HIZ_DOGRULUK_BG: Record<HizDogrulukKategorisi, string> = {
+  "hizli-dogru": MINT_BG, "hizli-hatali": BUTTER_BG, "yavas-dogru": SKY_BG, "yavas-hatali": BLUSH_BG,
+};
+
+// Analiz Motoru Faz A2, Katman 4 — ders bazlı hız-doğruluk matrisi. Hız,
+// öğrencinin KENDİ genel ortalamasına göre göreli (bkz. analiz-motoru.ts,
+// hizDogrulukKategorisiBelirle) — mutlak bir "iyi süre" eşiği yok.
+function HizDogrulukKarti({ satirlar }: { satirlar: AnalizVerisi["dersHizDogruluk"] }) {
+  return (
+    <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+      <div className="flex items-center gap-2 mb-1">
+        <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style={{ background: SKY_BG }}>
+          <Gauge size={14} color={SKY} />
+        </div>
+        <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Hız-Doğruluk Analizi</span>
+      </div>
+      <p style={{ color: TEXT_MUTED }} className="text-xs mb-4">
+        Soru çözümlerindeki süre ve doğruluğun ders bazlı karşılaştırması — hız, kendi genel ortalamana göre.
+      </p>
+      {satirlar.length === 0 ? (
+        <BosDurum />
+      ) : (
+        <div className="flex flex-col gap-2">
+          {satirlar.map((s) => (
+            <div key={s.ders} className="rounded-2xl px-3.5 py-2.5 flex items-center justify-between gap-2 flex-wrap" style={{ background: BG1_ALT, border: `1px solid ${BORDER}` }}>
+              <div className="min-w-0">
+                <div style={{ color: TEXT }} className="text-sm font-semibold">{s.ders}</div>
+                <div style={{ color: TEXT_MUTED }} className="text-[11px] mt-0.5">
+                  Soru başı ~{s.ortSureDakika} dk · Doğruluk %{Math.round(s.dogrulukOrani * 100)}
+                </div>
+              </div>
+              <span className="text-[10px] font-bold px-2 py-1 rounded-full shrink-0" style={{ background: HIZ_DOGRULUK_BG[s.kategori], color: HIZ_DOGRULUK_RENK[s.kategori] }}>
+                {HIZ_DOGRULUK_ETIKET[s.kategori]}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // Konu Hakimiyeti kartı — genel (tüm dersler) veya tek bir ders seçilip

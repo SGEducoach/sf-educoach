@@ -2,6 +2,14 @@ import type { createClient } from "@/lib/supabase/server";
 import { netHesapla } from "@/lib/types";
 import type { HedefeYakinlik, VerimlilikDuzeyi } from "@/lib/types";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
+import { trendHesapla, hizDogrulukKategorisiBelirle } from "@/lib/analiz-motoru";
+import type { TrendSonucu, HizDogrulukKategorisi, RegresyonNoktasi } from "@/lib/analiz-motoru";
+
+// Analiz Motoru Faz A2 — iki "tarih" string'i (YYYY-MM-DD) arasındaki gün
+// farkı; regresyon noktalarının x eksenini (gunOffset) üretmek için.
+function tarihGunFarki(tarih: string, referansTarih: string): number {
+  return (new Date(tarih).getTime() - new Date(referansTarih).getTime()) / (1000 * 3600 * 24);
+}
 
 export type RaporDonemi = "haftalik" | "aylik" | "tum";
 
@@ -26,6 +34,12 @@ export interface AnalizVerisi {
   buHaftaSoru: number;
   donem: RaporDonemi;
   donemBaslangic: string | null;
+  // Analiz Motoru Faz A2 — Katman 3: doğrusal regresyonla yorumlanmış net
+  // trendi (genel + ders bazlı). Katman 4: ders bazlı hız-doğruluk matrisi.
+  // Bkz. src/lib/analiz-motoru.ts.
+  denemeTrendYonu: TrendSonucu;
+  dersTrendYonu: Record<string, TrendSonucu>;
+  dersHizDogruluk: { ders: string; ortSureDakika: number; dogrulukOrani: number; kategori: HizDogrulukKategorisi }[];
 }
 
 const VERIMLILIK_PUAN: Record<VerimlilikDuzeyi, number> = {
@@ -123,6 +137,57 @@ export async function analizVerisiGetir(
     tarih: v.created_at, duzey: v.duzey, puan: VERIMLILIK_PUAN[v.duzey],
   }));
 
+  // Faz A2, Katman 3 — genel deneme net trendi. denemeTrend zaten tarih'e
+  // göre artan sıralı (denemeQuery .order("tarih")) — ilk kayıt referans.
+  const denemeTrendNoktalari: RegresyonNoktasi[] = denemeTrend.map((d) => ({
+    gunOffset: tarihGunFarki(d.tarih, denemeTrend[0]?.tarih ?? d.tarih),
+    deger: d.net,
+  }));
+  const denemeTrendYonu = trendHesapla(denemeTrendNoktalari);
+
+  // Ders bazlı net trendi — dersGunlukNet zaten tarih'e göre artan sıralı.
+  const dersTrendYonu: Record<string, TrendSonucu> = {};
+  for (const [ders, liste] of Object.entries(dersGunlukNet)) {
+    if (liste.length === 0) continue;
+    const noktalar: RegresyonNoktasi[] = liste.map((d) => ({
+      gunOffset: tarihGunFarki(d.tarih, liste[0].tarih),
+      deger: d.net,
+    }));
+    dersTrendYonu[ders] = trendHesapla(noktalar);
+  }
+
+  // Faz A2, Katman 4 — ders bazlı hız-doğruluk matrisi. Referans "genel
+  // ortalama süre/soru", öğrencinin TÜM derslerdeki toplamından çıkarılır.
+  const dersSureMap = new Map<string, { toplamSure: number; toplamDogru: number; toplamYanlis: number }>();
+  for (const s of soruListesi) {
+    const mevcut = dersSureMap.get(s.ders) ?? { toplamSure: 0, toplamDogru: 0, toplamYanlis: 0 };
+    mevcut.toplamSure += s.sure_dakika;
+    mevcut.toplamDogru += s.dogru;
+    mevcut.toplamYanlis += s.yanlis;
+    dersSureMap.set(s.ders, mevcut);
+  }
+  let genelToplamSure = 0;
+  let genelToplamCevaplanan = 0;
+  for (const v of dersSureMap.values()) {
+    genelToplamSure += v.toplamSure;
+    genelToplamCevaplanan += v.toplamDogru + v.toplamYanlis;
+  }
+  const genelOrtSureDakika = genelToplamCevaplanan > 0 ? genelToplamSure / genelToplamCevaplanan : 0;
+
+  const dersHizDogruluk: AnalizVerisi["dersHizDogruluk"] = [];
+  for (const [ders, v] of dersSureMap.entries()) {
+    const cevaplanan = v.toplamDogru + v.toplamYanlis;
+    if (cevaplanan === 0) continue; // hep "boş" geçilmişse kategori anlamsız
+    const ortSureDakika = v.toplamSure / cevaplanan;
+    const dogrulukOrani = v.toplamDogru / cevaplanan;
+    dersHizDogruluk.push({
+      ders,
+      ortSureDakika: Math.round(ortSureDakika * 100) / 100,
+      dogrulukOrani: Math.round(dogrulukOrani * 100) / 100,
+      kategori: hizDogrulukKategorisiBelirle({ ortSureDakika, dogrulukOrani, genelOrtSureDakika }),
+    });
+  }
+
   const bugun = new Date();
   const buHaftaBaslangic = new Date(bugun);
   buHaftaBaslangic.setDate(bugun.getDate() - 6);
@@ -147,5 +212,8 @@ export async function analizVerisiGetir(
     buHaftaSoru,
     donem,
     donemBaslangic: baslangic,
+    denemeTrendYonu,
+    dersTrendYonu,
+    dersHizDogruluk,
   };
 }

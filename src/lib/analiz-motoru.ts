@@ -113,3 +113,97 @@ export function bilesikMasterySkoruHesapla(girdi: MasterySkoruGirdisi): MasteryS
 
   return { skor: Math.round(skor), kaynaklar: bilesenler.map((b) => b.kaynak) };
 }
+
+// ============ Katman 3: trend ve momentum ============
+//
+// Faz A2 — Analiz Paneli'ndeki net trendleri bugüne kadar SADECE çizilir,
+// hiç yorumlanmazdı. En küçük kareler (least-squares) doğrusal regresyonuyla
+// "haftada +X net" gibi bir eğim çıkarılır; günler arası düzensiz aralıklar
+// (her gün deneme girilmez) sorun değil çünkü x ekseni GÜN OFFSET'İ, sıra
+// numarası değil.
+
+export interface RegresyonNoktasi {
+  gunOffset: number; // referans tarihten (genelde ilk kayıt) gün farkı
+  deger: number;
+}
+
+// En küçük kareler yöntemiyle eğim (birim: deger/gün). En az 3 nokta
+// isteniyor — 2 noktayla "regresyon" iki uç arasındaki düz çizgiden
+// ibaret kalıyor ve tek bir sıra dışı ölçüme aşırı duyarlı oluyor (örn.
+// 2 deneme arasında büyük bir fark varsa haftalık +/-20 net gibi
+// gerçekçi olmayan eğimler çıkabiliyor — gerçek veriyle doğrulanırken
+// görüldü). TÜM noktalar aynı güne düşüyorsa (payda=0) da anlamlı bir
+// eğim yok → null.
+export function dogrusalRegresyonEgimi(noktalar: RegresyonNoktasi[]): number | null {
+  const n = noktalar.length;
+  if (n < 3) return null;
+  const xOrt = noktalar.reduce((t, p) => t + p.gunOffset, 0) / n;
+  const yOrt = noktalar.reduce((t, p) => t + p.deger, 0) / n;
+  let pay = 0;
+  let payda = 0;
+  for (const p of noktalar) {
+    pay += (p.gunOffset - xOrt) * (p.deger - yOrt);
+    payda += (p.gunOffset - xOrt) ** 2;
+  }
+  if (payda === 0) return null;
+  return pay / payda;
+}
+
+export type TrendYonu = "yukselen" | "durgun" | "dusen";
+
+// Günlük eğimi haftalık değişime çevirip yorumlar. Eşik (varsayılan 0.5
+// net/hafta) altındaki değişimler "durgun" (gürültü) sayılır — YKS net
+// hesabında (dogru - yanlis/4) yarım netlik oynama zaten normal varyans.
+const TREND_ESIK_HAFTALIK = 0.5;
+
+export function trendYonuBelirle(gunlukEgim: number | null, esikHaftalik = TREND_ESIK_HAFTALIK): TrendYonu | null {
+  if (gunlukEgim === null) return null;
+  const haftalikDegisim = gunlukEgim * 7;
+  if (haftalikDegisim > esikHaftalik) return "yukselen";
+  if (haftalikDegisim < -esikHaftalik) return "dusen";
+  return "durgun";
+}
+
+export interface TrendSonucu {
+  yon: TrendYonu | null;
+  // Haftalık net değişim — arayüzde "haftada +0.8 net" gibi göstermek için.
+  haftalikDegisim: number | null;
+}
+
+export function trendHesapla(noktalar: RegresyonNoktasi[]): TrendSonucu {
+  const egim = dogrusalRegresyonEgimi(noktalar);
+  return {
+    yon: trendYonuBelirle(egim),
+    haftalikDegisim: egim === null ? null : Math.round(egim * 7 * 100) / 100,
+  };
+}
+
+// ============ Katman 4: hız / verimlilik analizi ============
+//
+// soru_cozumleri'nden ders bazlı "soru başı ortalama süre" ve doğruluk
+// oranını dört köşeli bir matrise yerleştirir. Hız için SABİT bir eşik
+// yerine öğrencinin KENDİ genel ortalaması referans alınır — bu, ders
+// zorluğuna göre doğal olarak değişen soru sürelerini (örn. Matematik
+// sorusu Türkçe'den daha uzun sürer) tek bir mutlak eşikle karşılaştırma
+// hatasından kaçınır.
+
+export type HizDogrulukKategorisi = "hizli-dogru" | "hizli-hatali" | "yavas-dogru" | "yavas-hatali";
+
+// YKS net formülünde (dogru - yanlis/4) %60 doğruluk kabaca "iyi" sınırı
+// sayılır (4 yanlış 1 doğruyu götürür, %60'ın altı net'i hızla eritir).
+const DOGRULUK_ESIGI = 0.6;
+
+export interface HizDogrulukGirdisi {
+  ortSureDakika: number; // bu ders için soru başına ortalama süre
+  dogrulukOrani: number; // bu ders için 0-1 doğruluk oranı
+  genelOrtSureDakika: number; // öğrencinin TÜM derslerdeki soru başına ortalaması (referans)
+}
+
+export function hizDogrulukKategorisiBelirle(girdi: HizDogrulukGirdisi): HizDogrulukKategorisi {
+  const hizli = girdi.ortSureDakika <= girdi.genelOrtSureDakika;
+  const dogru = girdi.dogrulukOrani >= DOGRULUK_ESIGI;
+  if (hizli && dogru) return "hizli-dogru";
+  if (hizli && !dogru) return "hizli-hatali"; // dikkatsizlik sinyali
+  if (!hizli && dogru) return "yavas-dogru"; // hız çalışması gerekir
+  return "yavas-hatali"; // temel eksik
+}
