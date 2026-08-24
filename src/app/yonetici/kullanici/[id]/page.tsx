@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { analizVerisiGetir } from "@/lib/analiz";
+import { konuHakimiyetiOzetiGetir } from "@/lib/konu-hakimiyeti";
 import { AnalizPaneli } from "@/components/dashboard/AnalizPaneli";
 import { Header } from "@/components/dashboard/Header";
 import { DashboardYanMenu } from "@/components/dashboard/DashboardYanMenu";
@@ -62,7 +63,10 @@ async function OgrenciSayfasi({ admin, userId, ad }: { admin: AdminClient; userI
     admin.from("denemeler").select("id, tarih, tur").eq("student_id", userId).order("tarih", { ascending: false }).limit(5),
   ]);
   if (!ogrenci) return <BosKart metin="Öğrenci profili bulunamadı." />;
-  const analiz = await analizVerisiGetir(admin as Parameters<typeof analizVerisiGetir>[0], userId, "tum");
+  const [analiz, konuHakimiyetiSatirlari] = await Promise.all([
+    analizVerisiGetir(admin as Parameters<typeof analizVerisiGetir>[0], userId, "tum"),
+    konuHakimiyetiOzetiGetir(admin as Parameters<typeof konuHakimiyetiOzetiGetir>[0], userId),
+  ]);
   const okul = ogrenci.schools as unknown as { ad: string } | null;
   const sinif = ogrenci.classes as unknown as { seviye: string; sube: string } | null;
   return <>
@@ -72,7 +76,7 @@ async function OgrenciSayfasi({ admin, userId, ad }: { admin: AdminClient; userI
       <Bilgi icon={UserRound} etiket="Okul no" deger={ogrenci.okul_no} />
       <Bilgi icon={CheckCircle2} etiket="Hedef" deger={ogrenci.hedef_bolum ? ogrenci.hedef_bolum.toLocaleUpperCase("tr-TR") : "—"} />
     </section>
-    <AnalizPaneli veri={analiz} ogrenciAdi={ad} />
+    <AnalizPaneli veri={analiz} ogrenciAdi={ad} konuHakimiyetiSatirlari={konuHakimiyetiSatirlari} />
     <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
       <KayitListesi baslik="Son konu çalışmaları" satirlar={(konular ?? []).map((r) => `${r.tarih} · ${r.ders} · ${r.konu} · ${r.sure_dakika} dk`)} />
       <KayitListesi baslik="Son soru çözümleri" satirlar={(sorular ?? []).map((r) => `${r.tarih} · ${r.ders} · ${r.dogru}D/${r.yanlis}Y · ${r.sure_dakika} dk`)} />

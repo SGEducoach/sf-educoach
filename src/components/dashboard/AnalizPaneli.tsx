@@ -1,15 +1,17 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip,
-  ResponsiveContainer, BarChart, Bar, Legend,
+  ResponsiveContainer, BarChart, Bar, Legend, PieChart, Pie, Cell,
 } from "recharts";
-import { Sparkles, Clock, Target, TrendingUp, Printer } from "lucide-react";
+import { Sparkles, Clock, Target, TrendingUp, Printer, ListChecks } from "lucide-react";
 import type { AnalizVerisi, RaporDonemi } from "@/lib/analiz";
 import { RAPOR_DONEMI_ETIKET } from "@/lib/analiz";
 import { HEDEFE_YAKINLIK_ETIKET, VERIMLILIK_ETIKET } from "@/lib/types";
 import type { HedefeYakinlik } from "@/lib/types";
+import type { KonuHakimiyetiSatiri } from "@/lib/konu-hakimiyeti";
 import {
   BG1, BG1_ALT, BORDER, BORDER_STRONG, TEXT, TEXT_MUTED, MINT, MINT_BG, MINT_ON,
   SKY, SKY_BG, BUTTER, BUTTER_BG, BLUSH, LILAC,
@@ -39,7 +41,9 @@ function IstatKart({ icon: Icon, etiket, deger, altYazi, renk, bg }: {
 
 const HEDEF_RENK: Record<HedefeYakinlik, string> = { yakin: MINT, belirsiz: BUTTER, uzak: BLUSH };
 
-export function AnalizPaneli({ veri, ogrenciAdi }: { veri: AnalizVerisi; ogrenciAdi?: string }) {
+export function AnalizPaneli({ veri, ogrenciAdi, konuHakimiyetiSatirlari = [] }: {
+  veri: AnalizVerisi; ogrenciAdi?: string; konuHakimiyetiSatirlari?: KonuHakimiyetiSatiri[];
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -49,6 +53,7 @@ export function AnalizPaneli({ veri, ogrenciAdi }: { veri: AnalizVerisi; ogrenci
   const verimlilikChartData = veri.haftalikVerimlilik.map((v) => ({ tarih: tarihFormat(v.tarih), puan: v.puan, duzey: VERIMLILIK_ETIKET[v.duzey] }));
 
   const hedefToplam = veri.hedefeYakinlikDagilimi.yakin + veri.hedefeYakinlikDagilimi.belirsiz + veri.hedefeYakinlikDagilimi.uzak;
+  const konuHakimiyetHakimSayisi = konuHakimiyetiSatirlari.filter((s) => s.hakimiyetSeviyesi === "yakin").length;
 
   // Ders bazlı ortalama net grafiğinde tekil ders seçilince o dersin
   // net trendi gösteriliyor (§1, yenilikler_1.txt). Dropdown, gerçekten
@@ -100,6 +105,10 @@ export function AnalizPaneli({ veri, ogrenciAdi }: { veri: AnalizVerisi; ogrenci
         <IstatKart icon={Clock} etiket="Bu hafta · konu" deger={`${veri.buHaftaKonuDakika} dk`} renk={BUTTER} bg={BUTTER_BG} />
         <IstatKart icon={Target} etiket="Bu hafta · soru" deger={`${veri.buHaftaSoru} soru`} renk={SKY} bg={SKY_BG} />
         <IstatKart icon={Target} etiket="Deneme sayısı" deger={veri.denemeTrend.length} renk={SKY} bg={SKY_BG} />
+        <IstatKart icon={ListChecks} etiket="Konu Hakimiyeti"
+          deger={konuHakimiyetiSatirlari.length > 0 ? `${konuHakimiyetHakimSayisi}/${konuHakimiyetiSatirlari.length}` : "—"}
+          altYazi={konuHakimiyetiSatirlari.length > 0 ? `%${Math.round((konuHakimiyetHakimSayisi / konuHakimiyetiSatirlari.length) * 100)} konuya hakim` : undefined}
+          renk={MINT} bg={MINT_BG} />
         <IstatKart icon={Sparkles} etiket="Toplam giriş" deger={hedefToplam} renk={LILAC} bg="rgba(199,182,255,0.15)" />
       </div>
 
@@ -220,6 +229,8 @@ export function AnalizPaneli({ veri, ogrenciAdi }: { veri: AnalizVerisi; ogrenci
             </div>
           )}
         </div>
+
+        <KonuHakimiyetKarti satirlar={konuHakimiyetiSatirlari} />
       </div>
 
       {verimlilikChartData.length > 0 && (
@@ -243,4 +254,59 @@ export function AnalizPaneli({ veri, ogrenciAdi }: { veri: AnalizVerisi; ogrenci
 
 function BosDurum() {
   return <p style={{ color: TEXT_MUTED }} className="text-sm py-10 text-center">Henüz veri yok.</p>;
+}
+
+// Konu Hakimiyeti kartı — genel (tüm dersler) veya tek bir ders seçilip
+// donut grafiğinde o kapsamın hakim/toplam oranı gösterilir. Görsel dil
+// KonuHakimiyetiEkrani.tsx'teki donutla birebir aynı (bkz. o dosya).
+function KonuHakimiyetKarti({ satirlar }: { satirlar: KonuHakimiyetiSatiri[] }) {
+  const [seciliDers, setSeciliDers] = useState<string>("genel");
+  const dersler = useMemo(() => Array.from(new Set(satirlar.map((s) => s.ders))).sort((a, b) => a.localeCompare(b, "tr")), [satirlar]);
+  const gorunenSatirlar = seciliDers === "genel" ? satirlar : satirlar.filter((s) => s.ders === seciliDers);
+  const hakimSayisi = gorunenSatirlar.filter((s) => s.hakimiyetSeviyesi === "yakin").length;
+  const toplam = gorunenSatirlar.length;
+  const yuzde = toplam > 0 ? Math.round((hakimSayisi / toplam) * 100) : 0;
+  const donutVeri = toplam > 0
+    ? [{ name: "hakim", value: hakimSayisi }, { name: "diger", value: toplam - hakimSayisi }]
+    : [{ name: "bos", value: 1 }];
+
+  return (
+    <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+      <div className="flex items-center justify-between gap-2 mb-4 flex-wrap print:hidden">
+        <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Konu Hakimiyeti</span>
+        {dersler.length > 0 && (
+          <select value={seciliDers} onChange={(e) => setSeciliDers(e.target.value)}
+            className="text-xs font-semibold px-2.5 py-1.5 rounded-xl outline-none"
+            style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
+            <option value="genel">Genel</option>
+            {dersler.map((d) => <option key={d} value={d}>{d}</option>)}
+          </select>
+        )}
+      </div>
+      <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold mb-4 hidden print:block">Konu Hakimiyeti</span>
+      {toplam === 0 ? (
+        <BosDurum />
+      ) : (
+        <div className="flex items-center gap-6 flex-wrap">
+          <div className="relative shrink-0" style={{ width: 130, height: 130 }}>
+            <PieChart width={130} height={130}>
+              <Pie data={donutVeri} dataKey="value" cx="50%" cy="50%" innerRadius={44} outerRadius={60}
+                startAngle={90} endAngle={-270} stroke="none" isAnimationActive={false}>
+                <Cell fill={MINT} />
+                <Cell fill={BORDER} />
+              </Pie>
+            </PieChart>
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-extrabold">%{yuzde}</span>
+              <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold">{hakimSayisi}/{toplam}</span>
+            </div>
+          </div>
+          <div className="flex flex-col gap-1.5 text-xs" style={{ color: TEXT_MUTED }}>
+            <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: MINT }} /> Hakim olunan konular</div>
+            <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: BORDER, border: `1px solid ${BORDER_STRONG}` }} /> Henüz hakim olunmayan / işaretlenmemiş</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }

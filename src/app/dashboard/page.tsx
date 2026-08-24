@@ -15,7 +15,7 @@ import { ZorunluSifreDegisikligiKapisi } from "@/components/dashboard/ZorunluSif
 import { analizVerisiGetir } from "@/lib/analiz";
 import type { RaporDonemi } from "@/lib/analiz";
 import { ogrencininZayifKonulariGetir, konuHaritasiGetir } from "@/lib/konu-raporu";
-import { konuHakimiyetiGetir, gerekYokHaritasiGetir } from "@/lib/konu-hakimiyeti";
+import { konuHakimiyetiGetir, konuHakimiyetiOzetiGetir, gerekYokHaritasiGetir } from "@/lib/konu-hakimiyeti";
 import { KonuHakimiyetiEkrani } from "@/components/dashboard/KonuHakimiyetiEkrani";
 import { AYT_ALAN_ETIKET, sinifSiraKarsilastir, dokuzOnSinifMi, maarifHiyerarsiSinifMi, TYT_DERSLERI, AYT_DERSLERI } from "@/lib/types";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
@@ -259,11 +259,12 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
     ? [...TYT_DERSLERI]
     : [...TYT_DERSLERI, ...AYT_DERSLERI[s.ayt_alan].filter((d) => !TYT_DERSLERI.includes(d as typeof TYT_DERSLERI[number]))];
 
-  // Faz H2 — Konu Hakimiyeti: sadece kendi sekmesinde, gereksiz sorguyu
-  // diğer sekmelerde atlıyoruz (aynı dokuzOnMu'ya bağlı olduğu için de
-  // student sorgusundan sonra, mufredatAltKonulari ile aynı gerekçeyle).
+  // Faz H2 — Konu Hakimiyeti: kendi sekmesinde VE Analiz/Rapor'da (özet
+  // kartı + donut grafiği) gerekiyor, diğer sekmelerde gereksiz sorguyu
+  // atlıyoruz (aynı dokuzOnMu'ya bağlı olduğu için de student sorgusundan
+  // sonra, mufredatAltKonulari ile aynı gerekçeyle).
   const dershaneMi = s.schools?.tur === "dershane";
-  const konuHakimiyetiSatirlari = aktifBolum === "konu-hakimiyeti"
+  const konuHakimiyetiSatirlari = (aktifBolum === "konu-hakimiyeti" || aktifBolum === "analiz")
     ? await konuHakimiyetiGetir(supabase, userId, s.classes?.seviye ?? null, s.ayt_alan, dokuzOnMu, dershaneMi)
     : [];
 
@@ -361,7 +362,7 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
 
       {aktifBolum === "analiz" && <div>
         <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-lg font-bold mb-3 print:hidden">Analiz / Rapor</h2>
-        <AnalizPaneli veri={analiz} ogrenciAdi={ad} />
+        <AnalizPaneli veri={analiz} ogrenciAdi={ad} konuHakimiyetiSatirlari={konuHakimiyetiSatirlari} />
       </div>}
     </div>
   );
@@ -423,7 +424,10 @@ async function OgretmenIcerik({ userId, role, kurumTuru, secilenSinifId, secilen
     const o = ogrenci as unknown as OgrenciRow | null;
 
     if (o) {
-      const analiz = await analizVerisiGetir(supabase, secilenOgrenciId, donem);
+      const [analiz, konuHakimiyetiSatirlari] = await Promise.all([
+        analizVerisiGetir(supabase, secilenOgrenciId, donem),
+        konuHakimiyetiOzetiGetir(supabase, secilenOgrenciId),
+      ]);
       const ogrenciAdi = o.profiles?.ad ?? "İsimsiz";
       // Dershane müdürünün "ozet" bölümü yok (bkz. DERSHANE_MUDUR_MENUSU) —
       // varsayılan geri dönüş hedefi ona göre değişiyor, aksi halde
@@ -440,7 +444,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, secilenSinifId, secilen
             <ChevronLeft size={14} /> Listeye dön
           </Link>
           <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-bold print:hidden">{ogrenciAdi}</h1>
-          <AnalizPaneli veri={analiz} ogrenciAdi={ogrenciAdi} />
+          <AnalizPaneli veri={analiz} ogrenciAdi={ogrenciAdi} konuHakimiyetiSatirlari={konuHakimiyetiSatirlari} />
         </div>
       );
     }
@@ -592,36 +596,13 @@ async function VeliIcerik({ userId, ad, secilenOgrenciId, donem, aktifBolum }: {
 
       {aktifBolum === "analiz" && seciliCocuk?.students && (
         <section className="flex flex-col gap-4">
-          <VeliKonuHakimiyetiOzeti supabase={supabase} studentId={seciliCocuk.students.id} />
-          <AnalizPaneli veri={await analizVerisiGetir(supabase, seciliCocuk.students.id, donem)} ogrenciAdi={seciliCocuk.students.profiles?.ad} />
+          <AnalizPaneli
+            veri={await analizVerisiGetir(supabase, seciliCocuk.students.id, donem)}
+            ogrenciAdi={seciliCocuk.students.profiles?.ad}
+            konuHakimiyetiSatirlari={await konuHakimiyetiOzetiGetir(supabase, seciliCocuk.students.id)}
+          />
         </section>
       )}
-    </div>
-  );
-}
-
-// Faz H4 — veli, çocuğunun Konu Hakimiyeti verisini ayrı bir ekrana
-// gitmeden, Analiz/Rapor sekmesinde tek satırlık bir özetle görür.
-async function VeliKonuHakimiyetiOzeti({ supabase, studentId }: { supabase: Awaited<ReturnType<typeof createClient>>; studentId: string }) {
-  const { data: cocuk } = await supabase
-    .from("students")
-    .select("ayt_alan, classes(seviye), schools(tur)")
-    .eq("id", studentId)
-    .single();
-  type CocukRow = { ayt_alan: AytAlan; classes: { seviye: string } | null; schools: { tur: string } | null };
-  const c = cocuk as unknown as CocukRow | null;
-  if (!c) return null;
-
-  const dokuzOnMuCocuk = dokuzOnSinifMi(c.classes?.seviye ?? null);
-  const dershaneMiCocuk = c.schools?.tur === "dershane";
-  const satirlar = await konuHakimiyetiGetir(supabase, studentId, c.classes?.seviye ?? null, c.ayt_alan, dokuzOnMuCocuk, dershaneMiCocuk);
-  const hakimSayisi = satirlar.filter((s) => s.hakimiyetSeviyesi === "yakin").length;
-  if (satirlar.length === 0) return null;
-
-  return (
-    <div className="rounded-2xl px-4 py-3 flex items-center gap-2" style={{ background: BG1_ALT, border: `1px solid ${BORDER}` }}>
-      <span style={{ color: TEXT_MUTED }} className="text-xs">Konu Hakimiyeti:</span>
-      <span style={{ color: TEXT }} className="text-sm font-bold">{hakimSayisi}/{satirlar.length} konuya hakim</span>
     </div>
   );
 }

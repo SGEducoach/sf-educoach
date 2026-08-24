@@ -4,7 +4,7 @@
 // diye ayrı bir tablodan (ogrenci_konu_hakimiyeti, migration 0055) besleniyor.
 import type { createClient } from "@/lib/supabase/server";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
-import { TYT_DERSLERI, AYT_DERSLERI } from "@/lib/types";
+import { TYT_DERSLERI, AYT_DERSLERI, dokuzOnSinifMi } from "@/lib/types";
 import type { AytAlan, HedefeYakinlik, OgrenmeSekli, TekrarDurumu } from "@/lib/types";
 
 type SupabaseC = Awaited<ReturnType<typeof createClient>>;
@@ -131,6 +131,28 @@ export async function konuHakimiyetiGetir(
       bayat,
     };
   });
+}
+
+// Analiz Paneli'nde (öğrenci/öğretmen-müdür/veli/admin — 4 ayrı çağrı
+// noktası) Konu Hakimiyeti özetini göstermek için — çağıranın öğrencinin
+// sınıf/ayt_alan/kurum türü bilgisini ZATEN elinde bulundurmasını
+// beklemeden, kendi içinde küçük bir sorguyla çekip konuHakimiyetiGetir'i
+// çağırır. Öğrencinin kendi dashboard'ında (H2 ekranının kendisi) bu
+// bilgiler zaten sayfa genelinde mevcut olduğundan orada konuHakimiyetiGetir
+// doğrudan çağrılmaya devam ediyor — bu sarmalayıcı sadece DİĞER 3 çağrı
+// noktası (öğretmen/müdür, veli, admin) için.
+export async function konuHakimiyetiOzetiGetir(supabase: SupabaseC, studentId: string): Promise<KonuHakimiyetiSatiri[]> {
+  const { data } = await supabase
+    .from("students")
+    .select("ayt_alan, classes(seviye), schools(tur)")
+    .eq("id", studentId)
+    .single();
+  type Row = { ayt_alan: AytAlan; classes: { seviye: string } | null; schools: { tur: string } | null };
+  const s = data as unknown as Row | null;
+  if (!s) return [];
+  const dokuzOnMu = dokuzOnSinifMi(s.classes?.seviye ?? null);
+  const dershaneMi = s.schools?.tur === "dershane";
+  return konuHakimiyetiGetir(supabase, studentId, s.classes?.seviye ?? null, s.ayt_alan, dokuzOnMu, dershaneMi);
 }
 
 // "Gerek yok" onayı (Faz H3, Plan Yap + Konu Çalışma girişi) için —
