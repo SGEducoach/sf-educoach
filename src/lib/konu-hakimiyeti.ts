@@ -6,6 +6,8 @@ import type { createClient } from "@/lib/supabase/server";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
 import { TYT_DERSLERI, AYT_DERSLERI, AYT_MUFREDAT_DERSLERI, dokuzOnSinifMi } from "@/lib/types";
 import type { AytAlan, HedefeYakinlik, OgrenmeSekli, TekrarDurumu } from "@/lib/types";
+import { oturumOrtalamasiHesapla, dogrulukOraniHesapla, bilesikMasterySkoruHesapla } from "@/lib/analiz-motoru";
+import type { MasteryKaynagi } from "@/lib/analiz-motoru";
 
 type SupabaseC = Awaited<ReturnType<typeof createClient>>;
 
@@ -25,6 +27,14 @@ export interface KonuHakimiyetiSatiri {
   // saf-olmayan yapardı) — 90+ gündür güncellenmemiş bir hakimiyet
   // beyanı "gözden geçir" rozetiyle işaretlenir.
   bayat: boolean;
+  // Analiz Motoru Faz A1 (Katman 2) — konu_calismalar (oturum), soru_cozumleri
+  // (ölçüm) ve ogrenci_konu_hakimiyeti (kalıcı beyan) sinyallerinin ağırlıklı
+  // bileşimi, 0-100. Hiçbir sinyal yoksa null (bu konuya hiç dokunulmamış).
+  // Bkz. src/lib/analiz-motoru.ts. ŞİMDİLİK sadece EK/görünür bir bilgi —
+  // "hakim/toplam" yüzdesi hâlâ hakimiyetSeviyesi'ne dayanıyor (bkz. plan,
+  // "tartışmaya açık" — kullanıcı gerçek veriyle görüp karar verecek).
+  masterySkoru: number | null;
+  masteryKaynaklari: MasteryKaynagi[];
 }
 
 const BAYATLAMA_GUN_SINIRI = 90;
@@ -167,12 +177,50 @@ export async function konuHakimiyetiGetir(
   const hakimiyetMap = new Map<string, HakimiyetRow>();
   for (const r of (hakimiyetHam as HakimiyetRow[]) ?? []) hakimiyetMap.set(`${r.ders}|${r.konu}`, r);
 
+  // Analiz Motoru Faz A1 (Katman 2) — bileşik skor için iki EK sinyal:
+  // "oturum" (konu_calismalar'daki tüm hedefe_yakinlik'lerin ortalaması)
+  // ve "ölçüm" (soru_cozumleri'ndeki gerçek dogru/yanlis oranı). İkisi de
+  // TARİH SINIRI OLMADAN, öğrencinin o konudaki tüm geçmişini kapsar —
+  // bkz. analiz-motoru.ts'teki formül gerekçesi.
+  const [{ data: oturumHam }, { data: olcumHam }] = await Promise.all([
+    supabase.from("konu_calismalar").select("ders, konu, hedefe_yakinlik").eq("student_id", studentId),
+    supabase.from("soru_cozumleri").select("ders, konu, dogru, yanlis").eq("student_id", studentId),
+  ]);
+  const oturumSeviyeleriMap = new Map<string, HedefeYakinlik[]>();
+  for (const r of (oturumHam as { ders: string; konu: string; hedefe_yakinlik: HedefeYakinlik }[]) ?? []) {
+    const anahtar = `${r.ders}|${r.konu}`;
+    const liste = oturumSeviyeleriMap.get(anahtar) ?? [];
+    liste.push(r.hedefe_yakinlik);
+    oturumSeviyeleriMap.set(anahtar, liste);
+  }
+  const olcumToplamMap = new Map<string, { dogru: number; yanlis: number }>();
+  for (const r of (olcumHam as { ders: string; konu: string; dogru: number; yanlis: number }[]) ?? []) {
+    if (!r.konu) continue; // soru_cozumleri'nde konu zorunlu değil — boşsa katkı veremez
+    const anahtar = `${r.ders}|${r.konu}`;
+    const mevcut = olcumToplamMap.get(anahtar) ?? { dogru: 0, yanlis: 0 };
+    mevcut.dogru += r.dogru;
+    mevcut.yanlis += r.yanlis;
+    olcumToplamMap.set(anahtar, mevcut);
+  }
+
   const simdi = Date.now();
   return yaprakListesi.map((l) => {
-    const h = hakimiyetMap.get(`${l.ders}|${l.konu}`);
+    const anahtar = `${l.ders}|${l.konu}`;
+    const h = hakimiyetMap.get(anahtar);
     const guncellenmeTarihi = h?.guncellenme_tarihi ?? null;
-    const bayat = guncellenmeTarihi !== null
-      && (simdi - new Date(guncellenmeTarihi).getTime()) / (1000 * 3600 * 24) > BAYATLAMA_GUN_SINIRI;
+    const gunFarkiSonGuncelleme = guncellenmeTarihi === null
+      ? null
+      : (simdi - new Date(guncellenmeTarihi).getTime()) / (1000 * 3600 * 24);
+    const bayat = gunFarkiSonGuncelleme !== null && gunFarkiSonGuncelleme > BAYATLAMA_GUN_SINIRI;
+
+    const olcumToplam = olcumToplamMap.get(anahtar);
+    const { skor: masterySkoru, kaynaklar: masteryKaynaklari } = bilesikMasterySkoruHesapla({
+      olcumDogrulukOrani: olcumToplam ? dogrulukOraniHesapla(olcumToplam.dogru, olcumToplam.yanlis) : null,
+      kaliciBeyan: h?.hakimiyet_seviyesi ?? null,
+      oturumOrtalamasi: oturumOrtalamasiHesapla(oturumSeviyeleriMap.get(anahtar) ?? []),
+      gunFarkiSonGuncelleme,
+    });
+
     return {
       ders: l.ders, ustKonu: l.ustKonu, konu: l.konu, seviye: l.seviye,
       hakimiyetSeviyesi: h?.hakimiyet_seviyesi ?? null,
@@ -180,6 +228,8 @@ export async function konuHakimiyetiGetir(
       tekrarDurumu: h?.tekrar_durumu ?? null,
       guncellenmeTarihi,
       bayat,
+      masterySkoru,
+      masteryKaynaklari,
     };
   });
 }

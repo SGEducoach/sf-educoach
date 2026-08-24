@@ -199,6 +199,12 @@ function KonuSatiri({ satir }: { satir: KonuHakimiyetiSatiri }) {
       <button type="button" onClick={() => setAcik((a) => !a)} className="sfec-btn w-full flex items-center justify-between gap-2 text-left">
         <span style={{ color: TEXT }} className="text-xs font-semibold">{satir.konu}</span>
         <span className="flex items-center gap-1.5 shrink-0">
+          {satir.masterySkoru !== null && (
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: SKY_BG, color: SKY }}
+              title={`Analiz Motoru skoru — ${satir.masteryKaynaklari.join(", ")} sinyaline dayanıyor (taslak, tartışmaya açık)`}>
+              Skor {satir.masterySkoru}
+            </span>
+          )}
           {satir.hakimiyetSeviyesi ? (
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
               style={{ background: HAKIMIYET_BG[satir.hakimiyetSeviyesi], color: HAKIMIYET_RENK[satir.hakimiyetSeviyesi], border: `1px solid ${HAKIMIYET_RENK[satir.hakimiyetSeviyesi]}` }}>
