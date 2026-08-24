@@ -15,7 +15,7 @@ import { ZorunluSifreDegisikligiKapisi } from "@/components/dashboard/ZorunluSif
 import { analizVerisiGetir } from "@/lib/analiz";
 import type { RaporDonemi } from "@/lib/analiz";
 import { ogrencininZayifKonulariGetir, konuHaritasiGetir } from "@/lib/konu-raporu";
-import { konuHakimiyetiGetir, konuHakimiyetiOzetiGetir, gerekYokHaritasiGetir } from "@/lib/konu-hakimiyeti";
+import { konuHakimiyetiGetir, konuHakimiyetiOzetiGetir, tamGorunumMu, gerekYokHaritasiGetir } from "@/lib/konu-hakimiyeti";
 import { KonuHakimiyetiEkrani } from "@/components/dashboard/KonuHakimiyetiEkrani";
 import { AYT_ALAN_ETIKET, sinifSiraKarsilastir, dokuzOnSinifMi, maarifHiyerarsiSinifMi, TYT_DERSLERI, AYT_DERSLERI } from "@/lib/types";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
@@ -264,6 +264,7 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
   // atlıyoruz (aynı dokuzOnMu'ya bağlı olduğu için de student sorgusundan
   // sonra, mufredatAltKonulari ile aynı gerekçeyle).
   const dershaneMi = s.schools?.tur === "dershane";
+  const konuHakimiyetiTamGorunum = tamGorunumMu(s.classes?.seviye ?? null, dershaneMi);
   const konuHakimiyetiSatirlari = (aktifBolum === "konu-hakimiyeti" || aktifBolum === "analiz")
     ? await konuHakimiyetiGetir(supabase, userId, s.classes?.seviye ?? null, s.ayt_alan, dokuzOnMu, dershaneMi)
     : [];
@@ -357,12 +358,12 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
       </div>}
 
       {aktifBolum === "konu-hakimiyeti" && <div className="print:hidden">
-        <KonuHakimiyetiEkrani satirlar={konuHakimiyetiSatirlari} />
+        <KonuHakimiyetiEkrani satirlar={konuHakimiyetiSatirlari} tamGorunum={konuHakimiyetiTamGorunum} />
       </div>}
 
       {aktifBolum === "analiz" && <div>
         <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-lg font-bold mb-3 print:hidden">Analiz / Rapor</h2>
-        <AnalizPaneli veri={analiz} ogrenciAdi={ad} konuHakimiyetiSatirlari={konuHakimiyetiSatirlari} />
+        <AnalizPaneli veri={analiz} ogrenciAdi={ad} konuHakimiyetiSatirlari={konuHakimiyetiSatirlari} konuHakimiyetiTamGorunum={konuHakimiyetiTamGorunum} />
       </div>}
     </div>
   );
@@ -424,7 +425,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, secilenSinifId, secilen
     const o = ogrenci as unknown as OgrenciRow | null;
 
     if (o) {
-      const [analiz, konuHakimiyetiSatirlari] = await Promise.all([
+      const [analiz, konuHakimiyetiOzeti] = await Promise.all([
         analizVerisiGetir(supabase, secilenOgrenciId, donem),
         konuHakimiyetiOzetiGetir(supabase, secilenOgrenciId),
       ]);
@@ -444,7 +445,8 @@ async function OgretmenIcerik({ userId, role, kurumTuru, secilenSinifId, secilen
             <ChevronLeft size={14} /> Listeye dön
           </Link>
           <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-bold print:hidden">{ogrenciAdi}</h1>
-          <AnalizPaneli veri={analiz} ogrenciAdi={ogrenciAdi} konuHakimiyetiSatirlari={konuHakimiyetiSatirlari} />
+          <AnalizPaneli veri={analiz} ogrenciAdi={ogrenciAdi}
+            konuHakimiyetiSatirlari={konuHakimiyetiOzeti.satirlar} konuHakimiyetiTamGorunum={konuHakimiyetiOzeti.tamGorunum} />
         </div>
       );
     }
@@ -595,15 +597,29 @@ async function VeliIcerik({ userId, ad, secilenOgrenciId, donem, aktifBolum }: {
       </div>
 
       {aktifBolum === "analiz" && seciliCocuk?.students && (
-        <section className="flex flex-col gap-4">
-          <AnalizPaneli
-            veri={await analizVerisiGetir(supabase, seciliCocuk.students.id, donem)}
-            ogrenciAdi={seciliCocuk.students.profiles?.ad}
-            konuHakimiyetiSatirlari={await konuHakimiyetiOzetiGetir(supabase, seciliCocuk.students.id)}
-          />
-        </section>
+        <VeliAnalizBolumu supabase={supabase} studentId={seciliCocuk.students.id} donem={donem} ogrenciAdi={seciliCocuk.students.profiles?.ad} />
       )}
     </div>
+  );
+}
+
+// Veli için Analiz/Rapor sekmesi — analiz verisi + Konu Hakimiyeti özetini
+// PARALEL çekip AnalizPaneli'ne geçirir (VeliIcerik'in JSX'i içinde iki
+// ayrı await ifadesi yerine, okunabilirlik için ayrı bir async bileşene
+// taşındı — aynı Promise.all deseni OgretmenIcerik'teki secilenOgrenciId
+// dalıyla tutarlı).
+async function VeliAnalizBolumu({ supabase, studentId, donem, ogrenciAdi }: {
+  supabase: Awaited<ReturnType<typeof createClient>>; studentId: string; donem: RaporDonemi; ogrenciAdi?: string;
+}) {
+  const [analiz, konuHakimiyetiOzeti] = await Promise.all([
+    analizVerisiGetir(supabase, studentId, donem),
+    konuHakimiyetiOzetiGetir(supabase, studentId),
+  ]);
+  return (
+    <section className="flex flex-col gap-4">
+      <AnalizPaneli veri={analiz} ogrenciAdi={ogrenciAdi}
+        konuHakimiyetiSatirlari={konuHakimiyetiOzeti.satirlar} konuHakimiyetiTamGorunum={konuHakimiyetiOzeti.tamGorunum} />
+    </section>
   );
 }
 

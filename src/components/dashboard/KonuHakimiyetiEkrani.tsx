@@ -13,6 +13,7 @@ import {
 import type { HedefeYakinlik, OgrenmeSekli, TekrarDurumu } from "@/lib/types";
 import { Etiket, SecenekSecici } from "@/components/dashboard/OgrenciVeriGirisi";
 import { konuHakimiyetiKaydet } from "@/app/dashboard/konu-hakimiyeti-actions";
+import { satirTytdeGosterilsinMi, satirAytdeGosterilsinMi } from "@/lib/konu-hakimiyeti";
 import type { KonuHakimiyetiSatiri } from "@/lib/konu-hakimiyeti";
 import { BG0, BG1, BG1_ALT, BLUSH, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, BUTTER, BUTTER_BG, PEACH, PEACH_BG, TEXT, TEXT_MUTED } from "@/lib/theme";
 
@@ -22,11 +23,25 @@ const HAKIMIYET_RENK: Record<HedefeYakinlik, string> = { yakin: MINT, belirsiz: 
 // belirgin bir "chip" oluyor (Hepsini İşaretle butonlarıyla aynı görsel dil).
 const HAKIMIYET_BG: Record<HedefeYakinlik, string> = { yakin: MINT_BG, belirsiz: BUTTER_BG, uzak: PEACH_BG };
 
-export function KonuHakimiyetiEkrani({ satirlar }: { satirlar: KonuHakimiyetiSatiri[] }) {
-  const dersler = useMemo(() => Array.from(new Set(satirlar.map((s) => s.ders))), [satirlar]);
+export function KonuHakimiyetiEkrani({ satirlar, tamGorunum }: { satirlar: KonuHakimiyetiSatiri[]; tamGorunum: boolean }) {
+  // Tam görünüm (12. sınıf/dershane) — kullanıcı isteği: "iki seçim
+  // kutucuğu olsun önce tyt/ayt seçilsin sonra da dersler". Maarif modunda
+  // (9-10-11. sınıf, dershane değil) bu seçici hiç gösterilmiyor, sınav
+  // filtresi de uygulanmıyor (satirlar zaten kendi kademesine göre geliyor).
+  const [seciliSinav, setSeciliSinav] = useState<"TYT" | "AYT">("TYT");
+  const sinavaGoreSatirlar = !tamGorunum
+    ? satirlar
+    : satirlar.filter(seciliSinav === "TYT" ? satirTytdeGosterilsinMi : satirAytdeGosterilsinMi);
+
+  const dersler = useMemo(() => Array.from(new Set(sinavaGoreSatirlar.map((s) => s.ders))), [sinavaGoreSatirlar]);
   const [seciliDers, setSeciliDers] = useState<string>("tum");
 
-  const gorunenSatirlar = seciliDers === "tum" ? satirlar : satirlar.filter((s) => s.ders === seciliDers);
+  function sinavDegistir(s: "TYT" | "AYT") {
+    setSeciliSinav(s);
+    setSeciliDers("tum"); // önceki dersin seçimi yeni sınav kapsamında geçersiz olabilir
+  }
+
+  const gorunenSatirlar = seciliDers === "tum" ? sinavaGoreSatirlar : sinavaGoreSatirlar.filter((s) => s.ders === seciliDers);
   const hakimSayisi = gorunenSatirlar.filter((s) => s.hakimiyetSeviyesi === "yakin").length;
   const toplam = gorunenSatirlar.length;
   const yuzde = toplam > 0 ? Math.round((hakimSayisi / toplam) * 100) : 0;
@@ -69,6 +84,17 @@ export function KonuHakimiyetiEkrani({ satirlar }: { satirlar: KonuHakimiyetiSat
           Geçmişten güncele bütün konuları gez, her biri için ne kadar hakim olduğunu işaretle — bir çalışma oturumu girmiş olman gerekmez.
         </p>
 
+        {tamGorunum && (
+          <div className="flex gap-1 p-1 rounded-full w-fit mb-3" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
+            {(["TYT", "AYT"] as const).map((s) => (
+              <button key={s} type="button" onClick={() => sinavDegistir(s)}
+                className="sfec-btn text-xs font-bold px-4 py-1.5 rounded-full"
+                style={{ background: seciliSinav === s ? MINT : "transparent", color: seciliSinav === s ? MINT_ON : TEXT_MUTED }}>
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
         <select value={seciliDers} onChange={(e) => setSeciliDers(e.target.value)}
           className="text-sm px-3 py-2 rounded-xl outline-none w-full sm:w-auto mb-4"
           style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>

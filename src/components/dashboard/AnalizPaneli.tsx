@@ -11,9 +11,10 @@ import type { AnalizVerisi, RaporDonemi } from "@/lib/analiz";
 import { RAPOR_DONEMI_ETIKET } from "@/lib/analiz";
 import { HEDEFE_YAKINLIK_ETIKET, VERIMLILIK_ETIKET } from "@/lib/types";
 import type { HedefeYakinlik } from "@/lib/types";
+import { satirTytdeGosterilsinMi, satirAytdeGosterilsinMi } from "@/lib/konu-hakimiyeti";
 import type { KonuHakimiyetiSatiri } from "@/lib/konu-hakimiyeti";
 import {
-  BG1, BG1_ALT, BORDER, BORDER_STRONG, TEXT, TEXT_MUTED, MINT, MINT_BG, MINT_ON,
+  BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, TEXT, TEXT_MUTED, MINT, MINT_BG, MINT_ON,
   SKY, SKY_BG, BUTTER, BUTTER_BG, BLUSH, LILAC,
 } from "@/lib/theme";
 
@@ -41,8 +42,8 @@ function IstatKart({ icon: Icon, etiket, deger, altYazi, renk, bg }: {
 
 const HEDEF_RENK: Record<HedefeYakinlik, string> = { yakin: MINT, belirsiz: BUTTER, uzak: BLUSH };
 
-export function AnalizPaneli({ veri, ogrenciAdi, konuHakimiyetiSatirlari = [] }: {
-  veri: AnalizVerisi; ogrenciAdi?: string; konuHakimiyetiSatirlari?: KonuHakimiyetiSatiri[];
+export function AnalizPaneli({ veri, ogrenciAdi, konuHakimiyetiSatirlari = [], konuHakimiyetiTamGorunum = false }: {
+  veri: AnalizVerisi; ogrenciAdi?: string; konuHakimiyetiSatirlari?: KonuHakimiyetiSatiri[]; konuHakimiyetiTamGorunum?: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -230,7 +231,7 @@ export function AnalizPaneli({ veri, ogrenciAdi, konuHakimiyetiSatirlari = [] }:
           )}
         </div>
 
-        <KonuHakimiyetKarti satirlar={konuHakimiyetiSatirlari} />
+        <KonuHakimiyetKarti satirlar={konuHakimiyetiSatirlari} tamGorunum={konuHakimiyetiTamGorunum} />
       </div>
 
       {verimlilikChartData.length > 0 && (
@@ -259,10 +260,16 @@ function BosDurum() {
 // Konu Hakimiyeti kartı — genel (tüm dersler) veya tek bir ders seçilip
 // donut grafiğinde o kapsamın hakim/toplam oranı gösterilir. Görsel dil
 // KonuHakimiyetiEkrani.tsx'teki donutla birebir aynı (bkz. o dosya).
-function KonuHakimiyetKarti({ satirlar }: { satirlar: KonuHakimiyetiSatiri[] }) {
+function KonuHakimiyetKarti({ satirlar, tamGorunum }: { satirlar: KonuHakimiyetiSatiri[]; tamGorunum: boolean }) {
+  // Tam görünüm (12. sınıf/dershane) — önce TYT/AYT, sonra o kapsamdaki
+  // ders seçilir (bkz. KonuHakimiyetiEkrani.tsx'teki aynı mantık).
+  const [seciliSinav, setSeciliSinav] = useState<"TYT" | "AYT">("TYT");
   const [seciliDers, setSeciliDers] = useState<string>("genel");
-  const dersler = useMemo(() => Array.from(new Set(satirlar.map((s) => s.ders))).sort((a, b) => a.localeCompare(b, "tr")), [satirlar]);
-  const gorunenSatirlar = seciliDers === "genel" ? satirlar : satirlar.filter((s) => s.ders === seciliDers);
+  const sinavaGoreSatirlar = !tamGorunum
+    ? satirlar
+    : satirlar.filter(seciliSinav === "TYT" ? satirTytdeGosterilsinMi : satirAytdeGosterilsinMi);
+  const dersler = useMemo(() => Array.from(new Set(sinavaGoreSatirlar.map((s) => s.ders))).sort((a, b) => a.localeCompare(b, "tr")), [sinavaGoreSatirlar]);
+  const gorunenSatirlar = seciliDers === "genel" ? sinavaGoreSatirlar : sinavaGoreSatirlar.filter((s) => s.ders === seciliDers);
   const hakimSayisi = gorunenSatirlar.filter((s) => s.hakimiyetSeviyesi === "yakin").length;
   const toplam = gorunenSatirlar.length;
   const yuzde = toplam > 0 ? Math.round((hakimSayisi / toplam) * 100) : 0;
@@ -270,10 +277,28 @@ function KonuHakimiyetKarti({ satirlar }: { satirlar: KonuHakimiyetiSatiri[] }) 
     ? [{ name: "hakim", value: hakimSayisi }, { name: "diger", value: toplam - hakimSayisi }]
     : [{ name: "bos", value: 1 }];
 
+  function sinavDegistir(s: "TYT" | "AYT") {
+    setSeciliSinav(s);
+    setSeciliDers("genel");
+  }
+
   return (
     <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-      <div className="flex items-center justify-between gap-2 mb-4 flex-wrap print:hidden">
+      <div className="flex items-center justify-between gap-2 mb-3 flex-wrap print:hidden">
         <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Konu Hakimiyeti</span>
+        {tamGorunum && (
+          <div className="flex gap-1 p-1 rounded-full" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
+            {(["TYT", "AYT"] as const).map((s) => (
+              <button key={s} type="button" onClick={() => sinavDegistir(s)}
+                className="sfec-btn text-[11px] font-bold px-3 py-1 rounded-full"
+                style={{ background: seciliSinav === s ? MINT : "transparent", color: seciliSinav === s ? MINT_ON : TEXT_MUTED }}>
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="flex items-center justify-end mb-4 print:hidden">
         {dersler.length > 0 && (
           <select value={seciliDers} onChange={(e) => setSeciliDers(e.target.value)}
             className="text-xs font-semibold px-2.5 py-1.5 rounded-xl outline-none"

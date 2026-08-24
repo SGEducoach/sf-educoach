@@ -29,12 +29,56 @@ export interface KonuHakimiyetiSatiri {
 
 const BAYATLAMA_GUN_SINIRI = 90;
 
-// students.classes.seviye "9. Sınıf" formatındaki seviye etiketinden
+// MUFREDAT_KONULARI[].seviye "9. Sınıf" formatındaki METİN etiketinden
 // sınıf numarasını çıkarır — TYT/AYT/Hazırlık gibi sınıfsız etiketler
 // için null döner (bunlar her zaman dahil edilir, aşağıya bakınız).
+// DİKKAT: bu, students.classes.seviye (öğrencinin KENDİ sınıfı) İLE AYNI
+// FORMAT DEĞİL — o çıplak "9"/"10"/"11"/"12" olarak tutuluyor (bkz.
+// dashboard/actions.ts'teki ["9","10","11","12"].includes(seviye) kontrolü,
+// DershaneSinifEkleFormu.tsx'teki <option value={s}> — s bare "9" vb.).
+// Öğrencinin kendi sınıfını sayıya çevirmek için ogrenciSinifNumarasi
+// kullanılır, BU fonksiyon KARIŞTIRILMASIN (bkz. aşağıdaki not).
 function seviyeSinifNumarasi(seviye: string): number | null {
   const eslesme = /^(\d+)\. Sınıf$/.exec(seviye);
   return eslesme ? Number(eslesme[1]) : null;
+}
+
+// students.classes.seviye — öğrencinin KENDİ sınıfı — çıplak "9"/"10"/
+// "11"/"12" string'i olarak tutuluyor (yukarıdaki seviyeSinifNumarasi'nin
+// ayrıştırdığı "9. Sınıf" METİN etiketiyle KARIŞTIRILMASIN — iki farklı
+// alan, iki farklı format). Boş/tanımsızsa (mezun/hazırlık vb.) 12 kabul
+// edilir — kümülatif YKS mantığında en üst kapsam.
+function ogrenciSinifNumarasi(sinifSeviyesi: string | null): number {
+  if (!sinifSeviyesi) return 12;
+  const sayi = Number(sinifSeviyesi);
+  return Number.isFinite(sayi) ? sayi : 12;
+}
+
+// "Tam görünüm" (dershaneli veya 12. sınıf/mezun) mi? — hem veri katmanı
+// (konuHakimiyetiGetir) hem çağıranlar (dashboard/page.tsx, KonuHakimiyetiEkrani/
+// AnalizPaneli'ne prop geçirmek için) aynı hesabı yapsın diye dışa açık.
+export function tamGorunumMu(sinifSeviyesi: string | null, dershaneMi: boolean): boolean {
+  return dershaneMi || ogrenciSinifNumarasi(sinifSeviyesi) >= 12;
+}
+
+// Tam görünümdeki (12.sınıf/dershane) kullanıcılar için istemci tarafında
+// TYT/AYT gruplaması — kullanıcı isteği: "iki seçim kutucuğu olsun önce
+// tyt/ayt seçilsin sonra da dersler". Veri katmanında AYRI bir kayıt
+// TUTULMUYOR (bir konunun hakimiyet beyanı TYT'den de AYT'den de
+// işaretlense aynı kayıt) — bu sadece GÖRÜNÜM/filtre katmanı.
+// Gerçek YKS'de AYT kümülatiftir (9-12. sınıf müfredatının TAMAMINI
+// kapsar), TYT ise temel/ortak düzeydir (9-10. sınıf ağırlıklı) — bu
+// yüzden 9-10. sınıf konuları HER İKİ grupta da görünür, 11-12. sınıf
+// konuları SADECE AYT'de görünür. Türkçe sadece TYT'de (gerçek AYT'de
+// Türkçe bölümü yok, sadece Edebiyat), Edebiyat sadece AYT'de.
+export function satirTytdeGosterilsinMi(satir: KonuHakimiyetiSatiri): boolean {
+  if (satir.ders === "Edebiyat") return false;
+  if (satir.ders === "Türkçe") return true;
+  const sinifNo = seviyeSinifNumarasi(satir.seviye);
+  return sinifNo === null || sinifNo <= 10;
+}
+export function satirAytdeGosterilsinMi(satir: KonuHakimiyetiSatiri): boolean {
+  return satir.ders !== "Türkçe";
 }
 
 // Maarif Modeli Türkçe'de ayrı konu başlığı vermiyor (tema/beceri bazlı,
@@ -59,15 +103,16 @@ export async function konuHakimiyetiGetir(
   // "seviye" 9-12 arası bir sınıf etiketiyken ve öğrencinin KENDİ
   // sınıfından İLERİ bir sınıfa aitse elenir. TYT/AYT/Hazırlık etiketli
   // (sınıf numarası taşımayan) konular her zaman dahil.
-  // (Önceki hata: burada çıplak Number(sinifSeviyesi) kullanılıyordu —
-  // sinifSeviyesi "9. Sınıf" gibi bir METİN olduğundan Number(...) hep
-  // NaN dönüyordu ve sınıf filtresi FİİLEN HİÇ ÇALIŞMIYORDU; herkes tüm
-  // sınıfların konularını görüyordu. seviyeSinifNumarasi ile düzeltildi.)
-  const kendiSinif = sinifSeviyesi ? (seviyeSinifNumarasi(sinifSeviyesi) ?? 12) : 12;
+  const kendiSinifHam = ogrenciSinifNumarasi(sinifSeviyesi);
   // "Tam görünüm" — dershaneli öğrenciler (sınıfları ne olursa olsun) ve
-  // 12. sınıf/mezun öğrenciler, Maarif'in kademeli 9-10-11 hiyerarşisini
-  // DEĞİL, TYT/AYT'nin TAM (düz) konu listesini görür — kullanıcı isteği.
-  const tamGorunum = dershaneMi || kendiSinif >= 12;
+  // 12. sınıf/mezun öğrenciler, Maarif'in KENDİ SINIFIYLA sınırlı kademeli
+  // görünümü yerine, klasik TYT/AYT müfredatının TAMAMINI (9-10-11-12.
+  // sınıf içeriğinin hepsi — gerçek YKS kümülatiftir) görür. Kullanıcı geri
+  // bildirimi: önceki hâli SADECE 12.sınıf'a özgü konularla sınırlıydı ve
+  // "konular çok az gözüküyor" şikayetine yol açtı — artık kendiSinif 12'ye
+  // sabitlenip AŞAĞIDAKİ AYNI kümülatif filtre (9→12 hepsi) kullanılıyor.
+  const tamGorunum = dershaneMi || kendiSinifHam >= 12;
+  const kendiSinif = tamGorunum ? 12 : kendiSinifHam;
   const dersListesiTemel = (dokuzOnMu && !tamGorunum)
     ? [...TYT_DERSLERI]
     : [...TYT_DERSLERI, ...AYT_DERSLERI[aytAlan].filter((d) => !TYT_DERSLERI.includes(d as typeof TYT_DERSLERI[number]))];
@@ -89,14 +134,13 @@ export async function konuHakimiyetiGetir(
   const yaprakListesi: { ders: string; ustKonu: string; konu: string; seviye: string }[] = [];
   for (const k of MUFREDAT_KONULARI) {
     if (!dersListesi.includes(k.ders)) continue;
+    // "Hazırlık" (9. sınıf ÖNCESİ, ek/hazırlık materyali) klasik TYT/AYT
+    // müfredatının parçası değil — tam görünümde hariç tutulur. Normal
+    // (Maarif) modda dokunmuyoruz, o davranış bu değişiklikten önce de
+    // vardı ve kapsam dışı.
+    if (tamGorunum && k.seviye === "Hazırlık") continue;
     const sinifNo = seviyeSinifNumarasi(k.seviye);
-    if (tamGorunum) {
-      // Tam görünümde Maarif'in 9./10./11. sınıfa özel konuları (grade
-      // etiketli olan HER ŞEY — kendi 12.sınıf'ı dahil değil) tamamen
-      // dışlanır; sadece TYT/AYT/Hazırlık (sınıfsız) + 12. sınıf konuları
-      // kalır — gerçek TYT/AYT sınavının kapsadığı düz konu seti bu.
-      if (sinifNo !== null && sinifNo !== 12) continue;
-    } else if (sinifNo !== null && sinifNo > kendiSinif) continue;
+    if (sinifNo !== null && sinifNo > kendiSinif) continue;
     const altBasliklar = altKonularMap.get(`${k.ders}|${k.konu}`);
     if (altBasliklar && altBasliklar.length > 0) {
       for (const alt of altBasliklar) yaprakListesi.push({ ders: k.ders, ustKonu: k.konu, konu: alt, seviye: k.seviye });
@@ -141,7 +185,10 @@ export async function konuHakimiyetiGetir(
 // bilgiler zaten sayfa genelinde mevcut olduğundan orada konuHakimiyetiGetir
 // doğrudan çağrılmaya devam ediyor — bu sarmalayıcı sadece DİĞER 3 çağrı
 // noktası (öğretmen/müdür, veli, admin) için.
-export async function konuHakimiyetiOzetiGetir(supabase: SupabaseC, studentId: string): Promise<KonuHakimiyetiSatiri[]> {
+export async function konuHakimiyetiOzetiGetir(
+  supabase: SupabaseC,
+  studentId: string,
+): Promise<{ satirlar: KonuHakimiyetiSatiri[]; tamGorunum: boolean }> {
   const { data } = await supabase
     .from("students")
     .select("ayt_alan, classes(seviye), schools(tur)")
@@ -149,10 +196,11 @@ export async function konuHakimiyetiOzetiGetir(supabase: SupabaseC, studentId: s
     .single();
   type Row = { ayt_alan: AytAlan; classes: { seviye: string } | null; schools: { tur: string } | null };
   const s = data as unknown as Row | null;
-  if (!s) return [];
+  if (!s) return { satirlar: [], tamGorunum: false };
   const dokuzOnMu = dokuzOnSinifMi(s.classes?.seviye ?? null);
   const dershaneMi = s.schools?.tur === "dershane";
-  return konuHakimiyetiGetir(supabase, studentId, s.classes?.seviye ?? null, s.ayt_alan, dokuzOnMu, dershaneMi);
+  const satirlar = await konuHakimiyetiGetir(supabase, studentId, s.classes?.seviye ?? null, s.ayt_alan, dokuzOnMu, dershaneMi);
+  return { satirlar, tamGorunum: tamGorunumMu(s.classes?.seviye ?? null, dershaneMi) };
 }
 
 // "Gerek yok" onayı (Faz H3, Plan Yap + Konu Çalışma girişi) için —
