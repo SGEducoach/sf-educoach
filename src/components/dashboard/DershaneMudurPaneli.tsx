@@ -3,6 +3,8 @@ import { ogretmenDuyuruGonder, gonderilenDuyurularGetir } from "@/app/dashboard/
 import { DuyuruFormu } from "@/components/dashboard/DuyuruFormu";
 import { KonuHaritasiRaporu } from "@/components/dashboard/KonuHaritasiRaporu";
 import { konuHaritasiGetir } from "@/lib/konu-raporu";
+import { dershaneAnaSayfaVerisiGetir } from "@/lib/dershane-ana-sayfa";
+import { DershaneAnaSayfa } from "@/components/dashboard/DershaneAnaSayfa";
 import { createClient } from "@/lib/supabase/server";
 import { DershaneRosterEkleFormu } from "@/components/dashboard/DershaneRosterEkleFormu";
 import { DershaneRosterTopluEkleFormu } from "@/components/dashboard/DershaneRosterTopluEkleFormu";
@@ -14,14 +16,21 @@ import type { DashboardBolumu } from "@/lib/dashboard-navigation";
 import { BG1, BORDER, TEXT_MUTED } from "@/lib/theme";
 
 // DERSHANE MODU (Faz D3) — dershane müdürünün tam paneli. Menü sırası
-// DERSHANE_MUDUR_MENUSU ile birebir (bkz. dashboard-navigation.ts):
-// öğretmenler, öğrenciler, denemeler, tg-denemeleri (page.tsx üst
-// seviyede, buraya hiç düşmez), yapay-zeka, duyurular.
+// DERSHANE_MUDUR_MENUSU ile birebir (bkz. dashboard-navigation.ts): ozet
+// (Ana Sayfa — kademe bazlı performans, varsayılan sekme), öğretmenler,
+// öğrenciler, denemeler, tg-denemeleri (page.tsx üst seviyede, buraya hiç
+// düşmez), yapay-zeka, duyurular.
 export async function DershaneMudurPaneli({ siniflar, aktifBolum, schoolId }: {
   siniflar: { id: string; seviye: string; sube: string }[];
   aktifBolum: DashboardBolumu;
   schoolId: string;
 }) {
+  if (aktifBolum === "ozet") {
+    const supabase = await createClient();
+    const veri = await dershaneAnaSayfaVerisiGetir(supabase, schoolId);
+    return <section className="sfec-section"><DershaneAnaSayfa veri={veri} /></section>;
+  }
+
   if (aktifBolum === "duyurular") {
     const kapsamSecenekleri = [
       { deger: "okul", etiket: "Tüm dershane" },

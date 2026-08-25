@@ -81,8 +81,12 @@ const MUDUR_MENUSU: DashboardMenuOgesi[] = [
 // bir menü görüyor: gözlemci değil, kendi kurumunda öğretmen/öğrenci
 // CRUD'u yapabilen bir yönetici (bkz. src/app/dashboard/actions.ts
 // requireDershaneMudur). "duyurular"/"tg-denemeleri"/"yapay-zeka" mevcut,
-// paylaşılan bölümler — yeniden tanımlanmadı.
+// paylaşılan bölümler — yeniden tanımlanmadı. "ozet" (Ana Sayfa — kademe
+// bazlı performans) başlangıçta yoktu, sonradan eklendi ve varsayılan
+// (giriş sonrası ilk açılan) sekme yapıldı — bkz. dashboard/page.tsx
+// varsayilanBolum.
 const DERSHANE_MUDUR_MENUSU: DashboardMenuOgesi[] = [
+  { bolum: "ozet", href: "/dashboard", etiket: "Ana Sayfa", ikon: "ana-sayfa" },
   { bolum: "ogretmenler", href: "/dashboard/ogretmenler", etiket: "Öğretmenler", ikon: "ogretmen" },
   { bolum: "ogrenciler", href: "/dashboard/ogrenciler", etiket: "Öğrenciler", ikon: "ogrenci" },
   { bolum: "denemeler", href: "/dashboard/denemeler", etiket: "Denemeler", ikon: "deneme" },

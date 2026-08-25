@@ -81,10 +81,10 @@ export default async function DashboardPage({
   }
 
   const params = await searchParams;
-  // Dershane müdürünün menüsünde "ozet" yok (bkz. DERSHANE_MUDUR_MENUSU) —
-  // bolum parametresi verilmediğinde varsayılan, doğrulamayı geçecek bir
-  // bölüm olmalı, aksi halde /dashboard'a redirect sonsuz döngüye girer.
-  const varsayilanBolum: DashboardBolumu = role === "mudur" && kurumTuru === "dershane" ? "ogretmenler" : "ozet";
+  // Tüm rollerde (dershane müdürü dahil, artık kendi "Ana Sayfa"sı var —
+  // bkz. DERSHANE_MUDUR_MENUSU) bolum parametresi verilmediğinde
+  // varsayılan "ozet".
+  const varsayilanBolum: DashboardBolumu = "ozet";
   const aktifBolum = (params.bolum ?? varsayilanBolum) as DashboardBolumu;
   if (!dashboardMenusu(role, kurumTuru).some((oge) => oge.bolum === aktifBolum)) redirect("/dashboard");
   const donem = (["haftalik", "aylik", "tum"].includes(params.donem ?? "") ? params.donem : "tum") as RaporDonemi;
