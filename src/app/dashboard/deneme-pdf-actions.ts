@@ -12,6 +12,8 @@ import { adNormalize } from "@/lib/validators";
 import { TYT_DERSLERI, AYT_DERSLERI, BRANS_DENEMESI_DERSLERI, dersSoruSayisi } from "@/lib/types";
 import type { DenemeTuru } from "@/lib/types";
 import { ogretmenDenemeSonucuKaydet } from "@/lib/deneme-sonucu-kaydet";
+import { okulListesiniAyristir } from "@/lib/deneme-pdf-ayristirici";
+import { netHesapla } from "@/lib/types";
 
 function gecerliDersler(tur: DenemeTuru): string[] {
   if (tur === "TYT") return [...TYT_DERSLERI];
@@ -253,6 +255,40 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
       ? e.kullaniciMesaji
       : "PDF işleme sırasında beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.";
     return { error: mesaj, ...BOS_SONUC };
+  }
+
+  // Faz P0/P1 (Deneme Net Dağıtımı raporu, 25.08.2026) — bilinen yayınevi
+  // şablonları (LİMİT: TYT/AYT/BRANŞ) için DETERMİNİSTİK, Vision'sız bir
+  // ayrıştırıcı kuruldu (src/lib/deneme-pdf-ayristirici.ts, gerçek
+  // örneklerde PDF'in kendi resmi katılımcı sayısıyla birebir eşleşti).
+  // Bu blok SADECE ÖLÇÜM amaçlı — Claude'un çıktısıyla sessizce
+  // karşılaştırıp konsola yazıyor, KAYDETME YOLUNU HİÇ DEĞİŞTİRMİYOR.
+  // Herhangi bir hata bu akışı asla etkilemesin diye ayrı try/catch'te.
+  try {
+    const pdfBuffer = Buffer.from(await dosya.arrayBuffer());
+    const deterministikSonuc = await okulListesiniAyristir(pdfBuffer);
+    if (!deterministikSonuc.basarili) {
+      console.info("[deneme-pdf P1 ölçüm] deterministik ayrıştırma başarısız (bilinmeyen format olabilir):", deterministikSonuc.hata);
+    } else {
+      let netUyusan = 0;
+      let netUyusmayan = 0;
+      const eslesmeyenOrnekler: string[] = [];
+      for (const dSatir of deterministikSonuc.ogrenciler) {
+        const dNorm = adNormalize(dSatir.isimHam);
+        const cSatir = ayristirilan.find((c) => adNormalize(c.ad_soyad) === dNorm);
+        if (!cSatir) { if (eslesmeyenOrnekler.length < 5) eslesmeyenOrnekler.push(dSatir.isimHam); continue; }
+        const cToplamNet = Math.round(cSatir.ders_sonuclari.reduce((t, s) => t + netHesapla(s.dogru, s.yanlis), 0) * 100) / 100;
+        if (Math.abs(cToplamNet - dSatir.toplam.net) < 0.5) netUyusan++; else netUyusmayan++;
+      }
+      console.info(
+        "[deneme-pdf P1 ölçüm] deterministik:", deterministikSonuc.ogrenciler.length,
+        "| claude:", ayristirilan.length,
+        "| toplam net uyuşan:", netUyusan, "| uyuşmayan:", netUyusmayan,
+        "| deterministikte olup claude'da bulunamayan (ilk 5):", eslesmeyenOrnekler,
+      );
+    }
+  } catch (olcumHatasi) {
+    console.warn("[deneme-pdf P1 ölçüm] beklenmeyen hata (asıl akışı etkilemez):", hataOzeti(olcumHatasi));
   }
 
   if (ayristirilan.length === 0) {
