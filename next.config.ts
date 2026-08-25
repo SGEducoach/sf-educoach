@@ -18,7 +18,15 @@ const nextConfig: NextConfig = {
   // yerelde ASLA tekrarlanmadı — sadece Vercel'in derlemesinde ortaya
   // çıkıyor). pdfjs-dist Node'a özgü davranışını (require ile, kendi
   // ortam algılamasıyla) koruyabilsin diye bundle DIŞINDA tutuluyor.
-  serverExternalPackages: ["pdfjs-dist"],
+  // Bu tek başına yetmedi: pdfjs-dist'in Node/legacy build'i DOMMatrix/
+  // Path2D'yi kendi kendine polyfill'lemeye çalışıyor ve bunun için
+  // @napi-rs/canvas paketini arıyor — o paket kurulu olmayınca sessizce
+  // uyarı verip devam etmek yerine aynı ReferenceError'ı fırlatıyordu.
+  // @napi-rs/canvas eklendi (native binding, canvas'tan farklı olarak
+  // derleme gerektirmiyor, Vercel'in Linux ortamında da prebuilt binary
+  // ile çalışıyor) — o da native modül olduğundan aynı şekilde bundle
+  // dışında tutulması gerekiyor.
+  serverExternalPackages: ["pdfjs-dist", "@napi-rs/canvas"],
 };
 
 export default nextConfig;
