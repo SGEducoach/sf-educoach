@@ -12,7 +12,9 @@ import { adNormalize } from "@/lib/validators";
 import { TYT_DERSLERI, AYT_DERSLERI, BRANS_DENEMESI_DERSLERI, dersSoruSayisi } from "@/lib/types";
 import type { DenemeTuru } from "@/lib/types";
 import { ogretmenDenemeSonucuKaydet } from "@/lib/deneme-sonucu-kaydet";
-import { okulListesiniAyristir, tumKarneleriIndeksle, karneyiTytDerslerineEslestir } from "@/lib/deneme-pdf-ayristirici";
+import {
+  okulListesiniAyristir, tumKarneleriIndeksle, karneyiTytDerslerineEslestir, tumKarneKazanimlariniIndeksle,
+} from "@/lib/deneme-pdf-ayristirici";
 import { netHesapla } from "@/lib/types";
 
 function gecerliDersler(tur: DenemeTuru): string[] {
@@ -388,6 +390,39 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
     }
   }
 
+  // Faz P4 (Deneme Net Dağıtımı raporu) — karnenin kazanım (konu bazlı)
+  // dökümü, deneme_kazanim_sonuclari'ne HAM olarak yazılır (bkz. migration
+  // 0063). SADECE P2'nin çapraz doğruladığı (granulerKarneMap'te bulunan)
+  // öğrenciler için toplanıyor — P2'nin doğrulaması zaten "bu karne
+  // güvenilir" sinyali veriyor, kazanım verisi için AYRI bir doğrulama
+  // gerekmiyor (aynı sayfadan/aynı satırlardan geliyor). Ekstra bir
+  // çapraz doğrulama YOK — bu veri "yardımcı/informational" (Analiz
+  // Motoru'nun konu bazlı sinyali), notlandırmayı hiç etkilemiyor; asıl
+  // deneme_ders_sonuclari kaydı (yukarıdaki granulerKarneMap) her zaman
+  // kendi başına doğru. Herhangi bir hata bu bloğu asla çökertmesin diye
+  // ayrı try/catch'te.
+  const kazanimMap = new Map<string, { ders: string; kazanimMetni: string; soru: number; dogru: number; yanlis: number }[]>();
+  if ((tur === "TYT" || tur === "BRANS") && deterministikSonuc?.basarili && granulerKarneMap.size > 0) {
+    try {
+      const pdfBufferKazanim = Buffer.from(await dosya.arrayBuffer());
+      const kazanimHedefleri = deterministikSonuc.ogrenciler
+        .filter((o) => granulerKarneMap.has(adNormalize(o.isimHam)))
+        .map((o) => ({ isimHam: o.isimHam, ogrenciNo: o.ogrenciNo }));
+      const kazanimIndeksi = await tumKarneKazanimlariniIndeksle(pdfBufferKazanim, kazanimHedefleri);
+      for (const dSatir of deterministikSonuc.ogrenciler) {
+        const girdi = kazanimIndeksi.get(`${dSatir.isimHam}|${dSatir.ogrenciNo}`);
+        if (!girdi) continue;
+        kazanimMap.set(
+          adNormalize(dSatir.isimHam),
+          girdi.kazanimlar.map((k) => ({ ders: k.ders, kazanimMetni: k.kazanimMetni, soru: k.soru, dogru: k.dogru, yanlis: k.yanlis })),
+        );
+      }
+      console.info("[deneme-pdf P4] kazanım dökümü bulunan öğrenci sayısı:", kazanimMap.size, "/", granulerKarneMap.size);
+    } catch (kazanimHatasi) {
+      console.warn("[deneme-pdf P4] beklenmeyen hata (kazanım verisi olmadan devam):", hataOzeti(kazanimHatasi));
+    }
+  }
+
   for (const satir of ayristirilan) {
     const adNorm = adNormalize(satir.ad_soyad);
     let eslesenler = ogrenciler.filter((o) => o.adNorm === adNorm);
@@ -411,6 +446,7 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
         tur,
         yayinevi,
         dersSonuclari: granulerDersSonuclari ?? satir.ders_sonuclari,
+        kazanimSonuclari: kazanimMap.get(adNorm),
       });
       if (!sonuc.error) {
         otomatikEslesen++;

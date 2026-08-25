@@ -8,6 +8,20 @@ export interface DenemeDersSonucu {
   yanlis: number;
 }
 
+// Faz P4 (Deneme Net Dağıtımı raporu) — karnenin kazanım (konu bazlı)
+// dökümü, deneme_kazanim_sonuclari'ne HAM olarak yazılır (ders adı burada
+// TYT_DERSLERI'nin kanonik hali DEĞİL, karnenin kendi alt-ders adı —
+// dersAdiNormalize buna uygulanmıyor). Şu an sadece TYT/BRANŞ için
+// dolduruluyor (bkz. deneme-pdf-ayristirici.ts P4 notu, AYT taksonomisi
+// netleşmedi).
+export interface DenemeKazanimSonucu {
+  ders: string;
+  kazanimMetni: string;
+  soru: number;
+  dogru: number;
+  yanlis: number;
+}
+
 function dersAdiNormalize(ad: string): string {
   return ad.trim().replace(/-\d$/, "").replace(/^Felsefe Grubu$/i, "Felsefe");
 }
@@ -20,6 +34,7 @@ export async function ogretmenDenemeSonucuKaydet(
     tur: DenemeTuru;
     yayinevi: string;
     dersSonuclari: DenemeDersSonucu[];
+    kazanimSonuclari?: DenemeKazanimSonucu[];
   },
 ): Promise<{ error: string | null; denemeId: string | null }> {
   const { data: mevcutDeneme, error: aramaHatasi } = await admin
@@ -66,6 +81,33 @@ export async function ogretmenDenemeSonucuKaydet(
     { onConflict: "deneme_id,ders" },
   );
   if (dersHatasi) return { error: dersHatasi.message, denemeId };
+
+  // Faz P4 — kazanım dökümü SUPPLEMENTARY: yoksa/yazılamazsa asıl kayıt
+  // (yukarıdaki dersSonuclari) hiç etkilenmesin diye hata döndürülmüyor,
+  // sadece konsola loglanıyor. Yeniden yükleme/güncelleme idempotent olsun
+  // diye önce bu deneme_id'nin eski kazanım satırları silinip yeniden
+  // yazılıyor (deneme_ders_sonuclari'nin aksine benzersiz kısıtı yok —
+  // aynı kazanım metni birden fazla soruya karşılık gelebiliyor, bkz.
+  // migration 0063).
+  if (input.kazanimSonuclari && input.kazanimSonuclari.length > 0) {
+    const { error: silmeHatasi } = await admin.from("deneme_kazanim_sonuclari").delete().eq("deneme_id", denemeId);
+    if (silmeHatasi) {
+      console.warn("Deneme kazanım verisi silinemedi (asıl kayıt etkilenmiyor):", silmeHatasi.message);
+    } else {
+      const { error: kazanimHatasi } = await admin.from("deneme_kazanim_sonuclari").insert(
+        input.kazanimSonuclari.map((k) => ({
+          deneme_id: denemeId,
+          ders: k.ders,
+          kazanim_metni: k.kazanimMetni,
+          soru: k.soru,
+          dogru: k.dogru,
+          yanlis: k.yanlis,
+        })),
+      );
+      if (kazanimHatasi) console.warn("Deneme kazanım verisi kaydedilemedi (asıl kayıt etkilenmiyor):", kazanimHatasi.message);
+    }
+  }
+
   return { error: null, denemeId };
 }
 

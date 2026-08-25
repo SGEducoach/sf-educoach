@@ -711,3 +711,387 @@ export function karneyiTytDerslerineEslestir(dersSonuclari: KarneDersSonucu[]): 
   if (toplamlar.size === 0) return null;
   return [...toplamlar.entries()].map(([ders, v]) => ({ ders, dogru: v.dogru, yanlis: v.yanlis }));
 }
+
+// ============ Faz P4: karnenin kazanım (konu bazlı) dökümü ============
+//
+// Her ders/alt-ders için MÜFREDAT KAZANIMI bazında bir S(oru)/D(oğru)/
+// Y(anlış)/B(aşarı)% dökümü. Örnek satır: "Metne Sözcük Yerleştirme 1 1 0
+// 100". Ders/alt-ders başlıkları "<ad> S D Y B%" deseniyle geliyor (örn.
+// "Tarih-1 S D Y B%") — bir sonraki başlığa kadar olan satırlar o derse
+// ait kazanımlar.
+//
+// GERÇEK VERİYLE İKİ FARKLI FİZİKSEL SAYFA YAPISI bulundu:
+//  - TYT: özet tablo (sol) + kazanım dökümü (sağ, TEK sütun) AYNI SAYFADA
+//    (tyt.pdf sayfa 72, MİCHAEL J ACKSON). karneOzetSutunlariniBul bu
+//    sayfada başarıyla özet tabloyu bulur — kazanım sağ sütunu Net
+//    sütunundan +50 birim sonra başlar (bkz. satirlardanOzetCikar'daki
+//    +15 marjıyla aynı felsefe, sadece daha geniş).
+//  - BRANŞ: özet tablo TAMAMEN AYRI bir sayfada (karneSayfasiniBul'un
+//    bulduğu sayfa) — kazanım dökümü BAŞKA bir sayfada, YAN YANA İKİ
+//    SÜTUN halinde (örn. sol=Türkçe/Tarih-1/Coğrafya-1/Din Kül., sağ=
+//    Matematik-1/Fizik/Kimya/Biyoloji — branş_9.pdf sayfa 62, ASYA
+//    GÜLERYÜZ). Bu sayfada karneOzetSutunlariniBul BAŞARISIZ olur (özet
+//    tablo yok) — bu, TYT-tipi tek-sütun mantığından BRANŞ-tipi
+//    çok-sütunlu mantığa geçiş sinyali olarak kullanılıyor.
+export interface KazanimSatiri {
+  ders: string; // örn. "Türkçe", "Tarih-1", "Matematik-1", "Fizik" — karnenin kendi alt-ders adı
+  kazanimMetni: string;
+  soru: number;
+  dogru: number;
+  yanlis: number;
+}
+
+const KAZANIM_DERS_BASLIK_DESENI = /^(.+?)\s+S\s+D\s+Y\s+B%$/;
+
+// Bir satırın (boşluk hariç) item'larından oluşan tek bir "bölüm" (segment)
+// — TYT'de her satırın tamamı tek segment, BRANŞ'ta iki (sol/sağ) segmente
+// bölünür — bkz. cokSutunluKazanimlariCikar.
+interface KazanimSegmenti { itemlar: KonumluMetin[]; }
+
+// Segment listesinden (her biri BİR satırın BİR sütununa ait item'ları)
+// kazanımları çıkarır — ders başlığı ("<ad> S D Y B%") görülünce
+// mevcutDers güncellenir, sonraki satırlar (sondan 4 tam sayı ile biten)
+// o derse kazanım olarak eklenir. Segment listesi TEK bir sütuna ait
+// olmalı — çok sütunlu sayfalarda her sütun için AYRI çağrılır (her
+// sütunun kendi ders bağlamı var, karışmamalı).
+function segmentlerdenKazanimlariCikar(segmentler: KazanimSegmenti[]): KazanimSatiri[] {
+  const kazanimlar: KazanimSatiri[] = [];
+  let mevcutDers: string | null = null;
+  for (const seg of segmentler) {
+    if (seg.itemlar.length === 0) continue;
+    const metin = seg.itemlar.map((it) => it.str).join(" ").replace(/\s+/g, " ").trim();
+    if (!metin) continue;
+
+    const baslikEslesme = KAZANIM_DERS_BASLIK_DESENI.exec(metin);
+    if (baslikEslesme) { mevcutDers = baslikEslesme[1].trim(); continue; }
+    if (!mevcutDers) continue; // henüz bir ders başlığı görülmedi (üst bilgi satırları vb.)
+
+    const tokenlar = metin.split(" ");
+    if (tokenlar.length < 5) continue; // en az 1 metin token'ı + 4 sayı
+    const son4 = tokenlar.slice(-4);
+    if (!son4.every((t) => /^-?\d+$/.test(t))) continue; // S/D/Y/B% hepsi tam sayı olmalı
+    const [soru, dogru, yanlis] = son4.slice(0, 3).map(Number);
+    const kazanimMetni = tokenlar.slice(0, -4).join(" ").trim();
+    if (!kazanimMetni) continue;
+
+    kazanimlar.push({ ders: mevcutDers, kazanimMetni, soru, dogru, yanlis });
+  }
+  return kazanimlar;
+}
+
+// TYT-tipi: özet tablo + kazanım AYNI sayfada, kazanım TEK sağ sütunda —
+// eşikX'in SAĞINDAKİ item'lar kazanıma ait (özet tablo solda kalır).
+function tekSutunluKazanimlariCikar(satirlar: KonumluSatirGrubu[], esikX: number): KazanimSatiri[] {
+  const segmentler: KazanimSegmenti[] = satirlar.map((s) => ({ itemlar: s.itemlar.filter((it) => it.x >= esikX) }));
+  return segmentlerdenKazanimlariCikar(segmentler);
+}
+
+// Bir satırın item'ları (boşluk hariç) içinde ardışık "S","D","Y","B%"
+// dörtlüsünü arar — ders adını, dörtlünün HEMEN ÖNCESİNDEN GERİYE DOĞRU
+// yürüyerek kurar. BRANŞ'ın kazanım sayfasında bir satırda İKİ blok (yan
+// yana, sol+sağ ders) olabilir; TYT tipi kazanım satırlarında (tek
+// sütun) en fazla bir blok olur.
+// adBaslangicX: ders adının başladığı x (sütunun SOL sınırına yakın).
+// numarikBitisX: "B%" item'ının x'i — bu bloğun S/D/Y/B% sayı grubunun
+// (dolayısıyla sütunun asıl içeriğinin) en SAĞ ucu — sütun sınırını bunun
+// üzerinden çizmek gerekiyor, ad başlangıcı üzerinden DEĞİL (bkz.
+// cokSutunluKazanimlariCikar'daki not).
+//
+// GERİYE DOĞRU YÜRÜME (blok başlangıcından itibaren TÜM önceki item'ları
+// almak YERİNE) BİLİNÇLİ: gerçek veride bir satırda SOL sütun bir ders
+// başlığı TAŞIMAZKEN (ör. bir kazanım gövde satırı) SAĞ sütun kendi
+// başlığını taşıyabiliyor ("Metinlerden hareketle çıkarımlar yapar. 1 1
+// 0 100 Fizik S D Y B%") — bu durumda SOL'daki alakasız metin+sayılar
+// SAĞ'ın ders adına yanlışlıkla karışıp adBaslangicX'i SOL sütunun
+// x'ine düşürüyor, bu da kümeleme sınırını bozuyordu (gerçek veride
+// yakalandı, branş_9.pdf). Ders adı gerçek veride HER ZAMAN S'ye yakın
+// (~215-240 birim) olduğundan, hem bir MESAFE ÜST SINIRI hem de SAYISAL
+// bir token'da (asla gerçek ders adının parçası olmaz) durma kuralı
+// ile bu karışma engelleniyor. Ayrıca ÖNCEKİ blok bulunmuşsa ondan
+// GERİ gitmiyor (bitişik iki başlığın birbirine karışmasını önler).
+const MAKS_BASLIK_GENISLIGI = 260;
+const SAYISAL_TOKEN_DESENI = /^-?\d+(?:,\d+)?%?$/;
+
+function satirdakiBaslikBloklariniBul(
+  itemlarBosluksuz: KonumluMetin[],
+): { dersAdi: string; adBaslangicX: number; numarikBitisX: number }[] {
+  const bloklar: { dersAdi: string; adBaslangicX: number; numarikBitisX: number }[] = [];
+  let blokBaslangic = 0;
+  for (let i = 0; i <= itemlarBosluksuz.length - 4; i++) {
+    if (
+      itemlarBosluksuz[i].str.trim() === "S" && itemlarBosluksuz[i + 1].str.trim() === "D" &&
+      itemlarBosluksuz[i + 2].str.trim() === "Y" && itemlarBosluksuz[i + 3].str.trim() === "B%"
+    ) {
+      const sX = itemlarBosluksuz[i].x;
+      let baslangicIdx = i;
+      for (let j = i - 1; j >= blokBaslangic; j--) {
+        if (sX - itemlarBosluksuz[j].x > MAKS_BASLIK_GENISLIGI) break;
+        if (SAYISAL_TOKEN_DESENI.test(itemlarBosluksuz[j].str.trim())) break;
+        baslangicIdx = j;
+      }
+      const adItemlari = itemlarBosluksuz.slice(baslangicIdx, i);
+      if (adItemlari.length > 0) {
+        bloklar.push({
+          dersAdi: adItemlari.map((it) => it.str).join(" ").replace(/\s+/g, " ").trim(),
+          adBaslangicX: adItemlari[0].x,
+          numarikBitisX: itemlarBosluksuz[i + 3].x,
+        });
+      }
+      blokBaslangic = i + 4;
+      i += 3; // dörtlüyü atla
+    }
+  }
+  return bloklar;
+}
+
+// Başlık ADI x'lerini kümelemek için eşik — sol sütunun ders adları
+// (~x=26..75) ile sağ sütunun ders adları (~x=303..326) arasında geniş
+// bir boşluk var; bu, kaç sütun olduğunu (1 mi 2 mi) tespit etmeye yeter
+// (kesin sütun SINIRINI çizmek için AYRICA aşağıdaki numarikBitisX
+// kullanılıyor — bkz. cokSutunluKazanimlariCikar).
+const SUTUN_KUMELEME_ESIGI = 80;
+
+// Sütun sınırı marjı — bir sütunun kendi S/D/Y/B% sayı bloğunun sağ ucu
+// (numarikBitisX, örn. "100" gibi 3 haneli bir değerle biraz taşabilir)
+// ile bir sonraki sütunun ders adı başlangıcı arasına küçük bir pay
+// bırakır (netX+15 marjıyla aynı felsefe, bkz. satirlardanOzetCikar).
+const SUTUN_SINIRI_MARJI = 10;
+
+// BRANŞ-tipi: özet tablo bu sayfada YOK, kazanım dökümü YAN YANA (genelde
+// 2) sütun halinde. Sütun sınırlarını sayfanın KENDİ başlık satırlarından
+// (header-driven, sabit x DEĞİL) türetir. DİKKAT: sınır, ders ADI
+// başlangıçlarının ortanoktası DEĞİL — bu, sol sütunun kendi S/D/Y/B%
+// sayı değerlerini (ad'dan ~230 birim SAĞDA) yanlışlıkla sağ sütuna
+// kaydırır (gerçek veride yakalandı). Bunun yerine: her sütun kümesinin
+// EN SAĞ numarik ucu (numarikBitisX) ile BİR SONRAKİ kümenin EN SOL ad
+// başlangıcı arasına sınır çizilir.
+function cokSutunluKazanimlariCikar(satirlar: KonumluSatirGrubu[]): KazanimSatiri[] | null {
+  const tumBloklar: { adBaslangicX: number; numarikBitisX: number }[] = [];
+  for (const satir of satirlar) {
+    const bosluksuz = satir.itemlar.filter((it) => it.str.trim() !== "");
+    tumBloklar.push(...satirdakiBaslikBloklariniBul(bosluksuz));
+  }
+  if (tumBloklar.length === 0) return null; // bu sayfada hiç kazanım başlığı yok — kazanım sayfası değil
+
+  // Ad başlangıç x'lerine göre kümele (kaç sütun var, tespit için).
+  const siraliBloklar = [...tumBloklar].sort((a, b) => a.adBaslangicX - b.adBaslangicX);
+  const kumeler: { adMin: number; bMax: number }[] = [];
+  for (const b of siraliBloklar) {
+    const sonKume = kumeler[kumeler.length - 1];
+    if (sonKume && b.adBaslangicX - sonKume.adMin <= SUTUN_KUMELEME_ESIGI) {
+      sonKume.bMax = Math.max(sonKume.bMax, b.numarikBitisX);
+    } else {
+      kumeler.push({ adMin: b.adBaslangicX, bMax: b.numarikBitisX });
+    }
+  }
+
+  if (kumeler.length === 1) {
+    // Tek sütun (bu şablonda beklenmiyor ama zarifçe düş) — tüm satırı tek segment say.
+    return segmentlerdenKazanimlariCikar(satirlar.map((s) => ({ itemlar: s.itemlar.filter((it) => it.str.trim() !== "") })));
+  }
+
+  // Ardışık kümeler arası sınır: SOLDAKİ kümenin sayı bloğu sonu ile
+  // SAĞDAKİ kümenin ad başlangıcı arasında (ikisi de aşılmayacak şekilde).
+  const esikler = kumeler.slice(1).map((k, i) => Math.min(kumeler[i].bMax + SUTUN_SINIRI_MARJI, k.adMin - 1));
+  const tumKazanimlar: KazanimSatiri[] = [];
+  for (let sutunNo = 0; sutunNo < kumeler.length; sutunNo++) {
+    const solSinir = sutunNo === 0 ? -Infinity : esikler[sutunNo - 1];
+    const sagSinir = sutunNo === kumeler.length - 1 ? Infinity : esikler[sutunNo];
+    const segmentler: KazanimSegmenti[] = satirlar.map((s) => ({
+      itemlar: s.itemlar.filter((it) => it.str.trim() !== "" && it.x >= solSinir && it.x < sagSinir),
+    }));
+    tumKazanimlar.push(...segmentlerdenKazanimlariCikar(segmentler));
+  }
+  return tumKazanimlar.length > 0 ? tumKazanimlar : null;
+}
+
+// Bir dizi x değeri içinde EN ÇOK TEKRAR EDEN değeri (±3 birim toleransla
+// yakın değerleri aynı sayarak) bulur — TYT'nin kazanım başlıklarının
+// x'i sayfa boyunca sabit (örn. 309) tekrar ederken, TEK bir satırdaki
+// arızi bir eşleşme (bkz. aşağıdaki not) TEK seferlik bir aykırı değer
+// üretir; modu almak bu aykırı değeri otomatik eler.
+function enSikTekrarEdenX(degerler: number[]): number | null {
+  if (degerler.length === 0) return null;
+  const sayaç = new Map<number, number>();
+  for (const x of degerler) {
+    let anahtar = x;
+    for (const k of sayaç.keys()) { if (Math.abs(k - x) <= 3) { anahtar = k; break; } }
+    sayaç.set(anahtar, (sayaç.get(anahtar) ?? 0) + 1);
+  }
+  let enSikX = degerler[0];
+  let enYuksekSayi = 0;
+  for (const [x, sayi] of sayaç) { if (sayi > enYuksekSayi) { enYuksekSayi = sayi; enSikX = x; } }
+  return enSikX;
+}
+
+function satirlardanKazanimlariCikar(satirlar: KonumluSatirGrubu[]): KazanimSatiri[] | null {
+  const sutunBilgisi = karneOzetSutunlariniBul(satirlar);
+  if (sutunBilgisi) {
+    // TYT-tipi: özet tablo + kazanım dökümü AYNI sayfada, kazanım TEK
+    // sağ sütunda. Eşiği önceliklice kazanım başlıklarının KENDİ (en sık
+    // tekrar eden) x'inden türet — netX+50 marjı bazen yetersiz kalıyor:
+    // gerçek veride "Öğrenci/Numara/Sınıf" öğrenci-bilgi etiketleri,
+    // kazanımın İLK başlık satırıyla (örn. "Türkçe S D Y B%") AYNI y'de
+    // denk gelip "Sınıf" (netX+50'nin biraz sağında) yanlışlıkla
+    // kazanıma dahil oluyordu — bu SADECE o satırda oluşan tek seferlik
+    // bir sapma, modu almak otomatik düzeltiyor. Başlık hiç bulunamazsa
+    // (beklenmeyen bir sayfa şekli) netX+50'ye düş.
+    const netX = sutunBilgisi.sutunlar.find((s) => s.ad === "net")!.x;
+    const tumBloklar: { adBaslangicX: number }[] = [];
+    for (const satir of satirlar) {
+      const bosluksuz = satir.itemlar.filter((it) => it.str.trim() !== "");
+      tumBloklar.push(...satirdakiBaslikBloklariniBul(bosluksuz));
+    }
+    const enSikAdX = enSikTekrarEdenX(tumBloklar.map((b) => b.adBaslangicX));
+    const sagBaslangicX = enSikAdX !== null ? enSikAdX - 5 : netX + 50;
+    const kazanimlar = tekSutunluKazanimlariCikar(satirlar, sagBaslangicX);
+    return kazanimlar.length > 0 ? kazanimlar : null;
+  }
+  // Bu sayfada özet tablo yok — BRANŞ-tipi ayrı kazanım sayfası olabilir.
+  return cokSutunluKazanimlariCikar(satirlar);
+}
+
+export interface KarneKazanimSonucu {
+  basarili: boolean;
+  hata?: string;
+  bulunanSayfa: number | null;
+  kazanimlar: KazanimSatiri[];
+}
+
+// Belirtilen sayfa aralığında, hem HAM isim hem öğrenci no'nun AYNI
+// satırda göründüğü, ARADA en az bir "<ad> S D Y B%" kazanım başlığı
+// bulunan bir sayfa arar. TYT'de bu, karneSayfasiniBul'un bulduğu
+// SAME özet sayfasıyla çakışır (kazanım orada da var); BRANŞ'ta ise
+// özet sayfasından FARKLI, ayrı bir sayfadır — bu yüzden karneSayfasiniBul
+// yerine BAĞIMSIZ bir arama gerekiyor (bkz. dosya başı P4 notu).
+async function kazanimSayfasiniBul(
+  dogument: Awaited<ReturnType<typeof getDocument>["promise"]>,
+  hedefIsim: string, hedefOgrenciNo: number, ilkSayfa: number, sonSayfa: number,
+): Promise<number | null> {
+  const hedefIsimTrim = hedefIsim.trim();
+  const hedefNoStr = String(hedefOgrenciNo);
+  for (let p = ilkSayfa; p <= Math.min(sonSayfa, dogument.numPages); p++) {
+    const sayfa = await dogument.getPage(p);
+    const icerik = await sayfa.getTextContent();
+    const itemlar: KonumluMetin[] = icerik.items.filter(metinItemMi)
+      .map((it) => ({ str: it.str, x: it.transform[4] as number, y: it.transform[5] as number }));
+    if (!itemlar.some((it) => KAZANIM_DERS_BASLIK_DESENI.test(it.str.trim()))) {
+      // Tam eşleşme item bazında nadiren olur (başlık genelde birden fazla
+      // item'a bölünmüş) — asıl kontrolü satır bazında aşağıda yapıyoruz,
+      // burada sadece EN UCUZ ön-eleme: "B%" hiç yoksa bu sayfa kesin değil.
+      if (!itemlar.some((it) => it.str.trim() === "B%")) continue;
+    }
+
+    const satirlar = konumluSatirlaraGrupla(itemlar);
+    const isimSatiri = satirlar.find((s) => s.itemlar.some((it) => it.str.trim() === hedefIsimTrim));
+    if (!isimSatiri || !isimSatiri.itemlar.some((it) => it.str.trim() === hedefNoStr)) continue;
+
+    const enAzBirBaslikVar = satirlar.some((s) => {
+      const bosluksuz = s.itemlar.filter((it) => it.str.trim() !== "");
+      return satirdakiBaslikBloklariniBul(bosluksuz).length > 0;
+    });
+    if (enAzBirBaslikVar) return p;
+  }
+  return null;
+}
+
+// Tek öğrenci için kazanım dökümünü bulur. Önce karneSayfasiniBul'un
+// bulduğu (özet) sayfayı dener (TYT-tipi kombine sayfa için yeterli ve
+// hızlı); orada kazanım bulunamazsa (BRANŞ-tipi, ayrı sayfa) BAĞIMSIZ bir
+// kazanım-sayfası araması yapar.
+export async function karneKazanimlariniAyristir(
+  pdfBuffer: Buffer, hedefIsim: string, hedefOgrenciNo: number,
+  aramaBaslangicSayfa = 1, aramaBitisSayfa = 400,
+): Promise<KarneKazanimSonucu> {
+  const BOS: KarneKazanimSonucu = { basarili: false, bulunanSayfa: null, kazanimlar: [] };
+  try {
+    const dogruBoyut = Uint8Array.from(pdfBuffer);
+    const dogument = await getDocument({ data: dogruBoyut, standardFontDataUrl: undefined, disableFontFace: true }).promise;
+
+    const ozetSayfaNo = await karneSayfasiniBul(dogument, hedefIsim, hedefOgrenciNo, aramaBaslangicSayfa, aramaBitisSayfa);
+    if (ozetSayfaNo === null) return { ...BOS, hata: `"${hedefIsim}" (Ö.No ${hedefOgrenciNo}) için karne sayfası bulunamadı.` };
+
+    const ozetSayfasindanCikar = async (sayfaNo: number): Promise<KazanimSatiri[] | null> => {
+      const sayfa = await dogument.getPage(sayfaNo);
+      const icerik = await sayfa.getTextContent();
+      const itemlar: KonumluMetin[] = icerik.items.filter(metinItemMi)
+        .map((it) => ({ str: it.str, x: it.transform[4] as number, y: it.transform[5] as number }));
+      const satirlar = konumluSatirlaraGrupla(itemlar);
+      return satirlardanKazanimlariCikar(satirlar);
+    };
+
+    const tytTipiSonuc = await ozetSayfasindanCikar(ozetSayfaNo);
+    if (tytTipiSonuc) return { basarili: true, bulunanSayfa: ozetSayfaNo, kazanimlar: tytTipiSonuc };
+
+    // Bu sayfada kazanım yoktu (BRANŞ-tipi olabilir) — bağımsız ara.
+    const kazanimSayfaNo = await kazanimSayfasiniBul(dogument, hedefIsim, hedefOgrenciNo, aramaBaslangicSayfa, aramaBitisSayfa);
+    if (kazanimSayfaNo === null) {
+      return { ...BOS, bulunanSayfa: ozetSayfaNo, hata: "Karne sayfası bulundu ama kazanım dökümü çözümlenemedi (ayrı bir kazanım sayfası da bulunamadı)." };
+    }
+    const bransTipiSonuc = await ozetSayfasindanCikar(kazanimSayfaNo);
+    if (!bransTipiSonuc) return { ...BOS, bulunanSayfa: kazanimSayfaNo, hata: "Kazanım sayfası bulundu ama dökümü çözümlenemedi." };
+    return { basarili: true, bulunanSayfa: kazanimSayfaNo, kazanimlar: bransTipiSonuc };
+  } catch (e) {
+    return { ...BOS, hata: `Kazanım ayrıştırma hatası: ${e instanceof Error ? e.message : String(e)}` };
+  }
+}
+
+export interface KarneKazanimIndeksGirisi {
+  isimHam: string;
+  ogrenciNo: number;
+  sayfaNo: number;
+  kazanimlar: KazanimSatiri[];
+}
+
+// tumKarneleriIndeksle ile AYNI O(sayfa) TEK-GEÇİŞ deseni — ayrı bir sweep
+// olarak (özet sweep'iyle BİRLEŞTİRİLMİYOR): TYT'de kazanım özet sayfasıyla
+// AYNI sayfada olduğu için oradan zaten yakalanır; BRANŞ'ta ayrı bir sayfada
+// olduğu için (bkz. dosya başı P4 notu) özet sayfası bulunur bulunmaz
+// hedefi silen tumKarneleriIndeksle'ye eklemek yerine BAĞIMSIZ bir tarama
+// daha güvenli. Ucuz ön-eleme: kazanım başlıkları HER ZAMAN "B%" içerir —
+// özet-only sayfalar (BRANŞ'ın "Başarı %" sütunu iki ayrı kelime/karakterdir,
+// "B%" tek token olarak hiç geçmez) bu adımda ELENIR.
+export async function tumKarneKazanimlariniIndeksle(
+  pdfBuffer: Buffer,
+  hedefler: { isimHam: string; ogrenciNo: number }[],
+  ilkSayfa = 1, sonSayfa = 500,
+): Promise<Map<string, KarneKazanimIndeksGirisi>> {
+  const sonuc = new Map<string, KarneKazanimIndeksGirisi>();
+  const hedefMap = new Map<string, { isimHam: string; ogrenciNo: number }>();
+  for (const h of hedefler) hedefMap.set(h.isimHam.trim(), h);
+  if (hedefMap.size === 0) return sonuc;
+
+  try {
+    const dogruBoyut = Uint8Array.from(pdfBuffer);
+    const dogument = await getDocument({ data: dogruBoyut, standardFontDataUrl: undefined, disableFontFace: true }).promise;
+
+    for (let p = ilkSayfa; p <= Math.min(sonSayfa, dogument.numPages) && hedefMap.size > 0; p++) {
+      const sayfa = await dogument.getPage(p);
+      const icerik = await sayfa.getTextContent();
+      const itemlar: KonumluMetin[] = icerik.items.filter(metinItemMi)
+        .map((it) => ({ str: it.str, x: it.transform[4] as number, y: it.transform[5] as number }));
+      if (!itemlar.some((it) => it.str.trim() === "B%")) continue;
+
+      const satirlar = konumluSatirlaraGrupla(itemlar);
+      let eslesenHedef: { isimHam: string; ogrenciNo: number } | null = null;
+      for (const satir of satirlar) {
+        const isimBulundu = satir.itemlar.find((it) => hedefMap.has(it.str.trim()));
+        if (!isimBulundu) continue;
+        const aday = hedefMap.get(isimBulundu.str.trim())!;
+        if (satir.itemlar.some((it) => it.str.trim() === String(aday.ogrenciNo))) { eslesenHedef = aday; break; }
+      }
+      if (!eslesenHedef) continue;
+
+      const kazanimlar = satirlardanKazanimlariCikar(satirlar);
+      if (!kazanimlar) continue;
+
+      sonuc.set(`${eslesenHedef.isimHam}|${eslesenHedef.ogrenciNo}`, {
+        isimHam: eslesenHedef.isimHam, ogrenciNo: eslesenHedef.ogrenciNo, kazanimlar, sayfaNo: p,
+      });
+      hedefMap.delete(eslesenHedef.isimHam);
+    }
+  } catch {
+    // Sessizce ne bulunduysa onunla dön — kısmi sonuç, hiç sonuçtan iyidir.
+  }
+  return sonuc;
+}
