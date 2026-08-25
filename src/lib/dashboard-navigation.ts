@@ -73,6 +73,11 @@ const OGRETMEN_MENUSU: DashboardMenuOgesi[] = [
 
 const MUDUR_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "ozet", href: "/dashboard", etiket: "Sınıflar", ikon: "ana-sayfa" },
+  // 2026-08-25 kullanıcı isteği: "dershane ve okul müdürü öğretmenlerin
+  // programlarını görsün" — okul müdürü salt-okunur (bkz. dashboard/page.tsx
+  // OgretmenIcerik yorumu; dershane müdürü zaten kendi ayrı panelinde
+  // düzenleyebiliyordu).
+  { bolum: "ogretmenler", href: "/dashboard/ogretmenler", etiket: "Öğretmenler", ikon: "ogretmen" },
   { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Konu Haritası", ikon: "ai" },
   { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Duyurular", ikon: "duyuru" },
   { bolum: "talepler", href: "/dashboard/talepler", etiket: "Veli talepleri", ikon: "talep" },

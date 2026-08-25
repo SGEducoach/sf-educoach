@@ -75,6 +75,7 @@ export function OgretmenPanel({
   role, bekleyenTalepler, ogrenciler, sinifAdi, siniflar, gorunecekSinifId, kendiSinifId, kendiSinifiMi,
   ogretmenDersleri, bekleyenOnaylar, verdigimGorevler, konuOnerileri, aktifBolum,
   dersProgramiSatirlari, yurtNobetiSatirlari, dershaneMi,
+  okulOgretmenleri, secilenOgretmenId, secilenOgretmenProgrami,
 }: {
   role: "ogretmen" | "mudur";
   bekleyenTalepler: (VeliLinkRequest & { ogrenci_ad: string })[];
@@ -96,6 +97,11 @@ export function OgretmenPanel({
   dersProgramiSatirlari?: DersProgramiSatiri[];
   yurtNobetiSatirlari?: YurtNobetiSatiri[];
   dershaneMi?: boolean;
+  // Okul müdürünün "Öğretmenler" bölümü (2026-08-25) — salt-okunur ders
+  // programı görüntüleme, sadece role==="mudur" + "ogretmenler" bölümünde.
+  okulOgretmenleri?: { id: string; ad: string; brans: string }[];
+  secilenOgretmenId?: string;
+  secilenOgretmenProgrami?: DersProgramiSatiri[];
 }) {
   const router = useRouter();
   const [uretilenKodlar, setUretilenKodlar] = useState<Record<string, string>>({});
@@ -241,6 +247,15 @@ export function OgretmenPanel({
           siniflar={siniflar}
           dersProgramiSatirlari={dersProgramiSatirlari ?? []}
           yurtNobetiSatirlari={yurtNobetiSatirlari ?? []}
+          dershaneMi={!!dershaneMi}
+        />
+      )}
+
+      {aktifBolum === "ogretmenler" && role === "mudur" && (
+        <OgretmenProgramlariBolumu
+          ogretmenler={okulOgretmenleri ?? []}
+          secilenOgretmenId={secilenOgretmenId}
+          program={secilenOgretmenProgrami ?? []}
           dershaneMi={!!dershaneMi}
         />
       )}
@@ -549,6 +564,51 @@ function BekleyenOnaylarBolumu({ onaylar }: { onaylar: BekleyenOnaySatiri[] }) {
 
 // Öğretmenin branş dersi verdiği sınıflar (çoklu, homeroom'dan bağımsız) —
 // kendi ekleyip çıkarabildiği self-servis liste (bkz. migration 0045).
+// Okul müdürünün "Öğretmenler" bölümü (2026-08-25 kullanıcı isteği:
+// "dershane ve okul müdürü öğretmenlerin programlarını görsün") —
+// salt-okunur: sadece admin ve dershane müdürü elle ekleyebiliyor
+// (kullanıcı kararı, bkz. migration 0066 yorumu), okul müdürü sadece görür.
+function OgretmenProgramlariBolumu({ ogretmenler, secilenOgretmenId, program, dershaneMi }: {
+  ogretmenler: { id: string; ad: string; brans: string }[];
+  secilenOgretmenId?: string;
+  program: DersProgramiSatiri[];
+  dershaneMi: boolean;
+}) {
+  const router = useRouter();
+  const secilen = ogretmenler.find((o) => o.id === secilenOgretmenId) ?? ogretmenler[0];
+
+  return (
+    <div className="sfec-section sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+      <div className="mb-4 flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: MINT_BG }}>
+            <BookMarked size={13} color={MINT} />
+          </div>
+          <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Öğretmenler</span>
+        </div>
+        {ogretmenler.length > 0 && (
+          <select value={secilen?.id ?? ""} onChange={(e) => router.push(`/dashboard/ogretmenler?ogretmen=${e.target.value}`)}
+            className="text-xs font-bold px-3 py-2 rounded-xl outline-none"
+            style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
+            {ogretmenler.map((o) => <option key={o.id} value={o.id}>{o.ad} · {o.brans}</option>)}
+          </select>
+        )}
+      </div>
+
+      {ogretmenler.length === 0 ? (
+        <p style={{ color: TEXT_MUTED }} className="py-4 text-center text-sm">Okulda kayıtlı başka öğretmen yok.</p>
+      ) : (
+        <>
+          <div className="mb-3" style={{ color: TEXT_MUTED }}>
+            <span className="text-xs font-semibold">{secilen?.ad}</span> <span className="text-xs">· {secilen?.brans}</span>
+          </div>
+          <DersProgramiGrid gunler={programGunleri(dershaneMi)} satirlar={program} />
+        </>
+      )}
+    </div>
+  );
+}
+
 function DerslerimBolumu({ dersler, siniflar, dersProgramiSatirlari, yurtNobetiSatirlari, dershaneMi }: {
   dersler: OgretmenDersiSatiri[];
   siniflar: SinifSatiri[];

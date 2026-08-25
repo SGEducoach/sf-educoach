@@ -34,6 +34,7 @@ import { RozetGoruntulemePaneli } from "@/components/dashboard/RozetGoruntulemeP
 import { kurumRozetGorunumuGetir, veliRozetGorunumuGetir } from "@/lib/rozet-gorunumu";
 import { dershaneDenemeBitisGetir, suresiDolduMu, kurumTuruGetir } from "@/lib/deneme-suresi";
 import { ogretmenProgramiGetir, yurtNobetiGetir } from "@/lib/ders-programi";
+import type { DersProgramiSatiri } from "@/lib/ders-programi";
 import { DenemeSuresiSonaErdiEkrani } from "@/components/DenemeSuresiSonaErdiEkrani";
 
 // Görevlerim takvimi haftalık gösteriliyor — verilen tarihin (veya bugünün,
@@ -53,7 +54,7 @@ function haftaninPazartesisi(tarihISO?: string): string {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sinif?: string; ogrenci?: string; donem?: string; okul?: string; hafta?: string; ders?: string; bolum?: string }>;
+  searchParams: Promise<{ sinif?: string; ogrenci?: string; ogretmen?: string; donem?: string; okul?: string; hafta?: string; ders?: string; bolum?: string }>;
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -133,7 +134,7 @@ export default async function DashboardPage({
             <>
               {role === "ogrenci" && <OgrenciIcerik userId={user.id} ad={profile.ad} donem={donem} haftaBaslangic={haftaninPazartesisi(params.hafta)} aktifBolum={aktifBolum} />}
               {(role === "ogretmen" || role === "mudur") && (
-                <OgretmenIcerik userId={user.id} role={role} kurumTuru={kurumTuru} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} donem={donem} aktifBolum={aktifBolum} />
+                <OgretmenIcerik userId={user.id} role={role} kurumTuru={kurumTuru} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} secilenOgretmenId={params.ogretmen} donem={donem} aktifBolum={aktifBolum} />
               )}
               {role === "veli" && <VeliIcerik userId={user.id} ad={profile.ad} secilenOgrenciId={params.ogrenci} donem={donem} aktifBolum={aktifBolum} />}
             </>
@@ -396,8 +397,8 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
   );
 }
 
-async function OgretmenIcerik({ userId, role, kurumTuru, secilenSinifId, secilenOgrenciId, donem, aktifBolum }: {
-  userId: string; role: "ogretmen" | "mudur"; kurumTuru?: KurumTuru; secilenSinifId?: string; secilenOgrenciId?: string; donem: RaporDonemi; aktifBolum: DashboardBolumu;
+async function OgretmenIcerik({ userId, role, kurumTuru, secilenSinifId, secilenOgrenciId, secilenOgretmenId, donem, aktifBolum }: {
+  userId: string; role: "ogretmen" | "mudur"; kurumTuru?: KurumTuru; secilenSinifId?: string; secilenOgrenciId?: string; secilenOgretmenId?: string; donem: RaporDonemi; aktifBolum: DashboardBolumu;
 }) {
   const supabase = await createClient();
   const { data: teacher } = await supabase
@@ -597,6 +598,32 @@ async function OgretmenIcerik({ userId, role, kurumTuru, secilenSinifId, secilen
       ])
     : [[], []];
 
+  // Okul müdürünün "Öğretmenler" bölümü (2026-08-25 kullanıcı isteği:
+  // "dershane ve okul müdürü öğretmenlerin programlarını görsün") —
+  // dershane müdürü zaten kendi ayrı panelinde (DershaneMudurPaneli)
+  // düzenleyebiliyordu; okul müdürü SALT-OKUNUR görsün (kullanıcının
+  // ders programı için belirlediği "sadece admin ve dershane müdürü elle
+  // ekler" kuralı okul müdürünü kapsamıyor). is_ogretmen() geniş okuma
+  // izni (bkz. AGENTS.md/proje notları) sayesinde müdür herhangi bir
+  // öğretmenin ders_programi'nı normal client ile okuyabiliyor, RLS
+  // ders_programi_select_moderator zaten bunu açıkça karşılıyor.
+  let okulOgretmenleri: { id: string; ad: string; brans: string }[] = [];
+  let secilenOgretmenProgrami: DersProgramiSatiri[] = [];
+  if (aktifBolum === "ogretmenler" && role === "mudur" && !dershaneMi) {
+    const { data: ogretmenlerHam } = await supabase
+      .from("teachers")
+      .select("id, brans, profiles!teachers_id_fkey(ad)")
+      .eq("school_id", teacher.school_id)
+      .neq("id", userId);
+    type OgretmenListeRow = { id: string; brans: string; profiles: { ad: string } | null };
+    okulOgretmenleri = ((ogretmenlerHam as unknown as OgretmenListeRow[]) ?? [])
+      .map((o) => ({ id: o.id, ad: o.profiles?.ad ?? "İsimsiz", brans: o.brans }))
+      .sort((a, b) => a.ad.localeCompare(b.ad, "tr"));
+    if (secilenOgretmenId) {
+      secilenOgretmenProgrami = await ogretmenProgramiGetir(supabase, secilenOgretmenId);
+    }
+  }
+
   return (
     <OgretmenPanel
       role={role}
@@ -615,6 +642,9 @@ async function OgretmenIcerik({ userId, role, kurumTuru, secilenSinifId, secilen
       dersProgramiSatirlari={dersProgramiSatirlari}
       yurtNobetiSatirlari={yurtNobetiSatirlari}
       dershaneMi={dershaneMi}
+      okulOgretmenleri={okulOgretmenleri}
+      secilenOgretmenId={secilenOgretmenId}
+      secilenOgretmenProgrami={secilenOgretmenProgrami}
     />
   );
 }
