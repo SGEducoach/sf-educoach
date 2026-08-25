@@ -32,6 +32,8 @@ import { dashboardMenusu } from "@/lib/dashboard-navigation";
 import type { DashboardBolumu } from "@/lib/dashboard-navigation";
 import { RozetGoruntulemePaneli } from "@/components/dashboard/RozetGoruntulemePaneli";
 import { kurumRozetGorunumuGetir, veliRozetGorunumuGetir } from "@/lib/rozet-gorunumu";
+import { dershaneDenemeBitisGetir, suresiDolduMu, kurumTuruGetir } from "@/lib/deneme-suresi";
+import { DenemeSuresiSonaErdiEkrani } from "@/components/DenemeSuresiSonaErdiEkrani";
 
 // Görevlerim takvimi haftalık gösteriliyor — verilen tarihin (veya bugünün,
 // Türkiye saatine göre) içinde bulunduğu haftanın Pazartesi'sini döndürür.
@@ -70,14 +72,20 @@ export default async function DashboardPage({
 
   // DERSHANE MODU (Faz D3): müdürün menüsü kendi kurumunun tur'una göre
   // tamamen değişiyor (bkz. dashboard-navigation.ts DERSHANE_MUDUR_MENUSU) —
-  // bu yüzden aktifBolum doğrulamasından ÖNCE bilinmesi gerekiyor.
-  let kurumTuru: KurumTuru | undefined;
-  if (role === "mudur") {
-    const { data: mudurTeacher } = await supabase.from("teachers").select("school_id").eq("id", user.id).single();
-    if (mudurTeacher) {
-      const { data: mudurOkulu } = await supabase.from("schools").select("tur").eq("id", mudurTeacher.school_id).single();
-      kurumTuru = mudurOkulu?.tur as KurumTuru | undefined;
-    }
+  // bu yüzden aktifBolum doğrulamasından ÖNCE bilinmesi gerekiyor. Artık
+  // TÜM roller için çözülüyor (öncesinde sadece müdür) — dershane 1
+  // haftalık deneme süresi (bkz. deneme-suresi.ts) öğrenci/veli/öğretmen
+  // için de kontrol edilmesi gerektiğinden.
+  const kurumTuru = await kurumTuruGetir(supabase, user.id, role);
+
+  // Dershane 1 haftalık deneme süresi (2026-08-25 kullanıcı isteği, bkz.
+  // migration 0065) — SADECE dershane rolleri, okul hiç etkilenmez. Zaten
+  // oturum açmış birinin dashboard'a her girişinde de kontrol ediliyor
+  // (sadece login anında değil) — süre oturum sırasında dolarsa da anında
+  // engellensin diye.
+  if (kurumTuru === "dershane") {
+    const bitis = await dershaneDenemeBitisGetir(supabase);
+    if (suresiDolduMu(bitis)) return <DenemeSuresiSonaErdiEkrani />;
   }
 
   const params = await searchParams;

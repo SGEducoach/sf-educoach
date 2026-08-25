@@ -12,6 +12,9 @@ import { KonuAnlatimYonetimi } from "@/components/yonetici/KonuAnlatimYonetimi";
 import { MufredatHiyerarsiYonetimi } from "@/components/yonetici/MufredatHiyerarsiYonetimi";
 import { KurallarYonetimi } from "@/components/yonetici/KurallarYonetimi";
 import { HataBildirimleriYonetimi } from "@/components/yonetici/HataBildirimleriYonetimi";
+import { DershaneDenemeSuresiAyari } from "@/components/yonetici/DershaneDenemeSuresiAyari";
+import { dershaneDenemeSuresiGetir } from "@/app/yonetici/actions";
+import { suresiDolduMu } from "@/lib/deneme-suresi";
 import { AdminProfilim } from "@/components/yonetici/AdminProfilim";
 import { YoneticiGirisForm } from "@/components/yonetici/YoneticiGirisForm";
 import { YoneticiYetkileri } from "@/components/yonetici/YoneticiYetkileri";
@@ -79,6 +82,8 @@ export default async function YoneticiPage({
     id: k.id, eylem: k.eylem, detay: k.detay, createdAt: k.created_at, aktorAdi: k.profiles?.ad ?? "—",
   }));
 
+  const { bitis: dershaneDenemeBitisi } = aktifBolum === "ozet" ? await dershaneDenemeSuresiGetir() : { bitis: null };
+
   return (
     <div className="sfec-dashboard-shell min-h-dvh w-full flex-1 flex flex-col">
       <Header ad={profile.ad} role="admin" aktifBolum={aktifBolum} />
@@ -88,6 +93,7 @@ export default async function YoneticiPage({
           {aktifBolum === "ozet" && (
             <>
               <section className="sfec-section"><PlatformIstatistikleri /></section>
+              <section className="sfec-section"><DershaneDenemeSuresiAyari bitis={dershaneDenemeBitisi} doldu={suresiDolduMu(dershaneDenemeBitisi)} /></section>
               <YoneticiYetkileri />
             </>
           )}

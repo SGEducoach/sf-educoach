@@ -7,11 +7,19 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { rastgeleSifre } from "@/lib/validators";
 import { bekleyenPdfSonuclariniOgrenciyeAktar } from "@/lib/deneme-sonucu-kaydet";
+import { dershaneDenemeBitisGetir, suresiDolduMu, DENEME_SURESI_SONA_ERDI_MESAJI } from "@/lib/deneme-suresi";
 
 export async function dershaneKayitTamamla(input: {
   schoolId: string; telefon: string; kullaniciAdi: string;
 }) {
   const admin = createAdminClient();
+
+  // Dershane 1 haftalık deneme süresi (bkz. deneme-suresi.ts, migration
+  // 0065) — bu action SADECE dershane öğrencisi kaydı için var, ayrıca
+  // kurumTuru sorgusuna gerek yok.
+  const bitis = await dershaneDenemeBitisGetir(admin);
+  if (suresiDolduMu(bitis)) return { error: DENEME_SURESI_SONA_ERDI_MESAJI, sifre: null };
+
   const telefon = input.telefon.trim();
   const kullaniciAdi = input.kullaniciAdi.trim();
 

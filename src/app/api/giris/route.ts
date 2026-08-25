@@ -2,6 +2,8 @@ import { createHash } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { dershaneDenemeBitisGetir, suresiDolduMu, kurumTuruGetir, DENEME_SURESI_SONA_ERDI_MESAJI } from "@/lib/deneme-suresi";
+import type { UserRole } from "@/lib/types";
 
 const PENCERE_MS = 15 * 60 * 1000;
 const ENGEL_MS = 15 * 60 * 1000;
@@ -68,6 +70,7 @@ export async function POST(request: NextRequest) {
     : { error: new Error("Invalid login credentials") };
 
   let askidaMi = false;
+  let denemeSuresiDoldu = false;
   if (!error) {
     const { data: { user } } = await supabase.auth.getUser();
     const { data: profile } = user ? await admin.from("profiles").select("role, aktif").eq("id", user.id).maybeSingle() : { data: null };
@@ -83,7 +86,23 @@ export async function POST(request: NextRequest) {
       await supabase.auth.signOut();
       askidaMi = true;
       error = new Error("Hesap askıda");
+    } else if (user && profile && profile.role !== "admin") {
+      // Dershane 1 haftalık deneme süresi (bkz. deneme-suresi.ts,
+      // migration 0065) — SADECE dershane rolleri, okul hiç etkilenmez.
+      const kurumTuru = await kurumTuruGetir(admin, user.id, profile.role as UserRole);
+      if (kurumTuru === "dershane") {
+        const bitis = await dershaneDenemeBitisGetir(admin);
+        if (suresiDolduMu(bitis)) {
+          await supabase.auth.signOut();
+          denemeSuresiDoldu = true;
+          error = new Error("Deneme süresi doldu");
+        }
+      }
     }
+  }
+
+  if (denemeSuresiDoldu) {
+    return NextResponse.json({ error: DENEME_SURESI_SONA_ERDI_MESAJI }, { status: 403 });
   }
 
   if (askidaMi) {

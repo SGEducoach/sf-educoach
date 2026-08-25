@@ -543,6 +543,30 @@ export async function hataBildirimiCozulduIsaretle(id: string): Promise<{ error:
   return { error: null };
 }
 
+// ============ Dershane deneme süresi (2026-08-25) ============
+// Admin panelinden bitiş tarihini uzat/kısalt/kaldır — bkz. migration
+// 0065, src/lib/deneme-suresi.ts. Sabit koda gömülü DEĞİL, bilinçli
+// olarak (kullanıcı kararı: "/yonetici'den ayarlanabilir olsun").
+export async function dershaneDenemeSuresiGetir(): Promise<{ error: string | null; bitis: string | null }> {
+  const { admin } = await requireAdmin();
+  const { data, error } = await admin.from("platform_ayarlari").select("dershane_deneme_bitis").eq("id", 1).maybeSingle();
+  if (error) return { error: error.message, bitis: null };
+  return { error: null, bitis: (data?.dershane_deneme_bitis as string | null) ?? null };
+}
+
+// bitisIso: null verilirse süre sınırı tamamen kaldırılır (dershane
+// modülü süresiz açık kalır).
+export async function dershaneDenemeSuresiAyarla(bitisIso: string | null): Promise<{ error: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const { error } = await admin
+    .from("platform_ayarlari")
+    .upsert({ id: 1, dershane_deneme_bitis: bitisIso, updated_at: new Date().toISOString() });
+  if (error) return { error: error.message };
+  await auditLogYaz(supabase, user.id, "dershane_deneme_suresi_ayarla", { bitis: bitisIso });
+  revalidatePath("/yonetici");
+  return { error: null };
+}
+
 // ============ Platform istatistikleri ============
 // Sayımlar normal (RLS'e tabi) client ile yapılıyor — is_ogretmen() zaten
 // admin'e profiles/konu_calismalar/soru_cozumleri/denemeler/
