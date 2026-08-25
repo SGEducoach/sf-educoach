@@ -20,8 +20,42 @@
 //
 // Sadece "OKUL ... NET LİSTESİ" bölümlerini (genelde ilk birkaç sayfa) okur
 // — sınıf bazlı tekrar listelerini ve karne sayfalarını atlar.
-import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
+import type { getDocument as GetDocumentFn } from "pdfjs-dist/legacy/build/pdf.mjs";
 import type { TextItem } from "pdfjs-dist/types/src/display/api";
+
+// pdfjs-dist'in Node/legacy build'i, HANGİ fonksiyonu çağırdığımızdan
+// bağımsız olarak, modül YÜKLENİRKEN (import anında) DOMMatrix/Path2D
+// global'lerini arıyor — @napi-rs/canvas ile polyfill'lemeyi deniyor,
+// bulamazsa "ReferenceError: DOMMatrix is not defined" ile çöküyor.
+// Vercel'in serverless ortamında keşfedildi (2026-08-25): hem statik
+// import + serverExternalPackages hem de @napi-rs/canvas eklemek TEK
+// BAŞINA yetmedi (Next.js'in dosya izleyicisi native paketi Vercel'in
+// fonksiyon paketine dahil etmiyordu, "Cannot find module" hatası). Biz
+// sadece metin/konum çıkarıyoruz (getTextContent) — gerçek canvas
+// render'ı hiç yapmıyoruz — bu yüzden gerçek bir canvas kütüphanesine
+// gerek yok, no-op stub'lar yeterli. ESM statik import'lar HOIST
+// edildiğinden bu stub'ları bir import satırından "önce" koymanın
+// anlamı yok (import, dosyadaki her şeyden önce çözülür) — bu yüzden
+// pdfjs-dist STATİK import edilmiyor, stub'lar kurulduktan SONRA
+// dinamik olarak yükleniyor (bkz. pdfjsGetDocument aşağıda).
+function pdfjsPolyfilleriKur(): void {
+  const g = globalThis as unknown as Record<string, unknown>;
+  if (typeof g.DOMMatrix === "undefined") {
+    g.DOMMatrix = class DOMMatrix {};
+  }
+  if (typeof g.Path2D === "undefined") {
+    g.Path2D = class Path2D {};
+  }
+}
+
+let getDocumentSozu: Promise<typeof GetDocumentFn> | null = null;
+function pdfjsGetDocument(): Promise<typeof GetDocumentFn> {
+  if (!getDocumentSozu) {
+    pdfjsPolyfilleriKur();
+    getDocumentSozu = import("pdfjs-dist/legacy/build/pdf.mjs").then((m) => m.getDocument);
+  }
+  return getDocumentSozu;
+}
 
 function metinItemMi(it: unknown): it is TextItem {
   return typeof it === "object" && it !== null && "transform" in it && "str" in it;
@@ -242,7 +276,7 @@ export async function okulListesiniAyristir(pdfBuffer: Buffer, maxSayfa = 10): P
     // aynı Buffer'ı birden fazla çağrıda (OKUL listesi + karne) güvenle
     // kullanabilmek için her çağrı kendi kopyasını almalı.
     const dogruBoyut = Uint8Array.from(pdfBuffer);
-    const dogument = await getDocument({ data: dogruBoyut, standardFontDataUrl: undefined, disableFontFace: true }).promise;
+    const dogument = await (await pdfjsGetDocument())({ data: dogruBoyut, standardFontDataUrl: undefined, disableFontFace: true }).promise;
 
     let grammer: Grammer | null = null;
     let dersEtiketleri: string[] = [];
@@ -465,7 +499,7 @@ function konumluSatirlaraGrupla(itemlar: KonumluMetin[]): KonumluSatirGrubu[] {
 // (orada da isim+no birlikte geçer ama bu özet tablosu YOK) karışmasını
 // engelliyor.
 async function karneSayfasiniBul(
-  dogument: Awaited<ReturnType<typeof getDocument>["promise"]>,
+  dogument: Awaited<ReturnType<typeof GetDocumentFn>["promise"]>,
   hedefIsim: string, hedefOgrenciNo: number, ilkSayfa: number, sonSayfa: number,
 ): Promise<number | null> {
   const hedefIsimTrim = hedefIsim.trim();
@@ -573,7 +607,7 @@ export async function karneOzetiniAyristir(
     // aynı Buffer'ı birden fazla çağrıda (OKUL listesi + karne) güvenle
     // kullanabilmek için her çağrı kendi kopyasını almalı.
     const dogruBoyut = Uint8Array.from(pdfBuffer);
-    const dogument = await getDocument({ data: dogruBoyut, standardFontDataUrl: undefined, disableFontFace: true }).promise;
+    const dogument = await (await pdfjsGetDocument())({ data: dogruBoyut, standardFontDataUrl: undefined, disableFontFace: true }).promise;
 
     const sayfaNo = await karneSayfasiniBul(dogument, hedefIsim, hedefOgrenciNo, aramaBaslangicSayfa, aramaBitisSayfa);
     if (sayfaNo === null) return { ...BOS, hata: `"${hedefIsim}" (Ö.No ${hedefOgrenciNo}) için karne sayfası bulunamadı.` };
@@ -616,7 +650,7 @@ export async function tumKarneleriIndeksle(
 
   try {
     const dogruBoyut = Uint8Array.from(pdfBuffer);
-    const dogument = await getDocument({ data: dogruBoyut, standardFontDataUrl: undefined, disableFontFace: true }).promise;
+    const dogument = await (await pdfjsGetDocument())({ data: dogruBoyut, standardFontDataUrl: undefined, disableFontFace: true }).promise;
 
     for (let p = ilkSayfa; p <= Math.min(sonSayfa, dogument.numPages) && hedefMap.size > 0; p++) {
       const sayfa = await dogument.getPage(p);
@@ -965,7 +999,7 @@ export interface KarneKazanimSonucu {
 // özet sayfasından FARKLI, ayrı bir sayfadır — bu yüzden karneSayfasiniBul
 // yerine BAĞIMSIZ bir arama gerekiyor (bkz. dosya başı P4 notu).
 async function kazanimSayfasiniBul(
-  dogument: Awaited<ReturnType<typeof getDocument>["promise"]>,
+  dogument: Awaited<ReturnType<typeof GetDocumentFn>["promise"]>,
   hedefIsim: string, hedefOgrenciNo: number, ilkSayfa: number, sonSayfa: number,
 ): Promise<number | null> {
   const hedefIsimTrim = hedefIsim.trim();
@@ -1006,7 +1040,7 @@ export async function karneKazanimlariniAyristir(
   const BOS: KarneKazanimSonucu = { basarili: false, bulunanSayfa: null, kazanimlar: [] };
   try {
     const dogruBoyut = Uint8Array.from(pdfBuffer);
-    const dogument = await getDocument({ data: dogruBoyut, standardFontDataUrl: undefined, disableFontFace: true }).promise;
+    const dogument = await (await pdfjsGetDocument())({ data: dogruBoyut, standardFontDataUrl: undefined, disableFontFace: true }).promise;
 
     const ozetSayfaNo = await karneSayfasiniBul(dogument, hedefIsim, hedefOgrenciNo, aramaBaslangicSayfa, aramaBitisSayfa);
     if (ozetSayfaNo === null) return { ...BOS, hata: `"${hedefIsim}" (Ö.No ${hedefOgrenciNo}) için karne sayfası bulunamadı.` };
@@ -1063,7 +1097,7 @@ export async function tumKarneKazanimlariniIndeksle(
 
   try {
     const dogruBoyut = Uint8Array.from(pdfBuffer);
-    const dogument = await getDocument({ data: dogruBoyut, standardFontDataUrl: undefined, disableFontFace: true }).promise;
+    const dogument = await (await pdfjsGetDocument())({ data: dogruBoyut, standardFontDataUrl: undefined, disableFontFace: true }).promise;
 
     for (let p = ilkSayfa; p <= Math.min(sonSayfa, dogument.numPages) && hedefMap.size > 0; p++) {
       const sayfa = await dogument.getPage(p);
