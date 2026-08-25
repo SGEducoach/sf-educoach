@@ -586,6 +586,55 @@ export async function siteKapaliDegistir(kapali: boolean): Promise<{ error: stri
   return { error: null };
 }
 
+// ============ Rol değiştirme (Faz 3, 2026-08-26) ============
+// "Admin herhangi bir kullanıcının rolünü değiştirebilir." — bilinçli
+// olarak 'ogrenci' KAYNAK ya da HEDEF rol olarak DESTEKLENMİYOR: students
+// tablosuna bağlı her çalışma kaydı (konu_calismalar/soru_cozumleri/
+// denemeler/haftalik_verimlilikler/...) "on delete cascade" ile students
+// satırına bağlı — bir öğrenciyi başka role çevirip students satırını
+// silmek yıllarca birikmiş çalışma geçmişini KALICI OLARAK yok eder. Bu
+// dört rol arasında (öğretmen/müdür/veli/admin) güvenle destekleniyor.
+export async function kullaniciRolDegistir(input: {
+  userId: string; yeniRol: UserRole; schoolId?: string; brans?: string;
+}): Promise<{ error: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const { data: mevcut } = await admin.from("profiles").select("role").eq("id", input.userId).maybeSingle();
+  if (!mevcut) return { error: "Kullanıcı bulunamadı." };
+  const eskiRol = mevcut.role as UserRole;
+  if (eskiRol === input.yeniRol) return { error: "Kullanıcı zaten bu rolde." };
+  if (eskiRol === "ogrenci" || input.yeniRol === "ogrenci") {
+    return { error: "Öğrenci rolüne veya öğrenci rolünden değişim desteklenmiyor (çalışma geçmişi kalıcı olarak silinir). Gerekirse hesabı silip yeniden oluşturun." };
+  }
+  if ((input.yeniRol === "ogretmen" || input.yeniRol === "mudur") && !input.schoolId) {
+    return { error: "Okul seçin." };
+  }
+
+  // Eski rolün bağlı kaydını temizle.
+  if (eskiRol === "ogretmen" || eskiRol === "mudur") {
+    await admin.from("teachers").delete().eq("id", input.userId);
+  } else if (eskiRol === "veli") {
+    await admin.from("parent_students").delete().eq("parent_id", input.userId);
+  }
+  // Rol değişince moderatörlük de sıfırlanır — yeni rol için admin
+  // gerekirse ayrıca yetki verir (bkz. moderatorler-actions.ts).
+  await admin.from("school_moderators").delete().eq("profile_id", input.userId);
+
+  // Yeni rolün gerektirdiği kaydı oluştur.
+  if (input.yeniRol === "ogretmen" || input.yeniRol === "mudur") {
+    const { error } = await admin.from("teachers").insert({
+      id: input.userId, school_id: input.schoolId, brans: input.yeniRol === "mudur" ? "Müdür" : (input.brans || ""),
+    });
+    if (error) return { error: error.message };
+  }
+
+  const { error: rolError } = await admin.from("profiles").update({ role: input.yeniRol }).eq("id", input.userId);
+  if (rolError) return { error: rolError.message };
+
+  await auditLogYaz(supabase, user.id, "kullanici_rolu_degistir", { hedef_id: input.userId, eski_rol: eskiRol, yeni_rol: input.yeniRol });
+  revalidatePath("/yonetici");
+  return { error: null };
+}
+
 // ============ Adminler (Faz 3, 2026-08-26) ============
 // "Admin tüm kullanıcıları görüp müdahale edebilirken admin hesaplarını
 // diğer hiçbir rol göremez, müdahale edemez. Admin paneline Adminler

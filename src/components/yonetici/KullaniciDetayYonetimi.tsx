@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { BedDouble, Link2, Save, Trash2, UserRoundCog } from "lucide-react";
+import { BedDouble, Link2, Save, Shuffle, Trash2, UserRoundCog } from "lucide-react";
 import {
   kullaniciProfilGuncelle,
   yonetimOkullariGetir,
   kullaniciKurumDegistir,
+  kullaniciRolDegistir,
   ogrenciVeliBaglantilari,
   ogrenciyeVeliBagla,
   ogrenciVeliBaglantisiSil,
@@ -18,9 +19,13 @@ import {
   type VeliBaglantisi,
   type YonetimOkulu,
 } from "@/app/yonetici/actions";
-import { AYT_ALAN_ETIKET } from "@/lib/types";
-import type { AytAlan } from "@/lib/types";
+import { AYT_ALAN_ETIKET, BRANS_LISTESI } from "@/lib/types";
+import type { AytAlan, UserRole } from "@/lib/types";
 import { BG0, BG1, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
+
+const ROL_ETIKET: Record<UserRole, string> = {
+  ogrenci: "Öğrenci", ogretmen: "Öğretmen", veli: "Veli", mudur: "Müdür", admin: "Admin",
+};
 
 export function KullaniciDetayYonetimi({ kullanici }: { kullanici: KullaniciSonuc }) {
   const [ad, setAd] = useState(kullanici.ad);
@@ -121,6 +126,7 @@ export function KullaniciDetayYonetimi({ kullanici }: { kullanici: KullaniciSonu
         <button type="button" onClick={kurumKaydet} disabled={pending || !schoolId} className="rounded-full px-3 py-2 text-[11px] font-bold" style={{ background: MINT, color: MINT_ON }}>Okulu güncelle</button>
       </div>}
       {mesaj && <p className="text-xs font-semibold" style={{ color: mesaj.includes("güncellendi") ? MINT : BLUSH }}>{mesaj}</p>}
+      {kullanici.role !== "ogrenci" && <RolDegistirBolumu userId={kullanici.id} mevcutRol={kullanici.role} />}
       {kullanici.role === "ogrenci" && <OgrenciEkYonetim studentId={kullanici.id} />}
     </div>
   );
@@ -128,6 +134,70 @@ export function KullaniciDetayYonetimi({ kullanici }: { kullanici: KullaniciSonu
 
 function Alan({ etiket, value, onChange, type = "text" }: { etiket: string; value: string; onChange: (v: string) => void; type?: string }) {
   return <label className="flex flex-col gap-1"><span className="text-[10px] font-semibold" style={{ color: TEXT_MUTED }}>{etiket}</span><input type={type} value={value} onChange={(e) => onChange(e.target.value)} className="rounded-lg px-2.5 py-2 text-xs outline-none" style={{ background: BG1, color: TEXT, border: `2px solid ${BORDER_STRONG}` }} /></label>;
+}
+
+// Faz 3 (2026-08-26 kullanıcı isteği) — "Admin herhangi bir kullanıcının
+// rolünü değiştirebilir." 'ogrenci' kaynak/hedef olarak desteklenmiyor
+// (bkz. kullaniciRolDegistir yorumu, actions.ts) — bu yüzden bu bölüm
+// öğrenci dışındaki roller için gösteriliyor (kullanıcı zaten öğrenciyse
+// hiç render edilmiyor).
+function RolDegistirBolumu({ userId, mevcutRol }: { userId: string; mevcutRol: UserRole }) {
+  const HEDEF_ROLLER = (["ogretmen", "mudur", "veli", "admin"] as UserRole[]).filter((r) => r !== mevcutRol);
+  const [yeniRol, setYeniRol] = useState<UserRole>(HEDEF_ROLLER[0]);
+  const [okullar, setOkullar] = useState<YonetimOkulu[]>([]);
+  const [schoolId, setSchoolId] = useState("");
+  const [brans, setBrans] = useState<string>(BRANS_LISTESI[0]);
+  const [mesaj, setMesaj] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (yeniRol === "ogretmen" || yeniRol === "mudur") yonetimOkullariGetir().then((r) => setOkullar(r.okullar));
+  }, [yeniRol]);
+
+  function degistir() {
+    if (!window.confirm(`${ROL_ETIKET[mevcutRol]} rolündeki bu kullanıcı ${ROL_ETIKET[yeniRol]} rolüne çevrilsin mi? Bu işlem geri alınamaz.`)) return;
+    setMesaj(null);
+    startTransition(async () => {
+      const r = await kullaniciRolDegistir({ userId, yeniRol, schoolId: schoolId || undefined, brans: yeniRol === "ogretmen" ? brans : undefined });
+      setMesaj(r.error ?? "Rol değiştirildi.");
+    });
+  }
+
+  return (
+    <div className="mt-2 rounded-xl p-3 flex flex-col gap-2" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
+      <div className="flex items-center gap-2 text-xs font-bold" style={{ color: TEXT }}><Shuffle size={13} /> Rolü değiştir</div>
+      <div className="flex flex-wrap items-end gap-2">
+        <label className="flex flex-col gap-1">
+          <span className="text-[10px] font-semibold" style={{ color: TEXT_MUTED }}>Yeni rol</span>
+          <select value={yeniRol} onChange={(e) => setYeniRol(e.target.value as UserRole)} className="rounded-lg px-2.5 py-2 text-xs" style={{ background: BG1, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
+            {HEDEF_ROLLER.map((r) => <option key={r} value={r}>{ROL_ETIKET[r]}</option>)}
+          </select>
+        </label>
+        {(yeniRol === "ogretmen" || yeniRol === "mudur") && (
+          <label className="flex min-w-40 flex-col gap-1">
+            <span className="text-[10px] font-semibold" style={{ color: TEXT_MUTED }}>Okul</span>
+            <select value={schoolId} onChange={(e) => setSchoolId(e.target.value)} className="rounded-lg px-2.5 py-2 text-xs" style={{ background: BG1, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
+              <option value="">Okul seçin</option>
+              {okullar.map((o) => <option key={o.id} value={o.id}>{o.ad}</option>)}
+            </select>
+          </label>
+        )}
+        {yeniRol === "ogretmen" && (
+          <label className="flex flex-col gap-1">
+            <span className="text-[10px] font-semibold" style={{ color: TEXT_MUTED }}>Branş</span>
+            <select value={brans} onChange={(e) => setBrans(e.target.value)} className="rounded-lg px-2.5 py-2 text-xs" style={{ background: BG1, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
+              {BRANS_LISTESI.map((b) => <option key={b} value={b}>{b}</option>)}
+            </select>
+          </label>
+        )}
+        <button type="button" onClick={degistir} disabled={pending || ((yeniRol === "ogretmen" || yeniRol === "mudur") && !schoolId)}
+          className="rounded-full px-3 py-2 text-[11px] font-bold disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+          {pending ? "Değiştiriliyor..." : "Rolü değiştir"}
+        </button>
+      </div>
+      {mesaj && <p className="text-xs font-semibold" style={{ color: mesaj.includes("değiştirildi") ? MINT : BLUSH }}>{mesaj}</p>}
+    </div>
+  );
 }
 
 function OgrenciEkYonetim({ studentId }: { studentId: string }) {
