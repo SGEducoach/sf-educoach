@@ -238,7 +238,10 @@ function kombinasyonlar(dizi: number[], k: number): number[][] {
 export async function okulListesiniAyristir(pdfBuffer: Buffer, maxSayfa = 10): Promise<OkulListesiAyristirmaSonucu> {
   const BOS: OkulListesiAyristirmaSonucu = { basarili: false, sinavAdi: null, dersEtiketleri: [], ogrenciler: [] };
   try {
-    const dogruBoyut = new Uint8Array(pdfBuffer.buffer, pdfBuffer.byteOffset, pdfBuffer.byteLength);
+    // KOPYALA, view değil — getDocument() ArrayBuffer'ı detach edebiliyor,
+    // aynı Buffer'ı birden fazla çağrıda (OKUL listesi + karne) güvenle
+    // kullanabilmek için her çağrı kendi kopyasını almalı.
+    const dogruBoyut = Uint8Array.from(pdfBuffer);
     const dogument = await getDocument({ data: dogruBoyut, standardFontDataUrl: undefined, disableFontFace: true }).promise;
 
     let grammer: Grammer | null = null;
@@ -315,5 +318,250 @@ export async function okulListesiniAyristir(pdfBuffer: Buffer, maxSayfa = 10): P
     return { basarili: true, sinavAdi, dersEtiketleri, ogrenciler: tekilOgrenciler };
   } catch (e) {
     return { ...BOS, hata: `PDF ayrıştırma hatası: ${e instanceof Error ? e.message : String(e)}` };
+  }
+}
+
+// ============ Faz P2: karne (kişisel sonuç belgesi) özet tablosu ============
+//
+// OKUL listesi (Faz P0) sadece BİRLEŞİK ders sütunları verir (TYT Sosyal,
+// TYT Fen — bkz. rapor, Bulgu 1). Her öğrencinin kendi "karne" sayfası
+// ("SONUÇ BELGESİ" / kişisel "DERSLERE GÖRE ANALİZ") ise AYNI verinin 9
+// AYRI dersle (TYT_DERSLERI ile örtüşen) kırılımını veriyor — rapor,
+// Bulgu 6. Karne sayfası genelde İKİ SÜTUNLU: solda bu özet tablo, sağda
+// çok daha ayrıntılı konu-kazanım dökümü (Faz P4'ün konusu, burada
+// OKUNMUYOR). İki sütun aynı y-koordinatlarını paylaştığından, sütun
+// sınırı SABİT bir x değeri değil — özet tablonun KENDİ başlık satırından
+// (Ders/Soru/Doğru/Yanlış/Net) dinamik olarak türetiliyor (LİMİT şablonu
+// içinde bile TYT ve BRANŞ karnelerinin x düzeni FARKLI çıktı — gerçek
+// veriyle doğrulandı).
+//
+// DURUM (25.08.2026): gerçek 44 öğrenciye karşı toplu test edildi — 43'ünde
+// (tyt/branş_9/branş_10: 44/44, ayt: 8/9) granüler ders toplamı, OKUL
+// listesindeki bağımsız toplamla BİREBİR eşleşti. Tek istisna: bir
+// öğrencinin AYT'de ardışık birden fazla dersi TAMAMEN boş (0 doğru/0
+// yanlış) bırakması — bu durumda altToplamlariIsaretle'nin "hangi
+// ardışık satırlar bir alt toplama toplanıyor" tahmini yapısal olarak
+// belirsizleşiyor (sıfırların toplamı da sıfır). ÇAĞIRAN TARAF BU YÜZDEN
+// HER ZAMAN karne toplamını (altToplamMi=false satırların net toplamı)
+// OKUL listesinin bağımsız toplamıyla ÇAPRAZ DOĞRULAMALI — tutmuyorsa bu
+// öğrencinin granüler verisini KULLANMAMALI (aggregate'e düş / incelemeye
+// at). Henüz canlı deneme-pdf-actions.ts'e BAĞLANMADI — bkz. rapor, Faz P2
+// tamamlandı ama "kaydetme yoluna entegrasyon" ayrı bir karar/faz.
+
+export interface KarneDersSonucu {
+  ders: string;
+  soru: number;
+  dogru: number;
+  yanlis: number;
+  net: number;
+  // Bu satır, hemen ÜSTÜNDEKİ ardışık satırların ARA TOPLAMI mı? (örn.
+  // TYT'de "TYT Sosyal", AYT'de "Sosyal-2"/"Matematik"/"Fen Bilimleri").
+  // İSME göre DEĞİL, YAPISAL olarak tespit ediliyor (bkz. altToplamlariIsaretle)
+  // — TYT/BRANŞ ve AYT'nin alt toplam isimlendirmesi FARKLI olduğu gerçek
+  // veriyle doğrulandı (AYT'de "TYT " ön eki hiç yok), isim deseni
+  // güvenilir değil. TYT_DERSLERI'ne yazarken bu satırlar ATLANMALI.
+  altToplamMi: boolean;
+}
+
+export interface KarneAyristirmaSonucu {
+  basarili: boolean;
+  hata?: string;
+  bulunanSayfa: number | null;
+  // Ara toplam satırları DA DAHİL (altToplamMi ile işaretli) — çağıran
+  // taraf TYT_DERSLERI'ne yazarken bunları filtrelemeli.
+  dersSonuclari: KarneDersSonucu[];
+}
+
+const KARNE_OZET_HEADER_DESENI = /^Ders(\s*\/\s*Test)?$/;
+
+// Bir satırın, kendinden ÖNCEKİ ardışık satırların (son ara toplamdan bu
+// yana) doğru+yanlış TOPLAMINA birebir eşit olup olmadığına bakarak ara
+// toplamları YAPISAL olarak işaretler. İsim bazlı bir liste yerine bu
+// yöntem seçildi çünkü gerçek veride TYT/BRANŞ "TYT Sosyal" derken AYT
+// "Sosyal-2"/"Matematik"/"Fen Bilimleri" kullanıyor — tek bir isim deseni
+// ikisini de güvenilir yakalayamıyor.
+// DİKKAT: satırların HER ZAMAN bir alt toplamla "kapanması" gerekmiyor —
+// örn. TYT karnesinde "Türkçe" tek başına bir grup ama ONU kapatan ayrı
+// bir "TYT Türkçe" alt toplam satırı YOK, oysa hemen ardından gelen
+// "Tarih-1..Felsefe (Seçmeli)" 5 satırı "TYT Sosyal" ile kapanıyor. Bu
+// yüzden GLOBAL bir "son kapanıştan bu yana" sayacı YANLIŞ — o yaklaşım
+// Türkçe'yi de yanlışlıkla Sosyal grubuna dahil ediyordu (gerçek veriyle
+// bulundu). Bunun yerine her satır İÇİN, hemen ÖNCESİNDEKİ artan
+// boyuttaki pencereleri (k=2,3,...) DENEYİP en küçük eşleşen k'yı kabul
+// ediyoruz — global durum yok, sadece yerel pencere karşılaştırması.
+// k=1'DEN BAŞLAMIYOR: küçük derslerin (örn. 5 sorulu Tarih-1/Coğrafya-1/
+// Felsefe/Din K.) doğru/yanlış sayıları RASTLANTISAL olarak birbirine eşit
+// çıkabiliyor (gerçek veride yakalandı — "Coğrafya-1" bir üstündeki
+// "Tarih-1" ile aynı D/Y'ye sahip olunca yanlışlıkla alt toplam
+// sanılıyordu). Gerçek bir alt toplam HER ZAMAN ≥2 satırı topluyor
+// (Sosyal:5, Matematik:2, Fen:3 vb.) — k=1'i tamamen dışlamak bu riski
+// pratikte sıfırlıyor.
+const ALT_TOPLAM_MAKS_PENCERE = 8;
+
+function altToplamlariIsaretle(satirlar: Omit<KarneDersSonucu, "altToplamMi">[]): KarneDersSonucu[] {
+  const sonuc: KarneDersSonucu[] = satirlar.map((s) => ({ ...s, altToplamMi: false }));
+  for (let i = 1; i < sonuc.length; i++) {
+    for (let k = 2; k <= Math.min(ALT_TOPLAM_MAKS_PENCERE, i); k++) {
+      let grupDogru = 0;
+      let grupYanlis = 0;
+      let pencerdeAltToplamVar = false;
+      for (let j = i - k; j < i; j++) {
+        if (sonuc[j].altToplamMi) { pencerdeAltToplamVar = true; break; } // iç içe/çift sayım riskine karşı
+        grupDogru += sonuc[j].dogru;
+        grupYanlis += sonuc[j].yanlis;
+      }
+      if (pencerdeAltToplamVar) continue;
+      if (sonuc[i].dogru === grupDogru && sonuc[i].yanlis === grupYanlis) {
+        sonuc[i].altToplamMi = true;
+        break; // en küçük eşleşen pencerede dur
+      }
+    }
+  }
+  return sonuc;
+}
+
+interface KonumluSatirGrubu { y: number; itemlar: KonumluMetin[]; }
+
+function konumluSatirlaraGrupla(itemlar: KonumluMetin[]): KonumluSatirGrubu[] {
+  const YAKINLIK = 1.5;
+  const gruplar: KonumluSatirGrubu[] = [];
+  for (const it of itemlar) {
+    if (!it.str.trim()) continue;
+    let grup = gruplar.find((g) => Math.abs(g.y - it.y) <= YAKINLIK);
+    if (!grup) { grup = { y: it.y, itemlar: [] }; gruplar.push(grup); }
+    grup.itemlar.push(it);
+  }
+  gruplar.sort((a, b) => b.y - a.y);
+  for (const g of gruplar) g.itemlar.sort((a, b) => a.x - b.x);
+  return gruplar;
+}
+
+// Belirtilen sayfa aralığında, hem HAM isim hem öğrenci no'nun AYNI
+// satırda göründüğü BİR KARNE ÖZETİ TABLOSUYLA birlikte bulunduğu bir
+// sayfa arar. BİLİNÇLİ OLARAK bir başlık metni ("SONUÇ BELGESİ" vb.)
+// aranmıyor — gerçek veriyle doğrulandı: TYT karnesi bunu kullanıyor,
+// BRANŞ karnesi ("9.SINIF MAARİF SÜREÇ DEĞERLENDİRME" — OKUL listesiyle
+// AYNI başlık) kullanmıyor. Bunun yerine "Ders/Soru/Doğru/Yanlış/Net"
+// özet tablosu başlığının AYNI SAYFADA olması şartı aranıyor — bu hem
+// karne sayfasını doğru tanımlıyor hem de OKUL LİSTESİ sayfasıyla
+// (orada da isim+no birlikte geçer ama bu özet tablosu YOK) karışmasını
+// engelliyor.
+async function karneSayfasiniBul(
+  dogument: Awaited<ReturnType<typeof getDocument>["promise"]>,
+  hedefIsim: string, hedefOgrenciNo: number, ilkSayfa: number, sonSayfa: number,
+): Promise<number | null> {
+  const hedefIsimTrim = hedefIsim.trim();
+  const hedefNoStr = String(hedefOgrenciNo);
+  for (let p = ilkSayfa; p <= Math.min(sonSayfa, dogument.numPages); p++) {
+    const sayfa = await dogument.getPage(p);
+    const icerik = await sayfa.getTextContent();
+    const itemlar: KonumluMetin[] = icerik.items.filter(metinItemMi)
+      .map((it) => ({ str: it.str, x: it.transform[4] as number, y: it.transform[5] as number }));
+    if (!itemlar.some((it) => KARNE_OZET_HEADER_DESENI.test(it.str.trim()) && it.x < 60)) continue;
+
+    const satirlar = konumluSatirlaraGrupla(itemlar);
+    const isimSatiri = satirlar.find((s) => s.itemlar.some((it) => it.str.trim() === hedefIsimTrim));
+    if (isimSatiri && isimSatiri.itemlar.some((it) => it.str.trim() === hedefNoStr)) {
+      return p;
+    }
+  }
+  return null;
+}
+
+// Karne sayfasındaki özet tablonun HEADER satırını (Ders/Soru/Doğru/
+// Yanlış/Net) bulup her sütunun x konumunu döndürür — sonraki satırlarda
+// her sayısal değer EN YAKIN sütuna atanır (sabit x eşiği yerine, bkz.
+// dosya başı notu: TYT/BRANŞ karnelerinde bu x'ler FARKLI).
+function karneOzetSutunlariniBul(satirlar: KonumluSatirGrubu[]): { headerY: number; sutunlar: { ad: string; x: number }[] } | null {
+  for (const satir of satirlar) {
+    const dersItem = satir.itemlar.find((it) => KARNE_OZET_HEADER_DESENI.test(it.str.trim()) && it.x < 60);
+    if (!dersItem) continue;
+    const soruItem = satir.itemlar.find((it) => it.str.trim() === "Soru");
+    const dogruItem = satir.itemlar.find((it) => it.str.trim() === "Doğru");
+    const yanlisItem = satir.itemlar.find((it) => it.str.trim() === "Yanlış");
+    const netItem = satir.itemlar.find((it) => it.str.trim() === "Net");
+    if (!soruItem || !dogruItem || !yanlisItem || !netItem) continue;
+    return {
+      headerY: satir.y,
+      sutunlar: [
+        { ad: "soru", x: soruItem.x },
+        { ad: "dogru", x: dogruItem.x },
+        { ad: "yanlis", x: yanlisItem.x },
+        { ad: "net", x: netItem.x },
+      ],
+    };
+  }
+  return null;
+}
+
+// pdfjs-dist'te virgüllü ondalıkların bazen "5" gibi tam sayı, bazen
+// "18,75" gibi virgüllü geldiği görüldü (gerçek veriyle) — ikisi de kabul.
+function karneSayisiParcala(token: string): number | null {
+  if (!/^-?\d+(?:,\d+)?$/.test(token.trim())) return null;
+  const n = Number(token.trim().replace(",", "."));
+  return Number.isFinite(n) ? n : null;
+}
+
+export async function karneOzetiniAyristir(
+  pdfBuffer: Buffer, hedefIsim: string, hedefOgrenciNo: number,
+  aramaBaslangicSayfa = 1, aramaBitisSayfa = 400,
+): Promise<KarneAyristirmaSonucu> {
+  const BOS: KarneAyristirmaSonucu = { basarili: false, bulunanSayfa: null, dersSonuclari: [] };
+  try {
+    // KOPYALA, view değil — getDocument() ArrayBuffer'ı detach edebiliyor,
+    // aynı Buffer'ı birden fazla çağrıda (OKUL listesi + karne) güvenle
+    // kullanabilmek için her çağrı kendi kopyasını almalı.
+    const dogruBoyut = Uint8Array.from(pdfBuffer);
+    const dogument = await getDocument({ data: dogruBoyut, standardFontDataUrl: undefined, disableFontFace: true }).promise;
+
+    const sayfaNo = await karneSayfasiniBul(dogument, hedefIsim, hedefOgrenciNo, aramaBaslangicSayfa, aramaBitisSayfa);
+    if (sayfaNo === null) return { ...BOS, hata: `"${hedefIsim}" (Ö.No ${hedefOgrenciNo}) için karne sayfası bulunamadı.` };
+
+    const sayfa = await dogument.getPage(sayfaNo);
+    const icerik = await sayfa.getTextContent();
+    const itemlar: KonumluMetin[] = icerik.items.filter(metinItemMi)
+      .map((it) => ({ str: it.str, x: it.transform[4] as number, y: it.transform[5] as number }));
+    const satirlar = konumluSatirlaraGrupla(itemlar);
+
+    const sutunBilgisi = karneOzetSutunlariniBul(satirlar);
+    if (!sutunBilgisi) return { ...BOS, bulunanSayfa: sayfaNo, hata: "Karne sayfası bulundu ama özet tablo başlığı (Ders/Soru/Doğru/Yanlış/Net) çözümlenemedi." };
+
+    const netX = sutunBilgisi.sutunlar.find((s) => s.ad === "net")!.x;
+    // TYT karnesinde Net değeri ile hemen sonraki Başarı% değeri arasında
+    // SADECE ~30 birimlik boşluk var (gerçek veriyle doğrulandı) — geniş
+    // bir marj Başarı%'yi yanlışlıkla 5. "sayısal" sütun olarak içeri
+    // sızdırıp satırı reddettiriyordu (tam 4 sütun bekleniyor). Dar bir
+    // marj (15) hem bu riski gideriyor hem BRANŞ karnesinin çok daha
+    // geniş (~64 birim) boşluğunda sorun çıkarmıyor.
+    const kesmeX = netX + 15;
+
+    const hamSatirlar: Omit<KarneDersSonucu, "altToplamMi">[] = [];
+    for (const satir of satirlar) {
+      if (satir.y >= sutunBilgisi.headerY) continue; // header'ın üstü/aynısı — atla
+      const dersItemlari = satir.itemlar.filter((it) => it.x < sutunBilgisi.sutunlar[0].x - 15);
+      const sayisalItemlari = satir.itemlar.filter((it) => it.x >= sutunBilgisi.sutunlar[0].x - 15 && it.x <= kesmeX);
+      if (dersItemlari.length === 0 || sayisalItemlari.length !== 4) continue; // tam 4 sayısal sütun bekleniyor
+
+      const degerler: Record<string, number> = {};
+      let hepsiSayi = true;
+      for (const it of sayisalItemlari) {
+        const enYakinSutun = sutunBilgisi.sutunlar.reduce((a, b) => (Math.abs(b.x - it.x) < Math.abs(a.x - it.x) ? b : a));
+        const deger = karneSayisiParcala(it.str);
+        if (deger === null) { hepsiSayi = false; break; }
+        degerler[enYakinSutun.ad] = deger;
+      }
+      if (!hepsiSayi || degerler.soru === undefined || degerler.dogru === undefined || degerler.yanlis === undefined || degerler.net === undefined) continue;
+
+      const ders = dersItemlari.map((it) => it.str).join(" ").replace(/\s+/g, " ").trim();
+      if (!ders || /^(Toplam|Katılımlar)/i.test(ders)) continue;
+
+      hamSatirlar.push({ ders, soru: degerler.soru, dogru: degerler.dogru, yanlis: degerler.yanlis, net: degerler.net });
+    }
+
+    if (hamSatirlar.length === 0) return { ...BOS, bulunanSayfa: sayfaNo, hata: "Karne sayfası bulundu ama hiç ders satırı ayrıştırılamadı." };
+    const dersSonuclari = altToplamlariIsaretle(hamSatirlar);
+    return { basarili: true, bulunanSayfa: sayfaNo, dersSonuclari };
+  } catch (e) {
+    return { ...BOS, hata: `Karne ayrıştırma hatası: ${e instanceof Error ? e.message : String(e)}` };
   }
 }
