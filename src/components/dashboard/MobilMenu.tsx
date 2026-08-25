@@ -115,7 +115,7 @@ export function MobilMenu({ ad, role, kurumTuru, okunmamisMesajSayisi, moderator
               </Link>
             )}
 
-            <HataBildirButonu boyut="satir" kapat={() => setAcik(false)} />
+            <HataBildirButonu boyut="satir" />
 
             <div className="flex items-center justify-between rounded-xl px-2.5 py-1.5">
               <span style={{ color: TEXT }} className="text-[13px] font-semibold">Bildirimler</span>

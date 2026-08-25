@@ -10,7 +10,17 @@ import { BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH
 // masaüstü (ikon-only, Header'daki diğer ikon butonlarla aynı boyut) ile
 // mobil (metin etiketli, MobilMenu'nün liste satırı deseniyle aynı) arasında
 // seçim yapıyor — aynı modal mantığı, iki farklı görünüm.
-export function HataBildirButonu({ boyut = "ikon", kapat }: { boyut?: "ikon" | "satir"; kapat?: () => void }) {
+//
+// Kullanıcı hata bildirimi (2026-08-25, öğretmen ve admin sayfasında,
+// mobilde): "hata bildir ekranı aktif olmuyor". Kök neden: MobilMenu bu
+// bileşeni {acik && (...)} bloğunun İÇİNDE render ediyordu ve eskiden
+// burada bir "kapat" prop'u menüyü de kapatıyordu — ama bu, aynı render
+// turunda bu BİLEŞENİN KENDİSİNİ (dolayısıyla modal açık durumunu tutan
+// kendi state'ini) unmount ediyordu, modal hiç görünmeden yok oluyordu.
+// Çözüm: menüyü kapatmayı bırakmak — modal (z-[200]) zaten menünün
+// (z-[150]) üzerinde göründüğü için menünün altta açık kalması görsel
+// bir sorun yaratmıyor.
+export function HataBildirButonu({ boyut = "ikon" }: { boyut?: "ikon" | "satir" }) {
   const pathname = usePathname();
   const [acik, setAcik] = useState(false);
   const [mesaj, setMesaj] = useState("");
@@ -28,7 +38,7 @@ export function HataBildirButonu({ boyut = "ikon", kapat }: { boyut?: "ikon" | "
     setMesaj("");
   }
 
-  const ac = () => { setAcik(true); kapat?.(); };
+  const ac = () => setAcik(true);
 
   return (
     <>

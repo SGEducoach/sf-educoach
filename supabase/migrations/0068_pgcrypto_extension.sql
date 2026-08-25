@@ -1,0 +1,12 @@
+-- Kullanıcı hata bildirimi (2026-08-25, Sedat Güler — /dashboard/talepler):
+-- "function gen_random_bytes(integer) does not exist — veliye kod
+-- üretirken çıkan hata". Kök neden: veli_talep_onayla() (migration 0035)
+-- veli bağlantı kodunu gen_random_bytes(6) ile üretiyor — bu fonksiyon
+-- pgcrypto eklentisine ait, ve bu proje hiçbir migration'da pgcrypto'yu
+-- ETKİNLEŞTİRMEMİŞ (gen_random_uuid() ayrı bir şey — o PostgreSQL 13+'ta
+-- çekirdeğe dahil, pgcrypto gerektirmiyor, bu yüzden şimdiye kadar hiç
+-- fark edilmemişti). veli_talep_onayla() search_path=public ile
+-- çalıştığından eklenti doğrudan public şemasına kuruluyor — aksi halde
+-- (örn. varsayılan "extensions" şeması) fonksiyon gen_random_bytes'ı yine
+-- bulamazdı.
+create extension if not exists pgcrypto schema public;
