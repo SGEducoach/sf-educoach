@@ -14,6 +14,7 @@ export type DashboardBolumu =
   | "talepler"
   | "onaylar"
   | "dersler"
+  | "kurum-performansi"
   | "ogretmenler"
   | "ogrenciler"
   | "denemeler"
@@ -72,6 +73,14 @@ const OGRETMEN_MENUSU: DashboardMenuOgesi[] = [
 ];
 
 const MUDUR_MENUSU: DashboardMenuOgesi[] = [
+  // 2026-08-25 kullanıcı isteği: "dershane müdürünün ana sayfası okul
+  // müdürlerinde de olsun" — dershaneAnaSayfaVerisiGetir/DershaneAnaSayfa
+  // aslında kurum türünden bağımsız (sadece school_id alıyor), okul
+  // müdürü için de olduğu gibi yeniden kullanıldı (bkz. dashboard/page.tsx
+  // OgretmenIcerik). Varsayılan bölüm (dashboard/page.tsx varsayilanBolum)
+  // okul müdürü için de buraya çekildi — dershane müdürüyle aynı ilk
+  // deneyim.
+  { bolum: "kurum-performansi", href: "/dashboard/kurum-performansi", etiket: "Ana Sayfa", ikon: "ana-sayfa" },
   { bolum: "ozet", href: "/dashboard", etiket: "Sınıflar", ikon: "ana-sayfa" },
   // 2026-08-25 kullanıcı isteği: "dershane ve okul müdürü öğretmenlerin
   // programlarını görsün" — okul müdürü salt-okunur (bkz. dashboard/page.tsx
@@ -134,7 +143,7 @@ export function dashboardMenusu(role: UserRole, kurumTuru?: KurumTuru): Dashboar
 
 export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
   "gorevler", "planlar", "veri-girisi", "konu-hakimiyeti", "analiz", "yapay-zeka", "rozetler", "tg-denemeleri",
-  "duyurular", "talepler", "onaylar", "dersler", "ogretmenler", "ogrenciler", "denemeler",
+  "duyurular", "talepler", "onaylar", "dersler", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler",
 ]);
 
 // /yonetici/[bolum] catch-all için — "rozetler" burada YOK, çünkü admin'in

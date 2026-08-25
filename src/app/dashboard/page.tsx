@@ -35,6 +35,8 @@ import { kurumRozetGorunumuGetir, veliRozetGorunumuGetir } from "@/lib/rozet-gor
 import { dershaneDenemeBitisGetir, suresiDolduMu, kurumTuruGetir } from "@/lib/deneme-suresi";
 import { ogretmenProgramiGetir, yurtNobetiGetir } from "@/lib/ders-programi";
 import type { DersProgramiSatiri } from "@/lib/ders-programi";
+import { dershaneAnaSayfaVerisiGetir } from "@/lib/dershane-ana-sayfa";
+import { DershaneAnaSayfa } from "@/components/dashboard/DershaneAnaSayfa";
 import { DenemeSuresiSonaErdiEkrani } from "@/components/DenemeSuresiSonaErdiEkrani";
 
 // Görevlerim takvimi haftalık gösteriliyor — verilen tarihin (veya bugünün,
@@ -94,7 +96,11 @@ export default async function DashboardPage({
   // Tüm rollerde (dershane müdürü dahil, artık kendi "Ana Sayfa"sı var —
   // bkz. DERSHANE_MUDUR_MENUSU) bolum parametresi verilmediğinde
   // varsayılan "ozet".
-  const varsayilanBolum: DashboardBolumu = "ozet";
+  // 2026-08-25 kullanıcı isteği: "dershane müdürünün ana sayfası okul
+  // müdürlerinde de olsun" — okul müdürü de artık dershane müdürüyle aynı
+  // ilk deneyimle (kademe bazlı performans) açılıyor. Dershane müdürü zaten
+  // "ozet" = Ana Sayfa olduğundan (bkz. DERSHANE_MUDUR_MENUSU) etkilenmiyor.
+  const varsayilanBolum: DashboardBolumu = role === "mudur" && kurumTuru !== "dershane" ? "kurum-performansi" : "ozet";
   const aktifBolum = (params.bolum ?? varsayilanBolum) as DashboardBolumu;
   if (!dashboardMenusu(role, kurumTuru).some((oge) => oge.bolum === aktifBolum)) redirect("/dashboard");
   const donem = (["haftalik", "aylik", "tum"].includes(params.donem ?? "") ? params.donem : "tum") as RaporDonemi;
@@ -418,6 +424,16 @@ async function OgretmenIcerik({ userId, role, kurumTuru, secilenSinifId, secilen
   if (aktifBolum === "rozetler") {
     const gorunum = await kurumRozetGorunumuGetir(supabase, teacher.school_id, secilenOgrenciId, secilenSinifId);
     return <RozetGoruntulemePaneli gorunum={gorunum} action="/dashboard/rozetler" kapsam={`${gorunum.kurumAdi ?? "Kurum"} · Yalnız bu kurumdaki öğrenciler`} />;
+  }
+
+  // Ana Sayfa / kurum performansı (2026-08-25 kullanıcı isteği: "dershane
+  // müdürünün ana sayfası okul müdürlerinde de olsun") — dershaneAnaSayfaVerisiGetir
+  // kurum türünden bağımsız (sadece school_id alıyor), olduğu gibi
+  // yeniden kullanıldı. Sadece okul müdürü (dershane müdürü zaten kendi
+  // ayrı panelinde, "ozet" bölümünde, aynı bileşeni kullanıyor).
+  if (aktifBolum === "kurum-performansi" && role === "mudur" && kurumTuru !== "dershane") {
+    const veri = await dershaneAnaSayfaVerisiGetir(supabase, teacher.school_id);
+    return <section className="sfec-section"><DershaneAnaSayfa veri={veri} /></section>;
   }
 
   // Konu bilme/bilmeme göstergesi (Faz K3) — müdür (okul) OKULUN geneline,
