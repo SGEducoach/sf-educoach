@@ -13,6 +13,10 @@ import { DuyuruFormu } from "@/components/dashboard/DuyuruFormu";
 import { BRANS_LISTESI, type GorevTuru, type SinifSeviyesi, type VeliLinkRequest } from "@/lib/types";
 import { bugununTarihiTR } from "@/lib/tarih";
 import type { DashboardBolumu } from "@/lib/dashboard-navigation";
+import { DersProgramiGrid } from "@/components/dashboard/DersProgramiGrid";
+import { YurtNobetiTablosu } from "@/components/dashboard/YurtNobetiTablosu";
+import { programGunleri } from "@/lib/ders-programi";
+import type { DersProgramiSatiri, YurtNobetiSatiri } from "@/lib/ders-programi";
 
 interface OgrenciSatiri {
   id: string;
@@ -53,6 +57,7 @@ function ogrencilerOkulNoSirali(ogrenciler: OgrenciSatiri[]): OgrenciSatiri[] {
 export function OgretmenPanel({
   role, bekleyenTalepler, ogrenciler, sinifAdi, siniflar, gorunecekSinifId, kendiSinifId, kendiSinifiMi,
   ogretmenDersleri, bekleyenOnaylar, konuOnerileri, aktifBolum,
+  dersProgramiSatirlari, yurtNobetiSatirlari, dershaneMi,
 }: {
   role: "ogretmen" | "mudur";
   bekleyenTalepler: (VeliLinkRequest & { ogrenci_ad: string })[];
@@ -66,6 +71,11 @@ export function OgretmenPanel({
   bekleyenOnaylar: BekleyenOnaySatiri[];
   konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
   aktifBolum: DashboardBolumu;
+  // Ders Programı + Yurt Nöbeti (2026-08-25) — sadece "dersler" bölümünde
+  // kullanılıyor, diğer bölümlerde boş dizi/false gelir.
+  dersProgramiSatirlari?: DersProgramiSatiri[];
+  yurtNobetiSatirlari?: YurtNobetiSatiri[];
+  dershaneMi?: boolean;
 }) {
   const router = useRouter();
   const [uretilenKodlar, setUretilenKodlar] = useState<Record<string, string>>({});
@@ -202,7 +212,15 @@ export function OgretmenPanel({
         <GorevVerBolumu ogrenciler={ogrenciler} konuOnerileri={konuOnerileri} />
       )}
 
-      {aktifBolum === "dersler" && role === "ogretmen" && <DerslerimBolumu dersler={ogretmenDersleri} siniflar={siniflar} />}
+      {aktifBolum === "dersler" && role === "ogretmen" && (
+        <DerslerimBolumu
+          dersler={ogretmenDersleri}
+          siniflar={siniflar}
+          dersProgramiSatirlari={dersProgramiSatirlari ?? []}
+          yurtNobetiSatirlari={yurtNobetiSatirlari ?? []}
+          dershaneMi={!!dershaneMi}
+        />
+      )}
 
       {aktifBolum === "ozet" && <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
@@ -443,7 +461,13 @@ function BekleyenOnaylarBolumu({ onaylar }: { onaylar: BekleyenOnaySatiri[] }) {
 
 // Öğretmenin branş dersi verdiği sınıflar (çoklu, homeroom'dan bağımsız) —
 // kendi ekleyip çıkarabildiği self-servis liste (bkz. migration 0045).
-function DerslerimBolumu({ dersler, siniflar }: { dersler: OgretmenDersiSatiri[]; siniflar: SinifSatiri[] }) {
+function DerslerimBolumu({ dersler, siniflar, dersProgramiSatirlari, yurtNobetiSatirlari, dershaneMi }: {
+  dersler: OgretmenDersiSatiri[];
+  siniflar: SinifSatiri[];
+  dersProgramiSatirlari: DersProgramiSatiri[];
+  yurtNobetiSatirlari: YurtNobetiSatiri[];
+  dershaneMi: boolean;
+}) {
   const [sinifId, setSinifId] = useState(siniflar[0]?.id ?? "");
   const [ders, setDers] = useState<string>(BRANS_LISTESI[0]);
   const [hata, setHata] = useState<string | null>(null);
@@ -516,6 +540,20 @@ function DerslerimBolumu({ dersler, siniflar }: { dersler: OgretmenDersiSatiri[]
         </button>
         {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
       </form>
+
+      {/* Ders Programı (2026-08-25 kullanıcı isteği) — salt-okunur, admin/
+          dershane müdürü elle doldurur. Öğretmen sadece kendi haftalık
+          programını görür. */}
+      <div className="mt-5 flex flex-col gap-2">
+        <span style={{ color: TEXT_MUTED }} className="text-[10px] font-bold uppercase tracking-wide">Ders Programım</span>
+        <DersProgramiGrid gunler={programGunleri(dershaneMi)} satirlar={dersProgramiSatirlari} />
+      </div>
+
+      {!dershaneMi && (
+        <div className="mt-4">
+          <YurtNobetiTablosu satirlar={yurtNobetiSatirlari} />
+        </div>
+      )}
     </div>
   );
 }

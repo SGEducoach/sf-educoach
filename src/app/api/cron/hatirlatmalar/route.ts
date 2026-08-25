@@ -205,6 +205,14 @@ export async function GET(request: Request) {
       }
     }
 
+    // Yurt Nöbeti hatırlatması ARTIK BURADA DEĞİL — kullanıcı isteğini
+    // (2026-08-25) "09:00/15:00/21:00, ilki okunana kadar diğerini
+    // aktifleştirme" şeklinde netleştirdi; bu günde 3 kez tetiklenen,
+    // okunma durumuna göre dallanan bir akış olduğundan ayrı bir cron
+    // route'una taşındı (bkz. /api/cron/yurt-nobeti-bildirim,
+    // vercel.json'daki 3 ayrı schedule, migration 0066
+    // ogretmen_yurt_nobeti_bildirim tablosu).
+
     // Faz 3 (§5): süresi (son_tarih) geçmiş, hâlâ "bekliyor" olan görev
     // atamalarını "tamamlanmadı" işaretle.
     const bugunISO = bugununTarihiTR();

@@ -3,6 +3,18 @@
     {
       "path": "/api/cron/hatirlatmalar",
       "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/yurt-nobeti-bildirim?sira=1",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/yurt-nobeti-bildirim?sira=2",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/yurt-nobeti-bildirim?sira=3",
+      "schedule": "0 18 * * *"
     }
   ]
 }

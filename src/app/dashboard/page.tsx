@@ -33,6 +33,7 @@ import type { DashboardBolumu } from "@/lib/dashboard-navigation";
 import { RozetGoruntulemePaneli } from "@/components/dashboard/RozetGoruntulemePaneli";
 import { kurumRozetGorunumuGetir, veliRozetGorunumuGetir } from "@/lib/rozet-gorunumu";
 import { dershaneDenemeBitisGetir, suresiDolduMu, kurumTuruGetir } from "@/lib/deneme-suresi";
+import { ogretmenProgramiGetir, yurtNobetiGetir } from "@/lib/ders-programi";
 import { DenemeSuresiSonaErdiEkrani } from "@/components/DenemeSuresiSonaErdiEkrani";
 
 // Görevlerim takvimi haftalık gösteriliyor — verilen tarihin (veya bugünün,
@@ -561,6 +562,19 @@ async function OgretmenIcerik({ userId, role, kurumTuru, secilenSinifId, secilen
     ogrenciAd: s.students?.profiles?.ad ?? "İsimsiz",
   }));
 
+  // Ders Programı + Yurt Nöbeti (2026-08-25 kullanıcı isteği) — sadece
+  // "Derslerim" bölümünde gösterildiği için o zaman çekiliyor. Yurt Nöbeti
+  // "okul için sadece" (kullanıcı kararı) — dershane'de bu path'e bir
+  // öğretmen (müdür değil) de düşebildiğinden kurumTuru burada da kontrol
+  // ediliyor.
+  const dershaneMi = kurumTuru === "dershane";
+  const [dersProgramiSatirlari, yurtNobetiSatirlari] = aktifBolum === "dersler" && role === "ogretmen"
+    ? await Promise.all([
+        ogretmenProgramiGetir(supabase, userId),
+        dershaneMi ? Promise.resolve([]) : yurtNobetiGetir(supabase, userId),
+      ])
+    : [[], []];
+
   return (
     <OgretmenPanel
       role={role}
@@ -575,6 +589,9 @@ async function OgretmenIcerik({ userId, role, kurumTuru, secilenSinifId, secilen
       bekleyenOnaylar={bekleyenOnaylar}
       konuOnerileri={MUFREDAT_KONULARI}
       aktifBolum={aktifBolum}
+      dersProgramiSatirlari={dersProgramiSatirlari}
+      yurtNobetiSatirlari={yurtNobetiSatirlari}
+      dershaneMi={dershaneMi}
     />
   );
 }

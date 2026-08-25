@@ -9,6 +9,9 @@ import { konuHakimiyetiOzetiGetir } from "@/lib/konu-hakimiyeti";
 import { AnalizPaneli } from "@/components/dashboard/AnalizPaneli";
 import { Header } from "@/components/dashboard/Header";
 import { DashboardYanMenu } from "@/components/dashboard/DashboardYanMenu";
+import { DersProgramiYonetimi } from "@/components/dashboard/DersProgramiYonetimi";
+import { YurtNobetiTablosu } from "@/components/dashboard/YurtNobetiTablosu";
+import { ogretmenProgramiGetir, yurtNobetiGetir } from "@/lib/ders-programi";
 import { BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, TEXT, TEXT_MUTED } from "@/lib/theme";
 import type { UserRole } from "@/lib/types";
 
@@ -90,17 +93,30 @@ async function OgrenciSayfasi({ admin, userId, ad }: { admin: AdminClient; userI
 }
 
 async function OgretmenSayfasi({ admin, userId }: { admin: AdminClient; userId: string }) {
-  const { data } = await admin.from("teachers").select("brans, school_id, class_id, schools(ad), classes(seviye, sube)").eq("id", userId).maybeSingle();
+  const { data } = await admin.from("teachers").select("brans, school_id, class_id, schools(ad, tur), classes(seviye, sube)").eq("id", userId).maybeSingle();
   if (!data) return <BosKart metin="Öğretmen profili bulunamadı." />;
-  const okul = data.schools as unknown as { ad: string } | null;
+  const okul = data.schools as unknown as { ad: string; tur: "okul" | "dershane" } | null;
   const sinif = data.classes as unknown as { seviye: string; sube: string } | null;
+  const dershaneMi = okul?.tur === "dershane";
   let ogrenciQuery = admin.from("students").select("id, okul_no, profiles!students_id_fkey(ad), classes(seviye, sube)").order("okul_no").limit(100);
   ogrenciQuery = data.class_id ? ogrenciQuery.eq("class_id", data.class_id) : ogrenciQuery.eq("school_id", data.school_id);
-  const { data: ogrenciler } = await ogrenciQuery;
+  const [{ data: ogrenciler }, { data: okulSiniflari }, dersProgrami, yurtNobeti] = await Promise.all([
+    ogrenciQuery,
+    admin.from("classes").select("id, seviye, sube").eq("school_id", data.school_id),
+    ogretmenProgramiGetir(admin as Parameters<typeof ogretmenProgramiGetir>[0], userId),
+    dershaneMi ? Promise.resolve([]) : yurtNobetiGetir(admin as Parameters<typeof yurtNobetiGetir>[0], userId),
+  ]);
   type OgrenciRow = { id: string; okul_no: string; profiles: { ad: string } | null; classes: { seviye: string; sube: string } | null };
   const liste = (ogrenciler as unknown as OgrenciRow[]) ?? [];
   return <>
     <section className="grid grid-cols-1 gap-3 sm:grid-cols-3"><Bilgi icon={School} etiket="Okul" deger={okul?.ad ?? "—"} /><Bilgi icon={BookOpen} etiket="Branş" deger={data.brans} /><Bilgi icon={Users} etiket="Sınıf öğretmenliği" deger={sinif ? `${sinif.seviye}-${sinif.sube}` : "Atanmamış"} /></section>
+    <section className="rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+      <h2 className="mb-3 text-base font-bold" style={{ color: TEXT }}>Ders programı</h2>
+      <DersProgramiYonetimi teacherId={userId} dershaneMi={dershaneMi} siniflar={(okulSiniflari ?? []) as { id: string; seviye: string; sube: string }[]} satirlar={dersProgrami} />
+    </section>
+    {!dershaneMi && (
+      <YurtNobetiTablosu satirlar={yurtNobeti} duzenlenebilir={false} />
+    )}
     <section className="rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}><h2 className="mb-3 text-base font-bold" style={{ color: TEXT }}>{data.class_id ? "Sınıfındaki öğrenciler" : "Okuldaki öğrenciler"}</h2><div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{liste.length === 0 && <p className="text-sm" style={{ color: TEXT_MUTED }}>Öğrenci bulunamadı.</p>}{liste.map((o) => <Link key={o.id} href={`/yonetici/kullanici/${o.id}`} className="rounded-xl p-3 text-sm" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}`, color: TEXT }}><strong>{o.profiles?.ad ?? "İsimsiz"}</strong><div className="mt-1 text-xs" style={{ color: TEXT_MUTED }}>{o.classes ? `${o.classes.seviye}-${o.classes.sube}` : "—"} · #{o.okul_no}</div></Link>)}</div></section>
   </>;
 }
