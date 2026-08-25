@@ -12,7 +12,7 @@ import { adNormalize } from "@/lib/validators";
 import { TYT_DERSLERI, AYT_DERSLERI, BRANS_DENEMESI_DERSLERI, dersSoruSayisi } from "@/lib/types";
 import type { DenemeTuru } from "@/lib/types";
 import { ogretmenDenemeSonucuKaydet } from "@/lib/deneme-sonucu-kaydet";
-import { okulListesiniAyristir } from "@/lib/deneme-pdf-ayristirici";
+import { okulListesiniAyristir, tumKarneleriIndeksle, karneyiTytDerslerineEslestir } from "@/lib/deneme-pdf-ayristirici";
 import { netHesapla } from "@/lib/types";
 
 function gecerliDersler(tur: DenemeTuru): string[] {
@@ -356,6 +356,38 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
     for (const dSatir of deterministikSonuc.ogrenciler) pdfSinifMap.set(adNormalize(dSatir.isimHam), dSatir.sinif);
   }
 
+  // Faz P2 entegrasyonu (Deneme Net Dağıtımı raporu) — SADECE TYT/BRANŞ
+  // için (AYT'nin karne taksonomisi netleşmediği için bilinçli olarak
+  // dışarıda, bkz. deneme-pdf-ayristirici.ts). Karneden çıkan 9 ayrı ders
+  // (TYT_DERSLERI ile örtüşen), Claude'un ürettiği BİRLEŞİK 4 dersten
+  // (TYT Sosyal/Fen vb.) daha granüler — gerçek 235 öğrenciye karşı
+  // doğrulandı (bulunanların tamamında OKUL listesiyle birebir net eşleşti).
+  // HER öğrenci için karne toplamı OKUL listesinin BAĞIMSIZ toplamıyla
+  // çapraz doğrulanıyor — tutmuyorsa (ör. bilinmeyen bir ders adıyla
+  // karşılaşıldıysa) granüler veri KULLANILMIYOR, Claude'un çıktısına
+  // sessizce düşülüyor. Herhangi bir hata bu bloğu asla çökertmesin diye
+  // ayrı try/catch'te — en kötü ihtimalle mevcut (Claude) yol kullanılır.
+  const granulerKarneMap = new Map<string, { ders: string; dogru: number; yanlis: number }[]>();
+  if ((tur === "TYT" || tur === "BRANS") && deterministikSonuc?.basarili) {
+    try {
+      const pdfBufferKarne = Buffer.from(await dosya.arrayBuffer());
+      const hedefler = deterministikSonuc.ogrenciler.map((o) => ({ isimHam: o.isimHam, ogrenciNo: o.ogrenciNo }));
+      const karneIndeksi = await tumKarneleriIndeksle(pdfBufferKarne, hedefler);
+      for (const dSatir of deterministikSonuc.ogrenciler) {
+        const girdi = karneIndeksi.get(`${dSatir.isimHam}|${dSatir.ogrenciNo}`);
+        if (!girdi) continue;
+        const granuler = karneyiTytDerslerineEslestir(girdi.dersSonuclari);
+        if (!granuler) continue;
+        const granulerToplamNet = Math.round(granuler.reduce((t, d) => t + netHesapla(d.dogru, d.yanlis), 0) * 100) / 100;
+        if (Math.abs(granulerToplamNet - dSatir.toplam.net) >= 0.5) continue; // çapraz doğrulama tutmadı — kullanma
+        granulerKarneMap.set(adNormalize(dSatir.isimHam), granuler);
+      }
+      console.info("[deneme-pdf P2] karneden granüler ders sonucu kullanılabilecek öğrenci sayısı:", granulerKarneMap.size, "/", deterministikSonuc.ogrenciler.length);
+    } catch (karneHatasi) {
+      console.warn("[deneme-pdf P2] beklenmeyen hata (Claude çıktısına sessizce düşülüyor):", hataOzeti(karneHatasi));
+    }
+  }
+
   for (const satir of ayristirilan) {
     const adNorm = adNormalize(satir.ad_soyad);
     let eslesenler = ogrenciler.filter((o) => o.adNorm === adNorm);
@@ -370,12 +402,15 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
     }
 
     if (eslesenler.length === 1 && eslesenOnKayitlar.length === 0) {
+      // Faz P2 — çapraz doğrulanmış granüler (9 ders) veri varsa Claude'un
+      // birleşik (4 ders) çıktısı yerine ONU kaydet.
+      const granulerDersSonuclari = granulerKarneMap.get(adNorm);
       const sonuc = await ogretmenDenemeSonucuKaydet(admin, {
         studentId: eslesenler[0].id,
         tarih,
         tur,
         yayinevi,
-        dersSonuclari: satir.ders_sonuclari,
+        dersSonuclari: granulerDersSonuclari ?? satir.ders_sonuclari,
       });
       if (!sonuc.error) {
         otomatikEslesen++;
