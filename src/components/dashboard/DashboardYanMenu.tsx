@@ -1,6 +1,6 @@
 import Link from "next/link";
 import {
-  BarChart3, BookOpen, BookOpenCheck, Bot, CalendarDays, CalendarPlus2, CircleUserRound, ClipboardCheck, ClipboardList,
+  BarChart3, BookOpen, BookOpenCheck, Bot, Bug, CalendarDays, CalendarPlus2, CircleUserRound, ClipboardCheck, ClipboardList,
   FileCheck2, FileSpreadsheet, GraduationCap, Home, ListChecks, Megaphone, Medal, PenLine, School, ScrollText,
   ShieldCheck, UserPlus, Users,
 } from "lucide-react";
@@ -34,6 +34,7 @@ const IKONLAR: Record<DashboardIkonu, typeof Home> = {
   icerik: BookOpen,
   kural: ScrollText,
   profil: CircleUserRound,
+  hata: Bug,
 };
 
 export function DashboardYanMenu({ role, kurumTuru, aktifBolum }: { role: UserRole; kurumTuru?: KurumTuru; aktifBolum: DashboardBolumu }) {

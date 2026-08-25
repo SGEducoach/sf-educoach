@@ -24,12 +24,14 @@ export type DashboardBolumu =
   | "moderatorler"
   | "icerik"
   | "kurallar"
-  | "profil";
+  | "profil"
+  // Faz G (2026-08-25) — hata bildirimleri, admin panelinde ayrı bölüm.
+  | "hata-bildirimleri";
 
 export type DashboardIkonu =
   | "ana-sayfa" | "gorev" | "plan" | "veri" | "hakimiyet" | "analiz" | "ai" | "rozet" | "takvim" | "duyuru" | "talep" | "onay" | "ders"
   | "ogretmen" | "ogrenci" | "deneme"
-  | "kullanici" | "eslestir" | "okul" | "moderator" | "icerik" | "kural" | "profil";
+  | "kullanici" | "eslestir" | "okul" | "moderator" | "icerik" | "kural" | "profil" | "hata";
 
 export interface DashboardMenuOgesi {
   bolum: DashboardBolumu;
@@ -110,6 +112,7 @@ const ADMIN_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "moderatorler", href: "/yonetici/moderatorler", etiket: "Moderatörler", ikon: "moderator" },
   { bolum: "icerik", href: "/yonetici/icerik", etiket: "Konu anlatımları", ikon: "icerik" },
   { bolum: "kurallar", href: "/yonetici/kurallar", etiket: "Kurallar", ikon: "kural" },
+  { bolum: "hata-bildirimleri", href: "/yonetici/hata-bildirimleri", etiket: "Hata Bildirimleri", ikon: "hata" },
   { bolum: "rozetler", href: "/yonetici/rozetler", etiket: "Rozetler", ikon: "rozet" },
   { bolum: "yapay-zeka", href: "/yonetici/yapay-zeka", etiket: "Konu Haritası", ikon: "ai" },
   { bolum: "profil", href: "/yonetici/profil", etiket: "Profilim", ikon: "profil" },
@@ -134,5 +137,5 @@ export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
 // mantığı olan bir route (bkz. o dosyadaki okul seçici) — literal route
 // dinamik [bolum]'dan her zaman önceliklidir, çakışma olmaz.
 export const YONETICI_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
-  "kullanicilar", "talepler", "pdf-eslesme", "okullar", "moderatorler", "icerik", "kurallar", "profil",
+  "kullanicilar", "talepler", "pdf-eslesme", "okullar", "moderatorler", "icerik", "kurallar", "profil", "hata-bildirimleri",
 ]);

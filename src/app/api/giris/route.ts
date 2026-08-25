@@ -67,13 +67,30 @@ export async function POST(request: NextRequest) {
     ? await supabase.auth.signInWithPassword({ email: girisEmail, password: body.password })
     : { error: new Error("Invalid login credentials") };
 
-  if (!error && body.role === "admin") {
+  let askidaMi = false;
+  if (!error) {
     const { data: { user } } = await supabase.auth.getUser();
-    const { data: profile } = user ? await admin.from("profiles").select("role").eq("id", user.id).maybeSingle() : { data: null };
-    if (profile?.role !== "admin") {
+    const { data: profile } = user ? await admin.from("profiles").select("role, aktif").eq("id", user.id).maybeSingle() : { data: null };
+    if (body.role === "admin" && profile?.role !== "admin") {
       await supabase.auth.signOut();
       error = new Error("Invalid login credentials");
+    } else if (profile && profile.aktif === false) {
+      // Faz F (2026-08-25) — profiles.aktif ZATEN vardı (moderatör/admin
+      // aç-kapa yapabiliyordu, bkz. moderatorAktiflikDegistir/
+      // hesapAktiflikDegistir) ama login bunu HİÇ kontrol etmiyordu; bu
+      // yüzden "ban" fiilen işe yaramıyordu. Otomatik manipülasyon
+      // banı (bkz. manipulasyon-takip.ts) da AYNI alanı kullanıyor.
+      await supabase.auth.signOut();
+      askidaMi = true;
+      error = new Error("Hesap askıda");
     }
+  }
+
+  if (askidaMi) {
+    // Şifre doğru olsa bile hesap askıda — bu bir "hatalı şifre denemesi"
+    // değil, rate-limit sayacını gereksiz artırmasın (kademeli engel
+    // burada anlamsız, hesap zaten kapalı).
+    return NextResponse.json({ error: "Hesabınız askıya alındı. Kurumunuzun yetkilisiyle (moderatör/yönetici) iletişime geçin." }, { status: 403 });
   }
 
   if (error) {

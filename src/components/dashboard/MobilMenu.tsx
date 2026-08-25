@@ -3,13 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  BarChart3, BookOpen, BookOpenCheck, Bot, CalendarDays, CalendarPlus2, CircleUserRound, ClipboardCheck, ClipboardList, FileCheck2, FileSpreadsheet, GraduationCap, Home,
+  BarChart3, BookOpen, BookOpenCheck, Bot, Bug, CalendarDays, CalendarPlus2, CircleUserRound, ClipboardCheck, ClipboardList, FileCheck2, FileSpreadsheet, GraduationCap, Home,
   ListChecks, LogOut, Medal, Megaphone, Menu, PenLine, School, ScrollText, ShieldCheck, UserPlus, Users, X,
 } from "lucide-react";
 import { BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, SEAFOAM, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 import { signOut } from "@/app/dashboard/actions";
 import { BildirimAyarlari } from "@/components/dashboard/BildirimAyarlari";
 import { MesajlarimIkonu } from "@/components/dashboard/MesajlarimIkonu";
+import { HataBildirButonu } from "@/components/dashboard/HataBildirButonu";
 import type { KurumTuru, UserRole } from "@/lib/types";
 import type { DashboardBolumu, DashboardIkonu } from "@/lib/dashboard-navigation";
 import { dashboardMenusu } from "@/lib/dashboard-navigation";
@@ -46,6 +47,7 @@ const IKONLAR: Record<DashboardIkonu, typeof Home> = {
   icerik: BookOpen,
   kural: ScrollText,
   profil: CircleUserRound,
+  hata: Bug,
 };
 
 // Telefon genişliğinde header'daki ikon sırası (moderatör/tema/bildirim/
@@ -112,6 +114,8 @@ export function MobilMenu({ ad, role, kurumTuru, okunmamisMesajSayisi, moderator
                 <ShieldCheck size={16} color={SEAFOAM} /> Moderatör paneli
               </Link>
             )}
+
+            <HataBildirButonu boyut="satir" kapat={() => setAcik(false)} />
 
             <div className="flex items-center justify-between rounded-xl px-2.5 py-1.5">
               <span style={{ color: TEXT }} className="text-[13px] font-semibold">Bildirimler</span>

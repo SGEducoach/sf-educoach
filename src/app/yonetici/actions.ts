@@ -499,6 +499,50 @@ export async function veliTalebiReddet(requestId: string): Promise<{ error: stri
   return { error: null };
 }
 
+// ============ Hata bildirimleri (Faz G, 2026-08-25) ============
+// Öğrenci/veli/öğretmen/müdür bildirimleri burada admin tarafından
+// çözüldü işaretlenir. bildirenRol==='admin' olanlar İSTİSNA — bunlar
+// admin'in (kullanıcının) Claude Code oturumunda bırakılan notlar,
+// panelden değil kod değişikliğiyle "çözülür" (bkz. tablo yorumu,
+// migration 0064).
+export interface HataBildirimSonuc {
+  id: string;
+  bildirenAd: string | null;
+  bildirenRol: UserRole;
+  mesaj: string;
+  sayfa: string | null;
+  durum: "bekliyor" | "cozuldu";
+  createdAt: string;
+}
+
+export async function hataBildirimleriGetir(): Promise<{ error: string | null; bildirimler: HataBildirimSonuc[] }> {
+  const { admin } = await requireAdmin();
+  const { data, error } = await admin
+    .from("hata_bildirimleri")
+    .select("id, bildiren_rol, mesaj, sayfa, durum, created_at, profiles(ad)")
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error) return { error: error.message, bildirimler: [] };
+
+  type Row = {
+    id: string; bildiren_rol: UserRole; mesaj: string; sayfa: string | null; durum: "bekliyor" | "cozuldu"; created_at: string;
+    profiles: { ad: string } | null;
+  };
+  const bildirimler = ((data as unknown as Row[]) ?? []).map((r) => ({
+    id: r.id, bildirenAd: r.profiles?.ad ?? null, bildirenRol: r.bildiren_rol, mesaj: r.mesaj, sayfa: r.sayfa, durum: r.durum, createdAt: r.created_at,
+  }));
+  return { error: null, bildirimler };
+}
+
+export async function hataBildirimiCozulduIsaretle(id: string): Promise<{ error: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const { error } = await admin.from("hata_bildirimleri").update({ durum: "cozuldu", cozuldu_at: new Date().toISOString() }).eq("id", id);
+  if (error) return { error: error.message };
+  await auditLogYaz(supabase, user.id, "hata_bildirimi_cozuldu", { hata_id: id });
+  revalidatePath("/yonetici");
+  return { error: null };
+}
+
 // ============ Platform istatistikleri ============
 // Sayımlar normal (RLS'e tabi) client ile yapılıyor — is_ogretmen() zaten
 // admin'e profiles/konu_calismalar/soru_cozumleri/denemeler/

@@ -11,6 +11,22 @@ import { pushGonderProfile } from "@/lib/push-send";
 import { SURE_UST_SINIR, SORU_SAYISI_UST_SINIR, KATEGORI_GERIYE_DONUK_SINIR, TAKIP_SORUSU, dersSoruSayisi } from "@/lib/types";
 import type { DenemeTuru, DenemeZorlugu, HedefeYakinlik, TakipCevabi, VerimlilikDuzeyi } from "@/lib/types";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
+import { manipulasyonGirisimiKaydet } from "@/lib/manipulasyon-takip";
+
+// Faz F — bir veri girişi server-side bir SAYISAL SINIRI aştığı için
+// reddedildiğinde (boş alan gibi masum hatalarda DEĞİL) çağrılır; sayaç
+// 4'e ulaşınca normal hata mesajının SONUNA bir uyarı eklenir, 5'e
+// ulaşınca hesap otomatik askıya alınır (bkz. manipulasyon-takip.ts).
+async function manipulasyonliHataMesaji(userId: string, detay: string, normalMesaj: string): Promise<string> {
+  const sonuc = await manipulasyonGirisimiKaydet(createAdminClient(), userId, detay);
+  if (sonuc.banlandi) {
+    return "Hesabınız, tekrarlanan geçersiz veri girişi nedeniyle askıya alındı. Kurumunuzun yetkilisiyle iletişime geçin.";
+  }
+  if (sonuc.uyariGoster) {
+    return `${normalMesaj} Uyarı: Tekrarlanan geçersiz girişler hesabınızın askıya alınmasına yol açabilir.`;
+  }
+  return normalMesaj;
+}
 
 const SEVIYE_ETIKET: Record<string, string> = { bronz: "Bronz 🥉", gumus: "Gümüş 🥈", altin: "Altın 🥇" };
 const KATEGORI_ETIKET: Record<string, string> = { konu: "Konu Çalışma", soru: "Soru Çözümü", deneme: "Deneme" };
@@ -190,7 +206,9 @@ export async function konuCalismaEkle(formData: FormData) {
   }
   if (tarihHatasi) return { error: tarihHatasi, verimlilikSorulsunMu: false };
   if (sureDakika > SURE_UST_SINIR) {
-    return { error: `Süre en fazla ${SURE_UST_SINIR} dakika olabilir (tek oturum için) — haftalık/günlük toplamı buraya girme.`, verimlilikSorulsunMu: false };
+    const mesaj = await manipulasyonliHataMesaji(user.id, `konuCalismaEkle: sureDakika=${sureDakika}`,
+      `Süre en fazla ${SURE_UST_SINIR} dakika olabilir (tek oturum için) — haftalık/günlük toplamı buraya girme.`);
+    return { error: mesaj, verimlilikSorulsunMu: false };
   }
 
   const { error } = await supabase.from("konu_calismalar").insert({
@@ -229,14 +247,18 @@ export async function soruCozumuEkle(formData: FormData) {
   // Soru Çözümü'nde serbest metin girişi olduğundan tek, genel bir üst
   // sınır uygulanıyor — bkz. SORU_SAYISI_UST_SINIR yorumu.
   if (dogru > SORU_SAYISI_UST_SINIR || yanlis > SORU_SAYISI_UST_SINIR || bos > SORU_SAYISI_UST_SINIR) {
-    return { error: `Tek bir alan için en fazla ${SORU_SAYISI_UST_SINIR} soru girebilirsiniz.`, verimlilikSorulsunMu: false };
+    const mesaj = await manipulasyonliHataMesaji(user.id, `soruCozumuEkle: dogru=${dogru} yanlis=${yanlis} bos=${bos}`,
+      `Tek bir alan için en fazla ${SORU_SAYISI_UST_SINIR} soru girebilirsiniz.`);
+    return { error: mesaj, verimlilikSorulsunMu: false };
   }
   // Süre, toplam soru sayısının (doğru+yanlış+boş) iki katını geçemez — soru
   // başına makul bir üst sınır koyup "günlük toplamı tek oturuma girme"
   // hatasını (bkz. SURE_UST_SINIR yorumu) burada da yakalıyor.
   const toplamSoru = dogru + yanlis + bos;
   if (sureDakika > toplamSoru * 2) {
-    return { error: `Süre, toplam soru sayısının (${toplamSoru}) iki katı olan ${toplamSoru * 2} dakikayı geçemez.`, verimlilikSorulsunMu: false };
+    const mesaj = await manipulasyonliHataMesaji(user.id, `soruCozumuEkle: sureDakika=${sureDakika} toplamSoru=${toplamSoru}`,
+      `Süre, toplam soru sayısının (${toplamSoru}) iki katı olan ${toplamSoru * 2} dakikayı geçemez.`);
+    return { error: mesaj, verimlilikSorulsunMu: false };
   }
 
   // kaynak: bu bir görevin karşılığıysa 'ogretmen', öğrencinin kendi
@@ -278,7 +300,9 @@ export async function denemeEkle(
   for (const d of dersSonuclari) {
     const maksSoru = dersSoruSayisi(tur, d.ders);
     if (maksSoru !== undefined && d.dogru + d.yanlis > maksSoru) {
-      return { error: `${d.ders} için doğru+yanlış toplamı ${maksSoru} soruyu aşamaz.`, verimlilikSorulsunMu: false };
+      const mesaj = await manipulasyonliHataMesaji(user.id, `denemeEkle: ${d.ders} dogru=${d.dogru} yanlis=${d.yanlis} maksSoru=${maksSoru}`,
+        `${d.ders} için doğru+yanlış toplamı ${maksSoru} soruyu aşamaz.`);
+      return { error: mesaj, verimlilikSorulsunMu: false };
     }
   }
 

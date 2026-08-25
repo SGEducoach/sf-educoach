@@ -11,6 +11,7 @@ import { PlatformIstatistikleri } from "@/components/yonetici/PlatformIstatistik
 import { KonuAnlatimYonetimi } from "@/components/yonetici/KonuAnlatimYonetimi";
 import { MufredatHiyerarsiYonetimi } from "@/components/yonetici/MufredatHiyerarsiYonetimi";
 import { KurallarYonetimi } from "@/components/yonetici/KurallarYonetimi";
+import { HataBildirimleriYonetimi } from "@/components/yonetici/HataBildirimleriYonetimi";
 import { AdminProfilim } from "@/components/yonetici/AdminProfilim";
 import { YoneticiGirisForm } from "@/components/yonetici/YoneticiGirisForm";
 import { YoneticiYetkileri } from "@/components/yonetici/YoneticiYetkileri";
@@ -110,6 +111,7 @@ export default async function YoneticiPage({
             </section>
           )}
           {aktifBolum === "kurallar" && <KurallarYonetimi />}
+          {aktifBolum === "hata-bildirimleri" && <section className="sfec-section"><HataBildirimleriYonetimi /></section>}
           {aktifBolum === "profil" && <section className="sfec-section"><AdminProfilim /></section>}
         </main>
       </div>

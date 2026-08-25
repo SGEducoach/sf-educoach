@@ -5,6 +5,7 @@ import { BORDER, BORDER_STRONG, MINT, MINT_BG, NAV_BG, TEXT, TEXT_MUTED } from "
 import { signOut } from "@/app/dashboard/actions";
 import { MesajlarimIkonu } from "@/components/dashboard/MesajlarimIkonu";
 import { BildirimAyarlari } from "@/components/dashboard/BildirimAyarlari";
+import { HataBildirButonu } from "@/components/dashboard/HataBildirButonu";
 import type { KurumTuru, UserRole } from "@/lib/types";
 import { MobilMenu } from "@/components/dashboard/MobilMenu";
 import { OturumZamanAsimi } from "@/components/OturumZamanAsimi";
@@ -47,6 +48,7 @@ export function Header({ ad, role, kurumTuru, okunmamisMesajSayisi = 0, mobilNav
               <span style={{ color: TEXT_MUTED }} className="text-[11px] shrink-0">· {rolEtiketi ?? rolEtiket[role]}</span>
             </div>
             {moderatorMu && <Link href="/moderator" title="Moderatör paneli" className="sfec-btn flex h-8 w-8 shrink-0 items-center justify-center rounded-full" style={{ background: MINT_BG, border: `2px solid ${BORDER}` }}><ShieldCheck size={16} color={MINT}/></Link>}
+            <HataBildirButonu />
             <BildirimAyarlari />
             {(role === "ogrenci" || role === "veli") && <MesajlarimIkonu baslangicSayisi={okunmamisMesajSayisi} />}
             <form action={signOut}>
