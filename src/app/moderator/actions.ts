@@ -4,8 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { adNormalize, rastgeleSifre, telefonGecerliMi } from "@/lib/validators";
-import type { UserRole } from "@/lib/types";
+import { adNormalize, hedefBolumNormalize, okulNoGecerliMi, rastgeleSifre, sifreGecerliMi, telefonGecerliMi } from "@/lib/validators";
+import type { AytAlan, UserRole } from "@/lib/types";
 
 export interface ModeratorKullanici {
   id: string;
@@ -141,6 +141,148 @@ export async function moderatorHesapSil(targetId: string, targetSchoolId?: strin
   const { error } = await admin.auth.admin.deleteUser(targetId);
   if (error) return { error: error.message };
   await admin.from("admin_audit_log").insert({ actor_id: user.id, eylem: "moderator_hesap_sil", detay: { hedef_id: targetId, school_id: schoolId } });
+  revalidatePath("/moderator");
+  return { error: null };
+}
+
+// Elle şifre belirleme — mevcut moderatorSifreSifirla (rastgele üretim) ile
+// birlikte kullanılıyor; kullanıcı 25.08.2026 isteğinde ikisini de istedi
+// ("isterse elle girer, isterse rastgele oluşturur").
+export async function moderatorSifreBelirle(targetId: string, yeniSifre: string, targetSchoolId?: string) {
+  const { user, admin, schoolId } = await requireModerator(targetSchoolId);
+  if (targetId === user.id || !(await hedefOkuldaMi(admin, schoolId, targetId))) return { error: "Bu kullanıcı için yetkiniz yok." };
+  if (!sifreGecerliMi(yeniSifre)) return { error: "Şifre en az 8 karakter olmalı; harf, rakam ve özel işaret içermeli." };
+  const { error } = await admin.auth.admin.updateUserById(targetId, { password: yeniSifre });
+  if (error) return { error: error.message };
+  await admin.from("profiles").update({ gecici_sifre: false }).eq("id", targetId).neq("role", "admin");
+  await admin.from("admin_audit_log").insert({ actor_id: user.id, eylem: "moderator_sifre_belirle", detay: { hedef_id: targetId, school_id: schoolId } });
+  return { error: null };
+}
+
+// Rozet sıfırlama (bkz. migration 0071) — kalıcı bir "puan sıfırlama" değil,
+// rozet hesaplamasının pencere başlangıcını bugüne çekiyor; geçmiş çalışma
+// kayıtları silinmiyor.
+export async function moderatorRozetSifirla(studentId: string, targetSchoolId?: string) {
+  const { user, admin, schoolId } = await requireModerator(targetSchoolId);
+  if (!(await hedefOkuldaMi(admin, schoolId, studentId))) return { error: "Bu kullanıcı için yetkiniz yok." };
+  const { data: profil } = await admin.from("profiles").select("role").eq("id", studentId).maybeSingle();
+  if (!profil || profil.role !== "ogrenci") return { error: "Bu işlem yalnızca öğrenciler için yapılabilir." };
+  const { error } = await admin.from("students").update({ rozet_sifirlama_tarihi: new Date().toISOString().slice(0, 10) }).eq("id", studentId);
+  if (error) return { error: error.message };
+  await admin.from("admin_audit_log").insert({ actor_id: user.id, eylem: "moderator_rozet_sifirla", detay: { hedef_id: studentId, school_id: schoolId } });
+  revalidatePath("/moderator");
+  return { error: null };
+}
+
+// ============ Sınıf/branş müdahalesi (KullaniciArama'daki admin akışının
+// okul-sınırlı eşdeğeri) ============
+export async function moderatorOkulSiniflari(targetSchoolId?: string): Promise<{ error: string | null; siniflar: { id: string; seviye: string; sube: string }[] }> {
+  const { admin, schoolId } = await requireModerator(targetSchoolId);
+  const { data, error } = await admin.from("classes").select("id, seviye, sube").eq("school_id", schoolId).order("seviye").order("sube");
+  if (error) return { error: error.message, siniflar: [] };
+  return { error: null, siniflar: data ?? [] };
+}
+
+export async function moderatorOgrenciSinifTasi(studentId: string, classId: string, targetSchoolId?: string) {
+  const { user, admin, schoolId } = await requireModerator(targetSchoolId);
+  if (!(await hedefOkuldaMi(admin, schoolId, studentId))) return { error: "Bu kullanıcı için yetkiniz yok." };
+  const { data: hedefSinif } = await admin.from("classes").select("school_id").eq("id", classId).maybeSingle();
+  if (!hedefSinif || hedefSinif.school_id !== schoolId) return { error: "Bu sınıf kurumunuza ait değil." };
+  const { error } = await admin.from("students").update({ class_id: classId }).eq("id", studentId);
+  if (error) return { error: error.message };
+  await admin.from("admin_audit_log").insert({ actor_id: user.id, eylem: "moderator_ogrenci_sinif_tasi", detay: { student_id: studentId, class_id: classId, school_id: schoolId } });
+  revalidatePath("/moderator");
+  return { error: null };
+}
+
+export async function moderatorOgretmenBransDegistir(teacherId: string, brans: string, targetSchoolId?: string) {
+  const { user, admin, schoolId } = await requireModerator(targetSchoolId);
+  if (!(await hedefOkuldaMi(admin, schoolId, teacherId))) return { error: "Bu kullanıcı için yetkiniz yok." };
+  const { error } = await admin.from("teachers").update({ brans }).eq("id", teacherId);
+  if (error) return { error: error.message };
+  await admin.from("admin_audit_log").insert({ actor_id: user.id, eylem: "moderator_ogretmen_brans_degistir", detay: { teacher_id: teacherId, brans, school_id: schoolId } });
+  revalidatePath("/moderator");
+  return { error: null };
+}
+
+// ============ Öğretmen/öğrenci ekleme (kendi kurumuna, admin'in
+// ogretmenEkleManuel/ogrenciEkleManuel akışının okul-sınırlı eşdeğeri) ============
+function manuelEklemeHatasi(mesaj: string): string {
+  if (mesaj.includes("already been registered") || mesaj.includes("already registered")) return "Bu e-posta zaten kayıtlı.";
+  if (mesaj.includes("okul_no")) return "Bu okul numarası zaten kullanılıyor.";
+  return mesaj;
+}
+
+export async function moderatorOgretmenEkle(input: { ad: string; email: string; telefon: string; brans: string }, targetSchoolId?: string) {
+  const { user, admin, schoolId } = await requireModerator(targetSchoolId);
+  const ad = adNormalize(input.ad);
+  const email = input.email.trim().toLowerCase();
+  if (!ad) return { error: "Ad Soyad gerekli.", sifre: null };
+  if (!email) return { error: "E-posta gerekli.", sifre: null };
+  if (!telefonGecerliMi(input.telefon)) return { error: "Telefon numarası geçersiz.", sifre: null };
+  if (!input.brans) return { error: "Branş seçin.", sifre: null };
+
+  const sifre = rastgeleSifre();
+  const { data: created, error } = await admin.auth.admin.createUser({
+    email, password: sifre, email_confirm: true,
+    user_metadata: { role: "ogretmen", ad, telefon: input.telefon, school_id: schoolId, brans: input.brans },
+  });
+  if (error) return { error: manuelEklemeHatasi(error.message), sifre: null };
+  await admin.from("admin_audit_log").insert({ actor_id: user.id, eylem: "moderator_ogretmen_ekle", detay: { ogretmen_id: created.user?.id, email, school_id: schoolId } });
+  revalidatePath("/moderator");
+  return { error: null, sifre };
+}
+
+export async function moderatorOgrenciEkle(input: {
+  ad: string; email: string; okulNo: string; telefon: string; classId: string; aytAlan: AytAlan; hedefBolum: string;
+}, targetSchoolId?: string) {
+  const { user, admin, schoolId } = await requireModerator(targetSchoolId);
+  const ad = adNormalize(input.ad);
+  const email = input.email.trim().toLowerCase();
+  if (!ad) return { error: "Ad Soyad gerekli.", sifre: null };
+  if (!email) return { error: "E-posta gerekli.", sifre: null };
+  if (!okulNoGecerliMi(input.okulNo)) return { error: "Okul no geçersiz (sadece rakam, en fazla 5 hane).", sifre: null };
+  if (input.telefon && !telefonGecerliMi(input.telefon)) return { error: "Telefon numarası geçersiz.", sifre: null };
+  if (!input.classId) return { error: "Sınıf seçin.", sifre: null };
+  const { data: hedefSinif } = await admin.from("classes").select("school_id").eq("id", input.classId).maybeSingle();
+  if (!hedefSinif || hedefSinif.school_id !== schoolId) return { error: "Bu sınıf kurumunuza ait değil.", sifre: null };
+  const hedefBolum = hedefBolumNormalize(input.hedefBolum);
+
+  const sifre = rastgeleSifre();
+  const { data: created, error } = await admin.auth.admin.createUser({
+    email, password: sifre, email_confirm: true,
+    user_metadata: {
+      role: "ogrenci", ad, telefon: input.telefon || null, school_id: schoolId, class_id: input.classId,
+      okul_no: input.okulNo, ayt_alan: input.aytAlan, hedef_bolum: hedefBolum,
+      admin_ekledi: true, // izinli öğrenci listesi kontrolünden muaf (bkz. migration 0026)
+    },
+  });
+  if (error) return { error: manuelEklemeHatasi(error.message), sifre: null };
+  await admin.from("admin_audit_log").insert({ actor_id: user.id, eylem: "moderator_ogrenci_ekle", detay: { ogrenci_id: created.user?.id, okul_no: input.okulNo, school_id: schoolId, class_id: input.classId } });
+  revalidatePath("/moderator");
+  return { error: null, sifre };
+}
+
+// ============ Kurum ayarları (isim, kurum kodu) ============
+export async function moderatorKurumBilgisiGetir(targetSchoolId?: string): Promise<{ error: string | null; ad: string; okulKodu: string }> {
+  const { admin, schoolId } = await requireModerator(targetSchoolId);
+  const { data, error } = await admin.from("schools").select("ad, okul_kodu").eq("id", schoolId).maybeSingle();
+  if (error || !data) return { error: error?.message ?? "Kurum bulunamadı.", ad: "", okulKodu: "" };
+  return { error: null, ad: data.ad, okulKodu: data.okul_kodu };
+}
+
+export async function moderatorKurumGuncelle(input: { ad: string; okulKodu: string }, targetSchoolId?: string) {
+  const { user, admin, schoolId } = await requireModerator(targetSchoolId);
+  const ad = input.ad.trim();
+  const okulKodu = input.okulKodu.trim();
+  if (!ad) return { error: "Kurum adı gerekli." };
+  if (!okulKodu) return { error: "Kurum kodu gerekli." };
+  const { error } = await admin.from("schools").update({ ad, okul_kodu: okulKodu }).eq("id", schoolId);
+  if (error) {
+    if (error.code === "23505") return { error: "Bu kurum kodu zaten kullanılıyor." };
+    return { error: error.message };
+  }
+  await admin.from("admin_audit_log").insert({ actor_id: user.id, eylem: "moderator_kurum_duzenle", detay: { school_id: schoolId, ad, okul_kodu: okulKodu } });
   revalidatePath("/moderator");
   return { error: null };
 }
