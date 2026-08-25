@@ -3,8 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  BarChart3, BookOpen, BookOpenCheck, Bot, Bug, CalendarDays, CalendarPlus2, CircleUserRound, ClipboardCheck, ClipboardList, FileCheck2, FileSpreadsheet, GraduationCap, Home,
-  ListChecks, LogOut, Medal, Megaphone, Menu, PenLine, School, ScrollText, ShieldCheck, UserPlus, Users, X,
+  BarChart3, BookOpen, BookOpenCheck, Bot, Bug, CalendarDays, CalendarPlus2, CircleUserRound, ClipboardCheck, ClipboardList, Crown, FileCheck2, FileSpreadsheet, GraduationCap, History, Home,
+  ListChecks, LogOut, Medal, Megaphone, Menu, PenLine, School, ScrollText, Settings2, ShieldCheck, UserPlus, Users, X,
 } from "lucide-react";
 import { BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, SEAFOAM, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 import { signOut } from "@/app/dashboard/actions";
@@ -48,6 +48,9 @@ const IKONLAR: Record<DashboardIkonu, typeof Home> = {
   kural: ScrollText,
   profil: CircleUserRound,
   hata: Bug,
+  ayarlar: Settings2,
+  admin: Crown,
+  gecmis: History,
 };
 
 // Telefon genişliğinde header'daki ikon sırası (moderatör/tema/bildirim/

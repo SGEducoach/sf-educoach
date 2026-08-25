@@ -27,12 +27,17 @@ export type DashboardBolumu =
   | "kurallar"
   | "profil"
   // Faz G (2026-08-25) — hata bildirimleri, admin panelinde ayrı bölüm.
-  | "hata-bildirimleri";
+  | "hata-bildirimleri"
+  // Faz 3 (2026-08-26) — okul admin rolü genişletmesi.
+  | "site-ayarlari"
+  | "adminler"
+  | "islem-gecmisi";
 
 export type DashboardIkonu =
   | "ana-sayfa" | "gorev" | "plan" | "veri" | "hakimiyet" | "analiz" | "ai" | "rozet" | "takvim" | "duyuru" | "talep" | "onay" | "ders"
   | "ogretmen" | "ogrenci" | "deneme"
-  | "kullanici" | "eslestir" | "okul" | "moderator" | "icerik" | "kural" | "profil" | "hata";
+  | "kullanici" | "eslestir" | "okul" | "moderator" | "icerik" | "kural" | "profil" | "hata"
+  | "ayarlar" | "admin" | "gecmis";
 
 export interface DashboardMenuOgesi {
   bolum: DashboardBolumu;
@@ -129,6 +134,12 @@ const ADMIN_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "hata-bildirimleri", href: "/yonetici/hata-bildirimleri", etiket: "Hata Bildirimleri", ikon: "hata" },
   { bolum: "rozetler", href: "/yonetici/rozetler", etiket: "Rozetler", ikon: "rozet" },
   { bolum: "yapay-zeka", href: "/yonetici/yapay-zeka", etiket: "Konu Haritası", ikon: "ai" },
+  // Faz 3 (2026-08-26) — İşlem Geçmişi ("Son işlemler"in taşındığı yer),
+  // Site ayarları (bakım modu) ve Adminler (admin hesapları SADECE burada
+  // görünür) — hepsi menünün sonunda, Profilim'den önce.
+  { bolum: "islem-gecmisi", href: "/yonetici/islem-gecmisi", etiket: "İşlem Geçmişi", ikon: "gecmis" },
+  { bolum: "site-ayarlari", href: "/yonetici/site-ayarlari", etiket: "Site ayarları", ikon: "ayarlar" },
+  { bolum: "adminler", href: "/yonetici/adminler", etiket: "Adminler", ikon: "admin" },
   { bolum: "profil", href: "/yonetici/profil", etiket: "Profilim", ikon: "profil" },
 ];
 
@@ -152,4 +163,5 @@ export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
 // dinamik [bolum]'dan her zaman önceliklidir, çakışma olmaz.
 export const YONETICI_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
   "kullanicilar", "talepler", "pdf-eslesme", "okullar", "moderatorler", "icerik", "kurallar", "profil", "hata-bildirimleri",
+  "islem-gecmisi", "site-ayarlari", "adminler",
 ]);

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Shield, Building2, ScrollText, UserPlus, Copy, Check, Plus, Pencil, EyeOff, Eye, X, ClipboardList, Download } from "lucide-react";
+import { Shield, Building2, UserPlus, Copy, Check, Plus, Pencil, EyeOff, Eye, X, ClipboardList, Download } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH, LILAC } from "@/lib/theme";
 import {
   sinifOgretmeniAta, ogretmenEkleManuel, ogrenciEkleManuel, okulEkle, okulDuzenle, okulAktiflikDegistir,
@@ -41,60 +41,13 @@ interface OgretmenSatiri {
   sinifAdi: string | null;
   mudurMu: boolean;
 }
-interface IslemKaydi {
-  id: string;
-  eylem: string;
-  detay: Record<string, unknown> | null;
-  createdAt: string;
-  aktorAdi: string;
-}
-
-const EYLEM_ETIKET: Record<string, string> = {
-  sinif_ekle: "Sınıf eklendi",
-  ogretmen_ekle_manuel: "Öğretmen eklendi",
-  mudur_ekle_manuel: "Müdür eklendi",
-  admin_duyuru_gonder: "Duyuru gönderildi",
-  ogrenci_ekle_manuel: "Öğrenci eklendi",
-  ogrenci_toplu_ekle: "Öğrenciler toplu eklendi",
-  deneme_toplu_gir: "Deneme sonuçları toplu girildi",
-  deneme_bildirim_gonder: "Deneme sonucu bildirimleri gönderildi",
-  sinif_ogretmeni_ata: "Sınıf öğretmeni atandı",
-  sinif_ogretmenliginden_cikar: "Sınıf öğretmenliğinden çıkarıldı",
-  okul_ekle: "Okul eklendi",
-  okul_duzenle: "Okul düzenlendi",
-  okul_aktiflestir: "Okul aktifleştirildi",
-  okul_pasiflestir: "Okul pasifleştirildi",
-  sifre_sifirla: "Şifre sıfırlandı",
-  hesap_aktiflestir: "Hesap aktifleştirildi",
-  hesap_pasiflestir: "Hesap pasifleştirildi",
-  hesap_sil: "Kullanıcı kalıcı olarak silindi",
-  kullanici_profil_guncelle: "Kullanıcı profili güncellendi",
-  kullanici_kurum_degistir: "Kullanıcının okulu değiştirildi",
-  veli_ogrenci_bagla: "Veli öğrenciye bağlandı",
-  veli_ogrenci_baglantisi_sil: "Veli–öğrenci bağlantısı silindi",
-  ogrenci_kaydi_guncelle: "Öğrenci kaydı güncellendi",
-  ogrenci_kaydi_sil: "Öğrenci kaydı silindi",
-  sinif_sil: "Sınıf silindi",
-  ogrenci_sinif_tasi: "Öğrenci sınıf değiştirdi",
-  ogretmen_brans_degistir: "Öğretmen branşı değiştirildi",
-  veli_talebi_admin_onayla: "Veli talebi onaylandı (admin)",
-  veli_talebi_reddet: "Veli talebi reddedildi",
-  konu_anlatimi_duzenle: "Konu anlatımı düzenlendi",
-  konu_anlatimi_yeniden_uret: "Konu anlatımı yeniden üretildi",
-  kurallar_metni_guncelle: "Kayıt kuralları metni güncellendi",
-  izinli_ogrenci_listesi_yukle: "İzinli öğrenci listesi güncellendi",
-  izinli_ogrenci_sil: "İzinli öğrenci listesinden silindi",
-  izinli_ogrenci_listesi_temizle: "İzinli öğrenci listesi temizlendi",
-};
-
 export function AdminPanel({
-  okullar, gorunecekOkulId, siniflar, ogretmenListesi, islemKayitlari,
+  okullar, gorunecekOkulId, siniflar, ogretmenListesi,
 }: {
   okullar: OkulSatiri[];
   gorunecekOkulId: string | null;
   siniflar: SinifSatiri[];
   ogretmenListesi: OgretmenSatiri[];
-  islemKayitlari: IslemKaydi[];
 }) {
   const router = useRouter();
   const gorunenOkul = okullar.find((o) => o.id === gorunecekOkulId);
@@ -198,27 +151,6 @@ export function AdminPanel({
               <IzinliOgrenciListesi schoolId={gorunenOkul.id} />
             </div>
           </>
-        )}
-      </div>
-
-      <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(199,182,255,0.15)" }}>
-            <ScrollText size={13} color={LILAC} />
-          </div>
-          <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Son işlemler</span>
-        </div>
-        {islemKayitlari.length === 0 ? (
-          <p style={{ color: TEXT_MUTED }} className="text-sm py-3 text-center">Henüz işlem kaydı yok.</p>
-        ) : (
-          <div className="flex flex-col gap-1.5">
-            {islemKayitlari.map((k) => (
-              <div key={k.id} className="rounded-xl px-3.5 py-2 flex items-center justify-between flex-wrap gap-1.5 text-xs" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
-                <span style={{ color: TEXT }} className="font-semibold">{EYLEM_ETIKET[k.eylem] ?? k.eylem} <span style={{ color: TEXT_MUTED }} className="font-normal">· {k.aktorAdi}</span></span>
-                <span style={{ color: TEXT_MUTED }}>{new Date(k.createdAt).toLocaleString("tr-TR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</span>
-              </div>
-            ))}
-          </div>
         )}
       </div>
     </div>

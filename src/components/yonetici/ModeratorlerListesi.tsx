@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ChevronRight, ShieldCheck } from "lucide-react";
 import { moderatorluOkullarGetir } from "@/app/yonetici/moderatorler-actions";
+import { ModeratorAtamaFormu } from "@/components/yonetici/ModeratorAtamaFormu";
 import { BG1, BG1_ALT, BORDER, BORDER_STRONG, TEXT, TEXT_MUTED } from "@/lib/theme";
 
 // Admin panelinde "Moderatörler" bölümü — okul isimleriyle sıralanır,
@@ -13,6 +14,7 @@ export async function ModeratorlerListesi() {
     <div className="rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold mb-1">Moderatörler</h2>
       <p style={{ color: TEXT_MUTED }} className="text-xs mb-4">Bir okula tıklayınca o okulun moderatör paneli açılır.</p>
+      <ModeratorAtamaFormu />
       {okullar.length === 0
         ? <p style={{ color: TEXT_MUTED }} className="text-sm">Henüz moderatörü olan bir okul yok.</p>
         : (

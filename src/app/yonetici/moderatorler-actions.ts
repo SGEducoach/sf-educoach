@@ -17,13 +17,60 @@ async function requireAdmin() {
   if (!user) redirect("/yonetici");
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
   if (profile?.role !== "admin") redirect("/");
-  return { admin: createAdminClient() };
+  return { user, admin: createAdminClient() };
 }
 
 export interface OkulModeratorGrubu {
   schoolId: string;
   okulAdi: string;
   moderatorler: { id: string; ad: string }[];
+}
+
+export interface OkulOgretmeni {
+  id: string;
+  ad: string;
+  brans: string;
+  mudurMu: boolean;
+  moderatorMu: boolean;
+}
+
+// 2026-08-26 kullanıcı isteği: "Admin panelinde moderatörler kısmında admin
+// istediği öğretmen hesabına moderatörlük yetkisi verip alabilecek. Şu an
+// moderatörleri sadece görebiliyor, müdahale edemiyor." — okul seçilince o
+// okulun tüm öğretmen/müdürleri (mevcut moderatörlük durumuyla) listelenir.
+export async function okulOgretmenleriModeratorlukGetir(schoolId: string): Promise<{ error: string | null; ogretmenler: OkulOgretmeni[] }> {
+  const { admin } = await requireAdmin();
+  const { data: ogretmenler, error } = await admin
+    .from("teachers")
+    .select("id, brans, profiles!teachers_id_fkey(ad, role)")
+    .eq("school_id", schoolId);
+  if (error) return { error: error.message, ogretmenler: [] };
+  const { data: moderatorler } = await admin.from("school_moderators").select("profile_id").eq("school_id", schoolId);
+  const moderatorSet = new Set((moderatorler ?? []).map((m) => m.profile_id));
+  type Row = { id: string; brans: string; profiles: { ad: string; role: string } | null };
+  const liste = ((ogretmenler as unknown as Row[]) ?? []).map((o) => ({
+    id: o.id, ad: o.profiles?.ad ?? "İsimsiz", brans: o.brans,
+    mudurMu: o.profiles?.role === "mudur", moderatorMu: moderatorSet.has(o.id),
+  })).sort((a, b) => a.ad.localeCompare(b.ad, "tr"));
+  return { error: null, ogretmenler: liste };
+}
+
+export async function moderatorYetkisiVer(profileId: string, schoolId: string): Promise<{ error: string | null }> {
+  const { user, admin } = await requireAdmin();
+  const { data: ogretmen } = await admin.from("teachers").select("school_id").eq("id", profileId).maybeSingle();
+  if (!ogretmen || ogretmen.school_id !== schoolId) return { error: "Bu kullanıcı bu okulun öğretmeni değil." };
+  const { error } = await admin.from("school_moderators").upsert({ profile_id: profileId, school_id: schoolId }, { onConflict: "profile_id" });
+  if (error) return { error: error.message };
+  await admin.from("admin_audit_log").insert({ actor_id: user.id, eylem: "moderatorluk_ver", detay: { hedef_id: profileId, school_id: schoolId } });
+  return { error: null };
+}
+
+export async function moderatorYetkisiAl(profileId: string): Promise<{ error: string | null }> {
+  const { user, admin } = await requireAdmin();
+  const { error } = await admin.from("school_moderators").delete().eq("profile_id", profileId);
+  if (error) return { error: error.message };
+  await admin.from("admin_audit_log").insert({ actor_id: user.id, eylem: "moderatorluk_al", detay: { hedef_id: profileId } });
+  return { error: null };
 }
 
 export async function moderatorluOkullarGetir(): Promise<{ error: string | null; okullar: OkulModeratorGrubu[] }> {

@@ -1,8 +1,8 @@
 import Link from "next/link";
 import {
   BarChart3, BookOpen, BookOpenCheck, Bot, Bug, CalendarDays, CalendarPlus2, CircleUserRound, ClipboardCheck, ClipboardList,
-  FileCheck2, FileSpreadsheet, GraduationCap, Home, ListChecks, Megaphone, Medal, PenLine, School, ScrollText,
-  ShieldCheck, UserPlus, Users,
+  Crown, FileCheck2, FileSpreadsheet, GraduationCap, History, Home, ListChecks, Megaphone, Medal, PenLine, School, ScrollText,
+  Settings2, ShieldCheck, UserPlus, Users,
 } from "lucide-react";
 import type { KurumTuru, UserRole } from "@/lib/types";
 import type { DashboardBolumu, DashboardIkonu } from "@/lib/dashboard-navigation";
@@ -35,6 +35,9 @@ const IKONLAR: Record<DashboardIkonu, typeof Home> = {
   kural: ScrollText,
   profil: CircleUserRound,
   hata: Bug,
+  ayarlar: Settings2,
+  admin: Crown,
+  gecmis: History,
 };
 
 export function DashboardYanMenu({ role, kurumTuru, aktifBolum }: { role: UserRole; kurumTuru?: KurumTuru; aktifBolum: DashboardBolumu }) {

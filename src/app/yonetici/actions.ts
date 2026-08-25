@@ -567,6 +567,105 @@ export async function dershaneDenemeSuresiAyarla(bitisIso: string | null): Promi
   return { error: null };
 }
 
+// ============ Site ayarları: bakım modu (Faz 3, 2026-08-26) ============
+export async function siteAyarlariGetir(): Promise<{ error: string | null; kapali: boolean }> {
+  const { admin } = await requireAdmin();
+  const { data, error } = await admin.from("platform_ayarlari").select("site_kapali").eq("id", 1).maybeSingle();
+  if (error) return { error: error.message, kapali: false };
+  return { error: null, kapali: !!data?.site_kapali };
+}
+
+export async function siteKapaliDegistir(kapali: boolean): Promise<{ error: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const { error } = await admin
+    .from("platform_ayarlari")
+    .upsert({ id: 1, site_kapali: kapali, updated_at: new Date().toISOString() });
+  if (error) return { error: error.message };
+  await auditLogYaz(supabase, user.id, kapali ? "site_bakima_al" : "site_ac", {});
+  revalidatePath("/yonetici");
+  return { error: null };
+}
+
+// ============ Adminler (Faz 3, 2026-08-26) ============
+// "Admin tüm kullanıcıları görüp müdahale edebilirken admin hesaplarını
+// diğer hiçbir rol göremez, müdahale edemez. Admin paneline Adminler
+// kategorisi oluşturulacak... burada bir admin kendinden başka yeni bir
+// admin hesabı oluşturabilir." kullaniciAra() (yukarıda) admin hesaplarını
+// KASITLI olarak dışlıyor (.neq("role","admin")) — bu yüzden admin
+// hesapları SADECE bu bölümde listelenir.
+export interface AdminHesabi {
+  id: string;
+  ad: string;
+  email: string | null;
+  aktif: boolean;
+  createdAt: string;
+}
+
+export async function adminleriGetir(): Promise<{ error: string | null; adminler: AdminHesabi[] }> {
+  const { admin } = await requireAdmin();
+  const { data, error } = await admin.from("profiles").select("id, ad, email, aktif, created_at").eq("role", "admin").order("created_at");
+  if (error) return { error: error.message, adminler: [] };
+  return { error: null, adminler: (data ?? []).map((a) => ({ id: a.id, ad: a.ad, email: a.email, aktif: a.aktif, createdAt: a.created_at })) };
+}
+
+export async function adminHesapOlustur(input: { ad: string; email: string }): Promise<{ error: string | null; sifre: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const ad = adNormalize(input.ad);
+  const email = input.email.trim().toLowerCase();
+  if (!ad) return { error: "Ad Soyad gerekli.", sifre: null };
+  if (!email || !email.includes("@")) return { error: "Geçerli bir e-posta girin.", sifre: null };
+
+  const sifre = rastgeleSifre();
+  const { data: created, error } = await admin.auth.admin.createUser({
+    email, password: sifre, email_confirm: true,
+    user_metadata: { role: "admin", ad },
+  });
+  if (error) {
+    if (error.message.includes("already been registered") || error.message.includes("already registered")) {
+      return { error: "Bu e-posta zaten kayıtlı.", sifre: null };
+    }
+    return { error: error.message, sifre: null };
+  }
+  await auditLogYaz(supabase, user.id, "admin_hesap_olustur", { yeni_admin_id: created.user?.id, email });
+  revalidatePath("/yonetici");
+  return { error: null, sifre };
+}
+
+// ============ İşlem Geçmişi (Faz 3, 2026-08-26) ============
+// Önceden "Okullar & Duyuru" bölümündeki "Son işlemler" kartıydı (bkz.
+// AdminPanel.tsx, 30 kayıtla sınırlıydı) — kullanıcı isteğiyle ayrı bir
+// kategoriye taşındı, detay görüntüleme ve aktör rütbesi eklendi.
+export interface IslemKaydiDetayli {
+  id: string;
+  eylem: string;
+  detay: Record<string, unknown> | null;
+  createdAt: string;
+  aktorAdi: string;
+  aktorRutbe: "admin" | "moderator" | null;
+}
+
+export async function islemGecmisiGetir(): Promise<{ error: string | null; kayitlar: IslemKaydiDetayli[] }> {
+  const { admin } = await requireAdmin();
+  const { data, error } = await admin
+    .from("admin_audit_log")
+    .select("id, eylem, detay, created_at, actor_id, profiles(ad, role)")
+    .order("created_at", { ascending: false })
+    .limit(150);
+  if (error) return { error: error.message, kayitlar: [] };
+
+  type Row = { id: string; eylem: string; detay: Record<string, unknown> | null; created_at: string; actor_id: string; profiles: { ad: string; role: string } | null };
+  const kayitlar = ((data as unknown as Row[]) ?? []).map((k) => ({
+    id: k.id, eylem: k.eylem, detay: k.detay, createdAt: k.created_at, aktorAdi: k.profiles?.ad ?? "—",
+    // "moderator_" önekli eylemler zaten sadece moderatör API yüzeyinden
+    // yazılabiliyor (bkz. src/app/moderator/actions.ts) — bu yüzden geçmişte
+    // moderatörlüğü kaldırılmış biri için de doğru kalır. Admin etiketi ise
+    // aktörün GÜNCEL rolüne bakar (admin'in kendi self-servis eylemi yok,
+    // her admin_audit_log satırı fiilen yönetici panelinden geliyor).
+    aktorRutbe: k.eylem.startsWith("moderator_") ? "moderator" as const : k.profiles?.role === "admin" ? "admin" as const : null,
+  }));
+  return { error: null, kayitlar };
+}
+
 // ============ Platform istatistikleri ============
 // Sayımlar normal (RLS'e tabi) client ile yapılıyor — is_ogretmen() zaten
 // admin'e profiles/konu_calismalar/soru_cozumleri/denemeler/

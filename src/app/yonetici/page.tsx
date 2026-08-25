@@ -13,7 +13,10 @@ import { MufredatHiyerarsiYonetimi } from "@/components/yonetici/MufredatHiyerar
 import { KurallarYonetimi } from "@/components/yonetici/KurallarYonetimi";
 import { HataBildirimleriYonetimi } from "@/components/yonetici/HataBildirimleriYonetimi";
 import { DershaneDenemeSuresiAyari } from "@/components/yonetici/DershaneDenemeSuresiAyari";
-import { dershaneDenemeSuresiGetir } from "@/app/yonetici/actions";
+import { SiteAyarlariYonetimi } from "@/components/yonetici/SiteAyarlariYonetimi";
+import { AdminlerYonetimi } from "@/components/yonetici/AdminlerYonetimi";
+import { IslemGecmisi } from "@/components/yonetici/IslemGecmisi";
+import { dershaneDenemeSuresiGetir, siteAyarlariGetir } from "@/app/yonetici/actions";
 import { suresiDolduMu } from "@/lib/deneme-suresi";
 import { AdminProfilim } from "@/components/yonetici/AdminProfilim";
 import { YoneticiGirisForm } from "@/components/yonetici/YoneticiGirisForm";
@@ -71,18 +74,8 @@ export default async function YoneticiPage({
     mudurMu: o.profiles?.role === "mudur",
   }));
 
-  const { data: kayitlar } = await supabase
-    .from("admin_audit_log")
-    .select("id, eylem, detay, created_at, profiles(ad)")
-    .order("created_at", { ascending: false })
-    .limit(30);
-
-  type KayitRow = { id: string; eylem: string; detay: Record<string, unknown> | null; created_at: string; profiles: { ad: string } | null };
-  const kayitListesi = ((kayitlar as unknown as KayitRow[]) ?? []).map((k) => ({
-    id: k.id, eylem: k.eylem, detay: k.detay, createdAt: k.created_at, aktorAdi: k.profiles?.ad ?? "—",
-  }));
-
   const { bitis: dershaneDenemeBitisi } = aktifBolum === "ozet" ? await dershaneDenemeSuresiGetir() : { bitis: null };
+  const { kapali: siteKapali } = aktifBolum === "site-ayarlari" ? await siteAyarlariGetir() : { kapali: false };
 
   return (
     <div className="sfec-dashboard-shell min-h-dvh w-full flex-1 flex flex-col">
@@ -106,7 +99,6 @@ export default async function YoneticiPage({
               gorunecekOkulId={gorunecekOkulId}
               siniflar={((siniflar ?? []) as { id: string; seviye: string; sube: string }[]).sort(sinifSiraKarsilastir)}
               ogretmenListesi={ogretmenListesi}
-              islemKayitlari={kayitListesi}
             /></section>
           )}
           {aktifBolum === "moderatorler" && <section className="sfec-section"><ModeratorlerListesi /></section>}
@@ -118,6 +110,9 @@ export default async function YoneticiPage({
           )}
           {aktifBolum === "kurallar" && <KurallarYonetimi />}
           {aktifBolum === "hata-bildirimleri" && <section className="sfec-section"><HataBildirimleriYonetimi /></section>}
+          {aktifBolum === "islem-gecmisi" && <section className="sfec-section"><IslemGecmisi /></section>}
+          {aktifBolum === "site-ayarlari" && <section className="sfec-section"><SiteAyarlariYonetimi kapaliBaslangic={siteKapali} /></section>}
+          {aktifBolum === "adminler" && <section className="sfec-section"><AdminlerYonetimi /></section>}
           {aktifBolum === "profil" && <section className="sfec-section"><AdminProfilim /></section>}
         </main>
       </div>
