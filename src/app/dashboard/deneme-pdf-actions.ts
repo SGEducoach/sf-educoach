@@ -165,17 +165,23 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
   // tamamlamamış ön kayıtları hedef listesine alıyoruz. Böylece sonuç PDF'i
   // öğrenci ilk kez giriş yapmadan önce de güvenle yüklenebilir.
   const [{ data: ogrencilerHam, error: ogrenciHatasi }, { data: onKayitlarHam, error: onKayitHatasi }] = await Promise.all([
-    admin.from("students").select("id, profiles!students_id_fkey(ad)").eq("school_id", schoolId),
+    admin.from("students").select("id, profiles!students_id_fkey(ad), classes(seviye, sube)").eq("school_id", schoolId),
     admin.from("pending_dershane_ogrenciler").select("id, ad").eq("school_id", schoolId).is("kullanildi_at", null),
   ]);
   if (ogrenciHatasi || onKayitHatasi) {
     console.error("PDF hedef öğrenci listesi alınamadı:", ogrenciHatasi ?? onKayitHatasi);
     return { error: "Kurum öğrenci listesi alınamadı. Lütfen tekrar deneyin.", ...BOS_SONUC };
   }
-  type OgrenciRow = { id: string; profiles: { ad: string } | null };
+  // Faz P3 (Deneme Net Dağıtımı raporu) — sınıf bilgisi, aynı isimli birden
+  // fazla öğrenci eşleşirse (Bulgu 5) daraltma sinyali olarak kullanılıyor,
+  // bkz. aşağıdaki eşleştirme döngüsü.
+  type OgrenciRow = { id: string; profiles: { ad: string } | null; classes: { seviye: string; sube: string } | null };
   const ogrenciler = ((ogrencilerHam ?? []) as unknown as OgrenciRow[])
     .filter((o) => o.profiles)
-    .map((o) => ({ id: o.id, ad: o.profiles!.ad.trim(), adNorm: adNormalize(o.profiles!.ad) }));
+    .map((o) => ({
+      id: o.id, ad: o.profiles!.ad.trim(), adNorm: adNormalize(o.profiles!.ad),
+      sinif: o.classes ? `${o.classes.seviye}-${o.classes.sube}` : null,
+    }));
   const onKayitlar = (onKayitlarHam ?? [])
     .map((o) => ({ id: o.id as string, ad: String(o.ad).trim(), adNorm: adNormalize(String(o.ad)) }))
     .filter((o) => o.ad);
@@ -264,9 +270,12 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
   // Bu blok SADECE ÖLÇÜM amaçlı — Claude'un çıktısıyla sessizce
   // karşılaştırıp konsola yazıyor, KAYDETME YOLUNU HİÇ DEĞİŞTİRMİYOR.
   // Herhangi bir hata bu akışı asla etkilemesin diye ayrı try/catch'te.
+  // deterministikSonuc dış kapsamda tutuluyor — Faz P3'te (aşağıdaki
+  // eşleştirme döngüsü) sınıf bilgisiyle daraltma için de kullanılıyor.
+  let deterministikSonuc: Awaited<ReturnType<typeof okulListesiniAyristir>> | null = null;
   try {
     const pdfBuffer = Buffer.from(await dosya.arrayBuffer());
-    const deterministikSonuc = await okulListesiniAyristir(pdfBuffer);
+    deterministikSonuc = await okulListesiniAyristir(pdfBuffer);
     if (!deterministikSonuc.basarili) {
       console.info("[deneme-pdf P1 ölçüm] deterministik ayrıştırma başarısız (bilinmeyen format olabilir):", deterministikSonuc.hata);
     } else {
@@ -338,10 +347,27 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
     return !error;
   }
 
+  // Faz P3 (Deneme Net Dağıtımı raporu) — aynı isimli birden fazla öğrenci
+  // eşleşirse (Bulgu 5), OKUL listesinden (P0, deterministik) gelen sınıf
+  // bilgisiyle daralt. SADECE zaten belirsiz olan durumda devreye giriyor
+  // — tek eşleşmeli mevcut akışı hiç etkilemiyor, bu yüzden düşük riskli.
+  const pdfSinifMap = new Map<string, string>();
+  if (deterministikSonuc?.basarili) {
+    for (const dSatir of deterministikSonuc.ogrenciler) pdfSinifMap.set(adNormalize(dSatir.isimHam), dSatir.sinif);
+  }
+
   for (const satir of ayristirilan) {
     const adNorm = adNormalize(satir.ad_soyad);
-    const eslesenler = ogrenciler.filter((o) => o.adNorm === adNorm);
+    let eslesenler = ogrenciler.filter((o) => o.adNorm === adNorm);
     const eslesenOnKayitlar = onKayitlar.filter((o) => o.adNorm === adNorm);
+
+    if (eslesenler.length > 1) {
+      const pdfSinif = pdfSinifMap.get(adNorm);
+      if (pdfSinif) {
+        const daralmisEslesenler = eslesenler.filter((o) => o.sinif === pdfSinif);
+        if (daralmisEslesenler.length === 1) eslesenler = daralmisEslesenler;
+      }
+    }
 
     if (eslesenler.length === 1 && eslesenOnKayitlar.length === 0) {
       const sonuc = await ogretmenDenemeSonucuKaydet(admin, {
