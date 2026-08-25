@@ -19,6 +19,16 @@ interface DuyuruSatiri {
 // sadece kendi alıcı satırlarını görmeye/güncellemeye izin verdiği için
 // (duyurular_select_alici, duyuru_aliciler_select_own/update_own) burada
 // doğrudan client'tan sorgulanıyor, ayrı bir server action gerekmiyor.
+//
+// Kullanıcı geri bildirimi (2026-08-25): "mesajlar duruyor, okunacak
+// halde olsun, okununca silinsin" — liste artık SADECE okunmamış
+// mesajları çekiyor (duyuru_aliciler.okundu = false). Panel açılınca
+// gösterilenler o an için hâlâ ekranda kalır (state zaten çekilmiş), ama
+// "okundu" işaretlenip sonraki açılışta bu sorgudan bir daha hiç
+// dönmezler — yani öğrenci/veli için mesaj "okununca kayboluyor". Gerçek
+// satır SİLİNMİYOR (bkz. gonderilenDuyurularGetir, dashboard/actions.ts —
+// gönderenin "kaç kişiye gitti" sayısı hâlâ duyuru_aliciler satır sayısına
+// dayanıyor; silseydik o sayı okundukça küçülürdü).
 export function MesajlarimIkonu({ baslangicSayisi }: { baslangicSayisi: number }) {
   const supabase = createClient();
   const [acik, setAcik] = useState(false);
@@ -36,8 +46,9 @@ export function MesajlarimIkonu({ baslangicSayisi }: { baslangicSayisi: number }
     if (user) {
       const { data } = await supabase
         .from("duyurular")
-        .select("id, baslik, mesaj, created_at, duyuru_aliciler!inner(profile_id)")
+        .select("id, baslik, mesaj, created_at, duyuru_aliciler!inner(profile_id, okundu)")
         .eq("duyuru_aliciler.profile_id", user.id)
+        .eq("duyuru_aliciler.okundu", false)
         .order("created_at", { ascending: false })
         .limit(20);
       setDuyurular(((data ?? []) as unknown as DuyuruSatiri[]).map((d) => ({ id: d.id, baslik: d.baslik, mesaj: d.mesaj, created_at: d.created_at })));
@@ -68,7 +79,7 @@ export function MesajlarimIkonu({ baslangicSayisi }: { baslangicSayisi: number }
         <MaskotKonusmaBalonu onKapat={() => setAcik(false)} ariaLabel="Mesajlarım">
             <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="block pr-9 text-sm font-bold">Mesajlarım</span>
             {yukleniyor && <p style={{ color: TEXT_MUTED }} className="text-xs text-center py-4">Yükleniyor...</p>}
-            {!yukleniyor && duyurular?.length === 0 && <p style={{ color: TEXT_MUTED }} className="text-xs text-center py-4">Henüz mesaj yok.</p>}
+            {!yukleniyor && duyurular?.length === 0 && <p style={{ color: TEXT_MUTED }} className="text-xs text-center py-4">Yeni mesajınız yok.</p>}
             <div className="mt-2 flex flex-col gap-2">
               {duyurular?.map((d) => (
               <div key={d.id} className="rounded-xl p-2.5" style={{ background: "rgba(13,148,136,0.05)", border: `2px solid ${BORDER}` }}>
