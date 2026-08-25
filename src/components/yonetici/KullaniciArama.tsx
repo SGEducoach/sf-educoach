@@ -3,7 +3,7 @@
 import { useState, useEffect, useTransition } from "react";
 import Link from "next/link";
 import { Search, Users, KeyRound, EyeOff, Eye, Copy, Check, ArrowRightLeft, Trash2, Settings } from "lucide-react";
-import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH, LILAC } from "@/lib/theme";
+import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH, LILAC, LILAC_TEXT } from "@/lib/theme";
 import { kullaniciAra, sifreSifirla, hesapAktiflikDegistir, hesapSil, okulSiniflari, ogrenciSinifTasi, ogretmenBransDegistir, type KullaniciSonuc } from "@/app/yonetici/actions";
 import { BRANS_LISTESI } from "@/lib/types";
 import type { UserRole } from "@/lib/types";
@@ -26,7 +26,12 @@ const ROL_ETIKET: Record<UserRole, string> = {
 // için doğru okulu/sınıfı önceden bilmeye gerek yok.
 export function KullaniciArama() {
   const [sorgu, setSorgu] = useState("");
-  const [rol, setRol] = useState<UserRole | "hepsi">("hepsi");
+  // Kullanıcı geri bildirimi (2026-08-25): "Tümü seçili geliyor ama hiçbir
+  // şey listelemiyor" — kök neden ayrıydı (mount'ta hiç arama tetiklenmiyordu,
+  // aşağıya bkz.) ama kullanıcı ayrıca hiçbir kategorinin baştan seçili
+  // GELMEMESİNİ istedi: ilk girişte kategoriler büyük kartlar halinde
+  // listelensin, seçim yapılınca mevcut küçük sekme haline dönsün.
+  const [rol, setRol] = useState<UserRole | "hepsi" | null>(null);
   const [sonuclar, setSonuclar] = useState<KullaniciSonuc[]>([]);
   const [aramaYapildi, setAramaYapildi] = useState(false);
   const [hata, setHata] = useState<string | null>(null);
@@ -57,44 +62,59 @@ export function KullaniciArama() {
         <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Kullanıcı ara</span>
       </div>
 
-      <div className="flex items-center gap-2 mb-3">
-        <div className="relative flex-1">
-          <Search size={14} color={TEXT_MUTED} className="absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            value={sorgu}
-            onChange={(e) => { setSorgu(e.target.value); ara(e.target.value, rol); }}
-            placeholder="Ad veya e-posta ile ara (en az 2 karakter)..."
-            className="text-sm pl-9 pr-3 py-2 rounded-xl outline-none w-full"
-            style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}
-          />
-        </div>
-      </div>
-
-      <div className="flex gap-1 flex-wrap mb-4">
-        {ROL_SEKME.map((r) => {
-          const aktif = rol === r.id;
-          return (
+      {rol === null ? (
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-5">
+          {ROL_SEKME.map((r) => (
             <button key={r.id} type="button"
               onClick={() => { setRol(r.id); ara(sorgu, r.id); }}
-              className="sfec-btn text-[11px] font-bold px-3 py-1.5 rounded-full"
-              style={{ background: aktif ? MINT : "rgba(255,255,255,0.06)", color: aktif ? MINT_ON : TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
+              className="sfec-btn rounded-2xl py-4 text-sm font-bold"
+              style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
               {r.ad}
             </button>
-          );
-        })}
-      </div>
-
-      {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold mb-2">{hata}</div>}
-
-      {pending ? (
-        <p style={{ color: TEXT_MUTED }} className="text-sm py-3 text-center">Aranıyor...</p>
-      ) : aramaYapildi && sonuclar.length === 0 ? (
-        <p style={{ color: TEXT_MUTED }} className="text-sm py-3 text-center">Sonuç bulunamadı.</p>
-      ) : sonuclar.length > 0 ? (
-        <div className="flex flex-col gap-2">
-          {sonuclar.map((k) => <KullaniciSatiri key={k.id} kullanici={k} />)}
+          ))}
         </div>
-      ) : null}
+      ) : (
+        <>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="relative flex-1">
+              <Search size={14} color={TEXT_MUTED} className="absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                value={sorgu}
+                onChange={(e) => { setSorgu(e.target.value); ara(e.target.value, rol); }}
+                placeholder="Ad veya e-posta ile ara (en az 2 karakter)..."
+                className="text-sm pl-9 pr-3 py-2 rounded-xl outline-none w-full"
+                style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-1 flex-wrap mb-4">
+            {ROL_SEKME.map((r) => {
+              const aktif = rol === r.id;
+              return (
+                <button key={r.id} type="button"
+                  onClick={() => { setRol(r.id); ara(sorgu, r.id); }}
+                  className="sfec-btn text-[11px] font-bold px-3 py-1.5 rounded-full"
+                  style={{ background: aktif ? MINT : "rgba(255,255,255,0.06)", color: aktif ? MINT_ON : TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
+                  {r.ad}
+                </button>
+              );
+            })}
+          </div>
+
+          {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold mb-2">{hata}</div>}
+
+          {pending ? (
+            <p style={{ color: TEXT_MUTED }} className="text-sm py-3 text-center">Aranıyor...</p>
+          ) : aramaYapildi && sonuclar.length === 0 ? (
+            <p style={{ color: TEXT_MUTED }} className="text-sm py-3 text-center">Sonuç bulunamadı.</p>
+          ) : sonuclar.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              {sonuclar.map((k) => <KullaniciSatiri key={k.id} kullanici={k} />)}
+            </div>
+          ) : null}
+        </>
+      )}
     </div>
   );
 }
@@ -157,7 +177,7 @@ function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <Link href={`/yonetici/kullanici/${kullanici.id}`} className="min-w-0 flex-1 cursor-pointer group" title={`${kullanici.ad} kullanıcısının sayfasını görüntüle`}>
           <div style={{ color: TEXT }} className="text-sm font-semibold underline-offset-2 group-hover:underline transition-colors">
-            {kullanici.ad} <span style={{ color: LILAC }} className="text-[10px] font-bold ml-1">{ROL_ETIKET[kullanici.role]}</span>
+            {kullanici.ad} <span style={{ color: LILAC_TEXT }} className="text-[10px] font-bold ml-1">{ROL_ETIKET[kullanici.role]}</span>
             {!aktif && <span style={{ color: BLUSH }} className="text-[10px] font-bold ml-1">Pasif</span>}
           </div>
           <div style={{ color: TEXT_MUTED }} className="text-xs mt-0.5">

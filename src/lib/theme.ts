@@ -21,6 +21,11 @@ export const BLUSH = "#E11D48";
 export const BLUSH_BG = "rgba(255,159,180,0.15)";
 export const LILAC = "#7C3AED";
 export const LILAC_BG = "rgba(199,182,255,0.15)";
+// Koyu zemin üzerinde METİN olarak kullanılacaksa LILAC'ın kendisi düşük
+// kontrastlı/okunması zor kalıyordu (kullanıcı geri bildirimi, 2026-08-25 —
+// yönetici panelinde isimlerin yanındaki rol etiketi). LILAC_BG'nin taban
+// rengi (açık lila) metin için LILAC'tan çok daha okunaklı.
+export const LILAC_TEXT = "#C7B6FF";
 export const SEAFOAM = "var(--sfec-seafoam)";
 
 // "SeFu Koç" marka renkleri — ÖSYM mavisi. Slogandaki baş harfler
