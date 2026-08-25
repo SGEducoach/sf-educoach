@@ -186,7 +186,7 @@ export function AnalizPaneli({
                 <CartesianGrid strokeDasharray="3 3" stroke={BORDER} vertical={false} />
                 <XAxis dataKey="tarih" tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={{ stroke: BORDER }} tickLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={false} tickLine={false} />
-                <RTooltip cursor={false} contentStyle={{ fontSize: 12, borderRadius: 12, border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT }} labelStyle={{ color: TEXT_MUTED }} />
+                <RTooltip cursor={false} allowEscapeViewBox={{ x: true, y: true }} contentStyle={{ fontSize: 12, borderRadius: 12, border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT }} labelStyle={{ color: TEXT_MUTED }} itemStyle={{ color: TEXT }} />
                 <Legend wrapperStyle={{ fontSize: 11, color: TEXT_MUTED }} />
                 <Line type="monotone" dataKey="TYT" stroke={SKY} strokeWidth={2.25} dot={{ r: 3.5, fill: SKY, strokeWidth: 2, stroke: BG1 }} connectNulls />
                 <Line type="monotone" dataKey="AYT" stroke={MINT} strokeWidth={2.25} dot={{ r: 3.5, fill: MINT, strokeWidth: 2, stroke: BG1 }} connectNulls />
@@ -205,7 +205,7 @@ export function AnalizPaneli({
                 <CartesianGrid strokeDasharray="3 3" stroke={BORDER} vertical={false} />
                 <XAxis dataKey="gun" tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={{ stroke: BORDER }} tickLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={false} tickLine={false} />
-                <RTooltip shared={false} cursor={false} formatter={(deger) => [`${deger} dk`, "Konu çalışması"]} contentStyle={{ fontSize: 12, borderRadius: 12, border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT }} labelStyle={{ color: TEXT_MUTED }} />
+                <RTooltip shared={false} cursor={false} allowEscapeViewBox={{ x: true, y: true }} formatter={(deger) => [`${deger} dk`, "Konu çalışması"]} contentStyle={{ fontSize: 12, borderRadius: 12, border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT }} labelStyle={{ color: TEXT_MUTED }} itemStyle={{ color: TEXT }} />
                 <Bar dataKey="dakika" fill={MINT} activeBar={false} radius={[5, 5, 0, 0]} maxBarSize={34} />
               </BarChart>
             </ResponsiveContainer>
@@ -222,7 +222,7 @@ export function AnalizPaneli({
                 <CartesianGrid strokeDasharray="3 3" stroke={BORDER} vertical={false} />
                 <XAxis dataKey="gun" tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={{ stroke: BORDER }} tickLine={false} />
                 <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={false} tickLine={false} />
-                <RTooltip shared={false} cursor={false} formatter={(deger) => [`${deger} soru`, "Soru çözümü"]} contentStyle={{ fontSize: 12, borderRadius: 12, border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT }} labelStyle={{ color: TEXT_MUTED }} />
+                <RTooltip shared={false} cursor={false} allowEscapeViewBox={{ x: true, y: true }} formatter={(deger) => [`${deger} soru`, "Soru çözümü"]} contentStyle={{ fontSize: 12, borderRadius: 12, border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT }} labelStyle={{ color: TEXT_MUTED }} itemStyle={{ color: TEXT }} />
                 <Bar dataKey="soru" fill={SKY} activeBar={false} radius={[5, 5, 0, 0]} maxBarSize={34} />
               </BarChart>
             </ResponsiveContainer>
@@ -252,7 +252,7 @@ export function AnalizPaneli({
                   <CartesianGrid strokeDasharray="3 3" stroke={BORDER} vertical={false} />
                   <XAxis dataKey="gun" tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={{ stroke: BORDER }} tickLine={false} />
                   <YAxis tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={false} tickLine={false} />
-                  <RTooltip cursor={false} contentStyle={{ fontSize: 12, borderRadius: 12, border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT }} labelStyle={{ color: TEXT_MUTED }} formatter={(deger) => [deger, seciliDers]} />
+                  <RTooltip cursor={false} allowEscapeViewBox={{ x: true, y: true }} contentStyle={{ fontSize: 12, borderRadius: 12, border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT }} labelStyle={{ color: TEXT_MUTED }} itemStyle={{ color: TEXT }} formatter={(deger) => [deger, seciliDers]} />
                   <Line type="monotone" dataKey="net" stroke={SKY} strokeWidth={2.25} dot={{ r: 3.5, fill: SKY, strokeWidth: 2, stroke: BG1 }} />
                 </LineChart>
               </ResponsiveContainer>
@@ -265,7 +265,7 @@ export function AnalizPaneli({
                 <CartesianGrid strokeDasharray="3 3" stroke={BORDER} vertical={false} />
                 <XAxis dataKey="ders" tick={{ fontSize: 10, fill: TEXT_MUTED }} axisLine={{ stroke: BORDER }} tickLine={false} interval={0} angle={-25} textAnchor="end" height={50} />
                 <YAxis tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={false} tickLine={false} />
-                <RTooltip shared={false} cursor={false} contentStyle={{ fontSize: 12, borderRadius: 12, border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT }} labelStyle={{ color: TEXT_MUTED }} />
+                <RTooltip shared={false} cursor={false} allowEscapeViewBox={{ x: true, y: true }} contentStyle={{ fontSize: 12, borderRadius: 12, border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT }} labelStyle={{ color: TEXT_MUTED }} itemStyle={{ color: TEXT }} />
                 <Bar dataKey="net" fill={SKY} activeBar={false} radius={[5, 5, 0, 0]} maxBarSize={34} />
               </BarChart>
             </ResponsiveContainer>
@@ -309,7 +309,7 @@ export function AnalizPaneli({
               <CartesianGrid strokeDasharray="3 3" stroke={BORDER} vertical={false} />
               <XAxis dataKey="tarih" tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={{ stroke: BORDER }} tickLine={false} />
               <YAxis domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={false} tickLine={false} />
-              <RTooltip cursor={false} contentStyle={{ fontSize: 12, borderRadius: 12, border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT }} labelStyle={{ color: TEXT_MUTED }}
+              <RTooltip cursor={false} allowEscapeViewBox={{ x: true, y: true }} contentStyle={{ fontSize: 12, borderRadius: 12, border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT }} labelStyle={{ color: TEXT_MUTED }} itemStyle={{ color: TEXT }}
                 formatter={(_, __, props) => [props.payload.duzey, "Verimlilik"]} />
               <Line type="monotone" dataKey="puan" stroke={LILAC} strokeWidth={2.25} dot={{ r: 3.5, fill: LILAC, strokeWidth: 2, stroke: BG1 }} />
             </LineChart>

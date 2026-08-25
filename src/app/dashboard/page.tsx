@@ -106,7 +106,13 @@ export default async function DashboardPage({
 
   return (
     <div className="sfec-dashboard-shell min-h-dvh w-full flex-1 flex flex-col">
-      <Header ad={profile.ad} role={role} kurumTuru={kurumTuru} okunmamisMesajSayisi={okunmamisMesajSayisi} moderatorMu={!!moderatorYetkisi} rolEtiketi={moderatorYetkisi ? "Moderatör" : undefined} aktifBolum={aktifBolum} />
+      {/* role !== "mudur" şartı: dershane müdürü hesap açılırken otomatik
+          olarak school_moderators'a da eklenir (migration 0052) — bu
+          öğretmen için olduğu gibi GERÇEK bir ek yetki değil, müdür için
+          örtük bir uygulama detayı. Bu yüzden müdürde her zaman "Müdür"
+          gösterilir, "Moderatör" etiketi öğretmen+moderatör kombinasyonuna
+          özel kalır. */}
+      <Header ad={profile.ad} role={role} kurumTuru={kurumTuru} okunmamisMesajSayisi={okunmamisMesajSayisi} moderatorMu={!!moderatorYetkisi} rolEtiketi={moderatorYetkisi && role !== "mudur" ? "Moderatör" : undefined} aktifBolum={aktifBolum} />
       <ZorunluSifreDegisikligiKapisi gecici={profile.gecici_sifre} />
       <HosgeldinPopuplari role={role} />
       <div className="mx-auto flex min-h-[calc(100dvh-6.75rem)] w-full max-w-[100rem] flex-1 items-stretch gap-6 px-4 py-6 sm:px-6 lg:py-7">

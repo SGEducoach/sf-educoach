@@ -287,6 +287,15 @@ export const DENEME_ZORLUGU_ETIKET: Record<DenemeZorlugu, string> = {
 // saat, tek oturum için zaten cömert bir üst sınır.
 export const SURE_UST_SINIR = 480;
 
+// Tek bir Soru Çözümü kaydında (doğru+yanlış+boş toplamı) makul üst sınır
+// — Deneme formunun aksine burada belirli bir derse/sınava bağlı sabit bir
+// soru sayısı yok (öğrenci serbestçe "bugün X soru çözdüm" giriyor), bu
+// yüzden dersSoruSayisi gibi ders bazlı bir tavan uygulanamıyor. 300, tek
+// oturumda (hatta uzun bir çalışma günü boyunca) gerçekçi bir tavan —
+// öğrencinin yanlışlıkla haftalık/aylık toplamı tek alana girmesini
+// (ör. "5000 soru") engellemek için.
+export const SORU_SAYISI_UST_SINIR = 300;
+
 // Ders bazında ÖSYM'nin resmi TYT/AYT soru sayıları (2026). Deneme
 // girerken doğru+yanlış toplamının bunu aşmaması için kullanılıyor.
 // Kaynak: ÖSYM TYT-AYT soru dağılım tablosu.

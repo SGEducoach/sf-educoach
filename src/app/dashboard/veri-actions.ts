@@ -8,7 +8,7 @@ import { getAnthropicClient } from "@/lib/anthropic";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
 import { KONU_ANLATIMI_SISTEM_PROMPTU, icerikTemizle } from "@/lib/konu-anlatimi";
 import { pushGonderProfile } from "@/lib/push-send";
-import { SURE_UST_SINIR, KATEGORI_GERIYE_DONUK_SINIR, TAKIP_SORUSU, dersSoruSayisi } from "@/lib/types";
+import { SURE_UST_SINIR, SORU_SAYISI_UST_SINIR, KATEGORI_GERIYE_DONUK_SINIR, TAKIP_SORUSU, dersSoruSayisi } from "@/lib/types";
 import type { DenemeTuru, DenemeZorlugu, HedefeYakinlik, TakipCevabi, VerimlilikDuzeyi } from "@/lib/types";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
 
@@ -218,10 +218,19 @@ export async function soruCozumuEkle(formData: FormData) {
   const gorevAtamaId = String(formData.get("gorevAtamaId") ?? "").trim() || null;
   const { tarih, error: tarihHatasi } = tarihDogrula(formData.get("tarih"), KATEGORI_GERIYE_DONUK_SINIR.soru);
 
-  if (!ders || Number.isNaN(dogru) || Number.isNaN(yanlis) || Number.isNaN(bos) || bos < 0 || !sureDakika || sureDakika <= 0 || !yayinevi) {
+  if (
+    !ders || Number.isNaN(dogru) || Number.isNaN(yanlis) || Number.isNaN(bos) ||
+    dogru < 0 || yanlis < 0 || bos < 0 || !sureDakika || sureDakika <= 0 || !yayinevi
+  ) {
     return { error: "Lütfen tüm alanları doldurun.", verimlilikSorulsunMu: false };
   }
   if (tarihHatasi) return { error: tarihHatasi, verimlilikSorulsunMu: false };
+  // Deneme formunun aksine (dersSoruSayisi ile derse özel bir tavan var)
+  // Soru Çözümü'nde serbest metin girişi olduğundan tek, genel bir üst
+  // sınır uygulanıyor — bkz. SORU_SAYISI_UST_SINIR yorumu.
+  if (dogru > SORU_SAYISI_UST_SINIR || yanlis > SORU_SAYISI_UST_SINIR || bos > SORU_SAYISI_UST_SINIR) {
+    return { error: `Tek bir alan için en fazla ${SORU_SAYISI_UST_SINIR} soru girebilirsiniz.`, verimlilikSorulsunMu: false };
+  }
   // Süre, toplam soru sayısının (doğru+yanlış+boş) iki katını geçemez — soru
   // başına makul bir üst sınır koyup "günlük toplamı tek oturuma girme"
   // hatasını (bkz. SURE_UST_SINIR yorumu) burada da yakalıyor.

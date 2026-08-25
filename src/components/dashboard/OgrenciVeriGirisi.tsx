@@ -7,7 +7,7 @@ import type {
 } from "@/lib/types";
 import {
   TYT_DERSLERI, AYT_DERSLERI, BRANS_DENEMESI_DERSLERI, TAKIP_SORUSU, VERIMLILIK_ETIKET, netHesapla, dersSoruSayisi,
-  SURE_UST_SINIR, KATEGORI_GERIYE_DONUK_SINIR, dokuzOnSinifMi, maarifHiyerarsiSinifMi,
+  SURE_UST_SINIR, SORU_SAYISI_UST_SINIR, KATEGORI_GERIYE_DONUK_SINIR, dokuzOnSinifMi, maarifHiyerarsiSinifMi,
 } from "@/lib/types";
 import {
   BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, SKY, SKY_BG, TEXT, TEXT_MUTED, BLUSH,
@@ -531,13 +531,13 @@ export function SoruCozumuForm({ dersListesi, konuOnerileri, onBasari, prefillDe
 
       <div className="grid grid-cols-2 gap-3">
         <label className="flex flex-col gap-1"><Etiket>Doğru</Etiket>
-          <Girdi name="dogru" type="number" min={0} required value={dogru} onChange={(e) => setDogru(e.target.value)} />
+          <Girdi name="dogru" type="number" min={0} max={SORU_SAYISI_UST_SINIR} required value={dogru} onChange={(e) => setDogru(e.target.value)} />
         </label>
         <label className="flex flex-col gap-1"><Etiket>Yanlış</Etiket>
-          <Girdi name="yanlis" type="number" min={0} required value={yanlis} onChange={(e) => setYanlis(e.target.value)} />
+          <Girdi name="yanlis" type="number" min={0} max={SORU_SAYISI_UST_SINIR} required value={yanlis} onChange={(e) => setYanlis(e.target.value)} />
         </label>
         <label className="flex flex-col gap-1"><Etiket>Boş</Etiket>
-          <Girdi name="bos" type="number" min={0} required value={bos} onChange={(e) => setBos(e.target.value)} />
+          <Girdi name="bos" type="number" min={0} max={SORU_SAYISI_UST_SINIR} required value={bos} onChange={(e) => setBos(e.target.value)} />
         </label>
         <label className="flex flex-col gap-1"><Etiket>Süre (dk)</Etiket>
           <Girdi name="sureDakika" type="number" min={1} max={toplamSoru > 0 ? sureUstSiniri : undefined} required />
