@@ -562,6 +562,28 @@ async function OgretmenIcerik({ userId, role, kurumTuru, secilenSinifId, secilen
     ogrenciAd: s.students?.profiles?.ad ?? "İsimsiz",
   }));
 
+  // Verdiğim Görevler (2026-08-25 kullanıcı isteği — öğretmenin verdiği
+  // görevleri takip edebileceği bir ekran yoktu, "Bekleyen Onaylar"
+  // sekmesine eklenmesi kararlaştırıldı). Homeroom şartı YOK (bekleyenOnaylar'ın
+  // aksine) — branş öğretmeni de kendi sınıfı olmadan görev verebiliyor
+  // (bkz. gorevVerilebilirMi), o yüzden burada da kendiSinifId'ye bağlı değil.
+  type VerdigimGorevRow = {
+    id: string; tur: string; ders: string; konu: string | null; tarih: string; son_tarih: string;
+    gorev_atamalari: { id: string; student_id: string; durum: "bekliyor" | "tamamlandi" | "tamamlanmadi"; students: { profiles: { ad: string } | null } | null }[];
+  };
+  const { data: verdigimGorevlerHam } = aktifBolum === "onaylar"
+    ? await supabase
+        .from("gorevler")
+        .select("id, tur, ders, konu, tarih, son_tarih, gorev_atamalari(id, student_id, durum, students(profiles!students_id_fkey(ad)))")
+        .eq("olusturan_ogretmen_id", userId)
+        .order("tarih", { ascending: false })
+        .limit(15)
+    : { data: [] as VerdigimGorevRow[] };
+  const verdigimGorevler = ((verdigimGorevlerHam as unknown as VerdigimGorevRow[]) ?? []).map((g) => ({
+    id: g.id, tur: g.tur as "konu" | "soru" | "deneme", ders: g.ders, konu: g.konu, tarih: g.tarih, sonTarih: g.son_tarih,
+    atamalar: (g.gorev_atamalari ?? []).map((a) => ({ id: a.id, durum: a.durum, ogrenciAd: a.students?.profiles?.ad ?? "İsimsiz" })),
+  }));
+
   // Ders Programı + Yurt Nöbeti (2026-08-25 kullanıcı isteği) — sadece
   // "Derslerim" bölümünde gösterildiği için o zaman çekiliyor. Yurt Nöbeti
   // "okul için sadece" (kullanıcı kararı) — dershane'de bu path'e bir
@@ -587,6 +609,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, secilenSinifId, secilen
       kendiSinifiMi={kendiSinifiMi}
       ogretmenDersleri={ogretmenDersleri}
       bekleyenOnaylar={bekleyenOnaylar}
+      verdigimGorevler={verdigimGorevler}
       konuOnerileri={MUFREDAT_KONULARI}
       aktifBolum={aktifBolum}
       dersProgramiSatirlari={dersProgramiSatirlari}

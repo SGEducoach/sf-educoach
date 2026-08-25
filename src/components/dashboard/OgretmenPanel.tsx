@@ -2,15 +2,18 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { UserPlus, Check, Users, Eye, Plus, X, BookMarked, BedDouble, ClipboardCheck, ArrowRightLeft, ChevronDown, ChevronUp, CalendarPlus } from "lucide-react";
-import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, SKY, SKY_BG, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
+import { UserPlus, Check, Users, Eye, Plus, X, BookMarked, BedDouble, ClipboardCheck, ListChecks, ArrowRightLeft, ChevronDown, ChevronUp, CalendarPlus } from "lucide-react";
+import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, PEACH, PEACH_BG, SKY, SKY_BG, TEXT, TEXT_MUTED, BLUSH, BLUSH_BG } from "@/lib/theme";
 import {
   veliTalepOnayla, sinifEkle, ogretmenDuyuruGonder, gonderilenDuyurularGetir,
   ogretmenDersEkle, ogretmenDersSil, ogrenciSinifTasi, ogrenciYurtDurumuGuncelle, soruCozumuOnayla,
 } from "@/app/dashboard/actions";
 import { gorevVer } from "@/app/dashboard/gorev-actions";
 import { DuyuruFormu } from "@/components/dashboard/DuyuruFormu";
-import { BRANS_LISTESI, type GorevTuru, type SinifSeviyesi, type VeliLinkRequest } from "@/lib/types";
+import {
+  BRANS_LISTESI, GOREV_DURUMU_ETIKET, GOREV_TURU_ETIKET,
+  type GorevDurumu, type GorevTuru, type SinifSeviyesi, type VeliLinkRequest,
+} from "@/lib/types";
 import { bugununTarihiTR } from "@/lib/tarih";
 import type { DashboardBolumu } from "@/lib/dashboard-navigation";
 import { DersProgramiGrid } from "@/components/dashboard/DersProgramiGrid";
@@ -45,6 +48,20 @@ interface BekleyenOnaySatiri {
   tarih: string;
   ogrenciAd: string;
 }
+// Verdiğim Görevler (2026-08-25 kullanıcı isteği — "öğretmenin verdiği
+// görevleri takip ekranı yok" bulgusuna karşılık, "Bekleyen Onaylar"
+// sekmesine eklendi). Tamamlanma öğrencinin kendi veri girişiyle otomatik
+// işaretlendiğinden (bkz. gorev-actions.ts) burada bir onay BUTONU yok —
+// salt-okunur bir takip/durum tablosu.
+interface VerdigimGorevSatiri {
+  id: string;
+  tur: GorevTuru;
+  ders: string;
+  konu: string | null;
+  tarih: string;
+  sonTarih: string;
+  atamalar: { id: string; durum: GorevDurumu; ogrenciAd: string }[];
+}
 
 // Okul numarası sahibi öğrenciler numara sırasına göre dizilir (metin
 // olarak saklanan okul_no'yu sayısal karşılaştırır, örn. "9" "10"dan önce
@@ -56,7 +73,7 @@ function ogrencilerOkulNoSirali(ogrenciler: OgrenciSatiri[]): OgrenciSatiri[] {
 
 export function OgretmenPanel({
   role, bekleyenTalepler, ogrenciler, sinifAdi, siniflar, gorunecekSinifId, kendiSinifId, kendiSinifiMi,
-  ogretmenDersleri, bekleyenOnaylar, konuOnerileri, aktifBolum,
+  ogretmenDersleri, bekleyenOnaylar, verdigimGorevler, konuOnerileri, aktifBolum,
   dersProgramiSatirlari, yurtNobetiSatirlari, dershaneMi,
 }: {
   role: "ogretmen" | "mudur";
@@ -69,6 +86,9 @@ export function OgretmenPanel({
   kendiSinifiMi: boolean;
   ogretmenDersleri: OgretmenDersiSatiri[];
   bekleyenOnaylar: BekleyenOnaySatiri[];
+  // Verdiğim Görevler (2026-08-25) — "Bekleyen Onaylar" sekmesinde, sadece
+  // o bölümde kullanılıyor, diğer bölümlerde boş dizi gelir.
+  verdigimGorevler?: VerdigimGorevSatiri[];
   konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
   aktifBolum: DashboardBolumu;
   // Ders Programı + Yurt Nöbeti (2026-08-25) — sadece "dersler" bölümünde
@@ -192,6 +212,9 @@ export function OgretmenPanel({
         </div>
       )}
 
+      {aktifBolum === "onaylar" && role === "ogretmen" && (
+        <VerdigimGorevlerBolumu gorevler={verdigimGorevler ?? []} />
+      )}
       {aktifBolum === "onaylar" && role === "ogretmen" && kendiSinifId && <BekleyenOnaylarBolumu onaylar={bekleyenOnaylar} />}
 
       {aktifBolum === "gorevler" && role === "ogretmen" && (
@@ -368,6 +391,71 @@ function OgrenciTasiButonu({ ogrenciId, kendiSinifId, siniflar }: {
 // toplanıyor — satıra basınca o öğrencinin tüm bekleyen kayıtları sıralanıyor.
 // "Gördüm" onaylanınca kayıt listeden kaybolmuyor, butonu pasifleşip renk
 // değiştiriyor (görsel onay izi).
+const DURUM_RENK: Record<GorevDurumu, { bg: string; renk: string }> = {
+  bekliyor: { bg: PEACH_BG, renk: PEACH },
+  tamamlandi: { bg: MINT_BG, renk: MINT },
+  tamamlanmadi: { bg: BLUSH_BG, renk: BLUSH },
+};
+
+// Son 15 görev, her biri altında öğrenci başına durum rozeti — tamamlama
+// öğrencinin kendi veri girişiyle otomatik işaretlendiğinden burada onay
+// butonu yok, sadece görünürlük (bkz. VerdigimGorevSatiri yorumu).
+function VerdigimGorevlerBolumu({ gorevler }: { gorevler: VerdigimGorevSatiri[] }) {
+  const [acikId, setAcikId] = useState<string | null>(null);
+
+  return (
+    <div className="sfec-section sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+      <div className="mb-4 flex items-center gap-2">
+        <div className="flex h-7 w-7 items-center justify-center rounded-full" style={{ background: SKY_BG }}>
+          <ListChecks size={13} color={SKY} />
+        </div>
+        <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Verdiğim görevler</span>
+      </div>
+      {gorevler.length === 0 ? (
+        <p style={{ color: TEXT_MUTED }} className="py-4 text-center text-sm">Henüz görev vermediniz.</p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {gorevler.map((g) => {
+            const acik = acikId === g.id;
+            const tamamlanan = g.atamalar.filter((a) => a.durum === "tamamlandi").length;
+            return (
+              <div key={g.id} className="rounded-2xl" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
+                <button type="button" onClick={() => setAcikId(acik ? null : g.id)}
+                  className="sfec-btn flex w-full items-center justify-between gap-3 p-3.5 text-left">
+                  <div className="min-w-0">
+                    <div style={{ color: TEXT }} className="text-sm font-bold">{GOREV_TURU_ETIKET[g.tur]} · {g.ders}</div>
+                    <div style={{ color: TEXT_MUTED }} className="mt-0.5 text-xs">
+                      {g.konu ? `${g.konu} · ` : ""}{g.tarih}{g.sonTarih !== g.tarih ? `–${g.sonTarih}` : ""}
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: MINT_BG, color: MINT }}>
+                      {tamamlanan}/{g.atamalar.length}
+                    </span>
+                    {acik ? <ChevronUp size={14} color={TEXT_MUTED} /> : <ChevronDown size={14} color={TEXT_MUTED} />}
+                  </div>
+                </button>
+                {acik && (
+                  <div className="flex flex-wrap gap-1.5 border-t px-3.5 py-3" style={{ borderColor: BORDER }}>
+                    {g.atamalar.map((a) => {
+                      const renk = DURUM_RENK[a.durum];
+                      return (
+                        <span key={a.id} className="text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ background: renk.bg, color: renk.renk }}>
+                          {a.ogrenciAd} · {GOREV_DURUMU_ETIKET[a.durum]}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function BekleyenOnaylarBolumu({ onaylar }: { onaylar: BekleyenOnaySatiri[] }) {
   const [onaylanan, setOnaylanan] = useState<Set<string>>(new Set());
   const [onaylanıyorId, setOnaylanıyorId] = useState<string | null>(null);
