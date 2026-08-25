@@ -1,12 +1,21 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { telefonGecerliMi, adNormalize } from "@/lib/validators";
 
+// GÜVENLİK DÜZELTMESİ (2026-08-25) — bu route ÖNCEDEN request body'sinden
+// (formdan) gelen veli_ad/veli_telefon'u DOĞRUDAN hesap oluşturmakta
+// kullanıyordu — kod'un GERÇEKTEN kime onaylandığıyla hiç karşılaştırmadan.
+// Sonuç: kod'u bilen HERKES (örn. öğrenciden sızmış bir kod), öğretmenin
+// onayladığı kişiden TAMAMEN FARKLI bir isimle veli hesabı açıp öğrencinin
+// özel verilerine erişebiliyordu. Artık isim/telefon bu istekten HİÇ
+// alınmıyor — aşağıda `talep.veli_ad`/`talep.veli_telefon` (onay anında
+// öğretmenin gördüğü değerler) kullanılıyor. bkz. /api/veli/dogrula (form,
+// şifre belirlemeden önce bu ismi kullanıcıya gösterip "bu ben değilim"
+// fark edilmesini sağlıyor).
 const KVKK_ONAY_VERSIYON = "v1-2026-08-05";
 
 export async function POST(request: Request) {
-  const { school_id, okul_no, kod, sifre, kvkkOnay, veli_ad, veli_telefon } = await request.json();
+  const { school_id, okul_no, kod, sifre, kvkkOnay } = await request.json();
 
   if (!school_id || !okul_no || !kod) {
     return NextResponse.json({ error: "Okul, okul no ve kod gerekli." }, { status: 400 });
@@ -16,13 +25,6 @@ export async function POST(request: Request) {
   }
   if (kvkkOnay !== true) {
     return NextResponse.json({ error: "Devam etmek için KVKK aydınlatma metnini onaylamanız gerekiyor." }, { status: 400 });
-  }
-  const veliAdTemiz = (veli_ad ?? "").toString().trim();
-  if (!veliAdTemiz) {
-    return NextResponse.json({ error: "Adınız Soyadınız gerekli." }, { status: 400 });
-  }
-  if (!telefonGecerliMi((veli_telefon ?? "").toString())) {
-    return NextResponse.json({ error: "Telefon numarası geçersiz." }, { status: 400 });
   }
 
   const admin = createAdminClient();
@@ -57,16 +59,19 @@ export async function POST(request: Request) {
   }
 
   const syntheticEmail = `veli+${talep.id}@sgeducoach.internal`;
-  const veliAdNormalize = adNormalize(veliAdTemiz);
 
+  // GÜVENLİK: hesap SADECE talebin ONAYLANDIĞI ANDAKİ (öğretmenin gördüğü)
+  // veli_ad/veli_telefon ile oluşturulur — bu istekten alınan bir isim/
+  // telefon YOK ARTIK (bkz. dosya başı notu). Kod'u bilen biri farklı bir
+  // kimlikle hesap açamaz.
   const { data: createdUser, error: createError } = await admin.auth.admin.createUser({
     email: syntheticEmail,
     password: sifre,
     email_confirm: true,
     user_metadata: {
       role: "veli",
-      ad: veliAdNormalize,
-      telefon: veli_telefon,
+      ad: talep.veli_ad,
+      telefon: talep.veli_telefon,
       request_id: talep.id,
     },
   });
@@ -74,10 +79,6 @@ export async function POST(request: Request) {
   if (createError) {
     return NextResponse.json({ error: createError.message }, { status: 400 });
   }
-
-  // Talep kaydını da güncel (gerçek) veli bilgisiyle senkron tutalım —
-  // admin panelindeki "Veli talepleri" listesi buradan okuyor.
-  await admin.from("veli_link_requests").update({ veli_ad: veliAdNormalize, veli_telefon }).eq("id", talep.id);
 
   // KVKK rıza beyanını zaman damgasıyla kaydet (trigger profiles'ı oluşturduktan sonra).
   if (createdUser.user) {

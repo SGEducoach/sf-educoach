@@ -644,20 +644,42 @@ function VeliTamamlaForm({ kurumTuru, schools, router }: { kurumTuru: KurumTuru;
   const [schoolId, setSchoolId] = useState("");
   const [okulNo, setOkulNo] = useState("");
   const [kod, setKod] = useState("");
-  const [veliAd, setVeliAd] = useState("");
-  const [veliTelefon, setVeliTelefon] = useState("");
+  // GÜVENLİK DÜZELTMESİ (2026-08-25) — isim/telefon artık BURADA
+  // GİRİLMİYOR (kod'u bilen herkes farklı bir isimle hesap açabiliyordu).
+  // Kod doğrulanınca /api/veli/dogrula, öğretmenin ONAYLADIĞI ismi
+  // döndürüyor — kullanıcı sadece bunu GÖRÜYOR ("bu ben değilim" fark
+  // edebilsin diye), giremiyor.
+  const [onaylananAd, setOnaylananAd] = useState<string | null>(null);
+  const [onaylananTelefonMaskeli, setOnaylananTelefonMaskeli] = useState<string | null>(null);
   const [sifre, setSifre] = useState("");
   const [sifreTekrar, setSifreTekrar] = useState("");
   const [kvkkOnay, setKvkkOnay] = useState(false);
   const [hata, setHata] = useState<string | null>(null);
   const [yukleniyor, setYukleniyor] = useState(false);
+  const [dogrulaniyor, setDogrulaniyor] = useState(false);
+
+  async function koduDogrulaVeDevamEt() {
+    setHata(null);
+    if (!schoolId) return setHata(`${KURUM_ETIKET[kurumTuru].secim} seçin.`);
+    if (!okulNo.trim() || !kod.trim()) return setHata("Okul no ve kod gerekli.");
+    if (!kvkkOnay) return setHata("Devam etmek için KVKK metnini onaylayın.");
+    setDogrulaniyor(true);
+    const res = await fetch("/api/veli/dogrula", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ school_id: schoolId, okul_no: okulNo.trim(), kod: kod.trim() }),
+    });
+    const body = await res.json();
+    setDogrulaniyor(false);
+    if (!res.ok) return setHata(body.error ?? "Okul no veya kod hatalı.");
+    setOnaylananAd(body.veliAd);
+    setOnaylananTelefonMaskeli(body.veliTelefonMaskeli ?? null);
+    setAsama(2);
+  }
 
   async function tamamla(e: React.FormEvent) {
     e.preventDefault();
     setHata(null);
-    if (!schoolId) return setHata(`${KURUM_ETIKET[kurumTuru].secim} seçin.`);
-    if (!veliAd.trim()) return setHata("Adınız Soyadınız gerekli.");
-    if (!telefonGecerliMi(veliTelefon)) return setHata("Telefon numarası geçersiz. " + TELEFON_IPUCU);
     if (!kvkkOnay) return setHata("Devam etmek için KVKK aydınlatma metnini onaylamanız gerekiyor.");
     if (!sifreGecerliMi(sifre)) return setHata(SIFRE_IPUCU);
     if (sifre !== sifreTekrar) return setHata("Şifreler aynı değil.");
@@ -667,7 +689,6 @@ function VeliTamamlaForm({ kurumTuru, schools, router }: { kurumTuru: KurumTuru;
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         school_id: schoolId, okul_no: okulNo.trim(), kod: kod.trim(), sifre, kvkkOnay: true,
-        veli_ad: adNormalize(veliAd), veli_telefon: veliTelefon,
       }),
     });
     const body = await res.json();
@@ -694,8 +715,6 @@ function VeliTamamlaForm({ kurumTuru, schools, router }: { kurumTuru: KurumTuru;
       </label>
       <label className="flex flex-col gap-1"><Etiket>{KURUM_ETIKET[kurumTuru].no}</Etiket><Girdi required value={okulNo} onChange={(e) => setOkulNo(e.target.value)} /></label>
       <label className="flex flex-col gap-1"><Etiket>Kod</Etiket><Girdi required value={kod} maxLength={12} autoCapitalize="characters" onChange={(e) => setKod(e.target.value.toUpperCase())} /></label>
-      <label className="flex flex-col gap-1"><Etiket>Adınız Soyadınız</Etiket><Girdi required value={veliAd} onChange={(e) => setVeliAd(e.target.value)} /></label>
-      <label className="flex flex-col gap-1"><Etiket>Telefon</Etiket><Girdi type="tel" required value={veliTelefon} inputMode="numeric" placeholder="5xxxxxxxxx" onChange={(e) => setVeliTelefon(telefonSanitize(e.target.value))} /></label>
 
       <div className="flex flex-col gap-1.5">
         <Etiket>KVKK Aydınlatma Metni ve Rıza Beyanı</Etiket>
@@ -714,18 +733,18 @@ function VeliTamamlaForm({ kurumTuru, schools, router }: { kurumTuru: KurumTuru;
       </label>
 
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
-      <button type="button" onClick={() => {
-        setHata(null);
-        if (!schoolId) return setHata(`${KURUM_ETIKET[kurumTuru].secim} seçin.`);
-        if (!okulNo.trim() || !kod.trim()) return setHata("Okul no ve kod gerekli.");
-        if (!veliAd.trim()) return setHata("Adınız Soyadınız gerekli.");
-        if (!telefonGecerliMi(veliTelefon)) return setHata("Telefon numarası geçersiz. " + TELEFON_IPUCU);
-        if (!kvkkOnay) return setHata("Devam etmek için KVKK metnini onaylayın.");
-        setAsama(2);
-      }} className="sfec-btn rounded-xl py-2.5 text-sm font-bold" style={{ background: MINT, color: MINT_ON }}>
-        Devam et
+      <button type="button" disabled={dogrulaniyor} onClick={koduDogrulaVeDevamEt}
+        className="sfec-btn rounded-xl py-2.5 text-sm font-bold disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+        {dogrulaniyor ? "Doğrulanıyor..." : "Devam et"}
       </button>
       </> : <>
+      <div className="rounded-xl p-3" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
+        <Etiket>Bu kod şu kişiye onaylandı</Etiket>
+        <p style={{ color: TEXT }} className="text-sm font-bold mt-1">{onaylananAd}{onaylananTelefonMaskeli ? ` · ${onaylananTelefonMaskeli}` : ""}</p>
+        <p style={{ color: BLUSH }} className="text-[11px] leading-relaxed mt-1.5">
+          Bu siz değilseniz devam ETMEYİN — &quot;Geri&quot; ile dönüp kurumunuzla iletişime geçin.
+        </p>
+      </div>
       <p style={{ color: TEXT_MUTED }} className="text-xs leading-relaxed">Kod yalnız hesabı eşleştirmek için kullanılacak. Bundan sonraki girişlerinizde aşağıda oluşturduğunuz kişisel şifreyi kullanacaksınız.</p>
       <label className="flex flex-col gap-1"><Etiket>Yeni Şifre</Etiket><Girdi type="password" required value={sifre} onChange={(e) => setSifre(e.target.value)} /></label>
       <label className="flex flex-col gap-1"><Etiket>Yeni Şifre Tekrar</Etiket><Girdi type="password" required value={sifreTekrar} onChange={(e) => setSifreTekrar(e.target.value)} /></label>
