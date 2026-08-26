@@ -55,7 +55,7 @@ export async function Header({ ad, role, kurumTuru, brans, okunmamisMesajSayisi 
           <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <Link href="/dashboard" title="Ana sayfaya dön" className="shrink-0">
-                <Image src="/logo.png" alt="SeFu Koç" width={800} height={395} className="sfec-brand-logo h-10 sm:h-12 w-auto object-contain" priority />
+                <Image src="/logo.png" alt="SeFu Koç" width={1258} height={837} className="sfec-brand-logo h-10 sm:h-12 w-auto object-contain" priority />
               </Link>
               <div className="min-w-0">
                 <SeFuMarkaAdi className="block text-base sm:text-lg font-extrabold leading-none truncate" />

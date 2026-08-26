@@ -6,8 +6,8 @@ export function SeFuLogo({ className, alt = "SeFu Koç" }: { className?: string;
     <Image
       src="/logo.png"
       alt={alt}
-      width={800}
-      height={395}
+      width={1258}
+      height={837}
       className={["sfec-brand-logo object-contain", className].filter(Boolean).join(" ")}
     />
   );

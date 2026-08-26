@@ -44,7 +44,10 @@ export function YoneticiGirisForm() {
     <div style={{ minHeight: "100vh", background: BG0 }} className="flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-7">
-          <Image src="/logo.png" alt="SeFu Koç" width={800} height={395} className="sfec-brand-logo h-28 w-auto max-w-full object-contain mb-2" priority />
+          {/* Kullanıcı isteği (26.08.2026): "İsminde login yazan sadece giriş
+              ekranı için kullanılacak" — bu bağımsız yönetim girişi de bir
+              giriş ekranı, bkz. dokumanlar/logo/. */}
+          <Image src="/logo-login.png" alt="SeFu Koç" width={1153} height={965} className="sfec-brand-logo h-28 w-auto max-w-full object-contain mb-2" priority />
           <SeFuMarkaAdi as="h1" className="text-2xl font-extrabold leading-none" />
           <p style={{ color: TEXT }} className="text-sm font-bold mt-2">Yönetim Girişi</p>
         </div>

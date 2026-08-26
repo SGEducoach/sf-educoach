@@ -11,7 +11,7 @@ export function DenemeSuresiSonaErdiEkrani() {
   return (
     <div style={{ minHeight: "100vh", background: BG0 }} className="flex items-center justify-center px-4">
       <div className="w-full max-w-sm flex flex-col items-center text-center">
-        <Image src="/logo.png" alt="SeFu Koç" width={800} height={395} className="sfec-brand-logo h-20 w-auto max-w-full object-contain mb-2" priority />
+        <Image src="/logo.png" alt="SeFu Koç" width={1258} height={837} className="sfec-brand-logo h-20 w-auto max-w-full object-contain mb-2" priority />
         <SeFuMarkaAdi as="h1" className="text-xl font-extrabold leading-none" />
         <p className="text-xs mt-1 italic mb-6"><SeFuSlogan /></p>
 

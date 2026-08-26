@@ -9,7 +9,7 @@ export function SiteBakimdaEkrani() {
   return (
     <div style={{ minHeight: "100vh", background: BG0 }} className="flex items-center justify-center px-4">
       <div className="flex flex-col items-center text-center gap-4">
-        <Image src="/logo.png" alt="SeFu Koç" width={800} height={395} className="sfec-brand-logo h-20 w-auto max-w-full object-contain" priority />
+        <Image src="/logo.png" alt="SeFu Koç" width={1258} height={837} className="sfec-brand-logo h-20 w-auto max-w-full object-contain" priority />
         <p className="text-sm font-semibold" style={{ color: TEXT_MUTED }}>Site şu anda bakımda. Kısa süre içinde tekrar hizmetinizdeyiz.</p>
       </div>
     </div>
