@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { BarChart3, CalendarClock, KeyRound, Trash2, UserCheck, UserX } from "lucide-react";
@@ -26,6 +26,18 @@ export function DershaneKullaniciListesi({ kullanicilar, kategori, siniflar, der
   const [pending, startTransition] = useTransition();
   const [mesaj, setMesaj] = useState<string | null>(null);
   const [acikProgramId, setAcikProgramId] = useState<string | null>(null);
+  // Kullanıcı isteği (26.08.2026): "öğrenciler kısmı düzgün çalışmıyor,
+  // farklı bir sınıf seçildiğinde..." — incelemede aslında bir yönlendirme
+  // hatası değil, sınıf/şube bazlı bir filtrenin HİÇ olmaması sorunuydu
+  // (ModeratorPanel.tsx'teki aynı desen burada eksikti). Client-side, sayfa
+  // yönlendirmesi olmadan — mevcut kullanicilar listesi zaten tek sorguda
+  // geliyor, ayrı bir sunucu isteği gerekmiyor.
+  const [sinifFiltre, setSinifFiltre] = useState("tumu");
+  const sinifSecenekleri = useMemo(
+    () => [...new Set(kullanicilar.map((k) => k.sinif).filter((x): x is string => !!x))].sort(),
+    [kullanicilar],
+  );
+  const gosterilenler = sinifFiltre === "tumu" ? kullanicilar : kullanicilar.filter((k) => k.sinif === sinifFiltre);
 
   if (kullanicilar.length === 0) {
     return (
@@ -38,8 +50,23 @@ export function DershaneKullaniciListesi({ kullanicilar, kategori, siniflar, der
   return (
     <div className="flex flex-col gap-2">
       {mesaj && <div className="rounded-xl p-3 text-xs font-bold" style={{ color: mesaj.startsWith("Hata") ? BLUSH : MINT, background: BG0, border: `2px solid ${BORDER_STRONG}` }}>{mesaj}</div>}
+      {kategori === "ogrenci" && sinifSecenekleri.length > 0 && (
+        <label className="flex items-center gap-2 self-start">
+          <span style={{ color: TEXT_MUTED }} className="text-[11px] font-bold">Sınıf/şube:</span>
+          <select value={sinifFiltre} onChange={(e) => setSinifFiltre(e.target.value)}
+            className="rounded-xl px-3 py-1.5 text-xs font-bold outline-none" style={{ background: BG0, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
+            <option value="tumu">Tüm sınıflar ({kullanicilar.length})</option>
+            {sinifSecenekleri.map((s) => <option key={s} value={s}>{s} ({kullanicilar.filter((k) => k.sinif === s).length})</option>)}
+          </select>
+        </label>
+      )}
+      {gosterilenler.length === 0 ? (
+        <div className="rounded-2xl p-6 text-center text-sm" style={{ color: TEXT_MUTED, background: BG1, border: `2px solid ${BORDER}` }}>
+          Bu sınıfta kayıtlı öğrenci yok.
+        </div>
+      ) : (
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        {kullanicilar.map((k) => (
+        {gosterilenler.map((k) => (
           <div key={k.id} className={`rounded-2xl p-3.5 ${acikProgramId === k.id ? "sm:col-span-2" : ""}`} style={{ background: BG1, border: `2px solid ${BORDER}` }}>
             <div style={{ color: TEXT }} className="text-sm font-bold">{k.ad}</div>
             <div style={{ color: TEXT_MUTED }} className="text-xs">{k.detay}{!k.aktif && " · Pasif"}</div>
@@ -89,6 +116,7 @@ export function DershaneKullaniciListesi({ kullanicilar, kategori, siniflar, der
           </div>
         ))}
       </div>
+      )}
     </div>
   );
 }
