@@ -239,8 +239,8 @@ export async function GET(request: Request) {
       for (const studentId of yaklasanOgrenciIdleri) {
         if (kapatanlar.has(studentId)) continue;
         const sayi = gorevSayisi.get(studentId) ?? 1;
-        const baslik = "Yaklaşan görev hatırlatması";
-        const govde = sayi > 1 ? `Yarın son tarihli ${sayi} görevin/planın var. SeFu Koç'tan kontrol et.` : "Yarın son tarihli bir görevin/planın var. SeFu Koç'tan kontrol et.";
+        const baslik = "Yaklaşan ödev hatırlatması";
+        const govde = sayi > 1 ? `Yarın son tarihli ${sayi} ödevin/programın var. SeFu Koç'tan kontrol et.` : "Yarın son tarihli bir ödevin/programın var. SeFu Koç'tan kontrol et.";
         await pushGonder(studentId, baslik, govde);
         const { data: duyuru } = await admin.from("duyurular").insert({ gonderen_id: null, baslik, mesaj: govde }).select("id").single();
         if (duyuru) await admin.from("duyuru_aliciler").insert({ duyuru_id: duyuru.id, profile_id: studentId });

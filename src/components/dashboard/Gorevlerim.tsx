@@ -138,7 +138,7 @@ export function Gorevlerim({ gorevler, gorunum, haftaBaslangic, aytAlan, sinifSe
       <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
           <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">
-            {planSayfasi ? "Programım" : "Görevlerim"}
+            {planSayfasi ? "Programım" : "Ödevlerim"}
           </span>
           {/* Kullanıcı isteği (27.08.2026): "Görevlerimdeki haftalık tabloyu
               kaldır, Plan Yap'la aynı duruyor karışmasın" — haftalık
@@ -205,7 +205,7 @@ export function Gorevlerim({ gorevler, gorunum, haftaBaslangic, aytAlan, sinifSe
         />
       ) : gunGorevleri.length === 0 ? (
         <p style={{ color: TEXT_MUTED }} className="text-sm py-4 text-center">
-          {planSayfasi ? "Bu gün için program yok." : "Bu gün için görev yok."}
+          {planSayfasi ? "Bu gün için program yok." : "Bu gün için ödev yok."}
         </p>
       ) : (
         <div className="flex flex-col gap-2.5 mb-2.5">
@@ -316,7 +316,7 @@ function GorevDetayBalonu({ gorev, gunler, onKapat, onTamamla }: {
     : "Belirtilmedi";
 
   const detaylar = [
-    ["Görev türü", GOREV_TURU_ETIKET[gorev.tur]],
+    ["Ödev türü", GOREV_TURU_ETIKET[gorev.tur]],
     ["Ders", gorev.ders],
     ["Konu", gorev.konu || "Belirtilmedi"],
     ["Tarih", uzunTarih(gorev.tarih)],
@@ -371,10 +371,10 @@ function GorevDetayBalonu({ gorev, gunler, onKapat, onTamamla }: {
   }
 
   return (
-    <MaskotKonusmaBalonu onKapat={onKapat} ariaLabel={gorev.kaynak === "plan" ? "Program ayrıntıları" : "Görev ayrıntıları"}>
+    <MaskotKonusmaBalonu onKapat={onKapat} ariaLabel={gorev.kaynak === "plan" ? "Program ayrıntıları" : "Ödev ayrıntıları"}>
       <div className="pr-9">
         <span className="mb-1 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: MINT }}>
-          <Icon size={13} aria-hidden="true" /> Einstein’dan {gorev.kaynak === "plan" ? "program" : "görev"} özeti
+          <Icon size={13} aria-hidden="true" /> Einstein’dan {gorev.kaynak === "plan" ? "program" : "ödev"} özeti
         </span>
         <h2 className="text-base font-extrabold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>
           {GOREV_TURU_ETIKET[gorev.tur]} · {gorev.ders}
@@ -398,7 +398,7 @@ function GorevDetayBalonu({ gorev, gunler, onKapat, onTamamla }: {
         {gorev.durum === "bekliyor" && (
           <button type="button" onClick={onTamamla}
             className="sfec-btn rounded-full px-4 py-2 text-xs font-bold" style={{ background: MINT, color: MINT_ON }}>
-            {gorev.kaynak === "plan" ? "Programı tamamla" : "Görevi tamamla"}
+            {gorev.kaynak === "plan" ? "Programı tamamla" : "Ödevi tamamla"}
           </button>
         )}
       </div>
@@ -419,7 +419,7 @@ function GorevDetayBalonu({ gorev, gunler, onKapat, onTamamla }: {
             <form onSubmit={formGonder} className="flex flex-col gap-2">
               {!hata && (
                 <span style={{ color: TEXT_MUTED }} className="text-[11px] font-semibold">
-                  Bu görevi hangi gün ve saatte çalışacaksınız?
+                  Bu ödevi hangi gün ve saatte çalışacaksınız?
                 </span>
               )}
               <div className="grid grid-cols-3 gap-2">
@@ -544,7 +544,7 @@ function HaftalikZamanPlani({ gunler, gorevler, bugun, planSayfasi, onGunSec, on
         </div>
       </div>
       <p className="px-4 pb-3 pt-1 text-[10px]" style={{ color: TEXT_MUTED }}>
-        Her gün 05.00’dan ertesi gün 05.00’a kadar gösterilir. Saati belirtilmeyen {planSayfasi ? "planlar" : "görevler"} günlük görünümde yer alır.
+        Her gün 05.00’dan ertesi gün 05.00’a kadar gösterilir. Saati belirtilmeyen {planSayfasi ? "planlar" : "ödevler"} günlük görünümde yer alır.
       </p>
     </div>
   );
@@ -572,7 +572,7 @@ function GorevTamamlamaModal({ gorev, aytAlan, sinifSeviyesi, dersListesi, konuO
       <div className="sfec-fade w-full max-w-md rounded-3xl p-5 max-h-[85vh] overflow-y-auto" style={{ background: BG1, border: `2px solid ${BORDER}` }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold">
-            {GOREV_TURU_ETIKET[gorev.tur]} {gorev.kaynak === "plan" ? "planını" : "görevini"} tamamla
+            {GOREV_TURU_ETIKET[gorev.tur]} {gorev.kaynak === "plan" ? "planını" : "ödevini"} tamamla
           </span>
           <button type="button" onClick={onKapat} className="sfec-btn w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.06)" }}>
             <X size={13} color={TEXT_MUTED} />

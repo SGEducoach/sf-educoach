@@ -25,7 +25,7 @@ const ROL_TERCIHLERI: Record<UserRole, { alan: keyof BildirimTercihleri; etiket:
   ogrenci: [
     { alan: "ogretmenMesaji", etiket: "Öğretmen duyuruları" },
     { alan: "mudurMesaji", etiket: "Müdür / okul duyuruları" },
-    { alan: "yaklasanGorev", etiket: "Yaklaşan görev/plan hatırlatmaları" },
+    { alan: "yaklasanGorev", etiket: "Yaklaşan ödev/program hatırlatmaları" },
   ],
   veli: [
     { alan: "ogretmenMesaji", etiket: "Öğretmen duyuruları" },
