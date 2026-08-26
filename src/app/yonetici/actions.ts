@@ -490,10 +490,19 @@ export async function veliTalebiAdminOnayla(requestId: string): Promise<{ error:
   return { error: null, kod };
 }
 
+// 2026-08-26 kullanıcı isteği: "veli onay veya redleri ... iş bitince
+// silinsin." Reddedilen bir talebin artık hiçbir işlevi kalmıyor (kod
+// üretilmedi, hiçbir yerde kullanılmıyor) — bu yüzden UPDATE yerine
+// doğrudan DELETE. NOT: aynı mantık 'onaylandı'/'kullanıldı' durumuna
+// UYGULANMIYOR — kullanıcı bunu ayrıca sormuştu, cevap: veli girişi
+// e-posta/şifre değil, TAMAMEN bu satırdaki kod'a dayanıyor
+// (resolve_veli_login RPC'si durum='kullanildi' olsa bile satırı arıyor);
+// o satırı silmek veliyi kalıcı olarak sistem dışına atar.
 export async function veliTalebiReddet(requestId: string): Promise<{ error: string | null }> {
   const { supabase, user, admin } = await requireAdmin();
-  const { error } = await admin.from("veli_link_requests").update({ durum: "reddedildi" }).eq("id", requestId).eq("durum", "bekliyor");
+  const { data: silinen, error } = await admin.from("veli_link_requests").delete().eq("id", requestId).eq("durum", "bekliyor").select("id").maybeSingle();
   if (error) return { error: error.message };
+  if (!silinen) return { error: "Talep daha önce işlenmiş veya bulunamadı." };
   await auditLogYaz(supabase, user.id, "veli_talebi_reddet", { request_id: requestId });
   revalidatePath("/yonetici");
   return { error: null };
@@ -534,9 +543,14 @@ export async function hataBildirimleriGetir(): Promise<{ error: string | null; b
   return { error: null, bildirimler };
 }
 
+// 2026-08-26 kullanıcı isteği: "düzeltilen hata bildirimleri ... iş bitince
+// silinsin." — önceden durum='cozuldu' işaretlenip listede (salt okunur
+// "Çözülenler" bölümünde) tutuluyordu; artık iş bitince kayıt tamamen
+// siliniyor. Denetim izi admin_audit_log'da kalıyor (bu tabloya FK yok,
+// silme onu etkilemez).
 export async function hataBildirimiCozulduIsaretle(id: string): Promise<{ error: string | null }> {
   const { supabase, user, admin } = await requireAdmin();
-  const { error } = await admin.from("hata_bildirimleri").update({ durum: "cozuldu", cozuldu_at: new Date().toISOString() }).eq("id", id);
+  const { error } = await admin.from("hata_bildirimleri").delete().eq("id", id);
   if (error) return { error: error.message };
   await auditLogYaz(supabase, user.id, "hata_bildirimi_cozuldu", { hata_id: id });
   revalidatePath("/yonetici");
