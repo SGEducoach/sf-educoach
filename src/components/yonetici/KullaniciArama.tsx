@@ -304,7 +304,7 @@ function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
             {[kullanici.email, kullanici.okulAdi, kullanici.sinifAdi, kullanici.okulNo && `#${kullanici.okulNo}`, kullanici.brans].filter(Boolean).join(" · ")}
           </div>
         </Link>
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex items-center gap-1.5 flex-wrap">
           <button type="button" onClick={sifreSifirlaTikla} disabled={sifrePending} title="Rastgele yeni şifre oluştur"
             className="sfec-btn flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full disabled:opacity-60"
             style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>

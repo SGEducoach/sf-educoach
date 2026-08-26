@@ -14,7 +14,17 @@ export function KurallarYonetimi() {
   const [versiyon, setVersiyon] = useState<string | null>(null);
   const [duzenlemeMetni, setDuzenlemeMetni] = useState("");
   const [hata, setHata] = useState<string | null>(null);
+  const [yukleHatasi, setYukleHatasi] = useState<string | null>(null);
   const [basarili, setBasarili] = useState(false);
+  // Kullanıcı bulgusu (26.08.2026, İKİNCİ bulgu — startTransition düzeltmesi
+  // sonrası bile "hâlâ aynı"): kök neden bu sefer farklıydı — canlı DB'de
+  // app_ayarlari tablosu tamamen boş çıktı (migration 0022'nin varsayılan
+  // satırları hiç eklenmemişti, bkz. migration 0078), yani istek BAŞARIYLA
+  // tamamlanıp metin=null dönüyordu. Ekran "metin === null" durumunu hem
+  // "henüz yüklenmedi" hem "yüklendi ama boş" için kullandığından ikincisi
+  // sonsuza kadar "Yükleniyor..." gibi görünüyordu. Ayrı bir "yuklendi"
+  // bayrağıyla bu iki durum artık birbirinden ayrılıyor.
+  const [yuklendi, setYuklendi] = useState(false);
   const [pending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -27,8 +37,9 @@ export function KurallarYonetimi() {
     // 01-app/02-guides/server-actions.md.
     startTransition(() => {
       kurallarGetir().then((res) => {
-        if (res.error) return setHata(res.error);
-        setMetin(res.metin);
+        setYuklendi(true);
+        if (res.error) return setYukleHatasi(res.error);
+        setMetin(res.metin ?? "");
         setVersiyon(res.versiyon);
         setDuzenlemeMetni(res.metin ?? "");
       });
@@ -59,12 +70,10 @@ export function KurallarYonetimi() {
         {versiyon && <span style={{ color: TEXT_MUTED }} className="text-[11px]">· {versiyon}</span>}
       </div>
 
-      {metin === null ? (
-        hata ? (
-          <div style={{ color: BLUSH }} className="text-xs font-semibold py-3 text-center">{hata}</div>
-        ) : (
-          <p style={{ color: TEXT_MUTED }} className="text-sm py-3 text-center">Yükleniyor...</p>
-        )
+      {!yuklendi ? (
+        <p style={{ color: TEXT_MUTED }} className="text-sm py-3 text-center">Yükleniyor...</p>
+      ) : yukleHatasi ? (
+        <div style={{ color: BLUSH }} className="text-xs font-semibold py-3 text-center">{yukleHatasi}</div>
       ) : (
         <div className="flex flex-col gap-2">
           <textarea

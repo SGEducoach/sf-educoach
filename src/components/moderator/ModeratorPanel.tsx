@@ -266,8 +266,12 @@ function KullaniciKarti({ kullanici: k, schoolId, onMesaj }: { kullanici: Modera
   const [duzenleAcik, setDuzenleAcik] = useState(false);
   const [sifreAcik, setSifreAcik] = useState(false);
   const [yeniSifre, setYeniSifre] = useState("");
-  // Kullanıcı isteği (26.08.2026): Pasifleştir/Sil/Rozetleri Sıfırla artık
-  // doğrudan görünmüyor — "Diğer ayarlar" tıklanınca açılıyor.
+  // Kullanıcı isteği (26.08.2026): Pasifleştir/Sil artık doğrudan görünmüyor
+  // — "Diğer ayarlar" tıklanınca açılıyor. Rozetleri sıfırla ise (aynı gün,
+  // tekrar bildirim: "moderatöre de verilecek") görünürlüğü artırmak için
+  // AŞAĞIDA, ana buton sırasına taşındı — yetki zaten vardı
+  // (moderatorRozetSifirla requireModerator ile korunuyor), sorun sadece bu
+  // toggle'ın arkasında gizli kalıp fark edilmemesiydi.
   const [digerAcik, setDigerAcik] = useState(false);
 
   return (
@@ -286,6 +290,13 @@ function KullaniciKarti({ kullanici: k, schoolId, onMesaj }: { kullanici: Modera
             <ArrowRightLeft className="mr-1 inline" size={12}/>{k.kategori === "ogrenci" ? "Sınıf taşı" : "Branş"}
           </button>
         )}
+        {k.kategori === "ogrenci" && (
+          <button disabled={pending} title="Rozet ilerlemesini bugünden başlatır — geçmiş çalışma kayıtları silinmez"
+            onClick={() => { if (!window.confirm(`${k.ad} için rozet ilerlemesi bugünden başlatılsın mı?`)) return; startTransition(async () => { const r = await moderatorRozetSifirla(k.id, schoolId); onMesaj(r.error ? `Hata: ${r.error}` : "Rozetler sıfırlandı."); }); }}
+            className="sfec-btn rounded-lg px-3 py-2 text-[11px] font-bold" style={{ color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
+            <Award size={12} className="mr-1 inline"/> Rozetleri sıfırla
+          </button>
+        )}
         <button disabled={pending} onClick={() => setDigerAcik((v) => !v)}
           className="sfec-btn rounded-lg px-3 py-2 text-[11px] font-bold flex items-center gap-1" style={{ background: digerAcik ? MINT : "transparent", color: digerAcik ? MINT_ON : TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
           Diğer ayarlar <ChevronDown size={12} style={{ transform: digerAcik ? "rotate(180deg)" : undefined, transition: "transform 0.15s" }}/>
@@ -296,13 +307,6 @@ function KullaniciKarti({ kullanici: k, schoolId, onMesaj }: { kullanici: Modera
         <div className="mt-2 flex flex-wrap gap-2 rounded-lg p-2" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
           <button disabled={pending} onClick={() => startTransition(async () => { const r = await moderatorAktiflikDegistir(k.id, !k.aktif, schoolId); onMesaj(r.error ? `Hata: ${r.error}` : "İşlem tamamlandı."); })} className="sfec-btn flex-1 rounded-lg px-2 py-2 text-[11px] font-bold" style={{ color: k.aktif ? BLUSH : MINT, border: `2px solid ${BORDER_STRONG}` }}>{k.aktif ? <UserX className="mr-1 inline" size={12}/> : <UserCheck className="mr-1 inline" size={12}/>} {k.aktif ? "Pasifleştir" : "Aktifleştir"}</button>
           <button disabled={pending} onClick={() => { if (!window.confirm(`${k.ad} hesabı kalıcı olarak silinsin mi?`)) return; startTransition(async () => { const r = await moderatorHesapSil(k.id, schoolId); onMesaj(r.error ? `Hata: ${r.error}` : "Hesap silindi."); }); }} className="sfec-btn rounded-lg px-3 py-2 text-[11px] font-bold" style={{ color: BLUSH, border: `2px solid ${BORDER_STRONG}` }}><Trash2 className="mr-1 inline" size={12}/>Sil</button>
-          {k.kategori === "ogrenci" && (
-            <button disabled={pending} title="Rozet ilerlemesini bugünden başlatır — geçmiş çalışma kayıtları silinmez"
-              onClick={() => { if (!window.confirm(`${k.ad} için rozet ilerlemesi bugünden başlatılsın mı?`)) return; startTransition(async () => { const r = await moderatorRozetSifirla(k.id, schoolId); onMesaj(r.error ? `Hata: ${r.error}` : "Rozetler sıfırlandı."); }); }}
-              className="sfec-btn flex-1 rounded-lg px-2 py-2 text-[11px] font-bold" style={{ color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
-              <Award size={12} className="mr-1 inline"/> Rozetleri sıfırla
-            </button>
-          )}
         </div>
       )}
 
