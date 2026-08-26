@@ -124,15 +124,16 @@ export function MobilMenu({ ad, role, kurumTuru, brans, okunmamisMesajSayisi, mo
 
             <div className="flex items-center justify-between rounded-xl px-2.5 py-1.5">
               <span style={{ color: TEXT }} className="text-[13px] font-semibold">Bildirimler</span>
-              <BildirimAyarlari />
+              <BildirimAyarlari role={role} />
             </div>
 
-            {(role === "ogrenci" || role === "veli") && (
-              <div className="flex items-center justify-between rounded-xl px-2.5 py-1.5">
-                <span style={{ color: TEXT }} className="text-[13px] font-semibold">Mesajlarım</span>
-                <MesajlarimIkonu baslangicSayisi={okunmamisMesajSayisi} />
-              </div>
-            )}
+            {/* Kullanıcı isteği (26.08.2026): yanlış giriş denemesi bildirimi
+                artık öğrenci hariç tüm rollere gidiyor (bkz. api/giris/route.ts)
+                — Mesajlarım kutusu bu yüzden ARTIK TÜM ROLLERDE görünüyor. */}
+            <div className="flex items-center justify-between rounded-xl px-2.5 py-1.5">
+              <span style={{ color: TEXT }} className="text-[13px] font-semibold">Mesajlarım</span>
+              <MesajlarimIkonu baslangicSayisi={okunmamisMesajSayisi} />
+            </div>
 
             <form action={signOut} className="mt-1 pt-2" style={{ borderTop: `2px solid ${BORDER}` }}>
               <button type="submit"

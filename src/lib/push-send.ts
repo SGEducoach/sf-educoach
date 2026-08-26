@@ -3,6 +3,18 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type DuyuruAliciTuru = "hepsi" | "ogrenci" | "veli";
 
+// Kullanıcı isteği (26.08.2026): Bildirimler bölümünde öğretmen/müdür
+// duyurularının AYRI AYRI kapatılabilmesi — bkz. migration 0077
+// (profiles.bildirim_ogretmen_mesaji/bildirim_mudur_mesaji). Admin
+// duyurusu buna dahil değil (o zaten site geneli sabit banner + push
+// olarak ayrı bir yoldan gidiyor, bkz. src/lib/site-duyuru.ts) — bu
+// yüzden admin gönderiminde kategori hiç geçilmiyor.
+export type DuyuruKategorisi = "ogretmen_mesaji" | "mudur_mesaji";
+const DUYURU_KATEGORI_KOLONU: Record<DuyuruKategorisi, "bildirim_ogretmen_mesaji" | "bildirim_mudur_mesaji"> = {
+  ogretmen_mesaji: "bildirim_ogretmen_mesaji",
+  mudur_mesaji: "bildirim_mudur_mesaji",
+};
+
 // Rozet kazanımı gibi anlık (kullanıcı işlem yaparken tetiklenen) push
 // bildirimleri için — cron route'undaki toplu gönderim ayrı/optimize
 // kalıyor (yüzlerce öğrenciyi tek seferde işliyor), bu ise tek bir
@@ -64,6 +76,7 @@ export async function duyuruGonder(
   govde: string,
   gonderenId?: string,
   aliciTuru: DuyuruAliciTuru = "hepsi",
+  kategori?: DuyuruKategorisi,
 ): Promise<{ ogrenciSayisi: number; veliSayisi: number }> {
   if (ogrenciIdleri.length === 0) return { ogrenciSayisi: 0, veliSayisi: 0 };
 
@@ -72,8 +85,23 @@ export async function duyuruGonder(
     .select("parent_id")
     .in("student_id", ogrenciIdleri);
   const veliIdSeti = new Set((veliBaglantilari ?? []).map((v) => v.parent_id as string));
-  const ogrenciAlicilari = aliciTuru === "veli" ? [] : ogrenciIdleri;
-  const veliAlicilari = aliciTuru === "ogrenci" ? new Set<string>() : veliIdSeti;
+  let ogrenciAlicilari = aliciTuru === "veli" ? [] : ogrenciIdleri;
+  let veliAlicilari = aliciTuru === "ogrenci" ? new Set<string>() : veliIdSeti;
+
+  // Kategoriye göre kapatmış olanları alıcı listesinden çıkar (kullanıcı
+  // isteği, 26.08.2026 — bkz. migration 0077).
+  if (kategori) {
+    const kolon = DUYURU_KATEGORI_KOLONU[kategori];
+    const tumAlicilar = [...new Set([...ogrenciAlicilari, ...veliAlicilari])];
+    if (tumAlicilar.length > 0) {
+      const { data: tercihler } = await admin.from("profiles").select(`id, ${kolon}`).in("id", tumAlicilar);
+      const kapatanlar = new Set((tercihler ?? []).filter((p) => (p as unknown as Record<string, boolean>)[kolon] === false).map((p) => p.id as string));
+      if (kapatanlar.size > 0) {
+        ogrenciAlicilari = ogrenciAlicilari.filter((id) => !kapatanlar.has(id));
+        veliAlicilari = new Set([...veliAlicilari].filter((id) => !kapatanlar.has(id)));
+      }
+    }
+  }
 
   for (const ogrenciId of ogrenciAlicilari) await pushGonderProfile(admin, ogrenciId, baslik, govde);
   for (const veliId of veliAlicilari) await pushGonderProfile(admin, veliId, baslik, govde);

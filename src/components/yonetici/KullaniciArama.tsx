@@ -4,7 +4,7 @@ import { useState, useEffect, useTransition } from "react";
 import Link from "next/link";
 import { Search, Users, KeyRound, EyeOff, Eye, Copy, Check, ArrowRightLeft, Trash2, Settings, Building2, ChevronLeft } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH, LILAC, LILAC_TEXT } from "@/lib/theme";
-import { kullaniciAra, sifreSifirla, hesapAktiflikDegistir, hesapSil, okulSiniflari, ogrenciSinifTasi, ogretmenBransDegistir, yonetimOkullariGetir, type KullaniciSonuc, type YonetimOkulu } from "@/app/yonetici/actions";
+import { kullaniciAra, sifreSifirla, sifreBelirle, hesapAktiflikDegistir, hesapSil, okulSiniflari, ogrenciSinifTasi, ogretmenBransDegistir, yonetimOkullariGetir, type KullaniciSonuc, type YonetimOkulu } from "@/app/yonetici/actions";
 import { BRANS_LISTESI } from "@/lib/types";
 import type { UserRole } from "@/lib/types";
 import { KullaniciDetayYonetimi } from "@/components/yonetici/KullaniciDetayYonetimi";
@@ -191,6 +191,9 @@ function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
   const [silmePending, startSilmeTransition] = useTransition();
   const [duzenleAcik, setDuzenleAcik] = useState(false);
   const [detayAcik, setDetayAcik] = useState(false);
+  const [elleSifreAcik, setElleSifreAcik] = useState(false);
+  const [elleSifre, setElleSifre] = useState("");
+  const [elleSifrePending, startElleSifreTransition] = useTransition();
 
   function sifreSifirlaTikla() {
     if (!window.confirm(`${kullanici.ad} için yeni bir şifre oluşturulsun mu? Eski şifre geçersiz olacak.`)) return;
@@ -199,6 +202,16 @@ function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
       const res = await sifreSifirla(kullanici.id);
       if (res.error) return setHata(res.error);
       setYeniSifre(res.sifre);
+    });
+  }
+
+  function elleSifreKaydet() {
+    setHata(null);
+    startElleSifreTransition(async () => {
+      const res = await sifreBelirle(kullanici.id, elleSifre);
+      if (res.error) return setHata(res.error);
+      setElleSifre("");
+      setElleSifreAcik(false);
     });
   }
 
@@ -239,6 +252,7 @@ function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
         <Link href={`/yonetici/kullanici/${kullanici.id}`} className="min-w-0 flex-1 cursor-pointer group" title={`${kullanici.ad} kullanıcısının sayfasını görüntüle`}>
           <div style={{ color: TEXT }} className="text-sm font-semibold underline-offset-2 group-hover:underline transition-colors">
             {kullanici.ad} <span style={{ color: LILAC_TEXT }} className="text-[10px] font-bold ml-1">{ROL_ETIKET[kullanici.role]}</span>
+            {kullanici.moderatorMu && <span style={{ color: MINT_ON, background: MINT }} className="text-[10px] font-bold ml-1 px-1.5 py-0.5 rounded-full">Moderatör</span>}
             {!aktif && <span style={{ color: BLUSH }} className="text-[10px] font-bold ml-1">Pasif</span>}
           </div>
           <div style={{ color: TEXT_MUTED }} className="text-xs mt-0.5">
@@ -246,10 +260,15 @@ function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
           </div>
         </Link>
         <div className="flex items-center gap-1.5 shrink-0">
-          <button type="button" onClick={sifreSifirlaTikla} disabled={sifrePending} title="Şifre sıfırla"
+          <button type="button" onClick={sifreSifirlaTikla} disabled={sifrePending} title="Rastgele yeni şifre oluştur"
             className="sfec-btn flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full disabled:opacity-60"
             style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
-            <KeyRound size={11} /> Şifre sıfırla
+            <KeyRound size={11} /> Rastgele şifre
+          </button>
+          <button type="button" onClick={() => setElleSifreAcik((v) => !v)} title="Şifreyi elle belirle"
+            className="sfec-btn flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full"
+            style={{ background: elleSifreAcik ? MINT : "rgba(255,255,255,0.06)", color: elleSifreAcik ? MINT_ON : TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
+            <KeyRound size={11} /> Şifre belirle
           </button>
           <button type="button" onClick={aktiflikTikla} disabled={aktiflikPending} title={aktif ? "Pasifleştir" : "Aktifleştir"}
             className="sfec-btn flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full disabled:opacity-60"
@@ -285,6 +304,16 @@ function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
         <OgretmenBransFormu teacherId={kullanici.id} suankiBrans={kullanici.brans} onDone={() => setDuzenleAcik(false)} />
       )}
 
+      {elleSifreAcik && (
+        <div className="rounded-xl p-2.5 flex items-center gap-2 flex-wrap" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
+          <input type="text" value={elleSifre} onChange={(e) => setElleSifre(e.target.value)} placeholder="Yeni şifre (en az 8, harf+rakam+özel işaret)"
+            className="min-w-0 flex-1 rounded-lg px-2.5 py-2 text-xs outline-none" style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }} />
+          <button type="button" disabled={elleSifrePending || !elleSifre} onClick={elleSifreKaydet}
+            className="sfec-btn shrink-0 rounded-lg px-3 py-2 text-[11px] font-bold disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+            {elleSifrePending ? "Kaydediliyor..." : "Kaydet"}
+          </button>
+        </div>
+      )}
       {yeniSifre && (
         <div className="rounded-xl p-2.5 flex items-center justify-between gap-2 flex-wrap" style={{ background: MINT_BG, border: `1px solid ${MINT}` }}>
           <div className="text-xs" style={{ color: TEXT }}>

@@ -117,17 +117,15 @@ export default async function DashboardPage({
     ? await supabase.from("school_moderators").select("school_id").eq("profile_id", user.id).maybeSingle()
     : { data: null };
 
-  // Sadece öğrenci/veli duyuru alıcısı olabiliyor — diğer rollerde sorgu
-  // zaten boş dönüyor, koşul sadece gereksiz sorguyu atlıyor.
-  let okunmamisMesajSayisi = 0;
-  if (role === "ogrenci" || role === "veli") {
-    const { count } = await supabase
-      .from("duyuru_aliciler")
-      .select("*", { count: "exact", head: true })
-      .eq("profile_id", user.id)
-      .eq("okundu", false);
-    okunmamisMesajSayisi = count ?? 0;
-  }
+  // Kullanıcı isteği (26.08.2026): yanlış giriş bildirimi artık öğrenci
+  // hariç tüm rollere gidebiliyor (bkz. api/giris/route.ts) — bu sorgu
+  // artık TÜM roller için çalışıyor, sadece öğrenci/veliyle sınırlı değil.
+  const { count: okunmamisMesajSayisiHam } = await supabase
+    .from("duyuru_aliciler")
+    .select("*", { count: "exact", head: true })
+    .eq("profile_id", user.id)
+    .eq("okundu", false);
+  const okunmamisMesajSayisi = okunmamisMesajSayisiHam ?? 0;
 
   return (
     <div className="sfec-dashboard-shell min-h-dvh w-full flex-1 flex flex-col">

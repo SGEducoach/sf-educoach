@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, BookOpen, CheckCircle2, Clock3, School, UserRound, Users } from "lucide-react";
+import { BookOpen, CheckCircle2, Clock3, School, UserRound, Users } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -11,11 +11,54 @@ import { Header } from "@/components/dashboard/Header";
 import { DashboardYanMenu } from "@/components/dashboard/DashboardYanMenu";
 import { DersProgramiYonetimi } from "@/components/dashboard/DersProgramiYonetimi";
 import { YurtNobetiTablosu } from "@/components/dashboard/YurtNobetiTablosu";
+import { GeriDonButonu } from "@/components/yonetici/GeriDonButonu";
+import { ProfiliYonetToggle } from "@/components/yonetici/ProfiliYonetToggle";
+import type { KullaniciSonuc } from "@/app/yonetici/actions";
 import { ogretmenProgramiGetir, yurtNobetiGetir } from "@/lib/ders-programi";
 import { BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, TEXT, TEXT_MUTED } from "@/lib/theme";
 import type { UserRole } from "@/lib/types";
 
 const ROL_ETIKET: Record<UserRole, string> = { ogrenci: "Öğrenci", ogretmen: "Öğretmen", veli: "Veli", mudur: "Müdür", admin: "Yönetici" };
+
+// "Profili Yönet" (kullanıcı isteği, 26.08.2026): bu sayfa şimdiye kadar
+// salt-okunur bir görünümdü — KullaniciDetayYonetimi'nin (düzenleme formu)
+// çalışması için KullaniciArama'daki kullaniciAra()'nın döndürdüğüyle aynı
+// şekilde KullaniciSonuc biçimine ihtiyacı var. Burada tek kullanıcı için
+// aynı alanları ayrı bir sorgu ile topluyoruz (kullaniciAra çoklu-satır
+// arama için tasarlandığından doğrudan reuse edilmiyor).
+async function kullaniciSonucInsa(
+  admin: ReturnType<typeof createAdminClient>,
+  profil: { id: string; ad: string; email: string | null; telefon: string | null; aktif: boolean },
+  role: UserRole,
+): Promise<KullaniciSonuc> {
+  const { data: moderatorKaydi } = await admin.from("school_moderators").select("profile_id").eq("profile_id", profil.id).maybeSingle();
+  const taban: KullaniciSonuc = {
+    id: profil.id, ad: profil.ad, email: profil.email, telefon: profil.telefon, role, aktif: profil.aktif,
+    okulAdi: null, okulId: null, sinifAdi: null, sinifId: null, okulNo: null, brans: null,
+    yurtOgrencisi: null, aytAlan: null, hedefBolum: null, hedefNetTyt: null, hedefNetAyt: null,
+    moderatorMu: !!moderatorKaydi,
+  };
+  if (role === "ogrenci") {
+    const { data } = await admin.from("students")
+      .select("okul_no, school_id, class_id, yurt_ogrencisi, ayt_alan, hedef_bolum, hedef_net_tyt, hedef_net_ayt, schools(ad), classes(seviye, sube)")
+      .eq("id", profil.id).maybeSingle();
+    if (!data) return taban;
+    const okul = data.schools as unknown as { ad: string } | null;
+    const sinif = data.classes as unknown as { seviye: string; sube: string } | null;
+    return {
+      ...taban, okulAdi: okul?.ad ?? null, okulId: data.school_id, sinifAdi: sinif ? `${sinif.seviye}-${sinif.sube}` : null,
+      sinifId: data.class_id, okulNo: data.okul_no, yurtOgrencisi: data.yurt_ogrencisi, aytAlan: data.ayt_alan,
+      hedefBolum: data.hedef_bolum, hedefNetTyt: data.hedef_net_tyt, hedefNetAyt: data.hedef_net_ayt,
+    };
+  }
+  if (role === "ogretmen" || role === "mudur") {
+    const { data } = await admin.from("teachers").select("brans, school_id, schools(ad)").eq("id", profil.id).maybeSingle();
+    if (!data) return taban;
+    const okul = data.schools as unknown as { ad: string } | null;
+    return { ...taban, okulAdi: okul?.ad ?? null, okulId: data.school_id, brans: data.brans };
+  }
+  return taban;
+}
 
 export default async function KullaniciGoruntulemeSayfasi({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -29,6 +72,7 @@ export default async function KullaniciGoruntulemeSayfasi({ params }: { params: 
   const { data: profil } = await admin.from("profiles").select("id, ad, email, telefon, role, aktif, created_at").eq("id", id).maybeSingle();
   if (!profil || profil.role === "admin") notFound();
   const role = profil.role as UserRole;
+  const kullaniciSonuc = await kullaniciSonucInsa(admin, profil, role);
 
   return (
     <div className="sfec-dashboard-shell min-h-dvh w-full flex-1 flex flex-col">
@@ -36,16 +80,20 @@ export default async function KullaniciGoruntulemeSayfasi({ params }: { params: 
       <div className="mx-auto flex min-h-[calc(100dvh-6.75rem)] w-full max-w-[100rem] flex-1 items-stretch gap-6 px-4 py-6 sm:px-6 lg:py-7">
         <DashboardYanMenu role="admin" aktifBolum="kullanicilar" />
         <main id="ana-icerik" className="sfec-dashboard-main min-h-[calc(100dvh-10.25rem)] min-w-0 w-full max-w-4xl flex-1 flex flex-col gap-6">
-          <Link href="/yonetici/kullanicilar" className="sfec-btn inline-flex min-h-11 w-fit items-center gap-1.5 rounded-full px-3 text-xs font-bold"
-            style={{ background: BG1, color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}><ArrowLeft size={15} /> Kullanıcılara dön</Link>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <GeriDonButonu />
+          </div>
           <section className="rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-            <div className="flex items-start gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: BG1_ALT }}><UserRound size={21} color={MINT} /></div>
-              <div className="min-w-0">
-                <h1 className="text-xl font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>{profil.ad}</h1>
-                <p className="mt-1 text-xs" style={{ color: TEXT_MUTED }}>{ROL_ETIKET[role]} · {profil.aktif ? "Aktif hesap" : "Pasif hesap"}</p>
-                <p className="mt-1 break-all text-xs" style={{ color: TEXT_MUTED }}>{[profil.email, profil.telefon].filter(Boolean).join(" · ") || "İletişim bilgisi yok"}</p>
+            <div className="flex items-start justify-between gap-3 flex-wrap">
+              <div className="flex items-start gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: BG1_ALT }}><UserRound size={21} color={MINT} /></div>
+                <div className="min-w-0">
+                  <h1 className="text-xl font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>{profil.ad}</h1>
+                  <p className="mt-1 text-xs" style={{ color: TEXT_MUTED }}>{ROL_ETIKET[role]}{kullaniciSonuc.moderatorMu ? " · Moderatör" : ""} · {profil.aktif ? "Aktif hesap" : "Pasif hesap"}</p>
+                  <p className="mt-1 break-all text-xs" style={{ color: TEXT_MUTED }}>{[profil.email, profil.telefon].filter(Boolean).join(" · ") || "İletişim bilgisi yok"}</p>
+                </div>
               </div>
+              <ProfiliYonetToggle kullanici={kullaniciSonuc} />
             </div>
           </section>
           {role === "ogrenci" && <OgrenciSayfasi admin={admin} userId={id} ad={profil.ad} />}

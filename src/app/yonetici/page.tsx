@@ -20,7 +20,7 @@ import { dershaneDenemeSuresiGetir, siteAyarlariGetir } from "@/app/yonetici/act
 import { suresiDolduMu } from "@/lib/deneme-suresi";
 import { AdminProfilim } from "@/components/yonetici/AdminProfilim";
 import { YoneticiGirisForm } from "@/components/yonetici/YoneticiGirisForm";
-import { YoneticiYetkileri } from "@/components/yonetici/YoneticiYetkileri";
+import { YoneticiDuyuruPaneli } from "@/components/yonetici/YoneticiDuyuruPaneli";
 import { dashboardMenusu } from "@/lib/dashboard-navigation";
 import type { DashboardBolumu } from "@/lib/dashboard-navigation";
 import { sinifSiraKarsilastir } from "@/lib/types";
@@ -77,9 +77,18 @@ export default async function YoneticiPage({
   const { bitis: dershaneDenemeBitisi } = aktifBolum === "ozet" ? await dershaneDenemeSuresiGetir() : { bitis: null };
   const { kapali: siteKapali } = aktifBolum === "site-ayarlari" ? await siteAyarlariGetir() : { kapali: false };
 
+  // Kullanıcı isteği (26.08.2026): admin de dahil olmak üzere yanlış giriş
+  // denemesi bildirimi alıyor (bkz. api/giris/route.ts) — Mesajlarım kutusu
+  // artık admin panelinde de görünüyor.
+  const { count: okunmamisMesajSayisiHam } = await supabase
+    .from("duyuru_aliciler")
+    .select("*", { count: "exact", head: true })
+    .eq("profile_id", user.id)
+    .eq("okundu", false);
+
   return (
     <div className="sfec-dashboard-shell min-h-dvh w-full flex-1 flex flex-col">
-      <Header ad={profile.ad} role="admin" aktifBolum={aktifBolum} />
+      <Header ad={profile.ad} role="admin" aktifBolum={aktifBolum} okunmamisMesajSayisi={okunmamisMesajSayisiHam ?? 0} />
       <div className="mx-auto flex min-h-[calc(100dvh-6.75rem)] w-full max-w-[100rem] flex-1 items-stretch gap-6 px-4 py-6 sm:px-6 lg:py-7">
         <DashboardYanMenu role="admin" aktifBolum={aktifBolum} />
         <main id="ana-icerik" className="sfec-dashboard-main min-h-[calc(100dvh-10.25rem)] min-w-0 w-full flex-1 flex flex-col gap-6">
@@ -87,7 +96,7 @@ export default async function YoneticiPage({
             <>
               <section className="sfec-section"><PlatformIstatistikleri /></section>
               <section className="sfec-section"><DershaneDenemeSuresiAyari bitis={dershaneDenemeBitisi} doldu={suresiDolduMu(dershaneDenemeBitisi)} /></section>
-              <YoneticiYetkileri />
+              <section className="sfec-section"><YoneticiDuyuruPaneli okullar={okulListesi.map((o) => ({ id: o.id, ad: o.ad }))} /></section>
             </>
           )}
           {aktifBolum === "kullanicilar" && <section className="sfec-section"><KullaniciArama /></section>}

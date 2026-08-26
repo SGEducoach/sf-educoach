@@ -89,7 +89,17 @@ const MUDUR_MENUSU: DashboardMenuOgesi[] = [
   // okul müdürü için de buraya çekildi — dershane müdürüyle aynı ilk
   // deneyim.
   { bolum: "kurum-performansi", href: "/dashboard/kurum-performansi", etiket: "Ana Sayfa", ikon: "ana-sayfa" },
-  { bolum: "ozet", href: "/dashboard", etiket: "Sınıflar", ikon: "ana-sayfa" },
+  // Bug düzeltmesi (26.08.2026 kullanıcı bulgusu): href bare "/dashboard"
+  // idi — dashboard/page.tsx'teki varsayilanBolum mantığı (satır ~105) bu
+  // rol/kurum kombinasyonu için varsayılanı zaten "kurum-performansi" (Ana
+  // Sayfa ile AYNI) yaptığından, bölüm parametresi olmadan "Sınıflar"a
+  // tıklamak "Ana Sayfa"yı tekrar açıyor, hiçbir şey olmuyormuş gibi
+  // görünüyordu. Ayrıca müdürün "Öğrenciler (salt-okunur liste/profil/
+  // performans)" isteğini de bu bölüm zaten karşılıyor (OgretmenPanel'in
+  // "ozet" görünümü — sınıf seç, öğrenciye tıkla, profil+performansı gör;
+  // ban/sil/rozet gibi müdahale butonu yok) — bu yüzden ayrı bir ekran
+  // açmak yerine etiket buna göre güncellendi.
+  { bolum: "ozet", href: "/dashboard?bolum=ozet", etiket: "Öğrenciler", ikon: "ogrenci" },
   // 2026-08-25 kullanıcı isteği: "dershane ve okul müdürü öğretmenlerin
   // programlarını görsün" — okul müdürü salt-okunur (bkz. dashboard/page.tsx
   // OgretmenIcerik yorumu; dershane müdürü zaten kendi ayrı panelinde

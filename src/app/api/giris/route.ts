@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { dershaneDenemeBitisGetir, suresiDolduMu, kurumTuruGetir, DENEME_SURESI_SONA_ERDI_MESAJI } from "@/lib/deneme-suresi";
+import { pushGonderProfile } from "@/lib/push-send";
 import type { UserRole } from "@/lib/types";
 
 const PENCERE_MS = 15 * 60 * 1000;
@@ -19,6 +20,27 @@ function kademeliEngelSuresi(blockCount: number): number {
 
 type GirisRolu = "ogrenci" | "ogretmen" | "veli" | "mudur" | "admin";
 interface GirisGovdesi { role?: GirisRolu; schoolId?: string; okulNo?: string; kod?: string; email?: string; password?: string }
+
+// Kullanıcı isteği (26.08.2026): öğrenci hariç tüm rollerde (admin dahil)
+// hesap sahibine "yanlış giriş denemesi yapıldı" bildirimi düşsün.
+// login_attempt_limits'teki attempt_key hash'i bir profile_id'ye
+// ÇÖZÜLEMEZ (bkz. anahtarOlustur) — bu yüzden hedefi BURADA, girisEmail
+// (rol'e göre RPC'yle veya doğrudan girilen e-posta) üzerinden ayrıca
+// çözüyoruz: gerçekten var olan bir hesaba denk geldiyse (rastgele bir
+// e-posta/okul no değil) ve o hesap öğrenci değilse, mevcut duyuru/
+// mesaj kutusu altyapısı (duyurular+duyuru_aliciler, bkz. push-send.ts)
+// üzerinden hem push hem kalıcı bir "Mesajlarım" kaydı oluşturuyoruz.
+async function yanlisGirisBildirimGonder(admin: ReturnType<typeof createAdminClient>, girisEmail: string, tarih: Date) {
+  if (!girisEmail) return;
+  const { data: hedefProfil } = await admin.from("profiles").select("id, role, bildirim_yanlis_giris").eq("email", girisEmail).maybeSingle();
+  if (!hedefProfil || hedefProfil.role === "ogrenci" || hedefProfil.bildirim_yanlis_giris === false) return;
+
+  const baslik = "Yanlış giriş denemesi";
+  const govde = `${tarih.toLocaleString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })} tarihinde hesabınıza yanlış şifre ile giriş denemesi yapıldı. Bu siz değilseniz şifrenizi değiştirmenizi öneririz.`;
+  await pushGonderProfile(admin, hedefProfil.id, baslik, govde);
+  const { data: duyuru } = await admin.from("duyurular").insert({ gonderen_id: null, baslik, mesaj: govde }).select("id").single();
+  if (duyuru) await admin.from("duyuru_aliciler").insert({ duyuru_id: duyuru.id, profile_id: hedefProfil.id });
+}
 
 function istemciIp(request: NextRequest) {
   return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
@@ -129,6 +151,7 @@ export async function POST(request: NextRequest) {
     const kalan = Math.max(0, MAKS_HATA - yeniSayac);
     const engelDakika = Math.round(engelSuresiMs / 60_000);
     const mesaj = blockedUntil ? `Çok fazla hatalı deneme yapıldı. ${engelDakika} dakika sonra tekrar deneyin.` : `Bilgiler hatalı. Kalan deneme hakkı: ${kalan}.`;
+    await yanlisGirisBildirimGonder(admin, girisEmail, new Date(simdi));
     return NextResponse.json({ error: mesaj }, { status: blockedUntil ? 429 : 401 });
   }
 

@@ -6,10 +6,15 @@ export function MaskotKonusmaBalonu({
   children,
   onKapat,
   ariaLabel,
+  genis = false,
 }: {
   children: React.ReactNode;
   onKapat: () => void;
   ariaLabel: string;
+  // Kullanıcı isteği (26.08.2026): "Mesajlar kutusu küçük, boyutu
+  // ayarlanacak" — sadece Mesajlarım için daha geniş bir varyant, diğer
+  // maskot popup'ları (Görevlerim, Hoşgeldin) etkilenmiyor.
+  genis?: boolean;
 }) {
   return (
     <div className="sfec-mascot-scene" role="dialog" aria-modal="true" aria-label={ariaLabel}>
@@ -23,7 +28,7 @@ export function MaskotKonusmaBalonu({
           className="sfec-mascot-character pointer-events-none select-none"
           priority
         />
-        <div className="sfec-mascot-bubble" style={{ background: BG1, border: `2px solid ${BORDER_STRONG}` }}>
+        <div className={`sfec-mascot-bubble${genis ? " sfec-mascot-bubble--genis" : ""}`} style={{ background: BG1, border: `2px solid ${BORDER_STRONG}` }}>
           <button
             type="button"
             onClick={onKapat}

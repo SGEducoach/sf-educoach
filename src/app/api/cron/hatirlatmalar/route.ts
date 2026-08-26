@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import webpush from "web-push";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { KATEGORI_GERIYE_DONUK_SINIR } from "@/lib/types";
-import { bugununTarihiTR } from "@/lib/tarih";
+import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
 
 // Yurt öğrencisi hafta içi telefonuna erişemiyor — bugün hafta sonu
 // (Cmt/Paz) değilse konu/soru hatırlatmaları onlar için bastırılıyor
@@ -213,9 +213,45 @@ export async function GET(request: Request) {
     // vercel.json'daki 3 ayrı schedule, migration 0066
     // ogretmen_yurt_nobeti_bildirim tablosu).
 
+    // Kullanıcı isteği (26.08.2026, Bildirimler yeniden tasarımı):
+    // "yaklaşan görev/plan" hatırlatması — son_tarih'i TAM OLARAK yarın
+    // olan, hâlâ "bekliyor" durumundaki görev/plan atamaları için (görev
+    // ve öğrencinin kendi "Plan Yap"ı AYNI tabloyu kullanıyor, bkz.
+    // gorev-actions.ts planEkle). Tarih eşitliği tek seferlik eşleştiği
+    // için ayrı bir "gönderildi" bayrağına gerek yok. bildirim_yaklasan_gorev
+    // tercihini kapatan öğrenciye gönderilmiyor (migration 0077).
+    const bugunISO = bugununTarihiTR();
+    const yarinISO = tarihEkle(bugunISO, 1);
+    const { data: yaklasanGorevler } = await admin
+      .from("gorev_atamalari")
+      .select("student_id, gorevler!inner(son_tarih)")
+      .eq("durum", "bekliyor")
+      .eq("gorevler.son_tarih", yarinISO);
+    type YaklasanGorevRow = { student_id: string };
+    const yaklasanOgrenciIdleri = [...new Set((yaklasanGorevler as unknown as YaklasanGorevRow[] ?? []).map((g) => g.student_id))];
+    if (yaklasanOgrenciIdleri.length > 0) {
+      const { data: tercihler } = await admin.from("profiles").select("id, bildirim_yaklasan_gorev").in("id", yaklasanOgrenciIdleri);
+      const kapatanlar = new Set((tercihler ?? []).filter((p) => p.bildirim_yaklasan_gorev === false).map((p) => p.id));
+      const gorevSayisi = new Map<string, number>();
+      for (const g of (yaklasanGorevler as unknown as YaklasanGorevRow[] ?? [])) {
+        gorevSayisi.set(g.student_id, (gorevSayisi.get(g.student_id) ?? 0) + 1);
+      }
+      for (const studentId of yaklasanOgrenciIdleri) {
+        if (kapatanlar.has(studentId)) continue;
+        const sayi = gorevSayisi.get(studentId) ?? 1;
+        const baslik = "Yaklaşan görev hatırlatması";
+        const govde = sayi > 1 ? `Yarın son tarihli ${sayi} görevin/planın var. SeFu Koç'tan kontrol et.` : "Yarın son tarihli bir görevin/planın var. SeFu Koç'tan kontrol et.";
+        await pushGonder(studentId, baslik, govde);
+        const { data: duyuru } = await admin.from("duyurular").insert({ gonderen_id: null, baslik, mesaj: govde }).select("id").single();
+        if (duyuru) await admin.from("duyuru_aliciler").insert({ duyuru_id: duyuru.id, profile_id: studentId });
+      }
+      if (yaklasanOgrenciIdleri.length - kapatanlar.size > 0) {
+        detaylar.push(`${yaklasanOgrenciIdleri.length - kapatanlar.size} öğrenciye yaklaşan görev/plan hatırlatması gönderildi.`);
+      }
+    }
+
     // Faz 3 (§5): süresi (son_tarih) geçmiş, hâlâ "bekliyor" olan görev
     // atamalarını "tamamlanmadı" işaretle.
-    const bugunISO = bugununTarihiTR();
     const { data: suresiGecenGorevler } = await admin
       .from("gorev_atamalari")
       .select("id, gorevler!inner(son_tarih)")

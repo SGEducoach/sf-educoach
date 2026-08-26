@@ -16,6 +16,10 @@ export interface ModeratorKullanici {
   kategori: "ogrenci" | "ogretmen" | "veli";
   sinif: string | null;
   yurtOgrencisi: boolean;
+  // Kullanıcı bulgusu (26.08.2026): "diğer moderatör öğretmenler
+  // listelenmiyor" — aslında listeleniyorlardı ama sade "Öğretmen" olarak
+  // görünüp moderatörlükleri hiç belirtilmiyordu, ayırt edilemiyorlardı.
+  moderatorMu: boolean;
 }
 
 // targetSchoolId: admin'in /yonetici → "Moderatörler" listesinden bir okula
@@ -67,9 +71,13 @@ export async function moderatorKullanicilariGetir(targetSchoolId?: string): Prom
   const ids = [...new Set([...(students ?? []).map(x => x.id), ...(teachers ?? []).map(x => x.id), ...(parents ?? []).map(x => x.parent_id)])]
     .filter((id) => id !== user.id);
   if (!ids.length) return { okulAdi, kullanicilar: [] };
-  const { data: profiles } = await admin.from("profiles").select("id, ad, role, aktif").in("id", ids).neq("role", "admin");
+  const [{ data: profiles }, { data: moderatorler }] = await Promise.all([
+    admin.from("profiles").select("id, ad, role, aktif").in("id", ids).neq("role", "admin"),
+    admin.from("school_moderators").select("profile_id").in("profile_id", ids),
+  ]);
   const studentMap = new Map((students ?? []).map(s => [s.id, s]));
   const teacherMap = new Map((teachers ?? []).map(t => [t.id, t]));
+  const moderatorIdSeti = new Set((moderatorler ?? []).map((m) => m.profile_id));
   return {
     okulAdi,
     kullanicilar: ((profiles ?? []) as { id: string; ad: string; role: UserRole; aktif: boolean }[]).map(p => {
@@ -81,6 +89,7 @@ export async function moderatorKullanicilariGetir(targetSchoolId?: string): Prom
         kategori: s ? "ogrenci" as const : t ? "ogretmen" as const : "veli" as const,
         detay: s ? `Öğrenci · #${s.okul_no}${sinif ? ` · ${sinif}` : ""}` : t ? `${p.role === "mudur" ? "Müdür" : "Öğretmen"} · ${t.brans}${sinif ? ` · ${sinif}` : ""}` : "Veli",
         yurtOgrencisi: s?.yurt_ogrencisi ?? false,
+        moderatorMu: moderatorIdSeti.has(p.id),
       };
     }).sort((a, b) => a.ad.localeCompare(b.ad, "tr")),
   };

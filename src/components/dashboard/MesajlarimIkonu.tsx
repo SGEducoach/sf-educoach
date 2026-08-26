@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import { Mail } from "lucide-react";
+import { ArrowLeft, Mail } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { BORDER, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
 import { MaskotKonusmaBalonu } from "@/components/dashboard/MaskotKonusmaBalonu";
@@ -35,11 +35,15 @@ export function MesajlarimIkonu({ baslangicSayisi }: { baslangicSayisi: number }
   const [sayisi, setSayisi] = useState(baslangicSayisi);
   const [duyurular, setDuyurular] = useState<DuyuruSatiri[] | null>(null);
   const [yukleniyor, setYukleniyor] = useState(false);
+  // Kullanıcı isteği (26.08.2026): "Gelen mesaja tıklayıp herhangi bir
+  // mesajı büyük boyutta detaylı şekilde görülecek."
+  const [secilenMesaj, setSecilenMesaj] = useState<DuyuruSatiri | null>(null);
 
   async function ac() {
     const yeniAcik = !acik;
     setAcik(yeniAcik);
-    if (!yeniAcik || duyurular !== null) return;
+    if (!yeniAcik) { setSecilenMesaj(null); return; }
+    if (duyurular !== null) return;
 
     setYukleniyor(true);
     const { data: { user } } = await supabase.auth.getUser();
@@ -76,19 +80,35 @@ export function MesajlarimIkonu({ baslangicSayisi }: { baslangicSayisi: number }
       </button>
 
       {acik && createPortal(
-        <MaskotKonusmaBalonu onKapat={() => setAcik(false)} ariaLabel="Mesajlarım">
-            <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="block pr-9 text-sm font-bold">Mesajlarım</span>
-            {yukleniyor && <p style={{ color: TEXT_MUTED }} className="text-xs text-center py-4">Yükleniyor...</p>}
-            {!yukleniyor && duyurular?.length === 0 && <p style={{ color: TEXT_MUTED }} className="text-xs text-center py-4">Yeni mesajınız yok.</p>}
-            <div className="mt-2 flex flex-col gap-2">
-              {duyurular?.map((d) => (
-              <div key={d.id} className="rounded-xl p-2.5" style={{ background: "rgba(13,148,136,0.05)", border: `2px solid ${BORDER}` }}>
-                <div style={{ color: TEXT }} className="text-xs font-bold mb-0.5">{d.baslik}</div>
-                <div style={{ color: TEXT_MUTED }} className="text-xs leading-relaxed">{d.mesaj}</div>
-                <div style={{ color: TEXT_MUTED }} className="text-[10px] mt-1">{new Date(d.created_at).toLocaleString("tr-TR")}</div>
-              </div>
-              ))}
-            </div>
+        <MaskotKonusmaBalonu onKapat={() => setAcik(false)} ariaLabel="Mesajlarım" genis>
+            {secilenMesaj ? (
+              <>
+                <button type="button" onClick={() => setSecilenMesaj(null)}
+                  className="sfec-btn mb-3 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold"
+                  style={{ color: TEXT_MUTED, border: `2px solid ${BORDER}` }}>
+                  <ArrowLeft size={13} /> Mesajlarıma dön
+                </button>
+                <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="block text-lg font-bold">{secilenMesaj.baslik}</span>
+                <span style={{ color: TEXT_MUTED }} className="block text-xs mt-1 mb-3">{new Date(secilenMesaj.created_at).toLocaleString("tr-TR")}</span>
+                <p style={{ color: TEXT }} className="text-sm leading-relaxed whitespace-pre-wrap">{secilenMesaj.mesaj}</p>
+              </>
+            ) : (
+              <>
+                <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="block pr-9 text-sm font-bold">Mesajlarım</span>
+                {yukleniyor && <p style={{ color: TEXT_MUTED }} className="text-xs text-center py-4">Yükleniyor...</p>}
+                {!yukleniyor && duyurular?.length === 0 && <p style={{ color: TEXT_MUTED }} className="text-xs text-center py-4">Yeni mesajınız yok.</p>}
+                <div className="mt-2 flex flex-col gap-2">
+                  {duyurular?.map((d) => (
+                  <button key={d.id} type="button" onClick={() => setSecilenMesaj(d)}
+                    className="sfec-btn w-full rounded-xl p-2.5 text-left" style={{ background: "rgba(13,148,136,0.05)", border: `2px solid ${BORDER}` }}>
+                    <div style={{ color: TEXT }} className="text-xs font-bold mb-0.5">{d.baslik}</div>
+                    <div style={{ color: TEXT_MUTED }} className="text-xs leading-relaxed line-clamp-2">{d.mesaj}</div>
+                    <div style={{ color: TEXT_MUTED }} className="text-[10px] mt-1">{new Date(d.created_at).toLocaleString("tr-TR")}</div>
+                  </button>
+                  ))}
+                </div>
+              </>
+            )}
         </MaskotKonusmaBalonu>,
         document.body,
       )}

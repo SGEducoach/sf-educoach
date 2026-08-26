@@ -604,7 +604,7 @@ export async function ogretmenDuyuruGonder(mesaj: string, kapsam?: string, alici
     baslik = "Öğretmeninizden duyuru";
   }
 
-  const sonuc = await duyuruGonderTemel(admin, ogrenciIdleri, baslik, mesajTemiz, user.id, aliciTuru);
+  const sonuc = await duyuruGonderTemel(admin, ogrenciIdleri, baslik, mesajTemiz, user.id, aliciTuru, profile.role === "mudur" ? "mudur_mesaji" : "ogretmen_mesaji");
   await admin.from("admin_audit_log").insert({
     actor_id: user.id,
     eylem: profile.role === "mudur" ? "mudur_duyuru_gonder" : "ogretmen_duyuru_gonder",

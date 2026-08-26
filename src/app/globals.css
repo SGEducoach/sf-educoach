@@ -392,23 +392,19 @@ select option {
   box-shadow: 0 14px 40px rgba(24, 48, 47, 0.28);
 }
 
-.sfec-mascot-bubble::after {
-  content: "";
-  position: absolute;
-  left: 18px;
-  bottom: -13px;
-  width: 24px;
-  height: 24px;
-  background: inherit;
-  border-right: 2px solid var(--sfec-border-strong);
-  border-bottom: 2px solid var(--sfec-border-strong);
-  transform: rotate(45deg);
-}
-
 @media (max-height: 620px) {
   .sfec-mascot-stage { min-height: 0; }
   .sfec-mascot-character { width: 161px; max-height: 80dvh; }
   .sfec-mascot-bubble { width: min(78vw, 330px); max-height: calc(100dvh - 116px); padding: 12px; }
+}
+
+/* Mesajlarım için geniş varyant (kullanıcı isteği, 26.08.2026). */
+.sfec-mascot-bubble--genis {
+  width: min(88vw, 460px);
+  max-height: calc(100dvh - 120px - env(safe-area-inset-bottom));
+}
+@media (max-height: 620px) {
+  .sfec-mascot-bubble--genis { width: min(90vw, 420px); max-height: calc(100dvh - 90px); }
 }
 
 /* Rapor yazdırma: koyu temayı yazıcı için açık zemine çevir. */

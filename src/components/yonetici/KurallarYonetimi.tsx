@@ -51,7 +51,11 @@ export function KurallarYonetimi() {
       </div>
 
       {metin === null ? (
-        <p style={{ color: TEXT_MUTED }} className="text-sm py-3 text-center">Yükleniyor...</p>
+        hata ? (
+          <div style={{ color: BLUSH }} className="text-xs font-semibold py-3 text-center">{hata}</div>
+        ) : (
+          <p style={{ color: TEXT_MUTED }} className="text-sm py-3 text-center">Yükleniyor...</p>
+        )
       ) : (
         <div className="flex flex-col gap-2">
           <textarea

@@ -9,12 +9,11 @@ import {
   ogrencileriTopluEkle, type TopluOgrenciSonuc,
 } from "@/app/dashboard/actions";
 import {
-  sinifSil, sinifOgrencileriGetir, denemeSonucuTopluGir, ogrenciListesiDisaAktar, adminDuyuruGonder,
-  denemeBildirimGonder, adminGonderilenDuyurularGetir, type SinifOgrencisi, type DenemeBildirimSonucu,
+  sinifSil, sinifOgrencileriGetir, denemeSonucuTopluGir, ogrenciListesiDisaAktar,
+  denemeBildirimGonder, type SinifOgrencisi, type DenemeBildirimSonucu,
 } from "@/app/yonetici/actions";
 import { SinifEkleFormu } from "@/components/dashboard/OgretmenPanel";
 import { bugununTarihiTR } from "@/lib/tarih";
-import { DuyuruFormu } from "@/components/dashboard/DuyuruFormu";
 import { IzinliOgrenciListesi } from "@/components/yonetici/IzinliOgrenciListesi";
 import { AYT_ALAN_ETIKET, BRANS_LISTESI, TYT_DERSLERI, AYT_DERSLERI, BRANS_DENEMESI_DERSLERI, DENEME_ZORLUGU_ETIKET, dersSoruSayisi, dokuzOnSinifMi } from "@/lib/types";
 import type { AytAlan, DenemeTuru, DenemeZorlugu } from "@/lib/types";
@@ -56,13 +55,6 @@ export function AdminPanel({
 
   return (
     <div className="flex flex-col gap-6">
-      <DuyuruFormu
-        baslik="Genel Duyuru Gönder"
-        aciklama="Tüm platformdaki öğrenci ve velilere anlık duyuru bildirim gönderin."
-        gonder={adminDuyuruGonder}
-        gecmisGetir={adminGonderilenDuyurularGetir}
-      />
-
       <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div className="flex items-center gap-2">

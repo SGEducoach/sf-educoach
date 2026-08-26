@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { rastgeleSifre, adNormalize, hedefBolumNormalize, telefonGecerliMi, okulNoGecerliMi } from "@/lib/validators";
+import { rastgeleSifre, adNormalize, hedefBolumNormalize, telefonGecerliMi, okulNoGecerliMi, sifreGecerliMi } from "@/lib/validators";
 import { getAnthropicClient } from "@/lib/anthropic";
 import { KONU_ANLATIMI_SISTEM_PROMPTU, icerikTemizle } from "@/lib/konu-anlatimi";
 import { duyuruGonder, pushGonderProfile } from "@/lib/push-send";
@@ -55,6 +55,11 @@ export interface KullaniciSonuc {
   hedefBolum: string | null;
   hedefNetTyt: number | null;
   hedefNetAyt: number | null;
+  // Kullanıcı isteği (26.08.2026): "birden fazla rolü olan kullanıcının
+  // (öğretmen+moderatör gibi) tüm rolleri isim yanında görünsün" —
+  // moderatörlük profiles.role'de ayrı bir değer değil, school_moderators
+  // tablosunda ayrı bir yetki kaydı (bkz. migration 0070 vd.).
+  moderatorMu: boolean;
 }
 
 // Okul/sınıf sınırı olmadan tüm öğrenci/öğretmen/veli/müdür hesaplarında
@@ -115,14 +120,18 @@ export async function kullaniciAra(sorgu: string, rolFiltre: UserRole | "hepsi",
   const ogrenciIdleri = satirlar.filter((s) => s.role === "ogrenci").map((s) => s.id);
   const ogretmenIdleri = satirlar.filter((s) => s.role === "ogretmen" || s.role === "mudur").map((s) => s.id);
 
-  const [ogrenciDetay, ogretmenDetay] = await Promise.all([
+  const [ogrenciDetay, ogretmenDetay, moderatorler] = await Promise.all([
     ogrenciIdleri.length
       ? supabase.from("students").select("id, okul_no, school_id, class_id, yurt_ogrencisi, ayt_alan, hedef_bolum, hedef_net_tyt, hedef_net_ayt, schools(ad), classes(seviye, sube)").in("id", ogrenciIdleri)
       : Promise.resolve({ data: [] }),
     ogretmenIdleri.length
       ? supabase.from("teachers").select("id, brans, school_id, schools(ad)").in("id", ogretmenIdleri)
       : Promise.resolve({ data: [] }),
+    ogretmenIdleri.length
+      ? supabase.from("school_moderators").select("profile_id").in("profile_id", ogretmenIdleri)
+      : Promise.resolve({ data: [] as { profile_id: string }[] }),
   ]);
+  const moderatorIdSeti = new Set((moderatorler.data ?? []).map((m) => m.profile_id));
 
   type OgrenciRow = {
     id: string; okul_no: string; school_id: string; class_id: string; yurt_ogrencisi: boolean;
@@ -149,6 +158,7 @@ export async function kullaniciAra(sorgu: string, rolFiltre: UserRole | "hepsi",
       hedefBolum: o?.hedef_bolum ?? null,
       hedefNetTyt: o?.hedef_net_tyt ?? null,
       hedefNetAyt: o?.hedef_net_ayt ?? null,
+      moderatorMu: moderatorIdSeti.has(s.id),
     };
   });
 
@@ -168,6 +178,22 @@ export async function sifreSifirla(userId: string): Promise<{ error: string | nu
   if (profileError) return { error: profileError.message, sifre: null };
   await auditLogYaz(supabase, user.id, "sifre_sifirla", { hedef_id: userId });
   return { error: null, sifre };
+}
+
+// Elle şifre belirleme — kullanıcı isteği (26.08.2026): "müdür hesapları
+// için admin isterse elle girsin isterse rastgele oluştursun" (mevcut
+// sifreSifirla sadece rastgele üretiyordu). moderatorSifreBelirle ile aynı
+// desen (bkz. moderator/actions.ts); tüm rollerde kullanılabilir, sadece
+// müdürle sınırlanmadı — aynı buton diğer rollerde de aynı işlevi görüyor.
+export async function sifreBelirle(userId: string, yeniSifre: string): Promise<{ error: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  if (!sifreGecerliMi(yeniSifre)) return { error: "Şifre en az 8 karakter olmalı; harf, rakam ve özel işaret içermeli." };
+  const { error } = await admin.auth.admin.updateUserById(userId, { password: yeniSifre });
+  if (error) return { error: error.message };
+  const { error: profileError } = await admin.from("profiles").update({ gecici_sifre: false }).eq("id", userId).neq("role", "admin");
+  if (profileError) return { error: profileError.message };
+  await auditLogYaz(supabase, user.id, "sifre_belirle", { hedef_id: userId });
+  return { error: null };
 }
 
 // Kullanıcı Auth kaydı silinince profiles ve kullanıcıya bağlı veriler,
@@ -689,15 +715,16 @@ export interface AdminHesabi {
   id: string;
   ad: string;
   email: string | null;
+  telefon: string | null;
   aktif: boolean;
   createdAt: string;
 }
 
 export async function adminleriGetir(): Promise<{ error: string | null; adminler: AdminHesabi[] }> {
   const { admin } = await requireAdmin();
-  const { data, error } = await admin.from("profiles").select("id, ad, email, aktif, created_at").eq("role", "admin").order("created_at");
+  const { data, error } = await admin.from("profiles").select("id, ad, email, telefon, aktif, created_at").eq("role", "admin").order("created_at");
   if (error) return { error: error.message, adminler: [] };
-  return { error: null, adminler: (data ?? []).map((a) => ({ id: a.id, ad: a.ad, email: a.email, aktif: a.aktif, createdAt: a.created_at })) };
+  return { error: null, adminler: (data ?? []).map((a) => ({ id: a.id, ad: a.ad, email: a.email, telefon: a.telefon, aktif: a.aktif, createdAt: a.created_at })) };
 }
 
 export async function adminHesapOlustur(input: { ad: string; email: string }): Promise<{ error: string | null; sifre: string | null }> {
@@ -721,6 +748,87 @@ export async function adminHesapOlustur(input: { ad: string; email: string }): P
   await auditLogYaz(supabase, user.id, "admin_hesap_olustur", { yeni_admin_id: created.user?.id, email });
   revalidatePath("/yonetici");
   return { error: null, sifre };
+}
+
+// ============ Admin, başka admin profillerini yönetebilir (26.08.2026
+// kullanıcı isteği) ============
+// Bu dörtlü kasıtlı olarak kullaniciProfilGuncelle/hesapAktiflikDegistir/
+// sifreSifirla/sifreBelirle'nin AYNISI DEĞİL — o fonksiyonlar admin
+// hesaplarını KASITLI DIŞLIYOR (bkz. AdminlerYonetimi.tsx yorumu: "admin
+// hesapları başka hiçbir ekrandan pasifleştirilemez/silinemez"). Burada
+// tam tersi doğrulanıyor (mevcut.role !== 'admin' ise reddedilir) ve
+// kendi kendini kilitleme/son admin'i pasifleştirme ek güvenlik
+// kontrolleriyle korunuyor.
+async function digerAdminGuvenligiKontrol(admin: ReturnType<typeof createAdminClient>, adminId: string): Promise<{ error: string | null }> {
+  const { data: hedef } = await admin.from("profiles").select("role").eq("id", adminId).maybeSingle();
+  if (!hedef || hedef.role !== "admin") return { error: "Kullanıcı bulunamadı veya admin değil." };
+  return { error: null };
+}
+
+export async function adminProfilGuncelle(input: { adminId: string; ad: string; email: string; telefon: string }): Promise<{ error: string | null }> {
+  const { admin } = await requireAdmin();
+  const guvenlik = await digerAdminGuvenligiKontrol(admin, input.adminId);
+  if (guvenlik.error) return guvenlik;
+
+  const ad = adNormalize(input.ad);
+  const email = input.email.trim().toLowerCase();
+  const telefon = input.telefon.trim();
+  if (!ad) return { error: "Ad soyad gerekli." };
+  if (!email || !email.includes("@")) return { error: "Geçerli bir e-posta girin." };
+  if (telefon && !telefonGecerliMi(telefon)) return { error: "Telefon 10-11 rakam olmalı." };
+
+  const { data: mevcut } = await admin.from("profiles").select("email").eq("id", input.adminId).maybeSingle();
+  const { error: authError } = await admin.auth.admin.updateUserById(input.adminId, { email, email_confirm: true });
+  if (authError) return { error: authError.message };
+  const { error: profileError } = await admin.from("profiles").update({ ad, email, telefon: telefon || null }).eq("id", input.adminId);
+  if (profileError) {
+    if (mevcut?.email) await admin.auth.admin.updateUserById(input.adminId, { email: mevcut.email, email_confirm: true });
+    return { error: profileError.message };
+  }
+  revalidatePath("/yonetici/adminler");
+  return { error: null };
+}
+
+export async function adminAktiflikDegistir(adminId: string, aktif: boolean): Promise<{ error: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const guvenlik = await digerAdminGuvenligiKontrol(admin, adminId);
+  if (guvenlik.error) return guvenlik;
+  if (adminId === user.id) return { error: "Kendi hesabınızı buradan pasifleştiremezsiniz." };
+  if (!aktif) {
+    const { count } = await admin.from("profiles").select("id", { count: "exact", head: true }).eq("role", "admin").eq("aktif", true);
+    if ((count ?? 0) <= 1) return { error: "Son aktif admin hesabı pasifleştirilemez." };
+  }
+  const { error: banError } = await admin.auth.admin.updateUserById(adminId, { ban_duration: aktif ? "none" : "87600h" });
+  if (banError) return { error: banError.message };
+  const { error: profileError } = await admin.from("profiles").update({ aktif }).eq("id", adminId);
+  if (profileError) return { error: profileError.message };
+  await auditLogYaz(supabase, user.id, aktif ? "hesap_aktiflestir" : "hesap_pasiflestir", { hedef_id: adminId });
+  revalidatePath("/yonetici/adminler");
+  return { error: null };
+}
+
+export async function adminSifreSifirla(adminId: string): Promise<{ error: string | null; sifre: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const guvenlik = await digerAdminGuvenligiKontrol(admin, adminId);
+  if (guvenlik.error) return { error: guvenlik.error, sifre: null };
+  const sifre = rastgeleSifre();
+  const { error } = await admin.auth.admin.updateUserById(adminId, { password: sifre });
+  if (error) return { error: error.message, sifre: null };
+  await admin.from("profiles").update({ gecici_sifre: true }).eq("id", adminId);
+  await auditLogYaz(supabase, user.id, "sifre_sifirla", { hedef_id: adminId });
+  return { error: null, sifre };
+}
+
+export async function adminSifreBelirle(adminId: string, yeniSifre: string): Promise<{ error: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const guvenlik = await digerAdminGuvenligiKontrol(admin, adminId);
+  if (guvenlik.error) return guvenlik;
+  if (!sifreGecerliMi(yeniSifre)) return { error: "Şifre en az 8 karakter olmalı; harf, rakam ve özel işaret içermeli." };
+  const { error } = await admin.auth.admin.updateUserById(adminId, { password: yeniSifre });
+  if (error) return { error: error.message };
+  await admin.from("profiles").update({ gecici_sifre: false }).eq("id", adminId);
+  await auditLogYaz(supabase, user.id, "sifre_belirle", { hedef_id: adminId });
+  return { error: null };
 }
 
 // ============ İşlem Geçmişi (Faz 3, 2026-08-26) ============
@@ -1252,10 +1360,18 @@ export async function izinliOgrencileriTemizle(schoolId: string): Promise<{ erro
   return { error: null };
 }
 
-// Admin duyurusu — TÜM okullardaki tüm öğrencilere ve bağlı velilere gider.
-// Öğretmen/müdür sürümü (kendi sınıfı/okulu ile sınırlı) dashboard/
-// actions.ts'te ogretmenDuyuruGonder.
-export async function adminDuyuruGonder(mesaj: string): Promise<{ error: string | null; ogrenciSayisi: number; veliSayisi: number; kalanGunlukHak: number }> {
+// Admin duyurusu — öğrenci/veliye (varsa hedef kuruma özel, yoksa TÜM
+// okullardaki) push+mesaj kutusu bildirimi GİDER, AYRICA (kullanıcı isteği,
+// 26.08.2026) platform_ayarlari'ndaki tek aktif "site geneli duyuru"
+// olarak yazılır — Header bunu rol fark etmeksizin (öğretmen/müdür/admin
+// dahil) üstte sabit bir şerit olarak gösterir (bkz. src/lib/site-duyuru.ts).
+// Öğretmen/müdür sürümü (kendi sınıfı/okulu ile sınırlı, banner'a
+// yazmayan) dashboard/actions.ts'te ogretmenDuyuruGonder.
+export async function adminDuyuruGonder(
+  mesaj: string,
+  sureSaat: number | null,
+  kurumId: string | null,
+): Promise<{ error: string | null; ogrenciSayisi: number; veliSayisi: number; kalanGunlukHak: number }> {
   const { supabase, user, admin } = await requireAdmin();
   const bosSonuc = { ogrenciSayisi: 0, veliSayisi: 0, kalanGunlukHak: 0 };
 
@@ -1268,12 +1384,49 @@ export async function adminDuyuruGonder(mesaj: string): Promise<{ error: string 
 
   const izin = await duyuruGonderimIzniKontrol(admin, user.id);
   if (izin.error) return { error: izin.error, ...bosSonuc };
-  const { data: ogrenciler } = await admin.from("students").select("id");
+  let ogrenciQuery = admin.from("students").select("id");
+  if (kurumId) ogrenciQuery = ogrenciQuery.eq("school_id", kurumId);
+  const { data: ogrenciler } = await ogrenciQuery;
   const ogrenciIdleri = (ogrenciler ?? []).map((o) => o.id);
 
   const sonuc = await duyuruGonder(admin, ogrenciIdleri, "SEFU KOÇ duyurusu", mesajTemiz, user.id);
-  await auditLogYaz(supabase, user.id, "admin_duyuru_gonder", { ogrenci_sayisi: sonuc.ogrenciSayisi, veli_sayisi: sonuc.veliSayisi, mesaj: mesajTemiz });
+
+  const bitis = sureSaat ? new Date(Date.now() + sureSaat * 3_600_000).toISOString() : null;
+  const { error: bannerError } = await admin.from("platform_ayarlari")
+    .update({ aktif_duyuru_metni: mesajTemiz, aktif_duyuru_bitis: bitis, aktif_duyuru_kurum_id: kurumId })
+    .eq("id", 1);
+  if (bannerError) return { error: bannerError.message, ...bosSonuc };
+
+  await auditLogYaz(supabase, user.id, "admin_duyuru_gonder", {
+    ogrenci_sayisi: sonuc.ogrenciSayisi, veli_sayisi: sonuc.veliSayisi, mesaj: mesajTemiz, kurum_id: kurumId, sure_saat: sureSaat,
+  });
   return { error: null, ...sonuc, kalanGunlukHak: izin.kalanGunlukHak };
+}
+
+// Admin panelinde "Genel Bakış" altında gösterilecek aktif banner durumu
+// (mesaj + kalan süre + hedef kurum adı) ve kaldırma.
+export async function yoneticiAktifDuyuruGetir(): Promise<{ mesaj: string | null; bitis: string | null; kurumAdi: string | null; aktif: boolean }> {
+  const { admin } = await requireAdmin();
+  const { data } = await admin.from("platform_ayarlari").select("aktif_duyuru_metni, aktif_duyuru_bitis, schools(ad)").eq("id", 1).maybeSingle();
+  const kurum = data?.schools as unknown as { ad: string } | null;
+  const suresiGecti = !!data?.aktif_duyuru_bitis && new Date(data.aktif_duyuru_bitis).getTime() < Date.now();
+  return {
+    mesaj: data?.aktif_duyuru_metni ?? null,
+    bitis: data?.aktif_duyuru_bitis ?? null,
+    kurumAdi: kurum?.ad ?? null,
+    aktif: !!data?.aktif_duyuru_metni && !suresiGecti,
+  };
+}
+
+export async function yoneticiAktifDuyuruSil(): Promise<{ error: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const { error } = await admin.from("platform_ayarlari")
+    .update({ aktif_duyuru_metni: null, aktif_duyuru_bitis: null, aktif_duyuru_kurum_id: null })
+    .eq("id", 1);
+  if (error) return { error: error.message };
+  await auditLogYaz(supabase, user.id, "admin_duyuru_kaldir", {});
+  revalidatePath("/yonetici");
+  return { error: null };
 }
 
 // Admin'in kendi gönderdiği duyuruların geçmişi — bkz dashboard/actions.ts

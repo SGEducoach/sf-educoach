@@ -33,6 +33,7 @@ export default async function ModeratorPage({ searchParams }: { searchParams: Pr
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 px-4 py-7 pb-24 sm:px-6">
         {!adminGoruntuluyor && <YonetimNavigasyonu tur="moderator" aktif="panel"/>}
         <ModeratorPanel {...veri}
+          ad={profil.ad}
           schoolId={adminGoruntuluyor ? params.okul : undefined}
           geriDonusHref={adminGoruntuluyor ? "/yonetici/moderatorler" : "/dashboard"}
           geriDonusEtiketi={adminGoruntuluyor ? "Yönetim paneline dön" : "Ana sayfaya dön"}

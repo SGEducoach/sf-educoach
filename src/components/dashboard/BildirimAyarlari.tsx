@@ -3,11 +3,35 @@
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Bell, BellOff, BellRing, X } from "lucide-react";
-import { BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
+import { BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 import { pushAbonelikSil } from "@/app/dashboard/push-actions";
 import { pushAbonelikAc } from "@/lib/push-subscribe";
+import { bildirimTercihiGuncelle, bildirimTercihleriGetir, type BildirimTercihleri } from "@/app/dashboard/bildirim-actions";
+import type { UserRole } from "@/lib/types";
 
 type Durum = "kontrolEdiliyor" | "desteklenmiyor" | "anaEkranaEklenmeli" | "kapali" | "reddedildi" | "acik";
+
+// Kullanıcı isteği (26.08.2026): "Bildirimler bölümü tarayıcı izninin
+// yanında GERÇEK bildirim türleri de içersin" — rol'e göre hangi
+// tercihlerin gösterileceği burada belirleniyor. "Yaklaşan deneme/sınav
+// tarihleri" BİLİNÇLİ OLARAK yok — platformda öğrenciye özel, ileri
+// tarihli bir sınav/deneme takvimi veri modeli hiç yok (bkz. migration
+// 0077'nin başındaki not); önce o özellik kurulmadan burada gerçek bir
+// tercih sunmak yanıltıcı olurdu.
+const ROL_TERCIHLERI: Record<UserRole, { alan: keyof BildirimTercihleri; etiket: string }[]> = {
+  ogrenci: [
+    { alan: "ogretmenMesaji", etiket: "Öğretmen duyuruları" },
+    { alan: "mudurMesaji", etiket: "Müdür / okul duyuruları" },
+    { alan: "yaklasanGorev", etiket: "Yaklaşan görev/plan hatırlatmaları" },
+  ],
+  veli: [
+    { alan: "ogretmenMesaji", etiket: "Öğretmen duyuruları" },
+    { alan: "mudurMesaji", etiket: "Müdür / okul duyuruları" },
+  ],
+  ogretmen: [{ alan: "yanlisGiris", etiket: "Şüpheli / yanlış giriş uyarıları" }],
+  mudur: [{ alan: "yanlisGiris", etiket: "Şüpheli / yanlış giriş uyarıları" }],
+  admin: [{ alan: "yanlisGiris", etiket: "Şüpheli / yanlış giriş uyarıları" }],
+};
 
 // Header'daki diğer ikonlar (tema, mesajlar) gibi küçük bir zil ikonu —
 // tıklanınca açılan bir kutuda durum ve "aç/kapat" seçeneği gösteriliyor.
@@ -15,11 +39,26 @@ type Durum = "kontrolEdiliyor" | "desteklenmiyor" | "anaEkranaEklenmeli" | "kapa
 // girişte göze batıyordu — artık sadece ihtiyaç olunca açılıyor. Durum ne
 // olursa olsun (kontrol ediliyor, desteklenmiyor, izin reddedilmiş, kapalı,
 // açık) ikon her zaman görünür — sadece içeriği duruma göre değişiyor.
-export function BildirimAyarlari() {
+export function BildirimAyarlari({ role }: { role: UserRole }) {
   const [durum, setDurum] = useState<Durum>("kontrolEdiliyor");
   const [hata, setHata] = useState<string | null>(null);
   const [yukleniyor, setYukleniyor] = useState(false);
   const [acik, setAcik] = useState(false);
+  const [tercihler, setTercihler] = useState<BildirimTercihleri | null>(null);
+  const [tercihPending, setTercihPending] = useState<keyof BildirimTercihleri | null>(null);
+
+  useEffect(() => {
+    if (!acik || tercihler !== null) return;
+    bildirimTercihleriGetir().then((r) => setTercihler(r.tercihler));
+  }, [acik, tercihler]);
+
+  function tercihDegistir(alan: keyof BildirimTercihleri) {
+    if (!tercihler) return;
+    const yeni = !tercihler[alan];
+    setTercihPending(alan);
+    setTercihler({ ...tercihler, [alan]: yeni });
+    bildirimTercihiGuncelle(alan, yeni).finally(() => setTercihPending(null));
+  }
 
   const kontrolEt = useCallback(async () => {
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
@@ -141,6 +180,27 @@ export function BildirimAyarlari() {
                 {durum === "acik" ? <BellOff size={13} /> : <Bell size={13} />}
                 {yukleniyor ? "..." : durum === "acik" ? "Kapat" : "Bildirimleri Aç"}
               </button>
+            )}
+
+            {ROL_TERCIHLERI[role].length > 0 && (
+              <div className="mt-3 pt-3 flex flex-col gap-2" style={{ borderTop: `1px solid ${BORDER_STRONG}` }}>
+                <span style={{ color: TEXT_MUTED }} className="text-[10px] font-bold uppercase tracking-wide">Bildirim türleri</span>
+                {tercihler === null ? (
+                  <p style={{ color: TEXT_MUTED }} className="text-xs">Yükleniyor...</p>
+                ) : (
+                  ROL_TERCIHLERI[role].map(({ alan, etiket }) => (
+                    <button key={alan} type="button" onClick={() => tercihDegistir(alan)} disabled={tercihPending === alan}
+                      className="sfec-btn flex items-center justify-between gap-2 rounded-xl px-2.5 py-2 text-xs disabled:opacity-60"
+                      style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
+                      <span style={{ color: TEXT }}>{etiket}</span>
+                      <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold"
+                        style={{ background: tercihler[alan] ? MINT : "rgba(255,255,255,0.06)", color: tercihler[alan] ? MINT_ON : TEXT_MUTED }}>
+                        {tercihler[alan] ? "Açık" : "Kapalı"}
+                      </span>
+                    </button>
+                  ))
+                )}
+              </div>
             )}
           </div>
         </div>,

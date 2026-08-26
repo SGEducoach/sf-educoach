@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import { ArrowRightLeft, Award, BedDouble, KeyRound, LayoutDashboard, Save, Search, Settings, ShieldCheck, Trash2, UserCheck, UserPlus, UserX } from "lucide-react";
+import { ArrowRightLeft, Award, BedDouble, ChevronDown, KeyRound, LayoutDashboard, Pencil, Save, Search, Settings, ShieldCheck, Trash2, UserCheck, UserPlus, UserX } from "lucide-react";
 import {
   moderatorAktiflikDegistir, moderatorHesapSil, moderatorKurumBilgisiGetir, moderatorKurumGuncelle,
   moderatorOgrenciEkle, moderatorOgrenciSinifTasi, moderatorOgretmenBransDegistir, moderatorOgretmenEkle,
@@ -13,13 +13,18 @@ import { AYT_ALAN_ETIKET, BRANS_LISTESI } from "@/lib/types";
 import type { AytAlan } from "@/lib/types";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 
-export function ModeratorPanel({ okulAdi, kullanicilar, schoolId, geriDonusHref = "/dashboard", geriDonusEtiketi = "Ana sayfaya dön" }: {
+export function ModeratorPanel({ okulAdi, kullanicilar, schoolId, ad, geriDonusHref = "/dashboard", geriDonusEtiketi = "Ana sayfaya dön" }: {
   okulAdi: string; kullanicilar: ModeratorKullanici[];
   // schoolId: yalnızca admin /yonetici → Moderatörler'den bu okulu
   // GÖRÜNTÜLERKEN geçilir (bkz. moderator/page.tsx) — aksiyon fonksiyonlarına
   // iletilir ki requireModerator() admin'in kendi (var olmayan) moderatör
   // satırı yerine hedef okulu kullanabilsin.
-  schoolId?: string; geriDonusHref?: string; geriDonusEtiketi?: string;
+  schoolId?: string;
+  // ad: panele bakan kişinin kendi adı — kullanıcı isteği (26.08.2026):
+  // "moderatör paneli yazısı kaldırılıp Ana sayfaya dön butonu sağ üstte
+  // isim yanına" taşınacak.
+  ad?: string;
+  geriDonusHref?: string; geriDonusEtiketi?: string;
 }) {
   const SAYFA_BOYUTU = 50;
   const [mesaj, setMesaj] = useState<string | null>(null);
@@ -56,16 +61,26 @@ export function ModeratorPanel({ okulAdi, kullanicilar, schoolId, geriDonusHref 
   ];
   return <div className="flex flex-col gap-5">
     <div className="rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-      <div className="flex items-center gap-2"><ShieldCheck size={18} color={MINT} /><h1 style={{ color: TEXT }} className="font-bold">{okulAdi} Moderatör Paneli</h1></div>
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-2"><ShieldCheck size={18} color={MINT} /><h1 style={{ color: TEXT }} className="font-bold">{okulAdi}</h1></div>
+        <div className="flex items-center gap-2.5">
+          {ad && <span style={{ color: TEXT_MUTED }} className="text-xs font-semibold">{ad}</span>}
+          <Link href={geriDonusHref} className="sfec-btn inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold" style={{ color: TEXT, border: `2px solid ${BORDER_STRONG}` }}><LayoutDashboard size={14}/>{geriDonusEtiketi}</Link>
+        </div>
+      </div>
       <p style={{ color: TEXT_MUTED }} className="mt-2 text-xs leading-relaxed">Yetkiniz yalnız bu okulun öğrenci, öğretmen, müdür ve bağlı velileriyle sınırlıdır. Başka okulların kayıtları görüntülenmez veya değiştirilemez.</p>
-      <Link href={geriDonusHref} className="sfec-btn mt-4 inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold" style={{ color: TEXT, border: `2px solid ${BORDER_STRONG}` }}><LayoutDashboard size={14}/>{geriDonusEtiketi}</Link>
     </div>
     {mesaj && <div className="rounded-xl p-3 text-xs font-bold" style={{ color: mesaj.startsWith("Hata") ? BLUSH : MINT, background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>{mesaj}</div>}
 
-    <KurumAyarlariKarti schoolId={schoolId} onMesaj={setMesaj} />
-
+    {/* Kullanıcı isteği (26.08.2026): "Kurum ayarları + Öğretmen ekle +
+        Öğrenci ekle tek çerçevede toplansın" — üç ayrı kart yerine tek
+        "Kurum ayarları" başlıklı bölüm. */}
     <div className="rounded-3xl p-4" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex items-center gap-2 text-sm font-bold" style={{ color: TEXT }}>
+        <Settings size={15} color={TEXT_MUTED} /> Kurum ayarları
+      </div>
+      <KurumBilgileriDuzenleyici schoolId={schoolId} onMesaj={setMesaj} />
+      <div className="mt-4 flex flex-wrap gap-2">
         <button type="button" onClick={() => setEkleModu((m) => m === "ogretmen" ? "yok" : "ogretmen")}
           className="sfec-btn flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold"
           style={{ background: ekleModu === "ogretmen" ? MINT : BG1_ALT, color: ekleModu === "ogretmen" ? MINT_ON : TEXT, border: `2px solid ${BORDER_STRONG}` }}>
@@ -110,8 +125,9 @@ export function ModeratorPanel({ okulAdi, kullanicilar, schoolId, geriDonusHref 
 
 // Kurum ayarları (isim, kurum kodu) — 2026-08-26 kullanıcı isteği: "Kurum
 // ayarlarını (isim, kurum kodu gibi) düzenleyebilir". Varsayılan kapalı,
-// gerekmedikçe listeyle aynı ekranda yer kaplamasın diye.
-function KurumAyarlariKarti({ schoolId, onMesaj }: { schoolId?: string; onMesaj: (m: string) => void }) {
+// gerekmedikçe listeyle aynı ekranda yer kaplamasın diye. Kendi çerçevesi
+// yok — "Kurum ayarları" başlıklı ortak bölümün içine gömülüyor.
+function KurumBilgileriDuzenleyici({ schoolId, onMesaj }: { schoolId?: string; onMesaj: (m: string) => void }) {
   const [acik, setAcik] = useState(false);
   // ad===null → henüz yüklenmedi ("Yükleniyor..." bu şekilde türetiliyor,
   // ayrı bir yükleniyor state'i effect içinde senkron setState'e yol açardı).
@@ -137,9 +153,9 @@ function KurumAyarlariKarti({ schoolId, onMesaj }: { schoolId?: string; onMesaj:
   }
 
   return (
-    <div className="rounded-3xl p-4" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-      <button type="button" onClick={() => setAcik((v) => !v)} className="sfec-btn flex items-center gap-2 text-sm font-bold" style={{ color: TEXT }}>
-        <Settings size={15} color={TEXT_MUTED} /> Kurum ayarları
+    <div className="mt-2">
+      <button type="button" onClick={() => setAcik((v) => !v)} className="sfec-btn flex items-center gap-1.5 text-xs font-bold" style={{ color: TEXT_MUTED }}>
+        <Pencil size={12} /> Kurum adı / kodunu düzenle
       </button>
       {acik && (ad === null ? (
         <p style={{ color: TEXT_MUTED }} className="mt-3 text-xs">Yükleniyor...</p>
@@ -259,22 +275,45 @@ function KullaniciKarti({ kullanici: k, schoolId, onMesaj }: { kullanici: Modera
   const [duzenleAcik, setDuzenleAcik] = useState(false);
   const [sifreAcik, setSifreAcik] = useState(false);
   const [yeniSifre, setYeniSifre] = useState("");
+  // Kullanıcı isteği (26.08.2026): Pasifleştir/Sil/Rozetleri Sıfırla artık
+  // doğrudan görünmüyor — "Diğer ayarlar" tıklanınca açılıyor.
+  const [digerAcik, setDigerAcik] = useState(false);
 
   return (
     <div className="rounded-2xl p-3.5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-      <div style={{ color: TEXT }} className="text-sm font-bold">{k.ad}</div><div style={{ color: TEXT_MUTED }} className="text-xs">{k.detay}</div>
+      <div style={{ color: TEXT }} className="text-sm font-bold flex items-center gap-1.5 flex-wrap">
+        {k.ad}
+        {k.moderatorMu && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5" style={{ background: MINT, color: MINT_ON }}><ShieldCheck size={9}/> Moderatör</span>}
+      </div>
+      <div style={{ color: TEXT_MUTED }} className="text-xs">{k.detay}</div>
       <div className="mt-3 flex flex-wrap gap-2">
         <button disabled={pending} onClick={() => startTransition(async () => { const r = await moderatorSifreSifirla(k.id, schoolId); onMesaj(r.error ? `Hata: ${r.error}` : `Geçici şifre (${k.ad}): ${r.sifre}`); })} className="sfec-btn flex-1 rounded-lg px-2 py-2 text-[11px] font-bold" style={{ color: TEXT, border: `2px solid ${BORDER_STRONG}` }}><KeyRound className="mr-1 inline" size={12}/>Rastgele şifre</button>
         <button disabled={pending} onClick={() => setSifreAcik((v) => !v)} className="sfec-btn flex-1 rounded-lg px-2 py-2 text-[11px] font-bold" style={{ background: sifreAcik ? MINT : "transparent", color: sifreAcik ? MINT_ON : TEXT, border: `2px solid ${BORDER_STRONG}` }}><KeyRound className="mr-1 inline" size={12}/>Şifre belirle</button>
-        <button disabled={pending} onClick={() => startTransition(async () => { const r = await moderatorAktiflikDegistir(k.id, !k.aktif, schoolId); onMesaj(r.error ? `Hata: ${r.error}` : "İşlem tamamlandı."); })} className="sfec-btn flex-1 rounded-lg px-2 py-2 text-[11px] font-bold" style={{ color: k.aktif ? BLUSH : MINT, border: `2px solid ${BORDER_STRONG}` }}>{k.aktif ? <UserX className="mr-1 inline" size={12}/> : <UserCheck className="mr-1 inline" size={12}/>} {k.aktif ? "Pasifleştir" : "Aktifleştir"}</button>
-        <button disabled={pending} onClick={() => { if (!window.confirm(`${k.ad} hesabı kalıcı olarak silinsin mi?`)) return; startTransition(async () => { const r = await moderatorHesapSil(k.id, schoolId); onMesaj(r.error ? `Hata: ${r.error}` : "Hesap silindi."); }); }} className="sfec-btn rounded-lg px-3 py-2 text-[11px] font-bold" style={{ color: BLUSH, border: `2px solid ${BORDER_STRONG}` }}><Trash2 className="mr-1 inline" size={12}/>Sil</button>
         {(k.kategori === "ogrenci" || k.kategori === "ogretmen") && (
           <button disabled={pending} onClick={() => setDuzenleAcik((v) => !v)} title={k.kategori === "ogrenci" ? "Sınıf taşı" : "Branş değiştir"}
             className="sfec-btn rounded-lg px-3 py-2 text-[11px] font-bold" style={{ background: duzenleAcik ? MINT : "transparent", color: duzenleAcik ? MINT_ON : TEXT, border: `2px solid ${BORDER_STRONG}` }}>
             <ArrowRightLeft className="mr-1 inline" size={12}/>{k.kategori === "ogrenci" ? "Sınıf taşı" : "Branş"}
           </button>
         )}
+        <button disabled={pending} onClick={() => setDigerAcik((v) => !v)}
+          className="sfec-btn rounded-lg px-3 py-2 text-[11px] font-bold flex items-center gap-1" style={{ background: digerAcik ? MINT : "transparent", color: digerAcik ? MINT_ON : TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
+          Diğer ayarlar <ChevronDown size={12} style={{ transform: digerAcik ? "rotate(180deg)" : undefined, transition: "transform 0.15s" }}/>
+        </button>
       </div>
+
+      {digerAcik && (
+        <div className="mt-2 flex flex-wrap gap-2 rounded-lg p-2" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
+          <button disabled={pending} onClick={() => startTransition(async () => { const r = await moderatorAktiflikDegistir(k.id, !k.aktif, schoolId); onMesaj(r.error ? `Hata: ${r.error}` : "İşlem tamamlandı."); })} className="sfec-btn flex-1 rounded-lg px-2 py-2 text-[11px] font-bold" style={{ color: k.aktif ? BLUSH : MINT, border: `2px solid ${BORDER_STRONG}` }}>{k.aktif ? <UserX className="mr-1 inline" size={12}/> : <UserCheck className="mr-1 inline" size={12}/>} {k.aktif ? "Pasifleştir" : "Aktifleştir"}</button>
+          <button disabled={pending} onClick={() => { if (!window.confirm(`${k.ad} hesabı kalıcı olarak silinsin mi?`)) return; startTransition(async () => { const r = await moderatorHesapSil(k.id, schoolId); onMesaj(r.error ? `Hata: ${r.error}` : "Hesap silindi."); }); }} className="sfec-btn rounded-lg px-3 py-2 text-[11px] font-bold" style={{ color: BLUSH, border: `2px solid ${BORDER_STRONG}` }}><Trash2 className="mr-1 inline" size={12}/>Sil</button>
+          {k.kategori === "ogrenci" && (
+            <button disabled={pending} title="Rozet ilerlemesini bugünden başlatır — geçmiş çalışma kayıtları silinmez"
+              onClick={() => { if (!window.confirm(`${k.ad} için rozet ilerlemesi bugünden başlatılsın mı?`)) return; startTransition(async () => { const r = await moderatorRozetSifirla(k.id, schoolId); onMesaj(r.error ? `Hata: ${r.error}` : "Rozetler sıfırlandı."); }); }}
+              className="sfec-btn flex-1 rounded-lg px-2 py-2 text-[11px] font-bold" style={{ color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
+              <Award size={12} className="mr-1 inline"/> Rozetleri sıfırla
+            </button>
+          )}
+        </div>
+      )}
 
       {sifreAcik && (
         <div className="mt-2 flex items-center gap-2 rounded-lg p-2" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
@@ -302,11 +341,6 @@ function KullaniciKarti({ kullanici: k, schoolId, onMesaj }: { kullanici: Modera
             className="sfec-btn flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-2 text-[11px] font-bold"
             style={{ background: k.yurtOgrencisi ? MINT : "transparent", color: k.yurtOgrencisi ? MINT_ON : TEXT_MUTED, border: `2px solid ${k.yurtOgrencisi ? MINT : BORDER_STRONG}` }}>
             <BedDouble size={12}/> {k.yurtOgrencisi ? "Yurt öğrencisi ✓" : "Yurt öğrencisi işaretle"}
-          </button>
-          <button disabled={pending} title="Rozet ilerlemesini bugünden başlatır — geçmiş çalışma kayıtları silinmez"
-            onClick={() => { if (!window.confirm(`${k.ad} için rozet ilerlemesi bugünden başlatılsın mı?`)) return; startTransition(async () => { const r = await moderatorRozetSifirla(k.id, schoolId); onMesaj(r.error ? `Hata: ${r.error}` : "Rozetler sıfırlandı."); }); }}
-            className="sfec-btn flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-2 text-[11px] font-bold" style={{ color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
-            <Award size={12}/> Rozetleri sıfırla
           </button>
         </div>
       )}
