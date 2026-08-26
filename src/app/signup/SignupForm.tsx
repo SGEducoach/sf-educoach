@@ -171,6 +171,29 @@ export default function SignupForm({ kurallarMetni, kurallarVersiyon }: { kurall
 }
 
 // ============ ÖĞRENCİ ============
+// Kullanıcı isteği (26.08.2026): veli akışındaki (bkz. KVKK_METNI, aşağıda)
+// gibi öğrenci kaydında da kendi verisinin işlenmesine dair ayrı, tam bir
+// KVKK Aydınlatma Metni + onay isteniyor — daha önce sadece genel "Kayıt
+// ve kullanım kuralları" metninin kısa bir bölümünde değiniliyordu. Onay
+// kalıcı olarak profiles.kvkk_onay_at/kvkk_onay_versiyon'a yazılıyor (bkz.
+// migration 0080 — handle_new_user() artık bu metadata'yı da okuyor).
+const OGRENCI_KVKK_VERSIYON = "v1-2026-08-26";
+const OGRENCI_KVKK_METNI = `SeFu Koç olarak, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, kişisel verilerinizin işlenmesi hakkında sizi bilgilendirmek isteriz.
+
+İşlenen veriler: adınız-soyadınız, okul/sınıf bilginiz, iletişim bilgileriniz (e-posta, telefon), akademik performans verileriniz (deneme sonuçları, çalışma kayıtları, soru çözüm istatistikleri, motivasyon durumu).
+
+İşleme amacı: akademik gelişiminizin takip edilmesi, öğretmeniniz tarafından değerlendirilmesi, size ve (varsa) bağlı velinize bu veriler hakkında bildirim ve rapor sunulması.
+
+Hukuki sebep: KVKK madde 5/2-c (bir sözleşmenin kurulması/ifasıyla doğrudan ilgili olması) ve madde 5/2-f (veri sorumlusunun meşru menfaati).
+
+Veri aktarımı: verileriniz; okul/dershane yönetiminiz, sınıf öğretmeniniz ve (bağlıysa) veliniz dışında, Platform'un altyapı sağlayıcıları (barındırma ve e-posta hizmetleri) hariç üçüncü kişilerle paylaşılmaz.
+
+Saklama süresi: hesabınız aktif olduğu sürece saklanır; hesap kapatma talebinizde makul süre içinde silinir.
+
+Haklarınız: KVKK madde 11 kapsamında verilerinizin düzeltilmesini, silinmesini, işlenme amacını öğrenmeyi talep etme gibi haklara sahipsiniz. Talepleriniz için sg.educoach@gmail.com adresinden bize ulaşabilirsiniz.
+
+Onay: Yukarıdaki bilgilendirmeyi okudum, kişisel verilerimin belirtilen kapsamda işlenmesini kabul ediyorum.`;
+
 function OgrenciKayit({ kurumTuru, schools, classes, router, supabase }: {
   kurumTuru: KurumTuru; schools: School[]; classes: SchoolClass[]; router: ReturnType<typeof useRouter>;
   supabase: ReturnType<typeof createClient>;
@@ -189,6 +212,7 @@ function OgrenciKayit({ kurumTuru, schools, classes, router, supabase }: {
   const [basarili, setBasarili] = useState(false);
   const [geciciSifre, setGeciciSifre] = useState("");
   const [oturumVar, setOturumVar] = useState(false);
+  const [kvkkOnay, setKvkkOnay] = useState(false);
 
   const sinifOptions = classes.filter((c) => c.school_id === schoolId);
   // 9-10. sınıfta TYT/AYT sorulmuyor — Branş Denemesi modeli kullanılıyor
@@ -212,6 +236,7 @@ function OgrenciKayit({ kurumTuru, schools, classes, router, supabase }: {
   async function kayitOl(e: React.FormEvent) {
     e.preventDefault();
     setHata(null);
+    if (!kvkkOnay) return setHata("Devam etmek için KVKK aydınlatma metnini onaylamanız gerekiyor.");
 
     const sifre = rastgeleSifre();
     setYukleniyor(true);
@@ -221,7 +246,7 @@ function OgrenciKayit({ kurumTuru, schools, classes, router, supabase }: {
         data: {
           role: "ogrenci", ad: adNormalize(ad), telefon, okul_no: okulNo,
           school_id: schoolId, class_id: classId, ayt_alan: aytAlan, hedef_bolum: hedefBolumNormalize(hedefBolum),
-          gecici_sifre: true,
+          gecici_sifre: true, kvkk_onay_versiyon: OGRENCI_KVKK_VERSIYON,
         },
       },
     });
@@ -270,12 +295,27 @@ function OgrenciKayit({ kurumTuru, schools, classes, router, supabase }: {
           <p style={{ color: TEXT_MUTED }} className="text-xs leading-relaxed">
             Şifrenizi sistem sizin için oluşturacak ve kayıt tamamlandığında ekranda gösterecek. İlk girişten sonra kendi şifrenizi belirleyebileceksiniz.
           </p>
+
+          <div className="flex flex-col gap-1.5">
+            <Etiket>KVKK Aydınlatma Metni ve Rıza Beyanı</Etiket>
+            <div className="text-[11px] leading-relaxed whitespace-pre-line rounded-xl p-3 max-h-40 overflow-y-auto"
+              style={{ background: BG0, border: `2px solid ${BORDER_STRONG}`, color: TEXT_MUTED }}>
+              {OGRENCI_KVKK_METNI}
+            </div>
+          </div>
+          <label className="flex items-start gap-2 cursor-pointer">
+            <input type="checkbox" checked={kvkkOnay} onChange={(e) => setKvkkOnay(e.target.checked)} className="mt-0.5" />
+            <span style={{ color: TEXT }} className="text-xs leading-snug">
+              Yukarıdaki metni okudum, kişisel verilerimin işlenmesine <strong>açık rızam ile onay veriyorum.</strong>
+            </span>
+          </label>
+
           {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
           <div className="flex gap-2">
             <button type="button" onClick={() => setAdim(1)} className="sfec-btn shrink-0 w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
               <ChevronLeft size={16} color={TEXT_MUTED} />
             </button>
-            <button type="submit" disabled={yukleniyor} className="sfec-btn flex-1 text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+            <button type="submit" disabled={yukleniyor || !kvkkOnay} className="sfec-btn flex-1 text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
               {yukleniyor ? "Kaydediliyor..." : "Kayıt ol"}
             </button>
           </div>
@@ -406,6 +446,25 @@ function DershaneOgrenciTamamlaForm({ schools }: { schools: School[] }) {
 }
 
 // ============ ÖĞRETMEN ============
+// Kullanıcı isteği (26.08.2026): öğrenci akışıyla aynı gerekçe — bkz.
+// OGRENCI_KVKK_METNI üstündeki not.
+const OGRETMEN_KVKK_VERSIYON = "v1-2026-08-26";
+const OGRETMEN_KVKK_METNI = `SeFu Koç olarak, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, kişisel verilerinizin işlenmesi hakkında sizi bilgilendirmek isteriz.
+
+İşlenen veriler: adınız-soyadınız, branş bilginiz, iletişim bilgileriniz (e-posta, telefon), bağlı olduğunuz okul/kurum bilgisi, platform üzerindeki işlem kayıtlarınız (görev/duyuru gönderimi, öğrenci değerlendirmeleri).
+
+İşleme amacı: platform hizmetinin size sunulması, sınıfınızın/öğrencilerinizin yönetilmesi, kurumunuzla ve öğrencilerinizle iletişim kurulması.
+
+Hukuki sebep: KVKK madde 5/2-c (bir sözleşmenin kurulması/ifasıyla doğrudan ilgili olması) ve madde 5/2-f (veri sorumlusunun meşru menfaati).
+
+Veri aktarımı: verileriniz; bağlı olduğunuz okul/dershane yönetimi dışında, Platform'un altyapı sağlayıcıları (barındırma ve e-posta hizmetleri) hariç üçüncü kişilerle paylaşılmaz.
+
+Saklama süresi: hesabınız aktif olduğu sürece saklanır; hesap kapatma talebinizde makul süre içinde silinir.
+
+Haklarınız: KVKK madde 11 kapsamında verilerinizin düzeltilmesini, silinmesini, işlenme amacını öğrenmeyi talep etme gibi haklara sahipsiniz. Talepleriniz için sg.educoach@gmail.com adresinden bize ulaşabilirsiniz.
+
+Onay: Yukarıdaki bilgilendirmeyi okudum, kişisel verilerimin belirtilen kapsamda işlenmesini kabul ediyorum.`;
+
 function OgretmenKayit({ kurumTuru, schools, router, supabase }: {
   kurumTuru: KurumTuru; schools: School[]; classes: SchoolClass[]; router: ReturnType<typeof useRouter>;
   supabase: ReturnType<typeof createClient>;
@@ -421,6 +480,7 @@ function OgretmenKayit({ kurumTuru, schools, router, supabase }: {
   const [hata, setHata] = useState<string | null>(null);
   const [yukleniyor, setYukleniyor] = useState(false);
   const [basarili, setBasarili] = useState(false);
+  const [kvkkOnay, setKvkkOnay] = useState(false);
 
   const adim1Tamam = ad && email && telefon && schoolId && brans;
 
@@ -437,6 +497,7 @@ function OgretmenKayit({ kurumTuru, schools, router, supabase }: {
     setHata(null);
     if (!sifreGecerliMi(password)) return setHata("Şifre geçersiz. " + SIFRE_IPUCU);
     if (password !== password2) return setHata("Şifreler eşleşmiyor.");
+    if (!kvkkOnay) return setHata("Devam etmek için KVKK aydınlatma metnini onaylamanız gerekiyor.");
 
     setYukleniyor(true);
     const { error } = await supabase.auth.signUp({
@@ -446,6 +507,7 @@ function OgretmenKayit({ kurumTuru, schools, router, supabase }: {
           // class_id kasıtlı olarak gönderilmiyor — sınıf öğretmenliği artık
           // sadece müdür tarafından (Yönetim panelinden) atanıyor.
           role: "ogretmen", ad: adNormalize(ad), telefon, school_id: schoolId, brans,
+          kvkk_onay_versiyon: OGRETMEN_KVKK_VERSIYON,
         },
       },
     });
@@ -477,12 +539,27 @@ function OgretmenKayit({ kurumTuru, schools, router, supabase }: {
           <label className="flex flex-col gap-1"><Etiket>Şifre (tekrar)</Etiket>
             <Girdi type="password" required minLength={8} value={password2} onChange={(e) => setPassword2(e.target.value)} />
           </label>
+
+          <div className="flex flex-col gap-1.5">
+            <Etiket>KVKK Aydınlatma Metni ve Rıza Beyanı</Etiket>
+            <div className="text-[11px] leading-relaxed whitespace-pre-line rounded-xl p-3 max-h-40 overflow-y-auto"
+              style={{ background: BG0, border: `2px solid ${BORDER_STRONG}`, color: TEXT_MUTED }}>
+              {OGRETMEN_KVKK_METNI}
+            </div>
+          </div>
+          <label className="flex items-start gap-2 cursor-pointer">
+            <input type="checkbox" checked={kvkkOnay} onChange={(e) => setKvkkOnay(e.target.checked)} className="mt-0.5" />
+            <span style={{ color: TEXT }} className="text-xs leading-snug">
+              Yukarıdaki metni okudum, kişisel verilerimin işlenmesine <strong>açık rızam ile onay veriyorum.</strong>
+            </span>
+          </label>
+
           {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
           <div className="flex gap-2">
             <button type="button" onClick={() => setAdim(1)} className="sfec-btn shrink-0 w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
               <ChevronLeft size={16} color={TEXT_MUTED} />
             </button>
-            <button type="submit" disabled={yukleniyor} className="sfec-btn flex-1 text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+            <button type="submit" disabled={yukleniyor || !kvkkOnay} className="sfec-btn flex-1 text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
               {yukleniyor ? "Kaydediliyor..." : "Kayıt ol"}
             </button>
           </div>
