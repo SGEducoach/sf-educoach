@@ -79,9 +79,13 @@ export async function Header({ ad, role, kurumTuru, brans, okunmamisMesajSayisi 
               )}
               <HataBildirButonu />
               <BildirimAyarlari role={role} />
-              {/* Kullanıcı isteği (26.08.2026): yanlış giriş bildirimi tüm rollere
-                  (öğrenci hariç) gidiyor — Mesajlarım artık tüm rollerde görünüyor. */}
-              <MesajlarimIkonu baslangicSayisi={okunmamisMesajSayisi} />
+              {/* Kullanıcı isteği (26.08.2026, Bildirimler yeniden tasarımı — devam):
+                  yanlış giriş bildirimi artık Bildirimler'e gidiyor (bkz.
+                  BildirimAyarlari.tsx, migration 0079) — Mesajlarım'ı tüm
+                  rollerde göstermenin TEK gerekçesi buydu, artık öğretmen/
+                  müdür/admin için hep boş bir kutuya dönüyordu. Öğrenci/veli-
+                  özel görünüme geri alındı (onlar gerçekten duyuru alıyor). */}
+              {(role === "ogrenci" || role === "veli") && <MesajlarimIkonu baslangicSayisi={okunmamisMesajSayisi} />}
               <form action={signOut}>
                 <button type="submit" title="Çıkış yap"
                   className="sfec-btn w-8 h-8 rounded-full flex items-center justify-center shrink-0"

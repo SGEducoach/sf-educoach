@@ -133,13 +133,16 @@ export function MobilMenu({ ad, role, kurumTuru, brans, okunmamisMesajSayisi, mo
               <BildirimAyarlari role={role} />
             </div>
 
-            {/* Kullanıcı isteği (26.08.2026): yanlış giriş denemesi bildirimi
-                artık öğrenci hariç tüm rollere gidiyor (bkz. api/giris/route.ts)
-                — Mesajlarım kutusu bu yüzden ARTIK TÜM ROLLERDE görünüyor. */}
-            <div className="flex items-center justify-between rounded-xl px-2.5 py-1.5">
-              <span style={{ color: TEXT }} className="text-[13px] font-semibold">Mesajlarım</span>
-              <MesajlarimIkonu baslangicSayisi={okunmamisMesajSayisi} />
-            </div>
+            {/* Kullanıcı isteği (26.08.2026, Bildirimler yeniden tasarımı —
+                devam): yanlış giriş bildirimi artık Bildirimler'e gidiyor
+                (bkz. Header.tsx'teki aynı notu) — Mesajlarım tekrar öğrenci/
+                veli'ye özel görünüme alındı. */}
+            {(role === "ogrenci" || role === "veli") && (
+              <div className="flex items-center justify-between rounded-xl px-2.5 py-1.5">
+                <span style={{ color: TEXT }} className="text-[13px] font-semibold">Mesajlarım</span>
+                <MesajlarimIkonu baslangicSayisi={okunmamisMesajSayisi} />
+              </div>
+            )}
 
             <form action={signOut} className="mt-1 pt-2" style={{ borderTop: `2px solid ${BORDER}` }}>
               <button type="submit"

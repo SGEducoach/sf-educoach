@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { dershaneDenemeBitisGetir, suresiDolduMu, kurumTuruGetir, DENEME_SURESI_SONA_ERDI_MESAJI } from "@/lib/deneme-suresi";
 import { pushGonderProfile } from "@/lib/push-send";
+import { bildirimGonder } from "@/lib/bildirim-gonder";
 import type { UserRole } from "@/lib/types";
 
 const PENCERE_MS = 15 * 60 * 1000;
@@ -27,9 +28,14 @@ interface GirisGovdesi { role?: GirisRolu; schoolId?: string; okulNo?: string; k
 // ÇÖZÜLEMEZ (bkz. anahtarOlustur) — bu yüzden hedefi BURADA, girisEmail
 // (rol'e göre RPC'yle veya doğrudan girilen e-posta) üzerinden ayrıca
 // çözüyoruz: gerçekten var olan bir hesaba denk geldiyse (rastgele bir
-// e-posta/okul no değil) ve o hesap öğrenci değilse, mevcut duyuru/
-// mesaj kutusu altyapısı (duyurular+duyuru_aliciler, bkz. push-send.ts)
-// üzerinden hem push hem kalıcı bir "Mesajlarım" kaydı oluşturuyoruz.
+// e-posta/okul no değil) ve o hesap öğrenci değilse hem push hem kalıcı
+// bir bildirim kaydı oluşturuyoruz.
+//
+// Kullanıcı isteği (26.08.2026, Bildirimler yeniden tasarımı — devam):
+// "Yanlış giriş denemesi bildirimleri mesajlar kısmına gidiyor. Bunlar
+// bildirim paneline gidecek." — daha önce duyurular/duyuru_aliciler'a
+// (Mesajlarım kutusu) yazıyordu, artık ayrı "bildirimler" tablosuna
+// (bkz. migration 0079, src/lib/bildirim-gonder.ts) yazıyor.
 async function yanlisGirisBildirimGonder(admin: ReturnType<typeof createAdminClient>, girisEmail: string, tarih: Date) {
   if (!girisEmail) return;
   const { data: hedefProfil } = await admin.from("profiles").select("id, role, bildirim_yanlis_giris").eq("email", girisEmail).maybeSingle();
@@ -38,8 +44,7 @@ async function yanlisGirisBildirimGonder(admin: ReturnType<typeof createAdminCli
   const baslik = "Yanlış giriş denemesi";
   const govde = `${tarih.toLocaleString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })} tarihinde hesabınıza yanlış şifre ile giriş denemesi yapıldı. Bu siz değilseniz şifrenizi değiştirmenizi öneririz.`;
   await pushGonderProfile(admin, hedefProfil.id, baslik, govde);
-  const { data: duyuru } = await admin.from("duyurular").insert({ gonderen_id: null, baslik, mesaj: govde }).select("id").single();
-  if (duyuru) await admin.from("duyuru_aliciler").insert({ duyuru_id: duyuru.id, profile_id: hedefProfil.id });
+  await bildirimGonder(admin, hedefProfil.id, "yanlis_giris", baslik, govde);
 }
 
 function istemciIp(request: NextRequest) {
