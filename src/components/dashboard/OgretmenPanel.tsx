@@ -226,8 +226,8 @@ export function OgretmenPanel({
       {aktifBolum === "gorevler" && role === "ogretmen" && (
         <div className="sfec-fade rounded-2xl p-3 flex items-center justify-between gap-3 flex-wrap" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
           <div>
-            <div className="text-sm font-bold" style={{ color: TEXT }}>Görev verilecek sınıf</div>
-            <div className="text-[11px]" style={{ color: TEXT_MUTED }}>Yalnızca ders verdiğiniz sınıflara görev gönderebilirsiniz.</div>
+            <div className="text-sm font-bold" style={{ color: TEXT }}>Ödev verilecek sınıf</div>
+            <div className="text-[11px]" style={{ color: TEXT_MUTED }}>Yalnızca ders verdiğiniz sınıflara ödev gönderebilirsiniz.</div>
           </div>
           <select value={gorunecekSinifId ?? ""} onChange={(e) => router.push(`/dashboard/gorevler?sinif=${e.target.value}`)}
             className="text-xs font-bold px-3 py-2 rounded-xl outline-none"
@@ -424,10 +424,10 @@ function VerdigimGorevlerBolumu({ gorevler }: { gorevler: VerdigimGorevSatiri[] 
         <div className="flex h-7 w-7 items-center justify-center rounded-full" style={{ background: SKY_BG }}>
           <ListChecks size={13} color={SKY} />
         </div>
-        <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Verdiğim görevler</span>
+        <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Verdiğim ödevler</span>
       </div>
       {gorevler.length === 0 ? (
-        <p style={{ color: TEXT_MUTED }} className="py-4 text-center text-sm">Henüz görev vermediniz.</p>
+        <p style={{ color: TEXT_MUTED }} className="py-4 text-center text-sm">Henüz ödev vermediniz.</p>
       ) : (
         <div className="flex flex-col gap-2">
           {gorevler.map((g) => {
@@ -843,7 +843,7 @@ function GorevVerBolumu({ ogrenciler, konuOnerileri }: {
         <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: MINT_BG }}>
           <CalendarPlus size={13} color={MINT} />
         </div>
-        <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Görev ver</span>
+        <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Ödev ver</span>
       </div>
 
       <form onSubmit={gonder} className="flex flex-col gap-3">
@@ -984,7 +984,7 @@ function GorevVerBolumu({ ogrenciler, konuOnerileri }: {
         {basari && <div style={{ color: MINT }} className="text-xs font-semibold">{basari}</div>}
         <button type="submit" disabled={pending}
           className="sfec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
-          {pending ? "Gönderiliyor..." : `Görev ver${secili.size > 1 ? ` (${secili.size} öğrenci)` : ""}`}
+          {pending ? "Gönderiliyor..." : `Ödev ver${secili.size > 1 ? ` (${secili.size} öğrenci)` : ""}`}
         </button>
       </form>
     </div>
