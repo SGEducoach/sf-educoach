@@ -33,7 +33,7 @@ export function KonuAnlatimYonetimi() {
         <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(199,182,255,0.15)" }}>
           <BookOpen size={13} color={LILAC} />
         </div>
-        <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Konu anlatımları</span>
+        <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Konu özetleri</span>
       </div>
 
       <div className="relative mb-3">

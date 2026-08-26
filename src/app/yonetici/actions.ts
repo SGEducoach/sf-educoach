@@ -61,24 +61,53 @@ export interface KullaniciSonuc {
 // ad veya e-posta üzerinden arama. Admin dışındaki roller RLS'te zaten
 // is_ogretmen() üzerinden admin'e tam okuma izni veriyor (bkz. migration
 // 0014); burada ekstra bir RLS gerekmiyor.
-export async function kullaniciAra(sorgu: string, rolFiltre: UserRole | "hepsi"): Promise<{ error: string | null; sonuclar: KullaniciSonuc[] }> {
+// 2026-08-26 kullanıcı isteği: "admin sayfasında filtreleri kurumdan
+// başlat" — kurum artık ZORUNLU ilk filtre (bkz. KullaniciArama.tsx'teki
+// yeni kurum seçim ekranı); classId ise sadece öğrenci listesini sınıf
+// bazlı daraltmak için opsiyonel.
+export async function kullaniciAra(sorgu: string, rolFiltre: UserRole | "hepsi", schoolId: string, classId?: string): Promise<{ error: string | null; sonuclar: KullaniciSonuc[] }> {
   const { supabase } = await requireAdmin();
-    const q = sorgu.trim();
+  const q = sorgu.trim();
 
-let query = supabase
-  .from("profiles")
-  .select("id, ad, email, telefon, role, aktif")
-  .neq("role", "admin")
-  .order("ad")
-  .limit(40);
+  // Kurum (ve varsa sınıf) kapsamındaki profil id'lerini önce belirle —
+  // profiles tablosunun kendisinde school_id yok, students/teachers/
+  // parent_students üzerinden dolaylı olarak bulunuyor.
+  const [{ data: ogrenciler }, { data: ogretmenler }, { data: veliBaglantilari }] = await Promise.all([
+    (rolFiltre === "hepsi" || rolFiltre === "ogrenci")
+      ? (classId
+          ? supabase.from("students").select("id").eq("school_id", schoolId).eq("class_id", classId)
+          : supabase.from("students").select("id").eq("school_id", schoolId))
+      : Promise.resolve({ data: [] as { id: string }[] }),
+    (rolFiltre === "hepsi" || rolFiltre === "ogretmen" || rolFiltre === "mudur")
+      ? supabase.from("teachers").select("id").eq("school_id", schoolId)
+      : Promise.resolve({ data: [] as { id: string }[] }),
+    (rolFiltre === "hepsi" || rolFiltre === "veli")
+      ? supabase.from("parent_students").select("parent_id, students!inner(school_id)").eq("students.school_id", schoolId)
+      : Promise.resolve({ data: [] as { parent_id: string }[] }),
+  ]);
 
-if (q.length >= 2) {
-  query = query.or(`ad.ilike.%${q}%,email.ilike.%${q}%`);
-}
+  const kurumKapsamindakiIdler = [
+    ...(ogrenciler ?? []).map((o) => o.id),
+    ...(ogretmenler ?? []).map((t) => t.id),
+    ...new Set((veliBaglantilari ?? []).map((v) => v.parent_id)),
+  ];
+  if (kurumKapsamindakiIdler.length === 0) return { error: null, sonuclar: [] };
 
-if (rolFiltre !== "hepsi") {
-  query = query.eq("role", rolFiltre);
-}
+  let query = supabase
+    .from("profiles")
+    .select("id, ad, email, telefon, role, aktif")
+    .neq("role", "admin")
+    .in("id", kurumKapsamindakiIdler)
+    .order("ad")
+    .limit(40);
+
+  if (q.length >= 2) {
+    query = query.or(`ad.ilike.%${q}%,email.ilike.%${q}%`);
+  }
+
+  if (rolFiltre !== "hepsi") {
+    query = query.eq("role", rolFiltre);
+  }
   const { data: profiller, error } = await query;
   if (error) return { error: error.message, sonuclar: [] };
 

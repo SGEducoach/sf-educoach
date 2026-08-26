@@ -105,14 +105,30 @@ function KonuSatiri({ konu }: { konu: OgrenciZayifKonu }) {
 
 // ============ Sınıf/kurum bazlı agrege rapor ============
 
+// 2026-08-26 kullanıcı isteği: "konu haritasını ders bazlı filtrele" —
+// satırlar zaten tek seferde (en fazla 30 satır) çekiliyor, filtre
+// tamamen client-side; yeni bir sorguya gerek yok.
 function ScopeRaporu({ satirlar, kapsamEtiketi, hata }: { satirlar: KonuHaritasiSatiri[]; kapsamEtiketi: string; hata?: string | null }) {
+  const [dersFiltre, setDersFiltre] = useState("tumu");
+  const dersler = [...new Set(satirlar.map((s) => s.ders))].sort((a, b) => a.localeCompare(b, "tr"));
+  const gosterilenler = dersFiltre === "tumu" ? satirlar : satirlar.filter((s) => s.ders === dersFiltre);
+
   return (
     <div className="sfec-fade rounded-3xl p-6 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-      <div className="flex items-center gap-2 mb-1">
-        <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: PEACH_BG }}>
-          <BarChart2 size={13} color={PEACH} />
+      <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: PEACH_BG }}>
+            <BarChart2 size={13} color={PEACH} />
+          </div>
+          <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Konu Haritası</span>
         </div>
-        <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Konu Haritası</span>
+        {dersler.length > 1 && (
+          <select value={dersFiltre} onChange={(e) => setDersFiltre(e.target.value)}
+            className="text-xs font-bold px-3 py-1.5 rounded-full outline-none" style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
+            <option value="tumu">Tüm dersler</option>
+            {dersler.map((d) => <option key={d} value={d}>{d}</option>)}
+          </select>
+        )}
       </div>
       <p style={{ color: TEXT_MUTED }} className="text-xs mb-4">
         {kapsamEtiketi} genelinde öğrencilerin en çok zorlandığı konular — &quot;Konuya hakimiyet&quot; alanında &quot;Yetersiz&quot; işaretlenme oranına göre sıralı. Sonuçlar isimsizdir; en az 3 öğrencinin veri girdiği konular gösterilir.
@@ -121,9 +137,11 @@ function ScopeRaporu({ satirlar, kapsamEtiketi, hata }: { satirlar: KonuHaritasi
         <p style={{ color: BLUSH }} className="text-sm py-6 text-center">{hata}</p>
       ) : satirlar.length === 0 ? (
         <BosDurum mesaj="Henüz yeterli veri yok — en az 3 öğrencinin aynı konuda veri girmesi gerekiyor." />
+      ) : gosterilenler.length === 0 ? (
+        <BosDurum mesaj="Bu derste henüz yeterli veri yok." />
       ) : (
         <div className="flex flex-col gap-2">
-          {satirlar.map((s) => <KonuHaritasiSatirGorunumu key={`${s.ders}-${s.konu}`} satir={s} />)}
+          {gosterilenler.map((s) => <KonuHaritasiSatirGorunumu key={`${s.ders}-${s.konu}`} satir={s} />)}
         </div>
       )}
     </div>
