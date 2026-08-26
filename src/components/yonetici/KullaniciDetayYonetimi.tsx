@@ -60,7 +60,9 @@ export function KullaniciDetayYonetimi({ kullanici }: { kullanici: KullaniciSonu
   }
 
   useEffect(() => {
-    if (kullanici.role === "ogrenci" || kullanici.role === "ogretmen" || kullanici.role === "mudur") yonetimOkullariGetir().then((r) => setOkullar(r.okullar));
+    if (kullanici.role === "ogrenci" || kullanici.role === "ogretmen" || kullanici.role === "mudur") {
+      startTransition(() => { yonetimOkullariGetir().then((r) => setOkullar(r.okullar)); });
+    }
   }, [kullanici.role]);
 
   function profilKaydet() {
@@ -151,7 +153,9 @@ function RolDegistirBolumu({ userId, mevcutRol }: { userId: string; mevcutRol: U
   const [pending, startTransition] = useTransition();
 
   useEffect(() => {
-    if (yeniRol === "ogretmen" || yeniRol === "mudur") yonetimOkullariGetir().then((r) => setOkullar(r.okullar));
+    if (yeniRol === "ogretmen" || yeniRol === "mudur") {
+      startTransition(() => { yonetimOkullariGetir().then((r) => setOkullar(r.okullar)); });
+    }
   }, [yeniRol]);
 
   function degistir() {
@@ -214,7 +218,8 @@ function OgrenciEkYonetim({ studentId }: { studentId: string }) {
       setKayitlar(k.kayitlar);
     });
   }
-  useEffect(yukle, [studentId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { startTransition(yukle); }, [studentId]);
 
   function veliBagla() {
     startTransition(async () => { const r = await ogrenciyeVeliBagla(studentId, veliSorgu); if (r.error) return setHata(r.error); setVeliSorgu(""); yukle(); });

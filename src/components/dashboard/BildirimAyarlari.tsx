@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { startTransition, useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Bell, BellOff, BellRing, X } from "lucide-react";
 import { BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
@@ -49,7 +49,11 @@ export function BildirimAyarlari({ role }: { role: UserRole }) {
 
   useEffect(() => {
     if (!acik || tercihler !== null) return;
-    bildirimTercihleriGetir().then((r) => setTercihler(r.tercihler));
+    // Bkz. KullaniciArama.tsx'teki startTransition notu — bu Next.js
+    // sürümünde şart, yoksa istek sessizce hiç sonuçlanmıyor.
+    startTransition(() => {
+      bildirimTercihleriGetir().then((r) => setTercihler(r.tercihler));
+    });
   }, [acik, tercihler]);
 
   function tercihDegistir(alan: keyof BildirimTercihleri) {

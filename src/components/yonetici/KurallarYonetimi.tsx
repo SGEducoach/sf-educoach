@@ -18,11 +18,20 @@ export function KurallarYonetimi() {
   const [pending, startTransition] = useTransition();
 
   useEffect(() => {
-    kurallarGetir().then((res) => {
-      if (res.error) return setHata(res.error);
-      setMetin(res.metin);
-      setVersiyon(res.versiyon);
-      setDuzenlemeMetni(res.metin ?? "");
+    // Kök neden bulundu (26.08.2026, tekrarlanan bulgu): bu Next.js
+    // sürümünde server action'lar useEffect içinden startTransition
+    // OLMADAN çağrılınca sessizce hiç sonuçlanmıyor — "Kurallar boş,
+    // sadece Yükleniyor... yazıyor" şikayetinin gerçek kök nedeni buydu
+    // (önceki düzeltme sadece hata GÖRÜNÜRLÜĞÜNÜ ele almıştı, isteğin
+    // kendisi hiç tamamlanmıyordu). Bkz. node_modules/next/dist/docs/
+    // 01-app/02-guides/server-actions.md.
+    startTransition(() => {
+      kurallarGetir().then((res) => {
+        if (res.error) return setHata(res.error);
+        setMetin(res.metin);
+        setVersiyon(res.versiyon);
+        setDuzenlemeMetni(res.metin ?? "");
+      });
     });
   }, []);
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { startTransition, useEffect, useState, useTransition } from "react";
 import { UserCheck, Check, X, Copy } from "lucide-react";
 import { BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH, LILAC } from "@/lib/theme";
 import { veliTalepleriGetir, veliTalebiAdminOnayla, veliTalebiReddet, type VeliTalebiSonuc } from "@/app/yonetici/actions";
@@ -19,9 +19,11 @@ export function VeliTalepleri() {
   const [hata, setHata] = useState<string | null>(null);
 
   useEffect(() => {
-    veliTalepleriGetir().then((res) => {
-      if (res.error) return setHata(res.error);
-      setTalepler(res.talepler);
+    startTransition(() => {
+      veliTalepleriGetir().then((res) => {
+        if (res.error) return setHata(res.error);
+        setTalepler(res.talepler);
+      });
     });
   }, []);
 

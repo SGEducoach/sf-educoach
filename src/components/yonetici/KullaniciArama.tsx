@@ -21,29 +21,74 @@ const ROL_ETIKET: Record<UserRole, string> = {
   ogrenci: "Öğrenci", ogretmen: "Öğretmen", veli: "Veli", mudur: "Müdür", admin: "Admin",
 };
 
+// Kullanıcı bulgusu (26.08.2026, İKİNCİ kez bildirildi — "hâlâ çalışmıyor"):
+// "Kullanıcılara dön" sonrası kurum seçim ekranına düşülüyordu.
+// router.back() (bkz. GeriDonButonu) tek başına yeterli olmadı — Next.js'in
+// router cache'i bu client bileşenin state'ini garanti korumuyor. Kalıcı,
+// navigasyon yolundan BAĞIMSIZ çözüm: filtreleri sessionStorage'a yazıp
+// mount'ta geri okumak — böylece "Kullanıcılara dön" linki, tarayıcı geri
+// tuşu veya sekme yenilemesi FARK ETMEKSİZİN son bakılan liste geri gelir.
+const OTURUM_ANAHTARI = "sfec_yonetici_kullanici_arama";
+
+interface KayitliDurum { schoolId: string | null; rol: UserRole | "hepsi" | null; sinifId: string; sorgu: string }
+
+function durumOku(): KayitliDurum | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const ham = sessionStorage.getItem(OTURUM_ANAHTARI);
+    return ham ? (JSON.parse(ham) as KayitliDurum) : null;
+  } catch {
+    return null;
+  }
+}
+
+function durumYaz(durum: KayitliDurum) {
+  try { sessionStorage.setItem(OTURUM_ANAHTARI, JSON.stringify(durum)); } catch { /* yoksay */ }
+}
+
 // 2026-08-26 kullanıcı isteği: "admin sayfasında filtreleri kurumdan
 // başlat" — artık ilk ve zorunlu adım kurum (okul/dershane) seçimi.
 // Ondan sonra rol (mevcut büyük kart davranışı), öğrenci seçilirse de
 // sınıf filtresi geliyor.
 export function KullaniciArama() {
+  const kayitli = durumOku();
   const [okullar, setOkullar] = useState<YonetimOkulu[]>([]);
-  const [schoolId, setSchoolId] = useState<string | null>(null);
-  const [sinifId, setSinifId] = useState("");
-  const [sorgu, setSorgu] = useState("");
+  const [schoolId, setSchoolId] = useState<string | null>(kayitli?.schoolId ?? null);
+  const [sinifId, setSinifId] = useState(kayitli?.sinifId ?? "");
+  const [sorgu, setSorgu] = useState(kayitli?.sorgu ?? "");
   // Kullanıcı geri bildirimi (2026-08-25): "Tümü seçili geliyor ama hiçbir
   // şey listelemiyor" — kök neden ayrıydı (mount'ta hiç arama tetiklenmiyordu,
   // aşağıya bkz.) ama kullanıcı ayrıca hiçbir kategorinin baştan seçili
   // GELMEMESİNİ istedi: ilk girişte kategoriler büyük kartlar halinde
   // listelensin, seçim yapılınca mevcut küçük sekme haline dönsün.
-  const [rol, setRol] = useState<UserRole | "hepsi" | null>(null);
+  const [rol, setRol] = useState<UserRole | "hepsi" | null>(kayitli?.rol ?? null);
   const [sonuclar, setSonuclar] = useState<KullaniciSonuc[]>([]);
   const [aramaYapildi, setAramaYapildi] = useState(false);
   const [hata, setHata] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   useEffect(() => {
-    yonetimOkullariGetir().then((r) => setOkullar(r.okullar));
+    // Bu Next.js sürümünde server action'lar useEffect içinden çağrılırken
+    // startTransition ile sarılmak ZORUNDA (bkz. node_modules/next/dist/docs/
+    // 01-app/02-guides/server-actions.md, "invoke it from ... a useEffect
+    // wrapped in startTransition") — yoksa istek sessizce hiç sonuçlanmıyor,
+    // ekran süresiz "Yükleniyor..." durumunda kalıyor. Bu, oturumdaki birçok
+    // "boş/yükleniyor" şikayetinin kök nedeni.
+    startTransition(() => {
+      yonetimOkullariGetir().then((r) => setOkullar(r.okullar));
+    });
   }, []);
+
+  // Kayıtlı bir durum varsa (schoolId+rol) sayfa ilk açıldığında aramayı
+  // otomatik tetikle — sadece mount'ta bir kez.
+  useEffect(() => {
+    if (kayitli?.schoolId && kayitli.rol) ara(kayitli.sorgu ?? "", kayitli.rol, kayitli.sinifId ?? "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    durumYaz({ schoolId, rol, sinifId, sorgu });
+  }, [schoolId, rol, sinifId, sorgu]);
 
   const seciliOkul = okullar.find((o) => o.id === schoolId) ?? null;
 

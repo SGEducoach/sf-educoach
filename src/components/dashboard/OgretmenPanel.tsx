@@ -276,7 +276,7 @@ export function OgretmenPanel({
           <div className="flex items-center gap-2">
             <select
               value={gorunecekSinifId ?? ""}
-              onChange={(e) => router.push(`/dashboard?sinif=${e.target.value}`)}
+              onChange={(e) => router.push(`/dashboard?bolum=ozet&sinif=${e.target.value}`)}
               className="text-xs font-bold px-3 py-1.5 rounded-full outline-none"
               style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
               {siniflar.map((s) => (
@@ -294,7 +294,7 @@ export function OgretmenPanel({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {ogrencilerOkulNoSirali(ogrenciler).map((o) => (
               <div key={o.id} className="rounded-xl flex items-center justify-between gap-2 pr-1.5" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
-                <button onClick={() => router.push(`/dashboard?sinif=${gorunecekSinifId}&ogrenci=${o.id}`)}
+                <button onClick={() => router.push(`/dashboard?bolum=ozet&sinif=${gorunecekSinifId}&ogrenci=${o.id}`)}
                   className="sfec-btn flex-1 min-w-0 px-3.5 py-2.5 flex items-center justify-between text-left">
                   <span style={{ color: TEXT }} className="text-sm font-semibold truncate">{o.ad}</span>
                   <span style={{ color: TEXT_MUTED }} className="text-xs shrink-0 ml-2">#{o.okul_no}</span>

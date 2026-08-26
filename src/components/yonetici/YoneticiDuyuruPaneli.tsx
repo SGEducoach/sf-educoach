@@ -44,7 +44,7 @@ export function YoneticiDuyuruPaneli({ okullar }: { okullar: { id: string; ad: s
   const [gecmisPending, startGecmisTransition] = useTransition();
 
   function aktifDuyuruYukle() {
-    yoneticiAktifDuyuruGetir().then(setAktifDuyuru);
+    startTransition(() => { yoneticiAktifDuyuruGetir().then(setAktifDuyuru); });
   }
   useEffect(aktifDuyuruYukle, []);
 

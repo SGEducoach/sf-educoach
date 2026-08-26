@@ -21,15 +21,17 @@ export function ModeratorAtamaFormu() {
   const [pending, startTransition] = useTransition();
 
   useEffect(() => {
-    yonetimOkullariGetir().then((r) => setOkullar(r.okullar));
+    startTransition(() => { yonetimOkullariGetir().then((r) => setOkullar(r.okullar)); });
   }, []);
 
   useEffect(() => {
     if (!schoolId) return;
-    okulOgretmenleriModeratorlukGetir(schoolId).then((r) => {
-      if (r.error) setMesaj(`Hata: ${r.error}`);
-      setOgretmenler(r.ogretmenler);
-      setOgretmenlerSchoolId(schoolId);
+    startTransition(() => {
+      okulOgretmenleriModeratorlukGetir(schoolId).then((r) => {
+        if (r.error) setMesaj(`Hata: ${r.error}`);
+        setOgretmenler(r.ogretmenler);
+        setOgretmenlerSchoolId(schoolId);
+      });
     });
   }, [schoolId]);
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 import { ChevronDown, History, ShieldCheck } from "lucide-react";
 import { islemGecmisiGetir, type IslemKaydiDetayli } from "@/app/yonetici/actions";
 import { EYLEM_ETIKET } from "@/lib/islem-gecmisi";
@@ -17,9 +17,11 @@ export function IslemGecmisi() {
   const [acikId, setAcikId] = useState<string | null>(null);
 
   useEffect(() => {
-    islemGecmisiGetir().then((r) => {
-      if (r.error) setHata(r.error);
-      setKayitlar(r.kayitlar);
+    startTransition(() => {
+      islemGecmisiGetir().then((r) => {
+        if (r.error) setHata(r.error);
+        setKayitlar(r.kayitlar);
+      });
     });
   }, []);
 

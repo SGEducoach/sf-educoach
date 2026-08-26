@@ -517,7 +517,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       // /dashboard'a dönüş aktifBolum doğrulamasında geçersiz kalıp
       // yönlendirme döngüsüne girerdi.
       const geriDonusHref = secilenSinifId
-        ? `/dashboard?sinif=${secilenSinifId}`
+        ? `/dashboard?bolum=ozet&sinif=${secilenSinifId}`
         : kurumTuru === "dershane" ? "/dashboard/ogrenciler" : "/dashboard";
       return (
         <div className="flex flex-col gap-4">

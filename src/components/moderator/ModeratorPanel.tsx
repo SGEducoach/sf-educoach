@@ -137,10 +137,13 @@ function KurumBilgileriDuzenleyici({ schoolId, onMesaj }: { schoolId?: string; o
 
   useEffect(() => {
     if (!acik || ad !== null) return;
-    moderatorKurumBilgisiGetir(schoolId).then((r) => {
-      if (r.error) onMesaj(`Hata: ${r.error}`);
-      setAd(r.ad);
-      setOkulKodu(r.okulKodu);
+    // Bkz. KullaniciArama.tsx'teki startTransition notu.
+    startTransition(() => {
+      moderatorKurumBilgisiGetir(schoolId).then((r) => {
+        if (r.error) onMesaj(`Hata: ${r.error}`);
+        setAd(r.ad);
+        setOkulKodu(r.okulKodu);
+      });
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [acik, ad]);
@@ -223,7 +226,7 @@ function OgrenciEkleFormu({ schoolId, onDone }: { schoolId?: string; onDone: (ms
   const [pending, startTransition] = useTransition();
 
   useEffect(() => {
-    moderatorOkulSiniflari(schoolId).then((r) => setSiniflar(r.siniflar));
+    startTransition(() => { moderatorOkulSiniflari(schoolId).then((r) => setSiniflar(r.siniflar)); });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -354,7 +357,7 @@ function ModeratorOgrenciSinifTasiFormu({ studentId, schoolId, onDone }: { stude
   const [pending, startTransition] = useTransition();
 
   useEffect(() => {
-    moderatorOkulSiniflari(schoolId).then((r) => setSiniflar(r.siniflar));
+    startTransition(() => { moderatorOkulSiniflari(schoolId).then((r) => setSiniflar(r.siniflar)); });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

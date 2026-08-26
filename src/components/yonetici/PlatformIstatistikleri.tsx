@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, startTransition } from "react";
 import { Activity, Building2, GraduationCap, Users, UserCheck, Flame, Radio } from "lucide-react";
 import { BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, TEXT, TEXT_MUTED, BLUSH, LILAC } from "@/lib/theme";
 import { platformIstatistikleriGetir, type PlatformIstatistikleri as Istatistik } from "@/app/yonetici/actions";
@@ -12,9 +12,11 @@ export function PlatformIstatistikleri() {
   const [hata, setHata] = useState<string | null>(null);
 
   useEffect(() => {
-    platformIstatistikleriGetir().then((res) => {
-      if (res.error) return setHata(res.error);
-      setIst(res.istatistik);
+    startTransition(() => {
+      platformIstatistikleriGetir().then((res) => {
+        if (res.error) return setHata(res.error);
+        setIst(res.istatistik);
+      });
     });
   }, []);
 

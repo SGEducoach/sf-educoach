@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { startTransition, useEffect, useState, useTransition } from "react";
 import { Check, Copy, Crown, Eye, EyeOff, KeyRound, ShieldPlus, Settings, UserPlus } from "lucide-react";
 import {
   adminAktiflikDegistir, adminHesapOlustur, adminleriGetir, adminProfilGuncelle, adminSifreBelirle, adminSifreSifirla,
@@ -23,7 +23,7 @@ export function AdminlerYonetimi() {
       setAdminler(r.adminler);
     });
   }
-  useEffect(yukle, []);
+  useEffect(() => { startTransition(yukle); }, []);
 
   return (
     <div className="rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>

@@ -23,7 +23,7 @@ export function MufredatHiyerarsiYonetimi() {
   const [pending, startTransition] = useTransition();
 
   useEffect(() => {
-    mufredatDersleriGetir().then((d) => { setDersler(d); if (d.length > 0) setSecilenDers(d[0]); });
+    startTransition(() => { mufredatDersleriGetir().then((d) => { setDersler(d); if (d.length > 0) setSecilenDers(d[0]); }); });
   }, []);
 
   useEffect(() => {
