@@ -48,7 +48,9 @@ export function YoneticiGirisForm() {
               ekranı için kullanılacak" — bu bağımsız yönetim girişi de bir
               giriş ekranı, bkz. dokumanlar/logo/. */}
           <Image src="/logo-login.png" alt="SeFu Koç" width={1153} height={965} className="sfec-brand-logo h-28 w-auto max-w-full object-contain mb-2" priority />
-          <SeFuMarkaAdi as="h1" className="text-2xl font-extrabold leading-none" />
+          {/* Kullanıcı isteği (26.08.2026): "giriş logosunun altındaki sefu
+              koç yazısını da kaldır" — bkz. LoginForm.tsx'teki aynı not. */}
+          <SeFuMarkaAdi as="h1" className="sr-only" />
           <p style={{ color: TEXT }} className="text-sm font-bold mt-2">Yönetim Girişi</p>
         </div>
 

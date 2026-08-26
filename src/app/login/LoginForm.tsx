@@ -143,7 +143,11 @@ export default function LoginForm() {
           {/* Kullanıcı isteği (26.08.2026): "İsminde login yazan sadece giriş
               ekranı için kullanılacak" — bkz. dokumanlar/logo/. */}
           <Image src="/logo-login.png" alt="SeFu Koç" width={1153} height={965} className="sfec-brand-logo h-28 w-auto max-w-full object-contain mb-2" priority />
-          <SeFuMarkaAdi as="h1" className="text-2xl font-extrabold leading-none" />
+          {/* Kullanıcı isteği (26.08.2026): "giriş logosunun altındaki sefu
+              koç yazısını da kaldır" — logonun kendisi zaten "//koç" alt
+              yazılı, marka adı metni tekrar oluyordu. sr-only ile sayfanın
+              H1'i (erişilebilirlik) korunuyor, sadece görsel olarak kaldırıldı. */}
+          <SeFuMarkaAdi as="h1" className="sr-only" />
           <p className="text-xs mt-1 italic"><SeFuSlogan /></p>
         </div>
 
