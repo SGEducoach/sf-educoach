@@ -354,6 +354,13 @@ export const BRANS_LISTESI = [
   "Felsefe",
   "Din Kültürü",
   "İngilizce",
+  // 2026-08-26 kullanıcı isteği — bu branştaki öğretmen (REHBER_BRANSI,
+  // bkz. src/lib/rehberlik.ts) okulun tüm öğrencilerine öğrenci/veli
+  // mesajı gönderebiliyor (bkz. RehberlikPaneli.tsx, rehberMesajGonder).
+  // Sabit string olarak tutuluyor (rehberlik.ts'i burada import etmek
+  // döngüsel bağımlılık riski taşır) — iki dosyadaki değer birbirine
+  // bağlı, biri değişirse diğeri de değişmeli.
+  "Rehber Öğretmen",
   "Diğer",
 ] as const;
 

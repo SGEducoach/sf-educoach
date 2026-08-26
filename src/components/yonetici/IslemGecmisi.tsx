@@ -43,7 +43,8 @@ export function IslemGecmisi() {
             // gösterilmeyecek. Sadece duyuruların içeriği detaylarda
             // görünecek." — ham jsonb artık hiç render edilmiyor, sadece
             // duyuru mesajı düz metin olarak gösteriliyor.
-            const duyuruMesaji = k.eylem === "admin_duyuru_gonder" && typeof k.detay?.mesaj === "string" ? k.detay.mesaj : null;
+            const duyuruMesajiVarMi = k.eylem === "admin_duyuru_gonder" || k.eylem === "rehber_mesaj_gonder";
+            const duyuruMesaji = duyuruMesajiVarMi && typeof k.detay?.mesaj === "string" ? k.detay.mesaj : null;
             return (
               <div key={k.id} className="rounded-xl overflow-hidden" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
                 <button type="button" onClick={() => duyuruMesaji && setAcikId(acik ? null : k.id)}

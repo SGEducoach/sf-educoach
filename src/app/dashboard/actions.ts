@@ -20,6 +20,7 @@ import { DUYURU_MIN_UZUNLUK, duyuruGonderimIzniKontrol } from "@/lib/duyuru-guve
 import { requireDershaneMudur } from "@/lib/dershane-auth";
 import { bekleyenPdfSonuclariniOgrenciyeAktar } from "@/lib/deneme-sonucu-kaydet";
 import type { SinifSeviyesi } from "@/lib/types";
+import { REHBER_BRANSI, REHBERLIK_DUYURU_BASLIGI } from "@/lib/rehberlik";
 
 const DUYURU_MAKS_UZUNLUK = 500;
 
@@ -608,6 +609,50 @@ export async function ogretmenDuyuruGonder(mesaj: string, kapsam?: string, alici
     actor_id: user.id,
     eylem: profile.role === "mudur" ? "mudur_duyuru_gonder" : "ogretmen_duyuru_gonder",
     detay: { school_id: teacher.school_id, class_id: teacher.class_id, kapsam: kapsam ?? null, alici_turu: aliciTuru, ogrenci_sayisi: sonuc.ogrenciSayisi, veli_sayisi: sonuc.veliSayisi },
+  });
+  return { error: null, ...sonuc, kalanGunlukHak: izin.kalanGunlukHak };
+}
+
+// ============ Rehberlik servisi mesajı (2026-08-26 kullanıcı isteği) ============
+// "Rehber Öğretmen" branşındaki bir öğretmen, sınıf öğretmenliği (homeroom)
+// sınırı olmadan kendi okulundaki HERHANGİ bir öğrenciye/veliye — tek tek
+// veya toplu seçerek — mesaj gönderebilir. Sabit başlık ("Rehberlik
+// Servisinden Mesajınız Var") sayesinde alıcı, bunun sınıf öğretmeninden
+// değil okul rehberlik servisinden geldiğini anlıyor (bkz. MesajlarimIkonu).
+export async function rehberMesajGonder(ogrenciIdleri: string[], mesaj: string, aliciTuru: DuyuruAliciTuru = "hepsi"): Promise<{ error: string | null; ogrenciSayisi: number; veliSayisi: number; kalanGunlukHak: number }> {
+  const { supabase, user } = await requireUser();
+  const bosSonuc = { ogrenciSayisi: 0, veliSayisi: 0, kalanGunlukHak: 0 };
+
+  const mesajTemiz = mesaj.trim();
+  if (!["hepsi", "ogrenci", "veli"].includes(aliciTuru)) return { error: "Geçersiz alıcı seçimi.", ...bosSonuc };
+  if (!mesajTemiz) return { error: "Mesaj boş olamaz.", ...bosSonuc };
+  if (mesajTemiz.length < DUYURU_MIN_UZUNLUK) return { error: `Mesaj en az ${DUYURU_MIN_UZUNLUK} karakter olmalıdır.`, ...bosSonuc };
+  if (mesajTemiz.length > DUYURU_MAKS_UZUNLUK) return { error: `Mesaj en fazla ${DUYURU_MAKS_UZUNLUK} karakter olabilir.`, ...bosSonuc };
+  if (ogrenciIdleri.length === 0) return { error: "En az bir öğrenci seçin.", ...bosSonuc };
+
+  const [{ data: profile }, { data: teacher }] = await Promise.all([
+    supabase.from("profiles").select("role").eq("id", user.id).single(),
+    supabase.from("teachers").select("school_id, brans").eq("id", user.id).single(),
+  ]);
+  if (!teacher || profile?.role !== "ogretmen" || teacher.brans !== REHBER_BRANSI) {
+    return { error: "Bu işlem sadece Rehber Öğretmen branşına açıktır.", ...bosSonuc };
+  }
+
+  const admin = createAdminClient();
+  const izin = await duyuruGonderimIzniKontrol(admin, user.id);
+  if (izin.error) return { error: izin.error, ...bosSonuc };
+
+  // İstemciden gelen id listesine körü körüne güvenilmiyor — sadece
+  // GERÇEKTEN bu okula ait öğrenciler mesaj alıyor.
+  const { data: ogrenciler } = await admin.from("students").select("id").eq("school_id", teacher.school_id).in("id", ogrenciIdleri);
+  const dogrulanmisIdler = (ogrenciler ?? []).map((o) => o.id);
+  if (dogrulanmisIdler.length === 0) return { error: "Seçilen öğrenciler bu okula ait değil.", ...bosSonuc };
+
+  const sonuc = await duyuruGonderTemel(admin, dogrulanmisIdler, REHBERLIK_DUYURU_BASLIGI, mesajTemiz, user.id, aliciTuru);
+  await admin.from("admin_audit_log").insert({
+    actor_id: user.id,
+    eylem: "rehber_mesaj_gonder",
+    detay: { school_id: teacher.school_id, ogrenci_sayisi: sonuc.ogrenciSayisi, veli_sayisi: sonuc.veliSayisi, alici_turu: aliciTuru, mesaj: mesajTemiz },
   });
   return { error: null, ...sonuc, kalanGunlukHak: izin.kalanGunlukHak };
 }

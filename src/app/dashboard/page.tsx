@@ -38,6 +38,8 @@ import type { DersProgramiSatiri } from "@/lib/ders-programi";
 import { dershaneAnaSayfaVerisiGetir } from "@/lib/dershane-ana-sayfa";
 import { DershaneAnaSayfa } from "@/components/dashboard/DershaneAnaSayfa";
 import { DenemeSuresiSonaErdiEkrani } from "@/components/DenemeSuresiSonaErdiEkrani";
+import { RehberlikPaneli } from "@/components/dashboard/RehberlikPaneli";
+import { REHBER_BRANSI } from "@/lib/rehberlik";
 
 // Görevlerim takvimi haftalık gösteriliyor — verilen tarihin (veya bugünün,
 // Türkiye saatine göre) içinde bulunduğu haftanın Pazartesi'sini döndürür.
@@ -102,7 +104,14 @@ export default async function DashboardPage({
   // "ozet" = Ana Sayfa olduğundan (bkz. DERSHANE_MUDUR_MENUSU) etkilenmiyor.
   const varsayilanBolum: DashboardBolumu = role === "mudur" && kurumTuru !== "dershane" ? "kurum-performansi" : "ozet";
   const aktifBolum = (params.bolum ?? varsayilanBolum) as DashboardBolumu;
-  if (!dashboardMenusu(role, kurumTuru).some((oge) => oge.bolum === aktifBolum)) redirect("/dashboard");
+  // 2026-08-26 kullanıcı isteği — Rehber Öğretmen branşına özel menü ögesi
+  // (bkz. dashboard-navigation.ts REHBERLIK_MENU_OGESI) branş bilgisine
+  // bağlı olduğundan menü geçerliliği kontrolünden ÖNCE çekiliyor.
+  const { data: ogretmenBransHam } = (role === "ogretmen")
+    ? await supabase.from("teachers").select("brans").eq("id", user.id).maybeSingle()
+    : { data: null };
+  const brans = ogretmenBransHam?.brans;
+  if (!dashboardMenusu(role, kurumTuru, brans).some((oge) => oge.bolum === aktifBolum)) redirect("/dashboard");
   const donem = (["haftalik", "aylik", "tum"].includes(params.donem ?? "") ? params.donem : "tum") as RaporDonemi;
   const { data: moderatorYetkisi } = (role === "ogretmen" || role === "mudur")
     ? await supabase.from("school_moderators").select("school_id").eq("profile_id", user.id).maybeSingle()
@@ -128,11 +137,11 @@ export default async function DashboardPage({
           örtük bir uygulama detayı. Bu yüzden müdürde her zaman "Müdür"
           gösterilir, "Moderatör" etiketi öğretmen+moderatör kombinasyonuna
           özel kalır. */}
-      <Header ad={profile.ad} role={role} kurumTuru={kurumTuru} okunmamisMesajSayisi={okunmamisMesajSayisi} moderatorMu={!!moderatorYetkisi} rolEtiketi={moderatorYetkisi && role !== "mudur" ? "Moderatör" : undefined} aktifBolum={aktifBolum} />
+      <Header ad={profile.ad} role={role} kurumTuru={kurumTuru} brans={brans} okunmamisMesajSayisi={okunmamisMesajSayisi} moderatorMu={!!moderatorYetkisi} rolEtiketi={moderatorYetkisi && role !== "mudur" ? "Moderatör" : undefined} aktifBolum={aktifBolum} />
       <ZorunluSifreDegisikligiKapisi gecici={profile.gecici_sifre} />
       <HosgeldinPopuplari role={role} />
       <div className="mx-auto flex min-h-[calc(100dvh-6.75rem)] w-full max-w-[100rem] flex-1 items-stretch gap-6 px-4 py-6 sm:px-6 lg:py-7">
-        <DashboardYanMenu role={role} kurumTuru={kurumTuru} aktifBolum={aktifBolum} />
+        <DashboardYanMenu role={role} kurumTuru={kurumTuru} brans={brans} aktifBolum={aktifBolum} />
         <main id="ana-icerik" className="sfec-dashboard-main min-h-[calc(100dvh-10.25rem)] min-w-0 w-full flex-1 flex flex-col gap-6">
           {aktifBolum === "tg-denemeleri" ? (
             <TgDenemeleri bugun={bugununTarihiTR()} />
@@ -140,7 +149,7 @@ export default async function DashboardPage({
             <>
               {role === "ogrenci" && <OgrenciIcerik userId={user.id} ad={profile.ad} donem={donem} haftaBaslangic={haftaninPazartesisi(params.hafta)} aktifBolum={aktifBolum} />}
               {(role === "ogretmen" || role === "mudur") && (
-                <OgretmenIcerik userId={user.id} role={role} kurumTuru={kurumTuru} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} secilenOgretmenId={params.ogretmen} donem={donem} aktifBolum={aktifBolum} />
+                <OgretmenIcerik userId={user.id} role={role} kurumTuru={kurumTuru} brans={brans} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} secilenOgretmenId={params.ogretmen} donem={donem} aktifBolum={aktifBolum} />
               )}
               {role === "veli" && <VeliIcerik userId={user.id} ad={profile.ad} secilenOgrenciId={params.ogrenci} donem={donem} aktifBolum={aktifBolum} />}
             </>
@@ -403,8 +412,8 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
   );
 }
 
-async function OgretmenIcerik({ userId, role, kurumTuru, secilenSinifId, secilenOgrenciId, secilenOgretmenId, donem, aktifBolum }: {
-  userId: string; role: "ogretmen" | "mudur"; kurumTuru?: KurumTuru; secilenSinifId?: string; secilenOgrenciId?: string; secilenOgretmenId?: string; donem: RaporDonemi; aktifBolum: DashboardBolumu;
+async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, secilenOgrenciId, secilenOgretmenId, donem, aktifBolum }: {
+  userId: string; role: "ogretmen" | "mudur"; kurumTuru?: KurumTuru; brans?: string; secilenSinifId?: string; secilenOgrenciId?: string; secilenOgretmenId?: string; donem: RaporDonemi; aktifBolum: DashboardBolumu;
 }) {
   const supabase = await createClient();
   const { data: teacher } = await supabase
@@ -419,6 +428,34 @@ async function OgretmenIcerik({ userId, role, kurumTuru, secilenSinifId, secilen
         <p style={{ color: TEXT_MUTED }} className="text-sm">Öğretmen profili bulunamadı.</p>
       </div>
     );
+  }
+
+  // 2026-08-26 kullanıcı isteği — Rehber Öğretmen kendi okulunun TÜM
+  // öğrencilerine (sınıf öğretmenliği/branş dersi sınırı olmadan) mesaj
+  // gönderebiliyor, tek tek veya toplu (bkz. RehberlikPaneli.tsx,
+  // rehberMesajGonder). Menüde bu bölüm zaten sadece rehber branşına
+  // gösteriliyor (bkz. dashboard-navigation.ts) — burada da savunma
+  // amaçlı aynı kontrol tekrarlanıyor (doğrudan URL ile erişim denenirse).
+  if (aktifBolum === "rehberlik") {
+    if (brans !== REHBER_BRANSI) {
+      return (
+        <div className="sfec-fade rounded-3xl p-6 text-center" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+          <p style={{ color: TEXT_MUTED }} className="text-sm">Bu bölüm sadece Rehber Öğretmen branşına açıktır.</p>
+        </div>
+      );
+    }
+    const { data: ogrenciler } = await supabase
+      .from("students")
+      .select("id, profiles!students_id_fkey(ad), classes(id, seviye, sube)")
+      .eq("school_id", teacher.school_id);
+    type RehberOgrenciRow = { id: string; profiles: { ad: string } | null; classes: { id: string; seviye: string; sube: string } | null };
+    const ogrenciListesi = ((ogrenciler as unknown as RehberOgrenciRow[]) ?? [])
+      .map((o) => ({
+        id: o.id, ad: o.profiles?.ad ?? "İsimsiz",
+        sinifId: o.classes?.id ?? null, sinifAdi: o.classes ? `${o.classes.seviye}-${o.classes.sube}` : "—",
+      }))
+      .sort((a, b) => a.ad.localeCompare(b.ad, "tr"));
+    return <RehberlikPaneli ogrenciler={ogrenciListesi} />;
   }
 
   if (aktifBolum === "rozetler") {
@@ -440,8 +477,10 @@ async function OgretmenIcerik({ userId, role, kurumTuru, secilenSinifId, secilen
   // öğretmen sadece kendi sınıfına (kendiSinifiMi ile aynı gerekçe: branş
   // öğretmeninin sınıf öğretmeni OLMADIĞI bir sınıfa dair veri sızmasın)
   // bakar. Dershane müdürü ayrı bileşende (DershaneMudurPaneli) ele alınıyor.
+  // 2026-08-26 kullanıcı isteği — Rehber Öğretmen'in sınıf öğretmenliği
+  // (homeroom) yok, bu yüzden müdürle aynı okul-geneli görünümü alıyor.
   if (aktifBolum === "yapay-zeka" && !(role === "mudur" && kurumTuru === "dershane")) {
-    if (role === "mudur") {
+    if (role === "mudur" || brans === REHBER_BRANSI) {
       const { satirlar, error } = await konuHaritasiGetir(supabase, { schoolId: teacher.school_id });
       return <KonuHaritasiRaporu mod="rapor" satirlar={satirlar} kapsamEtiketi="Okulunuz" hata={error} />;
     }

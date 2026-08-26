@@ -1,4 +1,5 @@
 import type { KurumTuru, UserRole } from "@/lib/types";
+import { REHBER_BRANSI } from "@/lib/rehberlik";
 
 export type DashboardBolumu =
   | "ozet"
@@ -31,13 +32,15 @@ export type DashboardBolumu =
   // Faz 3 (2026-08-26) — okul admin rolü genişletmesi.
   | "site-ayarlari"
   | "adminler"
-  | "islem-gecmisi";
+  | "islem-gecmisi"
+  // 2026-08-26 kullanıcı isteği — Rehber Öğretmen branşına özel bölüm.
+  | "rehberlik";
 
 export type DashboardIkonu =
   | "ana-sayfa" | "gorev" | "plan" | "veri" | "hakimiyet" | "analiz" | "ai" | "rozet" | "takvim" | "duyuru" | "talep" | "onay" | "ders"
   | "ogretmen" | "ogrenci" | "deneme"
   | "kullanici" | "eslestir" | "okul" | "moderator" | "icerik" | "kural" | "profil" | "hata"
-  | "ayarlar" | "admin" | "gecmis";
+  | "ayarlar" | "admin" | "gecmis" | "rehberlik";
 
 export interface DashboardMenuOgesi {
   bolum: DashboardBolumu;
@@ -146,10 +149,17 @@ const ADMIN_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "profil", href: "/yonetici/profil", etiket: "Profilim", ikon: "profil" },
 ];
 
-export function dashboardMenusu(role: UserRole, kurumTuru?: KurumTuru): DashboardMenuOgesi[] {
+// 2026-08-26 kullanıcı isteği — Rehber Öğretmen branşındaki bir öğretmene
+// ek bir menü ögesi (bkz. REHBER_BRANSI, src/lib/rehberlik.ts). brans
+// parametresi opsiyonel — sadece "ogretmen" rolünde ve o branşta anlamlı,
+// diğer tüm çağrılarda (admin, öğrenci, veli, müdür) yok sayılır.
+const REHBERLIK_MENU_OGESI: DashboardMenuOgesi =
+  { bolum: "rehberlik", href: "/dashboard/rehberlik", etiket: "Rehberlik", ikon: "rehberlik" };
+
+export function dashboardMenusu(role: UserRole, kurumTuru?: KurumTuru, brans?: string): DashboardMenuOgesi[] {
   if (role === "ogrenci") return OGRENCI_MENUSU;
   if (role === "veli") return VELI_MENUSU;
-  if (role === "ogretmen") return OGRETMEN_MENUSU;
+  if (role === "ogretmen") return brans === REHBER_BRANSI ? [...OGRETMEN_MENUSU, REHBERLIK_MENU_OGESI] : OGRETMEN_MENUSU;
   if (role === "mudur") return kurumTuru === "dershane" ? DERSHANE_MUDUR_MENUSU : MUDUR_MENUSU;
   if (role === "admin") return ADMIN_MENUSU;
   return [];
@@ -157,7 +167,7 @@ export function dashboardMenusu(role: UserRole, kurumTuru?: KurumTuru): Dashboar
 
 export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
   "gorevler", "planlar", "veri-girisi", "konu-hakimiyeti", "analiz", "yapay-zeka", "rozetler", "tg-denemeleri",
-  "duyurular", "talepler", "onaylar", "dersler", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler",
+  "duyurular", "talepler", "onaylar", "dersler", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler", "rehberlik",
 ]);
 
 // /yonetici/[bolum] catch-all için — "rozetler" burada YOK, çünkü admin'in

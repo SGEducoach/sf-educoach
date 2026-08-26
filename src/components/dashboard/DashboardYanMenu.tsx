@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {
   BarChart3, BookOpen, BookOpenCheck, Bot, Bug, CalendarDays, CalendarPlus2, CircleUserRound, ClipboardCheck, ClipboardList,
-  Crown, FileCheck2, FileSpreadsheet, GraduationCap, History, Home, ListChecks, Megaphone, Medal, PenLine, School, ScrollText,
+  Crown, FileCheck2, FileSpreadsheet, GraduationCap, HeartHandshake, History, Home, ListChecks, Megaphone, Medal, PenLine, School, ScrollText,
   Settings2, ShieldCheck, UserPlus, Users,
 } from "lucide-react";
 import type { KurumTuru, UserRole } from "@/lib/types";
@@ -38,10 +38,11 @@ const IKONLAR: Record<DashboardIkonu, typeof Home> = {
   ayarlar: Settings2,
   admin: Crown,
   gecmis: History,
+  rehberlik: HeartHandshake,
 };
 
-export function DashboardYanMenu({ role, kurumTuru, aktifBolum }: { role: UserRole; kurumTuru?: KurumTuru; aktifBolum: DashboardBolumu }) {
-  const menu = dashboardMenusu(role, kurumTuru);
+export function DashboardYanMenu({ role, kurumTuru, brans, aktifBolum }: { role: UserRole; kurumTuru?: KurumTuru; brans?: string; aktifBolum: DashboardBolumu }) {
+  const menu = dashboardMenusu(role, kurumTuru, brans);
   if (menu.length === 0) return null;
   const rolBasligi: Partial<Record<UserRole, string>> = {
     ogrenci: "Öğrenci çalışma alanı",

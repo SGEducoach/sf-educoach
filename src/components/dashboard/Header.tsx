@@ -20,7 +20,7 @@ const rolEtiket: Record<UserRole, string> = {
   admin: "Yönetici",
 };
 
-export function Header({ ad, role, kurumTuru, okunmamisMesajSayisi = 0, mobilNavigasyon = true, moderatorMu = false, rolEtiketi, aktifBolum = "ozet" }: { ad: string; role: UserRole; kurumTuru?: KurumTuru; okunmamisMesajSayisi?: number; mobilNavigasyon?: boolean; moderatorMu?: boolean; rolEtiketi?: string; aktifBolum?: DashboardBolumu }) {
+export function Header({ ad, role, kurumTuru, brans, okunmamisMesajSayisi = 0, mobilNavigasyon = true, moderatorMu = false, rolEtiketi, aktifBolum = "ozet" }: { ad: string; role: UserRole; kurumTuru?: KurumTuru; brans?: string; okunmamisMesajSayisi?: number; mobilNavigasyon?: boolean; moderatorMu?: boolean; rolEtiketi?: string; aktifBolum?: DashboardBolumu }) {
   return (
     <>
     <OturumZamanAsimi aktif={role === "admin" || moderatorMu} />
@@ -60,7 +60,7 @@ export function Header({ ad, role, kurumTuru, okunmamisMesajSayisi = 0, mobilNav
             </form>
           </div>
 
-          <MobilMenu ad={ad} role={role} kurumTuru={kurumTuru} okunmamisMesajSayisi={okunmamisMesajSayisi} moderatorMu={moderatorMu} rolEtiketi={rolEtiketi} aktifBolum={aktifBolum} navigasyonGoster={mobilNavigasyon} />
+          <MobilMenu ad={ad} role={role} kurumTuru={kurumTuru} brans={brans} okunmamisMesajSayisi={okunmamisMesajSayisi} moderatorMu={moderatorMu} rolEtiketi={rolEtiketi} aktifBolum={aktifBolum} navigasyonGoster={mobilNavigasyon} />
         </div>
       </div>
     </header>

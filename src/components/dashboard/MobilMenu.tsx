@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  BarChart3, BookOpen, BookOpenCheck, Bot, Bug, CalendarDays, CalendarPlus2, CircleUserRound, ClipboardCheck, ClipboardList, Crown, FileCheck2, FileSpreadsheet, GraduationCap, History, Home,
+  BarChart3, BookOpen, BookOpenCheck, Bot, Bug, CalendarDays, CalendarPlus2, CircleUserRound, ClipboardCheck, ClipboardList, Crown, FileCheck2, FileSpreadsheet, GraduationCap, HeartHandshake, History, Home,
   ListChecks, LogOut, Medal, Megaphone, Menu, PenLine, School, ScrollText, Settings2, ShieldCheck, UserPlus, Users, X,
 } from "lucide-react";
 import { BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, SEAFOAM, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
@@ -51,6 +51,7 @@ const IKONLAR: Record<DashboardIkonu, typeof Home> = {
   ayarlar: Settings2,
   admin: Crown,
   gecmis: History,
+  rehberlik: HeartHandshake,
 };
 
 // Telefon genişliğinde header'daki ikon sırası (moderatör/tema/bildirim/
@@ -61,10 +62,11 @@ const IKONLAR: Record<DashboardIkonu, typeof Home> = {
 // bir ara genişlik oluşmaz. Renkler
 // header gibi tema değişkenlerine bağlı — açık modda beyaz metin/koyu panel
 // kullanmak (eskiden olduğu gibi) gündüz de "gece" görünümü veriyordu.
-export function MobilMenu({ ad, role, kurumTuru, okunmamisMesajSayisi, moderatorMu, rolEtiketi, aktifBolum = "ozet", navigasyonGoster = true }: {
+export function MobilMenu({ ad, role, kurumTuru, brans, okunmamisMesajSayisi, moderatorMu, rolEtiketi, aktifBolum = "ozet", navigasyonGoster = true }: {
   ad: string;
   role: UserRole;
   kurumTuru?: KurumTuru;
+  brans?: string;
   okunmamisMesajSayisi: number;
   moderatorMu: boolean;
   rolEtiketi?: string;
@@ -72,7 +74,7 @@ export function MobilMenu({ ad, role, kurumTuru, okunmamisMesajSayisi, moderator
   navigasyonGoster?: boolean;
 }) {
   const [acik, setAcik] = useState(false);
-  const menu = navigasyonGoster ? dashboardMenusu(role, kurumTuru) : [];
+  const menu = navigasyonGoster ? dashboardMenusu(role, kurumTuru, brans) : [];
 
   return (
     <div className="relative lg:hidden">
