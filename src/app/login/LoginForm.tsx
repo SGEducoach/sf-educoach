@@ -255,7 +255,7 @@ export default function LoginForm() {
           )}
           {(role === "ogrenci" || role === "veli") && (
             <p style={{ color: TEXT_MUTED }} className="text-[11px] -mt-2">
-              Şifrenizi mi unuttunuz? Kurumunuzun yetkili moderatörüyle iletişime geçin.
+              Şifrenizi unuttuysanız kurumunuzun yetkili moderatörüyle iletişime geçin.
             </p>
           )}
 
@@ -272,6 +272,9 @@ export default function LoginForm() {
         <p style={{ color: TEXT_MUTED }} className="text-xs text-center mt-5">
           Hesabınız yok mu?{" "}
           <Link href="/signup" style={{ color: MINT }} className="font-semibold">Kayıt olun</Link>
+        </p>
+        <p style={{ color: TEXT_MUTED }} className="text-[10px] text-center mt-6 opacity-70">
+          © 2026 SeFu Koç. Tüm hakları saklıdır.
         </p>
       </div>
       <YukleniyorOverlay visible={yukleniyor} mesaj="Giriş yapılıyor..." />

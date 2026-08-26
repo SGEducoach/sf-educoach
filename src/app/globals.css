@@ -293,14 +293,21 @@ select option {
     background 0.15s ease;
 }
 @media (hover: hover) {
+  /* Kullanıcı bulgusu (26.08.2026): "sağ en üstteki butonların hover/
+     tıklama efektleri yeterli değil" — özellikle Header'daki yarı saydam
+     (rgba(255,255,255,0.06) gibi) arka planlı ikon butonlarında eski
+     brightness(1.12) neredeyse fark edilmiyordu. Belirgin bir kaldırma
+     (lift) + parlaklık + gölge kombinasyonuna çıkarıldı. */
   .sfec-btn:hover:not(:disabled) {
-    filter: brightness(1.12);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+    filter: brightness(1.35);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+    transform: translateY(-1px) scale(1.04);
   }
 }
 .sfec-btn:active:not(:disabled) {
-  transform: scale(0.97);
-  filter: brightness(0.94);
+  transform: scale(0.96);
+  filter: brightness(0.85);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }
 .sfec-card {
   transition:

@@ -29,14 +29,14 @@ export default async function ModeratorPage({ searchParams }: { searchParams: Pr
   const veri = await moderatorKullanicilariGetir(adminGoruntuluyor ? params.okul : undefined);
   return (
     <div className="flex min-h-screen flex-col">
-      <Header ad={profil.ad} role={profil.role as UserRole} moderatorMu={!adminGoruntuluyor} rolEtiketi={adminGoruntuluyor ? undefined : "Moderatör"} mobilNavigasyon={false}/>
+      <Header ad={profil.ad} role={profil.role as UserRole} moderatorMu={!adminGoruntuluyor} rolEtiketi={adminGoruntuluyor ? undefined : "Moderatör"} mobilNavigasyon={false}
+        geriDonusHref={adminGoruntuluyor ? "/yonetici/moderatorler" : "/dashboard"}
+        geriDonusEtiketi={adminGoruntuluyor ? "Yönetim paneline dön" : "Ana sayfaya dön"}
+      />
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 px-4 py-7 pb-24 sm:px-6">
         {!adminGoruntuluyor && <YonetimNavigasyonu tur="moderator" aktif="panel"/>}
         <ModeratorPanel {...veri}
-          ad={profil.ad}
           schoolId={adminGoruntuluyor ? params.okul : undefined}
-          geriDonusHref={adminGoruntuluyor ? "/yonetici/moderatorler" : "/dashboard"}
-          geriDonusEtiketi={adminGoruntuluyor ? "Yönetim paneline dön" : "Ana sayfaya dön"}
         />
       </main>
     </div>

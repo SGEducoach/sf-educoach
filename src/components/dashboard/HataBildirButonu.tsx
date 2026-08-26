@@ -61,7 +61,7 @@ export function HataBildirButonu({ boyut = "ikon" }: { boyut?: "ikon" | "satir" 
           <div className="w-full max-w-sm rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER_STRONG}` }}
             onClick={(e) => e.stopPropagation()}>
             <h3 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[16px] font-bold mb-1">Hata bildir</h3>
-            <p style={{ color: TEXT_MUTED }} className="text-xs mb-3">Karşılaştığınız sorunu kısaca anlatın — yönetici ekibi inceleyecek.</p>
+            <p style={{ color: TEXT_MUTED }} className="text-xs mb-3">Yönetici ekibin incelemesi için karşılaştığınız sorunu kısaca anlatınız.</p>
             <form onSubmit={gonder} className="flex flex-col gap-3">
               <textarea required maxLength={2000} rows={5} value={mesaj} onChange={(e) => setMesaj(e.target.value)}
                 placeholder="Örn: Deneme kaydettiğimde hata mesajı çıkıyor..."

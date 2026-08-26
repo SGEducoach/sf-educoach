@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import Link from "next/link";
-import { ArrowRightLeft, Award, BedDouble, ChevronDown, KeyRound, LayoutDashboard, Pencil, Save, Search, Settings, ShieldCheck, Trash2, UserCheck, UserPlus, UserX } from "lucide-react";
+import { ArrowRightLeft, Award, BedDouble, ChevronDown, KeyRound, Pencil, Save, Search, Settings, ShieldCheck, Trash2, UserCheck, UserPlus, UserX } from "lucide-react";
 import {
   moderatorAktiflikDegistir, moderatorHesapSil, moderatorKurumBilgisiGetir, moderatorKurumGuncelle,
   moderatorOgrenciEkle, moderatorOgrenciSinifTasi, moderatorOgretmenBransDegistir, moderatorOgretmenEkle,
@@ -13,18 +12,13 @@ import { AYT_ALAN_ETIKET, BRANS_LISTESI } from "@/lib/types";
 import type { AytAlan } from "@/lib/types";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 
-export function ModeratorPanel({ okulAdi, kullanicilar, schoolId, ad, geriDonusHref = "/dashboard", geriDonusEtiketi = "Ana sayfaya dön" }: {
+export function ModeratorPanel({ okulAdi, kullanicilar, schoolId }: {
   okulAdi: string; kullanicilar: ModeratorKullanici[];
   // schoolId: yalnızca admin /yonetici → Moderatörler'den bu okulu
   // GÖRÜNTÜLERKEN geçilir (bkz. moderator/page.tsx) — aksiyon fonksiyonlarına
   // iletilir ki requireModerator() admin'in kendi (var olmayan) moderatör
   // satırı yerine hedef okulu kullanabilsin.
   schoolId?: string;
-  // ad: panele bakan kişinin kendi adı — kullanıcı isteği (26.08.2026):
-  // "moderatör paneli yazısı kaldırılıp Ana sayfaya dön butonu sağ üstte
-  // isim yanına" taşınacak.
-  ad?: string;
-  geriDonusHref?: string; geriDonusEtiketi?: string;
 }) {
   const SAYFA_BOYUTU = 50;
   const [mesaj, setMesaj] = useState<string | null>(null);
@@ -61,13 +55,7 @@ export function ModeratorPanel({ okulAdi, kullanicilar, schoolId, ad, geriDonusH
   ];
   return <div className="flex flex-col gap-5">
     <div className="rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-      <div className="flex items-start justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-2"><ShieldCheck size={18} color={MINT} /><h1 style={{ color: TEXT }} className="font-bold">{okulAdi}</h1></div>
-        <div className="flex items-center gap-2.5">
-          {ad && <span style={{ color: TEXT_MUTED }} className="text-xs font-semibold">{ad}</span>}
-          <Link href={geriDonusHref} className="sfec-btn inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold" style={{ color: TEXT, border: `2px solid ${BORDER_STRONG}` }}><LayoutDashboard size={14}/>{geriDonusEtiketi}</Link>
-        </div>
-      </div>
+      <div className="flex items-center gap-2"><ShieldCheck size={18} color={MINT} /><h1 style={{ color: TEXT }} className="font-bold">{okulAdi}</h1></div>
       <p style={{ color: TEXT_MUTED }} className="mt-2 text-xs leading-relaxed">Yetkiniz yalnız bu okulun öğrenci, öğretmen, müdür ve bağlı velileriyle sınırlıdır. Başka okulların kayıtları görüntülenmez veya değiştirilemez.</p>
     </div>
     {mesaj && <div className="rounded-xl p-3 text-xs font-bold" style={{ color: mesaj.startsWith("Hata") ? BLUSH : MINT, background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>{mesaj}</div>}

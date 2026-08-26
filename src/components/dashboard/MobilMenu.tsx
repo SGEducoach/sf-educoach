@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   BarChart3, BookOpen, BookOpenCheck, Bot, Bug, CalendarDays, CalendarPlus2, CircleUserRound, ClipboardCheck, ClipboardList, Crown, FileCheck2, FileSpreadsheet, GraduationCap, HeartHandshake, History, Home,
-  ListChecks, LogOut, Medal, Megaphone, Menu, PenLine, School, ScrollText, Settings2, ShieldCheck, UserPlus, Users, X,
+  LayoutDashboard, ListChecks, LogOut, Medal, Megaphone, Menu, PenLine, School, ScrollText, Settings2, ShieldCheck, UserPlus, Users, X,
 } from "lucide-react";
 import { BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, SEAFOAM, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 import { signOut } from "@/app/dashboard/actions";
@@ -62,7 +62,7 @@ const IKONLAR: Record<DashboardIkonu, typeof Home> = {
 // bir ara genişlik oluşmaz. Renkler
 // header gibi tema değişkenlerine bağlı — açık modda beyaz metin/koyu panel
 // kullanmak (eskiden olduğu gibi) gündüz de "gece" görünümü veriyordu.
-export function MobilMenu({ ad, role, kurumTuru, brans, okunmamisMesajSayisi, moderatorMu, rolEtiketi, aktifBolum = "ozet", navigasyonGoster = true }: {
+export function MobilMenu({ ad, role, kurumTuru, brans, okunmamisMesajSayisi, moderatorMu, rolEtiketi, aktifBolum = "ozet", navigasyonGoster = true, geriDonusHref, geriDonusEtiketi }: {
   ad: string;
   role: UserRole;
   kurumTuru?: KurumTuru;
@@ -72,6 +72,7 @@ export function MobilMenu({ ad, role, kurumTuru, brans, okunmamisMesajSayisi, mo
   rolEtiketi?: string;
   aktifBolum?: DashboardBolumu;
   navigasyonGoster?: boolean;
+  geriDonusHref?: string; geriDonusEtiketi?: string;
 }) {
   const [acik, setAcik] = useState(false);
   const menu = navigasyonGoster ? dashboardMenusu(role, kurumTuru, brans) : [];
@@ -113,7 +114,12 @@ export function MobilMenu({ ad, role, kurumTuru, brans, okunmamisMesajSayisi, mo
               </nav>
             )}
 
-            {moderatorMu && (
+            {geriDonusHref ? (
+              <Link href={geriDonusHref} onClick={() => setAcik(false)}
+                className="sfec-btn flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-[13px] font-semibold" style={{ color: TEXT }}>
+                <LayoutDashboard size={16} color={SEAFOAM} /> {geriDonusEtiketi}
+              </Link>
+            ) : moderatorMu && (
               <Link href="/moderator" onClick={() => setAcik(false)}
                 className="sfec-btn flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-[13px] font-semibold" style={{ color: TEXT }}>
                 <ShieldCheck size={16} color={SEAFOAM} /> Moderatör paneli
