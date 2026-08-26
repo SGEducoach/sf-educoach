@@ -9,7 +9,7 @@ import { GOREV_TURU_ETIKET, GOREV_DURUMU_ETIKET } from "@/lib/types";
 import type { GorevTuru, GorevDurumu, AytAlan } from "@/lib/types";
 import { KonuCalismaForm, SoruCozumuForm, DenemeForm } from "@/components/dashboard/OgrenciVeriGirisi";
 import { MaskotKonusmaBalonu } from "@/components/dashboard/MaskotKonusmaBalonu";
-import { planEkle } from "@/app/dashboard/gorev-actions";
+import { planEkle, gorevProgramaEkle } from "@/app/dashboard/gorev-actions";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
 import { saatiDakikayaCevir } from "@/lib/saat-araligi";
 
@@ -27,6 +27,11 @@ export interface GorevSatiri {
   aciklama: string | null;
   durum: GorevDurumu;
   kaynak: "gorev" | "plan";
+  // Program Yap (27.08.2026) — bkz. gorev-actions.ts gorevProgramaEkle.
+  // kaynak='plan' satırlar oluşturulduğu anda hep true'dur; kaynak='gorev'
+  // satırlar öğrenci "Programa ekle" demeden false kalır (sadece
+  // Görevlerim'de görünür, Program Yap'ın haftalık çizelgesinde değil).
+  programaEklendiMi: boolean;
 }
 
 type TakvimGorunumu = "gorevler" | "planlar";
@@ -102,7 +107,14 @@ export function Gorevlerim({ gorevler, gorunum, haftaBaslangic, aytAlan, sinifSe
   const [planModalAcik, setPlanModalAcik] = useState(false);
   const [haftalikGorunum, setHaftalikGorunum] = useState(false);
   const planSayfasi = gorunum === "planlar";
-  const gorunenKayitlar = gorevler.filter((g) => g.kaynak === (planSayfasi ? "plan" : "gorev"));
+  // Program Yap (27.08.2026): "planlar" sekmesi artık kaynak'a değil
+  // programaEklendiMi'ye bakıyor — hem öğrencinin kendi eklediği planlar
+  // (her zaman true) hem öğretmenin verdiği ama öğrencinin "Programa ekle"
+  // dediği görevler burada görünür. "gorevler" sekmesi hâlâ TÜM öğretmen
+  // görevlerini gösterir (programa eklenmiş olsun olmasın) — bu, öğrencinin
+  // tamamlaması gereken iş listesi, programa eklenip eklenmemesi bunu
+  // etkilemez.
+  const gorunenKayitlar = gorevler.filter((g) => (planSayfasi ? g.programaEklendiMi : g.kaynak === "gorev"));
 
   const gunlukGorevSayisi = new Map<string, number>();
   for (const g of gorunenKayitlar) gunlukGorevSayisi.set(g.tarih, (gunlukGorevSayisi.get(g.tarih) ?? 0) + 1);
@@ -126,15 +138,20 @@ export function Gorevlerim({ gorevler, gorunum, haftaBaslangic, aytAlan, sinifSe
       <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
           <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">
-            {planSayfasi ? "Planlarım" : "Görevlerim"}
+            {planSayfasi ? "Programım" : "Görevlerim"}
           </span>
-          <button type="button" onClick={() => setHaftalikGorunum((acik) => !acik)}
-            aria-pressed={haftalikGorunum}
-            className="sfec-btn inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold"
-            style={{ background: haftalikGorunum ? MINT : BG1_ALT, color: haftalikGorunum ? MINT_ON : TEXT_MUTED, border: `2px solid ${haftalikGorunum ? MINT : BORDER_STRONG}` }}>
-            {haftalikGorunum ? <Rows3 size={13} /> : <CalendarDays size={13} />}
-            {haftalikGorunum ? "Günlük göster" : "Haftalık göster"}
-          </button>
+          {/* Kullanıcı isteği (27.08.2026): "Görevlerimdeki haftalık tabloyu
+              kaldır, Plan Yap'la aynı duruyor karışmasın" — haftalık
+              zaman çizelgesi artık SADECE Program Yap'ta (planSayfasi). */}
+          {planSayfasi && (
+            <button type="button" onClick={() => setHaftalikGorunum((acik) => !acik)}
+              aria-pressed={haftalikGorunum}
+              className="sfec-btn inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold"
+              style={{ background: haftalikGorunum ? MINT : BG1_ALT, color: haftalikGorunum ? MINT_ON : TEXT_MUTED, border: `2px solid ${haftalikGorunum ? MINT : BORDER_STRONG}` }}>
+              {haftalikGorunum ? <Rows3 size={13} /> : <CalendarDays size={13} />}
+              {haftalikGorunum ? "Günlük göster" : "Haftalık göster"}
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-1.5">
           <button type="button" onClick={() => haftaDegistir(-1)} title="Önceki hafta"
@@ -174,7 +191,7 @@ export function Gorevlerim({ gorevler, gorunum, haftaBaslangic, aytAlan, sinifSe
         </div>
       )}
 
-      {haftalikGorunum ? (
+      {planSayfasi && haftalikGorunum ? (
         <HaftalikZamanPlani
           gunler={gunler}
           gorevler={gorunenKayitlar}
@@ -188,7 +205,7 @@ export function Gorevlerim({ gorevler, gorunum, haftaBaslangic, aytAlan, sinifSe
         />
       ) : gunGorevleri.length === 0 ? (
         <p style={{ color: TEXT_MUTED }} className="text-sm py-4 text-center">
-          {planSayfasi ? "Bu gün için plan yok." : "Bu gün için görev yok."}
+          {planSayfasi ? "Bu gün için program yok." : "Bu gün için görev yok."}
         </p>
       ) : (
         <div className="flex flex-col gap-2.5 mb-2.5">
@@ -234,13 +251,14 @@ export function Gorevlerim({ gorevler, gorunum, haftaBaslangic, aytAlan, sinifSe
         <button type="button" onClick={() => setPlanModalAcik(true)}
           className="sfec-btn w-full flex items-center justify-center gap-1.5 text-xs font-bold py-2.5 rounded-2xl"
           style={{ background: "transparent", color: TEXT_MUTED, border: `2px dashed ${BORDER_STRONG}` }}>
-          <Plus size={14} /> Plan ekle
+          <Plus size={14} /> Program ekle
         </button>
       )}
 
       {detayGorev && createPortal(
         <GorevDetayBalonu
           gorev={detayGorev}
+          gunler={gunler}
           onKapat={() => setDetayGorev(null)}
           onTamamla={() => {
             setDetayGorev(null);
@@ -277,11 +295,15 @@ export function Gorevlerim({ gorevler, gorunum, haftaBaslangic, aytAlan, sinifSe
   );
 }
 
-function GorevDetayBalonu({ gorev, onKapat, onTamamla }: {
+function GorevDetayBalonu({ gorev, gunler, onKapat, onTamamla }: {
   gorev: GorevSatiri;
+  // Program Yap (27.08.2026) — "Programa ekle" akışının gün seçici bkz.
+  // aşağıdaki not: sadece görüntülenen haftanın günleri arasından seçilir.
+  gunler: string[];
   onKapat: () => void;
   onTamamla: () => void;
 }) {
+  const router = useRouter();
   const Icon = TUR_IKON[gorev.tur];
   const durumRengi = DURUM_RENK[gorev.durum];
   const hedef = gorev.tur === "soru" && gorev.hedefSoruSayisi
@@ -304,11 +326,55 @@ function GorevDetayBalonu({ gorev, onKapat, onTamamla }: {
     ["Açıklama", gorev.aciklama || "Not eklenmemiş"],
   ];
 
+  // Kullanıcı isteği (27.08.2026): "Görevlerime düşen yeni bir göreve
+  // öğrenci basınca programa ekle seçeneği çıksın; öğretmen saat aralığı
+  // girmişse doğrudan programa yerleşsin, girmemişse öğrenci saat
+  // belirlesin; çakışırsa uyarılsın, gerekirse gün de değiştirebilsin."
+  const programaEklenebilir = gorev.kaynak === "gorev" && !gorev.programaEklendiMi && gorev.durum === "bekliyor";
+  const [formAcik, setFormAcik] = useState(false);
+  const [gun, setGun] = useState(gunler.includes(gorev.tarih) ? gorev.tarih : (gunler[0] ?? gorev.tarih));
+  const [baslangic, setBaslangic] = useState(gorev.baslangicSaat ?? "");
+  const [bitis, setBitis] = useState(gorev.bitisSaat ?? "");
+  const [hata, setHata] = useState<string | null>(null);
+  const [basari, setBasari] = useState(false);
+  const [pending, startTransition] = useTransition();
+
+  function programaEkle(hedefGun: string, hedefBaslangic: string, hedefBitis: string) {
+    setHata(null);
+    startTransition(async () => {
+      const res = await gorevProgramaEkle({ atamaId: gorev.atamaId, tarih: hedefGun, baslangicSaat: hedefBaslangic, bitisSaat: hedefBitis });
+      if (res.error) {
+        setHata(res.error);
+        setFormAcik(true);
+        return;
+      }
+      setBasari(true);
+      router.refresh();
+      setTimeout(onKapat, 1200);
+    });
+  }
+
+  function butonaTikla() {
+    // Öğretmen zaten bir saat aralığı girmişse tek tıkla doğrudan dener —
+    // çakışma çıkarsa aynı akış hatayı gösterip formu açıyor.
+    if (gorev.baslangicSaat && gorev.bitisSaat) {
+      programaEkle(gorev.tarih, gorev.baslangicSaat, gorev.bitisSaat);
+    } else {
+      setFormAcik(true);
+    }
+  }
+
+  function formGonder(e: React.FormEvent) {
+    e.preventDefault();
+    if (!baslangic || !bitis) return setHata("Başlangıç ve bitiş saati zorunludur.");
+    programaEkle(gun, baslangic, bitis);
+  }
+
   return (
-    <MaskotKonusmaBalonu onKapat={onKapat} ariaLabel={gorev.kaynak === "plan" ? "Plan ayrıntıları" : "Görev ayrıntıları"}>
+    <MaskotKonusmaBalonu onKapat={onKapat} ariaLabel={gorev.kaynak === "plan" ? "Program ayrıntıları" : "Görev ayrıntıları"}>
       <div className="pr-9">
         <span className="mb-1 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: MINT }}>
-          <Icon size={13} aria-hidden="true" /> Einstein’dan {gorev.kaynak === "plan" ? "plan" : "görev"} özeti
+          <Icon size={13} aria-hidden="true" /> Einstein’dan {gorev.kaynak === "plan" ? "program" : "görev"} özeti
         </span>
         <h2 className="text-base font-extrabold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>
           {GOREV_TURU_ETIKET[gorev.tur]} · {gorev.ders}
@@ -332,10 +398,58 @@ function GorevDetayBalonu({ gorev, onKapat, onTamamla }: {
         {gorev.durum === "bekliyor" && (
           <button type="button" onClick={onTamamla}
             className="sfec-btn rounded-full px-4 py-2 text-xs font-bold" style={{ background: MINT, color: MINT_ON }}>
-            {gorev.kaynak === "plan" ? "Planı tamamla" : "Görevi tamamla"}
+            {gorev.kaynak === "plan" ? "Programı tamamla" : "Görevi tamamla"}
           </button>
         )}
       </div>
+
+      {basari ? (
+        <div className="mt-3 rounded-xl px-3 py-2 text-xs font-semibold text-center" style={{ background: MINT_BG, color: MINT }}>
+          ✓ Programa eklendi
+        </div>
+      ) : programaEklenebilir && (
+        <div className="mt-3 rounded-2xl p-3 flex flex-col gap-2" style={{ border: `2px dashed ${BORDER_STRONG}` }}>
+          {!formAcik ? (
+            <button type="button" onClick={butonaTikla} disabled={pending}
+              className="sfec-btn flex items-center justify-center gap-1.5 text-xs font-bold py-2.5 rounded-xl disabled:opacity-60"
+              style={{ background: "transparent", color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
+              <CalendarDays size={13} /> {pending ? "Ekleniyor..." : "Programa ekle"}
+            </button>
+          ) : (
+            <form onSubmit={formGonder} className="flex flex-col gap-2">
+              {!hata && (
+                <span style={{ color: TEXT_MUTED }} className="text-[11px] font-semibold">
+                  Bu görevi hangi gün ve saatte çalışacaksınız?
+                </span>
+              )}
+              <div className="grid grid-cols-3 gap-2">
+                <label className="flex flex-col gap-1 col-span-1">
+                  <span style={{ color: TEXT_MUTED }} className="text-[9px] font-bold uppercase tracking-wide">Gün</span>
+                  <select value={gun} onChange={(e) => setGun(e.target.value)}
+                    className="text-xs px-2 py-1.5 rounded-lg outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+                    {gunler.map((g) => <option key={g} value={g}>{gunAdi(g)} {gunSayisi(g)}</option>)}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span style={{ color: TEXT_MUTED }} className="text-[9px] font-bold uppercase tracking-wide">Başlangıç</span>
+                  <input type="time" required value={baslangic} onChange={(e) => setBaslangic(e.target.value)}
+                    className="text-xs px-2 py-1.5 rounded-lg outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span style={{ color: TEXT_MUTED }} className="text-[9px] font-bold uppercase tracking-wide">Bitiş</span>
+                  <input type="time" required value={bitis} onChange={(e) => setBitis(e.target.value)}
+                    className="text-xs px-2 py-1.5 rounded-lg outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+                </label>
+              </div>
+              {hata && <div style={{ color: BLUSH }} className="text-[11px] font-semibold">{hata}</div>}
+              <button type="submit" disabled={pending}
+                className="sfec-btn text-xs font-bold py-2 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+                {pending ? "Ekleniyor..." : "Programa ekle"}
+              </button>
+            </form>
+          )}
+        </div>
+      )}
     </MaskotKonusmaBalonu>
   );
 }
@@ -355,7 +469,7 @@ function HaftalikZamanPlani({ gunler, gorevler, bugun, planSayfasi, onGunSec, on
           <div className="ml-10 grid grid-cols-7 gap-2 mb-2">
             {gunler.map((gun, gunIndex) => (
               <button key={gun} type="button" onClick={() => onGunSec(gun)}
-                title={planSayfasi ? "Bu güne plan ekle" : "Günü seç"}
+                title={planSayfasi ? "Bu güne program ekle" : "Günü seç"}
                 className="sfec-btn rounded-2xl px-2 py-2 text-center"
                 style={{
                   color: TEXT,
@@ -518,7 +632,7 @@ function PlanEkleModal({ tarih, dersListesi, konuOnerileri, gerekYokListesi, onK
         tarih, baslangicSaat, bitisSaat, aciklama: aciklama || undefined,
       });
       if (res.error) setHata(res.error);
-      else { setBasari("Plan eklendi."); setTimeout(onKapat, 1000); }
+      else { setBasari("Programa eklendi."); setTimeout(onKapat, 1000); }
     });
   }
 
@@ -546,7 +660,7 @@ function PlanEkleModal({ tarih, dersListesi, konuOnerileri, gerekYokListesi, onK
       style={{ background: "rgba(0,0,0,0.55)" }} onClick={onKapat}>
       <div className="sfec-fade w-full max-w-md rounded-3xl p-5 max-h-[85vh] overflow-y-auto" style={{ background: BG1, border: `2px solid ${BORDER}` }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold">Plan ekle · {tarihEtiket}</span>
+          <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold">Program ekle · {tarihEtiket}</span>
           <button type="button" onClick={onKapat} className="sfec-btn w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.06)" }}>
             <X size={13} color={TEXT_MUTED} />
           </button>
@@ -639,7 +753,7 @@ function PlanEkleModal({ tarih, dersListesi, konuOnerileri, gerekYokListesi, onK
             ) : (
               <button type="submit" disabled={pending}
                 className="sfec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
-                {pending ? "Ekleniyor..." : "Plan ekle"}
+                {pending ? "Ekleniyor..." : "Program ekle"}
               </button>
             )}
           </form>

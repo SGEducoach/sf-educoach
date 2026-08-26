@@ -228,8 +228,15 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
       : Promise.resolve(new Set<string>()),
     // Görevlerim (Faz 3, §5): görüntülenen haftanın (Pzt-Paz) görevleri —
     // gorev_atamalari + gorevler join'i.
+    // Program Yap (27.08.2026): bir görevin bu öğrenci için EFEKTİF tarihi
+    // ogrenci_tarih varsa ondan, yoksa gorevler.tarih'ten gelir (bkz.
+    // GorevSatiri eşlemesi aşağıda). "Programa ekle" akışı öğrenciyi
+    // SADECE görüntülenen haftanın 7 günüyle sınırladığı için (bkz.
+    // Gorevlerim.tsx gün seçici) ogrenci_tarih hiçbir zaman gorevler.tarih'in
+    // haftasından farklı bir haftaya kaymaz — bu yüzden filtre hâlâ tek
+    // (orijinal) tarihe bakabiliyor, ayrı bir OR sorgusu gerekmiyor.
     supabase.from("gorev_atamalari")
-      .select("id, durum, gorevler!inner(tur, ders, konu, hedef_soru_sayisi, hedef_dakika, tarih, son_tarih, baslangic_saat, bitis_saat, aciklama, olusturan_ogrenci_id)")
+      .select("id, durum, programa_eklendi_mi, ogrenci_tarih, ogrenci_baslangic_saat, ogrenci_bitis_saat, gorevler!inner(tur, ders, konu, hedef_soru_sayisi, hedef_dakika, tarih, son_tarih, baslangic_saat, bitis_saat, aciklama, olusturan_ogrenci_id)")
       .eq("student_id", userId)
       .gte("gorevler.tarih", haftaBaslangic)
       .lte("gorevler.tarih", haftaBitis),
@@ -312,6 +319,8 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
 
   type GorevAtamaRow = {
     id: string; durum: GorevSatiri["durum"];
+    programa_eklendi_mi: boolean;
+    ogrenci_tarih: string | null; ogrenci_baslangic_saat: string | null; ogrenci_bitis_saat: string | null;
     gorevler: {
       tur: GorevSatiri["tur"]; ders: string; konu: string | null;
       hedef_soru_sayisi: number | null; hedef_dakika: number | null;
@@ -319,6 +328,11 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
       olusturan_ogrenci_id: string | null;
     } | null;
   };
+  // Program Yap (27.08.2026): tarih/baslangicSaat/bitisSaat aşağıda hep
+  // EFEKTİF değeri taşıyor — öğrenci "Programa ekle" ile kendi saat/gün
+  // seçtiyse (ogrenci_*), yoksa görevin kendi (öğretmenin girdiği veya hiç
+  // girilmemiş) değeri. Böylece Gorevlerim.tsx tek bir alan setiyle hem
+  // günlük listeyi (bu tarihe göre) hem haftalık programı çizebiliyor.
   const gorevlerimListesi: GorevSatiri[] = ((gorevAtamalariHam as unknown as GorevAtamaRow[]) ?? [])
     .filter((g) => g.gorevler)
     .map((g) => ({
@@ -328,13 +342,14 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
       konu: g.gorevler!.konu,
       hedefSoruSayisi: g.gorevler!.hedef_soru_sayisi,
       hedefDakika: g.gorevler!.hedef_dakika,
-      tarih: g.gorevler!.tarih,
+      tarih: g.ogrenci_tarih ?? g.gorevler!.tarih,
       sonTarih: g.gorevler!.son_tarih,
-      baslangicSaat: g.gorevler!.baslangic_saat,
-      bitisSaat: g.gorevler!.bitis_saat,
+      baslangicSaat: g.ogrenci_baslangic_saat ?? g.gorevler!.baslangic_saat,
+      bitisSaat: g.ogrenci_bitis_saat ?? g.gorevler!.bitis_saat,
       aciklama: g.gorevler!.aciklama,
       durum: g.durum,
       kaynak: g.gorevler!.olusturan_ogrenci_id ? "plan" : "gorev",
+      programaEklendiMi: g.programa_eklendi_mi,
     }));
 
   return (
