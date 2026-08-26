@@ -29,7 +29,7 @@ export function IslemGecmisi() {
         <History size={16} color={TEXT_MUTED} />
         <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold">İşlem Geçmişi</h2>
       </div>
-      <p style={{ color: TEXT_MUTED }} className="text-xs mb-4">Son 150 işlem. Bir işleme tıklayınca varsa detayını görebilirsiniz.</p>
+      <p style={{ color: TEXT_MUTED }} className="text-xs mb-4">Son 150 işlem. Duyuru gönderimlerinde içeriği görmek için satıra tıklayın.</p>
       {hata && <p style={{ color: BLUSH }} className="text-xs font-semibold mb-2">{hata}</p>}
       {kayitlar === null ? (
         <p style={{ color: TEXT_MUTED }} className="text-sm py-3 text-center">Yükleniyor...</p>
@@ -39,11 +39,15 @@ export function IslemGecmisi() {
         <div className="flex flex-col gap-1.5">
           {kayitlar.map((k) => {
             const acik = acikId === k.id;
-            const detayVarMi = k.detay && Object.keys(k.detay).length > 0;
+            // Kullanıcı isteği (2026-08-26): "İşlem detayı kod olarak
+            // gösterilmeyecek. Sadece duyuruların içeriği detaylarda
+            // görünecek." — ham jsonb artık hiç render edilmiyor, sadece
+            // duyuru mesajı düz metin olarak gösteriliyor.
+            const duyuruMesaji = k.eylem === "admin_duyuru_gonder" && typeof k.detay?.mesaj === "string" ? k.detay.mesaj : null;
             return (
               <div key={k.id} className="rounded-xl overflow-hidden" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
-                <button type="button" onClick={() => detayVarMi && setAcikId(acik ? null : k.id)}
-                  className="w-full flex items-center justify-between flex-wrap gap-1.5 px-3.5 py-2 text-xs text-left" style={{ cursor: detayVarMi ? "pointer" : "default" }}>
+                <button type="button" onClick={() => duyuruMesaji && setAcikId(acik ? null : k.id)}
+                  className="w-full flex items-center justify-between flex-wrap gap-1.5 px-3.5 py-2 text-xs text-left" style={{ cursor: duyuruMesaji ? "pointer" : "default" }}>
                   <span style={{ color: TEXT }} className="font-semibold flex items-center gap-1.5 flex-wrap">
                     {EYLEM_ETIKET[k.eylem] ?? k.eylem}
                     <span style={{ color: TEXT_MUTED }} className="font-normal">· {k.aktorAdi}</span>
@@ -58,12 +62,12 @@ export function IslemGecmisi() {
                   </span>
                   <span className="flex items-center gap-1.5" style={{ color: TEXT_MUTED }}>
                     {new Date(k.createdAt).toLocaleString("tr-TR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
-                    {detayVarMi && <ChevronDown size={13} style={{ transform: acik ? "rotate(180deg)" : undefined, transition: "transform 0.15s" }} />}
+                    {duyuruMesaji && <ChevronDown size={13} style={{ transform: acik ? "rotate(180deg)" : undefined, transition: "transform 0.15s" }} />}
                   </span>
                 </button>
-                {acik && detayVarMi && (
-                  <div className="px-3.5 pb-3 text-[11px] font-mono whitespace-pre-wrap break-all" style={{ color: TEXT_MUTED }}>
-                    {JSON.stringify(k.detay, null, 2)}
+                {acik && duyuruMesaji && (
+                  <div className="px-3.5 pb-3 text-xs leading-relaxed" style={{ color: TEXT }}>
+                    &ldquo;{duyuruMesaji}&rdquo;
                   </div>
                 )}
               </div>

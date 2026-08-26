@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Activity, Building2, GraduationCap, Users, UserCheck, Flame } from "lucide-react";
+import { Activity, Building2, GraduationCap, Users, UserCheck, Flame, Radio } from "lucide-react";
 import { BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, TEXT, TEXT_MUTED, BLUSH, LILAC } from "@/lib/theme";
 import { platformIstatistikleriGetir, type PlatformIstatistikleri as Istatistik } from "@/app/yonetici/actions";
 
@@ -32,7 +32,8 @@ export function PlatformIstatistikleri() {
       {!ist ? (
         <p style={{ color: TEXT_MUTED }} className="text-sm py-3 text-center">Yükleniyor...</p>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2.5">
+          <Kart ikon={Radio} deger={ist.suAnAktifKullanici} etiket="Şu an aktif kullanıcı" renk={ist.suAnAktifKullanici > 0 ? MINT : undefined} />
           <Kart ikon={Building2} deger={`${ist.aktifOkulSayisi}/${ist.okulSayisi}`} etiket="Okul (aktif/toplam)" />
           <Kart ikon={GraduationCap} deger={ist.ogrenciSayisi} etiket="Öğrenci" />
           <Kart ikon={Users} deger={ist.ogretmenSayisi} etiket="Öğretmen" />

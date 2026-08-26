@@ -729,15 +729,20 @@ export interface PlatformIstatistikleri {
   veliSayisi: number;
   bekleyenVeliTalebi: number;
   son7GunAktifOgrenci: number;
+  suAnAktifKullanici: number;
 }
 
 export async function platformIstatistikleriGetir(): Promise<{ error: string | null; istatistik: PlatformIstatistikleri | null }> {
   const { supabase, admin } = await requireAdmin();
   const yediGunOnce = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  // "Şu an aktif" penceresi — bkz. migration 0073 yorumu (middleware en
+  // fazla dakikada bir günceller, 5 dakikalık pencere makul bir "şu an
+  // burada" tanımı veriyor).
+  const besDakikaOnce = new Date(Date.now() - 5 * 60 * 1000).toISOString();
 
   const [
     okulToplam, okulAktif, ogrenciToplam, ogretmenToplam, veliToplam, bekleyenTalep,
-    konuAktif, soruAktif, denemeAktif, verimlilikAktif,
+    konuAktif, soruAktif, denemeAktif, verimlilikAktif, suAnAktif,
   ] = await Promise.all([
     supabase.from("schools").select("id", { count: "exact", head: true }),
     supabase.from("schools").select("id", { count: "exact", head: true }).eq("aktif", true),
@@ -749,6 +754,7 @@ export async function platformIstatistikleriGetir(): Promise<{ error: string | n
     supabase.from("soru_cozumleri").select("student_id").gte("created_at", yediGunOnce),
     supabase.from("denemeler").select("student_id").gte("created_at", yediGunOnce),
     supabase.from("haftalik_verimlilikler").select("student_id").gte("created_at", yediGunOnce),
+    admin.from("profiles").select("id", { count: "exact", head: true }).gte("son_gorulme", besDakikaOnce),
   ]);
 
   const aktifSet = new Set<string>();
@@ -766,6 +772,7 @@ export async function platformIstatistikleriGetir(): Promise<{ error: string | n
       veliSayisi: veliToplam.count ?? 0,
       bekleyenVeliTalebi: bekleyenTalep.count ?? 0,
       son7GunAktifOgrenci: aktifSet.size,
+      suAnAktifKullanici: suAnAktif.count ?? 0,
     },
   };
 }
