@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { GraduationCap, BookOpen, Users, Building2 } from "lucide-react";
@@ -20,11 +20,19 @@ const rolSecenekleri: { id: UserRole; ad: string; icon: typeof BookOpen }[] = [
   { id: "mudur", ad: "Müdür", icon: Building2 },
 ];
 
+// Kullanıcı isteği (27.08.2026): karşılama sayfasında (/) seçilen rol
+// buraya ?rol= ile taşınıyor — devamlılık hissi kaybolmasın diye.
+function baslangicRolu(searchParams: URLSearchParams): UserRole {
+  const q = searchParams.get("rol");
+  return q === "ogrenci" || q === "ogretmen" || q === "veli" || q === "mudur" ? q : "ogrenci";
+}
+
 export default function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
   const [kurumTuru, setKurumTuru] = useState<KurumTuru>("okul");
-  const [role, setRole] = useState<UserRole>("ogrenci");
+  const [role, setRole] = useState<UserRole>(() => baslangicRolu(searchParams));
 
   const [schools, setSchools] = useState<School[]>([]);
   const [schoolId, setSchoolId] = useState("");
