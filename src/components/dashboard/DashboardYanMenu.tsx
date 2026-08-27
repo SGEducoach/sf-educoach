@@ -1,14 +1,13 @@
 import Link from "next/link";
 import {
   BarChart3, BookOpen, BookOpenCheck, Bot, Bug, CalendarDays, CalendarPlus2, CircleUserRound, ClipboardCheck, ClipboardList,
-  Crown, FileCheck2, FileSpreadsheet, GraduationCap, HeartHandshake, History, Home, ListChecks, Megaphone, Medal, PenLine, School, ScrollText,
+  Copyright, Crown, FileCheck2, FileSpreadsheet, GraduationCap, HeartHandshake, History, Home, ListChecks, Megaphone, Medal, PenLine, School, ScrollText,
   Settings2, ShieldCheck, UserPlus, Users,
 } from "lucide-react";
 import type { KurumTuru, UserRole } from "@/lib/types";
 import type { DashboardBolumu, DashboardIkonu } from "@/lib/dashboard-navigation";
 import { dashboardMenusu } from "@/lib/dashboard-navigation";
 import { BG1, BORDER, MINT, MINT_BG, TEXT, TEXT_MUTED } from "@/lib/theme";
-import { SeFuSlogan } from "@/components/SeFuWordmark";
 
 const IKONLAR: Record<DashboardIkonu, typeof Home> = {
   "ana-sayfa": Home,
@@ -78,8 +77,11 @@ export function DashboardYanMenu({ role, kurumTuru, brans, aktifBolum }: { role:
             </Link>
           );
         })}
-        <div className="mt-2 px-3 pt-4 text-[12px] italic leading-relaxed" style={{ borderTop: `1px solid ${BORDER}` }}>
-          <SeFuSlogan />
+        {/* Kullanıcı isteği (27.08.2026): "Sen Geliş Farkın Duyulur" yazısı
+            kaldırılıp yerine "SeFu {yıl}" — yıl her zaman otomatik, elle
+            güncelleme gerekmiyor. */}
+        <div className="mt-2 flex items-center gap-1 px-3 pt-4 text-[11px] font-semibold" style={{ borderTop: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
+          <Copyright size={12} aria-hidden="true" /> SeFu {new Date().getFullYear()}
         </div>
       </nav>
     </aside>

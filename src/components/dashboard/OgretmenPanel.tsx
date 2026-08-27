@@ -146,7 +146,10 @@ export function OgretmenPanel({
 
   return (
     <div className="flex flex-col gap-6">
-      {aktifBolum === "ozet" && (
+      {/* Kullanıcı isteği (27.08.2026): "Müdür panelindeki Öğrenciler
+          kısmındaki hoş geldin hocam yazısı kaldırılacak" — müdür için bu
+          karşılama afişi hiç gösterilmiyor artık; öğretmen için aynen kalıyor. */}
+      {aktifBolum === "ozet" && role === "ogretmen" && (
         <section className="sfec-dashboard-hero sfec-fade rounded-3xl px-6 py-5 sm:px-7 print:hidden">
           <div className="relative z-10 flex items-center gap-3">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl" style={{ background: MINT_BG, border: `1px solid ${BORDER_STRONG}` }}>

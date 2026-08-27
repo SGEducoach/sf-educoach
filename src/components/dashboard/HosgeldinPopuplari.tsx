@@ -62,37 +62,32 @@ export function HosgeldinPopuplari({ role }: { role: UserRole }) {
   return (
     <MaskotKonusmaBalonu onKapat={() => sonrakiyeGec(false)} ariaLabel="Giriş bilgilendirmesi">
       <div className="pt-1">
+        {/* Kullanıcı isteği (27.08.2026): "ilk logo kaldırılacak, metin
+            [...], sağ en alta da SeFu logosu gelecek" + "Tamam butonuna
+            tıklandığında mesaj kapansın ve bir daha görünmesin" — ayrı bir
+            "Bir daha gösterme" butonu yerine tek "Tamam" butonu artık her
+            zaman kalıcı kapatıyor (sonrakiyeGec(true)). */}
         {asama === "hatirlatma" && (
           <>
             <div className="w-10 h-10 rounded-full flex items-center justify-center mb-3" style={{ background: MINT_BG }}>
               <Smartphone size={18} color={MINT} />
             </div>
             <p style={{ color: TEXT }} className="text-sm leading-relaxed mb-1">
-              <span className="mr-1 inline-flex align-middle">
-                <SeFuLogo className="h-6 w-auto max-w-20" />
-              </span>
-              &apos;tan en iyi şekilde yararlanmak için telefonunuzun ana ekranına eklemeyi ve bildirimleri açmayı unutmayınız.
+              SeFu Koç&apos;tan en iyi şekilde yararlanmak için telefonunuzun ana ekranına eklemeyi ve bildirimleri açmayı unutmayın.
             </p>
-            <p style={{ color: TEXT_MUTED }} className="mb-4 flex items-center justify-end gap-1.5 text-xs font-semibold">
+            <div className="mb-4 flex justify-end">
               <SeFuLogo className="h-6 w-auto max-w-20" />
-              <span>Ekibi</span>
-            </p>
+            </div>
           </>
         )}
 
         {asama === "bildirim" && <BildirimSoftAsk onTamamlandi={() => sonrakiyeGec(true)} />}
 
-        {asama !== "bildirim" && (
-          <div className="flex gap-2">
-            <button type="button" onClick={() => sonrakiyeGec(true)}
-              className="sfec-btn flex-1 flex items-center justify-center gap-1.5 text-xs font-bold py-2 rounded-xl" style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
-              <BellOff size={13} /> Bir daha gösterme
-            </button>
-            <button type="button" onClick={() => sonrakiyeGec(false)}
-              className="sfec-btn flex-1 text-xs font-bold py-2 rounded-xl" style={{ background: MINT, color: MINT_ON }}>
-              Tamam
-            </button>
-          </div>
+        {asama === "hatirlatma" && (
+          <button type="button" onClick={() => sonrakiyeGec(true)}
+            className="sfec-btn w-full text-xs font-bold py-2 rounded-xl" style={{ background: MINT, color: MINT_ON }}>
+            Tamam
+          </button>
         )}
       </div>
     </MaskotKonusmaBalonu>

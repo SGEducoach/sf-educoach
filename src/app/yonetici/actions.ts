@@ -13,6 +13,7 @@ import { dersSoruSayisi, sinifSiraKarsilastir } from "@/lib/types";
 import type { AytAlan, DenemeTuru, DenemeZorlugu, UserRole } from "@/lib/types";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
 import { tgDenemeArsiviGetir, type TgDenemeIlani } from "@/lib/tg-deneme-ilanlari";
+import { anaSayfaAyarlariniGetir, anaSayfaSliderGorselleriGetir, type AnaSayfaAyarlari, type AnaSayfaSliderGorseli } from "@/lib/ana-sayfa";
 
 const DUYURU_MAKS_UZUNLUK = 500;
 
@@ -1643,6 +1644,104 @@ export async function tgDenemeIlaniSil(id: string): Promise<{ error: string | nu
   }
   await auditLogYaz(supabase, user.id, "tg_deneme_ilani_sil", { id });
   revalidatePath("/dashboard");
+  revalidatePath("/yonetici");
+  return { error: null };
+}
+
+// ============ Ana Sayfa Ayarları (27.08.2026 kullanıcı isteği) ============
+// "Ana sayfada kullanılan metinleri, slider görsellerini ve slider geçiş
+// süresi gibi ayarları adminin kendisi bu bölümden tanımlayıp istediği
+// zaman değiştirecek." Site Ayarları bölümünün içinde ayrı bir kart —
+// bkz. src/components/yonetici/AnaSayfaAyarlariYonetimi.tsx.
+const ANA_SAYFA_BASLIK_MAKS = 200;
+const ANA_SAYFA_GOVDE_MAKS = 4000;
+const ANA_SAYFA_SLIDER_GECIS_MIN = 4;
+const ANA_SAYFA_GORSEL_MAKS_MB = 15;
+
+export async function anaSayfaAyarlariGetir(): Promise<{ error: string | null; ayarlar: AnaSayfaAyarlari; gorseller: AnaSayfaSliderGorseli[] }> {
+  const { admin } = await requireAdmin();
+  const [ayarlar, gorseller] = await Promise.all([
+    anaSayfaAyarlariniGetir(admin),
+    anaSayfaSliderGorselleriGetir(admin),
+  ]);
+  return { error: null, ayarlar, gorseller };
+}
+
+export async function anaSayfaAyarlariniGuncelle(input: {
+  baslik: string; govde: string; sliderGecisSaniye: number;
+}): Promise<{ error: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const baslik = input.baslik.trim();
+  const govde = input.govde.trim();
+
+  if (!baslik) return { error: "Başlık gerekli." };
+  if (baslik.length > ANA_SAYFA_BASLIK_MAKS) return { error: `Başlık en fazla ${ANA_SAYFA_BASLIK_MAKS} karakter olabilir.` };
+  if (govde.length > ANA_SAYFA_GOVDE_MAKS) return { error: `Gövde metni en fazla ${ANA_SAYFA_GOVDE_MAKS} karakter olabilir.` };
+  if (!Number.isInteger(input.sliderGecisSaniye) || input.sliderGecisSaniye < ANA_SAYFA_SLIDER_GECIS_MIN) {
+    return { error: `Slider geçiş süresi en az ${ANA_SAYFA_SLIDER_GECIS_MIN} saniye olmalı.` };
+  }
+
+  const { error } = await admin.from("ana_sayfa_ayarlari").upsert({
+    id: 1, baslik, govde, slider_gecis_saniye: input.sliderGecisSaniye, updated_at: new Date().toISOString(),
+  });
+  if (error) return { error: error.message };
+  await auditLogYaz(supabase, user.id, "ana_sayfa_ayarlari_guncelle", {});
+  revalidatePath("/");
+  revalidatePath("/yonetici");
+  return { error: null };
+}
+
+export async function anaSayfaSliderGorseliEkle(formData: FormData): Promise<{ error: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const dosya = formData.get("dosya") as File | null;
+  if (!dosya) return { error: "Görsel seçilmedi." };
+
+  const mimeType = dosya.type;
+  let uzanti: string;
+  if (mimeType === "image/jpeg") uzanti = "jpg";
+  else if (mimeType === "image/png") uzanti = "png";
+  else if (mimeType === "image/webp") uzanti = "webp";
+  else return { error: "Sadece JPEG, PNG veya WebP görseli yükleyebilirsiniz." };
+
+  if (dosya.size > ANA_SAYFA_GORSEL_MAKS_MB * 1024 * 1024) {
+    return { error: `Görsel en fazla ${ANA_SAYFA_GORSEL_MAKS_MB}MB olabilir.` };
+  }
+
+  const { data: mevcutlar } = await admin.from("ana_sayfa_slider_gorselleri").select("sira").order("sira", { ascending: false }).limit(1);
+  const sonrakiSira = ((mevcutlar?.[0]?.sira as number | undefined) ?? -1) + 1;
+
+  const buffer = Buffer.from(await dosya.arrayBuffer());
+  const dosyaYolu = `${crypto.randomUUID()}.${uzanti}`;
+  const { error: yuklemeHatasi } = await admin.storage.from("ana-sayfa").upload(dosyaYolu, buffer, {
+    contentType: mimeType, upsert: false,
+  });
+  if (yuklemeHatasi) return { error: "Görsel yüklenemedi: " + yuklemeHatasi.message };
+
+  const { error: eklemeHatasi } = await admin.from("ana_sayfa_slider_gorselleri").insert({
+    dosya_yolu: dosyaYolu, sira: sonrakiSira,
+  });
+  if (eklemeHatasi) {
+    await admin.storage.from("ana-sayfa").remove([dosyaYolu]);
+    return { error: eklemeHatasi.message };
+  }
+
+  await auditLogYaz(supabase, user.id, "ana_sayfa_slider_gorseli_ekle", { dosya_yolu: dosyaYolu });
+  revalidatePath("/");
+  revalidatePath("/yonetici");
+  return { error: null };
+}
+
+export async function anaSayfaSliderGorselSil(id: string): Promise<{ error: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const { data: gorsel } = await admin.from("ana_sayfa_slider_gorselleri").select("dosya_yolu").eq("id", id).maybeSingle();
+  const { error } = await admin.from("ana_sayfa_slider_gorselleri").delete().eq("id", id);
+  if (error) return { error: error.message };
+  if (gorsel?.dosya_yolu) {
+    const { error: silmeHatasi } = await admin.storage.from("ana-sayfa").remove([gorsel.dosya_yolu]);
+    if (silmeHatasi) console.warn("Ana sayfa slider görseli silinemedi (kayıt zaten silindi):", silmeHatasi.message);
+  }
+  await auditLogYaz(supabase, user.id, "ana_sayfa_slider_gorseli_sil", { id });
+  revalidatePath("/");
   revalidatePath("/yonetici");
   return { error: null };
 }

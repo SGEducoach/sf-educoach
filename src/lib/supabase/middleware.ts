@@ -73,8 +73,12 @@ export async function updateSession(request: NextRequest) {
   // kullanıcı daha giriş yapmadan bakımda olduğu uyarısını görsün, giriş/
   // kayıt sayfası hiç açılmasın. /yonetici (admin'in ayrı, gizli girişi)
   // BİLİNÇLİ OLARAK kapsam dışı — aksi halde admin siteyi geri açamazdı.
+  // 27.08.2026: "sitenin kapalı olma durumu ana sayfayı da kapsayacak" —
+  // "/" TAM EŞLEŞME ile eklendi (startsWith değil — her yol "/" ile
+  // başladığı için startsWith kullansaydık /yonetici dahil HER rota
+  // bakıma girerdi).
   const { pathname } = request.nextUrl;
-  const bakimKapsaminda = ["/dashboard", "/moderator", "/login", "/signup"].some((p) => pathname.startsWith(p));
+  const bakimKapsaminda = pathname === "/" || ["/dashboard", "/moderator", "/login", "/signup"].some((p) => pathname.startsWith(p));
   if (bakimKapsaminda) {
     const siteKapaliMi = await siteKapaliMiGetir(supabase);
     if (siteKapaliMi) {
