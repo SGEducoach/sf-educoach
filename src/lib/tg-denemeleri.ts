@@ -156,14 +156,18 @@ export function tgDenemeAkisiOlustur(dbIlanlari: TgDenemeIlani[]): TgDenemeHaber
   const donusturulmus: TgDenemeHaberi[] = dbIlanlari.map((ilan) => ({
     id: `ilan-${ilan.id}`,
     kategori: "Duyuru",
-    baslik: ilan.icerik,
-    aciklama: "",
-    tarihEtiketi: new Date(ilan.createdAt).toLocaleDateString("tr-TR", { day: "2-digit", month: "long", year: "numeric" }),
+    baslik: ilan.baslik,
+    aciklama: ilan.aciklama,
+    // Kullanıcı isteği (27.08.2026): "tarih ,başlık,alt metin" — statik
+    // takvim kayıtlarıyla aynı üçlü format. Süreli ilanlarda tarih olarak
+    // bitiş tarihi (genelde denemenin kendi tarihi) öne çıkarılıyor;
+    // süresizde yayınlanma tarihine düşülüyor.
+    tarihEtiketi: new Date(ilan.bitisTarihi ?? ilan.createdAt).toLocaleDateString("tr-TR", { day: "2-digit", month: "long", year: "numeric" }),
     sonTarih: ilan.bitisTarihi ?? "9999-12-31",
     gorsel: ilan.dosyaTipi === "resim" ? tgDenemeDosyaUrl(ilan.dosyaYolu) : "",
     genislik: ilan.genislik ?? 1200,
     yukseklik: ilan.yukseklik ?? 1600,
-    alt: ilan.icerik,
+    alt: ilan.baslik,
     kaynakHref: ilan.dosyaTipi === "pdf" ? tgDenemeDosyaUrl(ilan.dosyaYolu) : undefined,
     dosyaTipi: ilan.dosyaTipi,
   }));

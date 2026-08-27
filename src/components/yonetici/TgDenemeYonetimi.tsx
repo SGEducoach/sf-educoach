@@ -15,7 +15,8 @@ import { BG0, BG1, BG1_ALT, BLUSH, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON
 export function TgDenemeYonetimi() {
   const dosyaRef = useRef<HTMLInputElement>(null);
   const [acik, setAcik] = useState(false);
-  const [icerik, setIcerik] = useState("");
+  const [baslik, setBaslik] = useState("");
+  const [aciklama, setAciklama] = useState("");
   const [sure, setSure] = useState<"suresiz" | "sureli">("suresiz");
   const [bitisTarihi, setBitisTarihi] = useState("");
   const [hata, setHata] = useState<string | null>(null);
@@ -33,19 +34,20 @@ export function TgDenemeYonetimi() {
     setBasari(null);
     const dosya = dosyaRef.current?.files?.[0];
     if (!dosya) return setHata("Bir PDF, JPEG veya PNG dosyası seçin.");
-    if (!icerik.trim()) return setHata("İçerik gerekli.");
+    if (!baslik.trim()) return setHata("Başlık gerekli.");
     if (sure === "sureli" && !bitisTarihi) return setHata("Süreli seçildi — bitiş tarihi gerekli.");
 
     const formData = new FormData();
     formData.set("dosya", dosya);
-    formData.set("icerik", icerik.trim());
+    formData.set("baslik", baslik.trim());
+    formData.set("aciklama", aciklama.trim());
     formData.set("bitisTarihi", sure === "sureli" ? bitisTarihi : "");
 
     startTransition(async () => {
       const res = await tgDenemeIlaniEkle(formData);
       if (res.error) return setHata(res.error);
       setBasari("Yayınlandı — TG Denemeleri akışında görünecek.");
-      setIcerik(""); setBitisTarihi(""); setSure("suresiz");
+      setBaslik(""); setAciklama(""); setBitisTarihi(""); setSure("suresiz");
       if (dosyaRef.current) dosyaRef.current.value = "";
       if (arsivAcik) setArsiv(null);
     });
@@ -101,11 +103,18 @@ export function TgDenemeYonetimi() {
               style={{ color: TEXT }} />
           </label>
           <label className="flex flex-col gap-1">
-            <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">İçerik</span>
-            <textarea value={icerik} onChange={(e) => setIcerik(e.target.value.slice(0, 500))} rows={3}
-              placeholder="Örn. Ekim ayı TYT deneme takvimi yayınlandı."
+            <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Başlık</span>
+            <input value={baslik} onChange={(e) => setBaslik(e.target.value.slice(0, 150))}
+              placeholder="Örn. Ekim Ayı TYT Deneme Takvimi Yayınlandı"
+              className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+            <span style={{ color: TEXT_MUTED }} className="text-[10px]">{baslik.length}/150</span>
+          </label>
+          <label className="flex flex-col gap-1">
+            <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Alt metin (opsiyonel)</span>
+            <textarea value={aciklama} onChange={(e) => setAciklama(e.target.value.slice(0, 500))} rows={3}
+              placeholder="Örn. İşler Kitapevi şubelerinden deneme kitapçıklarını temin edebilirsiniz."
               className="text-sm px-3 py-2 rounded-xl outline-none resize-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
-            <span style={{ color: TEXT_MUTED }} className="text-[10px]">{icerik.length}/500</span>
+            <span style={{ color: TEXT_MUTED }} className="text-[10px]">{aciklama.length}/500</span>
           </label>
           <div className="flex flex-wrap items-end gap-2.5">
             <div className="flex gap-1 p-1 rounded-full" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
@@ -152,7 +161,8 @@ export function TgDenemeYonetimi() {
               <div key={i.id} className="flex items-center gap-2.5 rounded-xl p-2.5" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
                 {i.dosyaTipi === "pdf" ? <FileText size={16} color={TEXT_MUTED} className="shrink-0" /> : <ImageIcon size={16} color={TEXT_MUTED} className="shrink-0" />}
                 <div className="min-w-0 flex-1">
-                  <p style={{ color: TEXT }} className="text-xs leading-snug truncate">{i.icerik}</p>
+                  <p style={{ color: TEXT }} className="text-xs font-bold leading-snug truncate">{i.baslik}</p>
+                  {i.aciklama && <p style={{ color: TEXT_MUTED }} className="text-[11px] leading-snug truncate">{i.aciklama}</p>}
                   <div className="flex items-center gap-2 mt-0.5">
                     <span style={{ color: TEXT_MUTED }} className="text-[10px]">{new Date(i.createdAt).toLocaleDateString("tr-TR")}</span>
                     {i.bitisTarihi && <span style={{ color: TEXT_MUTED }} className="text-[10px] flex items-center gap-0.5"><CalendarClock size={10} /> {new Date(i.bitisTarihi).toLocaleDateString("tr-TR")}</span>}

@@ -53,7 +53,7 @@ export function TgDenemeleri({ bugun, dbIlanlar }: { bugun: string; dbIlanlar: T
             TG Denemeler
           </h1>
           <p className="mt-1 max-w-2xl text-sm" style={{ color: TEXT_MUTED }}>
-            Genel takvimler ve yaklaşan deneme afişleri. Otomatik akış açıkken haberler 10 saniyede bir ilerler.
+            Genel takvimler ve yaklaşan deneme afişleri.
           </p>
         </div>
       </div>
