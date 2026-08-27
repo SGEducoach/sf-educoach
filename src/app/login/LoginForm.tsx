@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, GraduationCap, BookOpen, Users, Building2 } from "lucide-react";
+import { GraduationCap, BookOpen, Users, Building2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { KurumTuru, School, UserRole } from "@/lib/types";
 import { BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
@@ -147,11 +147,6 @@ export default function LoginForm() {
   return (
     <div style={{ minHeight: "100vh", background: BG0 }} className="flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
-        {/* Kullanıcı isteği (27.08.2026): "Giriş yap ekranına ana sayfaya
-            dön butonu eklenecek". */}
-        <Link href="/" className="mb-4 inline-flex items-center gap-1.5 text-xs font-semibold" style={{ color: TEXT_MUTED }}>
-          <ArrowLeft size={14} /> Ana sayfaya dön
-        </Link>
         <div className="flex flex-col items-center mb-7">
           {/* Kullanıcı isteği (26.08.2026): "İsminde login yazan sadece giriş
               ekranı için kullanılacak" — bkz. dokumanlar/logo/. */}
