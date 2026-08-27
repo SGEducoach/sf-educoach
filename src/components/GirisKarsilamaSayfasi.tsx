@@ -44,6 +44,15 @@ const DONGU_SURESI_MS = 5000;
 
 // Fotoğraf kartı — normalde hafif, sırası gelince (aktif) derin gölge;
 // çerçeve yok (kullanıcı isteği: "fotolar çerçevesiz").
+//
+// Kullanıcı bulgusu (27.08.2026, ACİL): next/image kullanınca aktif foto
+// rotasyonda büyüyüp küçüldüğü için (flex 1↔2.3) `sizes` tahmini tutmuyor,
+// tarayıcı her tur Vercel'in ÜCRETLİ Image Optimization servisine yeniden
+// gidiyordu (ölçüldü: aynı foto ~15sn'de bir sunucuya gidip geliyordu).
+// Bu 3 fotoğraf zaten build-time'da 1600px/q82'ye sıkıştırılmış — sunucu
+// taraflı yeniden boyutlandırmaya gerek yok. Düz <img> ile statik dosya
+// olarak servis ediliyor (next/image'ın `fill`+`object-cover` davranışı
+// birebir aynı className'lerle taklit edildi, GÖRSEL FARK YOK).
 function FotoKart({ foto, alt, aktifMi, oncelik }: { foto: string; alt: string; aktifMi: boolean; oncelik?: boolean }) {
   return (
     <div className="relative h-full overflow-hidden rounded-2xl transition-all duration-700 ease-out"
@@ -53,7 +62,9 @@ function FotoKart({ foto, alt, aktifMi, oncelik }: { foto: string; alt: string; 
           ? "0 0 0 2px rgba(255,255,255,0.3), 0 24px 48px -10px rgba(0,0,0,0.6)"
           : "0 4px 14px -4px rgba(0,0,0,0.4)",
       }}>
-      <Image src={foto} alt={alt} fill sizes="(max-width: 640px) 100vw, 33vw" className="object-cover" priority={oncelik} />
+      {/* eslint-disable-next-line @next/next/no-img-element -- bilinçli: next/image'ın sunucu taraflı optimizasyonunu (ücretli, gereksiz) atlıyoruz */}
+      <img src={foto} alt={alt} loading={oncelik ? "eager" : "lazy"} fetchPriority={oncelik ? "high" : "auto"} decoding="async"
+        className="absolute inset-0 h-full w-full object-cover" />
     </div>
   );
 }
