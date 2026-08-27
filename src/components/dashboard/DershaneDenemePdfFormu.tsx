@@ -2,14 +2,18 @@
 
 import { useRef, useState } from "react";
 import { FileSpreadsheet } from "lucide-react";
-import { denemePdfIceriAktar } from "@/app/dashboard/deneme-pdf-actions";
-import { BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
+import { denemePdfIceriAktar, denemeExcelIceriAktar } from "@/app/dashboard/deneme-pdf-actions";
+import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 
-// DERSHANE MODU (Faz D5) — toplu deneme sonucu PDF'i yükle, Claude vision
-// ile ayrıştırılıp ad-soyad ile öğrencilerle eşleştirilir. Belirsiz/
-// eşleşmeyen satırlar admin'in (/yonetici) inceleme kuyruğuna düşer.
+// DERSHANE MODU (Faz D5) — toplu deneme sonucu PDF veya Excel (.xlsx) ile
+// yüklenir. PDF: Claude vision ile ayrıştırılır. Excel: zaten yapılandırılmış
+// veri olduğu için doğrudan (AI'sız) okunur — bkz. deneme-pdf-actions.ts
+// denemeExcelIceriAktar. İkisi de aynı ad-soyad eşleştirme/inceleme kuyruğu
+// mantığını kullanır (kullanıcı isteği, 27.08.2026: "sonuçlar excel olarak
+// da yüklenebilecek").
 export function DershaneDenemePdfFormu() {
   const dosyaRef = useRef<HTMLInputElement>(null);
+  const [mod, setMod] = useState<"pdf" | "excel">("pdf");
   const [yayinevi, setYayinevi] = useState("");
   const [tarih, setTarih] = useState("");
   const [tur, setTur] = useState<"TYT" | "AYT" | "BRANS">("TYT");
@@ -19,6 +23,7 @@ export function DershaneDenemePdfFormu() {
     otomatikEslesen: number;
     kayitBekleyen: number;
     incelemeBekleyen: number;
+    okunamayan: number;
   } | null>(null);
   const [yukleniyor, setYukleniyor] = useState(false);
 
@@ -27,7 +32,7 @@ export function DershaneDenemePdfFormu() {
     setHata(null);
     setSonuc(null);
     const dosya = dosyaRef.current?.files?.[0];
-    if (!dosya) return setHata("Bir PDF dosyası seçin.");
+    if (!dosya) return setHata(mod === "pdf" ? "Bir PDF dosyası seçin." : "Bir Excel (.xlsx) dosyası seçin.");
     if (!yayinevi.trim()) return setHata("Yayınevi gerekli.");
     if (!tarih) return setHata("Uygulama tarihi gerekli.");
 
@@ -38,7 +43,7 @@ export function DershaneDenemePdfFormu() {
     formData.set("tur", tur);
 
     setYukleniyor(true);
-    const yanit = await denemePdfIceriAktar(formData);
+    const yanit = mod === "pdf" ? await denemePdfIceriAktar(formData) : await denemeExcelIceriAktar(formData);
     setYukleniyor(false);
     if (yanit.error) return setHata(yanit.error);
     setSonuc({
@@ -46,6 +51,7 @@ export function DershaneDenemePdfFormu() {
       otomatikEslesen: yanit.otomatikEslesen,
       kayitBekleyen: yanit.kayitBekleyen,
       incelemeBekleyen: yanit.incelemeBekleyen,
+      okunamayan: yanit.okunamayan,
     });
     if (dosyaRef.current) dosyaRef.current.value = "";
   }
@@ -58,14 +64,39 @@ export function DershaneDenemePdfFormu() {
         </div>
         <div>
           <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold">Toplu deneme sonucu yükle</h2>
-          <p style={{ color: TEXT_MUTED }} className="text-xs">Deneme sonuç PDF&apos;i öğrencilerle ad-soyad ile otomatik eşleştirilir; belirsiz satırlar site yöneticisine düşer.</p>
+          <p style={{ color: TEXT_MUTED }} className="text-xs">
+            {mod === "pdf"
+              ? "Deneme sonuç PDF'i öğrencilerle ad-soyad ile otomatik eşleştirilir; belirsiz satırlar site yöneticisine düşer."
+              : "Deneme sonuç Excel'i öğrencilerle ad-soyad ile otomatik eşleştirilir; belirsiz satırlar site yöneticisine düşer."}
+          </p>
         </div>
       </div>
 
+      <div className="flex gap-1 p-1 rounded-full self-start" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
+        <button type="button" onClick={() => { setMod("pdf"); if (dosyaRef.current) dosyaRef.current.value = ""; }}
+          className="sfec-btn rounded-full px-3.5 py-1.5 text-xs font-bold"
+          style={{ background: mod === "pdf" ? MINT : "transparent", color: mod === "pdf" ? MINT_ON : TEXT_MUTED }}>
+          PDF yükle
+        </button>
+        <button type="button" onClick={() => { setMod("excel"); if (dosyaRef.current) dosyaRef.current.value = ""; }}
+          className="sfec-btn rounded-full px-3.5 py-1.5 text-xs font-bold"
+          style={{ background: mod === "excel" ? MINT : "transparent", color: mod === "excel" ? MINT_ON : TEXT_MUTED }}>
+          Excel yükle
+        </button>
+      </div>
+
       <form onSubmit={yukle} className="flex flex-col gap-3">
+        {mod === "excel" && (
+          <a href={`/api/dershane/deneme-sablonu?tur=${tur}`}
+            className="text-xs font-semibold underline self-start" style={{ color: MINT }}>
+            {tur} için boş Excel şablonunu indir
+          </a>
+        )}
         <label className="flex flex-col gap-1">
-          <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Deneme sonuç PDF&apos;i</span>
-          <input ref={dosyaRef} type="file" accept="application/pdf"
+          <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">
+            {mod === "pdf" ? "Deneme sonuç PDF'i" : "Deneme sonuç Excel'i (.xlsx)"}
+          </span>
+          <input key={mod} ref={dosyaRef} type="file" accept={mod === "pdf" ? "application/pdf" : ".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}
             className="text-sm file:mr-3 file:rounded-lg file:border-0 file:px-3 file:py-2 file:text-xs file:font-bold"
             style={{ color: TEXT }} />
         </label>
@@ -97,13 +128,18 @@ export function DershaneDenemePdfFormu() {
             {sonuc.toplam} öğrenci bulundu — {sonuc.otomatikEslesen} aktif öğrenciye işlendi
             {sonuc.kayitBekleyen > 0 && `, ${sonuc.kayitBekleyen} ön kayıt sonucu öğrenci hesabını açınca otomatik işlenmek üzere saklandı`}
             {sonuc.incelemeBekleyen > 0 && `, ${sonuc.incelemeBekleyen} sonuç site yöneticisinin incelemesine bırakıldı`}.
+            {sonuc.okunamayan > 0 && (
+              <span className="mt-1 block" style={{ color: BLUSH }}>
+                {sonuc.okunamayan} öğrencinin adı bulundu ancak ders satırı okunamadı; sağlam sonuçlar korundu.
+              </span>
+            )}
           </div>
         )}
 
         <button type="submit" disabled={yukleniyor}
           className="sfec-btn w-fit text-sm font-bold px-4 py-2.5 rounded-xl disabled:opacity-60"
           style={{ background: MINT, color: MINT_ON }}>
-          {yukleniyor ? "İşleniyor... (biraz sürebilir)" : "Yükle ve ayrıştır"}
+          {yukleniyor ? "İşleniyor... (biraz sürebilir)" : mod === "pdf" ? "Yükle ve ayrıştır" : "Yükle ve işle"}
         </button>
       </form>
     </div>
