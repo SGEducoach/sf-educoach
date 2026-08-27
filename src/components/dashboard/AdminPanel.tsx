@@ -95,7 +95,16 @@ export function AdminPanel({
           </div>
         </div>
 
-        {okulEkleAcik && <OkulEkleFormu onDone={() => setOkulEkleAcik(false)} />}
+        {okulEkleAcik && (
+          <OkulEkleFormu onDone={(yeniOkulId) => {
+            setOkulEkleAcik(false);
+            // Kullanıcı isteği (27.08.2026): "yeni eklenen kurum ilk iş
+            // olarak sınıflarını oluştursun" — yeni kurum otomatik seçilip
+            // aşağıdaki "Sınıflar" bölümüne (SinifEkleFormu + boş-sınıf
+            // uyarısı) düşülüyor.
+            if (yeniOkulId) router.push(`/yonetici/okullar?okul=${yeniOkulId}`);
+          }} />
+        )}
         {gorunenOkul && okulDuzenleAcik && (
           <OkulDuzenleFormu okul={gorunenOkul} onDone={() => setOkulDuzenleAcik(false)} />
         )}
@@ -106,7 +115,14 @@ export function AdminPanel({
           <>
             <SinifEkleFormu schoolId={gorunenOkul.id} />
 
-            {siniflar.length > 0 && (
+            {/* Kullanıcı isteği (27.08.2026): "yeni eklenen kurum ilk iş
+                olarak sınıflarını oluştursun" — sınıf yoksa sessizce
+                boş kalmak yerine açık bir yönlendirme gösteriliyor. */}
+            {siniflar.length === 0 ? (
+              <p style={{ color: BLUSH }} className="mt-3 text-xs font-semibold">
+                Bu kurum için henüz sınıf eklenmedi. Öğretmen/öğrenci eklemeden önce yukarıdan sınıflarınızı oluşturun.
+              </p>
+            ) : (
               <div className="mt-4">
                 <span style={{ color: TEXT_MUTED }} className="text-[11px] font-semibold uppercase tracking-wide mb-2 block">
                   Sınıflar ({siniflar.length})
@@ -149,7 +165,7 @@ export function AdminPanel({
   );
 }
 
-function OkulEkleFormu({ onDone }: { onDone: () => void }) {
+function OkulEkleFormu({ onDone }: { onDone: (yeniOkulId?: string) => void }) {
   const [ad, setAd] = useState("");
   const [tur, setTur] = useState<"okul" | "dershane">("okul");
   const [okulKodu, setOkulKodu] = useState("");
@@ -163,7 +179,7 @@ function OkulEkleFormu({ onDone }: { onDone: () => void }) {
       const res = await okulEkle({ ad, tur, okulKodu });
       if (res.error) return setHata(res.error);
       setAd(""); setOkulKodu("");
-      onDone();
+      onDone(res.id ?? undefined);
     });
   }
 

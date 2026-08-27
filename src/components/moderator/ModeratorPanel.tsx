@@ -1,15 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { ArrowRightLeft, Award, BedDouble, ChevronDown, KeyRound, Pencil, Save, Search, Settings, ShieldCheck, Trash2, UserCheck, UserPlus, UserX } from "lucide-react";
+import { ArrowRightLeft, Award, BedDouble, ChevronDown, KeyRound, Layers, Pencil, Plus, Save, Search, Settings, ShieldCheck, Trash2, UserCheck, UserPlus, UserX, X } from "lucide-react";
 import {
   moderatorAktiflikDegistir, moderatorHesapSil, moderatorKurumBilgisiGetir, moderatorKurumGuncelle,
   moderatorOgrenciEkle, moderatorOgrenciSinifTasi, moderatorOgretmenBransDegistir, moderatorOgretmenEkle,
-  moderatorOkulSiniflari, moderatorRozetSifirla, moderatorSifreBelirle, moderatorSifreSifirla, moderatorYurtDurumuDegistir,
+  moderatorOkulSiniflari, moderatorRozetSifirla, moderatorSifreBelirle, moderatorSifreSifirla, moderatorSinifEkle,
+  moderatorSinifSil, moderatorYurtDurumuDegistir,
   type ModeratorKullanici,
 } from "@/app/moderator/actions";
 import { AYT_ALAN_ETIKET, BRANS_LISTESI } from "@/lib/types";
-import type { AytAlan } from "@/lib/types";
+import type { AytAlan, SinifSeviyesi } from "@/lib/types";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 
 export function ModeratorPanel({ okulAdi, kullanicilar, schoolId }: {
@@ -27,8 +28,19 @@ export function ModeratorPanel({ okulAdi, kullanicilar, schoolId }: {
   const [sinif, setSinif] = useState("tumu");
   const [durum, setDurum] = useState<"tumu" | "aktif" | "pasif">("tumu");
   const [sayfa, setSayfa] = useState(1);
-  const [ekleModu, setEkleModu] = useState<"yok" | "ogretmen" | "ogrenci">("yok");
+  const [ekleModu, setEkleModu] = useState<"yok" | "ogretmen" | "ogrenci" | "sinif">("yok");
   const siniflar = useMemo(() => [...new Set(kullanicilar.map((k) => k.sinif).filter((x): x is string => !!x))].sort(), [kullanicilar]);
+  // Kullanıcı isteği (27.08.2026): "kullanıcılar sınıf bölümü de eklensin" —
+  // yukarıdaki `siniflar` sadece filtre dropdown'u için (mevcut
+  // ÖĞRENCİLERİN sınıflarından türetilmiş, id'siz, öğrenci yoksa boş)
+  // yeterliydi; sınıf ekleme/silme ve "hiç sınıf yok" uyarısı için gerçek
+  // `classes` tablosundan (id dahil) tam liste gerekiyor — ayrı bir state.
+  const [siniflarTam, setSiniflarTam] = useState<{ id: string; seviye: string; sube: string }[] | null>(null);
+  const [, startSiniflarTransition] = useTransition();
+
+  useEffect(() => {
+    startSiniflarTransition(() => { moderatorOkulSiniflari(schoolId).then((r) => setSiniflarTam(r.siniflar)); });
+  }, [schoolId]);
   const sayilar = useMemo(() => ({
     tumu: kullanicilar.length,
     ogrenci: kullanicilar.filter((k) => k.kategori === "ogrenci").length,
@@ -68,7 +80,34 @@ export function ModeratorPanel({ okulAdi, kullanicilar, schoolId }: {
         <Settings size={15} color={TEXT_MUTED} /> Kurum ayarları
       </div>
       <KurumBilgileriDuzenleyici schoolId={schoolId} onMesaj={setMesaj} />
-      <div className="mt-4 flex flex-wrap gap-2">
+
+      {/* Kullanıcı isteği (27.08.2026): "yeni eklenen kurum ilk iş olarak
+          sınıflarını oluştursun ... kullanıcılar sınıf bölümü de
+          eklensin" — sınıf listesi/ekleme butonu bilinçli olarak
+          Öğretmen/Öğrenci ekle'nin ÜSTÜNDE: önce sınıf, sonra kişi. */}
+      <div className="mt-4 flex items-center gap-1.5 text-xs font-bold" style={{ color: TEXT_MUTED }}>
+        <Layers size={13} /> Sınıflar {siniflarTam !== null && `(${siniflarTam.length})`}
+      </div>
+      {siniflarTam !== null && siniflarTam.length === 0 && (
+        <p style={{ color: BLUSH }} className="mt-1.5 text-xs font-semibold">
+          Bu kurum için henüz sınıf eklenmedi. Öğretmen/öğrenci eklemeden önce sınıflarınızı oluşturun.
+        </p>
+      )}
+      {siniflarTam !== null && siniflarTam.length > 0 && (
+        <div className="mt-1.5 flex flex-wrap gap-1.5">
+          {siniflarTam.map((s) => (
+            <SinifRozetiModerator key={s.id} sinif={s} schoolId={schoolId}
+              onSilindi={() => setSiniflarTam((prev) => (prev ?? []).filter((x) => x.id !== s.id))} />
+          ))}
+        </div>
+      )}
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button type="button" onClick={() => setEkleModu((m) => m === "sinif" ? "yok" : "sinif")}
+          className="sfec-btn flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold"
+          style={{ background: ekleModu === "sinif" ? MINT : BG1_ALT, color: ekleModu === "sinif" ? MINT_ON : TEXT, border: `2px solid ${BORDER_STRONG}` }}>
+          <Plus size={14} /> Sınıf ekle
+        </button>
         <button type="button" onClick={() => setEkleModu((m) => m === "ogretmen" ? "yok" : "ogretmen")}
           className="sfec-btn flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold"
           style={{ background: ekleModu === "ogretmen" ? MINT : BG1_ALT, color: ekleModu === "ogretmen" ? MINT_ON : TEXT, border: `2px solid ${BORDER_STRONG}` }}>
@@ -80,6 +119,10 @@ export function ModeratorPanel({ okulAdi, kullanicilar, schoolId }: {
           <UserPlus size={14} /> Öğrenci ekle
         </button>
       </div>
+      {ekleModu === "sinif" && (
+        <SinifEkleFormuModerator schoolId={schoolId}
+          onEklendi={(yeni) => { setSiniflarTam((prev) => [...(prev ?? []), yeni].sort((a, b) => a.seviye === b.seviye ? a.sube.localeCompare(b.sube) : a.seviye.localeCompare(b.seviye))); }} />
+      )}
       {ekleModu === "ogretmen" && <OgretmenEkleFormu schoolId={schoolId} onDone={(msg) => { setMesaj(msg); setEkleModu("yok"); }} />}
       {ekleModu === "ogrenci" && <OgrenciEkleFormu schoolId={schoolId} onDone={(msg) => { setMesaj(msg); setEkleModu("yok"); }} />}
     </div>
@@ -169,6 +212,86 @@ function KurumBilgileriDuzenleyici({ schoolId, onMesaj }: { schoolId?: string; o
   );
 }
 
+// Admin panelindeki SinifEkleFormu (OgretmenPanel.tsx) ile aynı görsel
+// dil/davranış — sadece moderatorSinifEkle çağırıyor ve eklenen sınıfı
+// üst bileşenin listesine (id dahil) geri veriyor.
+function SinifEkleFormuModerator({ schoolId, onEklendi }: { schoolId?: string; onEklendi: (yeni: { id: string; seviye: string; sube: string }) => void }) {
+  const [seviye, setSeviye] = useState<SinifSeviyesi>("9");
+  const [sube, setSube] = useState("");
+  const [hata, setHata] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  function ekle(e: React.FormEvent) {
+    e.preventDefault();
+    setHata(null);
+    if (!sube.trim()) return setHata("Şube adı girin (örn. E).");
+    startTransition(async () => {
+      const res = await moderatorSinifEkle(seviye, sube, schoolId);
+      if (res.error) return setHata(res.error);
+      const subeBuyuk = sube.trim().toUpperCase();
+      onEklendi({ id: `${seviye}-${subeBuyuk}-${Date.now()}`, seviye, sube: subeBuyuk });
+      setSube("");
+    });
+  }
+
+  return (
+    <form onSubmit={ekle} className="mt-3 flex flex-wrap items-end gap-2.5 rounded-xl p-3" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
+      <label className="flex flex-col gap-1">
+        <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Seviye</span>
+        <select value={seviye} onChange={(e) => setSeviye(e.target.value as SinifSeviyesi)}
+          className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
+          <option value="9">9</option>
+          <option value="10">10</option>
+          <option value="11">11</option>
+          <option value="12">12</option>
+        </select>
+      </label>
+      <label className="flex flex-col gap-1">
+        <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Şube</span>
+        <input value={sube} onChange={(e) => setSube(e.target.value)} placeholder="örn. E" maxLength={2}
+          className="text-sm px-2.5 py-1.5 rounded-xl outline-none w-20" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }} />
+      </label>
+      <button type="submit" disabled={pending}
+        className="sfec-btn flex items-center gap-1 text-xs font-bold px-3.5 py-1.5 rounded-full disabled:opacity-60"
+        style={{ background: MINT, color: MINT_ON }}>
+        <Plus size={13} /> {pending ? "Ekleniyor..." : "Sınıf ekle"}
+      </button>
+      {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
+    </form>
+  );
+}
+
+// Silme FK kısıtı yüzünden (öğrenci/öğretmen varken) engellenir — hata
+// mesajı bunu anlaşılır şekilde açıklıyor (bkz. AdminPanel.tsx SinifRozeti,
+// aynı desen).
+function SinifRozetiModerator({ sinif, schoolId, onSilindi }: { sinif: { id: string; seviye: string; sube: string }; schoolId?: string; onSilindi: () => void }) {
+  const [hata, setHata] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  function sil() {
+    if (!window.confirm(`${sinif.seviye}-${sinif.sube} sınıfı silinsin mi?`)) return;
+    setHata(null);
+    startTransition(async () => {
+      const res = await moderatorSinifSil(sinif.id, schoolId);
+      if (res.error) return setHata(res.error);
+      onSilindi();
+    });
+  }
+
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-1.5 rounded-full pl-3 pr-1.5 py-1" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
+        <span style={{ color: TEXT }} className="text-xs font-bold">{sinif.seviye}-{sinif.sube}</span>
+        <button type="button" onClick={sil} disabled={pending} title="Sınıfı sil"
+          className="sfec-btn w-5 h-5 rounded-full flex items-center justify-center disabled:opacity-60" style={{ background: "rgba(255,255,255,0.06)" }}>
+          <X size={10} color={BLUSH} />
+        </button>
+      </div>
+      {hata && <span style={{ color: BLUSH }} className="text-[10px] font-semibold">{hata}</span>}
+    </div>
+  );
+}
+
 function OgretmenEkleFormu({ schoolId, onDone }: { schoolId?: string; onDone: (msg: string) => void }) {
   const [ad, setAd] = useState("");
   const [email, setEmail] = useState("");
@@ -224,6 +347,17 @@ function OgrenciEkleFormu({ schoolId, onDone }: { schoolId?: string; onDone: (ms
       if (r.error) return onDone(`Hata: ${r.error}`);
       onDone(`Öğrenci eklendi. Geçici şifre: ${r.sifre}`);
     });
+  }
+
+  // Kullanıcı isteği (27.08.2026): "manuel öğrenci kaydı yapan moderatör
+  // veya müdür önce sınıfları oluştur uyarısı alsın" — sınıf listesi boşsa
+  // formun tamamı yerine sadece bu uyarı gösteriliyor, öğrenci eklenemez.
+  if (siniflar !== null && siniflar.length === 0) {
+    return (
+      <div className="mt-3 rounded-xl p-3 text-xs font-semibold" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}`, color: BLUSH }}>
+        Bu kurum için henüz sınıf eklenmedi. Öğrenci eklemeden önce yukarıdan &quot;Sınıf ekle&quot; ile en az bir sınıf oluşturun.
+      </div>
+    );
   }
 
   return (

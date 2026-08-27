@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { adNormalize, hedefBolumNormalize, okulNoGecerliMi, rastgeleSifre, sifreGecerliMi, telefonGecerliMi } from "@/lib/validators";
-import type { AytAlan, UserRole } from "@/lib/types";
+import type { AytAlan, SinifSeviyesi, UserRole } from "@/lib/types";
 
 export interface ModeratorKullanici {
   id: string;
@@ -190,6 +190,44 @@ export async function moderatorOkulSiniflari(targetSchoolId?: string): Promise<{
   const { data, error } = await admin.from("classes").select("id, seviye, sube").eq("school_id", schoolId).order("seviye").order("sube");
   if (error) return { error: error.message, siniflar: [] };
   return { error: null, siniflar: data ?? [] };
+}
+
+// Kullanıcı isteği (27.08.2026): "kullanıcılar sınıf bölümü de eklensin" —
+// önceden sadece admin (/yonetici) sınıf ekleyebiliyordu, okul moderatörü/
+// dershane müdürü kendi kurumu için sınıf açmak istediğinde admin'e
+// bağımlıydı. `sinifEkle` (dashboard/actions.ts, admin-only) ile birebir
+// aynı doğrulama/hata deseni, sadece requireModerator ile korunuyor.
+export async function moderatorSinifEkle(seviye: SinifSeviyesi, sube: string, targetSchoolId?: string) {
+  const { user, admin, schoolId } = await requireModerator(targetSchoolId);
+  if (!["9", "10", "11", "12"].includes(seviye)) return { error: "Geçersiz sınıf seviyesi." };
+  const subeBuyuk = sube.trim().toUpperCase();
+  if (!subeBuyuk) return { error: "Şube adı girin." };
+  const { error } = await admin.from("classes").insert({ school_id: schoolId, seviye, sube: subeBuyuk });
+  if (error) {
+    if (error.code === "23505") return { error: "Bu sınıf/şube zaten var." };
+    return { error: error.message };
+  }
+  await admin.from("admin_audit_log").insert({ actor_id: user.id, eylem: "moderator_sinif_ekle", detay: { school_id: schoolId, seviye, sube: subeBuyuk } });
+  revalidatePath("/moderator");
+  return { error: null };
+}
+
+// FK kısıtı (students.class_id / teachers.class_id) dolu bir sınıfın
+// silinmesini zaten engelliyor — bkz. yonetici/actions.ts sinifSil, aynı
+// desen. targetSchoolId doğrulaması: silinecek sınıfın gerçekten çağıranın
+// (veya admin'in görüntülediği) kurumuna ait olduğunu garantiliyor.
+export async function moderatorSinifSil(classId: string, targetSchoolId?: string) {
+  const { user, admin, schoolId } = await requireModerator(targetSchoolId);
+  const { data: sinif } = await admin.from("classes").select("school_id").eq("id", classId).maybeSingle();
+  if (!sinif || sinif.school_id !== schoolId) return { error: "Bu sınıf kurumunuza ait değil." };
+  const { error } = await admin.from("classes").delete().eq("id", classId);
+  if (error) {
+    if (error.code === "23503") return { error: "Bu sınıfta öğrenci veya öğretmen var, önce onları başka sınıfa taşıyın." };
+    return { error: error.message };
+  }
+  await admin.from("admin_audit_log").insert({ actor_id: user.id, eylem: "moderator_sinif_sil", detay: { school_id: schoolId, class_id: classId } });
+  revalidatePath("/moderator");
+  return { error: null };
 }
 
 export async function moderatorOgrenciSinifTasi(studentId: string, classId: string, targetSchoolId?: string) {

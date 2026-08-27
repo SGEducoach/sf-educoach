@@ -93,18 +93,21 @@ export async function okulEkle(input: { ad: string; tur: "okul" | "dershane"; ok
   const { supabase, user } = await requireUser();
   const ad = input.ad.trim();
   const okulKodu = input.okulKodu.trim();
-  if (!ad) return { error: "Okul adı gerekli." };
-  if (!okulKodu) return { error: "Okul kodu gerekli." };
+  if (!ad) return { error: "Okul adı gerekli.", id: null };
+  if (!okulKodu) return { error: "Okul kodu gerekli.", id: null };
 
   const { data, error } = await supabase.from("schools").insert({ ad, tur: input.tur, okul_kodu: okulKodu }).select("id").single();
   if (error) {
-    if (error.code === "23505") return { error: "Bu okul kodu zaten kullanılıyor." };
-    if (error.message?.includes("row-level security")) return { error: "Bu işlem için yönetici yetkisi gerekiyor." };
-    return { error: error.message };
+    if (error.code === "23505") return { error: "Bu okul kodu zaten kullanılıyor.", id: null };
+    if (error.message?.includes("row-level security")) return { error: "Bu işlem için yönetici yetkisi gerekiyor.", id: null };
+    return { error: error.message, id: null };
   }
   await auditLogYaz(supabase, user.id, "okul_ekle", { school_id: data.id, ad, okul_kodu: okulKodu });
   revalidatePath("/yonetici");
-  return { error: null };
+  // Kullanıcı isteği (27.08.2026): "yeni eklenen kurum ilk iş olarak
+  // sınıflarını oluştursun" — id geri döndürülüyor ki AdminPanel yeni
+  // kurumu otomatik seçip sınıf ekleme adımına yönlendirebilsin.
+  return { error: null, id: data.id };
 }
 
 export async function okulDuzenle(id: string, input: { ad: string; okulKodu: string }) {
