@@ -16,13 +16,13 @@ const KOYU_ZEMIN = "#39454F"; // sağ (ana) panel — nötr koyu lacivert-gri
 const KOYU_MAVI_ZEMIN = "#1C5670"; // sol panel + Giriş butonu
 const BEYAZ = "#FFFFFF";
 
-// Her iki sütun da kendi 0-100 dikey ölçeğinde, kullanıcının verdiği
-// "bölge" numaralarıyla MUTLAK konumlandırılıyor (ör. sağda fotoğraflar
-// %3-20, cümle %35-40, giriş %70-80; solda logo %5-15, slogan %50
-// ortalı, e-posta %95) — akış tabanlı boşluklarla YAKLAŞIK değil,
-// birebir bu yüzdelerde. Mobilde de AYNI ORANLAR korunuyor (kullanıcı
-// isteği: "mobil de aynı oranda") — sadece iki sütun üst üste dizilirken
-// her biri kendi (daha kısa) yüksekliği içinde aynı yüzdelere oturuyor.
+// Her iki sütun da kendi 0-100 dikey ölçeğinde, MUTLAK (top/height %)
+// konumlandırılıyor — akış tabanlı boşluklarla değil. Birçok küçük ince
+// ayar turundan sonra masaüstü ve mobil değerleri BİLİNÇLİ OLARAK
+// birbirinden bağımsız (mobilde sol sütun sayfanın %25'i, fotoğraf farklı
+// büyüklük/konumda vb.) — güncel sayılar için her bloğun kendi yorumuna
+// bakılmalı, burada tekrar özetlenmiyor (sürekli değiştiği için stale
+// kalma riski var).
 type Rol = "ogrenci" | "ogretmen" | "veli";
 
 const ROLLER: { id: Rol; ad: string; foto: string; cumle: string }[] = [
@@ -72,12 +72,12 @@ export function GirisKarsilamaSayfasi() {
 
   return (
     <div className="flex flex-col sm:flex-row" style={{ background: KOYU_ZEMIN }}>
-      {/* Sol ince sütun. Kullanıcı isteği (son revize): "sol sütunu kademe
-          kademe açık tonlara getir, en alt mevcut hali iken en üst beyazla
-          bitsin" — alttan (koyulaştırılmış ÖSYM mavisi) yukarı (beyaz) doğru
-          yumuşak bir geçiş. Logo bu sayede zaten en üstteki beyaza yakın
-          alanda oturuyor, ayrıca bir "spot ışığı" katmanına gerek kalmadı. */}
-      <div className="relative h-[40vh] w-full sm:h-[100dvh] sm:w-[280px] sm:shrink-0"
+      {/* Sol ince sütun. Kullanıcı isteği (son revize): "mobil logo bölümü
+          sayfanın %25'inde yer alsın" — mobilde artık 25vh (masaüstünde
+          eskisi gibi tam yükseklik, kendi sütunu). Arka plan: alt uçta
+          KOYU_MAVI_ZEMIN, üstte beyaz — hem mobil hem masaüstü aynı, tek/düz
+          gradyan. */}
+      <div className="relative h-[25vh] w-full sm:h-[100dvh] sm:w-[280px] sm:shrink-0"
         style={{ background: `linear-gradient(to top, ${KOYU_MAVI_ZEMIN} 0%, #ffffff 100%)` }}>
         <div className="absolute left-1/2 w-[60%] -translate-x-1/2 text-center"
           style={{ top: "5%" }}>
@@ -98,14 +98,36 @@ export function GirisKarsilamaSayfasi() {
             kalıyor, o yüzden burada SADECE masaüstünde gösteriliyor. */}
         <div className="absolute left-1/2 hidden -translate-x-1/2 -translate-y-full text-center sm:left-8 sm:block sm:translate-x-0 sm:text-left"
           style={{ top: "95%" }}>
-          <a href="mailto:sefukoc@gmail.com" style={{ color: BEYAZ }} className="text-xs font-semibold opacity-80">sefukoc@gmail.com</a>
+          <a href="https://mail.google.com/mail/?view=cm&fs=1&to=sefukoc@gmail.com" target="_blank" rel="noopener noreferrer"
+            style={{ color: BEYAZ }} className="text-[10px] font-semibold opacity-80">sefukoc@gmail.com</a>
         </div>
       </div>
 
-      {/* Sağ ana kısım — vitrin, koyulaştırılmış zemin */}
-      <div className="relative h-[58vh] w-full sm:h-[100dvh] sm:flex-1" style={{ background: KOYU_ZEMIN }}>
-        {/* Fotoğraflar — %3-20 */}
-        <div className="absolute left-1/2 w-[92%] -translate-x-1/2 sm:w-[85%] sm:max-w-4xl" style={{ top: "3%", height: "25.3%" }}>
+      {/* Sağ ana kısım — vitrin. Mobilde sol sütun %25 olduğu için burası
+          kalan %75 (kullanıcı isteği). Üst kenarda KOYU_MAVI_ZEMIN'den
+          başlayıp hızla KOYU_ZEMIN'e geçen kısa bir gradyan var — "iki
+          bölüm renk geçişini yumuşat" isteği, sol sütunun bittiği renkle
+          (KOYU_MAVI_ZEMIN) burada dikişsiz devam ediyor. Masaüstünde
+          sütunlar yan yana olduğu için bu geçişe gerek yok, düz KOYU_ZEMIN
+          kalıyor. */}
+      <div className="sfec-giris-sag-panel relative h-[75vh] w-full sm:h-[100dvh] sm:flex-1">
+        <style jsx>{`
+          .sfec-giris-sag-panel {
+            background: linear-gradient(to bottom, ${KOYU_MAVI_ZEMIN} 0%, ${KOYU_ZEMIN} 12%, ${KOYU_ZEMIN} 100%);
+          }
+          @media (min-width: 640px) {
+            .sfec-giris-sag-panel {
+              background: ${KOYU_ZEMIN};
+            }
+          }
+        `}</style>
+        {/* Fotoğraflar. Masaüstü: %3-25.3 (üstte, orijinal "bölge" düzeni).
+            Mobil: büyütülmüş (%42 yükseklik, önceki "ortala/%40 büyüt"
+            revizeleri) ama son isteğe göre artık ORTALANMIŞ değil —
+            "fotonun üstünü kendi rengi üst sınırına al" — üstteki geçiş
+            gradyanı bittiği yerden (bkz. sfec-giris-sag-panel, %12) hemen
+            başlıyor. */}
+        <div className="absolute left-1/2 top-[7%] h-[42%] w-[92%] -translate-x-1/2 sm:top-[3%] sm:h-[25.3%] sm:w-[85%] sm:max-w-4xl">
           {/* Masaüstü/tablet: üç fotoğraf yan yana */}
           <div className="hidden h-full gap-3 sm:flex lg:gap-4">
             {ROLLER.map((r, i) => (
@@ -118,26 +140,35 @@ export function GirisKarsilamaSayfasi() {
           </div>
         </div>
 
-        {/* Cümle — %35-40, çerçevesiz, italik, normal ağırlık */}
+        {/* Cümle. Mobilde büyütülen fotoğrafa göre aşağı kaydı (%81),
+            masaüstünde eskisi gibi %47.5'te. Çerçevesiz, italik, normal
+            ağırlık. */}
         <p key={`cumle-${aktif.id}`}
-          className="sfec-tg-haber-gir absolute left-1/2 line-clamp-2 w-[97%] -translate-x-1/2 -translate-y-1/2 text-center text-xs italic leading-snug sm:w-[85%] sm:max-w-2xl sm:text-xl sm:leading-relaxed"
-          style={{ top: "47.5%", color: BEYAZ, fontWeight: 400 }}>
+          className="sfec-tg-haber-gir absolute left-1/2 top-[57%] line-clamp-2 w-[97%] -translate-x-1/2 -translate-y-1/2 text-center text-xs italic leading-snug sm:top-[47.5%] sm:w-[85%] sm:max-w-2xl sm:text-xl sm:leading-relaxed"
+          style={{ color: BEYAZ, fontWeight: 400 }}>
           {aktif.cumle}
         </p>
 
-        {/* Giriş — %70-80, çerçevesiz */}
-        <div className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2" style={{ top: "75%" }}>
+        {/* Giriş. Mobilde %92, masaüstünde eskisi gibi %75. Çerçevesiz. */}
+        <div className="absolute left-1/2 top-[85%] -translate-x-1/2 -translate-y-1/2 sm:top-[75%]">
           <Link href={`/login?rol=${aktif.id}`}
-            className="sfec-btn flex items-center gap-2 rounded-full px-7 py-3 sm:px-10" style={{ background: KOYU_MAVI_ZEMIN, color: BEYAZ }}>
+            className="sfec-btn flex items-center gap-2 rounded-full px-9 py-3 sm:px-12" style={{ background: KOYU_MAVI_ZEMIN, color: BEYAZ }}>
             <span className="text-base font-bold">GİRİŞ</span>
           </Link>
         </div>
 
         {/* İletişim — SADECE mobilde, sayfanın en altında (bkz. sol
             sütundaki karşılığının üstündeki not). */}
-        <div className="absolute left-1/2 -translate-x-1/2 -translate-y-full text-center sm:hidden" style={{ top: "97%" }}>
-          <a href="mailto:sefukoc@gmail.com" style={{ color: BEYAZ }} className="text-xs font-semibold opacity-80">sefukoc@gmail.com</a>
+        <div className="absolute left-1/2 -translate-x-1/2 -translate-y-full text-center sm:hidden" style={{ top: "99%" }}>
+          <a href="https://mail.google.com/mail/?view=cm&fs=1&to=sefukoc@gmail.com" target="_blank" rel="noopener noreferrer"
+            style={{ color: BEYAZ }} className="text-[10px] font-semibold opacity-80">sefukoc@gmail.com</a>
         </div>
+
+        {/* Kullanıcı isteği: "her hakkı saklıdır küçük yazı sadece webde
+            sağ en alt" — SADECE masaüstünde, sağ panelin sağ alt köşesi. */}
+        <p className="absolute bottom-4 right-5 hidden text-[10px] opacity-60 sm:block" style={{ color: BEYAZ }}>
+          © 2026 SeFu Koç. Tüm hakları saklıdır.
+        </p>
       </div>
     </div>
   );
