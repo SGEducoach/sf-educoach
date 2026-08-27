@@ -25,17 +25,23 @@ const BEYAZ = "#FFFFFF";
 // kalma riski var).
 type Rol = "ogrenci" | "ogretmen" | "veli";
 
-const ROLLER: { id: Rol; ad: string; foto: string; cumle: string }[] = [
+// fotoTaban: uzantısız temel yol — gerçek dosyalar build sırasında
+// (scripts değil, elle bir kerelik) `${fotoTaban}-640.webp` ve
+// `${fotoTaban}-960.webp` olarak üretildi (bkz. FotoKart yorumu).
+// genislik/yukseklik: 960w varyantının gerçek piksel boyutu (width/height
+// attribute'ları için — object-cover+absolute nedeniyle layout'u etkilemez,
+// sadece semantik/CLS-hint amaçlı).
+const ROLLER: { id: Rol; ad: string; fotoTaban: string; genislik: number; yukseklik: number; cumle: string }[] = [
   {
-    id: "ogrenci", ad: "Öğrenci", foto: "/landing/ogrenci.jpg",
+    id: "ogrenci", ad: "Öğrenci", fotoTaban: "/landing/ogrenci", genislik: 960, yukseklik: 540,
     cumle: "Hedeflerini belirle, gelişimini takip et ve sana özel yönlendirmelerle başarıya daha emin adımlarla ilerle.",
   },
   {
-    id: "ogretmen", ad: "Öğretmen", foto: "/landing/ogretmen.jpg",
+    id: "ogretmen", ad: "Öğretmen", fotoTaban: "/landing/ogretmen", genislik: 960, yukseklik: 540,
     cumle: "Öğrencilerinin gelişimini tek yerden izle, ihtiyaçlarını erkenden fark et ve doğru zamanda destek ol.",
   },
   {
-    id: "veli", ad: "Veli", foto: "/landing/veli.jpg",
+    id: "veli", ad: "Veli", fotoTaban: "/landing/veli", genislik: 960, yukseklik: 640,
     cumle: "Çocuğunun eğitim sürecini yakından takip et, gelişimini görünür kıl ve geleceğine bilinçli şekilde rehberlik et.",
   },
 ];
@@ -49,11 +55,21 @@ const DONGU_SURESI_MS = 5000;
 // rotasyonda büyüyüp küçüldüğü için (flex 1↔2.3) `sizes` tahmini tutmuyor,
 // tarayıcı her tur Vercel'in ÜCRETLİ Image Optimization servisine yeniden
 // gidiyordu (ölçüldü: aynı foto ~15sn'de bir sunucuya gidip geliyordu).
-// Bu 3 fotoğraf zaten build-time'da 1600px/q82'ye sıkıştırılmış — sunucu
-// taraflı yeniden boyutlandırmaya gerek yok. Düz <img> ile statik dosya
-// olarak servis ediliyor (next/image'ın `fill`+`object-cover` davranışı
-// birebir aynı className'lerle taklit edildi, GÖRSEL FARK YOK).
-function FotoKart({ foto, alt, aktifMi, oncelik }: { foto: string; alt: string; aktifMi: boolean; oncelik?: boolean }) {
+// Düz <img> ile statik dosya olarak servis ediliyor (next/image'ın
+// `fill`+`object-cover` davranışı birebir aynı className'lerle taklit
+// edildi, GÖRSEL FARK YOK).
+//
+// İkinci tur (aynı gün, harici öneri üzerine): 1600px JPEG kaynağı
+// DOĞRUDAN kullanmak yerine, gösterilen boyuta uygun 640/960px WebP
+// varyantları (public/landing/*-640.webp, *-960.webp — orijinal
+// 1600px/q82 JPEG'lerden PIL ile üretildi, aynı q82) + srcset/sizes ile
+// sunuluyor. `sizes` masaüstünde aktif fotonun ulaştığı en büyük genişliğe
+// (~480px, konteyner 896px×2.3/4.3) göre sabitlendi — hangi foto aktif
+// olursa olsun bulanıklaşmasın diye üçü de aynı (muhafazakâr) değeri
+// kullanıyor.
+function FotoKart({ fotoTaban, genislik, yukseklik, alt, aktifMi, oncelik }: {
+  fotoTaban: string; genislik: number; yukseklik: number; alt: string; aktifMi: boolean; oncelik?: boolean;
+}) {
   return (
     <div className="relative h-full overflow-hidden rounded-2xl transition-all duration-700 ease-out"
       style={{
@@ -63,7 +79,12 @@ function FotoKart({ foto, alt, aktifMi, oncelik }: { foto: string; alt: string; 
           : "0 4px 14px -4px rgba(0,0,0,0.4)",
       }}>
       {/* eslint-disable-next-line @next/next/no-img-element -- bilinçli: next/image'ın sunucu taraflı optimizasyonunu (ücretli, gereksiz) atlıyoruz */}
-      <img src={foto} alt={alt} loading={oncelik ? "eager" : "lazy"} fetchPriority={oncelik ? "high" : "auto"} decoding="async"
+      <img
+        src={`${fotoTaban}-960.webp`}
+        srcSet={`${fotoTaban}-640.webp 640w, ${fotoTaban}-960.webp 960w`}
+        sizes="(max-width: 640px) 92vw, 480px"
+        width={genislik} height={yukseklik}
+        alt={alt} loading={oncelik ? "eager" : "lazy"} fetchPriority={oncelik ? "high" : "auto"} decoding="async"
         className="absolute inset-0 h-full w-full object-cover" />
     </div>
   );
@@ -142,12 +163,14 @@ export function GirisKarsilamaSayfasi() {
           {/* Masaüstü/tablet: üç fotoğraf yan yana */}
           <div className="hidden h-full gap-3 sm:flex lg:gap-4">
             {ROLLER.map((r, i) => (
-              <FotoKart key={r.id} foto={r.foto} alt={`${r.ad} SeFu Koç kullanırken`} aktifMi={i === aktifIndex} oncelik={i === 0} />
+              <FotoKart key={r.id} fotoTaban={r.fotoTaban} genislik={r.genislik} yukseklik={r.yukseklik}
+                alt={`${r.ad} SeFu Koç kullanırken`} aktifMi={i === aktifIndex} oncelik={i === 0} />
             ))}
           </div>
           {/* Mobil: tek fotoğraf akıyor */}
           <div key={`mobil-foto-${aktif.id}`} className="sfec-tg-haber-gir h-full sm:hidden">
-            <FotoKart foto={aktif.foto} alt={`${aktif.ad} SeFu Koç kullanırken`} aktifMi oncelik />
+            <FotoKart fotoTaban={aktif.fotoTaban} genislik={aktif.genislik} yukseklik={aktif.yukseklik}
+              alt={`${aktif.ad} SeFu Koç kullanırken`} aktifMi oncelik />
           </div>
         </div>
 

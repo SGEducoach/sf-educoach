@@ -1,6 +1,30 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+// Bakım modu kontrolü ("/dashboard", "/moderator", "/login", "/signup"
+// istekleri) HER seferinde platform_ayarlari'na gitmesin diye 45sn'lik
+// kısa bir bellek-içi önbellek (27.08.2026, harici performans önerisi).
+// ÖNEMLİ SINIR: bu modül-seviyesi değişken sunucusuz/edge ortamda İŞLEM
+// (instance) BAŞINA — Vercel aynı anda birden çok instance çalıştırıyorsa
+// her biri kendi ayrı önbelleğine sahip olur, tek bir global önbellek
+// DEĞİLDİR. Yine de sıcak bir instance üzerinde art arda gelen istekler
+// için DB okumasını gerçek anlamda azaltır; bakım açma/kapama sonrası en
+// kötü ihtimalle ~45sn gecikmeli yansır (kabul edilebilir — saniyelik
+// güncellik gerekmiyor).
+let siteKapaliOnbellek: { deger: boolean; sonKontrolMs: number } | null = null;
+const SITE_KAPALI_ONBELLEK_SURESI_MS = 45_000;
+
+async function siteKapaliMiGetir(supabase: ReturnType<typeof createServerClient>): Promise<boolean> {
+  const simdi = Date.now();
+  if (siteKapaliOnbellek && simdi - siteKapaliOnbellek.sonKontrolMs < SITE_KAPALI_ONBELLEK_SURESI_MS) {
+    return siteKapaliOnbellek.deger;
+  }
+  const { data } = await supabase.from("platform_ayarlari").select("site_kapali").eq("id", 1).maybeSingle();
+  const deger = !!data?.site_kapali;
+  siteKapaliOnbellek = { deger, sonKontrolMs: simdi };
+  return deger;
+}
+
 // Her istekte Supabase oturum çerezini tazeler. middleware.ts içinden çağrılır.
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -52,8 +76,8 @@ export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const bakimKapsaminda = ["/dashboard", "/moderator", "/login", "/signup"].some((p) => pathname.startsWith(p));
   if (bakimKapsaminda) {
-    const { data: ayarlar } = await supabase.from("platform_ayarlari").select("site_kapali").eq("id", 1).maybeSingle();
-    if (ayarlar?.site_kapali) {
+    const siteKapaliMi = await siteKapaliMiGetir(supabase);
+    if (siteKapaliMi) {
       let adminMi = false;
       if (user) {
         const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
