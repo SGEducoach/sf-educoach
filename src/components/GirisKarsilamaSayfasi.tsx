@@ -61,8 +61,10 @@ const DONGU_SURESI_MS = 5000;
 //
 // İkinci tur (aynı gün, harici öneri üzerine): 1600px JPEG kaynağı
 // DOĞRUDAN kullanmak yerine, gösterilen boyuta uygun 640/960px WebP
-// varyantları (public/landing/*-640.webp, *-960.webp — orijinal
-// 1600px/q82 JPEG'lerden PIL ile üretildi, aynı q82) + srcset/sizes ile
+// varyantları (public/landing/*-640.webp, *-960.webp — orijinal 1600px
+// JPEG'lerden PIL ile üretildi, q75 — Vercel'in eski next/image
+// pipeline'ının kullandığı varsayılan kaliteyle BİREBİR aynı, ölçülen
+// dosya boyutları eşdeğer/biraz daha küçük çıktı) + srcset/sizes ile
 // sunuluyor. `sizes` masaüstünde aktif fotonun ulaştığı en büyük genişliğe
 // (~480px, konteyner 896px×2.3/4.3) göre sabitlendi — hangi foto aktif
 // olursa olsun bulanıklaşmasın diye üçü de aynı (muhafazakâr) değeri
