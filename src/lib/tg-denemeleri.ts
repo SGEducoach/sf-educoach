@@ -159,11 +159,13 @@ export function tgDenemeAkisiOlustur(dbIlanlari: TgDenemeIlani[]): TgDenemeHaber
     baslik: ilan.baslik,
     aciklama: ilan.aciklama,
     // Kullanıcı isteği (27.08.2026): "tarih ,başlık,alt metin" — statik
-    // takvim kayıtlarıyla aynı üçlü format. Süreli ilanlarda tarih olarak
-    // bitiş tarihi (genelde denemenin kendi tarihi) öne çıkarılıyor;
-    // süresizde yayınlanma tarihine düşülüyor.
-    tarihEtiketi: new Date(ilan.bitisTarihi ?? ilan.createdAt).toLocaleDateString("tr-TR", { day: "2-digit", month: "long", year: "numeric" }),
-    sonTarih: ilan.bitisTarihi ?? "9999-12-31",
+    // takvim kayıtlarıyla aynı üçlü format. "tarih seçmeli olmasın, bazen
+    // aralık bazen tek tarih" — admin'in serbest yazdığı metin aynen
+    // gösteriliyor. Karşılığında makine tarafından karşılaştırılabilir bir
+    // bitiş tarihi YOK — bu ilanlar için "GEÇTİ" damgası hiç uygulanmıyor
+    // (sonTarih hep uzak bir sentinel).
+    tarihEtiketi: ilan.tarih,
+    sonTarih: "9999-12-31",
     gorsel: ilan.dosyaTipi === "resim" ? tgDenemeDosyaUrl(ilan.dosyaYolu) : "",
     genislik: ilan.genislik ?? 1200,
     yukseklik: ilan.yukseklik ?? 1600,

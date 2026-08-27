@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { Archive, CalendarClock, FileText, ImageIcon, Newspaper, Trash2 } from "lucide-react";
+import { Archive, FileText, ImageIcon, Newspaper, Trash2 } from "lucide-react";
 import { tgDenemeIlaniEkle, tgDenemeArsiviniGetir, tgDenemeIlaniSil } from "@/app/yonetici/actions";
 import { tgDenemeDosyaUrl, type TgDenemeIlani } from "@/lib/tg-deneme-ilanlari";
 import { BG0, BG1, BG1_ALT, BLUSH, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
@@ -9,16 +9,17 @@ import { BG0, BG1, BG1_ALT, BLUSH, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON
 // TG Denemeleri — Google Drive bypass planı (27.08.2026 kullanıcı isteği):
 // admin panelinin Duyurular bölümünde, YoneticiDuyuruPaneli'nin yanında.
 // Google Drive entegrasyonu (docs/tg-denemeleri-google-drive.md) yarım
-// kalmıştı — bunun yerine tamamen bu ekrandan (dosya yükle + içerik yaz +
-// süreli/süresiz) yönetilen bir akış. Arşiv, akıştaki ilk 20'nin
-// ÖTESİNDEKİ (21.'den itibaren) kayıtları gösterir — bkz. tg-deneme-ilanlari.ts.
+// kalmıştı — bunun yerine tamamen bu ekrandan (dosya yükle + tarih/başlık/
+// alt metin yaz) yönetilen bir akış. Tarih BİLEREK serbest metin (seçici
+// değil) — "bazen aralık bazen tek tarih girmek gerekiyor" (27.08.2026).
+// Arşiv, akıştaki ilk 20'nin ÖTESİNDEKİ (21.'den itibaren) kayıtları
+// gösterir — bkz. tg-deneme-ilanlari.ts.
 export function TgDenemeYonetimi() {
   const dosyaRef = useRef<HTMLInputElement>(null);
   const [acik, setAcik] = useState(false);
+  const [tarih, setTarih] = useState("");
   const [baslik, setBaslik] = useState("");
   const [aciklama, setAciklama] = useState("");
-  const [sure, setSure] = useState<"suresiz" | "sureli">("suresiz");
-  const [bitisTarihi, setBitisTarihi] = useState("");
   const [hata, setHata] = useState<string | null>(null);
   const [basari, setBasari] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -34,20 +35,20 @@ export function TgDenemeYonetimi() {
     setBasari(null);
     const dosya = dosyaRef.current?.files?.[0];
     if (!dosya) return setHata("Bir PDF, JPEG veya PNG dosyası seçin.");
+    if (!tarih.trim()) return setHata("Tarih gerekli.");
     if (!baslik.trim()) return setHata("Başlık gerekli.");
-    if (sure === "sureli" && !bitisTarihi) return setHata("Süreli seçildi — bitiş tarihi gerekli.");
 
     const formData = new FormData();
     formData.set("dosya", dosya);
+    formData.set("tarih", tarih.trim());
     formData.set("baslik", baslik.trim());
     formData.set("aciklama", aciklama.trim());
-    formData.set("bitisTarihi", sure === "sureli" ? bitisTarihi : "");
 
     startTransition(async () => {
       const res = await tgDenemeIlaniEkle(formData);
       if (res.error) return setHata(res.error);
       setBasari("Yayınlandı — TG Denemeleri akışında görünecek.");
-      setBaslik(""); setAciklama(""); setBitisTarihi(""); setSure("suresiz");
+      setTarih(""); setBaslik(""); setAciklama("");
       if (dosyaRef.current) dosyaRef.current.value = "";
       if (arsivAcik) setArsiv(null);
     });
@@ -103,6 +104,12 @@ export function TgDenemeYonetimi() {
               style={{ color: TEXT }} />
           </label>
           <label className="flex flex-col gap-1">
+            <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Tarih</span>
+            <input value={tarih} onChange={(e) => setTarih(e.target.value.slice(0, 100))}
+              placeholder="Örn. 29 Ağustos 2026 veya 18 Eylül 2026 - 14 Haziran 2027"
+              className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+          </label>
+          <label className="flex flex-col gap-1">
             <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Başlık</span>
             <input value={baslik} onChange={(e) => setBaslik(e.target.value.slice(0, 150))}
               placeholder="Örn. Ekim Ayı TYT Deneme Takvimi Yayınlandı"
@@ -116,27 +123,6 @@ export function TgDenemeYonetimi() {
               className="text-sm px-3 py-2 rounded-xl outline-none resize-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
             <span style={{ color: TEXT_MUTED }} className="text-[10px]">{aciklama.length}/500</span>
           </label>
-          <div className="flex flex-wrap items-end gap-2.5">
-            <div className="flex gap-1 p-1 rounded-full" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
-              <button type="button" onClick={() => setSure("suresiz")}
-                className="sfec-btn rounded-full px-3.5 py-1.5 text-xs font-bold"
-                style={{ background: sure === "suresiz" ? MINT : "transparent", color: sure === "suresiz" ? MINT_ON : TEXT_MUTED }}>
-                Süresiz
-              </button>
-              <button type="button" onClick={() => setSure("sureli")}
-                className="sfec-btn rounded-full px-3.5 py-1.5 text-xs font-bold"
-                style={{ background: sure === "sureli" ? MINT : "transparent", color: sure === "sureli" ? MINT_ON : TEXT_MUTED }}>
-                Süreli
-              </button>
-            </div>
-            {sure === "sureli" && (
-              <label className="flex flex-col gap-1">
-                <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Bitiş tarihi</span>
-                <input type="date" value={bitisTarihi} onChange={(e) => setBitisTarihi(e.target.value)}
-                  className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
-              </label>
-            )}
-          </div>
           {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
           {basari && <div style={{ color: MINT }} className="text-xs font-semibold">{basari}</div>}
           <button type="submit" disabled={pending}
@@ -164,8 +150,7 @@ export function TgDenemeYonetimi() {
                   <p style={{ color: TEXT }} className="text-xs font-bold leading-snug truncate">{i.baslik}</p>
                   {i.aciklama && <p style={{ color: TEXT_MUTED }} className="text-[11px] leading-snug truncate">{i.aciklama}</p>}
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span style={{ color: TEXT_MUTED }} className="text-[10px]">{new Date(i.createdAt).toLocaleDateString("tr-TR")}</span>
-                    {i.bitisTarihi && <span style={{ color: TEXT_MUTED }} className="text-[10px] flex items-center gap-0.5"><CalendarClock size={10} /> {new Date(i.bitisTarihi).toLocaleDateString("tr-TR")}</span>}
+                    <span style={{ color: TEXT_MUTED }} className="text-[10px]">{i.tarih}</span>
                     <a href={tgDenemeDosyaUrl(i.dosyaYolu)} target="_blank" rel="noopener noreferrer" style={{ color: MINT }} className="text-[10px] font-semibold underline">Dosyayı aç</a>
                   </div>
                 </div>

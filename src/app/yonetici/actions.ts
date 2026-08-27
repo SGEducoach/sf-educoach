@@ -1549,6 +1549,7 @@ export async function mufredatAltKonuSil(id: string): Promise<{ error: string | 
 // bağımlılık gerektirmeyen bu yapı kuruldu. Arşivleme mantığı için bkz.
 // src/lib/tg-deneme-ilanlari.ts (AKTIF_LIMIT, sıralama bazlı — ayrı bir
 // durum sütunu yok).
+const TG_DENEME_TARIH_MAKS = 100;
 const TG_DENEME_BASLIK_MAKS = 150;
 const TG_DENEME_ACIKLAMA_MAKS = 500;
 const TG_DENEME_DOSYA_MAKS_MB = 15;
@@ -1560,17 +1561,19 @@ export async function tgDenemeIlaniEkle(formData: FormData): Promise<{ error: st
   // Kullanıcı bulgusu (27.08.2026): "metin formatı da diğerleriyle eşit
   // olsun tarih, başlık, alt metin (yazdıklarım karışık olmuş)" — tek bir
   // "içerik" alanı statik takvim kayıtlarının başlık+açıklama ayrımıyla
-  // tutarsızdı, ikiye bölündü (bkz. migration 0083).
+  // tutarsızdı, ikiye bölündü (bkz. migration 0083). Ardından "tarih
+  // seçmeli olmasın, bazen aralık bazen tek tarih girmek gerekiyor" —
+  // tarih de tarih seçici yerine serbest metin oldu (bkz. migration 0084).
+  const tarih = String(formData.get("tarih") ?? "").trim();
   const baslik = String(formData.get("baslik") ?? "").trim();
   const aciklama = String(formData.get("aciklama") ?? "").trim();
-  const bitisTarihiHam = String(formData.get("bitisTarihi") ?? "").trim();
-  const bitisTarihi = bitisTarihiHam || null;
 
   if (!dosya) return { error: "Dosya seçilmedi." };
+  if (!tarih) return { error: "Tarih gerekli." };
+  if (tarih.length > TG_DENEME_TARIH_MAKS) return { error: `Tarih en fazla ${TG_DENEME_TARIH_MAKS} karakter olabilir.` };
   if (!baslik) return { error: "Başlık gerekli." };
   if (baslik.length > TG_DENEME_BASLIK_MAKS) return { error: `Başlık en fazla ${TG_DENEME_BASLIK_MAKS} karakter olabilir.` };
   if (aciklama.length > TG_DENEME_ACIKLAMA_MAKS) return { error: `Alt metin en fazla ${TG_DENEME_ACIKLAMA_MAKS} karakter olabilir.` };
-  if (bitisTarihi && !/^\d{4}-\d{2}-\d{2}$/.test(bitisTarihi)) return { error: "Bitiş tarihi geçersiz." };
 
   // Kullanıcı netleştirmesi (27.08.2026): "çoklu sayfalı pdf gelmeyecek" —
   // tek sayfalık PDF'ler tarayıcının kendi <embed> ile GÖRÜNTÜLENİYOR,
@@ -1609,8 +1612,8 @@ export async function tgDenemeIlaniEkle(formData: FormData): Promise<{ error: st
   if (yuklemeHatasi) return { error: "Dosya yüklenemedi: " + yuklemeHatasi.message };
 
   const { error: eklemeHatasi } = await admin.from("tg_deneme_ilanlari").insert({
-    baslik, aciklama, dosya_yolu: dosyaYolu, dosya_tipi: dosyaTipi, genislik, yukseklik,
-    bitis_tarihi: bitisTarihi, olusturan_id: user.id,
+    tarih, baslik, aciklama, dosya_yolu: dosyaYolu, dosya_tipi: dosyaTipi, genislik, yukseklik,
+    olusturan_id: user.id,
   });
   if (eklemeHatasi) {
     // Yetim dosya bırakma — kayıt başarısız olduysa yüklenen dosyayı geri al.

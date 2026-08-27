@@ -11,32 +11,32 @@ export const AKTIF_LIMIT = 20;
 
 export interface TgDenemeIlani {
   id: string;
+  tarih: string;
   baslik: string;
   aciklama: string;
   dosyaYolu: string;
   dosyaTipi: "resim" | "pdf";
   genislik: number | null;
   yukseklik: number | null;
-  bitisTarihi: string | null;
   createdAt: string;
 }
 
 interface TgDenemeIlaniRow {
   id: string;
+  tarih: string;
   baslik: string;
   aciklama: string;
   dosya_yolu: string;
   dosya_tipi: "resim" | "pdf";
   genislik: number | null;
   yukseklik: number | null;
-  bitis_tarihi: string | null;
   created_at: string;
 }
 
 function satiriDonustur(r: TgDenemeIlaniRow): TgDenemeIlani {
   return {
-    id: r.id, baslik: r.baslik, aciklama: r.aciklama, dosyaYolu: r.dosya_yolu, dosyaTipi: r.dosya_tipi,
-    genislik: r.genislik, yukseklik: r.yukseklik, bitisTarihi: r.bitis_tarihi, createdAt: r.created_at,
+    id: r.id, tarih: r.tarih, baslik: r.baslik, aciklama: r.aciklama, dosyaYolu: r.dosya_yolu, dosyaTipi: r.dosya_tipi,
+    genislik: r.genislik, yukseklik: r.yukseklik, createdAt: r.created_at,
   };
 }
 
@@ -47,7 +47,7 @@ function satiriDonustur(r: TgDenemeIlaniRow): TgDenemeIlani {
 export async function tgDenemeIlanlariGetir(supabase: SupabaseClient): Promise<TgDenemeIlani[]> {
   const { data, error } = await supabase
     .from("tg_deneme_ilanlari")
-    .select("id, baslik, aciklama, dosya_yolu, dosya_tipi, genislik, yukseklik, bitis_tarihi, created_at")
+    .select("id, tarih, baslik, aciklama, dosya_yolu, dosya_tipi, genislik, yukseklik, created_at")
     .order("created_at", { ascending: false })
     .limit(AKTIF_LIMIT);
   if (error) { console.error("tg_deneme_ilanlari okunamadı:", error.message); return []; }
@@ -59,7 +59,7 @@ export async function tgDenemeIlanlariGetir(supabase: SupabaseClient): Promise<T
 export async function tgDenemeArsiviGetir(supabase: SupabaseClient): Promise<TgDenemeIlani[]> {
   const { data, error } = await supabase
     .from("tg_deneme_ilanlari")
-    .select("id, baslik, aciklama, dosya_yolu, dosya_tipi, genislik, yukseklik, bitis_tarihi, created_at")
+    .select("id, tarih, baslik, aciklama, dosya_yolu, dosya_tipi, genislik, yukseklik, created_at")
     .order("created_at", { ascending: false })
     .range(AKTIF_LIMIT, AKTIF_LIMIT + 199); // arşivde de makul bir tavan (200)
   if (error) { console.error("tg_deneme_ilanlari arşivi okunamadı:", error.message); return []; }
