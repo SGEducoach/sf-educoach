@@ -74,6 +74,17 @@ export function TgDenemeleri({ bugun, dbIlanlar }: { bugun: string; dbIlanlar: T
                 // gösteriliyor (aynı görsel alanı, aynı köşe yuvarlama).
                 <embed key={haber.id} src={haber.kaynakHref} type="application/pdf"
                   className="sfec-tg-haber-gir h-full max-h-[72dvh] w-full max-w-full rounded-2xl shadow-2xl" aria-label={haber.alt} />
+              ) : haber.dosyaTipi === "resim" ? (
+                // Kullanıcı bulgusu (27.08.2026): "jpeg görüntülenemiyor,
+                // sadece yazı var" — next/image, next.config.ts'te
+                // allowlist'lenmemiş harici (Supabase Storage) domainlerden
+                // görsel yüklemeyi SESSİZCE reddediyor. Admin panelinden
+                // yüklenen ilanlar için düz <img> kullanılıyor (statik
+                // takvim görselleri — dosyaTipi hiç set edilmemiş — aşağıdaki
+                // next/image dalında, local /public yolları için sorun yok).
+                // eslint-disable-next-line @next/next/no-img-element -- bilinçli: next/image harici Storage domainini reddediyor
+                <img key={haber.id} src={haber.gorsel} alt={haber.alt}
+                  className="sfec-tg-haber-gir max-h-[72dvh] w-auto max-w-full rounded-2xl object-contain shadow-2xl" />
               ) : (
                 <Image
                   key={haber.id}

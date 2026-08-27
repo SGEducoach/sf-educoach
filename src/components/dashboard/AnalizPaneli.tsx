@@ -117,16 +117,20 @@ export function AnalizPaneli({
   const seciliDers = searchParams.get("ders") && dersSecenekleri.includes(searchParams.get("ders") ?? "") ? searchParams.get("ders") : null;
   const dersTrendChartData = seciliDers ? veri.dersGunlukNet[seciliDers].map((d) => ({ gun: tarihFormat(d.tarih), net: d.net })) : [];
 
+  // Kullanıcı bulgusu (27.08.2026): "dersi seçince sayfa yukarıdan
+  // başlıyor" — router.push varsayılan olarak sayfayı en başa kaydırıyor;
+  // bu sadece bir query param güncellemesi (aynı sayfada kalınıyor), scroll
+  // konumu korunmalı.
   function donemDegistir(donem: RaporDonemi) {
     const params = new URLSearchParams(searchParams.toString());
     params.set("donem", donem);
-    router.push(`${pathname}?${params.toString()}`);
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
   function dersDegistir(ders: string) {
     const params = new URLSearchParams(searchParams.toString());
     if (ders) params.set("ders", ders); else params.delete("ders");
-    router.push(`${pathname}?${params.toString()}`);
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
   const raporTarihi = new Date().toLocaleDateString("tr-TR", { day: "2-digit", month: "long", year: "numeric" });

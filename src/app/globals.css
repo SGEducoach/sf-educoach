@@ -309,6 +309,29 @@ select option {
   filter: brightness(0.85);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }
+/* Kullanıcı bulgusu (27.08.2026): "dosya seç butonu üzerine mouse gelince
+   aktif olmuyor" — dosya inputlarındaki (deneme PDF/Excel, roster, TG
+   Denemeleri) "Dosya seç" butonu file: yardımcı sınıflarıyla sadece boyut/
+   köşe alıyordu, arka plan/imleç/hover hiç tanımlanmamıştı (tarayıcı
+   varsayılanına kalıyordu). Border burada BİLEREK yok — file:border-0
+   zaten her yerde kullanılıyor, çakışmasın diye.  */
+input[type="file"]::file-selector-button,
+input[type="file"]::-webkit-file-upload-button {
+  cursor: pointer;
+  background: var(--sfec-mint-bg);
+  color: var(--sfec-text);
+  transition: filter 0.15s ease;
+}
+@media (hover: hover) {
+  input[type="file"]:hover::file-selector-button,
+  input[type="file"]:hover::-webkit-file-upload-button {
+    filter: brightness(1.35);
+  }
+}
+input[type="file"]:active::file-selector-button,
+input[type="file"]:active::-webkit-file-upload-button {
+  filter: brightness(0.85);
+}
 .sfec-card {
   transition:
     box-shadow 0.2s ease,
