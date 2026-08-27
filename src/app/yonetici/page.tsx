@@ -21,6 +21,7 @@ import { suresiDolduMu } from "@/lib/deneme-suresi";
 import { AdminProfilim } from "@/components/yonetici/AdminProfilim";
 import { YoneticiGirisForm } from "@/components/yonetici/YoneticiGirisForm";
 import { YoneticiDuyuruPaneli } from "@/components/yonetici/YoneticiDuyuruPaneli";
+import { TgDenemeYonetimi } from "@/components/yonetici/TgDenemeYonetimi";
 import { dashboardMenusu } from "@/lib/dashboard-navigation";
 import type { DashboardBolumu } from "@/lib/dashboard-navigation";
 import { sinifSiraKarsilastir } from "@/lib/types";
@@ -97,6 +98,7 @@ export default async function YoneticiPage({
               <section className="sfec-section"><PlatformIstatistikleri /></section>
               <section className="sfec-section"><DershaneDenemeSuresiAyari bitis={dershaneDenemeBitisi} doldu={suresiDolduMu(dershaneDenemeBitisi)} /></section>
               <section className="sfec-section"><YoneticiDuyuruPaneli okullar={okulListesi.map((o) => ({ id: o.id, ad: o.ad }))} /></section>
+              <section className="sfec-section"><TgDenemeYonetimi /></section>
             </>
           )}
           {aktifBolum === "kullanicilar" && <section className="sfec-section"><KullaniciArama /></section>}

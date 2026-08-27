@@ -12,6 +12,7 @@ import { DUYURU_MIN_UZUNLUK, duyuruGonderimIzniKontrol } from "@/lib/duyuru-guve
 import { dersSoruSayisi, sinifSiraKarsilastir } from "@/lib/types";
 import type { AytAlan, DenemeTuru, DenemeZorlugu, UserRole } from "@/lib/types";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
+import { tgDenemeArsiviGetir, type TgDenemeIlani } from "@/lib/tg-deneme-ilanlari";
 
 const DUYURU_MAKS_UZUNLUK = 500;
 
@@ -1538,6 +1539,100 @@ export async function mufredatAltKonuSil(id: string): Promise<{ error: string | 
   const { error } = await admin.from("mufredat_alt_konular").delete().eq("id", id);
   if (error) return { error: error.message };
   await auditLogYaz(supabase, user.id, "mufredat_alt_konu_sil", { id });
+  revalidatePath("/yonetici");
+  return { error: null };
+}
+
+// ============ TG Denemeleri — Google Drive bypass planı (27.08.2026) ============
+// Kullanıcı isteği: Drive entegrasyonu yarım kalmış ve hiç kod yazılmamıştı;
+// onun yerine admin panelinden PDF/JPEG yükleyip içerik yazılan, harici
+// bağımlılık gerektirmeyen bu yapı kuruldu. Arşivleme mantığı için bkz.
+// src/lib/tg-deneme-ilanlari.ts (AKTIF_LIMIT, sıralama bazlı — ayrı bir
+// durum sütunu yok).
+const TG_DENEME_ICERIK_MAKS = 500;
+const TG_DENEME_DOSYA_MAKS_MB = 15;
+
+export async function tgDenemeIlaniEkle(formData: FormData): Promise<{ error: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+
+  const dosya = formData.get("dosya") as File | null;
+  const icerik = String(formData.get("icerik") ?? "").trim();
+  const bitisTarihiHam = String(formData.get("bitisTarihi") ?? "").trim();
+  const bitisTarihi = bitisTarihiHam || null;
+
+  if (!dosya) return { error: "Dosya seçilmedi." };
+  if (!icerik) return { error: "İçerik gerekli." };
+  if (icerik.length > TG_DENEME_ICERIK_MAKS) return { error: `İçerik en fazla ${TG_DENEME_ICERIK_MAKS} karakter olabilir.` };
+  if (bitisTarihi && !/^\d{4}-\d{2}-\d{2}$/.test(bitisTarihi)) return { error: "Bitiş tarihi geçersiz." };
+
+  // Kullanıcı netleştirmesi (27.08.2026): "çoklu sayfalı pdf gelmeyecek" —
+  // tek sayfalık PDF'ler tarayıcının kendi <embed> ile GÖRÜNTÜLENİYOR,
+  // ayrı bir PDF->görsel dönüştürme kütüphanesi eklenmedi (bkz.
+  // TgDenemeleri.tsx render mantığı).
+  const mimeType = dosya.type;
+  let dosyaTipi: "resim" | "pdf";
+  let uzanti: string;
+  if (mimeType === "application/pdf") { dosyaTipi = "pdf"; uzanti = "pdf"; }
+  else if (mimeType === "image/jpeg") { dosyaTipi = "resim"; uzanti = "jpg"; }
+  else if (mimeType === "image/png") { dosyaTipi = "resim"; uzanti = "png"; }
+  else return { error: "Sadece PDF, JPEG veya PNG dosyası yükleyebilirsiniz." };
+
+  if (dosya.size > TG_DENEME_DOSYA_MAKS_MB * 1024 * 1024) {
+    return { error: `Dosya en fazla ${TG_DENEME_DOSYA_MAKS_MB}MB olabilir.` };
+  }
+
+  const buffer = Buffer.from(await dosya.arrayBuffer());
+  let genislik: number | null = null;
+  let yukseklik: number | null = null;
+  if (dosyaTipi === "resim") {
+    try {
+      const sharp = (await import("sharp")).default;
+      const meta = await sharp(buffer).metadata();
+      genislik = meta.width ?? null;
+      yukseklik = meta.height ?? null;
+    } catch (e) {
+      console.warn("TG deneme ilanı: görsel boyutu okunamadı (devam ediliyor):", e);
+    }
+  }
+
+  const dosyaYolu = `${crypto.randomUUID()}.${uzanti}`;
+  const { error: yuklemeHatasi } = await admin.storage.from("tg-denemeleri").upload(dosyaYolu, buffer, {
+    contentType: mimeType, upsert: false,
+  });
+  if (yuklemeHatasi) return { error: "Dosya yüklenemedi: " + yuklemeHatasi.message };
+
+  const { error: eklemeHatasi } = await admin.from("tg_deneme_ilanlari").insert({
+    icerik, dosya_yolu: dosyaYolu, dosya_tipi: dosyaTipi, genislik, yukseklik,
+    bitis_tarihi: bitisTarihi, olusturan_id: user.id,
+  });
+  if (eklemeHatasi) {
+    // Yetim dosya bırakma — kayıt başarısız olduysa yüklenen dosyayı geri al.
+    await admin.storage.from("tg-denemeleri").remove([dosyaYolu]);
+    return { error: eklemeHatasi.message };
+  }
+
+  await auditLogYaz(supabase, user.id, "tg_deneme_ilani_ekle", { dosya_yolu: dosyaYolu, dosya_tipi: dosyaTipi });
+  revalidatePath("/dashboard");
+  revalidatePath("/yonetici");
+  return { error: null };
+}
+
+export async function tgDenemeArsiviniGetir(): Promise<{ error: string | null; ilanlar: TgDenemeIlani[] }> {
+  const { admin } = await requireAdmin();
+  return { error: null, ilanlar: await tgDenemeArsiviGetir(admin) };
+}
+
+export async function tgDenemeIlaniSil(id: string): Promise<{ error: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const { data: ilan } = await admin.from("tg_deneme_ilanlari").select("dosya_yolu").eq("id", id).maybeSingle();
+  const { error } = await admin.from("tg_deneme_ilanlari").delete().eq("id", id);
+  if (error) return { error: error.message };
+  if (ilan?.dosya_yolu) {
+    const { error: silmeHatasi } = await admin.storage.from("tg-denemeleri").remove([ilan.dosya_yolu]);
+    if (silmeHatasi) console.warn("TG deneme ilanı dosyası silinemedi (kayıt zaten silindi):", silmeHatasi.message);
+  }
+  await auditLogYaz(supabase, user.id, "tg_deneme_ilani_sil", { id });
+  revalidatePath("/dashboard");
   revalidatePath("/yonetici");
   return { error: null };
 }

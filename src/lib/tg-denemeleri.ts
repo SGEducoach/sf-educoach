@@ -1,6 +1,8 @@
+import { tgDenemeDosyaUrl, type TgDenemeIlani } from "@/lib/tg-deneme-ilanlari";
+
 export interface TgDenemeHaberi {
   id: string;
-  kategori: "Genel takvim" | "Yayın takvimi";
+  kategori: "Genel takvim" | "Yayın takvimi" | "Duyuru";
   baslik: string;
   aciklama: string;
   tarihEtiketi: string;
@@ -10,6 +12,12 @@ export interface TgDenemeHaberi {
   yukseklik: number;
   alt: string;
   kaynakHref?: string;
+  // Google Drive bypass planı (27.08.2026) — admin panelinden eklenen
+  // ilanlar PDF olabilir; bu durumda `gorsel` boş kalır, TgDenemeleri.tsx
+  // <embed> ile tarayıcının kendi PDF görüntüleyicisini kullanır (bkz. o
+  // dosyadaki render mantığı). Belirtilmemişse (statik takvim kayıtları)
+  // "resim" kabul edilir.
+  dosyaTipi?: "resim" | "pdf";
 }
 
 // Haber alanında en fazla 10 kayıt gösterilir. Yeni afiş geldiğinde en güncel
@@ -138,3 +146,26 @@ export const TG_DENEME_HABERLERI: TgDenemeHaberi[] = [
     alt: "Farklı yayınların 2026-2027 toplu deneme sınavı takvimi",
   },
 ];
+
+// Google Drive bypass planı (27.08.2026) — admin panelinden eklenen
+// ilanlar, yukarıdaki elle bakımı yapılan takvim listesinin BAŞINA
+// (en yeni ilan en önde) ekleniyor; statik takvim listesi bilinçli olarak
+// hiç değiştirilmedi/silinmedi, sonuna aynen ekleniyor. Arşivleme (20
+// ilan sınırı) SADECE admin ilanları için geçerli — bkz. tg-deneme-ilanlari.ts.
+export function tgDenemeAkisiOlustur(dbIlanlari: TgDenemeIlani[]): TgDenemeHaberi[] {
+  const donusturulmus: TgDenemeHaberi[] = dbIlanlari.map((ilan) => ({
+    id: `ilan-${ilan.id}`,
+    kategori: "Duyuru",
+    baslik: ilan.icerik,
+    aciklama: "",
+    tarihEtiketi: new Date(ilan.createdAt).toLocaleDateString("tr-TR", { day: "2-digit", month: "long", year: "numeric" }),
+    sonTarih: ilan.bitisTarihi ?? "9999-12-31",
+    gorsel: ilan.dosyaTipi === "resim" ? tgDenemeDosyaUrl(ilan.dosyaYolu) : "",
+    genislik: ilan.genislik ?? 1200,
+    yukseklik: ilan.yukseklik ?? 1600,
+    alt: ilan.icerik,
+    kaynakHref: ilan.dosyaTipi === "pdf" ? tgDenemeDosyaUrl(ilan.dosyaYolu) : undefined,
+    dosyaTipi: ilan.dosyaTipi,
+  }));
+  return [...donusturulmus, ...TG_DENEME_HABERLERI];
+}

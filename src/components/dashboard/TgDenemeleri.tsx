@@ -3,16 +3,21 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { CalendarDays, ChevronLeft, ChevronRight, ExternalLink, Pause, Play } from "lucide-react";
-import { TG_DENEME_HABERLERI } from "@/lib/tg-denemeleri";
+import { tgDenemeAkisiOlustur } from "@/lib/tg-denemeleri";
+import type { TgDenemeIlani } from "@/lib/tg-deneme-ilanlari";
 import { BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
 
 const GECIS_SURESI = 10_000;
 
-export function TgDenemeleri({ bugun }: { bugun: string }) {
+// Google Drive bypass planı (27.08.2026) — dbIlanlar (admin panelinden
+// eklenen, en yeni 20) statik takvim listesinin BAŞINA ekleniyor, bkz.
+// tgDenemeAkisiOlustur. PDF ilanlar <embed> ile (next/image PDF gösteremez),
+// resimler eskisi gibi <Image> ile gösteriliyor.
+export function TgDenemeleri({ bugun, dbIlanlar }: { bugun: string; dbIlanlar: TgDenemeIlani[] }) {
   const [aktif, setAktif] = useState(0);
   const [otomatik, setOtomatik] = useState(true);
   const dokunmaBaslangici = useRef<number | null>(null);
-  const haberler = TG_DENEME_HABERLERI.slice(0, 10);
+  const haberler = tgDenemeAkisiOlustur(dbIlanlar).slice(0, 10);
   const haber = haberler[aktif];
 
   // Kullanıcı kararı: fare üzerine gelince akış durmasın — tek durdurma
@@ -62,16 +67,25 @@ export function TgDenemeleri({ bugun }: { bugun: string }) {
         <div className="grid min-h-[32rem] lg:grid-cols-[minmax(0,1fr)_19rem]" aria-live="polite">
           <div className="flex flex-col">
             <div className="relative flex min-h-[28rem] items-center justify-center overflow-hidden p-4 sm:p-6 lg:min-h-[42rem]" style={{ background: BG1_ALT }}>
-              <Image
-                key={haber.id}
-                src={haber.gorsel}
-                alt={haber.alt}
-                width={haber.genislik}
-                height={haber.yukseklik}
-                sizes="(min-width: 1024px) 60vw, 100vw"
-                className="sfec-tg-haber-gir max-h-[72dvh] w-auto max-w-full rounded-2xl object-contain shadow-2xl"
-                preload={aktif === 0}
-              />
+              {haber.dosyaTipi === "pdf" ? (
+                // Kullanıcı netleştirmesi (27.08.2026): "çoklu sayfalı pdf
+                // gelmeyecek" — tek sayfalık PDF, ayrı bir dönüştürme
+                // kütüphanesi eklenmeden tarayıcının kendi <embed> ile
+                // gösteriliyor (aynı görsel alanı, aynı köşe yuvarlama).
+                <embed key={haber.id} src={haber.kaynakHref} type="application/pdf"
+                  className="sfec-tg-haber-gir h-full max-h-[72dvh] w-full max-w-full rounded-2xl shadow-2xl" aria-label={haber.alt} />
+              ) : (
+                <Image
+                  key={haber.id}
+                  src={haber.gorsel}
+                  alt={haber.alt}
+                  width={haber.genislik}
+                  height={haber.yukseklik}
+                  sizes="(min-width: 1024px) 60vw, 100vw"
+                  className="sfec-tg-haber-gir max-h-[72dvh] w-auto max-w-full rounded-2xl object-contain shadow-2xl"
+                  preload={aktif === 0}
+                />
+              )}
               {gecti && (
                 <div className="absolute bottom-8 right-7 rotate-[-9deg] rounded-xl border-[5px] border-white bg-red-700 px-5 py-2 text-2xl font-black tracking-[0.16em] text-white shadow-[0_8px_24px_rgba(0,0,0,0.55)] sm:bottom-10 sm:right-10 sm:text-3xl" aria-label="Bu denemenin tarihi geçti">
                   GEÇTİ
