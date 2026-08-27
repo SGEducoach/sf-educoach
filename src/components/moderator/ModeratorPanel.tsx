@@ -281,44 +281,47 @@ function KullaniciKarti({ kullanici: k, schoolId, onMesaj }: { kullanici: Modera
         {k.moderatorMu && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5" style={{ background: MINT, color: MINT_ON }}><ShieldCheck size={9}/> Moderatör</span>}
       </div>
       <div style={{ color: TEXT_MUTED }} className="text-xs">{k.detay}</div>
-      <div className="mt-3 flex flex-wrap gap-2">
-        <button disabled={pending} onClick={() => startTransition(async () => { const r = await moderatorSifreSifirla(k.id, schoolId); onMesaj(r.error ? `Hata: ${r.error}` : `Geçici şifre (${k.ad}): ${r.sifre}`); })} className="sfec-btn flex-1 rounded-lg px-2 py-2 text-[11px] font-bold" style={{ color: TEXT, border: `2px solid ${BORDER_STRONG}` }}><KeyRound className="mr-1 inline" size={12}/>Rastgele şifre</button>
-        <button disabled={pending} onClick={() => setSifreAcik((v) => !v)} className="sfec-btn flex-1 rounded-lg px-2 py-2 text-[11px] font-bold" style={{ background: sifreAcik ? MINT : "transparent", color: sifreAcik ? MINT_ON : TEXT, border: `2px solid ${BORDER_STRONG}` }}><KeyRound className="mr-1 inline" size={12}/>Şifre belirle</button>
+      {/* Kullanıcı isteği (27.08.2026): "öğrenci hesabı yönetim butonları
+          küçültülecek" — kart başına buton sayısı fazla olduğundan (özellikle
+          öğrenci kartlarında) daha kompakt bir dolgu/yazı boyutuna geçildi. */}
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        <button disabled={pending} onClick={() => startTransition(async () => { const r = await moderatorSifreSifirla(k.id, schoolId); onMesaj(r.error ? `Hata: ${r.error}` : `Geçici şifre (${k.ad}): ${r.sifre}`); })} className="sfec-btn flex-1 rounded-lg px-2 py-1.5 text-[10px] font-bold" style={{ color: TEXT, border: `2px solid ${BORDER_STRONG}` }}><KeyRound className="mr-1 inline" size={11}/>Rastgele şifre</button>
+        <button disabled={pending} onClick={() => setSifreAcik((v) => !v)} className="sfec-btn flex-1 rounded-lg px-2 py-1.5 text-[10px] font-bold" style={{ background: sifreAcik ? MINT : "transparent", color: sifreAcik ? MINT_ON : TEXT, border: `2px solid ${BORDER_STRONG}` }}><KeyRound className="mr-1 inline" size={11}/>Şifre belirle</button>
         {(k.kategori === "ogrenci" || k.kategori === "ogretmen") && (
           <button disabled={pending} onClick={() => setDuzenleAcik((v) => !v)} title={k.kategori === "ogrenci" ? "Sınıf taşı" : "Branş değiştir"}
-            className="sfec-btn rounded-lg px-3 py-2 text-[11px] font-bold" style={{ background: duzenleAcik ? MINT : "transparent", color: duzenleAcik ? MINT_ON : TEXT, border: `2px solid ${BORDER_STRONG}` }}>
-            <ArrowRightLeft className="mr-1 inline" size={12}/>{k.kategori === "ogrenci" ? "Sınıf taşı" : "Branş"}
+            className="sfec-btn rounded-lg px-2.5 py-1.5 text-[10px] font-bold" style={{ background: duzenleAcik ? MINT : "transparent", color: duzenleAcik ? MINT_ON : TEXT, border: `2px solid ${BORDER_STRONG}` }}>
+            <ArrowRightLeft className="mr-1 inline" size={11}/>{k.kategori === "ogrenci" ? "Sınıf taşı" : "Branş"}
           </button>
         )}
         {k.kategori === "ogrenci" && (
           <button disabled={pending} title="Rozet ilerlemesini bugünden başlatır — geçmiş çalışma kayıtları silinmez"
             onClick={() => { if (!window.confirm(`${k.ad} için rozet ilerlemesi bugünden başlatılsın mı?`)) return; startTransition(async () => { const r = await moderatorRozetSifirla(k.id, schoolId); onMesaj(r.error ? `Hata: ${r.error}` : "Rozetler sıfırlandı."); }); }}
-            className="sfec-btn rounded-lg px-3 py-2 text-[11px] font-bold" style={{ color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
-            <Award size={12} className="mr-1 inline"/> Rozetleri sıfırla
+            className="sfec-btn rounded-lg px-2.5 py-1.5 text-[10px] font-bold" style={{ color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
+            <Award size={11} className="mr-1 inline"/> Rozetleri sıfırla
           </button>
         )}
         <button disabled={pending} onClick={() => setDigerAcik((v) => !v)}
-          className="sfec-btn rounded-lg px-3 py-2 text-[11px] font-bold flex items-center gap-1" style={{ background: digerAcik ? MINT : "transparent", color: digerAcik ? MINT_ON : TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
-          Diğer ayarlar <ChevronDown size={12} style={{ transform: digerAcik ? "rotate(180deg)" : undefined, transition: "transform 0.15s" }}/>
+          className="sfec-btn rounded-lg px-2.5 py-1.5 text-[10px] font-bold flex items-center gap-1" style={{ background: digerAcik ? MINT : "transparent", color: digerAcik ? MINT_ON : TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
+          Diğer ayarlar <ChevronDown size={11} style={{ transform: digerAcik ? "rotate(180deg)" : undefined, transition: "transform 0.15s" }}/>
         </button>
       </div>
 
       {digerAcik && (
-        <div className="mt-2 flex flex-wrap gap-2 rounded-lg p-2" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
-          <button disabled={pending} onClick={() => startTransition(async () => { const r = await moderatorAktiflikDegistir(k.id, !k.aktif, schoolId); onMesaj(r.error ? `Hata: ${r.error}` : "İşlem tamamlandı."); })} className="sfec-btn flex-1 rounded-lg px-2 py-2 text-[11px] font-bold" style={{ color: k.aktif ? BLUSH : MINT, border: `2px solid ${BORDER_STRONG}` }}>{k.aktif ? <UserX className="mr-1 inline" size={12}/> : <UserCheck className="mr-1 inline" size={12}/>} {k.aktif ? "Pasifleştir" : "Aktifleştir"}</button>
-          <button disabled={pending} onClick={() => { if (!window.confirm(`${k.ad} hesabı kalıcı olarak silinsin mi?`)) return; startTransition(async () => { const r = await moderatorHesapSil(k.id, schoolId); onMesaj(r.error ? `Hata: ${r.error}` : "Hesap silindi."); }); }} className="sfec-btn rounded-lg px-3 py-2 text-[11px] font-bold" style={{ color: BLUSH, border: `2px solid ${BORDER_STRONG}` }}><Trash2 className="mr-1 inline" size={12}/>Sil</button>
+        <div className="mt-2 flex flex-wrap gap-1.5 rounded-lg p-2" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
+          <button disabled={pending} onClick={() => startTransition(async () => { const r = await moderatorAktiflikDegistir(k.id, !k.aktif, schoolId); onMesaj(r.error ? `Hata: ${r.error}` : "İşlem tamamlandı."); })} className="sfec-btn flex-1 rounded-lg px-2 py-1.5 text-[10px] font-bold" style={{ color: k.aktif ? BLUSH : MINT, border: `2px solid ${BORDER_STRONG}` }}>{k.aktif ? <UserX className="mr-1 inline" size={11}/> : <UserCheck className="mr-1 inline" size={11}/>} {k.aktif ? "Pasifleştir" : "Aktifleştir"}</button>
+          <button disabled={pending} onClick={() => { if (!window.confirm(`${k.ad} hesabı kalıcı olarak silinsin mi?`)) return; startTransition(async () => { const r = await moderatorHesapSil(k.id, schoolId); onMesaj(r.error ? `Hata: ${r.error}` : "Hesap silindi."); }); }} className="sfec-btn rounded-lg px-2.5 py-1.5 text-[10px] font-bold" style={{ color: BLUSH, border: `2px solid ${BORDER_STRONG}` }}><Trash2 className="mr-1 inline" size={11}/>Sil</button>
         </div>
       )}
 
       {sifreAcik && (
         <div className="mt-2 flex items-center gap-2 rounded-lg p-2" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
           <input type="text" value={yeniSifre} onChange={(e) => setYeniSifre(e.target.value)} placeholder="Yeni şifre (en az 8, harf+rakam+özel işaret)"
-            className="min-w-0 flex-1 rounded-lg px-2.5 py-2 text-xs outline-none" style={{ background: BG1, color: TEXT, border: `2px solid ${BORDER_STRONG}` }} />
+            className="min-w-0 flex-1 rounded-lg px-2.5 py-1.5 text-xs outline-none" style={{ background: BG1, color: TEXT, border: `2px solid ${BORDER_STRONG}` }} />
           <button type="button" disabled={pending || !yeniSifre} onClick={() => startTransition(async () => {
             const r = await moderatorSifreBelirle(k.id, yeniSifre, schoolId);
             onMesaj(r.error ? `Hata: ${r.error}` : `${k.ad} için şifre güncellendi.`);
             if (!r.error) { setYeniSifre(""); setSifreAcik(false); }
-          })} className="sfec-btn shrink-0 rounded-lg px-3 py-2 text-[11px] font-bold disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>Kaydet</button>
+          })} className="sfec-btn shrink-0 rounded-lg px-2.5 py-1.5 text-[10px] font-bold disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>Kaydet</button>
         </div>
       )}
 

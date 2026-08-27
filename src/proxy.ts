@@ -1,21 +1,24 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
-// SG EduCoach -> SF EduCoach marka değişikliği sırasında Vercel projesi
-// yeniden adlandırıldı (sg-educoach -> sf-educoach). Eski otomatik
-// vercel.app adresleri hâlâ bu projeye alias'lı olduğu için, kayıtlı
-// kullanıcıların eski kısayolları/bookmarkları kırılmasın diye kalıcı
-// (308) yönlendirme yapıyoruz. (Not: bu yönlendirme önce projenin SSO
-// deployment protection'ı "all except custom domains" iken denenmiş ve
-// sf-educoach.vercel.app'in korumaya takılıp gerçek kullanıcıları Vercel
-// giriş ekranına düşürdüğü görülmüştü — SSO koruması kapatıldıktan sonra
-// tekrar etkinleştirildi.)
+// SG EduCoach -> SF EduCoach -> SeFu Koç marka değişiklikleri sırasında
+// Vercel projesi iki kez yeniden adlandırıldı (sg-educoach -> sf-educoach
+// -> sefukoc, 27.08.2026). Eski otomatik vercel.app adresleri hâlâ bu
+// projeye alias'lı olduğu için, kayıtlı kullanıcıların eski kısayolları/
+// bookmarkları kırılmasın diye kalıcı (308) yönlendirme yapıyoruz. (Not:
+// bu yönlendirme önce projenin SSO deployment protection'ı "all except
+// custom domains" iken denenmiş ve sf-educoach.vercel.app'in korumaya
+// takılıp gerçek kullanıcıları Vercel giriş ekranına düşürdüğü
+// görülmüştü — SSO koruması kapatıldıktan sonra tekrar etkinleştirildi.)
 const ESKI_VERCEL_DOMAINLERI = new Set([
   "sg-educoach.vercel.app",
   "sg-educoach-sg-educoach.vercel.app",
   "sg-educoach-git-main-sg-educoach.vercel.app",
+  "sf-educoach.vercel.app",
+  "sf-educoach-sg-educoach.vercel.app",
+  "sf-educoach-git-main-sg-educoach.vercel.app",
 ]);
-const YENI_DOMAIN = "sf-educoach.vercel.app";
+const YENI_DOMAIN = "sefukoc.vercel.app";
 
 export async function proxy(request: NextRequest) {
   const host = request.headers.get("host");
