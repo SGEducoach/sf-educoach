@@ -47,7 +47,7 @@ export function AnaSayfaTgAkisi({ dbIlanlar }: { dbIlanlar: TgDenemeIlani[] }) {
           </div>
 
           <div key={haber.id} className="sfec-tg-haber-gir flex flex-col items-center gap-4 sm:flex-row sm:justify-start">
-            <div className="h-24 w-full shrink-0 overflow-hidden rounded-xl sm:h-20 sm:w-20" style={{ background: "#E4E9EE" }}>
+            <div className="h-24 w-full shrink-0 overflow-hidden rounded-xl sm:h-24 sm:w-24" style={{ background: "#E4E9EE" }}>
               {haber.dosyaTipi === "pdf" ? (
                 <div className="flex h-full w-full items-center justify-center text-[10px] font-bold" style={{ color: METIN_GRI }}>PDF</div>
               ) : (
@@ -57,13 +57,13 @@ export function AnaSayfaTgAkisi({ dbIlanlar }: { dbIlanlar: TgDenemeIlani[] }) {
             </div>
             <div className="min-w-0 flex-1 text-center sm:text-left">
               <div className="text-[11px] font-bold" style={{ color: TURKUAZ }}>{haber.tarihEtiketi}</div>
-              <h3 className="mt-0.5 truncate text-sm font-bold sm:text-base" style={{ color: LACIVERT }}>{haber.baslik}</h3>
+              <h3 className="mt-0.5 text-sm font-bold sm:text-base" style={{ color: LACIVERT }}>{haber.baslik}</h3>
             </div>
           </div>
         </div>
 
         {haberler.length > 1 && (
-          <div className="flex items-center justify-center gap-1.5 sm:justify-start">
+          <div className="flex items-center justify-center gap-1.5">
             {haberler.map((h, i) => (
               <button key={h.id} type="button" onClick={() => setAktif(i)} aria-label={`${i + 1}. habere git`} aria-current={i === aktif ? "true" : undefined}
                 className="sfec-btn h-1.5 rounded-full" style={{ width: i === aktif ? 16 : 6, background: i === aktif ? TURKUAZ : "#D5DCE1" }} />
