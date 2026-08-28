@@ -31,15 +31,19 @@ export function AnaSayfaTgAkisi({ dbIlanlar }: { dbIlanlar: TgDenemeIlani[] }) {
   if (haberler.length === 0) return null;
 
   return (
-    <section className="border-y px-5 py-8 sm:px-10" style={{ borderColor: "#E4E9EE", background: "#F7FAFB" }}>
-      <div className="mx-auto flex max-w-4xl flex-col gap-4">
+    <section className="border-y border-[#E4E9EE] bg-[#F7FAFB] px-5 py-8 sm:border-y-0 sm:bg-transparent sm:px-8 sm:py-6">
+      {/* Masaüstünde (28.08.2026 kullanıcı isteği): ayırıcı band kaldırıldı,
+          kutu içerik sütunuyla (max-w-3xl) hizalanıp sola yaslandı — ana
+          slider'dan başlık metnine görsel akış kopmasın diye. Mobil bilinçli
+          olarak dokunulmadı (tam genişlik, ortalı, gri bandlı kart). */}
+      <div className="mx-auto flex max-w-4xl flex-col gap-4 sm:max-w-3xl sm:gap-3">
         <div className="flex items-center gap-2">
           <Radio size={15} color={TURKUAZ} aria-hidden="true" />
           <span className="text-xs font-bold uppercase tracking-[0.14em]" style={{ color: TURKUAZ }}>Platformda Şu An</span>
         </div>
 
-        <div key={haber.id} className="sfec-tg-haber-gir flex flex-col items-center gap-4 sm:flex-row">
-          <div className="h-24 w-full shrink-0 overflow-hidden rounded-xl sm:h-20 sm:w-32" style={{ background: "#E4E9EE" }}>
+        <div key={haber.id} className="sfec-tg-haber-gir flex flex-col items-center gap-4 sm:flex-row sm:justify-start">
+          <div className="h-24 w-full shrink-0 overflow-hidden rounded-xl sm:h-20 sm:w-20" style={{ background: "#E4E9EE" }}>
             {haber.dosyaTipi === "pdf" ? (
               <div className="flex h-full w-full items-center justify-center text-[10px] font-bold" style={{ color: METIN_GRI }}>PDF</div>
             ) : (
