@@ -5,6 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { anaSayfaDosyaUrl, type AnaSayfaSliderGorseli } from "@/lib/ana-sayfa";
+import { AnaSayfaTgAkisi } from "@/components/AnaSayfaTgAkisi";
+import type { TgDenemeIlani } from "@/lib/tg-deneme-ilanlari";
 
 // Ana Sayfa (27.08.2026 kullanıcı isteği) — GirisKarsilamaSayfasi.tsx'in
 // (rol vitrin ekranı) yerini alan, tamamen farklı bir "kurumsal" tasarım:
@@ -95,8 +97,8 @@ function Slider({ gorseller, gecisSaniye }: { gorseller: AnaSayfaSliderGorseli[]
   );
 }
 
-export function AnaSayfa({ baslik, govde, sliderGecisSaniye, sliderGorselleri }: {
-  baslik: string; govde: string; sliderGecisSaniye: number; sliderGorselleri: AnaSayfaSliderGorseli[];
+export function AnaSayfa({ baslik, govde, sliderGecisSaniye, sliderGorselleri, tgIlanlar }: {
+  baslik: string; govde: string; sliderGecisSaniye: number; sliderGorselleri: AnaSayfaSliderGorseli[]; tgIlanlar: TgDenemeIlani[];
 }) {
   const paragraflar = govde.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
 
@@ -111,6 +113,8 @@ export function AnaSayfa({ baslik, govde, sliderGecisSaniye, sliderGorselleri }:
       </header>
 
       <Slider gorseller={sliderGorselleri} gecisSaniye={sliderGecisSaniye} />
+
+      <AnaSayfaTgAkisi dbIlanlar={tgIlanlar} />
 
       <section className="mx-auto flex max-w-3xl flex-col gap-4 px-5 py-12 sm:px-8 sm:py-16">
         <h1 className="text-balance text-2xl font-extrabold leading-tight sm:text-3xl" style={{ color: LACIVERT, fontFamily: "var(--font-baloo)" }}>
