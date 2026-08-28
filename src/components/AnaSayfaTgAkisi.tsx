@@ -31,29 +31,34 @@ export function AnaSayfaTgAkisi({ dbIlanlar }: { dbIlanlar: TgDenemeIlani[] }) {
   if (haberler.length === 0) return null;
 
   return (
-    <section className="border-y border-[#E4E9EE] bg-[#F7FAFB] px-5 py-8 sm:border-y-0 sm:bg-transparent sm:px-8 sm:py-6">
-      {/* Masaüstünde (28.08.2026 kullanıcı isteği): ayırıcı band kaldırıldı,
-          kutu içerik sütunuyla (max-w-3xl) hizalanıp sola yaslandı — ana
-          slider'dan başlık metnine görsel akış kopmasın diye. Mobil bilinçli
-          olarak dokunulmadı (tam genişlik, ortalı, gri bandlı kart). */}
-      <div className="mx-auto flex max-w-4xl flex-col gap-4 sm:max-w-3xl sm:gap-3">
-        <div className="flex items-center gap-2">
-          <Radio size={15} color={TURKUAZ} aria-hidden="true" />
-          <span className="text-xs font-bold uppercase tracking-[0.14em]" style={{ color: TURKUAZ }}>Platformda Şu An</span>
-        </div>
-
-        <div key={haber.id} className="sfec-tg-haber-gir flex flex-col items-center gap-4 sm:flex-row sm:justify-start">
-          <div className="h-24 w-full shrink-0 overflow-hidden rounded-xl sm:h-20 sm:w-20" style={{ background: "#E4E9EE" }}>
-            {haber.dosyaTipi === "pdf" ? (
-              <div className="flex h-full w-full items-center justify-center text-[10px] font-bold" style={{ color: METIN_GRI }}>PDF</div>
-            ) : (
-              // eslint-disable-next-line @next/next/no-img-element -- next/image harici Storage domainini reddediyor (bkz. TgDenemeleri.tsx)
-              <img src={haber.gorsel} alt="" className="h-full w-full object-cover" />
-            )}
+    <section className="border-y border-[#E4E9EE] bg-[#F7FAFB] px-5 py-8 sm:h-full sm:border-y-0 sm:bg-transparent sm:px-0 sm:py-0">
+      {/* Masaüstünde (29.08.2026 kullanıcı isteği): artık slider ile metin
+          arasında ayrı bir blok değil — AnaSayfa.tsx'te bir grid ile sol
+          tarafta, üstü başlıkla (h1) hizalı dar bir sütun olarak
+          konumlanıyor. Alt sınır (noktalar) da AnaSayfa.tsx'in ölçtüğü
+          yüksekliğe sm:justify-between ile itilip birinci paragrafın
+          bitişine hizalanıyor. Mobil bilinçli olarak dokunulmadı (tam
+          genişlik, ortalı, gri bandlı kart). */}
+      <div className="mx-auto flex max-w-4xl flex-col gap-4 sm:h-full sm:max-w-none sm:justify-between sm:gap-3">
+        <div className="flex flex-col gap-4 sm:gap-3">
+          <div className="flex items-center gap-2">
+            <Radio size={15} color={TURKUAZ} aria-hidden="true" />
+            <span className="text-xs font-bold uppercase tracking-[0.14em]" style={{ color: TURKUAZ }}>Platformda Şu An</span>
           </div>
-          <div className="min-w-0 flex-1 text-center sm:text-left">
-            <div className="text-[11px] font-bold" style={{ color: TURKUAZ }}>{haber.tarihEtiketi}</div>
-            <h3 className="mt-0.5 truncate text-sm font-bold sm:text-base" style={{ color: LACIVERT }}>{haber.baslik}</h3>
+
+          <div key={haber.id} className="sfec-tg-haber-gir flex flex-col items-center gap-4 sm:flex-row sm:justify-start">
+            <div className="h-24 w-full shrink-0 overflow-hidden rounded-xl sm:h-20 sm:w-20" style={{ background: "#E4E9EE" }}>
+              {haber.dosyaTipi === "pdf" ? (
+                <div className="flex h-full w-full items-center justify-center text-[10px] font-bold" style={{ color: METIN_GRI }}>PDF</div>
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element -- next/image harici Storage domainini reddediyor (bkz. TgDenemeleri.tsx)
+                <img src={haber.gorsel} alt="" className="h-full w-full object-cover" />
+              )}
+            </div>
+            <div className="min-w-0 flex-1 text-center sm:text-left">
+              <div className="text-[11px] font-bold" style={{ color: TURKUAZ }}>{haber.tarihEtiketi}</div>
+              <h3 className="mt-0.5 truncate text-sm font-bold sm:text-base" style={{ color: LACIVERT }}>{haber.baslik}</h3>
+            </div>
           </div>
         </div>
 

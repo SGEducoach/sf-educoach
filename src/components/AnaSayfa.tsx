@@ -23,16 +23,12 @@ const METIN_GRI = "#3F4B5A";
 // kalın+turkuaz vurgulu göstermek için ayrıştırıyor — admin serbest metin
 // yazdığı için bu deseni bulamazsa satır olduğu gibi (düz paragraf)
 // gösteriliyor, hiçbir şey kırılmıyor.
-function paragrafGoster(paragraf: string, index: number) {
+function paragrafIcerik(paragraf: string) {
   const eslesme = paragraf.match(/^([^:\n]{2,40}):\s([\s\S]+)$/);
   if (eslesme) {
-    return (
-      <p key={index} className="text-base leading-relaxed sm:text-lg" style={{ color: METIN_GRI }}>
-        <span className="font-bold" style={{ color: TURKUAZ }}>{eslesme[1]}:</span> {eslesme[2]}
-      </p>
-    );
+    return <><span className="font-bold" style={{ color: TURKUAZ }}>{eslesme[1]}:</span> {eslesme[2]}</>;
   }
-  return <p key={index} className="text-base leading-relaxed sm:text-lg" style={{ color: METIN_GRI }}>{paragraf}</p>;
+  return paragraf;
 }
 
 function Slider({ gorseller, gecisSaniye }: { gorseller: AnaSayfaSliderGorseli[]; gecisSaniye: number }) {
@@ -101,6 +97,29 @@ export function AnaSayfa({ baslik, govde, sliderGecisSaniye, sliderGorselleri, t
   baslik: string; govde: string; sliderGecisSaniye: number; sliderGorselleri: AnaSayfaSliderGorseli[]; tgIlanlar: TgDenemeIlani[];
 }) {
   const paragraflar = govde.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+  const ilkParagrafRef = useRef<HTMLParagraphElement>(null);
+  const tgSutunRef = useRef<HTMLDivElement>(null);
+  const [tgYukseklik, setTgYukseklik] = useState<number>();
+
+  // Masaüstünde (29.08.2026 kullanıcı isteği): TG akışı sütununun ALT
+  // sınırı birinci paragrafın bitişiyle aynı çizgide olsun — paragraf
+  // metni admin tarafından her an değişebildiği için CSS'le sabit bir
+  // oran vermek yerine gerçek render sonrası yükseklik ölçülüyor.
+  // Mobilde (< 640px) ölçüm uygulanmıyor, mobil tasarım dokunulmuyor.
+  useEffect(() => {
+    function hizala() {
+      if (!ilkParagrafRef.current || !tgSutunRef.current) return;
+      if (window.matchMedia("(max-width: 639px)").matches) { setTgYukseklik(undefined); return; }
+      const ustSinir = tgSutunRef.current.getBoundingClientRect().top;
+      const altSinir = ilkParagrafRef.current.getBoundingClientRect().bottom;
+      setTgYukseklik(Math.max(0, altSinir - ustSinir));
+    }
+    hizala();
+    const gozlemci = new ResizeObserver(hizala);
+    if (ilkParagrafRef.current) gozlemci.observe(ilkParagrafRef.current);
+    window.addEventListener("resize", hizala);
+    return () => { gozlemci.disconnect(); window.removeEventListener("resize", hizala); };
+  }, [baslik, govde]);
 
   return (
     <div style={{ background: BEYAZ }} className="flex min-h-dvh flex-col">
@@ -114,14 +133,32 @@ export function AnaSayfa({ baslik, govde, sliderGecisSaniye, sliderGorselleri, t
 
       <Slider gorseller={sliderGorselleri} gecisSaniye={sliderGecisSaniye} />
 
-      <AnaSayfaTgAkisi dbIlanlar={tgIlanlar} />
+      {/* Masaüstünde (29.08.2026 kullanıcı isteği): TG akışı slider ile metin
+          arasındaki ayrı bloktan çıkarılıp sola, başlıkla (h1) üstten hizalı
+          dar bir sütuna alındı. Bu <div> mobilde HİÇBİR class uygulamıyor
+          (tüm class'lar sm: önekli) — DOM sırası (TG önce, metin sonra)
+          mobilde olduğu gibi kalıyor, TG'nin kendi tam genişlik/gri bantlı
+          görünümü dokunulmadı. */}
+      <div className="sm:mx-auto sm:grid sm:max-w-5xl sm:grid-cols-[18rem_1fr] sm:items-start sm:gap-10 sm:px-8">
+        <div ref={tgSutunRef} className="sm:pt-16" style={tgYukseklik ? { height: tgYukseklik } : undefined}>
+          <AnaSayfaTgAkisi dbIlanlar={tgIlanlar} />
+        </div>
 
-      <section className="mx-auto flex max-w-3xl flex-col gap-4 px-5 py-12 sm:px-8 sm:py-16">
-        <h1 className="text-balance text-2xl font-extrabold leading-tight sm:text-3xl" style={{ color: LACIVERT, fontFamily: "var(--font-baloo)" }}>
-          {baslik}
-        </h1>
-        {paragraflar.map(paragrafGoster)}
-      </section>
+        <section className="mx-auto flex max-w-3xl flex-col gap-4 px-5 py-12 sm:mx-0 sm:max-w-none sm:px-0 sm:py-16">
+          <h1 className="text-balance text-2xl font-extrabold leading-tight sm:text-3xl" style={{ color: LACIVERT, fontFamily: "var(--font-baloo)" }}>
+            {baslik}
+          </h1>
+          {paragraflar.map((p, i) => i === 0 ? (
+            <p key={i} ref={ilkParagrafRef} className="text-base leading-relaxed sm:text-lg" style={{ color: METIN_GRI }}>
+              {paragrafIcerik(p)}
+            </p>
+          ) : (
+            <p key={i} className="text-base leading-relaxed sm:text-lg" style={{ color: METIN_GRI }}>
+              {paragrafIcerik(p)}
+            </p>
+          ))}
+        </section>
+      </div>
 
       <footer className="mt-auto px-5 py-6 text-center text-xs sm:px-10" style={{ color: METIN_GRI }}>
         © {new Date().getFullYear()} SeFu Koç. Tüm hakları saklıdır.
