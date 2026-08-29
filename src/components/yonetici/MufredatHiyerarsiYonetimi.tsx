@@ -113,7 +113,12 @@ function UstBaslikSatiri({ satir, acik, onToggle }: { satir: MufredatUstBaslikSa
 
   return (
     <div className="rounded-xl px-3.5 py-2.5" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
-      <button type="button" onClick={ac} className="sfec-btn w-full flex items-center justify-between gap-2 text-left">
+      {/* Kullanıcı bulgusu (29.08.2026): "konu özetlerinde konunun üzerine
+          gelince aktifleşen konu çerçeve dışına taşıyor" — aynı sfec-btn
+          hover taşması burada da vardı (bkz. KonuAnlatimYonetimi.tsx'teki
+          aynı düzeltme). */}
+      <button type="button" onClick={ac}
+        className="w-full flex items-center justify-between gap-2 text-left rounded-lg transition-colors hover:bg-white/5">
         <div>
           <div style={{ color: TEXT }} className="text-sm font-semibold">
             {satir.konu} <span style={{ color: LILAC }} className="text-[10px] font-bold ml-1">{satir.seviye}</span>
