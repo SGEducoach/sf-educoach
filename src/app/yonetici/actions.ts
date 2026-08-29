@@ -96,7 +96,9 @@ export async function kullaniciAra(sorgu: string, rolFiltre: UserRole | "hepsi",
     // geçirildi (bu dosyada veli_link_requests için zaten kullanılan aynı
     // desen, bkz. veliTalepleriGetir).
     (rolFiltre === "hepsi" || rolFiltre === "veli")
-      ? admin.from("parent_students").select("parent_id, students!inner(school_id)").eq("students.school_id", schoolId)
+      ? (classId
+          ? admin.from("parent_students").select("parent_id, students!inner(school_id, class_id)").eq("students.school_id", schoolId).eq("students.class_id", classId)
+          : admin.from("parent_students").select("parent_id, students!inner(school_id)").eq("students.school_id", schoolId))
       : Promise.resolve({ data: [] as { parent_id: string }[] }),
   ]);
 

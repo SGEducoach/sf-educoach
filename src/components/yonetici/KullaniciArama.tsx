@@ -101,7 +101,7 @@ export function KullaniciArama() {
     const aranacakMetin = q.trim().length >= 2 ? q : "";
 
     startTransition(async () => {
-      const res = await kullaniciAra(aranacakMetin, r, schoolId, r === "ogrenci" && sinif ? sinif : undefined);
+      const res = await kullaniciAra(aranacakMetin, r, schoolId, (r === "ogrenci" || r === "veli") && sinif ? sinif : undefined);
       if (res.error) return setHata(res.error);
 
       setSonuclar(res.sonuclar);
@@ -183,7 +183,7 @@ export function KullaniciArama() {
                     style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}
                   />
                 </div>
-                {rol === "ogrenci" && (
+                {(rol === "ogrenci" || rol === "veli") && (
                   <select value={sinifId} onChange={(e) => { setSinifId(e.target.value); ara(sorgu, rol, e.target.value); }}
                     className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
                     <option value="">Tüm sınıflar</option>
