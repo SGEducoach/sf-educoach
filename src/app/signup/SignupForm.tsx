@@ -634,7 +634,7 @@ function VeliTalepForm({ kurumTuru, schools }: { kurumTuru: KurumTuru; schools: 
   return (
     <div className="rounded-3xl p-6 flex flex-col gap-4" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <form onSubmit={gonder} className="flex flex-col gap-3">
-        <label className="flex flex-col gap-1"><Etiket>Ad Soyad</Etiket><Girdi required value={ad} onChange={(e) => setAd(e.target.value)} /></label>
+        <label className="flex flex-col gap-1"><Etiket>Veli Adı-Soyadı</Etiket><Girdi required value={ad} onChange={(e) => setAd(e.target.value)} /></label>
         <label className="flex flex-col gap-1"><Etiket>{KURUM_ETIKET[kurumTuru].ogrenciSecim}</Etiket>
           <Secim required value={schoolId} onChange={(e) => setSchoolId(e.target.value)}>
             <option value="">Seçiniz</option>
