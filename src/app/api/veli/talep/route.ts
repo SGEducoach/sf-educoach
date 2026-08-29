@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { adNormalize, okulNoGecerliMi, telefonGecerliMi } from "@/lib/validators";
+import { adNormalize, okulNoGecerliMi } from "@/lib/validators";
 
 const GENEL_YANIT = "Talebiniz alındı. Onaylandığında kod öğrencinin Mesajlarım kutusuna gönderilecektir.";
 
+// Sadeleştirme (29.08.2026 kullanıcı isteği): telefon artık İSTENMİYOR —
+// hiçbir zaman doğrulanmıyordu (SMS/OTP yok), tek gerçek güvenlik kapısı
+// zaten öğretmenin onayı. Kayıt artık sadece Ad Soyad + Öğrenci No.
 export async function POST(request: Request) {
   let body: Record<string, unknown>;
   try {
@@ -15,9 +18,8 @@ export async function POST(request: Request) {
   const schoolId = String(body.school_id ?? "").trim();
   const okulNo = String(body.okul_no ?? "").trim();
   const veliAd = adNormalize(String(body.veli_ad ?? "").trim());
-  const veliTelefon = String(body.veli_telefon ?? "").trim();
 
-  if (!/^[0-9a-f-]{36}$/i.test(schoolId) || !okulNoGecerliMi(okulNo) || !veliAd || !telefonGecerliMi(veliTelefon)) {
+  if (!/^[0-9a-f-]{36}$/i.test(schoolId) || !okulNoGecerliMi(okulNo) || !veliAd) {
     return NextResponse.json({ error: "Girilen bilgileri kontrol edin." }, { status: 400 });
   }
 
@@ -33,11 +35,15 @@ export async function POST(request: Request) {
   // döndürürüz. Böylece anonim kişi sistemde kimlerin kayıtlı olduğunu öğrenemez.
   if (!student) return genelBasariYaniti();
 
+  // Telefon kalktığı için mükerrer talep kontrolü artık isim üzerinden
+  // (aynı öğrenci + aynı isim + hâlâ bekliyor) — tam koruma değil ama
+  // yanlışlıkla çift tıklama/gönderimi engellemeye yeterli; asıl sınır
+  // aşağıdaki günlük talep tavanı.
   const { data: mevcut } = await admin
     .from("veli_link_requests")
     .select("id")
     .eq("student_id", student.id)
-    .eq("veli_telefon", veliTelefon)
+    .eq("veli_ad", veliAd)
     .eq("durum", "bekliyor")
     .limit(1);
   if (mevcut?.length) return genelBasariYaniti();
@@ -56,7 +62,6 @@ export async function POST(request: Request) {
   const { error } = await admin.from("veli_link_requests").insert({
     student_id: student.id,
     veli_ad: veliAd,
-    veli_telefon: veliTelefon,
   });
   if (error) {
     console.error("Veli talebi oluşturulamadı:", error.message);

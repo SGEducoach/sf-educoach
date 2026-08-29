@@ -494,7 +494,7 @@ export async function ogretmenBransDegistir(teacherId: string, brans: string): P
 export interface VeliTalebiSonuc {
   id: string;
   veliAd: string;
-  veliTelefon: string;
+  veliTelefon: string | null;
   durum: "bekliyor" | "onaylandi" | "reddedildi" | "kullanildi";
   kod: string | null;
   createdAt: string;
@@ -513,7 +513,7 @@ export async function veliTalepleriGetir(): Promise<{ error: string | null; tale
   if (error) return { error: error.message, talepler: [] };
 
   type Row = {
-    id: string; veli_ad: string; veli_telefon: string; durum: VeliTalebiSonuc["durum"]; kod: string | null; created_at: string;
+    id: string; veli_ad: string; veli_telefon: string | null; durum: VeliTalebiSonuc["durum"]; kod: string | null; created_at: string;
     students: { profiles: { ad: string } | null; schools: { ad: string } | null; classes: { seviye: string; sube: string } | null } | null;
   };
   const talepler = ((data as unknown as Row[]) ?? []).map((r) => ({

@@ -86,7 +86,7 @@ export interface VeliLinkRequest {
   id: string;
   student_id: string;
   veli_ad: string;
-  veli_telefon: string;
+  veli_telefon: string | null;
   durum: VeliTalepDurum;
   kod: string | null;
   onaylayan_ogretmen_id: string | null;

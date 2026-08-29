@@ -605,7 +605,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   }));
 
   type TalepRow = {
-    id: string; student_id: string; veli_ad: string; veli_telefon: string;
+    id: string; student_id: string; veli_ad: string; veli_telefon: string | null;
     durum: "bekliyor" | "onaylandi" | "reddedildi" | "kullanildi"; kod: string | null;
     onaylayan_ogretmen_id: string | null; created_at: string; onaylanma_at: string | null;
     students: { profiles: { ad: string } | null } | null;

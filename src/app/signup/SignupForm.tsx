@@ -159,7 +159,7 @@ export default function SignupForm({ kurallarMetni, kurallarVersiyon }: { kurall
         {role === "ogrenci" && kurumTuru === "dershane" && <DershaneOgrenciTamamlaForm key="dershane-ogrenci" schools={schools} />}
         {role === "ogrenci" && kurumTuru === "okul" && <OgrenciKayit key={kurumTuru} kurumTuru={kurumTuru} schools={schools} classes={classes} router={router} supabase={supabase} />}
         {role === "ogretmen" && <OgretmenKayit key={kurumTuru} kurumTuru={kurumTuru} schools={schools} classes={classes} router={router} supabase={supabase} />}
-        {role === "veli" && <VeliKayit key={kurumTuru} kurumTuru={kurumTuru} schools={schools} router={router} supabase={supabase} />}
+        {role === "veli" && <VeliTalepForm key={kurumTuru} kurumTuru={kurumTuru} schools={schools} />}
 
         <p style={{ color: TEXT_MUTED }} className="text-xs text-center mt-5">
           Zaten hesabınız var mı?{" "}
@@ -595,31 +595,13 @@ function OgretmenKayit({ kurumTuru, schools, router, supabase }: {
 }
 
 // ============ VELİ ============
-function VeliKayit({ kurumTuru, schools, router, supabase }: { kurumTuru: KurumTuru; schools: School[]; router: ReturnType<typeof useRouter>; supabase: ReturnType<typeof createClient> }) {
-  const [mod, setMod] = useState<"talep" | "tamamla">("talep");
-
-  return (
-    <div className="rounded-3xl p-6 flex flex-col gap-4" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-      <div className="flex gap-1 p-1 rounded-full" style={{ background: "rgba(255,255,255,0.06)", border: `2px solid ${BORDER}` }}>
-        <button type="button" onClick={() => setMod("talep")}
-          className="sfec-btn flex-1 text-[11px] font-bold py-1.5 rounded-full"
-          style={{ background: mod === "talep" ? MINT : "transparent", color: mod === "talep" ? MINT_ON : TEXT_MUTED }}>
-          Kod talep et
-        </button>
-        <button type="button" onClick={() => setMod("tamamla")}
-          className="sfec-btn flex-1 text-[11px] font-bold py-1.5 rounded-full"
-          style={{ background: mod === "tamamla" ? MINT : "transparent", color: mod === "tamamla" ? MINT_ON : TEXT_MUTED }}>
-          Kodum var, tamamla
-        </button>
-      </div>
-      {mod === "talep" ? <VeliTalepForm kurumTuru={kurumTuru} schools={schools} /> : <VeliTamamlaForm kurumTuru={kurumTuru} schools={schools} router={router} supabase={supabase} />}
-    </div>
-  );
-}
-
+// Sadeleştirme (29.08.2026 kullanıcı isteği): "Kod talep et / Kodum var,
+// tamamla" ayrımı kalktı — bu sayfa artık SADECE talep formu. Kod
+// redeem edip şifre belirleme adımı /login'e taşındı (bkz. LoginForm.tsx)
+// çünkü zaten bir "giriş" eylemi. Telefon de kalktı — hiçbir zaman
+// doğrulanmıyordu (SMS/OTP yok), tek gerçek kapı öğretmenin onayı.
 function VeliTalepForm({ kurumTuru, schools }: { kurumTuru: KurumTuru; schools: School[] }) {
   const [ad, setAd] = useState("");
-  const [telefon, setTelefon] = useState("");
   const [schoolId, setSchoolId] = useState("");
   const [okulNo, setOkulNo] = useState("");
   const [hata, setHata] = useState<string | null>(null);
@@ -629,7 +611,6 @@ function VeliTalepForm({ kurumTuru, schools }: { kurumTuru: KurumTuru; schools: 
   async function gonder(e: React.FormEvent) {
     e.preventDefault();
     setHata(null);
-    if (!telefonGecerliMi(telefon)) return setHata("Telefon numarası geçersiz. " + TELEFON_IPUCU);
     if (!schoolId) return setHata(`${KURUM_ETIKET[kurumTuru].secim} seçin.`);
     setYukleniyor(true);
 
@@ -637,7 +618,7 @@ function VeliTalepForm({ kurumTuru, schools }: { kurumTuru: KurumTuru; schools: 
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        school_id: schoolId, okul_no: okulNo.trim(), veli_ad: adNormalize(ad), veli_telefon: telefon,
+        school_id: schoolId, okul_no: okulNo.trim(), veli_ad: adNormalize(ad),
       }),
     });
     const body = await res.json();
@@ -647,14 +628,13 @@ function VeliTalepForm({ kurumTuru, schools }: { kurumTuru: KurumTuru; schools: 
   }
 
   function yeniTalep() {
-    setAd(""); setTelefon(""); setSchoolId(""); setOkulNo(""); setGonderildi(false);
+    setAd(""); setSchoolId(""); setOkulNo(""); setGonderildi(false);
   }
 
   return (
-    <>
+    <div className="rounded-3xl p-6 flex flex-col gap-4" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <form onSubmit={gonder} className="flex flex-col gap-3">
         <label className="flex flex-col gap-1"><Etiket>Ad Soyad</Etiket><Girdi required value={ad} onChange={(e) => setAd(e.target.value)} /></label>
-        <label className="flex flex-col gap-1"><Etiket>Telefon</Etiket><Girdi type="tel" required value={telefon} inputMode="numeric" placeholder="5xxxxxxxxx" onChange={(e) => setTelefon(telefonSanitize(e.target.value))} /></label>
         <label className="flex flex-col gap-1"><Etiket>{KURUM_ETIKET[kurumTuru].ogrenciSecim}</Etiket>
           <Secim required value={schoolId} onChange={(e) => setSchoolId(e.target.value)}>
             <option value="">Seçiniz</option>
@@ -698,146 +678,7 @@ function VeliTalepForm({ kurumTuru, schools }: { kurumTuru: KurumTuru; schools: 
           </div>
         </div>
       )}
-    </>
-  );
-}
-
-const KVKK_METNI = `SeFu Koç olarak, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, velisi/vasisi olduğunuz öğrencinin kişisel verilerinin işlenmesi hakkında sizi bilgilendirmek isteriz.
-
-İşlenen veriler: öğrencinin adı-soyadı, okul/sınıf bilgisi, iletişim bilgileri, akademik performans verileri (deneme sonuçları, çalışma kayıtları, soru çözüm istatistikleri, motivasyon durumu).
-
-İşleme amacı: öğrencinin akademik gelişiminin takip edilmesi, öğretmen tarafından değerlendirilmesi, size ve öğrenciye bu veriler hakkında bildirim ve rapor sunulması.
-
-Veri aktarımı: veriler, Platform'un altyapı sağlayıcıları (barındırma ve e-posta hizmetleri) dışında üçüncü kişilerle paylaşılmaz.
-
-Saklama süresi: hesap aktif olduğu sürece saklanır; hesap kapatma talebinde makul süre içinde silinir.
-
-Haklarınız: KVKK madde 11 kapsamında verilerin düzeltilmesi, silinmesi, işlenme amacını öğrenme gibi haklara sahipsiniz.
-
-Onay: Yukarıdaki bilgilendirmeyi okudum; velisi/vasisi olduğum öğrencinin belirtilen kapsamda kişisel verilerinin işlenmesine açık rızamla onay veriyorum.`;
-
-function VeliTamamlaForm({ kurumTuru, schools, router }: { kurumTuru: KurumTuru; schools: School[]; router: ReturnType<typeof useRouter>; supabase: ReturnType<typeof createClient> }) {
-  const [asama, setAsama] = useState<1 | 2>(1);
-  const [schoolId, setSchoolId] = useState("");
-  const [okulNo, setOkulNo] = useState("");
-  const [kod, setKod] = useState("");
-  // GÜVENLİK DÜZELTMESİ (2026-08-25) — isim/telefon artık BURADA
-  // GİRİLMİYOR (kod'u bilen herkes farklı bir isimle hesap açabiliyordu).
-  // Kod doğrulanınca /api/veli/dogrula, öğretmenin ONAYLADIĞI ismi
-  // döndürüyor — kullanıcı sadece bunu GÖRÜYOR ("bu ben değilim" fark
-  // edebilsin diye), giremiyor.
-  const [onaylananAd, setOnaylananAd] = useState<string | null>(null);
-  const [onaylananTelefonMaskeli, setOnaylananTelefonMaskeli] = useState<string | null>(null);
-  const [sifre, setSifre] = useState("");
-  const [sifreTekrar, setSifreTekrar] = useState("");
-  const [kvkkOnay, setKvkkOnay] = useState(false);
-  const [hata, setHata] = useState<string | null>(null);
-  const [yukleniyor, setYukleniyor] = useState(false);
-  const [dogrulaniyor, setDogrulaniyor] = useState(false);
-
-  async function koduDogrulaVeDevamEt() {
-    setHata(null);
-    if (!schoolId) return setHata(`${KURUM_ETIKET[kurumTuru].secim} seçin.`);
-    if (!okulNo.trim() || !kod.trim()) return setHata("Okul no ve kod gerekli.");
-    if (!kvkkOnay) return setHata("Devam etmek için KVKK metnini onaylayın.");
-    setDogrulaniyor(true);
-    const res = await fetch("/api/veli/dogrula", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ school_id: schoolId, okul_no: okulNo.trim(), kod: kod.trim() }),
-    });
-    const body = await res.json();
-    setDogrulaniyor(false);
-    if (!res.ok) return setHata(body.error ?? "Okul no veya kod hatalı.");
-    setOnaylananAd(body.veliAd);
-    setOnaylananTelefonMaskeli(body.veliTelefonMaskeli ?? null);
-    setAsama(2);
-  }
-
-  async function tamamla(e: React.FormEvent) {
-    e.preventDefault();
-    setHata(null);
-    if (!kvkkOnay) return setHata("Devam etmek için KVKK aydınlatma metnini onaylamanız gerekiyor.");
-    if (!sifreGecerliMi(sifre)) return setHata(SIFRE_IPUCU);
-    if (sifre !== sifreTekrar) return setHata("Şifreler aynı değil.");
-    setYukleniyor(true);
-    const res = await fetch("/api/veli/tamamla", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        school_id: schoolId, okul_no: okulNo.trim(), kod: kod.trim(), sifre, kvkkOnay: true,
-      }),
-    });
-    const body = await res.json();
-    setYukleniyor(false);
-    if (!res.ok) return setHata(body.error ?? "Bir hata oluştu.");
-    router.push("/dashboard");
-    router.refresh();
-  }
-
-  return (
-    <>
-    <form onSubmit={tamamla} className="flex flex-col gap-3">
-      <div className="flex items-center gap-2 text-[11px] font-bold" style={{ color: TEXT_MUTED }}>
-        <span className="rounded-full px-2.5 py-1" style={{ background: asama === 1 ? MINT : BG0, color: asama === 1 ? MINT_ON : TEXT_MUTED }}>1 · Kodu doğrula</span>
-        <span>→</span>
-        <span className="rounded-full px-2.5 py-1" style={{ background: asama === 2 ? MINT : BG0, color: asama === 2 ? MINT_ON : TEXT_MUTED }}>2 · Şifreni oluştur</span>
-      </div>
-      {asama === 1 ? <>
-      <label className="flex flex-col gap-1"><Etiket>{KURUM_ETIKET[kurumTuru].ogrenciSecim}</Etiket>
-        <Secim required value={schoolId} onChange={(e) => setSchoolId(e.target.value)}>
-          <option value="">Seçiniz</option>
-          {schools.map((s) => <option key={s.id} value={s.id}>{s.ad}</option>)}
-        </Secim>
-      </label>
-      <label className="flex flex-col gap-1"><Etiket>{KURUM_ETIKET[kurumTuru].no}</Etiket><Girdi required value={okulNo} onChange={(e) => setOkulNo(e.target.value)} /></label>
-      <label className="flex flex-col gap-1"><Etiket>Kod</Etiket><Girdi required value={kod} maxLength={12} autoCapitalize="characters" onChange={(e) => setKod(e.target.value.toUpperCase())} /></label>
-
-      <div className="flex flex-col gap-1.5">
-        <Etiket>KVKK Aydınlatma Metni ve Rıza Beyanı</Etiket>
-        <div className="text-[11px] leading-relaxed whitespace-pre-line rounded-xl p-3 max-h-40 overflow-y-auto"
-          style={{ background: BG0, border: `2px solid ${BORDER_STRONG}`, color: TEXT_MUTED }}>
-          {KVKK_METNI}
-        </div>
-      </div>
-
-      <label className="flex items-start gap-2 cursor-pointer">
-        <input type="checkbox" checked={kvkkOnay} onChange={(e) => setKvkkOnay(e.target.checked)}
-          className="mt-0.5" />
-        <span style={{ color: TEXT }} className="text-xs leading-snug">
-          Yukarıdaki metni okudum, velisi/vasisi olduğum öğrencinin kişisel verilerinin işlenmesine <strong>açık rızam ile onay veriyorum.</strong>
-        </span>
-      </label>
-
-      {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
-      <button type="button" disabled={dogrulaniyor} onClick={koduDogrulaVeDevamEt}
-        className="sfec-btn rounded-xl py-2.5 text-sm font-bold disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
-        {dogrulaniyor ? "Doğrulanıyor..." : "Devam et"}
-      </button>
-      </> : <>
-      <div className="rounded-xl p-3" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
-        <Etiket>Bu kod şu kişiye onaylandı</Etiket>
-        <p style={{ color: TEXT }} className="text-sm font-bold mt-1">{onaylananAd}{onaylananTelefonMaskeli ? ` · ${onaylananTelefonMaskeli}` : ""}</p>
-        <p style={{ color: BLUSH }} className="text-[11px] leading-relaxed mt-1.5">
-          Bu siz değilseniz devam ETMEYİN — &quot;Geri&quot; ile dönüp kurumunuzla iletişime geçin.
-        </p>
-      </div>
-      <p style={{ color: TEXT_MUTED }} className="text-xs leading-relaxed">Kod yalnız hesabı eşleştirmek için kullanılacak. Bundan sonraki girişlerinizde aşağıda oluşturduğunuz kişisel şifreyi kullanacaksınız.</p>
-      <label className="flex flex-col gap-1"><Etiket>Yeni Şifre</Etiket><Girdi type="password" required value={sifre} onChange={(e) => setSifre(e.target.value)} /></label>
-      <label className="flex flex-col gap-1"><Etiket>Yeni Şifre Tekrar</Etiket><Girdi type="password" required value={sifreTekrar} onChange={(e) => setSifreTekrar(e.target.value)} /></label>
-      <p style={{ color: TEXT_MUTED }} className="text-[11px] leading-relaxed">{SIFRE_IPUCU}</p>
-
-      {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
-      <div className="flex gap-2">
-        <button type="button" onClick={() => { setHata(null); setAsama(1); }} disabled={yukleniyor} className="sfec-btn flex-1 rounded-xl py-2.5 text-sm font-bold" style={{ background: BG0, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>Geri</button>
-        <button type="submit" disabled={yukleniyor} className="sfec-btn flex-1 text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
-          {yukleniyor ? "Tamamlanıyor..." : "Şifreyi oluştur"}
-        </button>
-      </div>
-      </>}
-    </form>
-    <YukleniyorOverlay visible={yukleniyor} mesaj="Tamamlanıyor..." />
-    </>
+    </div>
   );
 }
 

@@ -20,7 +20,7 @@ function kademeliEngelSuresi(blockCount: number): number {
 }
 
 type GirisRolu = "ogrenci" | "ogretmen" | "veli" | "mudur" | "admin";
-interface GirisGovdesi { role?: GirisRolu; schoolId?: string; okulNo?: string; kod?: string; email?: string; password?: string }
+interface GirisGovdesi { role?: GirisRolu; schoolId?: string; okulNo?: string; email?: string; password?: string }
 
 // Kullanıcı isteği (26.08.2026): öğrenci hariç tüm rollerde (admin dahil)
 // hesap sahibine "yanlış giriş denemesi yapıldı" bildirimi düşsün.
@@ -83,18 +83,29 @@ export async function POST(request: NextRequest) {
   if (body.role === "ogrenci") {
     const { data } = await admin.rpc("resolve_ogrenci_email", { p_school_id: body.schoolId, p_okul_no: body.okulNo?.trim() });
     girisEmail = data ?? "";
-  } else if (body.role === "veli") {
-    const { data } = await admin.rpc("resolve_veli_login", { p_school_id: body.schoolId, p_okul_no: body.okulNo?.trim(), p_kod: body.kod?.trim() });
-    girisEmail = data ?? "";
   } else if (body.role === "mudur") {
     const { data } = await admin.rpc("resolve_mudur_email", { p_okul_kodu: body.okulNo?.trim() });
     girisEmail = data ?? "";
   }
 
   const supabase = await createClient();
-  let { error } = girisEmail
-    ? await supabase.auth.signInWithPassword({ email: girisEmail, password: body.password })
-    : { error: new Error("Invalid login credentials") };
+  let error: Error | null;
+  if (body.role === "veli") {
+    // Sadeleştirme (29.08.2026) — veli artık HER girişte kod GİRMİYOR,
+    // sadece şifre. Bir öğrencide birden fazla tamamlanmış veli hesabı
+    // olabildiği için (anne+baba ayrı kayıt) okul_no tek başına hesabı
+    // belirlemiyor — adayların HER birine şifre denenir, ilk tutan kazanır.
+    const { data: adaylar } = await admin.rpc("resolve_veli_email_adaylari", { p_school_id: body.schoolId, p_okul_no: body.okulNo?.trim() });
+    error = new Error("Invalid login credentials");
+    for (const aday of (adaylar as string[] | null) ?? []) {
+      const sonuc = await supabase.auth.signInWithPassword({ email: aday, password: body.password });
+      if (!sonuc.error) { error = null; girisEmail = aday; break; }
+    }
+  } else {
+    ({ error } = girisEmail
+      ? await supabase.auth.signInWithPassword({ email: girisEmail, password: body.password })
+      : { error: new Error("Invalid login credentials") });
+  }
 
   let askidaMi = false;
   let denemeSuresiDoldu = false;

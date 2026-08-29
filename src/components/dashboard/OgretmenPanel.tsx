@@ -195,7 +195,7 @@ export function OgretmenPanel({
               {oturumdaOnaylanan.map((t) => (
                 <div key={t.id} className="rounded-2xl p-3.5 flex items-center justify-between flex-wrap gap-2" style={{ background: BG1_ALT, border: `2px solid ${BORDER}` }}>
                   <div>
-                    <div style={{ color: TEXT }} className="text-sm font-semibold">{t.veli_ad} <span style={{ color: TEXT_MUTED }} className="font-normal">· {t.veli_telefon}</span></div>
+                    <div style={{ color: TEXT }} className="text-sm font-semibold">{t.veli_ad}{t.veli_telefon && <span style={{ color: TEXT_MUTED }} className="font-normal"> · {t.veli_telefon}</span>}</div>
                     <div style={{ color: TEXT_MUTED }} className="text-xs mt-0.5">Öğrenci: {t.ogrenci_ad}</div>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full" style={{ background: MINT_BG, color: MINT }}>
@@ -206,7 +206,7 @@ export function OgretmenPanel({
               {gosterilecekBekleyenler.map((t) => (
                 <div key={t.id} className="rounded-2xl p-3.5 flex items-center justify-between flex-wrap gap-2" style={{ background: BG1_ALT, border: `2px solid ${BORDER}` }}>
                   <div>
-                    <div style={{ color: TEXT }} className="text-sm font-semibold">{t.veli_ad} <span style={{ color: TEXT_MUTED }} className="font-normal">· {t.veli_telefon}</span></div>
+                    <div style={{ color: TEXT }} className="text-sm font-semibold">{t.veli_ad}{t.veli_telefon && <span style={{ color: TEXT_MUTED }} className="font-normal"> · {t.veli_telefon}</span>}</div>
                     <div style={{ color: TEXT_MUTED }} className="text-xs mt-0.5">Öğrenci: {t.ogrenci_ad}</div>
                   </div>
                   <button onClick={() => onayla(t)} disabled={pending}
