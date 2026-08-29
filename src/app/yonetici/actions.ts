@@ -73,7 +73,7 @@ export interface KullaniciSonuc {
 // yeni kurum seçim ekranı); classId ise sadece öğrenci listesini sınıf
 // bazlı daraltmak için opsiyonel.
 export async function kullaniciAra(sorgu: string, rolFiltre: UserRole | "hepsi", schoolId: string, classId?: string): Promise<{ error: string | null; sonuclar: KullaniciSonuc[] }> {
-  const { supabase } = await requireAdmin();
+  const { supabase, admin } = await requireAdmin();
   const q = sorgu.trim();
 
   // Kurum (ve varsa sınıf) kapsamındaki profil id'lerini önce belirle —
@@ -88,8 +88,15 @@ export async function kullaniciAra(sorgu: string, rolFiltre: UserRole | "hepsi",
     (rolFiltre === "hepsi" || rolFiltre === "ogretmen" || rolFiltre === "mudur")
       ? supabase.from("teachers").select("id").eq("school_id", schoolId)
       : Promise.resolve({ data: [] as { id: string }[] }),
+    // Kullanıcı bulgusu (29.08.2026): "genel bakışta 1 veli gözüküyor ama
+    // kullanıcılarda yok" — parent_students RLS'i SADECE velinin/öğrencinin
+    // kendi satırını görmesine izin veriyor (schema.sql), admin için bir
+    // istisna yok. Normal (RLS'e tabi) supabase client'ı burada veli
+    // bağlantısını HİÇBİR ZAMAN bulamıyordu — service-role admin client'a
+    // geçirildi (bu dosyada veli_link_requests için zaten kullanılan aynı
+    // desen, bkz. veliTalepleriGetir).
     (rolFiltre === "hepsi" || rolFiltre === "veli")
-      ? supabase.from("parent_students").select("parent_id, students!inner(school_id)").eq("students.school_id", schoolId)
+      ? admin.from("parent_students").select("parent_id, students!inner(school_id)").eq("students.school_id", schoolId)
       : Promise.resolve({ data: [] as { parent_id: string }[] }),
   ]);
 
