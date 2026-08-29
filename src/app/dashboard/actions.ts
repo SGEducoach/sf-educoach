@@ -57,6 +57,28 @@ export async function veliTalepOnayla(requestId: string) {
   return { error: null, kod: data as string };
 }
 
+// Kullanıcı bulgusu (29.08.2026): "acil problem — bildiğim bir öğrenci
+// numarasıyla veli kodu talep ettim, ismi salladım, öğretmen ekranına
+// düştü" — yanlış/tanınmayan bir talebi öğretmen kendi silebilsin diye.
+// Yeni bir RPC gerekmiyor — veli_link_requests_update_teacher RLS
+// politikası (schema.sql) öğretmenin kendi sınıfının öğrencisine ait
+// satırları zaten güncelleyebilmesine izin veriyor; admin/service-role
+// gerekmez.
+export async function veliTalepSil(requestId: string) {
+  const { supabase } = await requireUser();
+  const { data, error } = await supabase
+    .from("veli_link_requests")
+    .update({ durum: "reddedildi" })
+    .eq("id", requestId)
+    .eq("durum", "bekliyor")
+    .select("id")
+    .maybeSingle();
+  if (error) return { error: error.message };
+  if (!data) return { error: "Talep daha önce işlenmiş veya bulunamadı." };
+  revalidatePath("/dashboard");
+  return { error: null };
+}
+
 // Admin kontrol işlemlerini iz kaydına yazar. Log yazımı başarısız olsa bile
 // asıl işlemi (sınıf ekleme, atama vb.) engellemez — sadece konsola düşer.
 async function auditLogYaz(

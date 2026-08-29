@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { UserPlus, Check, Users, Eye, Plus, X, BookMarked, BedDouble, ClipboardCheck, ListChecks, ArrowRightLeft, ChevronDown, ChevronUp, CalendarPlus } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, PEACH, PEACH_BG, SKY, SKY_BG, TEXT, TEXT_MUTED, BLUSH, BLUSH_BG } from "@/lib/theme";
 import {
-  veliTalepOnayla, sinifEkle, ogretmenDuyuruGonder, gonderilenDuyurularGetir,
+  veliTalepOnayla, veliTalepSil, sinifEkle, ogretmenDuyuruGonder, gonderilenDuyurularGetir,
   ogretmenDersEkle, ogretmenDersSil, ogrenciSinifTasi, ogrenciYurtDurumuGuncelle, soruCozumuOnayla,
 } from "@/app/dashboard/actions";
 import { gorevVer } from "@/app/dashboard/gorev-actions";
@@ -108,8 +108,14 @@ export function OgretmenPanel({
   // Onaylanınca sunucu listesi (bekleyenTalepler) yenilenip o talep listeden
   // düşüyor — kodu kaybetmemek için bu oturumda onaylananları ayrıca tutuyoruz.
   const [oturumdaOnaylanan, setOturumdaOnaylanan] = useState<(VeliLinkRequest & { ogrenci_ad: string })[]>([]);
+  // Kullanıcı bulgusu (29.08.2026): yanlış/tanınmayan bir talep ("bildiğim
+  // bir öğrenci numarasıyla kod talep ettim, ismi salladım") öğretmen
+  // ekranına düşebiliyor — öğretmen artık kendi silebiliyor (bkz.
+  // veliTalepSil, RLS ile korunuyor).
+  const [oturumdaSilinen, setOturumdaSilinen] = useState<Set<string>>(new Set());
   const [hata, setHata] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [silPending, startSilTransition] = useTransition();
 
   function onayla(talep: VeliLinkRequest & { ogrenci_ad: string }) {
     setHata(null);
@@ -123,8 +129,18 @@ export function OgretmenPanel({
     });
   }
 
+  function sil(talep: VeliLinkRequest & { ogrenci_ad: string }) {
+    if (!window.confirm(`${talep.veli_ad} adlı velinin talebi silinsin mi? Bu işlem geri alınamaz.`)) return;
+    setHata(null);
+    startSilTransition(async () => {
+      const res = await veliTalepSil(talep.id);
+      if (res.error) setHata(res.error);
+      else setOturumdaSilinen((set) => new Set(set).add(talep.id));
+    });
+  }
+
   const onaylananIdSeti = new Set(oturumdaOnaylanan.map((t) => t.id));
-  const gosterilecekBekleyenler = bekleyenTalepler.filter((t) => !onaylananIdSeti.has(t.id));
+  const gosterilecekBekleyenler = bekleyenTalepler.filter((t) => !onaylananIdSeti.has(t.id) && !oturumdaSilinen.has(t.id));
 
   // Görev verilebilir mi: kendi sınıfı veya ogretmen_dersleri ile ilişkili
   // olduğu bir sınıf görüntüleniyorsa (bkz. migration 0047 RLS kuralı).
@@ -209,11 +225,18 @@ export function OgretmenPanel({
                     <div style={{ color: TEXT }} className="text-sm font-semibold">{t.veli_ad}{t.veli_telefon && <span style={{ color: TEXT_MUTED }} className="font-normal"> · {t.veli_telefon}</span>}</div>
                     <div style={{ color: TEXT_MUTED }} className="text-xs mt-0.5">Öğrenci: {t.ogrenci_ad}</div>
                   </div>
-                  <button onClick={() => onayla(t)} disabled={pending}
-                    className="sfec-btn text-xs font-bold px-3.5 py-1.5 rounded-full disabled:opacity-60"
-                    style={{ background: MINT, color: MINT_ON }}>
-                    Onayla ve kod üret
-                  </button>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button onClick={() => onayla(t)} disabled={pending || silPending}
+                      className="sfec-btn text-xs font-bold px-3.5 py-1.5 rounded-full disabled:opacity-60"
+                      style={{ background: MINT, color: MINT_ON }}>
+                      Onayla ve kod üret
+                    </button>
+                    <button onClick={() => sil(t)} disabled={pending || silPending}
+                      className="sfec-btn flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full disabled:opacity-60"
+                      style={{ background: "rgba(255,255,255,0.06)", color: BLUSH, border: `2px solid ${BORDER_STRONG}` }}>
+                      <X size={12} /> Sil
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

@@ -107,7 +107,14 @@ function KonuSatiri({ satir, acik, onToggle }: { satir: KonuAnlatimiSatiri; acik
 
   return (
     <div className="rounded-xl px-3.5 py-2.5" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
-      <button type="button" onClick={ac} className="sfec-btn w-full flex items-center justify-between gap-2 text-left">
+      {/* Kullanıcı bulgusu (29.08.2026): "konu özetlerinde konunun üzerine
+          gelince aktifleşen konu çerçeve dışına taşıyor" — global .sfec-btn
+          hover'ı (transform: scale(1.04)) bu satırın kendi rounded-xl
+          çerçevesini taşırıyordu (satır w-full, kendi kartını dolduruyor).
+          Bilinçli olarak sfec-btn kaldırıldı, taşırmayan düz bir hover
+          rengiyle değiştirildi. */}
+      <button type="button" onClick={ac}
+        className="w-full flex items-center justify-between gap-2 text-left rounded-lg transition-colors hover:bg-white/5">
         <div>
           <div style={{ color: TEXT }} className="text-sm font-semibold">
             {satir.konu} {satir.seviye && <span style={{ color: LILAC }} className="text-[10px] font-bold ml-1">{satir.seviye}</span>}
