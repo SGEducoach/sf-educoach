@@ -17,7 +17,7 @@ export interface AnaSayfaSliderGorseli {
 }
 
 const VARSAYILAN_AYARLAR: AnaSayfaAyarlari = {
-  baslik: "SeFu Koç",
+  baslik: "www.sefukoc.com",
   govde: "",
   sliderGecisSaniye: 6,
 };

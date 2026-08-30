@@ -43,7 +43,7 @@ const KATEGORI_TANIM: Record<KategoriAnahtar, {
     tablo: "konu_calismalar",
     deadlineKolonu: "son_hatirlatma_konu_deadline",
     ad: "Konu Çalışma",
-    ogrenciGovde: (gun) => `${gun} gündür konu çalışması girmedin. SeFu Koç'a girip güncel verilerini ekle.`,
+    ogrenciGovde: (gun) => `${gun} gündür konu çalışması girmedin. www.sefukoc.com'a girip güncel verilerini ekle.`,
     veliBaslik: () => "Öğrenciniz konu verisi girmiyor!",
     veliGovde: (ad, gun) => `${ad} adlı öğrenciniz ${gun} gündür konu çalışması verisi girmedi.`,
   },
@@ -51,7 +51,7 @@ const KATEGORI_TANIM: Record<KategoriAnahtar, {
     tablo: "soru_cozumleri",
     deadlineKolonu: "son_hatirlatma_soru_deadline",
     ad: "Soru Çözümü",
-    ogrenciGovde: (gun) => `${gun} gündür soru çözümü girmedin. SeFu Koç'a girip güncel verilerini ekle.`,
+    ogrenciGovde: (gun) => `${gun} gündür soru çözümü girmedin. www.sefukoc.com'a girip güncel verilerini ekle.`,
     veliBaslik: () => "Öğrenciniz soru çözümü girmiyor!",
     veliGovde: (ad, gun) => `${ad} adlı öğrenciniz ${gun} gündür soru çözümü verisi girmedi.`,
   },
@@ -59,7 +59,7 @@ const KATEGORI_TANIM: Record<KategoriAnahtar, {
     tablo: "denemeler",
     deadlineKolonu: "son_hatirlatma_deneme_deadline",
     ad: "Deneme",
-    ogrenciGovde: () => `Bu hafta deneme girişi yapmadın. SeFu Koç'a girip güncel verilerini ekle.`,
+    ogrenciGovde: () => `Bu hafta deneme girişi yapmadın. www.sefukoc.com'a girip güncel verilerini ekle.`,
     veliBaslik: () => "Öğrenciniz bu hafta deneme girişi yapmadı!",
     veliGovde: (ad) => `${ad} adlı öğrenciniz bu hafta deneme sınavı girmedi.`,
   },
@@ -240,7 +240,7 @@ export async function GET(request: Request) {
         if (kapatanlar.has(studentId)) continue;
         const sayi = gorevSayisi.get(studentId) ?? 1;
         const baslik = "Yaklaşan ödev hatırlatması";
-        const govde = sayi > 1 ? `Yarın son tarihli ${sayi} ödevin/programın var. SeFu Koç'tan kontrol et.` : "Yarın son tarihli bir ödevin/programın var. SeFu Koç'tan kontrol et.";
+        const govde = sayi > 1 ? `Yarın son tarihli ${sayi} ödevin/programın var. www.sefukoc.com'dan kontrol et.` : "Yarın son tarihli bir ödevin/programın var. www.sefukoc.com'dan kontrol et.";
         await pushGonder(studentId, baslik, govde);
         const { data: duyuru } = await admin.from("duyurular").insert({ gonderen_id: null, baslik, mesaj: govde }).select("id").single();
         if (duyuru) await admin.from("duyuru_aliciler").insert({ duyuru_id: duyuru.id, profile_id: studentId });

@@ -131,7 +131,7 @@ export default function SignupForm({ kurallarMetni, kurallarVersiyon }: { kurall
     <div style={{ minHeight: "100vh", background: BG0 }} className="flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-6">
-          <Image src="/logo.png" alt="SeFu Koç" width={1258} height={837} className="sfec-brand-logo h-24 w-auto max-w-full object-contain mb-2" priority />
+          <Image src="/logo.png" alt="www.sefukoc.com" width={1258} height={837} className="sfec-brand-logo h-24 w-auto max-w-full object-contain mb-2" priority />
           <SeFuMarkaAdi as="h1" className="text-2xl font-extrabold leading-none" />
           <p className="text-xs mt-1 italic"><SeFuSlogan /></p>
           <p style={{ color: TEXT }} className="text-sm font-bold mt-2">Hesap oluşturun</p>
@@ -178,7 +178,7 @@ export default function SignupForm({ kurallarMetni, kurallarVersiyon }: { kurall
 // kalıcı olarak profiles.kvkk_onay_at/kvkk_onay_versiyon'a yazılıyor (bkz.
 // migration 0080 — handle_new_user() artık bu metadata'yı da okuyor).
 const OGRENCI_KVKK_VERSIYON = "v1-2026-08-26";
-const OGRENCI_KVKK_METNI = `SeFu Koç olarak, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, kişisel verilerinizin işlenmesi hakkında sizi bilgilendirmek isteriz.
+const OGRENCI_KVKK_METNI = `SeFu Koç (www.sefukoc.com) olarak, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, kişisel verilerinizin işlenmesi hakkında sizi bilgilendirmek isteriz.
 
 İşlenen veriler: adınız-soyadınız, okul/sınıf bilginiz, iletişim bilgileriniz (e-posta, telefon), akademik performans verileriniz (deneme sonuçları, çalışma kayıtları, soru çözüm istatistikleri, motivasyon durumu).
 
@@ -449,7 +449,7 @@ function DershaneOgrenciTamamlaForm({ schools }: { schools: School[] }) {
 // Kullanıcı isteği (26.08.2026): öğrenci akışıyla aynı gerekçe — bkz.
 // OGRENCI_KVKK_METNI üstündeki not.
 const OGRETMEN_KVKK_VERSIYON = "v1-2026-08-26";
-const OGRETMEN_KVKK_METNI = `SeFu Koç olarak, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, kişisel verilerinizin işlenmesi hakkında sizi bilgilendirmek isteriz.
+const OGRETMEN_KVKK_METNI = `SeFu Koç (www.sefukoc.com) olarak, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, kişisel verilerinizin işlenmesi hakkında sizi bilgilendirmek isteriz.
 
 İşlenen veriler: adınız-soyadınız, branş bilginiz, iletişim bilgileriniz (e-posta, telefon), bağlı olduğunuz okul/kurum bilgisi, platform üzerindeki işlem kayıtlarınız (görev/duyuru gönderimi, öğrenci değerlendirmeleri).
 

@@ -20,13 +20,13 @@ const montserratBaslik = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "SeFu Koç",
+  title: "www.sefukoc.com",
   description: "Sen Geliş, Farkın Duyulur",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "SeFu Koç",
+    title: "www.sefukoc.com",
   },
   icons: {
     apple: "/apple-touch-icon.png",

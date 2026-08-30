@@ -219,7 +219,7 @@ export default function LoginForm() {
         <div className="flex flex-col items-center mb-7">
           {/* Kullanıcı isteği (26.08.2026): "İsminde login yazan sadece giriş
               ekranı için kullanılacak" — bkz. dokumanlar/logo/. */}
-          <Image src="/logo-login.png" alt="SeFu Koç" width={1153} height={965} className="sfec-brand-logo h-28 w-auto max-w-full object-contain mb-2" priority />
+          <Image src="/logo-login.png" alt="www.sefukoc.com" width={1153} height={965} className="sfec-brand-logo h-28 w-auto max-w-full object-contain mb-2" priority />
           {/* Kullanıcı isteği (26.08.2026): "giriş logosunun altındaki sefu
               koç yazısını da kaldır" — logonun kendisi zaten "//koç" alt
               yazılı, marka adı metni tekrar oluyordu. sr-only ile sayfanın
@@ -402,7 +402,7 @@ export default function LoginForm() {
           <Link href="/signup" style={{ color: MINT }} className="font-semibold">Kayıt olun</Link>
         </p>
         <p style={{ color: TEXT_MUTED }} className="text-[10px] text-center mt-6 opacity-70">
-          © 2026 SeFu Koç. Tüm hakları saklıdır.
+          © 2026 www.sefukoc.com. Tüm hakları saklıdır.
         </p>
       </div>
       <YukleniyorOverlay visible={yukleniyor} mesaj="Giriş yapılıyor..." />

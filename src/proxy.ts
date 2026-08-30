@@ -11,6 +11,7 @@ import { updateSession } from "@/lib/supabase/middleware";
 // takılıp gerçek kullanıcıları Vercel giriş ekranına düşürdüğü
 // görülmüştü — SSO koruması kapatıldıktan sonra tekrar etkinleştirildi.)
 const ESKI_VERCEL_DOMAINLERI = new Set([
+  "sefukoc.vercel.app",
   "sg-educoach.vercel.app",
   "sg-educoach-sg-educoach.vercel.app",
   "sg-educoach-git-main-sg-educoach.vercel.app",
@@ -18,7 +19,7 @@ const ESKI_VERCEL_DOMAINLERI = new Set([
   "sf-educoach-sg-educoach.vercel.app",
   "sf-educoach-git-main-sg-educoach.vercel.app",
 ]);
-const YENI_DOMAIN = "sefukoc.vercel.app";
+const YENI_DOMAIN = "www.sefukoc.com";
 
 export async function proxy(request: NextRequest) {
   const host = request.headers.get("host");

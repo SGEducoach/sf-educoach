@@ -73,7 +73,7 @@ export function HosgeldinPopuplari({ role }: { role: UserRole }) {
               <Smartphone size={18} color={MINT} />
             </div>
             <p style={{ color: TEXT }} className="text-sm leading-relaxed mb-1">
-              SeFu Koç&apos;tan en iyi şekilde yararlanmak için telefonunuzun ana ekranına eklemeyi ve bildirimleri açmayı unutmayın.
+              www.sefukoc.com üzerinden en iyi şekilde yararlanmak için telefonunuzun ana ekranına eklemeyi ve bildirimleri açmayı unutmayın.
             </p>
             <div className="mb-4 flex justify-end">
               <SeFuLogo className="h-6 w-auto max-w-20" />

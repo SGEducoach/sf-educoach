@@ -124,7 +124,7 @@ export function AnaSayfa({ baslik, govde, sliderGecisSaniye, sliderGorselleri, t
   return (
     <div style={{ background: BEYAZ }} className="flex min-h-dvh flex-col">
       <header className="flex items-center justify-between px-5 py-4 sm:px-10">
-        <Image src="/logo.png" alt="SeFu Koç" width={512} height={512} className="h-10 w-auto object-contain sm:h-12" priority />
+        <Image src="/logo.png" alt="www.sefukoc.com" width={512} height={512} className="h-10 w-auto object-contain sm:h-12" priority />
         <div className="flex-1" />
         <Link href="/login" className="sfec-btn rounded-full px-6 py-2.5 text-sm font-bold" style={{ background: TURKUAZ, color: BEYAZ }}>
           GİRİŞ YAP
@@ -161,7 +161,7 @@ export function AnaSayfa({ baslik, govde, sliderGecisSaniye, sliderGorselleri, t
       </div>
 
       <footer className="mt-auto px-5 py-6 text-center text-xs sm:px-10" style={{ color: METIN_GRI }}>
-        © {new Date().getFullYear()} SeFu Koç. Tüm hakları saklıdır.
+        © {new Date().getFullYear()} www.sefukoc.com. Tüm hakları saklıdır.
       </footer>
     </div>
   );

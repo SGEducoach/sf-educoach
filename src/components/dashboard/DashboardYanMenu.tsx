@@ -81,7 +81,7 @@ export function DashboardYanMenu({ role, kurumTuru, brans, aktifBolum }: { role:
             kaldırılıp yerine "SeFu {yıl}" — yıl her zaman otomatik, elle
             güncelleme gerekmiyor. */}
         <div className="mt-2 flex items-center gap-1 px-3 pt-4 text-[11px] font-semibold" style={{ borderTop: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
-          <Copyright size={12} aria-hidden="true" /> SeFu {new Date().getFullYear()}
+          <Copyright size={12} aria-hidden="true" /> www.sefukoc.com {new Date().getFullYear()}
         </div>
       </nav>
     </aside>

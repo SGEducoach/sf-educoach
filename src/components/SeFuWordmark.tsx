@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { SEFU_MAVI, SEFU_KIRMIZI, SEFU_KIRMIZI_VURGU } from "@/lib/theme";
 
-export function SeFuLogo({ className, alt = "SeFu Koç" }: { className?: string; alt?: string }) {
+export function SeFuLogo({ className, alt = "www.sefukoc.com" }: { className?: string; alt?: string }) {
   return (
     <Image
       src="/logo.png"
@@ -17,7 +17,7 @@ export function SeFuLogo({ className, alt = "SeFu Koç" }: { className?: string;
 // seçim yapılabiliyor — bazı sayfalarda bu isim sayfanın tek H1'i (login/
 // signup), Header'da ise sadece bir div/span içeriği.
 export function SeFuMarkaAdi({ className, as: Etiket = "span" }: { className?: string; as?: "span" | "h1" }) {
-  return <Etiket style={{ color: SEFU_MAVI, fontFamily: "var(--font-baloo)" }} className={className}>SeFu Koç</Etiket>;
+  return <Etiket style={{ color: SEFU_MAVI, fontFamily: "var(--font-baloo)" }} className={className}>www.sefukoc.com</Etiket>;
 }
 
 // Slogan — ÖSYM kırmızısı; her kelimenin baş harfi (S/G/F/D) biraz büyük

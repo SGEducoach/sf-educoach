@@ -115,7 +115,7 @@ export function GirisKarsilamaSayfasi() {
         style={{ background: `linear-gradient(to top, ${KOYU_MAVI_ZEMIN} 0%, #ffffff 100%)` }}>
         <div className="absolute left-1/2 w-[60%] -translate-x-1/2 text-center"
           style={{ top: "5%" }}>
-          <Image src="/logo-login.png" alt="SeFu Koç" width={1153} height={965} className="mx-auto h-[6.27rem] w-auto object-contain" priority />
+          <Image src="/logo-login.png" alt="www.sefukoc.com" width={1153} height={965} className="mx-auto h-[6.27rem] w-auto object-contain" priority />
         </div>
         {/* Kullanıcı isteği: "logo altı yazı mobilde kalksın" — bu cümle
             artık mobilde HİÇ görünmüyor, masaüstünde eskisi gibi %50'de
@@ -166,13 +166,13 @@ export function GirisKarsilamaSayfasi() {
           <div className="hidden h-full gap-3 sm:flex lg:gap-4">
             {ROLLER.map((r, i) => (
               <FotoKart key={r.id} fotoTaban={r.fotoTaban} genislik={r.genislik} yukseklik={r.yukseklik}
-                alt={`${r.ad} SeFu Koç kullanırken`} aktifMi={i === aktifIndex} oncelik={i === 0} />
+                alt={`${r.ad} www.sefukoc.com kullanırken`} aktifMi={i === aktifIndex} oncelik={i === 0} />
             ))}
           </div>
           {/* Mobil: tek fotoğraf akıyor */}
           <div key={`mobil-foto-${aktif.id}`} className="sfec-tg-haber-gir h-full sm:hidden">
             <FotoKart fotoTaban={aktif.fotoTaban} genislik={aktif.genislik} yukseklik={aktif.yukseklik}
-              alt={`${aktif.ad} SeFu Koç kullanırken`} aktifMi oncelik />
+              alt={`${aktif.ad} www.sefukoc.com kullanırken`} aktifMi oncelik />
           </div>
         </div>
 
@@ -203,7 +203,7 @@ export function GirisKarsilamaSayfasi() {
         {/* Kullanıcı isteği: "her hakkı saklıdır küçük yazı sadece webde
             sağ en alt" — SADECE masaüstünde, sağ panelin sağ alt köşesi. */}
         <p className="absolute bottom-4 right-5 hidden text-[10px] opacity-60 sm:block" style={{ color: BEYAZ }}>
-          © 2026 SeFu Koç. Tüm hakları saklıdır.
+          © 2026 www.sefukoc.com. Tüm hakları saklıdır.
         </p>
       </div>
     </div>
