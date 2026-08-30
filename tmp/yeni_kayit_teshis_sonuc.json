@@ -1,0 +1,359 @@
+[
+  {
+    "id": "643e050a-b8d6-4354-b239-e84adce4630c",
+    "ad": "Fatma Zehra Gözükara",
+    "okulNo": "111",
+    "sinif": "11-B",
+    "createdAt": "2026-08-30T19:12:02.963243+00:00"
+  },
+  {
+    "id": "d733938f-df1c-4608-9ae7-c5586030ff32",
+    "ad": "Hatice Kılıç",
+    "okulNo": "186",
+    "sinif": "11-B",
+    "createdAt": "2026-08-30T17:53:19.184828+00:00"
+  },
+  {
+    "id": "9ebe5a56-550c-4700-8ad9-b9d197ca6a2d",
+    "ad": "İbrahi̇m Mert Per",
+    "okulNo": "394",
+    "sinif": "11-B",
+    "createdAt": "2026-08-30T17:21:20.146114+00:00"
+  },
+  {
+    "id": "d5df1145-69a8-4a32-8b8f-085cf148ca68",
+    "ad": "Yasemi̇n Bülbül",
+    "okulNo": "123",
+    "sinif": "11-B",
+    "createdAt": "2026-08-30T17:11:14.697492+00:00"
+  },
+  {
+    "id": "fa485fd4-f814-4332-af07-4c7f538a2422",
+    "ad": "Özge Üstün",
+    "okulNo": "99",
+    "sinif": "11-B",
+    "createdAt": "2026-08-30T16:43:14.687428+00:00"
+  },
+  {
+    "id": "9882dbef-8193-443f-94ae-fbe00d5fe67b",
+    "ad": "İbrahim Özdemir",
+    "okulNo": "102",
+    "sinif": "11-B",
+    "createdAt": "2026-08-30T16:29:54.887583+00:00"
+  },
+  {
+    "id": "67c7718e-c43e-44f6-9715-4fe37fcb271f",
+    "ad": "Fadi̇me Soykök",
+    "okulNo": "117",
+    "sinif": "11-B",
+    "createdAt": "2026-08-30T16:21:38.419735+00:00"
+  },
+  {
+    "id": "5e6601ec-e649-407e-b1dd-3dd9fd6cf96c",
+    "ad": "Zehra Deli̇oğlu",
+    "okulNo": "185",
+    "sinif": "11-B",
+    "createdAt": "2026-08-30T16:18:09.10466+00:00"
+  },
+  {
+    "id": "7fcb6f71-d55e-4d22-83b3-8b36d58bb2d2",
+    "ad": "Ahmet Talha Kara",
+    "okulNo": "244",
+    "sinif": "11-B",
+    "createdAt": "2026-08-30T16:11:26.248911+00:00"
+  },
+  {
+    "id": "9deac64d-31eb-4fa3-87de-d24e457e4a37",
+    "ad": "Hati̇ce Uluer",
+    "okulNo": "122",
+    "sinif": "11-B",
+    "createdAt": "2026-08-30T16:07:29.848516+00:00"
+  },
+  {
+    "id": "5156ad58-c6e4-4da6-aa3a-e95d5443b205",
+    "ad": "Ni̇sanur Aktaş",
+    "okulNo": "104",
+    "sinif": "11-B",
+    "createdAt": "2026-08-30T16:02:51.145294+00:00"
+  },
+  {
+    "id": "2da1bda2-3da0-40b4-a04c-b979ab62db65",
+    "ad": "Enes Doğan",
+    "okulNo": "98",
+    "sinif": "11-B",
+    "createdAt": "2026-08-30T15:54:39.963847+00:00"
+  },
+  {
+    "id": "794a07fe-afb3-409f-b832-0aba7adbbfd8",
+    "ad": "Kağan Erdem Kaba",
+    "okulNo": "372",
+    "sinif": "11-B",
+    "createdAt": "2026-08-30T15:40:58.537651+00:00"
+  },
+  {
+    "id": "85a21a61-4215-40ac-bca5-3c9d0d26be5f",
+    "ad": "Zeynep Sude Ücük",
+    "okulNo": "53",
+    "sinif": "11-B",
+    "createdAt": "2026-08-30T15:39:00.764794+00:00"
+  },
+  {
+    "id": "f1686944-55eb-446e-92f7-6cbda17a4bf9",
+    "ad": "Ela Nur Sert",
+    "okulNo": "124",
+    "sinif": "11-B",
+    "createdAt": "2026-08-30T15:32:16.163592+00:00"
+  },
+  {
+    "id": "ddc20825-6068-4e60-bca0-27f60c1d6ddf",
+    "ad": "Fati̇h Buğra Sert",
+    "okulNo": "397",
+    "sinif": "11-B",
+    "createdAt": "2026-08-30T15:31:58.417471+00:00"
+  },
+  {
+    "id": "8a23a6aa-e1e9-43a0-ac16-f326984b747b",
+    "ad": "Esma Kurt",
+    "okulNo": "1234",
+    "sinif": "11-B",
+    "createdAt": "2026-08-30T15:31:32.593641+00:00"
+  },
+  {
+    "id": "51522acb-89f8-4c9d-8fe6-74b91bfac507",
+    "ad": "Bahar Aydoğan",
+    "okulNo": "5035",
+    "sinif": "11-B",
+    "createdAt": "2026-08-30T15:31:10.355539+00:00"
+  },
+  {
+    "id": "3332b590-6f0e-47cf-bfc9-6a223ae9217e",
+    "ad": "Enes Yıldırım",
+    "okulNo": "216",
+    "sinif": "11-B",
+    "createdAt": "2026-08-30T15:30:19.40744+00:00"
+  },
+  {
+    "id": "780cd8b4-eb8d-4a86-827c-fe0e6b222e6e",
+    "ad": "Ahmet Buğra Karakaş",
+    "okulNo": "222",
+    "sinif": "11-B",
+    "createdAt": "2026-08-30T15:28:50.077095+00:00"
+  },
+  {
+    "id": "3a6c08a1-1d73-4c13-b2d2-2c417ca442b3",
+    "ad": "Yağmur Yanik",
+    "okulNo": "187",
+    "sinif": "11-B",
+    "createdAt": "2026-08-30T15:28:48.213381+00:00"
+  },
+  {
+    "id": "bca3cff3-312b-46ff-ab53-14ca34443d1d",
+    "ad": "Ahmet Hüsrev Yilmaz",
+    "okulNo": "225",
+    "sinif": "11-B",
+    "createdAt": "2026-08-30T15:26:42.48575+00:00"
+  },
+  {
+    "id": "95b01a88-e34a-465c-89cb-defb748f96be",
+    "ad": "Ahmet Göktuğ Bozatli",
+    "okulNo": "12345",
+    "sinif": "11-B",
+    "createdAt": "2026-08-30T15:25:40.467093+00:00"
+  },
+  {
+    "id": "b3ffc9d3-0d92-4cec-bb62-3c29926a91b1",
+    "ad": "Avni̇ Doğan",
+    "okulNo": "282",
+    "sinif": "11-B",
+    "createdAt": "2026-08-30T15:24:04.951328+00:00"
+  },
+  {
+    "id": "80285f50-fc12-4b98-89fe-458c7e6d1206",
+    "ad": "Eylül Soykan",
+    "okulNo": "392",
+    "sinif": "11-D",
+    "createdAt": "2026-08-26T14:17:21.793775+00:00"
+  },
+  {
+    "id": "da094cfa-45d8-4ad8-ab43-8c255df1c109",
+    "ad": "Muhammed Yiğit Gök",
+    "okulNo": "296",
+    "sinif": "11-C",
+    "createdAt": "2026-08-25T07:35:30.337406+00:00"
+  },
+  {
+    "id": "7d4c53b6-d79b-471d-a21b-c2379ed8a03f",
+    "ad": "Zehra Yanık",
+    "okulNo": "328",
+    "sinif": "11-C",
+    "createdAt": "2026-08-12T19:53:00.061936+00:00"
+  },
+  {
+    "id": "3605958f-14be-4064-a8f2-2a97f8f6ec8a",
+    "ad": "İkra Elif Turaç",
+    "okulNo": "307",
+    "sinif": "11-C",
+    "createdAt": "2026-08-11T18:35:34.1743+00:00"
+  },
+  {
+    "id": "b561c310-b928-4801-8294-b09997035ffa",
+    "ad": "Fatma Eda Toz",
+    "okulNo": "302",
+    "sinif": "11-C",
+    "createdAt": "2026-08-10T09:37:52.660651+00:00"
+  },
+  {
+    "id": "32835be8-ae0c-4329-83cf-5f3b8ec62008",
+    "ad": "Eslem Kişif",
+    "okulNo": "344",
+    "sinif": "11-C",
+    "createdAt": "2026-08-09T17:45:45.781882+00:00"
+  },
+  {
+    "id": "182f01e3-97f4-4455-bff9-7aa5d9ce23a7",
+    "ad": "Fatmanur Alkaya",
+    "okulNo": "348",
+    "sinif": "11-C",
+    "createdAt": "2026-08-09T09:07:27.816625+00:00"
+  },
+  {
+    "id": "f7311cc8-9cc1-4af4-bdaa-db545c08d597",
+    "ad": "Zekeriya Kürşat Türkmen",
+    "okulNo": "309",
+    "sinif": "11-C",
+    "createdAt": "2026-08-08T19:18:40.331826+00:00"
+  },
+  {
+    "id": "c064218a-cf26-4666-8104-1205ebf18f29",
+    "ad": "Sırma Naz Algül",
+    "okulNo": "357",
+    "sinif": "11-C",
+    "createdAt": "2026-08-08T14:14:25.263291+00:00"
+  },
+  {
+    "id": "52b3b37e-b8f6-47d6-b868-e4bfc4070985",
+    "ad": "Ahmet Said Çeleğen",
+    "okulNo": "276",
+    "sinif": "11-C",
+    "createdAt": "2026-08-08T11:55:23.340597+00:00"
+  },
+  {
+    "id": "1086acf2-c6f0-4356-940c-096681986d12",
+    "ad": "Nurdane Gökce Moralı",
+    "okulNo": "289",
+    "sinif": "11-C",
+    "createdAt": "2026-08-08T11:43:07.804057+00:00"
+  },
+  {
+    "id": "92271d9a-e0ea-4724-b72b-0d8d70873420",
+    "ad": "Zeynep Bülbül",
+    "okulNo": "127",
+    "sinif": "11-C",
+    "createdAt": "2026-08-07T21:10:18.567232+00:00"
+  },
+  {
+    "id": "de763c1e-d83d-4c9a-a292-234c018f7763",
+    "ad": "Galip Buğra İspir",
+    "okulNo": "324",
+    "sinif": "11-C",
+    "createdAt": "2026-08-07T20:08:25.557805+00:00"
+  },
+  {
+    "id": "0ecb48fe-862a-49e6-8633-2a25d48f4088",
+    "ad": "Sena Sayın",
+    "okulNo": "298",
+    "sinif": "11-C",
+    "createdAt": "2026-08-07T19:49:08.91889+00:00"
+  },
+  {
+    "id": "2133f354-d900-4a3d-915b-3573f38b53d0",
+    "ad": "Fadime Zehra Kişlal",
+    "okulNo": "299",
+    "sinif": "11-C",
+    "createdAt": "2026-08-07T19:47:15.154402+00:00"
+  },
+  {
+    "id": "5825def8-dbfb-42b6-aca2-90820d62e20c",
+    "ad": "Tuana Tatar",
+    "okulNo": "319",
+    "sinif": "11-C",
+    "createdAt": "2026-08-07T19:04:13.377538+00:00"
+  },
+  {
+    "id": "4e4637e9-f73f-4e05-8083-8b5f1d65bb0e",
+    "ad": "Mehmet Toruk",
+    "okulNo": "284",
+    "sinif": "11-C",
+    "createdAt": "2026-08-07T18:58:50.802487+00:00"
+  },
+  {
+    "id": "bf24081f-b04b-435c-a1d0-f9fce67af15d",
+    "ad": "Kevser Büyük",
+    "okulNo": "257",
+    "sinif": "11-C",
+    "createdAt": "2026-08-07T18:55:59.467129+00:00"
+  },
+  {
+    "id": "b6276912-a28a-40ad-9f3c-a0d93b30b7dc",
+    "ad": "Şevval Kaya",
+    "okulNo": "313",
+    "sinif": "11-C",
+    "createdAt": "2026-08-07T18:49:01.435813+00:00"
+  },
+  {
+    "id": "8898df12-0159-47e7-81fc-0b001e1a1a52",
+    "ad": "İpek Yüce",
+    "okulNo": "305",
+    "sinif": "11-C",
+    "createdAt": "2026-08-07T18:46:59.723191+00:00"
+  },
+  {
+    "id": "96ab84d6-9b05-4ca6-8743-05cb607f1a2b",
+    "ad": "Çağan Akpınar",
+    "okulNo": "80",
+    "sinif": "11-C",
+    "createdAt": "2026-08-07T18:42:36.296196+00:00"
+  },
+  {
+    "id": "974e1200-2b3d-4064-8c84-5a34e8de56b8",
+    "ad": "Hacı Said Gül",
+    "okulNo": "283",
+    "sinif": "11-C",
+    "createdAt": "2026-08-07T18:41:14.413567+00:00"
+  },
+  {
+    "id": "ef3a8343-8165-4b7f-9c79-4cf3f0c8e153",
+    "ad": "Efraim Yıldırım",
+    "okulNo": "333",
+    "sinif": "11-C",
+    "createdAt": "2026-08-07T18:40:08.085241+00:00"
+  },
+  {
+    "id": "9fd512c7-468a-4610-92e8-fceb6250393d",
+    "ad": "Hacer Kebeli",
+    "okulNo": "287",
+    "sinif": "11-C",
+    "createdAt": "2026-08-07T18:08:23.704827+00:00"
+  },
+  {
+    "id": "6829864b-31c6-4768-8181-4aac7aef4f2d",
+    "ad": "Ahmet Karakuş",
+    "okulNo": "262",
+    "sinif": "11-C",
+    "createdAt": "2026-08-07T17:05:05.370785+00:00"
+  },
+  {
+    "id": "c6ece953-af36-4e87-92ae-4eb2713499fc",
+    "ad": "Elif Büşra Dere",
+    "okulNo": "389",
+    "sinif": "11-C",
+    "createdAt": "2026-08-07T17:04:06.749571+00:00"
+  },
+  {
+    "id": "6ea961d9-d118-44cd-a262-c7e5d9d07f0f",
+    "ad": "Sedat Güler",
+    "okulNo": "9999",
+    "sinif": "11-C",
+    "createdAt": "2026-08-07T00:28:57.497558+00:00"
+  }
+]

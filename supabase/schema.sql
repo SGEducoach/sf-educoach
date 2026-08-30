@@ -2197,3 +2197,805 @@ create policy "gorevler_select_related" on public.gorevler
     or olusturan_ogrenci_id = auth.uid()
     or public.gorev_ilgili_mi(id)
   );
+
+-- ============ Dershane Modu — Faz D1 (migration 0051) ============
+-- Kapsam: sadece dershane (schools.tur='dershane'). Okul tarafı bu
+-- bölümden etkilenmez. Müdür/moderatör CRUD'u için burada yeni bir RLS
+-- politikası/SECURITY DEFINER fonksiyonu YOK — application-layer kontrol
+-- (requireDershaneMudur() → service-role client) kullanılıyor, bkz.
+-- migration 0051 dosyasındaki not.
+
+-- 1) classes.program (haftaiçi/haftasonu) — nullable, okul şubeleri kullanmaz.
+alter table public.classes
+  add column if not exists program text check (program in ('haftaici', 'haftasonu'));
+
+-- 2) students.veli_telefon — dershane kaydında toplanan veli telefonu,
+--    veli_link_requests.veli_telefon'dan bağımsız.
+alter table public.students
+  add column if not exists veli_telefon text;
+
+-- 3) okul_no format kontrolü: CHECK (migration 0012) → tur'a duyarlı trigger.
+--    Dershane'de okul_no artık "kullanıcı adı" (>=6 karakter, boşluksuz).
+alter table public.students drop constraint if exists students_okul_no_format;
+
+create or replace function public.ogrenci_no_format_kontrol()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_tur public.kurum_turu;
+begin
+  select tur into v_tur from public.schools where id = new.school_id;
+  if v_tur = 'dershane' then
+    if new.okul_no !~ '^[A-Za-z0-9_]{6,}$' then
+      raise exception 'Kullanıcı adı en az 6 karakter olmalı, boşluk/özel karakter içeremez.';
+    end if;
+  else
+    if new.okul_no !~ '^[0-9]{1,5}$' then
+      raise exception 'Okul no 1-5 haneli bir sayı olmalı.';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists ogrenci_no_format_kontrol_trigger on public.students;
+create trigger ogrenci_no_format_kontrol_trigger
+  before insert or update of okul_no, school_id on public.students
+  for each row execute function public.ogrenci_no_format_kontrol();
+
+-- 4) pending_dershane_ogrenciler (roster ön-kayıt) — bilinçli olarak HİÇBİR
+--    RLS politikası yok (varsayılan: herkese kapalı), erişim service-role
+--    (admin) client üzerinden application-layer kontrolle yapılıyor.
+create table if not exists public.pending_dershane_ogrenciler (
+  id uuid primary key default gen_random_uuid(),
+  school_id uuid not null references public.schools(id) on delete cascade,
+  class_id uuid not null references public.classes(id),
+  ad text not null,
+  telefon text not null,
+  veli_telefon text,
+  ayt_alan public.ayt_alan not null default 'SAY',
+  created_by uuid references public.profiles(id) on delete set null,
+  created_at timestamptz not null default now(),
+  kullanildi_at timestamptz,
+  unique (school_id, telefon)
+);
+alter table public.pending_dershane_ogrenciler enable row level security;
+
+-- 5) pdf_deneme_eslesme_bekleyenler (Faz D5, admin review kuyruğu)
+create table if not exists public.pdf_deneme_eslesme_bekleyenler (
+  id uuid primary key default gen_random_uuid(),
+  school_id uuid not null references public.schools(id) on delete cascade,
+  ad_soyad_ham text not null,
+  ders_sonuclari jsonb not null,
+  yayinevi text not null,
+  tarih date not null,
+  tur public.deneme_turu not null,
+  olusturan_mudur_id uuid references public.profiles(id) on delete set null,
+  durum text not null default 'bekliyor' check (durum in ('bekliyor', 'atandi', 'reddedildi')),
+  atanan_student_id uuid references public.students(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+alter table public.pdf_deneme_eslesme_bekleyenler enable row level security;
+
+drop policy if exists "pdf_deneme_eslesme_select_admin" on public.pdf_deneme_eslesme_bekleyenler;
+create policy "pdf_deneme_eslesme_select_admin" on public.pdf_deneme_eslesme_bekleyenler
+  for select using (public.is_admin());
+
+-- ============ handle_new_user: veli_telefon eklendi (migration 0052) ============
+-- students insert'ine veli_telefon eklendi (migration 0051'de eklenen kolon
+-- doldurulmuyordu) — fonksiyonun geri kalanı 0042'deki hâliyle AYNEN korunuyor.
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_role public.user_role := coalesce(new.raw_user_meta_data->>'role', 'ogrenci')::public.user_role;
+  v_request record;
+  v_school_id uuid;
+  v_class_seviye text;
+  v_girilen_ad text := coalesce(new.raw_user_meta_data->>'ad', new.email);
+  v_profile_ad text;
+  v_izinli_ad text;
+  v_admin_ekledi boolean := coalesce((new.raw_user_meta_data->>'admin_ekledi')::boolean, false);
+  v_gecici_sifre boolean := coalesce((new.raw_user_meta_data->>'gecici_sifre')::boolean, false);
+begin
+  v_profile_ad := public.ad_baslik(v_girilen_ad);
+
+  if v_role = 'ogrenci' then
+    v_school_id := (new.raw_user_meta_data->>'school_id')::uuid;
+    select seviye into v_class_seviye from public.classes where id = (new.raw_user_meta_data->>'class_id')::uuid;
+
+    if not v_admin_ekledi and coalesce(v_class_seviye not in ('9', '10'), true) and exists (
+      select 1 from public.izinli_ogrenciler where school_id = v_school_id
+    ) then
+      select io.ad_soyad into v_izinli_ad
+      from public.izinli_ogrenciler io
+      cross join lateral (select string_to_array(public.ad_esleme_anahtari(io.ad_soyad), ' ') as p) izinli
+      cross join lateral (select string_to_array(public.ad_esleme_anahtari(v_girilen_ad), ' ') as p) girilen
+      where io.school_id = v_school_id
+        and array_length(izinli.p, 1) >= 2
+        and array_length(girilen.p, 1) >= 2
+        and izinli.p[array_length(izinli.p, 1)] = girilen.p[array_length(girilen.p, 1)]
+        and exists (
+          select 1
+          from unnest(izinli.p[1:array_length(izinli.p, 1)-1]) izinli_ad
+          join unnest(girilen.p[1:array_length(girilen.p, 1)-1]) girilen_ad
+            on izinli_ad = girilen_ad
+        )
+      limit 1;
+
+      if v_izinli_ad is null then
+        raise exception 'Bu isim okulun kayıtlı öğrenci listesinde bulunamadı. İsimlerinizden birini ve soyadınızı doğru yazın.';
+      end if;
+      v_profile_ad := v_izinli_ad;
+    end if;
+  end if;
+
+  insert into public.profiles (id, ad, email, telefon, role, gecici_sifre)
+  values (new.id, v_profile_ad, new.email, new.raw_user_meta_data->>'telefon', v_role, v_gecici_sifre);
+
+  if v_role = 'ogrenci' then
+    insert into public.students (id, school_id, class_id, okul_no, ayt_alan, hedef_bolum, veri_giris_sikligi, veli_telefon)
+    values (
+      new.id, v_school_id, (new.raw_user_meta_data->>'class_id')::uuid,
+      new.raw_user_meta_data->>'okul_no', (new.raw_user_meta_data->>'ayt_alan')::public.ayt_alan,
+      coalesce(new.raw_user_meta_data->>'hedef_bolum', ''),
+      coalesce((new.raw_user_meta_data->>'veri_giris_sikligi')::public.veri_giris_sikligi, 'haftalik'),
+      new.raw_user_meta_data->>'veli_telefon'
+    );
+  elsif v_role = 'ogretmen' then
+    insert into public.teachers (id, school_id, class_id, brans)
+    values (new.id, (new.raw_user_meta_data->>'school_id')::uuid, nullif(new.raw_user_meta_data->>'class_id', '')::uuid, coalesce(new.raw_user_meta_data->>'brans', ''));
+  elsif v_role = 'mudur' then
+    insert into public.teachers (id, school_id, class_id, brans)
+    values (new.id, (new.raw_user_meta_data->>'school_id')::uuid, null, 'Müdür');
+
+    -- DERSHANE MODU: dershane müdürü otomatik olarak kendi okulunun
+    -- moderatörü de olur — okul müdürleri etkilenmez.
+    if (select tur from public.schools where id = (new.raw_user_meta_data->>'school_id')::uuid) = 'dershane' then
+      insert into public.school_moderators (profile_id, school_id)
+      values (new.id, (new.raw_user_meta_data->>'school_id')::uuid)
+      on conflict (profile_id) do nothing;
+    end if;
+  elsif v_role = 'veli' and new.raw_user_meta_data->>'request_id' is not null then
+    select * into v_request from public.veli_link_requests
+    where id = (new.raw_user_meta_data->>'request_id')::uuid and durum = 'onaylandi';
+    if found then
+      insert into public.parent_students (parent_id, student_id) values (new.id, v_request.student_id) on conflict do nothing;
+      update public.veli_link_requests set durum = 'kullanildi' where id = v_request.id;
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+-- ============ Yurt öğrencisi (migration 0053) ============
+-- Hafta içi telefonuna erişemeyen öğrenciler için: rozet sistemi hafta
+-- sonuna göre esnetiliyor, hafta içi "sisteme girmedi" hatırlatmaları
+-- bastırılıyor (bkz. src/app/api/cron/hatirlatmalar/route.ts).
+alter table public.students add column if not exists yurt_ogrencisi boolean not null default false;
+
+comment on column public.students.yurt_ogrencisi is
+  'Yurtta kalan öğrenci — hafta içi telefonuna erişemediği için rozet sistemi ve "sisteme girmedi" hatırlatmaları hafta sonuna göre esnetilir.';
+
+-- Konu Çalışma seviyesi — yurt öğrencisi esnetmesi: seri/boşluk cezası
+-- kaldırılıp kayan 30 günde kaç hafta sonu (Cmt/Paz) günü aktif olduğu sayılıyor.
+create or replace function public.ogrenci_konu_seviyesi(p_student_id uuid)
+returns text
+language plpgsql
+security definer
+set search_path = public
+stable
+as $$
+declare
+  v_yurt boolean;
+  v_sonuc text;
+begin
+  select yurt_ogrencisi into v_yurt from public.students where id = p_student_id;
+
+  if v_yurt then
+    select case
+      when count(*) >= 8 then 'altin'
+      when count(*) >= 6 then 'gumus'
+      when count(*) >= 4 then 'bronz'
+      else 'yok'
+    end into v_sonuc
+    from (
+      select distinct tarih from public.konu_calismalar
+      where student_id = p_student_id and tarih between current_date - 30 and current_date
+        and extract(dow from tarih) in (0, 6)
+    ) g;
+    return v_sonuc;
+  end if;
+
+  return (
+    with gunler as (
+      select distinct tarih from public.konu_calismalar
+      where student_id = p_student_id and tarih between current_date - 30 and current_date
+    ),
+    sirali as (
+      select tarih, lag(tarih) over (order by tarih) as onceki from gunler
+    ),
+    gruplu as (
+      select tarih,
+        sum(case when onceki is null or tarih - onceki > 3 then 1 else 0 end) over (order by tarih) as grup
+      from sirali
+    ),
+    son_grup as (
+      select count(*) as gun_sayisi, max(tarih) as son_tarih
+      from gruplu
+      where grup = (select max(grup) from gruplu)
+    )
+    select case
+      when not exists (select 1 from son_grup) then 'yok'
+      when current_date - (select son_tarih from son_grup) > 3 then 'yok'
+      when (select gun_sayisi from son_grup) >= 30 then 'altin'
+      when (select gun_sayisi from son_grup) >= 20 then 'gumus'
+      when (select gun_sayisi from son_grup) >= 15 then 'bronz'
+      else 'yok'
+    end
+  );
+end;
+$$;
+
+revoke all on function public.ogrenci_konu_seviyesi(uuid) from public;
+grant execute on function public.ogrenci_konu_seviyesi(uuid) to authenticated;
+
+-- Soru Çözümü seviyesi — yurt öğrencisi için pencere son 7 güne genişletiliyor
+-- (normal pencere 3 gün hafta içi kontrol edildiğinde hiç hafta sonu içermeyebilir).
+create or replace function public.ogrenci_soru_seviyesi(p_student_id uuid)
+returns text
+language plpgsql
+security definer
+set search_path = public
+stable
+as $$
+declare
+  v_yurt boolean;
+  v_gecmis_gun int;
+  v_sonuc text;
+begin
+  select yurt_ogrencisi into v_yurt from public.students where id = p_student_id;
+  v_gecmis_gun := case when v_yurt then 7 else 3 end;
+
+  with tum_dersler as (
+    select unnest(array['Türkçe', 'Matematik', 'Fizik', 'Kimya', 'Biyoloji']) as ders
+  ),
+  toplamlar as (
+    select ders, sum(dogru + yanlis) as toplam
+    from public.soru_cozumleri
+    where student_id = p_student_id and tarih between current_date - v_gecmis_gun and current_date
+    group by ders
+  ),
+  birlesik as (
+    select td.ders, coalesce(t.toplam, 0) as toplam
+    from tum_dersler td left join toplamlar t on t.ders = td.ders
+  )
+  select case
+    when (select min(toplam) from birlesik) >= 50 then 'altin'
+    when (select min(toplam) from birlesik) >= 30 then 'gumus'
+    when (select min(toplam) from birlesik) >= 20 then 'bronz'
+    else 'yok'
+  end into v_sonuc;
+
+  return v_sonuc;
+end;
+$$;
+
+revoke all on function public.ogrenci_soru_seviyesi(uuid) from public;
+grant execute on function public.ogrenci_soru_seviyesi(uuid) to authenticated;
+
+-- ============ Konu Haritası (migration 0054) ============
+-- "Konu bilme/bilmeme göstergesi" veri modeli.
+
+-- 1) 2. aşama takip cevabı: KonuCalismaForm'daki "Konuya hakimiyet"
+--    (hedefe_yakinlik) seçimine göre sorulan takip sorusunun cevap kodu.
+alter table public.konu_calismalar add column if not exists takip_cevabi text;
+
+alter table public.konu_calismalar drop constraint if exists konu_calismalar_takip_cevabi_gecerli;
+alter table public.konu_calismalar
+  add constraint konu_calismalar_takip_cevabi_gecerli check (
+    takip_cevabi is null or takip_cevabi in (
+      'az_hic', 'az_az', 'az_orta', 'az_yuksek',
+      'orta_evet', 'orta_biraz', 'orta_hayir',
+      'yeterli_hizli_dogru', 'yeterli_dogru_yavas', 'yeterli_hizli_hata'
+    )
+  );
+
+comment on column public.konu_calismalar.takip_cevabi is
+  '"Konuya hakimiyet" (hedefe_yakinlik) seçimine göre sorulan 2. aşama takip sorusunun cevap kodu.';
+
+-- 2) 9-10. sınıf müfredat üst başlık → alt başlık hiyerarşisi. ust_konu,
+--    statik mufredat-konulari.json'daki (ders,konu) çiftine serbest-metin
+--    eşleşir (FK değil — konu_anlatimlari'nın konu_calismalar.konu'ya
+--    eşleşme deseniyle aynı mantık).
+create table if not exists public.mufredat_alt_konular (
+  id uuid primary key default gen_random_uuid(),
+  ders text not null,
+  ust_konu text not null,
+  alt_baslik text not null,
+  sira integer not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists mufredat_alt_konular_ust_idx on public.mufredat_alt_konular (ders, ust_konu);
+
+alter table public.mufredat_alt_konular enable row level security;
+
+drop policy if exists "mufredat_alt_konular_select" on public.mufredat_alt_konular;
+create policy "mufredat_alt_konular_select" on public.mufredat_alt_konular
+  for select using (true);
+
+drop policy if exists "mufredat_alt_konular_admin_all" on public.mufredat_alt_konular;
+create policy "mufredat_alt_konular_admin_all" on public.mufredat_alt_konular
+  for all using (public.is_admin()) with check (public.is_admin());
+
+-- ============ Konu Hakimiyeti (migration 0055, RLS teyidi 0059) ============
+-- Öğrencinin müfredattaki her konu için KALICI hakimiyet beyanı —
+-- konu_calismalar.hedefe_yakinlik (bir ÇALIŞMA OTURUMUNUN o anki
+-- değerlendirmesi) ile KARIŞTIRILMASIN diye ayrı bir tablo: konu başına
+-- TEK kayıt (upsert).
+create table if not exists public.ogrenci_konu_hakimiyeti (
+  id uuid primary key default gen_random_uuid(),
+  student_id uuid not null references public.students(id) on delete cascade,
+  ders text not null,
+  konu text not null,
+  hakimiyet_seviyesi public.hedefe_yakinlik not null,
+  ogrenme_sekli text[] not null default '{}',
+  tekrar_durumu text,
+  guncellenme_tarihi timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  unique (student_id, ders, konu)
+);
+
+alter table public.ogrenci_konu_hakimiyeti drop constraint if exists ogrenci_konu_hakimiyeti_tekrar_durumu_gecerli;
+alter table public.ogrenci_konu_hakimiyeti
+  add constraint ogrenci_konu_hakimiyeti_tekrar_durumu_gecerli check (
+    tekrar_durumu is null or tekrar_durumu in ('tekrar_edebilirim', 'yuzeysel_bakarim', 'gerek_yok')
+  );
+
+create index if not exists ogrenci_konu_hakimiyeti_student_idx on public.ogrenci_konu_hakimiyeti (student_id);
+
+comment on table public.ogrenci_konu_hakimiyeti is
+  'Öğrencinin müfredat konuları için kalıcı hakimiyet beyanı — bir çalışma oturumu loglamaktan bağımsız, konu başına tek (upsert) kayıt.';
+comment on column public.ogrenci_konu_hakimiyeti.ogrenme_sekli is
+  'Çoklu seçim: ''derste''|''video''|''kitap''|''dershane'' — doğrulama uygulama katmanında.';
+
+-- Öğrenci kendi kaydını (+ bağlı veli) okuyabilir; sadece öğrencinin
+-- kendisi yazabilir. Öğretmen/admin bu tabloyu DOĞRUDAN select edemiyor —
+-- tek erişim yolu aşağıdaki (agrege/isimsiz) konu_zayiflik_raporu RPC'si.
+-- (migration 0059: tablonun migration 0055'in tek SQL Editor çalıştırmasında
+-- aynı script'in sonundaki create-or-replace hatası yüzünden RLS'siz
+-- kalmış olabileceği görüldü — bu iki politika idempotent olarak yeniden
+-- teyit edildi.)
+alter table public.ogrenci_konu_hakimiyeti enable row level security;
+
+drop policy if exists "ogrenci_konu_hakimiyeti_select" on public.ogrenci_konu_hakimiyeti;
+create policy "ogrenci_konu_hakimiyeti_select" on public.ogrenci_konu_hakimiyeti
+  for select using (public.has_student_access(student_id));
+
+drop policy if exists "ogrenci_konu_hakimiyeti_write" on public.ogrenci_konu_hakimiyeti;
+create policy "ogrenci_konu_hakimiyeti_write" on public.ogrenci_konu_hakimiyeti
+  for all using (student_id = auth.uid()) with check (student_id = auth.uid());
+
+-- ============ Matematik alt konu taslağı (migration 0056) ============
+-- Faz H5 — Matematik 9-10-11. sınıf alt konu TASLAĞI. MEB 2024 Maarif
+-- Modeli çerçevesine dair genel bilgiyle hazırlanan bir TASLAK — kaynak
+-- dokümanla birebir doğrulanmadı, /yonetici → Konu anlatımları → Müfredat
+-- hiyerarşisi ekranından gözden geçirilmeli.
+do $$
+declare
+  v_satirlar jsonb := '[
+    {"ust": "Üslü-Köklü Sayılar, Sayı Kümeleri, Özdeşlikler", "altlar": ["Üslü sayılar ve işlemler", "Köklü sayılar ve işlemler", "Sayı kümeleri (doğal, tam, rasyonel, irrasyonel, reel)", "Özdeşlikler ve çarpanlara ayırma"]},
+    {"ust": "Doğrusal Fonksiyonlar ve Mutlak Değer Fonksiyonu", "altlar": ["Fonksiyon kavramı ve gösterimi", "Doğrusal fonksiyonlar ve grafikleri", "Mutlak değer kavramı", "Mutlak değerli fonksiyonlar ve grafikleri"]},
+    {"ust": "Algoritma, Mantık Bağlaçları ve Niceleyiciler", "altlar": ["Algoritma ve akış şeması", "Önermeler ve mantık bağlaçları", "Niceleyiciler (her, bazı)", "İspat yöntemleri"]},
+    {"ust": "Üçgende Açı-Kenar Özellikleri", "altlar": ["Üçgende açı özellikleri", "Üçgende kenar-açı bağıntıları (kenarortay, açıortay, kenar orta dikme)", "Üçgende alan bağıntıları", "Eşkenar, ikizkenar, dik üçgen özellikleri"]},
+    {"ust": "Geometrik Dönüşümler, Üçgende Eşlik ve Benzerlik", "altlar": ["Öteleme, dönme, yansıma", "Üçgende eşlik (KKK, KAK, AKA)", "Üçgende benzerlik", "Benzerlik oranı ve uygulamaları"]},
+    {"ust": "İstatistiksel Problem Kurma ve Analiz (Tek Değişken)", "altlar": ["Veri toplama ve sunma", "Merkezi eğilim ölçüleri (ortalama, medyan, mod)", "Merkezi yayılım ölçüleri (açıklık, standart sapma)", "Histogram ve kutu grafiği"]},
+    {"ust": "Olasılık (Deneysel ve Teorik)", "altlar": ["Örnek uzay ve olay kavramı", "Deneysel olasılık", "Teorik olasılık", "Basit olayların olasılığı"]},
+    {"ust": "Bölünebilme, OBEB-OKEK, Asal Çarpanlar", "altlar": ["Bölünebilme kuralları", "Asal sayılar ve asal çarpanlara ayırma", "OBEB ve OKEK", "Modüler aritmetik (temel düzey)"]},
+    {"ust": "Karesel, Karekök ve Rasyonel Fonksiyonlar", "altlar": ["Karesel (ikinci dereceden) fonksiyonlar ve grafikleri", "Parabolün özellikleri (tepe noktası, simetri ekseni)", "Karekök fonksiyonu", "Rasyonel fonksiyonlar"]},
+    {"ust": "Sayma Stratejileri ve Algoritmik Cebir", "altlar": ["Toplama ve çarpma kuralı", "Permütasyon", "Kombinasyon", "Binom açılımı (temel düzey)"]},
+    {"ust": "Trigonometri (Dik Üçgen, Alan, Sinüs-Kosinüs Teoremi)", "altlar": ["Dik üçgende trigonometrik oranlar", "Trigonometrik oranlar arası bağıntılar", "Üçgende alan bağıntısı (trigonometrik)", "Sinüs teoremi ve kosinüs teoremi"]},
+    {"ust": "Analitik Geometri (Nokta ve Doğru)", "altlar": ["İki nokta arası uzaklık", "Doğrunun eğimi", "Doğru denklemi", "Doğrular arası ilişkiler (paralellik, diklik)"]},
+    {"ust": "İstatistik (İki Kategorik Değişken)", "altlar": ["İki kategorik değişken kavramı", "Sıklık ve çapraz tablolar", "Bağımsızlık yorumlanması", "Verilerin grafiksel gösterimi"]},
+    {"ust": "Koşullu Olasılık ve Bayes Teoremi", "altlar": ["Koşullu olasılık kavramı", "Bağımlı ve bağımsız olaylar", "Çarpma kuralı", "Bayes teoremi (temel düzey)"]},
+    {"ust": "Trigonometrik Fonksiyonlar", "altlar": ["Yönlü açı ve birim çember", "Trigonometrik fonksiyonların grafikleri", "Trigonometrik denklemler", "Toplam-fark formülleri"]},
+    {"ust": "Üstel ve Logaritmik Fonksiyonlar", "altlar": ["Üstel fonksiyon ve grafiği", "Logaritma kavramı ve özellikleri", "Logaritmik fonksiyon ve grafiği", "Üstel-logaritmik denklemler"]},
+    {"ust": "Fonksiyonlarda İşlemler ve Bileşke", "altlar": ["Fonksiyonlarda dört işlem", "Bileşke fonksiyon", "Ters fonksiyon", "Fonksiyonların grafik yorumlanması"]},
+    {"ust": "Dörtgenler ve Çokgenler", "altlar": ["Dörtgen çeşitleri ve özellikleri", "Paralelkenar, yamuk, deltoid özellikleri", "Çokgenlerde açı ve köşegen sayıları", "Çokgenlerde alan hesaplama"]},
+    {"ust": "İstatistik (İki Nicel Değişken)", "altlar": ["Serpme (saçılım) diyagramı", "Korelasyon kavramı", "Doğrusal regresyon (temel düzey)", "Yorumlama ve tahmin"]}
+  ]'::jsonb;
+  v_grup jsonb;
+  v_alt text;
+  v_sira int;
+begin
+  for v_grup in select * from jsonb_array_elements(v_satirlar) loop
+    v_sira := 0;
+    for v_alt in select * from jsonb_array_elements_text(v_grup->'altlar') loop
+      if not exists (
+        select 1 from public.mufredat_alt_konular
+        where ders = 'Matematik' and ust_konu = (v_grup->>'ust') and alt_baslik = v_alt
+      ) then
+        insert into public.mufredat_alt_konular (ders, ust_konu, alt_baslik, sira)
+        values ('Matematik', v_grup->>'ust', v_alt, v_sira);
+      end if;
+      v_sira := v_sira + 1;
+    end loop;
+  end loop;
+end $$;
+
+-- ============ Diğer dersler alt konu taslağı (migration 0057) ============
+-- Faz H5 (devam) — Fizik, Kimya, Biyoloji, Coğrafya, Tarih, Felsefe, Din
+-- Kültürü için 9-10-11. sınıf alt konu TASLAĞI. Edebiyat (ve Türkçe)
+-- bilinçli olarak DIŞARIDA — düz TYT/AYT listesi olarak kalıyor. TASLAK —
+-- kaynak dokümanla birebir doğrulanmadı, gözden geçirilmeli.
+do $$
+declare
+  v_satirlar jsonb := $json$[
+    {"ders": "Fizik", "ust": "Fizik Bilimi ve Kariyer Keşfi", "altlar": ["Fiziğin tanımı ve alt dalları", "Bilimsel yöntem ve model kavramı", "Fizikle ilgili meslek ve kariyer alanları", "Fiziğin günlük hayattaki uygulamaları"]},
+    {"ders": "Fizik", "ust": "Temel-Türetilmiş Nicelikler, Vektörler, Hareket", "altlar": ["Temel ve türetilmiş büyüklükler, birim sistemleri", "Skaler ve vektörel büyüklükler", "Vektörlerin bileşenlerine ayrılması ve toplanması", "Konum, yer değiştirme ve alınan yol"]},
+    {"ders": "Fizik", "ust": "Akışkanlar (Basınç, Kaldırma Kuvveti)", "altlar": ["Katı basıncı", "Sıvı basıncı ve Pascal prensibi", "Açık hava basıncı", "Kaldırma kuvveti ve Arşimet prensibi"]},
+    {"ders": "Fizik", "ust": "Isı, Sıcaklık ve Hâl Değişimi", "altlar": ["Isı ve sıcaklık kavramları", "Genleşme", "Hâl değişim grafikleri", "Isının yayılma yolları (iletim, taşınım, ışıma)"]},
+    {"ders": "Fizik", "ust": "Sabit Hızlı ve Sabit İvmeli Hareket", "altlar": ["Sabit hızlı (düzgün) doğrusal hareket", "Hız-zaman ve konum-zaman grafikleri", "Sabit ivmeli (düzgün değişen) doğrusal hareket", "Serbest düşme hareketi"]},
+    {"ders": "Fizik", "ust": "İş, Enerji ve Güç", "altlar": ["İş kavramı ve hesaplanması", "Kinetik ve potansiyel enerji", "Enerjinin korunumu", "Güç ve verim"]},
+    {"ders": "Fizik", "ust": "Basit Elektrik Devreleri (Ohm Yasası)", "altlar": ["Elektrik akımı ve gerilim", "Ohm yasası", "Seri ve paralel bağlı devreler", "Elektriksel güç ve enerji"]},
+    {"ders": "Fizik", "ust": "Dalgalar (Temel Kavramlar, Periyodik Hareket, Rezonans)", "altlar": ["Periyodik hareket ve titreşim", "Dalga çeşitleri ve temel özellikleri", "Yay dalgaları ve su dalgaları", "Rezonans (çınlama)"]},
+    {"ders": "Fizik", "ust": "Newton Hareket Yasaları, Sürtünme, Çembersel Hareket", "altlar": ["Newton'un hareket yasaları", "Sürtünme kuvveti", "Çembersel hareket ve merkezcil kuvvet", "Bağıl hareket"]},
+    {"ders": "Fizik", "ust": "Elektrik Alan, Manyetik Alan ve İndüksiyon", "altlar": ["Elektrik alan ve elektrik potansiyeli", "Manyetik alan ve manyetik kuvvet", "Elektromanyetik indüksiyon", "Alternatif akım temelleri"]},
+    {"ders": "Fizik", "ust": "Yarı İletkenlik ve Süper İletkenlik", "altlar": ["İletken, yalıtkan ve yarı iletken maddeler", "Diyot ve temel yarı iletken uygulamaları", "Süper iletkenlik kavramı", "Yarı iletken teknolojisinin uygulama alanları"]},
+    {"ders": "Fizik", "ust": "Optik (Aynalar, Kırılma, Mercekler)", "altlar": ["Işığın yansıması ve düzlem/küresel aynalar", "Işığın kırılması ve Snell yasası", "Mercekler ve görüntü oluşumu", "Optik araçlar (göz, mikroskop, teleskop)"]},
+
+    {"ders": "Kimya", "ust": "Kimya Bilimine Giriş, Atom Teorileri ve Periyodik Sistem", "altlar": ["Kimyanın çalışma alanları ve önemi", "Atom modellerinin tarihsel gelişimi", "Atomun yapısı ve elektron dizilimi", "Periyodik sistem ve periyodik özellikler"]},
+    {"ders": "Kimya", "ust": "Kimyasal Türler Arası Etkileşimler", "altlar": ["Güçlü etkileşimler (iyonik, kovalent, metalik bağ)", "Zayıf etkileşimler (Van der Waals, hidrojen bağı)", "Molekül geometrisi", "Etkileşimlerin madde özelliklerine etkisi"]},
+    {"ders": "Kimya", "ust": "Nanoparçacıklar ve Ekolojik Sürdürülebilirlik", "altlar": ["Nanoteknoloji kavramı ve temel ilkeleri", "Nanoparçacıkların özellikleri", "Ekolojik ayak izi", "Sürdürülebilirlik ve kimya"]},
+    {"ders": "Kimya", "ust": "Kimyasal Tepkimeler ve Mol Kavramı, Gazlar", "altlar": ["Mol kavramı ve Avogadro sayısı", "Kimyasal tepkime denklemleri ve denkleştirme", "Sınırlayıcı bileşen ve tepkime verimi", "Gazların genel özellikleri ve gaz yasaları"]},
+    {"ders": "Kimya", "ust": "Çözeltiler", "altlar": ["Çözünme olayı ve çözünürlüğü etkileyen faktörler", "Derişim birimleri (molarite, kütlece yüzde)", "Karışımların ayrılması", "Koligatif özellikler (temel düzey)"]},
+    {"ders": "Kimya", "ust": "Yeşil Kimya ve Çevresel Sürdürülebilirlik", "altlar": ["Yeşil kimyanın 12 ilkesi", "Çevre kirliliği türleri", "Geri dönüşüm ve atık yönetimi", "Sürdürülebilir kimyasal üretim"]},
+    {"ders": "Kimya", "ust": "Kimyasal Tepkimelerde Enerji (Entalpi) ve Hız", "altlar": ["Tepkime ısısı ve entalpi", "Ekzotermik ve endotermik tepkimeler", "Tepkime hızını etkileyen faktörler", "Hız denklemi ve aktivasyon enerjisi"]},
+    {"ders": "Kimya", "ust": "Kimyasal Denge, Asit-Baz Dengesi", "altlar": ["Dinamik denge kavramı", "Denge sabiti ve Le Chatelier ilkesi", "Asit-baz teorileri", "pH ve pOH hesaplamaları"]},
+    {"ders": "Kimya", "ust": "Nanoteknoloji ve Sürdürülebilirlik", "altlar": ["Nanomalzemelerin sınıflandırılması", "Nanoteknolojinin sanayi uygulamaları", "Nanoteknolojide etik ve güvenlik", "Sürdürülebilir nanoteknoloji"]},
+
+    {"ders": "Biyoloji", "ust": "Yaşam Bilimi Biyoloji", "altlar": ["Biyolojinin alt dalları ve canlı bilimlerle ilişkisi", "Bilimsel araştırma yöntemleri", "Biyolojinin günlük yaşam ve teknolojideki yeri", "Biyoetik kavramı"]},
+    {"ders": "Biyoloji", "ust": "Hücrenin Temel Bileşenleri", "altlar": ["Hücrenin keşfi ve hücre teorisi", "Prokaryot ve ökaryot hücre yapısı", "Hücre organelleri ve görevleri", "Hücre zarından madde geçişi"]},
+    {"ders": "Biyoloji", "ust": "Sınıflandırma ve Biyoçeşitlilik", "altlar": ["Canlıların sınıflandırılma ilkeleri", "Beş alem sistemi", "Biyoçeşitliliğin önemi", "Türkiye'nin biyoçeşitliliği"]},
+    {"ders": "Biyoloji", "ust": "Fotosentez ve Hücresel Solunum", "altlar": ["Fotosentezin evreleri (ışık ve karanlık tepkimeler)", "Fotosentezi etkileyen faktörler", "Hücresel solunum evreleri (glikoliz, krebs, ETS)", "Fermantasyon"]},
+    {"ders": "Biyoloji", "ust": "Ekosistemler ve Madde Döngüleri", "altlar": ["Ekosistem bileşenleri ve enerji akışı", "Karbon, azot ve su döngüleri", "Popülasyon ekolojisi", "Ekolojik ayak izi ve insan etkisi"]},
+    {"ders": "Biyoloji", "ust": "Canlılarda Tepki (Sinir Sistemi ve Hareket)", "altlar": ["Sinir sisteminin yapısı ve nöron", "Merkezi ve çevresel sinir sistemi", "Duyu organları", "Destek ve hareket sistemi"]},
+    {"ders": "Biyoloji", "ust": "Homeostazi ve Endokrin Sistem", "altlar": ["Homeostazi kavramı", "Endokrin bezler ve hormonlar", "Hormonal düzenleme mekanizmaları", "Boşaltım sistemi ve homeostazideki rolü"]},
+
+    {"ders": "Coğrafya", "ust": "Coğrafyanın Doğası", "altlar": ["Coğrafyanın konusu ve bölümleri", "Coğrafi bakış açısı", "Coğrafyanın diğer bilimlerle ilişkisi", "Coğrafi araştırma yöntemleri"]},
+    {"ders": "Coğrafya", "ust": "Mekânsal Bilgi Teknolojileri — Harita Bilgisi", "altlar": ["Harita çeşitleri ve ölçek kavramı", "Harita projeksiyonları", "İzohips (eş yükselti) haritaları ve profil çıkarma", "Coğrafi Bilgi Sistemleri'ne (CBS) giriş"]},
+    {"ders": "Coğrafya", "ust": "İklim Sistemi ve Türleri", "altlar": ["Atmosferin yapısı ve katmanları", "İklim elemanları (sıcaklık, basınç, rüzgar, nem, yağış)", "Dünya'nın iklim tipleri", "Türkiye'nin iklim özellikleri"]},
+    {"ders": "Coğrafya", "ust": "Nüfus (Dağılış, Hareketler, Piramitler)", "altlar": ["Nüfusun dağılışını etkileyen faktörler", "Göç ve göç türleri", "Nüfus piramitleri ve yorumlanması", "Türkiye'nin nüfus özellikleri"]},
+    {"ders": "Coğrafya", "ust": "Ekonomik Faaliyetleri Etkileyen Coğrafi Faktörler", "altlar": ["Tarımı etkileyen coğrafi faktörler", "Sanayiyi etkileyen coğrafi faktörler", "Ticareti ve ulaşımı etkileyen faktörler", "Turizmi etkileyen coğrafi faktörler"]},
+    {"ders": "Coğrafya", "ust": "Afet Türleri ve Bütüncül Afet Yönetimi", "altlar": ["Doğal afet türleri (deprem, sel, heyelan vb.)", "Afetlerin oluşum nedenleri", "Afet risk yönetimi", "Afet öncesi-sırası-sonrası alınacak önlemler"]},
+    {"ders": "Coğrafya", "ust": "Bölge ve Bölge Sınırı", "altlar": ["Bölge kavramı ve bölge türleri", "Bölge sınırlarının belirlenmesi", "Türkiye'nin coğrafi bölgeleri", "Kalkınmada öncelikli yöreler"]},
+    {"ders": "Coğrafya", "ust": "Coğrafi Bakış, CBS ve Uzaktan Algılama", "altlar": ["Coğrafi Bilgi Sistemleri'nin bileşenleri", "Uzaktan algılama teknikleri", "Küresel Konumlama Sistemi (GPS/GNSS)", "CBS'nin günlük hayatta kullanım alanları"]},
+    {"ders": "Coğrafya", "ust": "Yer Şekilleri Oluşumu (Tektonik, Aşınım-Birikim Süreçleri)", "altlar": ["İç kuvvetler (tektonizma, volkanizma, deprem)", "Dış kuvvetler (akarsu, rüzgar, buzul, dalga aşındırması)", "Türkiye'nin yer şekilleri", "Karstik yer şekilleri"]},
+    {"ders": "Coğrafya", "ust": "Yerleşmelerin Kuruluşu ve Fonksiyonları", "altlar": ["Yerleşmeyi etkileyen doğal ve beşeri faktörler", "Kır ve şehir yerleşmeleri", "Yerleşme fonksiyonları (idari, ticari, sanayi vb.)", "Türkiye'de şehirleşme süreci"]},
+    {"ders": "Coğrafya", "ust": "Türkiye Ekonomisinin Sektörel Dağılımı", "altlar": ["Tarım sektörü ve Türkiye tarımı", "Sanayi sektörü ve Türkiye sanayisi", "Hizmetler sektörü", "Sektörler arası geçişler ve ekonomik gelişmişlik"]},
+    {"ders": "Coğrafya", "ust": "Mekânsal Sorunlar Karşısında Coğrafya Bilimi, Web Tabanlı CBS", "altlar": ["Mekânsal sorunların tespiti ve analizi", "Web tabanlı CBS uygulamaları", "Katılımcı haritalama", "Coğrafi verinin karar alma süreçlerinde kullanımı"]},
+    {"ders": "Coğrafya", "ust": "Su Kaynakları ve Sürdürülebilir Kullanımı", "altlar": ["Dünya ve Türkiye'nin su kaynakları", "Su kıtlığı ve su stresi", "Sürdürülebilir su yönetimi", "Sınır aşan sular sorunu"]},
+    {"ders": "Coğrafya", "ust": "Yerleşmelerin Mekânsal Organizasyonu ve Etki Alanları", "altlar": ["Merkezi yer teorisi", "Şehirlerin etki alanları (hinterlant)", "Metropol ve megapol kavramları", "Kentleşme sorunları"]},
+    {"ders": "Coğrafya", "ust": "Tarım, Madencilik, Enerji Kaynakları, Sanayileşme", "altlar": ["Tarım politikaları ve tarımsal verimlilik", "Madenler ve maden işletmeciliği", "Enerji kaynakları (yenilenebilir/yenilenemez)", "Sanayileşme süreçleri ve etkileri"]},
+    {"ders": "Coğrafya", "ust": "Küresel İklim Değişikliği", "altlar": ["Küresel iklim değişikliğinin nedenleri", "İklim değişikliğinin etkileri", "Sera gazı emisyonları ve azaltım politikaları", "İklim değişikliğine uyum stratejileri"]},
+
+    {"ders": "Tarih", "ust": "Tarih Bilimine Giriş", "altlar": ["Tarihin tanımı ve konusu", "Tarih biliminin yöntemi ve yardımcı bilimleri", "Zaman ve takvim kavramı", "Tarihi kaynaklar ve tasnifi"]},
+    {"ders": "Tarih", "ust": "İlk Uygarlıklar ve Tarım Devrimi", "altlar": ["Tarih öncesi çağlar", "Tarım devriminin toplumsal etkileri", "Mezopotamya, Mısır ve Anadolu uygarlıkları", "İlk yazı ve hukuk sistemleri"]},
+    {"ders": "Tarih", "ust": "Orta Çağ'da Dünya (Göçler, Devletler, Ticaret Yolları)", "altlar": ["Kavimler göçü ve etkileri", "Orta Çağ Avrupa'sında feodalite", "İpek ve Baharat yolları", "Orta Çağ İslam dünyası"]},
+    {"ders": "Tarih", "ust": "Türklerin İslamiyeti Kabulü ve İlk Türk-İslam Devletleri", "altlar": ["Türklerin İslamiyet öncesi inanç ve devlet gelenekleri", "Türklerin İslamiyeti kabul süreci", "Karahanlılar ve Gazneliler", "Büyük Selçuklu Devleti"]},
+    {"ders": "Tarih", "ust": "Beylikten Devlete Osmanlı (Kuruluş Dönemi)", "altlar": ["Anadolu Selçuklu Devleti'nin yıkılışı ve beylikler dönemi", "Osmanlı Devleti'nin kuruluşu", "İlk fetihler ve Balkanlara geçiş", "Devlet teşkilatının temelleri"]},
+    {"ders": "Tarih", "ust": "Dünya Gücü Osmanlı (1453-1683)", "altlar": ["İstanbul'un fethi ve sonuçları", "Yavuz Sultan Selim dönemi fetihleri", "Kanuni dönemi ve altın çağ", "Klasik dönem devlet ve toplum yapısı"]},
+    {"ders": "Tarih", "ust": "Değişen Dünya Dengeleri Karşısında Osmanlı (1683-1789)", "altlar": ["Duraklama ve gerileme dönemi gelişmeleri", "Coğrafi keşiflerin Osmanlı'ya etkisi", "Islahat hareketlerinin başlaması", "Karlofça ve sonrası antlaşmalar"]},
+    {"ders": "Tarih", "ust": "Devrimler Çağında Osmanlı (1789-1908)", "altlar": ["Fransız İhtilali'nin etkileri", "III. Selim ve II. Mahmut dönemi ıslahatları", "Tanzimat ve Islahat fermanları", "I. ve II. Meşrutiyet"]},
+    {"ders": "Tarih", "ust": "XX. Yüzyıl Başlarında Osmanlı ve I. Dünya Savaşı (1908-1918)", "altlar": ["Trablusgarp ve Balkan Savaşları", "I. Dünya Savaşı'nın nedenleri ve cepheleri", "Osmanlı'nın savaştaki cepheleri", "Mondros Ateşkes Antlaşması"]},
+
+    {"ders": "Felsefe", "ust": "Felsefenin Anlamı ve Doğuşu", "altlar": ["Felsefenin tanımı ve temel kavramları", "Felsefenin doğuşunu hazırlayan koşullar", "Felsefi düşüncenin özellikleri", "Felsefe ile diğer disiplinlerin ilişkisi"]},
+    {"ders": "Felsefe", "ust": "Mantık ve Argümantasyon", "altlar": ["Mantığın konusu ve önemi", "Kavram, önerme ve akıl yürütme", "Argüman türleri (tümdengelim, tümevarım)", "Geçerli ve sağlam argüman ayrımı"]},
+    {"ders": "Felsefe", "ust": "Varlık Felsefesi", "altlar": ["Varlık felsefesinin temel soruları", "İdealizm ve materyalizm", "Varlığın yapısına ilişkin görüşler", "Varoluşçu yaklaşımlar"]},
+    {"ders": "Felsefe", "ust": "Bilgi Felsefesi", "altlar": ["Bilginin kaynağı sorunu (rasyonalizm-empirizm)", "Doğruluk ölçütleri", "Bilgi türleri", "Septisizm ve dogmatizm"]},
+    {"ders": "Felsefe", "ust": "Ahlak Felsefesi", "altlar": ["Ahlaki değer kavramı", "Ahlak yasasının kaynağı sorunu", "Özgürlük ve sorumluluk", "Erdem etiği ve fayda ahlakı"]},
+    {"ders": "Felsefe", "ust": "Estetik ve Sanat Felsefesi", "altlar": ["Estetik ve güzellik kavramı", "Sanat eserinin özellikleri", "Sanatta öznellik-nesnellik tartışması", "Sanat ve toplum ilişkisi"]},
+    {"ders": "Felsefe", "ust": "Siyaset Felsefesi", "altlar": ["Siyaset felsefesinin temel kavramları (iktidar, otorite, meşruiyet)", "Devlet biçimleri ve yönetim türleri", "Toplum sözleşmesi kuramları", "Özgürlük ve eşitlik tartışmaları"]},
+    {"ders": "Felsefe", "ust": "Din Felsefesi", "altlar": ["Din felsefesinin konusu", "Tanrı'nın varlığına ilişkin görüşler", "Din-bilim-felsefe ilişkisi", "Dinin toplumsal işlevi"]},
+    {"ders": "Felsefe", "ust": "Bilim Felsefesi", "altlar": ["Bilimin tanımı ve bilimsel yöntem", "Bilim felsefesinin temel sorunları", "Bilimsel açıklama modelleri", "Bilim-teknoloji-toplum ilişkisi"]},
+    {"ders": "Felsefe", "ust": "Çevre Felsefesi ve Etik", "altlar": ["Çevre etiğinin temel kavramları", "İnsan merkezci ve doğa merkezci yaklaşımlar", "Sürdürülebilirlik ve gelecek kuşaklara sorumluluk", "Çevre sorunlarına felsefi yaklaşımlar"]},
+    {"ders": "Felsefe", "ust": "Teknoloji Felsefesi", "altlar": ["Teknolojinin insan yaşamına etkileri", "Teknoloji ve etik sorunlar", "Yapay zeka ve felsefi tartışmalar", "Teknolojik determinizm"]},
+    {"ders": "Felsefe", "ust": "Akıl-İnanç İlişkisi", "altlar": ["Akıl ve inanç kavramlarının felsefi temelleri", "Akıl-inanç ilişkisine dair farklı görüşler", "Din felsefesinde akılcılık", "Fideizm ve rasyonalizm tartışması"]},
+    {"ders": "Felsefe", "ust": "Dil, Edebiyat ve Felsefe İlişkisi", "altlar": ["Dilin düşünceyle ilişkisi", "Dil felsefesinin temel sorunları", "Edebiyat ve felsefe etkileşimi", "Anlam ve yorum sorunu"]},
+    {"ders": "Felsefe", "ust": "Mutluluk, Varoluş ve Kendi Olma", "altlar": ["Mutluluk kavramına felsefi yaklaşımlar", "Varoluşçu felsefede birey", "Otantiklik ve kendi olma", "Yaşamın anlamı sorunu"]},
+    {"ders": "Felsefe", "ust": "Hukuk Felsefesi", "altlar": ["Hukuk felsefesinin temel kavramları", "Doğal hukuk ve pozitif hukuk", "Adalet kavramı", "Hukuk-ahlak ilişkisi"]},
+
+    {"ders": "Din Kültürü", "ust": "İnsan ve İnsanın Yaratılışı", "altlar": ["İnsanın yaratılışına dair dini bilgiler", "İnsanın diğer varlıklardan farkı", "İnsanın Yaratıcı ile ilişkisi", "İnsanın sorumluluk bilinci"]},
+    {"ders": "Din Kültürü", "ust": "İman Esasları", "altlar": ["İmanın tanımı ve şartları", "Allah'a iman", "Meleklere, kitaplara, peygamberlere iman", "Ahirete ve kadere iman"]},
+    {"ders": "Din Kültürü", "ust": "İslam'da İbadetler", "altlar": ["İbadetin anlamı ve önemi", "Namaz, oruç, zekât, hac ibadetleri", "İbadetlerin bireysel ve toplumsal faydaları", "İbadetlerde kolaylık ilkesi"]},
+    {"ders": "Din Kültürü", "ust": "İslam'da Ahlak İlkeleri", "altlar": ["Ahlakın tanımı ve İslam'daki yeri", "Temel ahlaki değerler (doğruluk, adalet, sabır vb.)", "Aile ve toplum ahlakı", "Kötü alışkanlıklardan korunma"]},
+    {"ders": "Din Kültürü", "ust": "Hz. Muhammed'in Hayatı ve Örnekliği", "altlar": ["Hz. Muhammed'in doğumu ve gençliği", "Peygamberlik dönemi ve tebliğ süreci", "Hz. Muhammed'in örnek kişiliği", "Hz. Muhammed'in aile ve toplum hayatındaki örnekliği"]},
+    {"ders": "Din Kültürü", "ust": "İslam Düşüncesinde Bilgi ve Varlık", "altlar": ["İslam düşüncesinde bilgi kaynakları", "Akıl-vahiy ilişkisi", "Varlık anlayışı", "İslam düşünce ekollerine giriş"]},
+    {"ders": "Din Kültürü", "ust": "Allah İnancı ve Sıfatları", "altlar": ["Allah'ın varlığının delilleri", "Allah'ın zati ve subuti sıfatları", "Tevhit inancı", "Allah-insan ilişkisi"]},
+    {"ders": "Din Kültürü", "ust": "Tevhit, Adalet ve Barış", "altlar": ["Tevhit ilkesinin toplumsal yansımaları", "İslam'da adalet anlayışı", "Barış ve hoşgörü ilkeleri", "Farklılıklara saygı"]},
+    {"ders": "Din Kültürü", "ust": "Çevre, Teknoloji ve Ahlak", "altlar": ["İslam'da çevre bilinci", "Teknoloji kullanımında ahlaki sorumluluk", "Emanet bilinci", "Sürdürülebilir yaşam ve din"]},
+    {"ders": "Din Kültürü", "ust": "İslam Düşüncesinde Yorum Farklılıkları (Mezhepler)", "altlar": ["Mezhep kavramı ve oluşum nedenleri", "İtikadi mezhepler", "Fıkhi mezhepler", "Mezhepler arası hoşgörü"]},
+    {"ders": "Din Kültürü", "ust": "Kader ve İnsan Sorumluluğu", "altlar": ["Kader ve kaza kavramları", "İnsan iradesi ve özgürlüğü", "Kader-sorumluluk ilişkisi", "Kadere iman ile ilgili yanlış anlayışlar"]},
+    {"ders": "Din Kültürü", "ust": "Din, Felsefe, Bilim ve Sanat İlişkisi", "altlar": ["Din-felsefe ilişkisi", "Din-bilim ilişkisi", "Din-sanat ilişkisi", "İslam medeniyetinde bilim ve sanat"]},
+    {"ders": "Din Kültürü", "ust": "İslam Medeniyeti", "altlar": ["İslam medeniyetinin oluşumu", "İslam medeniyetinin bilim ve kültüre katkıları", "İslam medeniyetinde önemli merkezler", "İslam medeniyetinin günümüze etkileri"]},
+    {"ders": "Din Kültürü", "ust": "Kötülük Problemi ve Dinî-Felsefi Yaklaşımlar", "altlar": ["Kötülük probleminin tanımı", "Kötülüğe dini yaklaşımlar", "Kötülüğe felsefi yaklaşımlar", "Sınav ve imtihan anlayışı"]},
+    {"ders": "Din Kültürü", "ust": "Diğer Dinler: Yahudilik ve Hristiyanlık", "altlar": ["Yahudiliğin temel inanç esasları", "Hristiyanlığın temel inanç esasları", "Bu dinlerin kutsal kitapları ve ibadetleri", "İslam'ın diğer semavi dinlerle ortak ve farklı yönleri"]}
+  ]$json$::jsonb;
+  v_grup jsonb;
+  v_alt text;
+  v_sira int;
+begin
+  for v_grup in select * from jsonb_array_elements(v_satirlar) loop
+    v_sira := 0;
+    for v_alt in select * from jsonb_array_elements_text(v_grup->'altlar') loop
+      if not exists (
+        select 1 from public.mufredat_alt_konular
+        where ders = (v_grup->>'ders') and ust_konu = (v_grup->>'ust') and alt_baslik = v_alt
+      ) then
+        insert into public.mufredat_alt_konular (ders, ust_konu, alt_baslik, sira)
+        values (v_grup->>'ders', v_grup->>'ust', v_alt, v_sira);
+      end if;
+      v_sira := v_sira + 1;
+    end loop;
+  end loop;
+end $$;
+
+-- ============ Konu zayıflık raporu — son hali (migration 0054 → 0055 → 0058) ============
+-- konu_zayiflik_raporu RPC'si migration 0054'te (8 kolon dönüşlü) yaratıldı,
+-- migration 0055'te (11 kolona genişletildi — beyan_* alanları eklendi)
+-- create-or-replace ile değiştirilmeye çalışıldı. Postgres, OUT
+-- parametreleriyle (returns table) tanımlı bir fonksiyonun dönüş
+-- sütunlarını create-or-replace ile değiştirmesine izin vermiyor
+-- ("cannot change return type of existing function") — bu yüzden ara
+-- adımlar burada ATLANDI, sadece migration 0058'in drop+create ile
+-- düzelttiği SON hali (+ "column reference is ambiguous" hatasını önleyen
+-- #variable_conflict use_column pragma'sı) aşağıda yer alıyor.
+drop function if exists public.konu_zayiflik_raporu(uuid, uuid);
+
+create function public.konu_zayiflik_raporu(p_class_id uuid default null, p_school_id uuid default null)
+returns table (
+  ders text,
+  konu text,
+  ogrenci_sayisi bigint,
+  uzak_sayisi bigint,
+  belirsiz_sayisi bigint,
+  yakin_sayisi bigint,
+  uzak_orani numeric,
+  en_sik_uzak_takip_cevabi text,
+  beyan_uzak_sayisi bigint,
+  beyan_belirsiz_sayisi bigint,
+  beyan_yakin_sayisi bigint
+)
+language plpgsql
+security definer
+set search_path = public
+stable
+as $$
+#variable_conflict use_column
+begin
+  if (p_class_id is null) = (p_school_id is null) then
+    raise exception 'Tam olarak bir kapsam (sınıf veya okul) belirtilmeli.';
+  end if;
+
+  if p_class_id is not null then
+    if not (
+      public.is_admin()
+      or exists (select 1 from public.teachers t where t.id = auth.uid() and t.class_id = p_class_id)
+    ) then
+      raise exception 'Bu sınıfın raporunu görme yetkiniz yok.';
+    end if;
+  else
+    if not (public.is_admin() or public.is_school_moderator(p_school_id)) then
+      raise exception 'Bu okulun raporunu görme yetkiniz yok.';
+    end if;
+  end if;
+
+  return query
+  with kapsamdaki_ogrenciler as (
+    select s.id from public.students s
+    where (p_class_id is not null and s.class_id = p_class_id)
+       or (p_school_id is not null and s.school_id = p_school_id)
+  ),
+  log_satirlar as (
+    select k.student_id, k.ders, k.konu, k.hedefe_yakinlik, k.takip_cevabi
+    from public.konu_calismalar k
+    where k.student_id in (select id from kapsamdaki_ogrenciler)
+  ),
+  beyan_satirlar as (
+    select h.student_id, h.ders, h.konu, h.hakimiyet_seviyesi
+    from public.ogrenci_konu_hakimiyeti h
+    where h.student_id in (select id from kapsamdaki_ogrenciler)
+  ),
+  tum_konular as (
+    select ders, konu from log_satirlar
+    union
+    select ders, konu from beyan_satirlar
+  ),
+  kapsayan_ogrenci_sayisi as (
+    select ders, konu, count(distinct student_id) as ogrenci_sayisi
+    from (
+      select student_id, ders, konu from log_satirlar
+      union
+      select student_id, ders, konu from beyan_satirlar
+    ) birlesik
+    group by ders, konu
+  ),
+  log_gruplu as (
+    select
+      ders, konu,
+      count(*) filter (where hedefe_yakinlik = 'uzak') as uzak_sayisi,
+      count(*) filter (where hedefe_yakinlik = 'belirsiz') as belirsiz_sayisi,
+      count(*) filter (where hedefe_yakinlik = 'yakin') as yakin_sayisi
+    from log_satirlar
+    group by ders, konu
+  ),
+  beyan_gruplu as (
+    select
+      ders, konu,
+      count(*) filter (where hakimiyet_seviyesi = 'uzak') as beyan_uzak_sayisi,
+      count(*) filter (where hakimiyet_seviyesi = 'belirsiz') as beyan_belirsiz_sayisi,
+      count(*) filter (where hakimiyet_seviyesi = 'yakin') as beyan_yakin_sayisi
+    from beyan_satirlar
+    group by ders, konu
+  ),
+  uzak_cevap_sayilari as (
+    select ders, konu, takip_cevabi, count(*) as adet
+    from log_satirlar
+    where hedefe_yakinlik = 'uzak' and takip_cevabi is not null
+    group by ders, konu, takip_cevabi
+  ),
+  uzak_cevap_siralanmis as (
+    select ders, konu, takip_cevabi,
+           row_number() over (partition by ders, konu order by adet desc) as sira
+    from uzak_cevap_sayilari
+  )
+  select
+    tk.ders, tk.konu,
+    kos.ogrenci_sayisi,
+    coalesce(lg.uzak_sayisi, 0) as uzak_sayisi,
+    coalesce(lg.belirsiz_sayisi, 0) as belirsiz_sayisi,
+    coalesce(lg.yakin_sayisi, 0) as yakin_sayisi,
+    round(
+      coalesce(lg.uzak_sayisi, 0)::numeric
+      / nullif(coalesce(lg.uzak_sayisi, 0) + coalesce(lg.belirsiz_sayisi, 0) + coalesce(lg.yakin_sayisi, 0), 0),
+      2
+    ) as uzak_orani,
+    u.takip_cevabi as en_sik_uzak_takip_cevabi,
+    coalesce(bg.beyan_uzak_sayisi, 0) as beyan_uzak_sayisi,
+    coalesce(bg.beyan_belirsiz_sayisi, 0) as beyan_belirsiz_sayisi,
+    coalesce(bg.beyan_yakin_sayisi, 0) as beyan_yakin_sayisi
+  from tum_konular tk
+  join kapsayan_ogrenci_sayisi kos on kos.ders = tk.ders and kos.konu = tk.konu
+  left join log_gruplu lg on lg.ders = tk.ders and lg.konu = tk.konu
+  left join beyan_gruplu bg on bg.ders = tk.ders and bg.konu = tk.konu
+  left join uzak_cevap_siralanmis u on u.ders = tk.ders and u.konu = tk.konu and u.sira = 1
+  where kos.ogrenci_sayisi >= 3
+  order by uzak_orani desc nulls last, kos.ogrenci_sayisi desc
+  limit 30;
+end;
+$$;
+
+revoke all on function public.konu_zayiflik_raporu(uuid, uuid) from public;
+grant execute on function public.konu_zayiflik_raporu(uuid, uuid) to authenticated;
+
+-- ============ Türkçe (Maarif) alt konu taslağı (migration 0060) ============
+-- Türkçe'de Maarif Modeli ayrı konu başlığı vermiyor (tema/beceri bazlı) —
+-- bu yüzden hem ÜST hem alt başlıklar burada TASLAK olarak üretildi (MEB'in
+-- dört temel dil becerisi + söz varlığı/dil bilgisi çerçevesine dayanarak).
+-- Kaynak dokümanla doğrulanmadı, gözden geçirilmeli. "Türkçe (Maarif)" düz
+-- TYT "Türkçe" dersinin YANINDA duran AYRI bir ders — TYT listesine dokunulmadı.
+do $$
+declare
+  v_satirlar jsonb := $json$[
+    {"ust": "Okuma Kültürü ve Metin Türleri", "altlar": ["Okuma stratejileri ve okuduğunu anlama", "Öyküleyici metinler", "Bilgilendirici metinler", "Şiir türleri ve nazım biçimleri"]},
+    {"ust": "Dinleme/İzleme Becerileri", "altlar": ["Dinleme/izleme stratejileri", "Sözlü metinleri anlama ve yorumlama", "Medya okuryazarlığı", "Dinlediğini/izlediğini değerlendirme"]},
+    {"ust": "Konuşma Becerileri", "altlar": ["Hazırlıklı ve hazırlıksız konuşma", "Konuşma kuralları ve beden dili", "Anlatım biçimleri (betimleme, öyküleme, açıklama)", "Sunum teknikleri"]},
+    {"ust": "Yazma Becerileri", "altlar": ["Yazma süreci (planlama, taslak, düzeltme)", "Öyküleyici ve betimleyici yazılar", "Bilgilendirici yazılar", "Yazım ve noktalama kurallarının uygulanması"]},
+    {"ust": "Söz Varlığı ve Dil Bilgisi Uygulamaları", "altlar": ["Kelime ve kavram bilgisi", "Deyim, atasözü ve söz sanatları", "Cümlede ve sözcükte anlam uygulamaları", "Yazım ve noktalama kuralları"]},
+
+    {"ust": "Metin Türleri: Bilgilendirici ve Öyküleyici", "altlar": ["Bilgilendirici metin çözümlemesi", "Öyküleyici metin çözümlemesi", "Metinler arası karşılaştırma", "Yazarın bakış açısını belirleme"]},
+    {"ust": "Şiir İncelemesi", "altlar": ["Nazım birimi, ölçü, uyak", "Temalara göre şiir çözümlemesi", "Şiirde söz sanatları", "Şiir yazma denemeleri"]},
+    {"ust": "Anlatım Biçimleri ve Düşünceyi Geliştirme Yolları", "altlar": ["Açıklayıcı ve tartışmacı anlatım", "Örnekleme, tanımlama, karşılaştırma", "Düşünceyi geliştirme yolları", "Metinde tutarlılık ve bütünlük"]},
+    {"ust": "Yazılı ve Sözlü Anlatım Uygulamaları", "altlar": ["Deneme ve eleştiri yazma", "Sunum ve tartışma uygulamaları", "Rapor ve tutanak yazma", "Dilekçe ve resmî yazışmalar"]},
+    {"ust": "Dil Bilgisi ve Anlatım Bozuklukları", "altlar": ["Cümle çözümlemesi", "Anlatım bozukluğu türleri", "Yazım ve noktalama uygulamaları", "Cümlede anlam ilişkileri"]},
+
+    {"ust": "Eleştirel Okuma ve Metin Çözümleme", "altlar": ["Metni yorumlama ve eleştirme", "Yazarın amacını ve bakış açısını sorgulama", "Metinler arası ilişkilendirme", "Farklı disiplinlerden metin okuma"]},
+    {"ust": "Tartışmacı ve Bilgilendirici Metinler", "altlar": ["Tez-antitez geliştirme", "Kanıt ve gerekçelendirme", "Makale ve fıkra türleri", "Sav ve karşı sav oluşturma"]},
+    {"ust": "Sözlü Anlatım ve Tartışma Teknikleri", "altlar": ["Panel, forum, açık oturum", "Etkili konuşma ve ikna teknikleri", "Grup tartışmalarında rol alma", "Sözlü sunumda görsel destek kullanımı"]},
+    {"ust": "Yazılı Anlatım: Deneme ve Eleştiri", "altlar": ["Deneme yazma teknikleri", "Eleştiri yazısı yazma", "Kompozisyon planlama ve düzenleme", "Özgün metin oluşturma"]},
+    {"ust": "İleri Dil Bilgisi ve Anlatım Bozuklukları", "altlar": ["Karmaşık cümle çözümlemesi", "Anlatım bozukluklarını giderme", "Yazım ve noktalama ileri uygulamalar", "Metin türlerine göre dil kullanımı"]}
+  ]$json$::jsonb;
+  v_grup jsonb;
+  v_alt text;
+  v_sira int;
+begin
+  for v_grup in select * from jsonb_array_elements(v_satirlar) loop
+    v_sira := 0;
+    for v_alt in select * from jsonb_array_elements_text(v_grup->'altlar') loop
+      if not exists (
+        select 1 from public.mufredat_alt_konular
+        where ders = 'Türkçe (Maarif)' and ust_konu = (v_grup->>'ust') and alt_baslik = v_alt
+      ) then
+        insert into public.mufredat_alt_konular (ders, ust_konu, alt_baslik, sira)
+        values ('Türkçe (Maarif)', v_grup->>'ust', v_alt, v_sira);
+      end if;
+      v_sira := v_sira + 1;
+    end loop;
+  end loop;
+end $$;
+
+-- ============ Analiz Motoru Faz A4: hedef net (migration 0061) ============
+-- Katman 5 (hedefe uzaklık/projeksiyon) — hedef net alanını ÖĞRENCİ KENDİ
+-- girer, hedef_bolum deseniyle tutarlı olarak admin de düzeltebilir. TYT ve
+-- AYT AYRI tutuluyor: ikisi farklı ölçekte puanlanıyor (TYT azami ~120, AYT
+-- alana göre değişiyor) ve ayrı ayrı deneme trendleri var.
+alter table public.students add column if not exists hedef_net_tyt numeric;
+alter table public.students add column if not exists hedef_net_ayt numeric;
+
+alter table public.students drop constraint if exists students_hedef_net_tyt_araligi;
+alter table public.students
+  add constraint students_hedef_net_tyt_araligi check (hedef_net_tyt is null or (hedef_net_tyt >= 0 and hedef_net_tyt <= 120));
+
+alter table public.students drop constraint if exists students_hedef_net_ayt_araligi;
+alter table public.students
+  add constraint students_hedef_net_ayt_araligi check (hedef_net_ayt is null or (hedef_net_ayt >= 0 and hedef_net_ayt <= 160));
+
+comment on column public.students.hedef_net_tyt is
+  'Öğrencinin kendi belirlediği TYT hedef net puanı — Analiz Motoru Faz A4 (hedefe uzaklık/projeksiyon) için. Nullable: girilmemişse o katman devre dışı kalır.';
+comment on column public.students.hedef_net_ayt is
+  'Öğrencinin kendi belirlediği AYT hedef net puanı — Analiz Motoru Faz A4 için. Nullable.';
+
+-- Öğrenci kendi hedef_net_tyt/hedef_net_ayt alanlarını güncelleyebilsin diye
+-- ek bir RLS politikası GEREKMEZ — mevcut students UPDATE politikaları
+-- zaten öğrencinin kendi satırını güncellemesine izin veriyor.
+
+-- ============ Rozet durumu: yetki genişletme (migration 0062) ============
+-- ogrenci_rozet_durumu RPC'sinin yetki kontrolü (migration 0029) sadece
+-- has_student_access() VEYA is_ogretmen() kapsıyordu — ADMIN ve OKUL
+-- MODERATÖRÜ hiç kapsanmıyordu, bu yüzden /yonetici ve /moderator
+-- ekranları bu RPC'yi çağıramıyor, service-role client + TS formül
+-- kopyasıyla idare ediyordu. İmza/dönüş tipi (jsonb) DEĞİŞMEDİ.
+create or replace function public.ogrenci_rozet_durumu(p_student_id uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+stable
+as $$
+declare
+  v_konu text; v_soru text; v_deneme text; v_altin_sayisi int; v_genel text;
+begin
+  if not (
+    public.has_student_access(p_student_id)
+    or public.is_ogretmen()
+    or public.is_admin()
+    or exists (
+      select 1 from public.students s
+      where s.id = p_student_id and public.is_school_moderator(s.school_id)
+    )
+  ) then
+    raise exception 'Yetkisiz.';
+  end if;
+
+  v_konu := public.ogrenci_konu_seviyesi(p_student_id);
+  v_soru := public.ogrenci_soru_seviyesi(p_student_id);
+  v_deneme := public.ogrenci_deneme_seviyesi(p_student_id);
+
+  v_altin_sayisi := (case when v_konu = 'altin' then 1 else 0 end)
+                  + (case when v_soru = 'altin' then 1 else 0 end)
+                  + (case when v_deneme = 'altin' then 1 else 0 end);
+  v_genel := case v_altin_sayisi when 3 then 'altin' when 2 then 'gumus' when 1 then 'bronz' else 'yok' end;
+
+  return jsonb_build_object('konu', v_konu, 'soru', v_soru, 'deneme', v_deneme, 'genel', v_genel);
+end;
+$$;
+
+revoke all on function public.ogrenci_rozet_durumu(uuid) from public;
+grant execute on function public.ogrenci_rozet_durumu(uuid) to authenticated;
