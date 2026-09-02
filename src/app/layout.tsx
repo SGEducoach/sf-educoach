@@ -22,7 +22,6 @@ const montserratBaslik = Montserrat({
 export const metadata: Metadata = {
   title: "SeFu Koç | YKS Hazırlık ve Öğrenci Takip Platformu",
   description: "SeFu Koç ile konu çalışmalarını, soru çözümlerini ve deneme netlerini takip edin. Öğrenci, veli ve öğretmen aynı platformda gelişimi izlesin.",
-};
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

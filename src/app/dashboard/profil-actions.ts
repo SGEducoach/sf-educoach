@@ -10,8 +10,14 @@ export async function ogretmenEpostasiniTeyitEt(yeniEmail?: string): Promise<{ e
   if (!user) return { error: "Oturum bulunamadı.", email: null };
 
   const admin = createAdminClient();
+  // Kullanıcı isteği (30.08.2026): müdürler de şifre sıfırlamayı e-posta
+  // üzerinden yapıyor (giriş ekranında okul koduyla giriyor ama sıfırlama
+  // bağlantısı gerçek adresine gidiyor — bkz. LoginForm resolve_mudur_email),
+  // bu yüzden teyit akışı müdürü de kapsıyor.
   const { data: profil } = await admin.from("profiles").select("email, role").eq("id", user.id).maybeSingle();
-  if (!profil || profil.role !== "ogretmen") return { error: "Bu işlem yalnızca öğretmen hesapları içindir.", email: null };
+  if (!profil || (profil.role !== "ogretmen" && profil.role !== "mudur")) {
+    return { error: "Bu işlem yalnızca öğretmen ve müdür hesapları içindir.", email: null };
+  }
 
   const email = (yeniEmail?.trim() || profil.email || "").toLowerCase();
   if (!teslimEdilebilirEpostaMi(email)) return { error: "Geçerli, e-posta alabilen bir adres girin.", email: null };

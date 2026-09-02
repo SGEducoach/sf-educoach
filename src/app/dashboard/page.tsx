@@ -84,7 +84,7 @@ export default async function DashboardPage({
   const teyitliOgretmenEpostasi = typeof user.user_metadata?.sifre_eposta_teyit_email === "string"
     ? user.user_metadata.sifre_eposta_teyit_email.toLowerCase()
     : null;
-  const ogretmenEpostaUyarisi = role === "ogretmen"
+  const ogretmenEpostaUyarisi = (role === "ogretmen" || role === "mudur")
     && (!profile.email || profile.email.endsWith(".internal") || teyitliOgretmenEpostasi !== profile.email.toLowerCase());
 
   // DERSHANE MODU (Faz D3): müdürün menüsü kendi kurumunun tur'una göre
