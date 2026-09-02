@@ -11,6 +11,7 @@ import { KonuHaritasiRaporu } from "@/components/dashboard/KonuHaritasiRaporu";
 import type { OyunEtiketiSayaclari, RozetDurum } from "@/components/dashboard/Rozetlerim";
 import { AnalizPaneli } from "@/components/dashboard/AnalizPaneli";
 import { HosgeldinPopuplari } from "@/components/dashboard/HosgeldinPopuplari";
+import { OgretmenEpostaUyarisi } from "@/components/dashboard/OgretmenEpostaUyarisi";
 import { ZorunluSifreDegisikligiKapisi } from "@/components/dashboard/ZorunluSifreDegisikligiKapisi";
 import { analizVerisiGetir } from "@/lib/analiz";
 import type { RaporDonemi } from "@/lib/analiz";
@@ -67,7 +68,7 @@ export default async function DashboardPage({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("ad, role, gecici_sifre")
+    .select("ad, role, email, gecici_sifre")
     .eq("id", user.id)
     .single();
 
@@ -76,6 +77,15 @@ export default async function DashboardPage({
   const role = profile.role as UserRole;
   // Admin artık normal akışta hiç görünmez — tek kontrol noktası /yonetici'dir.
   if (role === "admin") redirect("/yonetici");
+  // Kullanıcı isteği (30.08.2026): şifre sıfırlama artık e-posta üzerinden
+  // yapılacağı için öğretmenin GERÇEK (teslim edilebilir) bir adres tanımlaması
+  // gerekiyor. Uyarı, adres yoksa/sentetikse VEYA teyit edilen adres mevcut
+  // adresten farklıysa çıkar — teyit sonrası susar, adres değişirse geri gelir.
+  const teyitliOgretmenEpostasi = typeof user.user_metadata?.sifre_eposta_teyit_email === "string"
+    ? user.user_metadata.sifre_eposta_teyit_email.toLowerCase()
+    : null;
+  const ogretmenEpostaUyarisi = role === "ogretmen"
+    && (!profile.email || profile.email.endsWith(".internal") || teyitliOgretmenEpostasi !== profile.email.toLowerCase());
 
   // DERSHANE MODU (Faz D3): müdürün menüsü kendi kurumunun tur'una göre
   // tamamen değişiyor (bkz. dashboard-navigation.ts DERSHANE_MUDUR_MENUSU) —
@@ -138,6 +148,7 @@ export default async function DashboardPage({
           özel kalır. */}
       <Header ad={profile.ad} role={role} kurumTuru={kurumTuru} brans={brans} okunmamisMesajSayisi={okunmamisMesajSayisi} moderatorMu={!!moderatorYetkisi} rolEtiketi={moderatorYetkisi && role !== "mudur" ? "Moderatör" : undefined} aktifBolum={aktifBolum} />
       <ZorunluSifreDegisikligiKapisi gecici={profile.gecici_sifre} />
+      <OgretmenEpostaUyarisi email={profile.email} goster={ogretmenEpostaUyarisi} />
       <HosgeldinPopuplari role={role} />
       <div className="mx-auto flex min-h-[calc(100dvh-6.75rem)] w-full max-w-[100rem] flex-1 items-stretch gap-6 px-4 py-6 sm:px-6 lg:py-7">
         <DashboardYanMenu role={role} kurumTuru={kurumTuru} brans={brans} aktifBolum={aktifBolum} />

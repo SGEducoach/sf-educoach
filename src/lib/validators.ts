@@ -65,6 +65,14 @@ export function sifreGecerliMi(v: string) {
 export const SIFRE_IPUCU = "En az 8 karakter, boşluksuz; harf, rakam ve özel işaret (. , ! gibi) içermeli.";
 export const TELEFON_IPUCU = "Sadece rakam, 10-11 hane (örn. 5xxxxxxxxx).";
 
+// Gerçekten e-posta alabilen bir adres mi — dershane öğrenci/veli
+// hesaplarında kullanılan sentetik "@...internal" adresleri şifre
+// sıfırlama için kullanılamaz (bkz. OgretmenEpostaUyarisi).
+export function teslimEdilebilirEpostaMi(value: string | null | undefined) {
+  const email = value?.trim().toLowerCase() ?? "";
+  return email.includes("@") && !email.endsWith(".internal");
+}
+
 // Admin'in manuel eklediği öğretmen/öğrenci hesapları için geçici şifre
 // üretir — harf+rakam+özel işaret karışık, 10 karakter (sifreGecerliMi'yi
 // her zaman geçer).
