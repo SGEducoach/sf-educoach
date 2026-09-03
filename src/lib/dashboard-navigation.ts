@@ -155,9 +155,6 @@ const ADMIN_MENUSU: DashboardMenuOgesi[] = [
   // olarak yeniden adlandırıldı ve Konu Haritası'nın hemen üstüne taşındı
   // (önceden Moderatörler'in altındaydı, ikisi arasında 3 öge vardı).
   { bolum: "icerik", href: "/yonetici/icerik", etiket: "Konu özetleri", ikon: "icerik" },
-  // Kullanıcı isteği (03.09.2026): SeFu Blog — her yazı Google için ayrı
-  // bir sayfa (bkz. src/app/blog, src/app/sitemap.ts).
-  { bolum: "blog", href: "/yonetici/blog", etiket: "Blog", ikon: "blog" },
   { bolum: "yapay-zeka", href: "/yonetici/yapay-zeka", etiket: "Konu Haritası", ikon: "ai" },
   // Faz 3 (2026-08-26) — İşlem Geçmişi ("Son işlemler"in taşındığı yer),
   // Site ayarları (bakım modu) ve Adminler (admin hesapları SADECE burada
@@ -167,6 +164,9 @@ const ADMIN_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "site-ayarlari", href: "/yonetici/site-ayarlari", etiket: "Site ayarları", ikon: "ayarlar" },
   { bolum: "adminler", href: "/yonetici/adminler", etiket: "Adminler", ikon: "admin" },
   { bolum: "profil", href: "/yonetici/profil", etiket: "Profilim", ikon: "profil" },
+  // Kullanıcı isteği (03.09.2026): "blog en aşağı alınsın" — SeFu Blog
+  // (her yazı Google için ayrı bir sayfa, bkz. src/app/blog).
+  { bolum: "blog", href: "/yonetici/blog", etiket: "Blog", ikon: "blog" },
 ];
 
 // 2026-08-26 kullanıcı isteği — Rehber Öğretmen branşındaki bir öğretmene
