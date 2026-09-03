@@ -137,9 +137,13 @@ function BlogFormu({ yazi, onBitti }: { yazi: BlogYazisi | null; onBitti: () => 
   const [mod, setMod] = useState<"yaz" | "onizle">("yaz");
   // Henüz yüklenmemiş kapak dosyasını önizlemek için geçici tarayıcı adresi.
   const [secilenKapak, setSecilenKapak] = useState<string | null>(null);
+  const [kapakSecildi, setKapakSecildi] = useState(false);
   useEffect(() => () => { if (secilenKapak) URL.revokeObjectURL(secilenKapak); }, [secilenKapak]);
 
   const mevcutKapak = yazi?.kapakGorseli ? blogGorselUrl(yazi.kapakGorseli) : null;
+  // Kapak varsa (yeni seçilen ya da kayıtlı) alt metin zorunlu — sunucu da
+  // aynı kuralı uyguluyor (bkz. blogYazisiKaydet).
+  const kapakVar = kapakSecildi || Boolean(yazi?.kapakGorseli);
   const onizlemeKapagi = secilenKapak ?? mevcutKapak;
 
   function gonder(e: React.FormEvent<HTMLFormElement>) {
@@ -205,6 +209,7 @@ function BlogFormu({ yazi, onBitti }: { yazi: BlogYazisi | null; onBitti: () => 
         <input type="file" name="kapak" accept="image/jpeg,image/png,image/webp" className="text-xs" style={{ color: TEXT_MUTED }}
           onChange={(e) => {
             const d = e.target.files?.[0];
+            setKapakSecildi(Boolean(d));
             setSecilenKapak((eskiAdres) => { if (eskiAdres) URL.revokeObjectURL(eskiAdres); return d ? URL.createObjectURL(d) : null; });
           }} />
       </label>
@@ -235,9 +240,12 @@ function BlogFormu({ yazi, onBitti }: { yazi: BlogYazisi | null; onBitti: () => 
       )}
 
       <label className="flex flex-col gap-1">
-        <span className={etiket} style={{ color: TEXT_MUTED }}>Görsel alt metni — görselde ne olduğunu yazın (görsel aramada indekslenir)</span>
-        <input name="kapakAlt" value={kapakAlt} onChange={(e) => setKapakAlt(e.target.value)} maxLength={200}
-          placeholder="Ders çalışan lise öğrencisi ve öğretmeni" className={girdi} style={girdiStil} />
+        <span className={etiket} style={{ color: kapakVar && !kapakAlt.trim() ? BLUSH : TEXT_MUTED }}>
+          Görsel alt metni{kapakVar ? " (zorunlu)" : ""} — görselde ne olduğunu yazın (görsel aramada indekslenir)
+        </span>
+        <input name="kapakAlt" required={kapakVar} value={kapakAlt} onChange={(e) => setKapakAlt(e.target.value)} maxLength={200}
+          placeholder="Ders çalışan lise öğrencisi ve öğretmeni" className={girdi}
+          style={{ ...girdiStil, border: `2px solid ${kapakVar && !kapakAlt.trim() ? BLUSH : BORDER_STRONG}` }} />
       </label>
       </div>
 

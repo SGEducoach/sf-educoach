@@ -128,9 +128,25 @@ export async function blogYazisiKaydet(formData: FormData): Promise<{ error: str
   // Metni olduğu gibi yapıştırabilmek adına baştaki H1 satırı atılıyor.
   const icerik = icerikHam.replace(/^#[ \t]+.*(?:\r?\n)+/, "").trim();
 
+  // Düzenlemede zaten bir kapak varsa (yeni dosya seçilmese bile) alt metin
+  // şartı işlemeli — bu yüzden mevcut kapak önce okunuyor.
+  const { data: mevcutKayit } = id
+    ? await admin.from("blog_yazilari").select("kapak_gorseli").eq("id", id).maybeSingle()
+    : { data: null };
+  const mevcutKapak = mevcutKayit?.kapak_gorseli ?? null;
+
   const dogrulama = alanlariDogrula(baslik, ozet, icerik);
   if (dogrulama) return { error: dogrulama };
   if (kapakAlt.length > 200) return { error: "Görsel alt metni en fazla 200 karakter olabilir." };
+
+  // Kullanıcı isteği (03.09.2026): ikinci yazı alt metinsiz yayınlanmıştı,
+  // "bundan sonra öyle bir sorun oluşmasın". Kapak görseli OLAN yazı alt
+  // metinsiz kaydedilemiyor — alt metin hem ekran okuyucular hem de görsel
+  // aramada indekslenme için gerekli. Kapaksız yazıda istenmiyor.
+  const kapakOlacakMi = Boolean(dosya && dosya.size > 0) || Boolean(id && mevcutKapak);
+  if (kapakOlacakMi && !kapakAlt) {
+    return { error: "Kapak görseli olan yazılarda görsel alt metni zorunludur — görselde ne olduğunu kısaca yazın." };
+  }
 
   // Kullanıcı slug yazdıysa onu normalize et (Türkçe harf/boşluk temizliği),
   // yazmadıysa başlıktan üret. Tablodaki kısıt en az 3 karakter istiyor.
