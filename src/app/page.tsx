@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { AnaSayfa } from "@/components/AnaSayfa";
 import { anaSayfaAyarlariniGetir, anaSayfaSliderGorselleriGetir } from "@/lib/ana-sayfa";
 import { tgDenemeIlanlariGetir } from "@/lib/tg-deneme-ilanlari";
+import { anaSayfaDuyurulariniGetir } from "@/lib/ana-sayfa-duyurulari";
 
 // Kullanıcı isteği (27.08.2026): "/" artık admin panelinden (Site Ayarları
 // → Ana Sayfa Ayarları) yönetilen kurumsal bir tanıtım sayfası — header +
@@ -15,10 +16,11 @@ export default async function Home() {
   const { data: { user } } = await supabase.auth.getUser();
   if (user) redirect("/dashboard");
 
-  const [ayarlar, sliderGorselleri, tgIlanlar] = await Promise.all([
+  const [ayarlar, sliderGorselleri, tgIlanlar, duyurular] = await Promise.all([
     anaSayfaAyarlariniGetir(supabase),
     anaSayfaSliderGorselleriGetir(supabase),
     tgDenemeIlanlariGetir(supabase),
+    anaSayfaDuyurulariniGetir(supabase),
   ]);
 
   return (
@@ -28,6 +30,7 @@ export default async function Home() {
       sliderGecisSaniye={ayarlar.sliderGecisSaniye}
       sliderGorselleri={sliderGorselleri}
       tgIlanlar={tgIlanlar}
+      duyurular={duyurular}
     />
   );
 }

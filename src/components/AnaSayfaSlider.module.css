@@ -1,0 +1,18 @@
+.slider { width: min(100%, 1056px); margin: 0 auto; padding: 14px 28px 4px; }
+.kartlar { display: flex; gap: 14px; height: clamp(220px, 27vw, 340px); touch-action: pan-y; }
+.kart { position: relative; min-width: 0; flex: 1 1 0; overflow: hidden; border-radius: 20px; border: 1px solid #0f254026; padding: 0; background: #0f2540; cursor: pointer; transition: flex-grow 650ms ease, box-shadow 650ms ease; }
+.kart[data-active="true"] { flex-grow: 2.35; box-shadow: 0 16px 30px #0f254026; }
+.kart img { width: 100%; height: 100%; object-fit: cover; }
+.kart:focus-visible, .kontroller button:focus-visible { outline: 3px solid #14b8b0; outline-offset: 4px; }
+.kontroller { display: flex; align-items: center; justify-content: center; gap: 10px; padding-top: 20px; color: #0f2540; }
+.kontroller button { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; border: 1px solid #0f254020; cursor: pointer; background: #f5f8fa; }
+.kontroller button:hover { background: #dff6f3; }
+.sayac { min-width: 44px; text-align: center; font-size: 12px; font-variant-numeric: tabular-nums; }
+.bos { width: min(94%, 1000px); height: 240px; margin: 14px auto; border-radius: 20px; background: linear-gradient(120deg, #0f2540, #14b8b0); }
+@media (max-width: 640px) {
+  .slider { padding: 10px 16px 0; }
+  .kartlar { gap: 8px; height: 220px; }
+  .kart { border-radius: 14px; }
+  .kart[data-active="true"] { flex-grow: 3.5; }
+}
+@media (prefers-reduced-motion: reduce) { .kart { transition: none; } }

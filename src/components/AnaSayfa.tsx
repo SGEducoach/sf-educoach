@@ -1,168 +1,39 @@
 "use client";
-
-import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { anaSayfaDosyaUrl, type AnaSayfaSliderGorseli } from "@/lib/ana-sayfa";
+import { GraduationCap, School, Users, UserRoundCheck } from "lucide-react";
+import { AnaSayfaSlider } from "@/components/AnaSayfaSlider";
 import { AnaSayfaTgAkisi } from "@/components/AnaSayfaTgAkisi";
+import { AnaSayfaDuyurular } from "@/components/AnaSayfaDuyurular";
+import type { AnaSayfaSliderGorseli } from "@/lib/ana-sayfa";
 import type { TgDenemeIlani } from "@/lib/tg-deneme-ilanlari";
+import type { AnaSayfaDuyurusu } from "@/lib/ana-sayfa-duyurulari";
 
-// Ana Sayfa (27.08.2026 kullanıcı isteği) — GirisKarsilamaSayfasi.tsx'in
-// (rol vitrin ekranı) yerini alan, tamamen farklı bir "kurumsal" tasarım:
-// header + tam genişlik slider + tanıtım metni. Metinler/görseller/slider
-// süresi admin panelinden (Site Ayarları → Ana Sayfa Ayarları) yönetiliyor
-// — bkz. src/lib/ana-sayfa.ts, src/app/yonetici/actions.ts.
-const LACIVERT = "#0F2540";
-const TURKUAZ = "#14B8B0";
-const BEYAZ = "#FFFFFF";
-const METIN_GRI = "#3F4B5A";
-
-// "Etiket: metin" satırlarını (kullanıcının taslağındaki "Müdürler ve Okul
-// Yönetimi: ...", "Kurs Eğitimcileri: ...", "Veliler: ..." gibi) etiketi
-// kalın+turkuaz vurgulu göstermek için ayrıştırıyor — admin serbest metin
-// yazdığı için bu deseni bulamazsa satır olduğu gibi (düz paragraf)
-// gösteriliyor, hiçbir şey kırılmıyor.
-function paragrafIcerik(paragraf: string) {
-  const eslesme = paragraf.match(/^([^:\n]{2,40}):\s([\s\S]+)$/);
-  if (eslesme) {
-    return <><span className="font-bold" style={{ color: TURKUAZ }}>{eslesme[1]}:</span> {eslesme[2]}</>;
-  }
-  return paragraf;
-}
-
-function Slider({ gorseller, gecisSaniye }: { gorseller: AnaSayfaSliderGorseli[]; gecisSaniye: number }) {
-  const [aktif, setAktif] = useState(0);
-  const dokunmaBaslangici = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (gorseller.length < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const zamanlayici = window.setInterval(() => setAktif((i) => (i + 1) % gorseller.length), gecisSaniye * 1000);
-    return () => window.clearInterval(zamanlayici);
-  }, [gorseller.length, gecisSaniye]);
-
-  function git(index: number) {
-    setAktif((index + gorseller.length) % gorseller.length);
-  }
-
-  function dokunmaBitti(x: number) {
-    if (dokunmaBaslangici.current === null) return;
-    const fark = x - dokunmaBaslangici.current;
-    dokunmaBaslangici.current = null;
-    if (Math.abs(fark) < 45) return;
-    git(aktif + (fark < 0 ? 1 : -1));
-  }
-
-  // Admin henüz görsel yüklemediyse kırık bir slider yerine düz bir
-  // marka rengi zemin gösteriliyor — sayfanın geri kalanı yine çalışıyor.
-  if (gorseller.length === 0) {
-    return <div className="h-[38vh] w-full sm:h-[52vh]" style={{ background: `linear-gradient(120deg, ${LACIVERT} 0%, ${TURKUAZ} 100%)` }} />;
-  }
-
-  return (
-    <div className="relative h-[38vh] w-full overflow-hidden sm:h-[52vh]"
-      onTouchStart={(e) => { dokunmaBaslangici.current = e.changedTouches[0]?.clientX ?? null; }}
-      onTouchEnd={(e) => dokunmaBitti(e.changedTouches[0]?.clientX ?? 0)}>
-      {gorseller.map((g, i) => (
-        <div key={g.id} className="absolute inset-0 transition-opacity duration-700" style={{ opacity: i === aktif ? 1 : 0 }} aria-hidden={i !== aktif}>
-          {/* eslint-disable-next-line @next/next/no-img-element -- next/image harici Storage domainini reddediyor (bkz. TgDenemeleri.tsx) */}
-          <img src={anaSayfaDosyaUrl(g.dosyaYolu)} alt="" className="h-full w-full object-cover" />
-        </div>
-      ))}
-      {gorseller.length > 1 && (
-        <>
-          <button type="button" onClick={() => git(aktif - 1)} aria-label="Önceki görsel"
-            className="sfec-btn absolute left-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full sm:left-6"
-            style={{ background: "rgba(15,37,64,0.55)" }}>
-            <ChevronLeft size={20} color={BEYAZ} />
-          </button>
-          <button type="button" onClick={() => git(aktif + 1)} aria-label="Sonraki görsel"
-            className="sfec-btn absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full sm:right-6"
-            style={{ background: "rgba(15,37,64,0.55)" }}>
-            <ChevronRight size={20} color={BEYAZ} />
-          </button>
-          <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2">
-            {gorseller.map((g, i) => (
-              <button key={g.id} type="button" onClick={() => git(i)} aria-label={`${i + 1}. görsele git`} aria-current={i === aktif ? "true" : undefined}
-                className="sfec-btn h-2.5 rounded-full" style={{ width: i === aktif ? 22 : 9, background: i === aktif ? TURKUAZ : "rgba(255,255,255,0.6)" }} />
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-export function AnaSayfa({ baslik, govde, sliderGecisSaniye, sliderGorselleri, tgIlanlar }: {
-  baslik: string; govde: string; sliderGecisSaniye: number; sliderGorselleri: AnaSayfaSliderGorseli[]; tgIlanlar: TgDenemeIlani[];
-}) {
-  const paragraflar = govde.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
-  const ilkParagrafRef = useRef<HTMLParagraphElement>(null);
-  const tgSutunRef = useRef<HTMLDivElement>(null);
-  const [tgYukseklik, setTgYukseklik] = useState<number>();
-
-  // Masaüstünde (29.08.2026 kullanıcı isteği): TG akışı sütununun ALT
-  // sınırı birinci paragrafın bitişiyle aynı çizgide olsun — paragraf
-  // metni admin tarafından her an değişebildiği için CSS'le sabit bir
-  // oran vermek yerine gerçek render sonrası yükseklik ölçülüyor.
-  // Mobilde (< 640px) ölçüm uygulanmıyor, mobil tasarım dokunulmuyor.
-  useEffect(() => {
-    function hizala() {
-      if (!ilkParagrafRef.current || !tgSutunRef.current) return;
-      if (window.matchMedia("(max-width: 639px)").matches) { setTgYukseklik(undefined); return; }
-      const ustSinir = tgSutunRef.current.getBoundingClientRect().top;
-      const altSinir = ilkParagrafRef.current.getBoundingClientRect().bottom;
-      setTgYukseklik(Math.max(0, altSinir - ustSinir));
-    }
-    hizala();
-    const gozlemci = new ResizeObserver(hizala);
-    if (ilkParagrafRef.current) gozlemci.observe(ilkParagrafRef.current);
-    window.addEventListener("resize", hizala);
-    return () => { gozlemci.disconnect(); window.removeEventListener("resize", hizala); };
-  }, [baslik, govde]);
-
-  return (
-    <div style={{ background: BEYAZ }} className="flex min-h-dvh flex-col">
-      <header className="flex items-center justify-between px-5 py-4 sm:px-10">
-        <Image src="/logo.png" alt="www.sefukoc.com" width={512} height={512} className="h-10 w-auto object-contain sm:h-12" priority />
-        <div className="flex-1" />
-        <Link href="/login" className="sfec-btn rounded-full px-6 py-2.5 text-sm font-bold" style={{ background: TURKUAZ, color: BEYAZ }}>
-          GİRİŞ YAP
-        </Link>
-      </header>
-
-      <Slider gorseller={sliderGorselleri} gecisSaniye={sliderGecisSaniye} />
-
-      {/* Masaüstünde (29.08.2026 kullanıcı isteği): TG akışı slider ile metin
-          arasındaki ayrı bloktan çıkarılıp sola, başlıkla (h1) üstten hizalı
-          dar bir sütuna alındı. Bu <div> mobilde HİÇBİR class uygulamıyor
-          (tüm class'lar sm: önekli) — DOM sırası (TG önce, metin sonra)
-          mobilde olduğu gibi kalıyor, TG'nin kendi tam genişlik/gri bantlı
-          görünümü dokunulmadı. */}
-      <div className="sm:mx-auto sm:grid sm:max-w-5xl sm:grid-cols-[18rem_1fr] sm:items-start sm:gap-10 sm:px-8">
-        <div ref={tgSutunRef} className="sm:pt-16" style={tgYukseklik ? { height: tgYukseklik } : undefined}>
-          <AnaSayfaTgAkisi dbIlanlar={tgIlanlar} />
-        </div>
-
-        <section className="mx-auto flex max-w-3xl flex-col gap-4 px-5 py-12 sm:mx-0 sm:max-w-none sm:px-0 sm:py-16">
-          <h1 className="text-balance text-2xl font-extrabold leading-tight sm:text-3xl" style={{ color: LACIVERT, fontFamily: "var(--font-baloo)" }}>
-            {baslik}
-          </h1>
-          {paragraflar.map((p, i) => i === 0 ? (
-            <p key={i} ref={ilkParagrafRef} className="text-base leading-relaxed sm:text-lg" style={{ color: METIN_GRI }}>
-              {paragrafIcerik(p)}
-            </p>
-          ) : (
-            <p key={i} className="text-base leading-relaxed sm:text-lg" style={{ color: METIN_GRI }}>
-              {paragrafIcerik(p)}
-            </p>
-          ))}
-        </section>
-      </div>
-
-      <footer className="mt-auto px-5 py-6 text-center text-xs sm:px-10" style={{ color: METIN_GRI }}>
-        © {new Date().getFullYear()} www.sefukoc.com. Tüm hakları saklıdır.
-      </footer>
-    </div>
-  );
+const LACIVERT="#0F2540",TURKUAZ="#14B8B0",BEYAZ="#FFF",GRI="#3F4B5A";
+const roller=[
+ {ad:"Öğrenci",Icon:GraduationCap,renk:"#2563EB",zemin:"#EFF6FF",metin:"Kimseyle yarışmadan, kendi hedefi ve gelişim hızına göre kişiye özel çalışma takibi."},
+ {ad:"Öğretmen",Icon:UserRoundCheck,renk:"#7C3AED",zemin:"#F5F3FF",metin:"Öğrencilerin çalışma, soru ve deneme verilerini izleyerek doğru zamanda yönlendirme."},
+ {ad:"Veli",Icon:Users,renk:"#C2410C",zemin:"#FFF7ED",metin:"Çocuğunu başkalarıyla kıyaslamadan, kişiye özel gelişimini ve öğretmen geri bildirimlerini güvenle takip."},
+ {ad:"Müdür",Icon:School,renk:"#047857",zemin:"#ECFDF5",metin:"Okul veya dershane genelindeki akademik gelişimi, sınıfları ve koçluk sürecini tek yerden izleme."},
+];
+export function AnaSayfa({baslik,govde,sliderGecisSaniye,sliderGorselleri,tgIlanlar,duyurular}:{baslik:string;govde:string;sliderGecisSaniye:number;sliderGorselleri:AnaSayfaSliderGorseli[];tgIlanlar:TgDenemeIlani[];duyurular:AnaSayfaDuyurusu[]}){
+ const paragraflar=govde.split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean);
+ return <div className="flex min-h-dvh flex-col" style={{background:BEYAZ}}>
+  <header className="flex items-center justify-between px-5 py-4 sm:px-10"><Image src="/logo.png" alt="SeFu Koç" width={512} height={512} className="h-10 w-auto object-contain sm:h-12" priority/><Link href="/login" className="rounded-full px-6 py-2.5 text-sm font-bold" style={{background:TURKUAZ,color:BEYAZ}}>GİRİŞ YAP</Link></header>
+  <AnaSayfaSlider gorseller={sliderGorselleri} gecisSaniye={sliderGecisSaniye}/>
+  <main>
+   <section className="mx-auto max-w-6xl px-5 pb-12 pt-10 sm:px-8 sm:pb-16 sm:pt-14">
+    <h1 className="text-balance text-center text-3xl font-extrabold leading-tight sm:text-4xl" style={{color:LACIVERT,fontFamily:"var(--font-baloo)"}}>SeFu Koç YKS Hazırlık ve Öğrenci Takip Platformu&apos;na Hoş Geldiniz!</h1>
+    <h2 className="mt-9 text-center text-2xl font-extrabold" style={{color:LACIVERT,fontFamily:"var(--font-baloo)"}}>İçeride neler var?</h2>
+    <p className="mx-auto mt-3 max-w-3xl text-center text-base leading-7" style={{color:GRI}}>Okul ve dershanelerin kullanabildiği SeFu Koç; öğrenci, öğretmen, veli ve müdür rollerini aynı gelişim sürecinde buluşturan YKS hazırlık ve öğrenci takip platformudur.</p>
+    <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{roller.map(({ad,Icon,renk,zemin,metin})=><article key={ad} className="flex flex-col items-center rounded-3xl p-5 text-center sm:items-start sm:text-left" style={{background:zemin,border:`1px solid ${renk}33`}}><div className="flex h-11 w-11 items-center justify-center rounded-2xl" style={{background:`${renk}18`}}><Icon color={renk}/></div><h3 className="mt-4 text-lg font-extrabold" style={{color:renk}}>{ad}</h3><p className="mt-2 text-sm leading-6" style={{color:GRI}}>{metin}</p></article>)}</div>
+   </section>
+   <section className="mx-auto grid max-w-6xl gap-5 px-5 pb-14 sm:px-8 lg:grid-cols-2">
+    <div className="min-h-72 overflow-hidden rounded-3xl border border-[#DDE7EA] bg-[#F7FAFB] p-5 shadow-sm"><AnaSayfaTgAkisi dbIlanlar={tgIlanlar}/></div>
+    <AnaSayfaDuyurular duyurular={duyurular}/>
+   </section>
+   <section className="border-t border-[#E4E9EE] bg-[#F7FAFB]"><div className="mx-auto max-w-5xl px-5 py-14 sm:px-8 sm:py-20"><h2 className="text-balance text-2xl font-extrabold leading-tight sm:text-3xl" style={{color:LACIVERT,fontFamily:"var(--font-baloo)"}}>{baslik}</h2><div className="mt-5 space-y-4">{paragraflar.map((p,i)=><p key={i} className="text-base leading-7 sm:text-lg" style={{color:GRI}}>{p}</p>)}</div></div></section>
+  </main>
+  <footer className="mt-auto px-5 py-6 text-center text-xs" style={{color:GRI}}>© {new Date().getFullYear()} www.sefukoc.com. Tüm hakları saklıdır.</footer>
+ </div>;
 }
