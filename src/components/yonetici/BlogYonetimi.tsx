@@ -4,7 +4,7 @@ import { startTransition, useEffect, useState, useTransition } from "react";
 import { Rss, Trash2, Eye, EyeOff, Save, X, ExternalLink } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH, LILAC } from "@/lib/theme";
 import { blogYazilariniYonetimIcinGetir, blogYazisiKaydet, blogYazisiYayinDurumu, blogYazisiSil } from "@/app/yonetici/blog-actions";
-import { blogGorselUrl, tarihFormatla, type BlogYazisi } from "@/lib/blog";
+import { blogGorselUrl, slugUret, tarihFormatla, type BlogYazisi } from "@/lib/blog";
 import { BasitMarkdown } from "@/components/BasitMarkdown";
 
 // SeFu Blog yönetimi (03.09.2026). Taslak kaydedip sonra yayınlama akışı:
@@ -126,6 +126,8 @@ function BlogFormu({ yazi, onBitti }: { yazi: BlogYazisi | null; onBitti: () => 
   const [baslik, setBaslik] = useState(yazi?.baslik ?? "");
   const [ozet, setOzet] = useState(yazi?.ozet ?? "");
   const [icerik, setIcerik] = useState(yazi?.icerik ?? "");
+  const [slug, setSlug] = useState(yazi?.slug ?? "");
+  const [kapakAlt, setKapakAlt] = useState(yazi?.kapakAlt ?? "");
   const [yayinda, setYayinda] = useState(yazi?.yayinda ?? false);
   const [hata, setHata] = useState<string | null>(null);
   const [pending, startPending] = useTransition();
@@ -184,6 +186,15 @@ function BlogFormu({ yazi, onBitti }: { yazi: BlogYazisi | null; onBitti: () => 
       </label>
 
       <label className="flex flex-col gap-1">
+        <span className={etiket} style={{ color: TEXT_MUTED }}>URL kısa adı — boş bırakırsanız başlıktan üretilir</span>
+        <input name="slug" value={slug} onChange={(e) => setSlug(e.target.value)} placeholder={slugUret(baslik) || "ornek-yazi-adresi"}
+          className={girdi} style={girdiStil} />
+        <span className="text-[10px]" style={{ color: TEXT_MUTED }}>
+          Adres: /blog/{slugUret(slug || baslik) || "..."}
+        </span>
+      </label>
+
+      <label className="flex flex-col gap-1">
         <span className={etiket} style={{ color: TEXT_MUTED }}>İçerik — ## ara başlık, - liste, **kalın**, [bağlantı](adres) kullanabilirsiniz</span>
         <textarea name="icerik" required rows={14} value={icerik} onChange={(e) => setIcerik(e.target.value)}
           className={`${girdi} resize-y font-mono text-xs leading-relaxed`} style={girdiStil} />
@@ -198,8 +209,6 @@ function BlogFormu({ yazi, onBitti }: { yazi: BlogYazisi | null; onBitti: () => 
           }} />
       </label>
 
-      </div>
-
       {mod === "onizle" && (
         // Sitedeki yazı sayfasıyla aynı tipografi/renk düzeni — panel koyu
         // temalı olduğu için önizleme bilinçli olarak beyaz zeminde.
@@ -211,7 +220,7 @@ function BlogFormu({ yazi, onBitti }: { yazi: BlogYazisi | null; onBitti: () => 
               {ozet.trim() && <p className="mt-4 text-base leading-7 sm:text-lg" style={{ color: "#3F4B5A" }}>{ozet}</p>}
               {onizlemeKapagi && (
                 // eslint-disable-next-line @next/next/no-img-element -- yerel önizleme (blob) veya Storage görseli
-                <img src={onizlemeKapagi} alt="" className="mt-5 w-full rounded-2xl object-cover" />
+                <img src={onizlemeKapagi} alt={kapakAlt} className="mt-5 w-full rounded-2xl object-cover" />
               )}
               <div className="mt-6">
                 {icerik.trim()
@@ -224,6 +233,13 @@ function BlogFormu({ yazi, onBitti }: { yazi: BlogYazisi | null; onBitti: () => 
           )}
         </div>
       )}
+
+      <label className="flex flex-col gap-1">
+        <span className={etiket} style={{ color: TEXT_MUTED }}>Görsel alt metni — görselde ne olduğunu yazın (görsel aramada indekslenir)</span>
+        <input name="kapakAlt" value={kapakAlt} onChange={(e) => setKapakAlt(e.target.value)} maxLength={200}
+          placeholder="Ders çalışan lise öğrencisi ve öğretmeni" className={girdi} style={girdiStil} />
+      </label>
+      </div>
 
       <label className="flex cursor-pointer items-center gap-2">
         <input type="checkbox" checked={yayinda} onChange={(e) => setYayinda(e.target.checked)} />

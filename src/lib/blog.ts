@@ -11,6 +11,7 @@ export interface BlogYazisi {
   ozet: string;
   icerik: string;
   kapakGorseli: string | null;
+  kapakAlt: string | null;
   yayinda: boolean;
   yayinTarihi: string | null;
   createdAt: string;
@@ -19,16 +20,16 @@ export interface BlogYazisi {
 
 type BlogSatiri = {
   id: string; slug: string; baslik: string; ozet: string; icerik: string;
-  kapak_gorseli: string | null; yayinda: boolean; yayin_tarihi: string | null;
+  kapak_gorseli: string | null; kapak_alt: string | null; yayinda: boolean; yayin_tarihi: string | null;
   created_at: string; updated_at: string;
 };
 
-const SUTUNLAR = "id, slug, baslik, ozet, icerik, kapak_gorseli, yayinda, yayin_tarihi, created_at, updated_at";
+const SUTUNLAR = "id, slug, baslik, ozet, icerik, kapak_gorseli, kapak_alt, yayinda, yayin_tarihi, created_at, updated_at";
 
 function satiriCevir(r: BlogSatiri): BlogYazisi {
   return {
     id: r.id, slug: r.slug, baslik: r.baslik, ozet: r.ozet, icerik: r.icerik,
-    kapakGorseli: r.kapak_gorseli, yayinda: r.yayinda, yayinTarihi: r.yayin_tarihi,
+    kapakGorseli: r.kapak_gorseli, kapakAlt: r.kapak_alt, yayinda: r.yayinda, yayinTarihi: r.yayin_tarihi,
     createdAt: r.created_at, updatedAt: r.updated_at,
   };
 }

@@ -26,7 +26,7 @@ async function adminIstemcisi(): Promise<AdminBaglami> {
 
 type BlogSatiri = {
   id: string; slug: string; baslik: string; ozet: string; icerik: string;
-  kapak_gorseli: string | null; yayinda: boolean; yayin_tarihi: string | null;
+  kapak_gorseli: string | null; kapak_alt: string | null; yayinda: boolean; yayin_tarihi: string | null;
   created_at: string; updated_at: string;
 };
 
@@ -37,13 +37,13 @@ export async function blogYazilariniYonetimIcinGetir(): Promise<{ error: string 
 
   const { data, error } = await ctx.admin
     .from("blog_yazilari")
-    .select("id, slug, baslik, ozet, icerik, kapak_gorseli, yayinda, yayin_tarihi, created_at, updated_at")
+    .select("id, slug, baslik, ozet, icerik, kapak_gorseli, kapak_alt, yayinda, yayin_tarihi, created_at, updated_at")
     .order("created_at", { ascending: false }).limit(200);
   if (error) return { error: error.message, yazilar: [] };
 
   const yazilar = ((data ?? []) as BlogSatiri[]).map((r) => ({
     id: r.id, slug: r.slug, baslik: r.baslik, ozet: r.ozet, icerik: r.icerik,
-    kapakGorseli: r.kapak_gorseli, yayinda: r.yayinda, yayinTarihi: r.yayin_tarihi,
+    kapakGorseli: r.kapak_gorseli, kapakAlt: r.kapak_alt, yayinda: r.yayinda, yayinTarihi: r.yayin_tarihi,
     createdAt: r.created_at, updatedAt: r.updated_at,
   }));
   return { error: null, yazilar };
@@ -116,12 +116,26 @@ export async function blogYazisiKaydet(formData: FormData): Promise<{ error: str
   const id = String(formData.get("id") ?? "").trim();
   const baslik = String(formData.get("baslik") ?? "").trim();
   const ozet = String(formData.get("ozet") ?? "").trim();
-  const icerik = String(formData.get("icerik") ?? "").trim();
+  const icerikHam = String(formData.get("icerik") ?? "").trim();
   const yayinda = formData.get("yayinda") === "true";
   const dosya = formData.get("kapak") as File | null;
+  const kapakAlt = String(formData.get("kapakAlt") ?? "").trim();
+  const istenenSlug = String(formData.get("slug") ?? "").trim();
+
+  // Kullanıcı taslakları "# Başlık" satırıyla başlıyor; sayfa başlığı zaten
+  // ayrı bir <h1> olarak basıldığı için ikinci bir H1 hem SEO'da olumsuz
+  // hem de render'ımız tek "#" desteklemediği için düz metin görünürdü.
+  // Metni olduğu gibi yapıştırabilmek adına baştaki H1 satırı atılıyor.
+  const icerik = icerikHam.replace(/^#[ \t]+.*(?:\r?\n)+/, "").trim();
 
   const dogrulama = alanlariDogrula(baslik, ozet, icerik);
   if (dogrulama) return { error: dogrulama };
+  if (kapakAlt.length > 200) return { error: "Görsel alt metni en fazla 200 karakter olabilir." };
+
+  // Kullanıcı slug yazdıysa onu normalize et (Türkçe harf/boşluk temizliği),
+  // yazmadıysa başlıktan üret. Tablodaki kısıt en az 3 karakter istiyor.
+  const slugTaban = slugUret(istenenSlug || baslik) || "yazi";
+  if (slugTaban.length < 3) return { error: "URL kısa adı en az 3 karakter olmalı." };
 
   let kapakYolu: string | undefined;
   if (dosya && dosya.size > 0) {
@@ -136,8 +150,11 @@ export async function blogYazisiKaydet(formData: FormData): Promise<{ error: str
     const { data: mevcut } = await admin.from("blog_yazilari").select("slug, yayinda, yayin_tarihi, kapak_gorseli").eq("id", id).maybeSingle();
     if (!mevcut) { await geriAl(); return { error: "Yazı bulunamadı." }; }
 
-    const guncelleme: Record<string, unknown> = { baslik, ozet, icerik, yayinda };
+    const guncelleme: Record<string, unknown> = { baslik, ozet, icerik, yayinda, kapak_alt: kapakAlt || null };
     if (kapakYolu) guncelleme.kapak_gorseli = kapakYolu;
+    // Slug değiştiyse adres de değişir; benzersizliği kendi kaydını hariç
+    // tutarak kontrol ediyoruz.
+    if (slugTaban !== mevcut.slug) guncelleme.slug = await benzersizSlug(admin, slugTaban, id);
     // İlk kez yayınlanıyorsa yayın tarihini şimdi damgala.
     if (yayinda && !mevcut.yayin_tarihi) guncelleme.yayin_tarihi = new Date().toISOString();
 
@@ -146,10 +163,11 @@ export async function blogYazisiKaydet(formData: FormData): Promise<{ error: str
     // Eski kapak artık kullanılmıyorsa storage'dan temizle.
     if (kapakYolu && mevcut.kapak_gorseli) await admin.storage.from("blog").remove([mevcut.kapak_gorseli]);
   } else {
-    const slug = await benzersizSlug(admin, slugUret(baslik) || "yazi");
+    const slug = await benzersizSlug(admin, slugTaban);
     const { error } = await admin.from("blog_yazilari").insert({
       slug, baslik, ozet, icerik, yayinda,
       kapak_gorseli: kapakYolu ?? null,
+      kapak_alt: kapakAlt || null,
       yayin_tarihi: yayinda ? new Date().toISOString() : null,
       olusturan_id: userId,
     });

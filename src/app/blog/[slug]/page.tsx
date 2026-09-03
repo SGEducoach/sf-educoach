@@ -78,7 +78,7 @@ export default async function BlogYazisiSayfasi({ params }: { params: Promise<{ 
         <p className="mt-4 text-lg leading-8" style={{ color: GRI }}>{yazi.ozet}</p>
         {gorsel && (
           // eslint-disable-next-line @next/next/no-img-element -- yönetilen Supabase Storage görseli
-          <img src={gorsel} alt="" className="mt-6 w-full rounded-3xl object-cover" />
+          <img src={gorsel} alt={yazi.kapakAlt ?? ""} className="mt-6 w-full rounded-3xl object-cover" />
         )}
         <div className="mt-8">
           <BasitMarkdown icerik={yazi.icerik} />

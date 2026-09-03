@@ -52,7 +52,7 @@ export default async function BlogListesi() {
                 <Link href={`/blog/${y.slug}`} className="block">
                   {y.kapakGorseli && (
                     // eslint-disable-next-line @next/next/no-img-element -- yönetilen Supabase Storage görseli
-                    <img src={blogGorselUrl(y.kapakGorseli)} alt="" className="mb-5 h-56 w-full rounded-2xl object-cover sm:h-64" loading="lazy" />
+                    <img src={blogGorselUrl(y.kapakGorseli)} alt={y.kapakAlt ?? ""} className="mb-5 h-56 w-full rounded-2xl object-cover sm:h-64" loading="lazy" />
                   )}
                   {y.yayinTarihi && <span className="text-[11px] font-bold" style={{ color: TURKUAZ }}>{tarihFormatla(y.yayinTarihi)}</span>}
                   <h2 className="mt-1 text-xl font-extrabold leading-snug sm:text-2xl" style={{ color: LACIVERT }}>{y.baslik}</h2>
