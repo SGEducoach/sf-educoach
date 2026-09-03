@@ -5,6 +5,7 @@ import { Rss, Trash2, Eye, EyeOff, Save, X, ExternalLink } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH, LILAC } from "@/lib/theme";
 import { blogYazilariniYonetimIcinGetir, blogYazisiKaydet, blogYazisiYayinDurumu, blogYazisiSil } from "@/app/yonetici/blog-actions";
 import { blogGorselUrl, tarihFormatla, type BlogYazisi } from "@/lib/blog";
+import { BasitMarkdown } from "@/components/BasitMarkdown";
 
 // SeFu Blog yönetimi (03.09.2026). Taslak kaydedip sonra yayınlama akışı:
 // "yayında" işaretlenmeden yazı public tarafta hiç görünmüyor.
@@ -122,10 +123,22 @@ function YaziSatiri({ yazi, onDuzenle, onDegisti, onHata }: {
 }
 
 function BlogFormu({ yazi, onBitti }: { yazi: BlogYazisi | null; onBitti: () => void }) {
+  const [baslik, setBaslik] = useState(yazi?.baslik ?? "");
   const [ozet, setOzet] = useState(yazi?.ozet ?? "");
+  const [icerik, setIcerik] = useState(yazi?.icerik ?? "");
   const [yayinda, setYayinda] = useState(yazi?.yayinda ?? false);
   const [hata, setHata] = useState<string | null>(null);
   const [pending, startPending] = useTransition();
+  // Kullanıcı isteği (03.09.2026): yayın öncesi önizleme. Tamamen tarayıcı
+  // içinde — sunucuya istek gitmiyor, taslak için bir URL oluşmuyor, dolayısıyla
+  // Google'ın yayınlanmamış yazıyı görme ihtimali de yok.
+  const [mod, setMod] = useState<"yaz" | "onizle">("yaz");
+  // Henüz yüklenmemiş kapak dosyasını önizlemek için geçici tarayıcı adresi.
+  const [secilenKapak, setSecilenKapak] = useState<string | null>(null);
+  useEffect(() => () => { if (secilenKapak) URL.revokeObjectURL(secilenKapak); }, [secilenKapak]);
+
+  const mevcutKapak = yazi?.kapakGorseli ? blogGorselUrl(yazi.kapakGorseli) : null;
+  const onizlemeKapagi = secilenKapak ?? mevcutKapak;
 
   function gonder(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -146,9 +159,22 @@ function BlogFormu({ yazi, onBitti }: { yazi: BlogYazisi | null; onBitti: () => 
 
   return (
     <form onSubmit={gonder} className="mb-4 flex flex-col gap-3 rounded-2xl p-4" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
+      <div className="flex gap-1 self-start rounded-full p-1" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
+        {(["yaz", "onizle"] as const).map((m) => (
+          <button key={m} type="button" onClick={() => setMod(m)}
+            className="sfec-btn rounded-full px-4 py-1.5 text-xs font-bold"
+            style={{ background: mod === m ? MINT : "transparent", color: mod === m ? MINT_ON : TEXT_MUTED }}>
+            {m === "yaz" ? "Yaz" : "Önizle"}
+          </button>
+        ))}
+      </div>
+
+      {/* Alanlar önizlemede gizleniyor ama DOM'dan KALDIRILMIYOR: dosya
+          seçici unmount edilirse seçilen kapak dosyası kaybolur. */}
+      <div className={mod === "yaz" ? "flex flex-col gap-3" : "hidden"}>
       <label className="flex flex-col gap-1">
         <span className={etiket} style={{ color: TEXT_MUTED }}>Başlık</span>
-        <input name="baslik" required defaultValue={yazi?.baslik ?? ""} className={girdi} style={girdiStil} />
+        <input name="baslik" required value={baslik} onChange={(e) => setBaslik(e.target.value)} className={girdi} style={girdiStil} />
       </label>
 
       <label className="flex flex-col gap-1">
@@ -159,14 +185,45 @@ function BlogFormu({ yazi, onBitti }: { yazi: BlogYazisi | null; onBitti: () => 
 
       <label className="flex flex-col gap-1">
         <span className={etiket} style={{ color: TEXT_MUTED }}>İçerik — ## ara başlık, - liste, **kalın**, [bağlantı](adres) kullanabilirsiniz</span>
-        <textarea name="icerik" required rows={14} defaultValue={yazi?.icerik ?? ""}
+        <textarea name="icerik" required rows={14} value={icerik} onChange={(e) => setIcerik(e.target.value)}
           className={`${girdi} resize-y font-mono text-xs leading-relaxed`} style={girdiStil} />
       </label>
 
       <label className="flex flex-col gap-1">
         <span className={etiket} style={{ color: TEXT_MUTED }}>Kapak görseli (JPEG/PNG/WebP, en fazla 5MB)</span>
-        <input type="file" name="kapak" accept="image/jpeg,image/png,image/webp" className="text-xs" style={{ color: TEXT_MUTED }} />
+        <input type="file" name="kapak" accept="image/jpeg,image/png,image/webp" className="text-xs" style={{ color: TEXT_MUTED }}
+          onChange={(e) => {
+            const d = e.target.files?.[0];
+            setSecilenKapak((eskiAdres) => { if (eskiAdres) URL.revokeObjectURL(eskiAdres); return d ? URL.createObjectURL(d) : null; });
+          }} />
       </label>
+
+      </div>
+
+      {mod === "onizle" && (
+        // Sitedeki yazı sayfasıyla aynı tipografi/renk düzeni — panel koyu
+        // temalı olduğu için önizleme bilinçli olarak beyaz zeminde.
+        <div className="overflow-hidden rounded-2xl bg-white p-6 sm:p-8">
+          {baslik.trim() ? (
+            <>
+              <h1 className="text-balance text-2xl font-extrabold leading-tight sm:text-3xl" style={{ color: "#0F2540", fontFamily: "var(--font-baloo)" }}>{baslik}</h1>
+              <p className="mt-2 text-sm font-semibold" style={{ color: "#14B8B0" }}>{tarihFormatla(yazi?.yayinTarihi ?? new Date().toISOString())}</p>
+              {ozet.trim() && <p className="mt-4 text-base leading-7 sm:text-lg" style={{ color: "#3F4B5A" }}>{ozet}</p>}
+              {onizlemeKapagi && (
+                // eslint-disable-next-line @next/next/no-img-element -- yerel önizleme (blob) veya Storage görseli
+                <img src={onizlemeKapagi} alt="" className="mt-5 w-full rounded-2xl object-cover" />
+              )}
+              <div className="mt-6">
+                {icerik.trim()
+                  ? <BasitMarkdown icerik={icerik} />
+                  : <p className="text-sm italic" style={{ color: "#5A6472" }}>İçerik boş — &quot;Yaz&quot; sekmesinden metni girin.</p>}
+              </div>
+            </>
+          ) : (
+            <p className="text-sm italic" style={{ color: "#5A6472" }}>Önizleme için önce başlık girin.</p>
+          )}
+        </div>
+      )}
 
       <label className="flex cursor-pointer items-center gap-2">
         <input type="checkbox" checked={yayinda} onChange={(e) => setYayinda(e.target.checked)} />
