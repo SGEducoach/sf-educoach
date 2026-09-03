@@ -62,15 +62,40 @@ async function benzersizSlug(admin: ReturnType<typeof createAdminClient>, taban:
   return `${taban}-${Date.now()}`;
 }
 
+// Kullanıcı isteği (03.09.2026): ilk yazının kapağı 1,9MB PNG'di — bu
+// doğrudan Core Web Vitals'ı (LCP) düşürüyor ve arama sıralamasına
+// yansıyor. Kapaklar artık yüklenirken otomatik WebP'ye çevriliyor ve
+// en fazla KAPAK_MAKS_GENISLIK piksele küçültülüyor; yönetici tarafında
+// ek bir işlem gerekmiyor. Dönüşüm başarısız olursa (sharp yoksa vb.)
+// yükleme iptal edilmiyor, dosya olduğu gibi kaydediliyor.
+const KAPAK_MAKS_GENISLIK = 1600;
+const KAPAK_WEBP_KALITE = 80;
+
 async function kapakYukle(admin: ReturnType<typeof createAdminClient>, dosya: File): Promise<{ yol?: string; hata?: string }> {
   const tipler: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
   const uzanti = tipler[dosya.type];
   if (!uzanti) return { hata: "Kapak görseli JPEG, PNG veya WebP olmalı." };
   if (dosya.size > KAPAK_MAKS_MB * 1024 * 1024) return { hata: `Kapak görseli en fazla ${KAPAK_MAKS_MB}MB olabilir.` };
 
-  const yol = `${crypto.randomUUID()}.${uzanti}`;
-  const buffer = Buffer.from(await dosya.arrayBuffer());
-  const { error } = await admin.storage.from("blog").upload(yol, buffer, { contentType: dosya.type, upsert: false });
+  let buffer = Buffer.from(await dosya.arrayBuffer());
+  let sonUzanti = uzanti;
+  let icerikTipi = dosya.type;
+  try {
+    const sharp = (await import("sharp")).default;
+    // rotate(): EXIF yönlendirmesini uygular, yoksa telefondan gelen
+    // fotoğraflar yan dönük kaydediliyor.
+    buffer = await sharp(buffer).rotate()
+      .resize({ width: KAPAK_MAKS_GENISLIK, withoutEnlargement: true })
+      .webp({ quality: KAPAK_WEBP_KALITE })
+      .toBuffer();
+    sonUzanti = "webp";
+    icerikTipi = "image/webp";
+  } catch (e) {
+    console.warn("Blog kapağı WebP'ye çevrilemedi, orijinal yükleniyor:", e);
+  }
+
+  const yol = `${crypto.randomUUID()}.${sonUzanti}`;
+  const { error } = await admin.storage.from("blog").upload(yol, buffer, { contentType: icerikTipi, upsert: false });
   if (error) return { hata: "Kapak görseli yüklenemedi: " + error.message };
   return { yol };
 }
