@@ -35,11 +35,23 @@ async function programaCakisiyorMu(
   const { data, error } = await sorgu;
   if (error) return { error: error.message, cakisiyor: false };
 
-  const cakisiyor = ((data ?? []) as { ogrenci_baslangic_saat: string | null; ogrenci_bitis_saat: string | null }[]).some((r) =>
+  const gorevCakisiyor = ((data ?? []) as { ogrenci_baslangic_saat: string | null; ogrenci_bitis_saat: string | null }[]).some((r) =>
     !!r.ogrenci_baslangic_saat && !!r.ogrenci_bitis_saat &&
     saatAraliklariCakisiyor(r.ogrenci_baslangic_saat, r.ogrenci_bitis_saat, baslangicSaat, bitisSaat),
   );
-  return { error: null, cakisiyor };
+  if (gorevCakisiyor) return { error: null, cakisiyor: true };
+
+  // Kabul edilmiş Beden Eğitimi/Müzik çalışmaları da öğrencinin programını
+  // kapatır. Böylece öğrenci daha sonra aynı saate kişisel plan ekleyemez.
+  const { count: etkinlikSayisi, error: etkinlikHatasi } = await supabase
+    .from("etkinlik_calisma_atamalari")
+    .select("id,etkinlik_calismalari!inner(tarih,baslangic_saat,bitis_saat)", { count: "exact", head: true })
+    .eq("student_id", studentId).eq("durum", "kabul")
+    .eq("etkinlik_calismalari.tarih", tarih)
+    .lt("etkinlik_calismalari.baslangic_saat", bitisSaat)
+    .gt("etkinlik_calismalari.bitis_saat", baslangicSaat);
+  if (etkinlikHatasi) return { error: etkinlikHatasi.message, cakisiyor: false };
+  return { error: null, cakisiyor: (etkinlikSayisi ?? 0) > 0 };
 }
 
 // Öğretmen bir veya birden çok öğrenciye (toplu görev) aynı görevi verir —

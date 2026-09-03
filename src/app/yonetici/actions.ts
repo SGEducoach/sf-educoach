@@ -4,16 +4,17 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { rastgeleSifre, adNormalize, hedefBolumNormalize, telefonGecerliMi, okulNoGecerliMi, sifreGecerliMi } from "@/lib/validators";
+import { rastgeleSifre, adNormalize, hedefBolumNormalize, telefonGecerliMi, sifreGecerliMi, ogrenciGirisKimligiHatasi, teslimEdilebilirEpostaMi } from "@/lib/validators";
 import { getAnthropicClient } from "@/lib/anthropic";
 import { KONU_ANLATIMI_SISTEM_PROMPTU, icerikTemizle } from "@/lib/konu-anlatimi";
 import { duyuruGonder, pushGonderProfile } from "@/lib/push-send";
 import { DUYURU_MIN_UZUNLUK, duyuruGonderimIzniKontrol } from "@/lib/duyuru-guvenligi";
 import { dersSoruSayisi, sinifSiraKarsilastir } from "@/lib/types";
-import type { AytAlan, DenemeTuru, DenemeZorlugu, UserRole } from "@/lib/types";
+import type { AytAlan, DenemeTuru, DenemeZorlugu, UserRole, KurumTuru } from "@/lib/types";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
 import { tgDenemeArsiviGetir, type TgDenemeIlani } from "@/lib/tg-deneme-ilanlari";
 import { anaSayfaAyarlariniGetir, anaSayfaSliderGorselleriGetir, type AnaSayfaAyarlari, type AnaSayfaSliderGorseli } from "@/lib/ana-sayfa";
+import { anaSayfaDuyurulariniGetir, type AnaSayfaDuyurusu } from "@/lib/ana-sayfa-duyurulari";
 
 const DUYURU_MAKS_UZUNLUK = 500;
 
@@ -48,6 +49,7 @@ export interface KullaniciSonuc {
   aktif: boolean;
   okulAdi: string | null;
   okulId: string | null;
+  kurumTuru: KurumTuru | null;
   sinifAdi: string | null;
   sinifId: string | null;
   okulNo: string | null;
@@ -115,7 +117,7 @@ export async function kullaniciAra(sorgu: string, rolFiltre: UserRole | "hepsi",
     .neq("role", "admin")
     .in("id", kurumKapsamindakiIdler)
     .order("ad")
-    .limit(40);
+    .limit(1000);
 
   if (q.length >= 2) {
     query = query.or(`ad.ilike.%${q}%,email.ilike.%${q}%`);
@@ -133,7 +135,7 @@ export async function kullaniciAra(sorgu: string, rolFiltre: UserRole | "hepsi",
 
   const [ogrenciDetay, ogretmenDetay, moderatorler] = await Promise.all([
     ogrenciIdleri.length
-      ? supabase.from("students").select("id, okul_no, school_id, class_id, yurt_ogrencisi, ayt_alan, hedef_bolum, hedef_net_tyt, hedef_net_ayt, schools(ad), classes(seviye, sube)").in("id", ogrenciIdleri)
+      ? supabase.from("students").select("id, okul_no, school_id, class_id, yurt_ogrencisi, ayt_alan, hedef_bolum, hedef_net_tyt, hedef_net_ayt, schools(ad, tur), classes(seviye, sube)").in("id", ogrenciIdleri)
       : Promise.resolve({ data: [] }),
     ogretmenIdleri.length
       ? supabase.from("teachers").select("id, brans, school_id, schools(ad)").in("id", ogretmenIdleri)
@@ -147,7 +149,7 @@ export async function kullaniciAra(sorgu: string, rolFiltre: UserRole | "hepsi",
   type OgrenciRow = {
     id: string; okul_no: string; school_id: string; class_id: string; yurt_ogrencisi: boolean;
     ayt_alan: AytAlan; hedef_bolum: string; hedef_net_tyt: number | null; hedef_net_ayt: number | null;
-    schools: { ad: string } | null; classes: { seviye: string; sube: string } | null;
+    schools: { ad: string; tur: KurumTuru } | null; classes: { seviye: string; sube: string } | null;
   };
   type OgretmenRow = { id: string; brans: string; school_id: string; schools: { ad: string } | null };
   const ogrenciMap = new Map(((ogrenciDetay.data as unknown as OgrenciRow[]) ?? []).map((o) => [o.id, o]));
@@ -160,6 +162,7 @@ export async function kullaniciAra(sorgu: string, rolFiltre: UserRole | "hepsi",
       id: s.id, ad: s.ad, email: s.email, telefon: s.telefon, role: s.role, aktif: s.aktif,
       okulAdi: o?.schools?.ad ?? t?.schools?.ad ?? null,
       okulId: o?.school_id ?? t?.school_id ?? null,
+      kurumTuru: o?.schools?.tur ?? null,
       sinifAdi: o?.classes ? `${o.classes.seviye}-${o.classes.sube}` : null,
       sinifId: o?.class_id ?? null,
       okulNo: o?.okul_no ?? null,
@@ -182,6 +185,8 @@ export async function kullaniciAra(sorgu: string, rolFiltre: UserRole | "hepsi",
 // şifresini kendi başına sıfırlayamıyor, bu akış admin üzerinden çözülüyor).
 export async function sifreSifirla(userId: string): Promise<{ error: string | null; sifre: string | null }> {
   const { supabase, user, admin } = await requireAdmin();
+  const { data: hedef } = await admin.from("profiles").select("email").eq("id", userId).neq("role", "admin").maybeSingle();
+  if (!hedef || !teslimEdilebilirEpostaMi(hedef.email)) return { error: "Önce kullanıcıya geçerli bir e-posta adresi kaydedin.", sifre: null };
   const sifre = rastgeleSifre();
   const { error } = await admin.auth.admin.updateUserById(userId, { password: sifre });
   if (error) return { error: error.message, sifre: null };
@@ -198,12 +203,32 @@ export async function sifreSifirla(userId: string): Promise<{ error: string | nu
 // müdürle sınırlanmadı — aynı buton diğer rollerde de aynı işlevi görüyor.
 export async function sifreBelirle(userId: string, yeniSifre: string): Promise<{ error: string | null }> {
   const { supabase, user, admin } = await requireAdmin();
+  const { data: hedef } = await admin.from("profiles").select("email").eq("id", userId).neq("role", "admin").maybeSingle();
+  if (!hedef || !teslimEdilebilirEpostaMi(hedef.email)) return { error: "Önce kullanıcıya geçerli bir e-posta adresi kaydedin." };
   if (!sifreGecerliMi(yeniSifre)) return { error: "Şifre en az 8 karakter olmalı; harf, rakam ve özel işaret içermeli." };
   const { error } = await admin.auth.admin.updateUserById(userId, { password: yeniSifre });
   if (error) return { error: error.message };
   const { error: profileError } = await admin.from("profiles").update({ gecici_sifre: false }).eq("id", userId).neq("role", "admin");
   if (profileError) return { error: profileError.message };
   await auditLogYaz(supabase, user.id, "sifre_belirle", { hedef_id: userId });
+  return { error: null };
+}
+
+export async function kullaniciEpostaKaydet(userId: string, yeniEmail: string): Promise<{ error: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const email = yeniEmail.trim().toLowerCase();
+  if (!teslimEdilebilirEpostaMi(email)) return { error: "Geçerli, e-posta alabilen bir adres girin." };
+  const { data: mevcut } = await admin.from("profiles").select("email, role").eq("id", userId).maybeSingle();
+  if (!mevcut || mevcut.role === "admin") return { error: "Kullanıcı bulunamadı veya düzenlenemez." };
+  const { error: authError } = await admin.auth.admin.updateUserById(userId, { email, email_confirm: true });
+  if (authError) return { error: authError.message };
+  const { error: profileError } = await admin.from("profiles").update({ email }).eq("id", userId);
+  if (profileError) {
+    if (mevcut.email) await admin.auth.admin.updateUserById(userId, { email: mevcut.email, email_confirm: true });
+    return { error: profileError.message };
+  }
+  await auditLogYaz(supabase, user.id, "kullanici_eposta_kaydet", { hedef_id: userId });
+  revalidatePath("/yonetici");
   return { error: null };
 }
 
@@ -306,7 +331,16 @@ export async function kullaniciProfilGuncelle(input: {
 
   const { data: mevcut } = await admin.from("profiles").select("email, role").eq("id", input.userId).maybeSingle();
   if (!mevcut || mevcut.role === "admin") return { error: "Kullanıcı bulunamadı veya düzenlenemez." };
-  if (mevcut.role === "ogrenci" && input.okulNo !== undefined && !okulNoGecerliMi(input.okulNo)) return { error: "Okul numarası geçersiz." };
+  const girisKimligi = input.okulNo?.trim();
+  if (mevcut.role === "ogrenci" && girisKimligi !== undefined) {
+    // Kurum türünü istemciden değil öğrencinin kayıtlı kurumundan al.
+    const { data: ogrenci, error: ogrenciHatasi } = await admin.from("students")
+      .select("schools(tur)").eq("id", input.userId).maybeSingle();
+    const kurum = ogrenci?.schools as unknown as { tur: KurumTuru } | null;
+    if (ogrenciHatasi || !kurum) return { error: "Öğrencinin kurum bilgisi okunamadı. Lütfen tekrar deneyin." };
+    const kimlikHatasi = ogrenciGirisKimligiHatasi(girisKimligi, kurum.tur);
+    if (kimlikHatasi) return { error: kimlikHatasi };
+  }
 
   const { error: authError } = await admin.auth.admin.updateUserById(input.userId, { email, email_confirm: true });
   if (authError) return { error: authError.message };
@@ -316,7 +350,7 @@ export async function kullaniciProfilGuncelle(input: {
     return { error: profileError.message };
   }
   if (mevcut.role === "ogrenci" && input.okulNo !== undefined) {
-    const { error: ogrenciError } = await admin.from("students").update({ okul_no: input.okulNo }).eq("id", input.userId);
+    const { error: ogrenciError } = await admin.from("students").update({ okul_no: girisKimligi }).eq("id", input.userId);
     if (ogrenciError) return { error: ogrenciError.message };
   }
   if (mevcut.role === "ogrenci" && (input.hedefBolum !== undefined || input.aytAlan !== undefined || input.hedefNetTyt !== undefined || input.hedefNetAyt !== undefined)) {
@@ -1400,7 +1434,9 @@ export async function adminDuyuruGonder(
   const { data: ogrenciler } = await ogrenciQuery;
   const ogrenciIdleri = (ogrenciler ?? []).map((o) => o.id);
 
-  const sonuc = await duyuruGonder(admin, ogrenciIdleri, "SEFU KOÇ duyurusu", mesajTemiz, user.id);
+  const { data: adminProfil } = await admin.from("profiles").select("ad").eq("id", user.id).single();
+  const { data: hedefKurum } = kurumId ? await admin.from("schools").select("ad").eq("id", kurumId).maybeSingle() : { data: null };
+  const sonuc = await duyuruGonder(admin, ogrenciIdleri, "SEFU KOÇ duyurusu", mesajTemiz, user.id, "hepsi", undefined, { schoolId: kurumId, gonderenRol: "admin", gonderenAdi: adminProfil?.ad ?? "Admin", hedef: kurumId ? `${hedefKurum?.ad ?? "Kurum"} · Öğrenci ve veliler` : "Tüm kurumlar · Öğrenci ve veliler" });
 
   const bitis = sureSaat ? new Date(Date.now() + sureSaat * 3_600_000).toISOString() : null;
   const { error: bannerError } = await admin.from("platform_ayarlari")
@@ -1448,6 +1484,7 @@ export async function adminGonderilenDuyurularGetir(): Promise<{ error: string |
     .from("duyurular")
     .select("id, baslik, mesaj, created_at")
     .eq("gonderen_id", user.id)
+    .is("silindi_at", null)
     .order("created_at", { ascending: false })
     .limit(20);
   if (error) return { error: error.message, duyurular: [] };
@@ -1632,8 +1669,9 @@ export async function tgDenemeIlaniEkle(formData: FormData): Promise<{ error: st
   }
 
   await auditLogYaz(supabase, user.id, "tg_deneme_ilani_ekle", { dosya_yolu: dosyaYolu, dosya_tipi: dosyaTipi });
-  revalidatePath("/dashboard");
-  revalidatePath("/yonetici");
+  revalidatePath("/");
+  revalidatePath("/dashboard", "layout");
+  revalidatePath("/yonetici", "layout");
   return { error: null };
 }
 
@@ -1652,8 +1690,9 @@ export async function tgDenemeIlaniSil(id: string): Promise<{ error: string | nu
     if (silmeHatasi) console.warn("TG deneme ilanı dosyası silinemedi (kayıt zaten silindi):", silmeHatasi.message);
   }
   await auditLogYaz(supabase, user.id, "tg_deneme_ilani_sil", { id });
-  revalidatePath("/dashboard");
-  revalidatePath("/yonetici");
+  revalidatePath("/");
+  revalidatePath("/dashboard", "layout");
+  revalidatePath("/yonetici", "layout");
   return { error: null };
 }
 
@@ -1753,4 +1792,18 @@ export async function anaSayfaSliderGorselSil(id: string): Promise<{ error: stri
   revalidatePath("/");
   revalidatePath("/yonetici");
   return { error: null };
+}
+
+export async function anaSayfaDuyurusuKaydet(input:{id:string|null;baslik:string;icerik:string}):Promise<{error:string|null;duyurular:AnaSayfaDuyurusu[]}>{
+ const {supabase,user,admin}=await requireAdmin(); const baslik=input.baslik.trim(),icerik=input.icerik.trim();
+ if(!baslik||!icerik)return {error:"Başlık ve içerik gereklidir.",duyurular:[]};
+ if(baslik.length>120||icerik.length>2000)return {error:"Başlık en fazla 120, içerik en fazla 2000 karakter olabilir.",duyurular:[]};
+ const sorgu=input.id?admin.from("ana_sayfa_duyurulari").update({baslik,icerik,updated_at:new Date().toISOString()}).eq("id",input.id):admin.from("ana_sayfa_duyurulari").insert({baslik,icerik});
+ const {error}=await sorgu;if(error)return {error:error.message,duyurular:[]};
+ await auditLogYaz(supabase,user.id,input.id?"ana_sayfa_duyurusu_guncelle":"ana_sayfa_duyurusu_ekle",{id:input.id});revalidatePath("/");revalidatePath("/yonetici");
+ return {error:null,duyurular:await anaSayfaDuyurulariniGetir(admin)};
+}
+export async function anaSayfaDuyurusuSil(id:string):Promise<{error:string|null;duyurular:AnaSayfaDuyurusu[]}>{
+ const {supabase,user,admin}=await requireAdmin();const {error}=await admin.from("ana_sayfa_duyurulari").delete().eq("id",id);if(error)return {error:error.message,duyurular:[]};
+ await auditLogYaz(supabase,user.id,"ana_sayfa_duyurusu_sil",{id});revalidatePath("/");revalidatePath("/yonetici");return {error:null,duyurular:await anaSayfaDuyurulariniGetir(admin)};
 }

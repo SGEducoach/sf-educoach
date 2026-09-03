@@ -1,17 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { ArrowRightLeft, Award, BedDouble, ChevronDown, KeyRound, Layers, Pencil, Plus, Save, Search, Settings, ShieldCheck, Trash2, UserCheck, UserPlus, UserX, X } from "lucide-react";
+import { ArrowRightLeft, Award, BedDouble, ChevronDown, KeyRound, Layers, MailWarning, Pencil, Plus, Save, Search, Settings, ShieldCheck, Trash2, UserCheck, UserPlus, UserX, X } from "lucide-react";
 import {
   moderatorAktiflikDegistir, moderatorHesapSil, moderatorKurumBilgisiGetir, moderatorKurumGuncelle,
   moderatorOgrenciEkle, moderatorOgrenciSinifTasi, moderatorOgretmenBransDegistir, moderatorOgretmenEkle,
-  moderatorOkulSiniflari, moderatorRozetSifirla, moderatorSifreBelirle, moderatorSifreSifirla, moderatorSinifEkle,
+  moderatorEpostaKaydet, moderatorOkulSiniflari, moderatorRozetSifirla, moderatorSifreBelirle, moderatorSifreSifirla, moderatorSinifEkle,
   moderatorSinifSil, moderatorYurtDurumuDegistir,
   type ModeratorKullanici,
 } from "@/app/moderator/actions";
 import { AYT_ALAN_ETIKET, BRANS_LISTESI } from "@/lib/types";
 import type { AytAlan, SinifSeviyesi } from "@/lib/types";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
+import { teslimEdilebilirEpostaMi } from "@/lib/validators";
 
 export function ModeratorPanel({ okulAdi, kullanicilar, schoolId }: {
   okulAdi: string; kullanicilar: ModeratorKullanici[];
@@ -407,6 +408,8 @@ function KullaniciKarti({ kullanici: k, schoolId, onMesaj }: { kullanici: Modera
   // (moderatorRozetSifirla requireModerator ile korunuyor), sorun sadece bu
   // toggle'ın arkasında gizli kalıp fark edilmemesiydi.
   const [digerAcik, setDigerAcik] = useState(false);
+  const [epostaKayitli, setEpostaKayitli] = useState(teslimEdilebilirEpostaMi(k.email));
+  const [eposta, setEposta] = useState(teslimEdilebilirEpostaMi(k.email) ? k.email ?? "" : "");
 
   return (
     <div className="rounded-2xl p-3.5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
@@ -415,12 +418,29 @@ function KullaniciKarti({ kullanici: k, schoolId, onMesaj }: { kullanici: Modera
         {k.moderatorMu && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5" style={{ background: MINT, color: MINT_ON }}><ShieldCheck size={9}/> Moderatör</span>}
       </div>
       <div style={{ color: TEXT_MUTED }} className="text-xs">{k.detay}</div>
+      {!epostaKayitli && (
+        <div className="mt-2 flex flex-col gap-2 rounded-lg p-2 sm:flex-row sm:items-end" style={{ background: "rgba(225,29,72,0.08)", border: `1px solid ${BLUSH}` }}>
+          <div className="flex min-w-0 flex-1 items-start gap-2">
+            <MailWarning size={14} className="mt-0.5 shrink-0" color={BLUSH} />
+            <label className="flex min-w-0 flex-1 flex-col gap-1">
+              <span className="text-[10px] font-semibold" style={{ color: BLUSH }}>Şifre işleminden önce e-posta adresini kaydedin.</span>
+              <input type="email" value={eposta} onChange={(e) => setEposta(e.target.value)} placeholder="kullanici@ornek.com"
+                className="rounded-lg px-2.5 py-1.5 text-xs outline-none" style={{ background: BG0, color: TEXT, border: `2px solid ${BORDER_STRONG}` }} />
+            </label>
+          </div>
+          <button type="button" disabled={pending || !eposta.trim()} onClick={() => startTransition(async () => {
+            const r = await moderatorEpostaKaydet(k.id, eposta, schoolId);
+            onMesaj(r.error ? `Hata: ${r.error}` : `${k.ad} için e-posta kaydedildi.`);
+            if (!r.error) setEpostaKayitli(true);
+          })} className="sfec-btn rounded-lg px-2.5 py-1.5 text-[10px] font-bold disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>E-postayı kaydet</button>
+        </div>
+      )}
       {/* Kullanıcı isteği (27.08.2026): "öğrenci hesabı yönetim butonları
           küçültülecek" — kart başına buton sayısı fazla olduğundan (özellikle
           öğrenci kartlarında) daha kompakt bir dolgu/yazı boyutuna geçildi. */}
       <div className="mt-3 flex flex-wrap gap-1.5">
-        <button disabled={pending} onClick={() => startTransition(async () => { const r = await moderatorSifreSifirla(k.id, schoolId); onMesaj(r.error ? `Hata: ${r.error}` : `Geçici şifre (${k.ad}): ${r.sifre}`); })} className="sfec-btn flex-1 rounded-lg px-2 py-1.5 text-[10px] font-bold" style={{ color: TEXT, border: `2px solid ${BORDER_STRONG}` }}><KeyRound className="mr-1 inline" size={11}/>Rastgele şifre</button>
-        <button disabled={pending} onClick={() => setSifreAcik((v) => !v)} className="sfec-btn flex-1 rounded-lg px-2 py-1.5 text-[10px] font-bold" style={{ background: sifreAcik ? MINT : "transparent", color: sifreAcik ? MINT_ON : TEXT, border: `2px solid ${BORDER_STRONG}` }}><KeyRound className="mr-1 inline" size={11}/>Şifre belirle</button>
+        <button disabled={pending || !epostaKayitli} title={epostaKayitli ? undefined : "Önce e-posta kaydedin"} onClick={() => startTransition(async () => { const r = await moderatorSifreSifirla(k.id, schoolId); onMesaj(r.error ? `Hata: ${r.error}` : `Geçici şifre (${k.ad}): ${r.sifre}`); })} className="sfec-btn flex-1 rounded-lg px-2 py-1.5 text-[10px] font-bold disabled:opacity-50" style={{ color: TEXT, border: `2px solid ${BORDER_STRONG}` }}><KeyRound className="mr-1 inline" size={11}/>Rastgele şifre</button>
+        <button disabled={pending || !epostaKayitli} title={epostaKayitli ? undefined : "Önce e-posta kaydedin"} onClick={() => setSifreAcik((v) => !v)} className="sfec-btn flex-1 rounded-lg px-2 py-1.5 text-[10px] font-bold disabled:opacity-50" style={{ background: sifreAcik ? MINT : "transparent", color: sifreAcik ? MINT_ON : TEXT, border: `2px solid ${BORDER_STRONG}` }}><KeyRound className="mr-1 inline" size={11}/>Şifre belirle</button>
         {(k.kategori === "ogrenci" || k.kategori === "ogretmen") && (
           <button disabled={pending} onClick={() => setDuzenleAcik((v) => !v)} title={k.kategori === "ogrenci" ? "Sınıf taşı" : "Branş değiştir"}
             className="sfec-btn rounded-lg px-2.5 py-1.5 text-[10px] font-bold" style={{ background: duzenleAcik ? MINT : "transparent", color: duzenleAcik ? MINT_ON : TEXT, border: `2px solid ${BORDER_STRONG}` }}>

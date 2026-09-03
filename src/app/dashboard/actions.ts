@@ -219,7 +219,7 @@ export async function ogretmenEkleManuel(input: {
 export async function ogrenciEkleManuel(input: {
   ad: string; email: string; okulNo: string; telefon: string; schoolId: string; classId: string;
   aytAlan: "SAY" | "EA" | "SOZ"; hedefBolum: string;
-}) {
+}): Promise<{ error: string | null; sifre: string | null }> {
   const { supabase, user, admin } = await requireAdmin();
   if (!admin) return { error: "Bu işlem için yönetici yetkisi gerekiyor.", sifre: null };
 
@@ -234,17 +234,24 @@ export async function ogrenciEkleManuel(input: {
   const hedefBolum = hedefBolumNormalize(input.hedefBolum);
 
   const sifre = rastgeleSifre();
-  const { data: created, error } = await admin.auth.admin.createUser({
-    email, password: sifre, email_confirm: true,
-    user_metadata: {
-      role: "ogrenci", ad, telefon: input.telefon || null, school_id: input.schoolId, class_id: input.classId,
-      okul_no: input.okulNo, ayt_alan: input.aytAlan, hedef_bolum: hedefBolum,
-      admin_ekledi: true, // izinli öğrenci listesi kontrolünden muaf (bkz. migration 0026)
-    },
-  });
-  if (error) return { error: manuelEklemeHatasi(error.message), sifre: null };
+  let createdUserId: string | undefined;
+  try {
+    const { data: created, error } = await admin.auth.admin.createUser({
+      email, password: sifre, email_confirm: true,
+      user_metadata: {
+        role: "ogrenci", ad, telefon: input.telefon || null, school_id: input.schoolId, class_id: input.classId,
+        okul_no: input.okulNo, ayt_alan: input.aytAlan, hedef_bolum: hedefBolum,
+        admin_ekledi: true, // izinli öğrenci listesi kontrolünden muaf (bkz. migration 0026)
+      },
+    });
+    if (error) return { error: manuelEklemeHatasi(error.message), sifre: null };
+    createdUserId = created.user?.id;
+  } catch (hata) {
+    const mesaj = hata instanceof Error ? hata.message : "Öğrenci hesabı oluşturulamadı. Lütfen tekrar deneyin.";
+    return { error: manuelEklemeHatasi(mesaj), sifre: null };
+  }
 
-  await auditLogYaz(supabase, user.id, "ogrenci_ekle_manuel", { ogrenci_id: created.user?.id, okul_no: input.okulNo, school_id: input.schoolId, class_id: input.classId });
+  await auditLogYaz(supabase, user.id, "ogrenci_ekle_manuel", { ogrenci_id: createdUserId, okul_no: input.okulNo, school_id: input.schoolId, class_id: input.classId });
   revalidatePath("/yonetici");
   return { error: null, sifre };
 }
@@ -588,8 +595,8 @@ export async function ogretmenDuyuruGonder(mesaj: string, kapsam?: string, alici
   }
 
   const [{ data: profile }, { data: teacher }] = await Promise.all([
-    supabase.from("profiles").select("role").eq("id", user.id).single(),
-    supabase.from("teachers").select("school_id, class_id").eq("id", user.id).single(),
+    supabase.from("profiles").select("role, ad").eq("id", user.id).single(),
+    supabase.from("teachers").select("school_id, class_id, brans").eq("id", user.id).single(),
   ]);
   if (!teacher || (profile?.role !== "ogretmen" && profile?.role !== "mudur")) {
     return { error: "Bu işlem için öğretmen veya müdür yetkisi gerekiyor.", ...bosSonuc };
@@ -601,13 +608,17 @@ export async function ogretmenDuyuruGonder(mesaj: string, kapsam?: string, alici
   let ogrenciIdleri: string[];
   let baslik: string;
 
-  if (profile.role === "mudur") {
+  const rehberMi = profile.role === "ogretmen" && teacher.brans === REHBER_BRANSI;
+  let hedefEtiketi = "";
+
+  if (profile.role === "mudur" || rehberMi) {
     if (["9", "10", "11", "12"].includes(kapsam ?? "")) {
       const { data: ogrenciler } = await admin
         .from("students").select("id, classes!inner(seviye)")
         .eq("school_id", teacher.school_id).eq("classes.seviye", kapsam);
       ogrenciIdleri = (ogrenciler ?? []).map((o) => o.id);
-      baslik = `Okul yönetiminden duyuru (${kapsam}. sınıflar)`;
+      baslik = rehberMi ? `Rehber Öğretmen duyurusu (${kapsam}. sınıflar)` : `Okul yönetiminden duyuru (${kapsam}. sınıflar)`;
+      hedefEtiketi = `${kapsam}. sınıflar`;
     } else if (kapsam && kapsam !== "okul") {
       // Belirli bir şube seçildi — o sınıfın gerçekten bu müdürün okuluna
       // ait olduğunu doğrulamadan öğrenci çekmiyoruz (başka okulun class_id'si
@@ -616,23 +627,26 @@ export async function ogretmenDuyuruGonder(mesaj: string, kapsam?: string, alici
       if (!sinif) return { error: "Seçilen sınıf bu okula ait değil.", ...bosSonuc };
       const { data: ogrenciler } = await admin.from("students").select("id").eq("class_id", sinif.id);
       ogrenciIdleri = (ogrenciler ?? []).map((o) => o.id);
-      baslik = `Okul yönetiminden duyuru (${sinif.seviye}-${sinif.sube})`;
+      baslik = rehberMi ? `Rehber Öğretmen duyurusu (${sinif.seviye}-${sinif.sube})` : `Okul yönetiminden duyuru (${sinif.seviye}-${sinif.sube})`;
+      hedefEtiketi = `${sinif.seviye}-${sinif.sube} sınıfı`;
     } else {
       const { data: ogrenciler } = await admin.from("students").select("id").eq("school_id", teacher.school_id);
       ogrenciIdleri = (ogrenciler ?? []).map((o) => o.id);
-      baslik = "Okul yönetiminden duyuru";
+      baslik = rehberMi ? "Rehber Öğretmen duyurusu" : "Okul yönetiminden duyuru";
+      hedefEtiketi = "Tüm okul";
     }
   } else {
     if (!teacher.class_id) return { error: "Sınıf öğretmeni olmadığınız için duyuru gönderemezsiniz.", ...bosSonuc };
     const { data: ogrenciler } = await admin.from("students").select("id").eq("class_id", teacher.class_id);
     ogrenciIdleri = (ogrenciler ?? []).map((o) => o.id);
     baslik = "Öğretmeninizden duyuru";
+    hedefEtiketi = "Kendi sınıfı";
   }
 
-  const sonuc = await duyuruGonderTemel(admin, ogrenciIdleri, baslik, mesajTemiz, user.id, aliciTuru, profile.role === "mudur" ? "mudur_mesaji" : "ogretmen_mesaji");
+  const sonuc = await duyuruGonderTemel(admin, ogrenciIdleri, baslik, mesajTemiz, user.id, aliciTuru, profile.role === "mudur" ? "mudur_mesaji" : "ogretmen_mesaji", { schoolId: teacher.school_id, gonderenRol: rehberMi ? "rehber_ogretmen" : profile.role, gonderenAdi: profile.ad, hedef: `${hedefEtiketi} · ${aliciTuru === "hepsi" ? "Öğrenci ve veliler" : aliciTuru === "ogrenci" ? "Öğrenciler" : "Veliler"}` });
   await admin.from("admin_audit_log").insert({
     actor_id: user.id,
-    eylem: profile.role === "mudur" ? "mudur_duyuru_gonder" : "ogretmen_duyuru_gonder",
+    eylem: profile.role === "mudur" ? "mudur_duyuru_gonder" : rehberMi ? "rehber_duyuru_gonder" : "ogretmen_duyuru_gonder",
     detay: { school_id: teacher.school_id, class_id: teacher.class_id, kapsam: kapsam ?? null, alici_turu: aliciTuru, ogrenci_sayisi: sonuc.ogrenciSayisi, veli_sayisi: sonuc.veliSayisi },
   });
   return { error: null, ...sonuc, kalanGunlukHak: izin.kalanGunlukHak };
@@ -656,7 +670,7 @@ export async function rehberMesajGonder(ogrenciIdleri: string[], mesaj: string, 
   if (ogrenciIdleri.length === 0) return { error: "En az bir öğrenci seçin.", ...bosSonuc };
 
   const [{ data: profile }, { data: teacher }] = await Promise.all([
-    supabase.from("profiles").select("role").eq("id", user.id).single(),
+    supabase.from("profiles").select("role, ad").eq("id", user.id).single(),
     supabase.from("teachers").select("school_id, brans").eq("id", user.id).single(),
   ]);
   if (!teacher || profile?.role !== "ogretmen" || teacher.brans !== REHBER_BRANSI) {
@@ -673,7 +687,24 @@ export async function rehberMesajGonder(ogrenciIdleri: string[], mesaj: string, 
   const dogrulanmisIdler = (ogrenciler ?? []).map((o) => o.id);
   if (dogrulanmisIdler.length === 0) return { error: "Seçilen öğrenciler bu okula ait değil.", ...bosSonuc };
 
-  const sonuc = await duyuruGonderTemel(admin, dogrulanmisIdler, REHBERLIK_DUYURU_BASLIGI, mesajTemiz, user.id, aliciTuru);
+  const hedefEtiketi = dogrulanmisIdler.length === 1
+    ? "1 öğrenci"
+    : `${dogrulanmisIdler.length} öğrenci`;
+  const sonuc = await duyuruGonderTemel(
+    admin,
+    dogrulanmisIdler,
+    REHBERLIK_DUYURU_BASLIGI,
+    mesajTemiz,
+    user.id,
+    aliciTuru,
+    "ogretmen_mesaji",
+    {
+      schoolId: teacher.school_id,
+      gonderenRol: "rehber_ogretmen",
+      gonderenAdi: profile.ad,
+      hedef: `${hedefEtiketi} · ${aliciTuru === "hepsi" ? "Öğrenci ve veliler" : aliciTuru === "ogrenci" ? "Öğrenciler" : "Veliler"}`,
+    },
+  );
   await admin.from("admin_audit_log").insert({
     actor_id: user.id,
     eylem: "rehber_mesaj_gonder",
@@ -775,6 +806,7 @@ export async function gonderilenDuyurularGetir(): Promise<{ error: string | null
     .from("duyurular")
     .select("id, baslik, mesaj, created_at")
     .eq("gonderen_id", user.id)
+    .is("silindi_at", null)
     .order("created_at", { ascending: false })
     .limit(20);
   if (error) return { error: error.message, duyurular: [] };

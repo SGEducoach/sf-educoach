@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useTransition } from "react";
 import Link from "next/link";
-import { Search, Users, KeyRound, EyeOff, Eye, Copy, Check, ArrowRightLeft, Trash2, Settings, Building2, ChevronLeft } from "lucide-react";
+import { Search, Users, KeyRound, EyeOff, Eye, Copy, Check, ArrowRightLeft, Trash2, Settings, Building2, ChevronLeft, MailWarning } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH, LILAC, LILAC_TEXT } from "@/lib/theme";
-import { kullaniciAra, sifreSifirla, sifreBelirle, hesapAktiflikDegistir, hesapSil, okulSiniflari, ogrenciSinifTasi, ogretmenBransDegistir, yonetimOkullariGetir, type KullaniciSonuc, type YonetimOkulu } from "@/app/yonetici/actions";
+import { kullaniciAra, sifreSifirla, sifreBelirle, kullaniciEpostaKaydet, hesapAktiflikDegistir, hesapSil, okulSiniflari, ogrenciSinifTasi, ogretmenBransDegistir, yonetimOkullariGetir, type KullaniciSonuc, type YonetimOkulu } from "@/app/yonetici/actions";
 import { BRANS_LISTESI } from "@/lib/types";
 import type { UserRole } from "@/lib/types";
 import { KullaniciDetayYonetimi } from "@/components/yonetici/KullaniciDetayYonetimi";
+import { teslimEdilebilirEpostaMi } from "@/lib/validators";
 
 const ROL_SEKME: { id: UserRole | "hepsi"; ad: string }[] = [
   { id: "hepsi", ad: "Tümü" },
@@ -239,6 +240,18 @@ function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
   const [elleSifreAcik, setElleSifreAcik] = useState(false);
   const [elleSifre, setElleSifre] = useState("");
   const [elleSifrePending, startElleSifreTransition] = useTransition();
+  const [epostaKayitli, setEpostaKayitli] = useState(teslimEdilebilirEpostaMi(kullanici.email));
+  const [eposta, setEposta] = useState(teslimEdilebilirEpostaMi(kullanici.email) ? kullanici.email ?? "" : "");
+  const [epostaPending, startEpostaTransition] = useTransition();
+
+  function epostaKaydet() {
+    setHata(null);
+    startEpostaTransition(async () => {
+      const res = await kullaniciEpostaKaydet(kullanici.id, eposta);
+      if (res.error) return setHata(res.error);
+      setEpostaKayitli(true);
+    });
+  }
 
   function sifreSifirlaTikla() {
     if (!window.confirm(`${kullanici.ad} için yeni bir şifre oluşturulsun mu? Eski şifre geçersiz olacak.`)) return;
@@ -305,12 +318,12 @@ function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
           </div>
         </Link>
         <div className="flex items-center gap-1.5 flex-wrap">
-          <button type="button" onClick={sifreSifirlaTikla} disabled={sifrePending} title="Rastgele yeni şifre oluştur"
+          <button type="button" onClick={sifreSifirlaTikla} disabled={sifrePending || !epostaKayitli} title={epostaKayitli ? "Rastgele yeni şifre oluştur" : "Önce e-posta kaydedin"}
             className="sfec-btn flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full disabled:opacity-60"
             style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
             <KeyRound size={11} /> Rastgele şifre
           </button>
-          <button type="button" onClick={() => setElleSifreAcik((v) => !v)} title="Şifreyi elle belirle"
+          <button type="button" onClick={() => setElleSifreAcik((v) => !v)} disabled={!epostaKayitli} title={epostaKayitli ? "Şifreyi elle belirle" : "Önce e-posta kaydedin"}
             className="sfec-btn flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full"
             style={{ background: elleSifreAcik ? MINT : "rgba(255,255,255,0.06)", color: elleSifreAcik ? MINT_ON : TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
             <KeyRound size={11} /> Şifre belirle
@@ -339,6 +352,23 @@ function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
           </button>
         </div>
       </div>
+
+      {!epostaKayitli && (
+        <div className="flex flex-col gap-2 rounded-xl p-3 sm:flex-row sm:items-end" style={{ background: "rgba(225,29,72,0.08)", border: `1px solid ${BLUSH}` }}>
+          <div className="flex min-w-0 flex-1 items-start gap-2">
+            <MailWarning size={15} className="mt-0.5 shrink-0" color={BLUSH} />
+            <label className="flex min-w-0 flex-1 flex-col gap-1">
+              <span className="text-[11px] font-semibold" style={{ color: BLUSH }}>Şifre işlemi için önce kullanıcının e-posta adresini kaydedin.</span>
+              <input type="email" value={eposta} onChange={(e) => setEposta(e.target.value)} placeholder="kullanici@ornek.com"
+                className="rounded-lg px-2.5 py-2 text-xs outline-none" style={{ background: BG0, color: TEXT, border: `2px solid ${BORDER_STRONG}` }} />
+            </label>
+          </div>
+          <button type="button" onClick={epostaKaydet} disabled={epostaPending || !eposta.trim()}
+            className="sfec-btn rounded-lg px-3 py-2 text-[11px] font-bold disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+            {epostaPending ? "Kaydediliyor..." : "E-postayı kaydet"}
+          </button>
+        </div>
+      )}
 
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
 

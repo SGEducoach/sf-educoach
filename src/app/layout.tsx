@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "www.sefukoc.com",
+    title: "SeFu Koç",
   },
   icons: {
     apple: "/apple-touch-icon.png",

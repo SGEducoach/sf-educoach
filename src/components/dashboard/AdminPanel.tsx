@@ -412,10 +412,14 @@ function OgrenciEkleFormu({ schoolId, siniflar }: { schoolId: string; siniflar: 
     setHata(null);
     if (!classId) return setHata("Sınıf seçin.");
     startTransition(async () => {
-      const res = await ogrenciEkleManuel({ ad, email, okulNo, telefon, schoolId, classId, aytAlan, hedefBolum });
-      if (res.error) return setHata(res.error);
-      setSonuc({ email: email.trim().toLowerCase(), sifre: res.sifre! });
-      setAd(""); setEmail(""); setOkulNo(""); setTelefon(""); setHedefBolum("");
+      try {
+        const res = await ogrenciEkleManuel({ ad, email, okulNo, telefon, schoolId, classId, aytAlan, hedefBolum });
+        if (res.error || !res.sifre) return setHata(res.error ?? "Öğrenci hesabı oluşturulamadı.");
+        setSonuc({ email: email.trim().toLowerCase(), sifre: res.sifre });
+        setAd(""); setEmail(""); setOkulNo(""); setTelefon(""); setHedefBolum("");
+      } catch {
+        setHata("Öğrenci eklenemedi. Bağlantınızı kontrol edip tekrar deneyin.");
+      }
     });
   }
 

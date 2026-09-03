@@ -54,14 +54,13 @@ export async function tgDenemeIlanlariGetir(supabase: SupabaseClient): Promise<T
   return (data ?? []).map(satiriDonustur);
 }
 
-// Admin'in "Arşiv" listesi — AKTIF_LIMIT'in ÖTESİNDEKİ (21. ve sonrası) tüm
-// kayıtlar. Silme dışında bir işlem yok (bkz. tgDenemeSil, yonetici/actions.ts).
+// Admin yönetim listesi: yayındaki ve arşivdeki ilanlar birlikte silinebilir.
 export async function tgDenemeArsiviGetir(supabase: SupabaseClient): Promise<TgDenemeIlani[]> {
   const { data, error } = await supabase
     .from("tg_deneme_ilanlari")
     .select("id, tarih, baslik, aciklama, dosya_yolu, dosya_tipi, genislik, yukseklik, created_at")
     .order("created_at", { ascending: false })
-    .range(AKTIF_LIMIT, AKTIF_LIMIT + 199); // arşivde de makul bir tavan (200)
+    .range(0, AKTIF_LIMIT + 199); // Admin: yayındaki ve arşivdeki en yeni 220 ilan.
   if (error) { console.error("tg_deneme_ilanlari arşivi okunamadı:", error.message); return []; }
   return (data ?? []).map(satiriDonustur);
 }

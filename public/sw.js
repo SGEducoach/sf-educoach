@@ -14,10 +14,10 @@ self.addEventListener("push", (event) => {
   try {
     veri = event.data.json();
   } catch {
-    veri = { title: "www.sefukoc.com", body: event.data.text() };
+    veri = { title: "SeFu Koç", body: event.data.text() };
   }
 
-  const baslik = veri.title || "www.sefukoc.com";
+  const baslik = veri.title || "SeFu Koç";
   const secenekler = {
     body: veri.body || "",
     icon: "/icon-192.png",

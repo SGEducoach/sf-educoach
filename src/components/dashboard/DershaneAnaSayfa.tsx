@@ -7,7 +7,7 @@ import {
 } from "recharts";
 import type { DershaneAnaSayfaVerisi } from "@/lib/dershane-ana-sayfa";
 import {
-  BG1, BG1_ALT, BORDER, BORDER_STRONG, TEXT, TEXT_MUTED, MINT, MINT_BG, MINT_ON,
+  BG1, BG1_ALT, BORDER, BORDER_STRONG, TEXT, TEXT_MUTED, MINT, MINT_BG,
   SKY, SKY_BG, BUTTER, LILAC,
 } from "@/lib/theme";
 
@@ -48,6 +48,8 @@ export function DershaneAnaSayfa({ veri }: { veri: DershaneAnaSayfaVerisi }) {
     return satir;
   });
 
+  const sinifChartData = veri.genel.map((n,i)=>{ const satir:Record<string,string|number|null>={tarih:tarihFormat(n.haftaBaslangic)}; for(const x of veri.siniflar??[])satir[x.ad]=x.noktalar[i].netOrtalama; return satir; });
+
   const soruChartData = veri.genel.map((_, i) => {
     const satir: Record<string, string | number> = { tarih: tarihFormat(veri.genel[i].haftaBaslangic) };
     for (const k of veri.kademeler) satir[`${k.seviye}. sınıf`] = k.noktalar[i].soruSayisi;
@@ -57,11 +59,11 @@ export function DershaneAnaSayfa({ veri }: { veri: DershaneAnaSayfaVerisi }) {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-3 sm:flex-row">
-        <IstatKart icon={Users} etiket="Toplam öğrenci" deger={veri.ogrenciSayisi} renk={MINT_ON} bg={MINT_BG} />
+        <IstatKart icon={Users} etiket="Toplam öğrenci" deger={veri.ogrenciSayisi} renk={MINT} bg={MINT_BG} />
         <IstatKart icon={Target} etiket="Bu hafta genel net ort." deger={buHaftaGenel.netOrtalama ?? "—"}
           altYazi={buHaftaGenel.denemeSayisi > 0 ? `${buHaftaGenel.denemeSayisi} deneme` : "Bu hafta deneme yok"} renk={SKY} bg={SKY_BG} />
         <IstatKart icon={ListChecks} etiket="Bu hafta çözülen soru" deger={buHaftaGenel.soruSayisi}
-          altYazi={buHaftaKademeSoru || undefined} renk={MINT_ON} bg={MINT_BG} />
+          altYazi={buHaftaKademeSoru || undefined} renk={MINT} bg={MINT_BG} />
       </div>
 
       {veri.ogrenciSayisi === 0 ? (
@@ -92,6 +94,16 @@ export function DershaneAnaSayfa({ veri }: { veri: DershaneAnaSayfaVerisi }) {
             </ResponsiveContainer>
           </div>
 
+          <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+            <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold mb-4 block">Sınıf bazlı net ortalaması — son 8 hafta</span>
+            <ResponsiveContainer width="100%" height={260}>
+              <LineChart data={sinifChartData} margin={{left:-20,right:10}}>
+                <CartesianGrid strokeDasharray="3 3" stroke={BORDER} vertical={false}/><XAxis dataKey="tarih" tick={{fontSize:11,fill:TEXT_MUTED}}/><YAxis tick={{fontSize:11,fill:TEXT_MUTED}}/>
+                <RTooltip contentStyle={{fontSize:12,borderRadius:12,border:`2px solid ${BORDER_STRONG}`,background:BG1_ALT}}/><Legend wrapperStyle={{fontSize:10}}/>
+                {(veri.siniflar??[]).map((x,i)=><Line key={x.id} type="monotone" dataKey={x.ad} stroke={[MINT,SKY,BUTTER,LILAC,"#f97316","#ef4444","#06b6d4","#8b5cf6"][i%8]} strokeWidth={2} dot={false} connectNulls/>)}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
           <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
             <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold mb-4 block">
               Kademe bazlı çözülen soru sayısı — son 8 hafta

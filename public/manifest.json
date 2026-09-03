@@ -1,6 +1,6 @@
 {
-  "name": "www.sefukoc.com",
-  "short_name": "www.sefukoc.com",
+  "name": "SeFu Koç",
+  "short_name": "SeFu Koç",
   "description": "Sen Geliş, Farkın Duyulur",
   "start_url": "/dashboard",
   "display": "standalone",

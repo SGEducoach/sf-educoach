@@ -50,7 +50,7 @@ export function TgDenemeYonetimi() {
       setBasari("Yayınlandı — TG Denemeleri akışında görünecek.");
       setTarih(""); setBaslik(""); setAciklama("");
       if (dosyaRef.current) dosyaRef.current.value = "";
-      if (arsivAcik) setArsiv(null);
+      if (arsivAcik) { const liste = await tgDenemeArsiviniGetir(); if (liste.error) setHata(liste.error); else setArsiv(liste.ilanlar); }
     });
   }
 
@@ -60,7 +60,7 @@ export function TgDenemeYonetimi() {
     if (acilacak) {
       startArsivTransition(async () => {
         const res = await tgDenemeArsiviniGetir();
-        setArsiv(res.error ? [] : res.ilanlar);
+        if (res.error) setHata(res.error); else setArsiv(res.ilanlar);
       });
     }
   }
@@ -92,7 +92,7 @@ export function TgDenemeYonetimi() {
         </button>
       </div>
       <p style={{ color: TEXT_MUTED }} className="mt-2 text-[11px] leading-relaxed">
-        Akış en yeni 20 ilanı gösterir; 21. ilan eklendiğinde en eski ilan otomatik olarak arşive düşer (silinmez, aşağıdan erişilebilir).
+        Tarihi geçen ilanlar akıştan çıkar; son gün boyunca görünür kalır. Yayındaki ve arşivdeki en yeni 220 ilanı aşağıdan silebilirsiniz. Açık bir gün/ay/yıl içermeyen tarihler otomatik kaldırılmaz.
       </p>
 
       {acik && (
@@ -134,15 +134,16 @@ export function TgDenemeYonetimi() {
       )}
 
       <div className="mt-3">
+        {!acik && hata && <p role="alert" style={{ color: BLUSH }} className="mb-2 text-xs">{hata}</p>}
         <button type="button" onClick={arsiviAcKapat}
           className="sfec-btn flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-full"
           style={{ background: arsivAcik ? MINT : "rgba(255,255,255,0.06)", color: arsivAcik ? MINT_ON : TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
-          <Archive size={12} /> Arşiv
+          <Archive size={12} /> İlanları yönet (yayın ve arşiv)
         </button>
         {arsivAcik && (
           <div className="mt-2 rounded-2xl p-3 max-h-72 overflow-y-auto flex flex-col gap-2" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
             {arsivPending && !arsiv && <p style={{ color: TEXT_MUTED }} className="text-xs text-center py-2">Yükleniyor...</p>}
-            {arsiv?.length === 0 && <p style={{ color: TEXT_MUTED }} className="text-xs text-center py-2">Arşivde ilan yok.</p>}
+            {arsiv?.length === 0 && <p style={{ color: TEXT_MUTED }} className="text-xs text-center py-2">Kayıtlı ilan yok.</p>}
             {arsiv?.map((i) => (
               <div key={i.id} className="flex items-center gap-2.5 rounded-xl p-2.5" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
                 {i.dosyaTipi === "pdf" ? <FileText size={16} color={TEXT_MUTED} className="shrink-0" /> : <ImageIcon size={16} color={TEXT_MUTED} className="shrink-0" />}
@@ -154,7 +155,7 @@ export function TgDenemeYonetimi() {
                     <a href={tgDenemeDosyaUrl(i.dosyaYolu)} target="_blank" rel="noopener noreferrer" style={{ color: MINT }} className="text-[10px] font-semibold underline">Dosyayı aç</a>
                   </div>
                 </div>
-                <button type="button" onClick={() => arsivdenSil(i.id)} disabled={silinenId === i.id}
+                <button type="button" onClick={() => arsivdenSil(i.id)} aria-label={`${i.baslik} ilanını sil`} title="İlanı sil" disabled={arsivPending || silinenId === i.id}
                   className="sfec-btn shrink-0 w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-60" style={{ border: `2px solid ${BORDER_STRONG}` }}>
                   <Trash2 size={13} color={BLUSH} />
                 </button>

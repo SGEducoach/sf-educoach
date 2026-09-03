@@ -51,6 +51,7 @@ export function MesajlarimIkonu({ baslangicSayisi }: { baslangicSayisi: number }
       const { data } = await supabase
         .from("duyurular")
         .select("id, baslik, mesaj, created_at, duyuru_aliciler!inner(profile_id, okundu)")
+        .is("silindi_at", null)
         .eq("duyuru_aliciler.profile_id", user.id)
         .eq("duyuru_aliciler.okundu", false)
         .order("created_at", { ascending: false })

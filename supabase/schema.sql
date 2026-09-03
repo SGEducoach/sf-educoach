@@ -2999,3 +2999,434 @@ $$;
 
 revoke all on function public.ogrenci_rozet_durumu(uuid) from public;
 grant execute on function public.ogrenci_rozet_durumu(uuid) to authenticated;
+
+-- ============ Konu Hakimiyeti öğretmen/müdür okuma (migration 0087) ============
+-- Öğrenci analizindeki Konu Hakimiyeti grafiği için öğretmen/müdür okuma izni.
+-- 0055/0059 yalnızca öğrencinin kendisini, bağlı velisini ve sınıf
+-- öğretmenini kapsıyordu. Diğer öğretmenler ve class_id'si olmayan müdürler
+-- kayıtları okuyamadığından grafik işaretlenmemiş konular gösteriyordu.
+-- Diğer analiz tablolarındaki 0008 okuma politikasıyla aynı kapsam:
+-- is_ogretmen(), 0009/0014 itibarıyla müdür ve admin'i de kapsar.
+-- Öğrencinin kendi kaydını yazma ve bağlı velinin okuma izinleri değişmez.
+
+drop policy if exists "ogrenci_konu_hakimiyeti_select_any_teacher"
+  on public.ogrenci_konu_hakimiyeti;
+create policy "ogrenci_konu_hakimiyeti_select_any_teacher"
+  on public.ogrenci_konu_hakimiyeti
+  for select to authenticated
+  using (public.is_ogretmen());
+
+-- ============ Türkçe öğrenci adları (migration 0088) ============
+-- Türkçe ad dönüşümünü veritabanının locale ayarından bağımsız yapar.
+-- 0034'teki upper/lower, İ/ı harflerini kayıt sırasında bozabiliyordu.
+create or replace function public.ad_baslik(p_ad text)
+returns text
+language plpgsql
+immutable
+set search_path = public
+as $$
+declare
+  v_ad text;
+  v_harf text;
+  v_sonuc text := '';
+  v_baslangic boolean := true;
+  v_i integer;
+begin
+  v_ad := normalize(coalesce(p_ad, ''), NFC);
+  v_ad := translate(v_ad, 'ABCDEFGHIJKLMNOPQRSTUVWXYZÇĞİÖŞÜ', 'abcdefghıjklmnopqrstuvwxyzçğiöşü');
+  v_ad := normalize(regexp_replace(v_ad, U&'([iı])\0307', '\1', 'g'), NFC);
+  v_ad := trim(regexp_replace(v_ad, '\s+', ' ', 'g'));
+  for v_i in 1..char_length(v_ad) loop
+    v_harf := substr(v_ad, v_i, 1);
+    if v_baslangic then
+      v_harf := translate(v_harf, 'abcdefghijklmnopqrstuvwxyzçğıöşü', 'ABCDEFGHİJKLMNOPQRSTUVWXYZÇĞIÖŞÜ');
+    end if;
+    v_sonuc := v_sonuc || v_harf;
+    v_baslangic := v_harf in (' ', '-', '''');
+  end loop;
+  return v_sonuc;
+end;
+$$;
+
+-- Eşleştirmede İ, I, i ve ı aynı anahtara dönüşür; görünen ad korunur.
+create or replace function public.ad_esleme_anahtari(p_ad text)
+returns text
+language sql
+immutable
+set search_path = public
+as $$
+  select trim(regexp_replace(
+    replace(translate(normalize(coalesce(p_ad, ''), NFC),
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZÇĞİÖŞÜı',
+      'abcdefghijklmnopqrstuvwxyzçğiöşüi'), U&'\0307', ''),
+    '\s+', ' ', 'g'));
+$$;
+
+-- Değişiklik eski kayıtları etkilemeden önce örnekleri doğrula.
+do $$
+begin
+  if public.ad_baslik('İSMAİL IŞIK') <> 'İsmail Işık'
+    or public.ad_baslik('  ipek   ırmak  ') <> 'İpek Irmak'
+    or public.ad_baslik(U&'I\0307SMAI\0307L') <> 'İsmail'
+    or public.ad_baslik(U&'i\0307pek') <> 'İpek'
+    or public.ad_baslik('ALİ-VELİ') <> 'Ali-Veli'
+    or public.ad_baslik('O''NEİL') <> 'O''Neil'
+    or public.ad_baslik('') <> ''
+    or public.ad_baslik(null) <> ''
+    or public.ad_esleme_anahtari('İSMAİL IŞIK') <> public.ad_esleme_anahtari('Ismail Işık')
+  then
+    raise exception 'Türkçe ad dönüşümü kontrolü başarısız.';
+  end if;
+end;
+$$;
+
+-- Aynı tam adın özgün kayıt bilgisi varsa kaybolan İ/ı ayrımını geri al.
+-- Adı eksik/farklı metadata ile resmi tam adı değiştirme. Eşleşmeyen
+-- adlarda yalnızca biçimi düzelt; kaybolmuş harflerin doğrusunu tahmin etme.
+with duzeltmeler as (
+  select p.id, public.ad_baslik(case
+    when nullif(trim(u.raw_user_meta_data->>'ad'), '') is not null
+      and public.ad_esleme_anahtari(u.raw_user_meta_data->>'ad') = public.ad_esleme_anahtari(p.ad)
+    then u.raw_user_meta_data->>'ad'
+    else p.ad
+  end) as ad
+  from public.profiles p
+  join auth.users u on u.id = p.id
+  where p.role = 'ogrenci'
+)
+update public.profiles p set ad = d.ad
+from duzeltmeler d
+where p.id = d.id and p.ad is distinct from d.ad;
+
+-- İzinli listede aynı ada dönüşen satırları SİLME; benzersizlik
+-- çakışması olmayan satırları düzelt, çakışanları yöneticiye bırak.
+with adaylar as (
+  select id, school_id, public.ad_baslik(ad_soyad) as ad,
+    count(*) over (partition by school_id, public.ad_baslik(ad_soyad)) as adet
+  from public.izinli_ogrenciler
+)
+update public.izinli_ogrenciler io set ad_soyad = a.ad
+from adaylar a
+where io.id = a.id and a.adet = 1 and io.ad_soyad is distinct from a.ad;
+
+-- İzinli listedeki adın doğrudan kullanıldığı kayıt yolu dahil tüm
+-- profil yazımlarında aynı Türkçe dönüşümü uygula.
+create or replace function public.profil_adini_normalize_et()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  new.ad := public.ad_baslik(new.ad);
+  return new;
+end;
+$$;
+
+drop trigger if exists profil_adini_normalize_et on public.profiles;
+create trigger profil_adini_normalize_et
+  before insert or update of ad on public.profiles
+  for each row execute function public.profil_adini_normalize_et();
+
+-- ============ Resmî öğrenci bilgileri (migration 0089) ============
+-- Aynı ad-soyada sahip farklı öğrenciler olabilir. Eski izinli isim
+-- listesinin benzersiz ad kuralını bozmadan, numara bazlı resmî liste tut.
+create table if not exists public.resmi_ogrenci_listesi (
+  id uuid primary key default gen_random_uuid(),
+  school_id uuid not null references public.schools(id) on delete cascade,
+  ad_soyad text not null,
+  okul_no text not null check (okul_no ~ '^[0-9]{1,5}$'),
+  yurt_ogrencisi boolean not null,
+  unique (school_id, okul_no)
+);
+alter table public.resmi_ogrenci_listesi enable row level security;
+drop policy if exists resmi_ogrenci_listesi_admin on public.resmi_ogrenci_listesi;
+create policy resmi_ogrenci_listesi_admin on public.resmi_ogrenci_listesi
+  for all to authenticated using (public.is_admin()) with check (public.is_admin());
+
+-- 0088'deki Türkçe normalizasyon fonksiyonları gerekir.
+-- Tam ad önceliklidir. Kısaltılmış isim ancak soyad + en az bir ad
+-- eşleşmesi TEK bir resmî öğrenciye aitse kabul edilir.
+create or replace function public.izinli_ogrenci_resmi_kaydi(p_school_id uuid, p_ad text, p_okul_no text default null)
+returns uuid
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  v_ids uuid[];
+  v_parcalar text[] := string_to_array(public.ad_esleme_anahtari(p_ad), ' ');
+begin
+  select array_agg(io.id) into v_ids
+  from public.resmi_ogrenci_listesi io
+  where io.school_id = p_school_id and io.okul_no is not null
+    and public.ad_esleme_anahtari(io.ad_soyad) = public.ad_esleme_anahtari(p_ad);
+  if coalesce(cardinality(v_ids), 0) = 0 and cardinality(v_parcalar) >= 2 then
+    select array_agg(io.id) into v_ids
+    from public.resmi_ogrenci_listesi io
+    cross join lateral (select string_to_array(public.ad_esleme_anahtari(io.ad_soyad), ' ') as p) ad
+    where io.school_id = p_school_id and io.okul_no is not null
+      and cardinality(ad.p) >= 2
+      and ad.p[cardinality(ad.p)] = v_parcalar[cardinality(v_parcalar)]
+      and ad.p[1:cardinality(ad.p)-1] && v_parcalar[1:cardinality(v_parcalar)-1];
+  end if;
+  -- Tam adı aynı olan iki kişi yalnızca resmî numaralarıyla ayrılabilir.
+  if cardinality(v_ids) > 1 then
+    select array_agg(io.id) into v_ids from public.resmi_ogrenci_listesi io
+    where io.id = any(v_ids) and io.okul_no = p_okul_no;
+    if coalesce(cardinality(v_ids), 0) = 0 then
+      raise exception 'Birden fazla öğrenciyle eşleşiyor. Resmî okul numaranızı doğru yazın veya okul yönetimine başvurun.';
+    end if;
+  end if;
+  if cardinality(v_ids) > 1 then
+    raise exception 'Birden fazla öğrenciyle eşleşiyor. Lütfen tüm adlarınızı ve soyadınızı yazın; sorun sürerse okul yönetimine başvurun.';
+  end if;
+  return v_ids[1];
+end;
+$$;
+
+-- Dışarıya isim/numara sorgulama uç noktası açılmaz.
+revoke all on function public.izinli_ogrenci_resmi_kaydi(uuid, text, text) from public, anon, authenticated;
+
+create or replace function public.ogrenci_resmi_bilgilerini_uygula()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_ad text;
+  v_resmi_id uuid;
+  v_resmi public.resmi_ogrenci_listesi%rowtype;
+begin
+  if not exists (select 1 from public.resmi_ogrenci_listesi
+    where school_id = new.school_id and okul_no is not null) then
+    return new;
+  end if;
+
+  -- Önceki kayıt trigger'ının seçtiği ad yerine özgün kullanıcı girdisini
+  -- kullan: böylece o trigger'daki LIMIT 1 belirsiz bir eşleşmeyi gizleyemez.
+  select coalesce(nullif(trim(u.raw_user_meta_data->>'ad'), ''), p.ad) into v_ad
+  from public.profiles p join auth.users u on u.id = p.id where p.id = new.id;
+  v_resmi_id := public.izinli_ogrenci_resmi_kaydi(new.school_id, v_ad, new.okul_no);
+  if v_resmi_id is null then
+    -- Yetkili yöneticinin liste dışı manuel öğrenci eklemesi korunur.
+    -- Kullanıcının değiştirebildiği admin_ekledi metadata'sına güvenilmez.
+    if auth.role() = 'service_role' or public.is_admin() then return new; end if;
+    raise exception 'Resmî öğrenci listesinde eşleşme bulunamadı. Adınızı ve soyadınızı kontrol edin veya okul yönetimine başvurun.';
+  end if;
+
+  select * into strict v_resmi from public.resmi_ogrenci_listesi where id = v_resmi_id;
+  new.okul_no := v_resmi.okul_no;
+  new.yurt_ogrencisi := coalesce(v_resmi.yurt_ogrencisi, new.yurt_ogrencisi);
+  update public.profiles set ad = public.ad_baslik(v_resmi.ad_soyad) where id = new.id;
+  return new;
+end;
+$$;
+
+revoke all on function public.ogrenci_resmi_bilgilerini_uygula() from public, anon, authenticated;
+
+-- Numara formatı kontrolünden önce resmî numara atanır.
+drop trigger if exists a_ogrenci_resmi_bilgilerini_uygula on public.students;
+create trigger a_ogrenci_resmi_bilgilerini_uygula
+  before insert on public.students
+  for each row execute function public.ogrenci_resmi_bilgilerini_uygula();
+create table public.ana_sayfa_duyurulari (
+  id uuid primary key default gen_random_uuid(),
+  baslik text not null check (char_length(baslik) between 1 and 120),
+  icerik text not null check (char_length(icerik) between 1 and 2000),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.ana_sayfa_duyurulari enable row level security;
+create policy "ana_sayfa_duyurulari_select_all" on public.ana_sayfa_duyurulari for select using (true);
+create policy "ana_sayfa_duyurulari_insert_admin" on public.ana_sayfa_duyurulari for insert with check (public.is_admin());
+create policy "ana_sayfa_duyurulari_update_admin" on public.ana_sayfa_duyurulari for update using (public.is_admin());
+create policy "ana_sayfa_duyurulari_delete_admin" on public.ana_sayfa_duyurulari for delete using (public.is_admin());
+
+-- Aynı anda gelen eklemelerde dahi en yeni altı kayıt tutulur.
+create or replace function public.ana_sayfa_duyurularini_sinirla()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  perform pg_advisory_xact_lock(901006);
+  delete from public.ana_sayfa_duyurulari
+  where id in (
+    select id from public.ana_sayfa_duyurulari
+    order by created_at desc, id desc offset 6
+  );
+  return null;
+end;
+$$;
+revoke all on function public.ana_sayfa_duyurularini_sinirla() from public, anon, authenticated;
+create trigger ana_sayfa_duyurulari_limit
+after insert on public.ana_sayfa_duyurulari
+for each statement execute function public.ana_sayfa_duyurularini_sinirla();
+
+
+-- ============ Etkinlik grupları (0091) ============
+create table public.etkinlik_gruplari (
+ id uuid primary key default gen_random_uuid(), teacher_id uuid not null references public.teachers(id) on delete cascade,
+ school_id uuid not null references public.schools(id) on delete cascade, isim text not null check(char_length(isim) between 2 and 100),
+ created_at timestamptz not null default now()
+);
+create table public.etkinlik_grup_uyeleri (
+ group_id uuid not null references public.etkinlik_gruplari(id) on delete cascade,
+ student_id uuid not null references public.students(id) on delete cascade, created_at timestamptz not null default now(),
+ primary key(group_id,student_id)
+);
+create table public.etkinlik_calismalari (
+ id uuid primary key default gen_random_uuid(), group_id uuid not null references public.etkinlik_gruplari(id) on delete cascade,
+ isim text not null check(char_length(isim) between 2 and 150), tarih date not null, baslangic_saat time not null, bitis_saat time not null,
+ created_at timestamptz not null default now(), check(bitis_saat>baslangic_saat)
+);
+create table public.etkinlik_calisma_atamalari (
+ id uuid primary key default gen_random_uuid(), calisma_id uuid not null references public.etkinlik_calismalari(id) on delete cascade,
+ student_id uuid not null references public.students(id) on delete cascade,
+ durum text not null default 'karar_bekliyor' check(durum in('karar_bekliyor','kabul','reddedildi')),
+ cakisiyor boolean not null default false, red_gerekcesi text check(red_gerekcesi is null or char_length(red_gerekcesi) between 3 and 500),
+ karar_at timestamptz, created_at timestamptz not null default now(), unique(calisma_id,student_id)
+);
+create index etkinlik_gruplari_teacher_idx on public.etkinlik_gruplari(teacher_id);
+create index etkinlik_atamalari_student_idx on public.etkinlik_calisma_atamalari(student_id,created_at desc);
+
+create or replace function public.etkinlik_grubu_kapsam_kontrolu() returns trigger language plpgsql as $$
+begin
+ if not exists(
+   select 1 from public.teachers t join public.schools s on s.id=t.school_id
+   where t.id=new.teacher_id and t.school_id=new.school_id and s.tur='okul'
+     and t.brans in ('Beden Eğitimi','Müzik')
+ ) then raise exception 'Etkinlik grupları yalnızca okullardaki Beden Eğitimi ve Müzik öğretmenlerine açıktır.'; end if;
+ return new;
+end $$;
+create trigger etkinlik_grubu_kapsam_trg before insert or update on public.etkinlik_gruplari
+for each row execute function public.etkinlik_grubu_kapsam_kontrolu();
+
+create or replace function public.etkinlik_uyesi_kurum_kontrolu() returns trigger language plpgsql as $$
+begin
+ if not exists(
+   select 1 from public.etkinlik_gruplari g join public.students s on s.id=new.student_id
+   where g.id=new.group_id and g.school_id=s.school_id
+ ) then raise exception 'Öğrenci etkinlik grubuyla aynı okula ait olmalıdır.'; end if;
+ return new;
+end $$;
+create trigger etkinlik_uyesi_kurum_trg before insert or update on public.etkinlik_grup_uyeleri
+for each row execute function public.etkinlik_uyesi_kurum_kontrolu();
+alter table public.etkinlik_gruplari enable row level security;
+alter table public.etkinlik_grup_uyeleri enable row level security;
+alter table public.etkinlik_calismalari enable row level security;
+alter table public.etkinlik_calisma_atamalari enable row level security;
+create policy "etkinlik_grup_select" on public.etkinlik_gruplari for select using(teacher_id=auth.uid() or exists(select 1 from public.etkinlik_grup_uyeleri u where u.group_id=id and u.student_id=auth.uid()));
+create policy "etkinlik_uye_select" on public.etkinlik_grup_uyeleri for select using(student_id=auth.uid() or exists(select 1 from public.etkinlik_gruplari g where g.id=group_id and g.teacher_id=auth.uid()));
+create policy "etkinlik_calisma_select" on public.etkinlik_calismalari for select using(exists(select 1 from public.etkinlik_gruplari g where g.id=group_id and (g.teacher_id=auth.uid() or exists(select 1 from public.etkinlik_grup_uyeleri u where u.group_id=g.id and u.student_id=auth.uid()))));
+create policy "etkinlik_atama_select" on public.etkinlik_calisma_atamalari for select using(student_id=auth.uid() or exists(select 1 from public.etkinlik_calismalari c join public.etkinlik_gruplari g on g.id=c.group_id where c.id=calisma_id and g.teacher_id=auth.uid()));
+-- Yazma işlemleri sunucu action'larında rol/kurum/üyelik doğrulandıktan sonra service-role ile yapılır.
+
+
+-- ============ Duyuru geçmişi (0092) ============
+alter table public.duyurular
+  add column if not exists school_id uuid references public.schools(id) on delete set null,
+  add column if not exists gonderen_rol text,
+  add column if not exists gonderen_adi text,
+  add column if not exists hedef text,
+  add column if not exists alici_sayisi integer not null default 0,
+  add column if not exists silindi_at timestamptz,
+  add column if not exists silen_id uuid references public.profiles(id) on delete set null;
+
+create index if not exists duyurular_school_created_idx on public.duyurular(school_id, created_at desc);
+create index if not exists duyurular_silindi_idx on public.duyurular(silindi_at);
+
+-- Eski kayıtların gönderici ad/rol/kurum bilgisini mümkün olduğu kadar tamamla.
+update public.duyurular d set
+  gonderen_adi = coalesce(d.gonderen_adi, p.ad),
+  gonderen_rol = coalesce(d.gonderen_rol, p.role::text),
+  school_id = coalesce(d.school_id, t.school_id),
+  hedef = coalesce(d.hedef, 'Geçmiş gönderim')
+from public.profiles p left join public.teachers t on t.id=p.id
+where d.gonderen_id=p.id;
+
+update public.duyurular d
+set alici_sayisi = x.sayi
+from (
+  select duyuru_id, count(*)::integer as sayi
+  from public.duyuru_aliciler
+  group by duyuru_id
+) x
+where d.id=x.duyuru_id and d.alici_sayisi=0;
+
+-- Alıcılar, kullanıcı görünümünden kaldırılmış duyuruyu okuyamaz.
+drop policy if exists "duyurular_select_alici" on public.duyurular;
+create policy "duyurular_select_alici" on public.duyurular for select using (
+  silindi_at is null and exists (
+    select 1 from public.duyuru_aliciler da
+    where da.duyuru_id=duyurular.id and da.profile_id=auth.uid()
+  )
+);
+
+
+create or replace function public.duyuru_gonderen_meta_doldur()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_ad text;
+  v_rol text;
+  v_school_id uuid;
+begin
+  if new.gonderen_id is not null then
+    select p.ad, p.role::text, t.school_id
+      into v_ad, v_rol, v_school_id
+    from public.profiles p
+    left join public.teachers t on t.id=p.id
+    where p.id=new.gonderen_id;
+
+    new.gonderen_adi := coalesce(new.gonderen_adi, v_ad);
+    new.gonderen_rol := coalesce(new.gonderen_rol, v_rol);
+    new.school_id := coalesce(new.school_id, v_school_id);
+  end if;
+  new.hedef := coalesce(new.hedef, 'Bireysel bildirim');
+  return new;
+end;
+$$;
+
+drop trigger if exists duyuru_gonderen_meta_trigger on public.duyurular;
+create trigger duyuru_gonderen_meta_trigger
+before insert on public.duyurular
+for each row execute function public.duyuru_gonderen_meta_doldur();
+
+create or replace function public.duyuru_alici_meta_guncelle()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_school_id uuid;
+begin
+  select s.school_id into v_school_id
+  from public.students s
+  where s.id=new.profile_id;
+
+  if v_school_id is null then
+    select s.school_id into v_school_id
+    from public.parent_students ps
+    join public.students s on s.id=ps.student_id
+    where ps.parent_id=new.profile_id
+    limit 1;
+  end if;
+
+  update public.duyurular d
+  set
+    alici_sayisi=(select count(*)::integer from public.duyuru_aliciler da where da.duyuru_id=new.duyuru_id),
+    school_id=coalesce(d.school_id, v_school_id)
+  where d.id=new.duyuru_id;
+  return new;
+end;
+$$;
+
+drop trigger if exists duyuru_alici_meta_trigger on public.duyuru_aliciler;
+create trigger duyuru_alici_meta_trigger
+after insert on public.duyuru_aliciler
+for each row execute function public.duyuru_alici_meta_guncelle();

@@ -1,5 +1,6 @@
 import type { KurumTuru, UserRole } from "@/lib/types";
 import { REHBER_BRANSI } from "@/lib/rehberlik";
+import { etkinlikBransiMi } from "@/lib/etkinlik";
 
 export type DashboardBolumu =
   | "ozet"
@@ -21,6 +22,7 @@ export type DashboardBolumu =
   | "denemeler"
   // YÖNETİCİ (admin) paneline özel — bkz. ADMIN_MENUSU
   | "kullanicilar"
+  | "google-analytics"
   | "pdf-eslesme"
   | "okullar"
   | "moderatorler"
@@ -34,7 +36,9 @@ export type DashboardBolumu =
   | "adminler"
   | "islem-gecmisi"
   // 2026-08-26 kullanıcı isteği — Rehber Öğretmen branşına özel bölüm.
-  | "rehberlik";
+  | "rehberlik"
+  | "etkinlikler"
+  | "duyuru-gecmisi";
 
 export type DashboardIkonu =
   | "ana-sayfa" | "gorev" | "plan" | "veri" | "hakimiyet" | "analiz" | "ai" | "rozet" | "takvim" | "duyuru" | "talep" | "onay" | "ders"
@@ -107,7 +111,7 @@ const MUDUR_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "ogretmenler", href: "/dashboard/ogretmenler", etiket: "Öğretmenler", ikon: "ogretmen" },
   { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Konu Haritası", ikon: "ai" },
   { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Duyurular", ikon: "duyuru" },
-  { bolum: "talepler", href: "/dashboard/talepler", etiket: "Veli talepleri", ikon: "talep" },
+  { bolum: "duyuru-gecmisi", href: "/dashboard/duyuru-gecmisi", etiket: "Duyuru Geçmişi", ikon: "gecmis" },
   { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "TG Denemeler", ikon: "takvim" },
 ];
 
@@ -137,10 +141,11 @@ const DERSHANE_MUDUR_MENUSU: DashboardMenuOgesi[] = [
 // platform genelinde.
 const ADMIN_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "ozet", href: "/yonetici", etiket: "Genel bakış", ikon: "ana-sayfa" },
+  { bolum: "google-analytics", href: "/yonetici/google-analytics", etiket: "Google Analytics", ikon: "analiz" },
   { bolum: "kullanicilar", href: "/yonetici/kullanicilar", etiket: "Kullanıcılar", ikon: "kullanici" },
   { bolum: "talepler", href: "/yonetici/talepler", etiket: "Veli talepleri", ikon: "talep" },
   { bolum: "pdf-eslesme", href: "/yonetici/pdf-eslesme", etiket: "PDF Eşleştirme", ikon: "eslestir" },
-  { bolum: "okullar", href: "/yonetici/okullar", etiket: "Okullar & Duyuru", ikon: "okul" },
+  { bolum: "okullar", href: "/yonetici/okullar", etiket: "Okullar", ikon: "okul" },
   { bolum: "moderatorler", href: "/yonetici/moderatorler", etiket: "Moderatörler", ikon: "moderator" },
   { bolum: "kurallar", href: "/yonetici/kurallar", etiket: "Kurallar", ikon: "kural" },
   { bolum: "hata-bildirimleri", href: "/yonetici/hata-bildirimleri", etiket: "Hata Bildirimleri", ikon: "hata" },
@@ -153,6 +158,7 @@ const ADMIN_MENUSU: DashboardMenuOgesi[] = [
   // Faz 3 (2026-08-26) — İşlem Geçmişi ("Son işlemler"in taşındığı yer),
   // Site ayarları (bakım modu) ve Adminler (admin hesapları SADECE burada
   // görünür) — hepsi menünün sonunda, Profilim'den önce.
+  { bolum: "duyuru-gecmisi", href: "/yonetici/duyuru-gecmisi", etiket: "Duyuru Geçmişi", ikon: "duyuru" },
   { bolum: "islem-gecmisi", href: "/yonetici/islem-gecmisi", etiket: "İşlem Geçmişi", ikon: "gecmis" },
   { bolum: "site-ayarlari", href: "/yonetici/site-ayarlari", etiket: "Site ayarları", ikon: "ayarlar" },
   { bolum: "adminler", href: "/yonetici/adminler", etiket: "Adminler", ikon: "admin" },
@@ -163,13 +169,19 @@ const ADMIN_MENUSU: DashboardMenuOgesi[] = [
 // ek bir menü ögesi (bkz. REHBER_BRANSI, src/lib/rehberlik.ts). brans
 // parametresi opsiyonel — sadece "ogretmen" rolünde ve o branşta anlamlı,
 // diğer tüm çağrılarda (admin, öğrenci, veli, müdür) yok sayılır.
-const REHBERLIK_MENU_OGESI: DashboardMenuOgesi =
-  { bolum: "rehberlik", href: "/dashboard/rehberlik", etiket: "Rehberlik", ikon: "rehberlik" };
+const REHBER_OGRETMEN_MENUSU: DashboardMenuOgesi[] = [
+  { bolum: "kurum-performansi", href: "/dashboard/kurum-performansi", etiket: "Kurum Performansı", ikon: "ana-sayfa" },
+  { bolum: "ozet", href: "/dashboard?bolum=ozet", etiket: "Öğrenciler", ikon: "ogrenci" },
+  { bolum: "ogretmenler", href: "/dashboard/ogretmenler", etiket: "Öğretmenler ve Programlar", ikon: "ogretmen" },
+  { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Rehber Öğretmen Duyurusu", ikon: "duyuru" },
+  { bolum: "rehberlik", href: "/dashboard/rehberlik", etiket: "Bireysel Mesaj", ikon: "rehberlik" },
+  { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "TG Denemeler", ikon: "takvim" },
+];
 
 export function dashboardMenusu(role: UserRole, kurumTuru?: KurumTuru, brans?: string): DashboardMenuOgesi[] {
-  if (role === "ogrenci") return OGRENCI_MENUSU;
+  if (role === "ogrenci") return kurumTuru === "okul" ? [...OGRENCI_MENUSU, { bolum:"etkinlikler", href:"/dashboard/etkinlikler", etiket:"Etkinlikler", ikon:"takvim" }] : OGRENCI_MENUSU;
   if (role === "veli") return VELI_MENUSU;
-  if (role === "ogretmen") return brans === REHBER_BRANSI ? [...OGRETMEN_MENUSU, REHBERLIK_MENU_OGESI] : OGRETMEN_MENUSU;
+  if (role === "ogretmen") return brans === REHBER_BRANSI ? REHBER_OGRETMEN_MENUSU : kurumTuru === "okul" && etkinlikBransiMi(brans) ? [...OGRETMEN_MENUSU, { bolum:"etkinlikler", href:"/dashboard/etkinlikler", etiket:"Etkinlik Grupları", ikon:"takvim" }] : OGRETMEN_MENUSU;
   if (role === "mudur") return kurumTuru === "dershane" ? DERSHANE_MUDUR_MENUSU : MUDUR_MENUSU;
   if (role === "admin") return ADMIN_MENUSU;
   return [];
@@ -177,7 +189,7 @@ export function dashboardMenusu(role: UserRole, kurumTuru?: KurumTuru, brans?: s
 
 export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
   "gorevler", "planlar", "veri-girisi", "konu-hakimiyeti", "analiz", "yapay-zeka", "rozetler", "tg-denemeleri",
-  "duyurular", "talepler", "onaylar", "dersler", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler", "rehberlik",
+  "duyurular", "talepler", "onaylar", "dersler", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler", "rehberlik", "etkinlikler", "duyuru-gecmisi",
 ]);
 
 // /yonetici/[bolum] catch-all için — "rozetler" burada YOK, çünkü admin'in
@@ -186,5 +198,5 @@ export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
 // dinamik [bolum]'dan her zaman önceliklidir, çakışma olmaz.
 export const YONETICI_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
   "kullanicilar", "talepler", "pdf-eslesme", "okullar", "moderatorler", "icerik", "kurallar", "profil", "hata-bildirimleri",
-  "islem-gecmisi", "site-ayarlari", "adminler",
+  "duyuru-gecmisi", "islem-gecmisi", "site-ayarlari", "adminler",
 ]);

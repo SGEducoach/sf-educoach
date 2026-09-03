@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { dershaneDenemeBitisGetir, suresiDolduMu, kurumTuruGetir, DENEME_SURESI_SONA_ERDI_MESAJI } from "@/lib/deneme-suresi";
 import { pushGonderProfile } from "@/lib/push-send";
 import { bildirimGonder } from "@/lib/bildirim-gonder";
+import { geciciSifreyiEtkinlestir } from "@/lib/gecici-sifre";
 import type { UserRole } from "@/lib/types";
 
 const PENCERE_MS = 15 * 60 * 1000;
@@ -98,13 +99,25 @@ export async function POST(request: NextRequest) {
     const { data: adaylar } = await admin.rpc("resolve_veli_email_adaylari", { p_school_id: body.schoolId, p_okul_no: body.okulNo?.trim() });
     error = new Error("Invalid login credentials");
     for (const aday of (adaylar as string[] | null) ?? []) {
-      const sonuc = await supabase.auth.signInWithPassword({ email: aday, password: body.password });
+      let sonuc = await supabase.auth.signInWithPassword({ email: aday, password: body.password });
+      if (sonuc.error) {
+        const { data: adayProfil } = await admin.from("profiles").select("id").eq("email", aday).eq("role", "veli").maybeSingle();
+        if (adayProfil && await geciciSifreyiEtkinlestir(admin, adayProfil.id, body.password)) {
+          sonuc = await supabase.auth.signInWithPassword({ email: aday, password: body.password });
+        }
+      }
       if (!sonuc.error) { error = null; girisEmail = aday; break; }
     }
   } else {
     ({ error } = girisEmail
       ? await supabase.auth.signInWithPassword({ email: girisEmail, password: body.password })
       : { error: new Error("Invalid login credentials") });
+    if (error && girisEmail) {
+      const { data: hedefProfil } = await admin.from("profiles").select("id").eq("email", girisEmail).maybeSingle();
+      if (hedefProfil && await geciciSifreyiEtkinlestir(admin, hedefProfil.id, body.password)) {
+        ({ error } = await supabase.auth.signInWithPassword({ email: girisEmail, password: body.password }));
+      }
+    }
   }
 
   let askidaMi = false;

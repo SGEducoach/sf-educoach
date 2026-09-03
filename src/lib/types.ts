@@ -354,6 +354,8 @@ export const BRANS_LISTESI = [
   "Felsefe",
   "Din Kültürü",
   "İngilizce",
+  "Beden Eğitimi",
+  "Müzik",
   // 2026-08-26 kullanıcı isteği — bu branştaki öğretmen (REHBER_BRANSI,
   // bkz. src/lib/rehberlik.ts) okulun tüm öğrencilerine öğrenci/veli
   // mesajı gönderebiliyor (bkz. RehberlikPaneli.tsx, rehberMesajGonder).

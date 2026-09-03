@@ -52,8 +52,8 @@ export function DashboardYanMenu({ role, kurumTuru, brans, aktifBolum }: { role:
   };
 
   return (
-    <aside className="hidden lg:block w-64 xl:w-72 shrink-0 self-stretch print:hidden">
-      <nav aria-label="Dashboard bölümleri" className="sfec-dashboard-sidebar sticky top-28 min-h-[calc(100dvh-8.75rem)] rounded-3xl p-4 flex flex-col gap-1.5"
+    <aside className="sticky top-28 hidden h-[calc(100dvh-8.75rem)] w-64 shrink-0 self-start lg:block xl:w-72 print:hidden">
+      <nav aria-label="Dashboard bölümleri" className="sfec-dashboard-sidebar flex h-full min-h-0 flex-col gap-1.5 overflow-y-auto overscroll-contain rounded-3xl p-4"
         style={{ background: BG1, border: `1px solid ${BORDER}` }}>
         {/* Bulgu 10 — sol menüde ayrıca logo YOK: Header zaten her sayfanın
             üstünde logoyu gösteriyor, burada tekrarlamak gereksizdi. */}
@@ -80,8 +80,8 @@ export function DashboardYanMenu({ role, kurumTuru, brans, aktifBolum }: { role:
         {/* Kullanıcı isteği (27.08.2026): "Sen Geliş Farkın Duyulur" yazısı
             kaldırılıp yerine "SeFu {yıl}" — yıl her zaman otomatik, elle
             güncelleme gerekmiyor. */}
-        <div className="mt-2 flex items-center gap-1 px-3 pt-4 text-[11px] font-semibold" style={{ borderTop: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
-          <Copyright size={12} aria-hidden="true" /> www.sefukoc.com {new Date().getFullYear()}
+        <div className="mt-auto flex items-center gap-1 px-3 pt-4 text-[11px] font-semibold" style={{ borderTop: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
+          <Copyright size={12} aria-hidden="true" /> SefuKoc {new Date().getFullYear()}
         </div>
       </nav>
     </aside>

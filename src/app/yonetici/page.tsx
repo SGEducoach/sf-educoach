@@ -16,8 +16,11 @@ import { DershaneDenemeSuresiAyari } from "@/components/yonetici/DershaneDenemeS
 import { SiteAyarlariYonetimi } from "@/components/yonetici/SiteAyarlariYonetimi";
 import { AdminlerYonetimi } from "@/components/yonetici/AdminlerYonetimi";
 import { IslemGecmisi } from "@/components/yonetici/IslemGecmisi";
+import { DuyuruGecmisi } from "@/components/dashboard/DuyuruGecmisi";
 import { dershaneDenemeSuresiGetir, siteAyarlariGetir, anaSayfaAyarlariGetir } from "@/app/yonetici/actions";
 import { AnaSayfaAyarlariYonetimi } from "@/components/yonetici/AnaSayfaAyarlariYonetimi";
+import { AnaSayfaDuyuruYonetimi } from "@/components/yonetici/AnaSayfaDuyuruYonetimi";
+import { anaSayfaDuyurulariniGetir } from "@/lib/ana-sayfa-duyurulari";
 import { suresiDolduMu } from "@/lib/deneme-suresi";
 import { AdminProfilim } from "@/components/yonetici/AdminProfilim";
 import { YoneticiGirisForm } from "@/components/yonetici/YoneticiGirisForm";
@@ -81,6 +84,7 @@ export default async function YoneticiPage({
   const { ayarlar: anaSayfaAyarlari, gorseller: anaSayfaGorselleri } = aktifBolum === "site-ayarlari"
     ? await anaSayfaAyarlariGetir()
     : { ayarlar: { baslik: "", govde: "", sliderGecisSaniye: 6 }, gorseller: [] };
+  const anaSayfaDuyurulari = aktifBolum === "site-ayarlari" ? await anaSayfaDuyurulariniGetir(supabase) : [];
 
   // Kullanıcı isteği (26.08.2026): admin de dahil olmak üzere yanlış giriş
   // denemesi bildirimi alıyor (bkz. api/giris/route.ts) — Mesajlarım kutusu
@@ -125,11 +129,13 @@ export default async function YoneticiPage({
           )}
           {aktifBolum === "kurallar" && <KurallarYonetimi />}
           {aktifBolum === "hata-bildirimleri" && <section className="sfec-section"><HataBildirimleriYonetimi /></section>}
+          {aktifBolum === "duyuru-gecmisi" && <section className="sfec-section"><DuyuruGecmisi /></section>}
           {aktifBolum === "islem-gecmisi" && <section className="sfec-section"><IslemGecmisi /></section>}
           {aktifBolum === "site-ayarlari" && (
             <section className="sfec-section">
               <SiteAyarlariYonetimi kapaliBaslangic={siteKapali} />
               <AnaSayfaAyarlariYonetimi ayarlarBaslangic={anaSayfaAyarlari} gorsellerBaslangic={anaSayfaGorselleri} />
+              <AnaSayfaDuyuruYonetimi baslangic={anaSayfaDuyurulari} />
             </section>
           )}
           {aktifBolum === "adminler" && <section className="sfec-section"><AdminlerYonetimi /></section>}

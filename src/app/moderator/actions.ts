@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { adNormalize, hedefBolumNormalize, okulNoGecerliMi, rastgeleSifre, sifreGecerliMi, telefonGecerliMi } from "@/lib/validators";
+import { adNormalize, hedefBolumNormalize, okulNoGecerliMi, rastgeleSifre, sifreGecerliMi, telefonGecerliMi, teslimEdilebilirEpostaMi } from "@/lib/validators";
 import type { AytAlan, SinifSeviyesi, UserRole } from "@/lib/types";
 
 export interface ModeratorKullanici {
@@ -12,6 +12,7 @@ export interface ModeratorKullanici {
   ad: string;
   role: UserRole;
   aktif: boolean;
+  email: string | null;
   detay: string;
   kategori: "ogrenci" | "ogretmen" | "veli";
   sinif: string | null;
@@ -72,7 +73,7 @@ export async function moderatorKullanicilariGetir(targetSchoolId?: string): Prom
     .filter((id) => id !== user.id);
   if (!ids.length) return { okulAdi, kullanicilar: [] };
   const [{ data: profiles }, { data: moderatorler }] = await Promise.all([
-    admin.from("profiles").select("id, ad, role, aktif").in("id", ids).neq("role", "admin"),
+    admin.from("profiles").select("id, ad, email, role, aktif").in("id", ids).neq("role", "admin"),
     admin.from("school_moderators").select("profile_id").in("profile_id", ids),
   ]);
   const studentMap = new Map((students ?? []).map(s => [s.id, s]));
@@ -80,12 +81,12 @@ export async function moderatorKullanicilariGetir(targetSchoolId?: string): Prom
   const moderatorIdSeti = new Set((moderatorler ?? []).map((m) => m.profile_id));
   return {
     okulAdi,
-    kullanicilar: ((profiles ?? []) as { id: string; ad: string; role: UserRole; aktif: boolean }[]).map(p => {
+    kullanicilar: ((profiles ?? []) as { id: string; ad: string; email: string | null; role: UserRole; aktif: boolean }[]).map(p => {
       const s = studentMap.get(p.id) as { okul_no: string; yurt_ogrencisi: boolean; classes: { seviye: string; sube: string } | null } | undefined;
       const t = teacherMap.get(p.id) as { brans: string; classes: { seviye: string; sube: string } | null } | undefined;
       const sinif = s?.classes ? `${s.classes.seviye}-${s.classes.sube}` : t?.classes ? `${t.classes.seviye}-${t.classes.sube}` : null;
       return {
-        id: p.id, ad: p.ad, role: p.role, aktif: p.aktif, sinif,
+        id: p.id, ad: p.ad, email: p.email, role: p.role, aktif: p.aktif, sinif,
         kategori: s ? "ogrenci" as const : t ? "ogretmen" as const : "veli" as const,
         detay: s ? `Öğrenci · #${s.okul_no}${sinif ? ` · ${sinif}` : ""}` : t ? `${p.role === "mudur" ? "Müdür" : "Öğretmen"} · ${t.brans}${sinif ? ` · ${sinif}` : ""}` : "Veli",
         yurtOgrencisi: s?.yurt_ogrencisi ?? false,
@@ -125,6 +126,8 @@ export async function moderatorYurtDurumuDegistir(targetId: string, yurtOgrencis
 export async function moderatorSifreSifirla(targetId: string, targetSchoolId?: string) {
   const { user, admin, schoolId } = await requireModerator(targetSchoolId);
   if (targetId === user.id || !(await hedefOkuldaMi(admin, schoolId, targetId))) return { error: "Bu kullanıcı için yetkiniz yok.", sifre: null };
+  const { data: hedef } = await admin.from("profiles").select("email").eq("id", targetId).neq("role", "admin").maybeSingle();
+  if (!hedef || !teslimEdilebilirEpostaMi(hedef.email)) return { error: "Önce kullanıcıya geçerli bir e-posta adresi kaydedin.", sifre: null };
   const sifre = rastgeleSifre();
   const { error } = await admin.auth.admin.updateUserById(targetId, { password: sifre });
   if (error) return { error: error.message, sifre: null };
@@ -160,11 +163,32 @@ export async function moderatorHesapSil(targetId: string, targetSchoolId?: strin
 export async function moderatorSifreBelirle(targetId: string, yeniSifre: string, targetSchoolId?: string) {
   const { user, admin, schoolId } = await requireModerator(targetSchoolId);
   if (targetId === user.id || !(await hedefOkuldaMi(admin, schoolId, targetId))) return { error: "Bu kullanıcı için yetkiniz yok." };
+  const { data: hedef } = await admin.from("profiles").select("email").eq("id", targetId).neq("role", "admin").maybeSingle();
+  if (!hedef || !teslimEdilebilirEpostaMi(hedef.email)) return { error: "Önce kullanıcıya geçerli bir e-posta adresi kaydedin." };
   if (!sifreGecerliMi(yeniSifre)) return { error: "Şifre en az 8 karakter olmalı; harf, rakam ve özel işaret içermeli." };
   const { error } = await admin.auth.admin.updateUserById(targetId, { password: yeniSifre });
   if (error) return { error: error.message };
   await admin.from("profiles").update({ gecici_sifre: false }).eq("id", targetId).neq("role", "admin");
   await admin.from("admin_audit_log").insert({ actor_id: user.id, eylem: "moderator_sifre_belirle", detay: { hedef_id: targetId, school_id: schoolId } });
+  return { error: null };
+}
+
+export async function moderatorEpostaKaydet(targetId: string, yeniEmail: string, targetSchoolId?: string) {
+  const { user, admin, schoolId } = await requireModerator(targetSchoolId);
+  if (targetId === user.id || !(await hedefOkuldaMi(admin, schoolId, targetId))) return { error: "Bu kullanıcı için yetkiniz yok." };
+  const email = yeniEmail.trim().toLowerCase();
+  if (!teslimEdilebilirEpostaMi(email)) return { error: "Geçerli, e-posta alabilen bir adres girin." };
+  const { data: mevcut } = await admin.from("profiles").select("email, role").eq("id", targetId).maybeSingle();
+  if (!mevcut || mevcut.role === "admin") return { error: "Kullanıcı bulunamadı veya düzenlenemez." };
+  const { error: authError } = await admin.auth.admin.updateUserById(targetId, { email, email_confirm: true });
+  if (authError) return { error: authError.message };
+  const { error: profileError } = await admin.from("profiles").update({ email }).eq("id", targetId);
+  if (profileError) {
+    if (mevcut.email) await admin.auth.admin.updateUserById(targetId, { email: mevcut.email, email_confirm: true });
+    return { error: profileError.message };
+  }
+  await admin.from("admin_audit_log").insert({ actor_id: user.id, eylem: "moderator_eposta_kaydet", detay: { hedef_id: targetId, school_id: schoolId } });
+  revalidatePath("/moderator");
   return { error: null };
 }
 

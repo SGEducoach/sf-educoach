@@ -2,6 +2,7 @@ import Link from "next/link";
 import { BarChart3, CalendarCheck2, ChevronLeft, ListChecks, Sparkles, Target } from "lucide-react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { Header } from "@/components/dashboard/Header";
 import { OgretmenPanel } from "@/components/dashboard/OgretmenPanel";
 import { DershaneMudurPaneli } from "@/components/dashboard/DershaneMudurPaneli";
@@ -42,6 +43,10 @@ import { DershaneAnaSayfa } from "@/components/dashboard/DershaneAnaSayfa";
 import { DenemeSuresiSonaErdiEkrani } from "@/components/DenemeSuresiSonaErdiEkrani";
 import { RehberlikPaneli } from "@/components/dashboard/RehberlikPaneli";
 import { REHBER_BRANSI } from "@/lib/rehberlik";
+import { DuyuruGecmisi } from "@/components/dashboard/DuyuruGecmisi";
+import { EtkinlikPaneli } from "@/components/dashboard/EtkinlikPaneli";
+import { etkinlikBransiMi } from "@/lib/etkinlik";
+import type { EtkinlikAtamasi, EtkinlikGrubu, EtkinlikOgrencisi } from "@/lib/etkinlik";
 
 // Görevlerim takvimi haftalık gösteriliyor — verilen tarihin (veya bugünün,
 // Türkiye saatine göre) içinde bulunduğu haftanın Pazartesi'sini döndürür.
@@ -77,10 +82,6 @@ export default async function DashboardPage({
   const role = profile.role as UserRole;
   // Admin artık normal akışta hiç görünmez — tek kontrol noktası /yonetici'dir.
   if (role === "admin") redirect("/yonetici");
-  // Kullanıcı isteği (30.08.2026): şifre sıfırlama artık e-posta üzerinden
-  // yapılacağı için öğretmenin GERÇEK (teslim edilebilir) bir adres tanımlaması
-  // gerekiyor. Uyarı, adres yoksa/sentetikse VEYA teyit edilen adres mevcut
-  // adresten farklıysa çıkar — teyit sonrası susar, adres değişirse geri gelir.
   const teyitliOgretmenEpostasi = typeof user.user_metadata?.sifre_eposta_teyit_email === "string"
     ? user.user_metadata.sifre_eposta_teyit_email.toLowerCase()
     : null;
@@ -113,8 +114,6 @@ export default async function DashboardPage({
   // müdürlerinde de olsun" — okul müdürü de artık dershane müdürüyle aynı
   // ilk deneyimle (kademe bazlı performans) açılıyor. Dershane müdürü zaten
   // "ozet" = Ana Sayfa olduğundan (bkz. DERSHANE_MUDUR_MENUSU) etkilenmiyor.
-  const varsayilanBolum: DashboardBolumu = role === "mudur" && kurumTuru !== "dershane" ? "kurum-performansi" : "ozet";
-  const aktifBolum = (params.bolum ?? varsayilanBolum) as DashboardBolumu;
   // 2026-08-26 kullanıcı isteği — Rehber Öğretmen branşına özel menü ögesi
   // (bkz. dashboard-navigation.ts REHBERLIK_MENU_OGESI) branş bilgisine
   // bağlı olduğundan menü geçerliliği kontrolünden ÖNCE çekiliyor.
@@ -122,6 +121,9 @@ export default async function DashboardPage({
     ? await supabase.from("teachers").select("brans").eq("id", user.id).maybeSingle()
     : { data: null };
   const brans = ogretmenBransHam?.brans;
+  const varsayilanBolum: DashboardBolumu = (role === "mudur" && kurumTuru !== "dershane") || (role === "ogretmen" && brans === REHBER_BRANSI)
+    ? "kurum-performansi" : "ozet";
+  const aktifBolum = (params.bolum ?? varsayilanBolum) as DashboardBolumu;
   if (!dashboardMenusu(role, kurumTuru, brans).some((oge) => oge.bolum === aktifBolum)) redirect("/dashboard");
   const donem = (["haftalik", "aylik", "tum"].includes(params.donem ?? "") ? params.donem : "tum") as RaporDonemi;
   const { data: moderatorYetkisi } = (role === "ogretmen" || role === "mudur")
@@ -153,7 +155,9 @@ export default async function DashboardPage({
       <div className="mx-auto flex min-h-[calc(100dvh-6.75rem)] w-full max-w-[100rem] flex-1 items-stretch gap-6 px-4 py-6 sm:px-6 lg:py-7">
         <DashboardYanMenu role={role} kurumTuru={kurumTuru} brans={brans} aktifBolum={aktifBolum} />
         <main id="ana-icerik" className="sfec-dashboard-main min-h-[calc(100dvh-10.25rem)] min-w-0 w-full flex-1 flex flex-col gap-6">
-          {aktifBolum === "tg-denemeleri" ? (
+          {aktifBolum === "duyuru-gecmisi" ? (
+            <DuyuruGecmisi />
+          ) : aktifBolum === "tg-denemeleri" ? (
             <TgDenemeleri bugun={bugununTarihiTR()} dbIlanlar={await tgDenemeIlanlariGetir(supabase)} />
           ) : (
             <>
@@ -192,6 +196,20 @@ async function oyunEtiketiSayaclariGetir(
 
 async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: { userId: string; ad: string; donem: RaporDonemi; haftaBaslangic: string; aktifBolum: DashboardBolumu }) {
   const supabase = await createClient();
+
+  if (aktifBolum === "etkinlikler") {
+    const { data } = await supabase.from("etkinlik_calisma_atamalari")
+      .select("id,durum,cakisiyor,red_gerekcesi,etkinlik_calismalari(isim,tarih,baslangic_saat,bitis_saat,etkinlik_gruplari(isim))")
+      .eq("student_id", userId).order("created_at", { ascending: false });
+    type AtamaRow = { id:string; durum:EtkinlikAtamasi["durum"]; cakisiyor:boolean; red_gerekcesi:string|null; etkinlik_calismalari:{isim:string;tarih:string;baslangic_saat:string;bitis_saat:string;etkinlik_gruplari:{isim:string}|null}|null };
+    const atamalar = ((data as unknown as AtamaRow[]) ?? []).flatMap((a): EtkinlikAtamasi[] => a.etkinlik_calismalari ? [{
+      id:a.id, durum:a.durum, cakisiyor:a.cakisiyor, redGerekcesi:a.red_gerekcesi,
+      etkinlikIsmi:a.etkinlik_calismalari.isim, tarih:a.etkinlik_calismalari.tarih,
+      baslangicSaat:a.etkinlik_calismalari.baslangic_saat, bitisSaat:a.etkinlik_calismalari.bitis_saat,
+      grupIsmi:a.etkinlik_calismalari.etkinlik_gruplari?.isim ?? "Etkinlik",
+    }] : []);
+    return <EtkinlikPaneli mod="ogrenci" atamalar={atamalar} />;
+  }
 
   // Kullanıcı bulgusu (24.08.2026): "önce kutular geliyor içerik geç
   // geliyor" — bu fonksiyon önceden ~7 sorguyu SIRAYLA (her biri bir
@@ -455,6 +473,33 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
     );
   }
 
+  const rehberOgretmenMi = role === "ogretmen" && brans === REHBER_BRANSI;
+  const okulOkumaClient = rehberOgretmenMi ? createAdminClient() : supabase;
+
+  if (aktifBolum === "etkinlikler") {
+    if (role !== "ogretmen" || kurumTuru !== "okul" || !etkinlikBransiMi(brans)) {
+      return <div className="rounded-3xl p-6 text-center" style={{background:BG1,border:`2px solid ${BORDER}`}}><p style={{color:TEXT_MUTED}}>Bu bölüm yalnızca okullardaki Beden Eğitimi ve Müzik öğretmenlerine açıktır.</p></div>;
+    }
+    // Beden/Müzik öğretmenleri etkinlik için okulun tüm sınıflarından
+    // öğrenci seçebilir. Normal öğretmen RLS'i yalnız ders verdiği/sınıfı
+    // olan öğrencileri döndürdüğü için burada, yukarıdaki rol+branş+okul
+    // doğrulamasından sonra sunucu istemcisi kullanılır.
+    const admin = createAdminClient();
+    const { data: gruplarHam } = await admin.from("etkinlik_gruplari").select("id,isim").eq("teacher_id",userId).eq("school_id",teacher.school_id).order("created_at");
+    const grupIds = (gruplarHam ?? []).map((g) => g.id);
+    const [{data:siniflarHam},{data:ogrencilerHam},{data:uyelerHam}] = await Promise.all([
+      admin.from("classes").select("id,seviye,sube").eq("school_id",teacher.school_id),
+      admin.from("students").select("id,class_id,profiles!students_id_fkey(ad),classes(id,seviye,sube)").eq("school_id",teacher.school_id),
+      grupIds.length ? admin.from("etkinlik_grup_uyeleri").select("group_id,student_id").in("group_id", grupIds) : Promise.resolve({data:[]}),
+    ]);
+    type OgrRow={id:string;class_id:string;profiles:{ad:string}|null;classes:{id:string;seviye:string;sube:string}|null};
+    const ogrenciler:EtkinlikOgrencisi[]=((ogrencilerHam as unknown as OgrRow[])??[]).map(o=>({id:o.id,ad:o.profiles?.ad??"İsimsiz",sinifId:o.class_id,sinifAdi:o.classes?`${o.classes.seviye}-${o.classes.sube}`:"—"})).sort((a,b)=>a.ad.localeCompare(b.ad,"tr"));
+    const uyeMap=new Map<string,Set<string>>(); for(const u of (uyelerHam as {group_id:string;student_id:string}[]|null)??[]){if(!uyeMap.has(u.group_id))uyeMap.set(u.group_id,new Set());uyeMap.get(u.group_id)!.add(u.student_id)}
+    const gruplar:EtkinlikGrubu[]=((gruplarHam as {id:string;isim:string}[]|null)??[]).map(g=>({...g,uyeler:ogrenciler.filter(o=>uyeMap.get(g.id)?.has(o.id))}));
+    const siniflar=((siniflarHam as {id:string;seviye:string;sube:string}[]|null)??[]).sort(sinifSiraKarsilastir).map(s=>({id:s.id,ad:`${s.seviye}-${s.sube}`}));
+    return <EtkinlikPaneli mod="ogretmen" brans={brans} siniflar={siniflar} ogrenciler={ogrenciler} gruplar={gruplar}/>;
+  }
+
   // 2026-08-26 kullanıcı isteği — Rehber Öğretmen kendi okulunun TÜM
   // öğrencilerine (sınıf öğretmenliği/branş dersi sınırı olmadan) mesaj
   // gönderebiliyor, tek tek veya toplu (bkz. RehberlikPaneli.tsx,
@@ -493,8 +538,8 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   // kurum türünden bağımsız (sadece school_id alıyor), olduğu gibi
   // yeniden kullanıldı. Sadece okul müdürü (dershane müdürü zaten kendi
   // ayrı panelinde, "ozet" bölümünde, aynı bileşeni kullanıyor).
-  if (aktifBolum === "kurum-performansi" && role === "mudur" && kurumTuru !== "dershane") {
-    const veri = await dershaneAnaSayfaVerisiGetir(supabase, teacher.school_id);
+  if (aktifBolum === "kurum-performansi" && (role === "mudur" || rehberOgretmenMi) && kurumTuru !== "dershane") {
+    const veri = await dershaneAnaSayfaVerisiGetir(okulOkumaClient, teacher.school_id);
     return <section className="sfec-section"><DershaneAnaSayfa veri={veri} /></section>;
   }
 
@@ -523,10 +568,11 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   // "Öğrenci profili görüntüle" (analiz sayfası, ?ogrenci=) hem okul hem
   // dershane müdürü için ORTAK — dershane dalına geçmeden önce ele alınır.
   if (secilenOgrenciId) {
-    const { data: ogrenci } = await supabase
+    const { data: ogrenci } = await okulOkumaClient
       .from("students")
       .select("id, profiles!students_id_fkey(ad)")
       .eq("id", secilenOgrenciId)
+      .eq("school_id", teacher.school_id)
       .single();
 
     type OgrenciRow = { id: string; profiles: { ad: string } | null };
@@ -534,9 +580,9 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
 
     if (o) {
       const [analiz, konuHakimiyetiOzeti, kohort] = await Promise.all([
-        analizVerisiGetir(supabase, secilenOgrenciId, donem),
-        konuHakimiyetiOzetiGetir(supabase, secilenOgrenciId),
-        kohortKarsilastirmasiGetir(supabase, secilenOgrenciId),
+        analizVerisiGetir(okulOkumaClient, secilenOgrenciId, donem),
+        konuHakimiyetiOzetiGetir(okulOkumaClient, secilenOgrenciId),
+        kohortKarsilastirmasiGetir(okulOkumaClient, secilenOgrenciId),
       ]);
       const ogrenciAdi = o.profiles?.ad ?? "İsimsiz";
       // Dershane müdürünün "ozet" bölümü yok (bkz. DERSHANE_MUDUR_MENUSU) —
@@ -578,18 +624,18 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
     );
   }
 
-  const { data: siniflar } = await supabase
+  const { data: siniflar } = await okulOkumaClient
     .from("classes")
     .select("id, seviye, sube")
     .eq("school_id", teacher.school_id);
 
   const sinifListesi = ((siniflar ?? []) as { id: string; seviye: string; sube: string }[]).sort(sinifSiraKarsilastir);
-  const gorunecekSinifId = secilenSinifId || teacher.class_id || sinifListesi[0]?.id || null;
+  const gorunecekSinifId = secilenSinifId || (rehberOgretmenMi ? null : teacher.class_id) || sinifListesi[0]?.id || null;
   const kendiSinifiMi = gorunecekSinifId === teacher.class_id;
 
   const [{ data: ogrenciler }, { data: talepler }, { data: ogretmenDersleriHam }, { data: bekleyenOnaylarHam }] = await Promise.all([
     gorunecekSinifId
-      ? supabase.from("students").select("id, okul_no, yurt_ogrencisi, profiles!students_id_fkey(ad)").eq("class_id", gorunecekSinifId)
+      ? okulOkumaClient.from("students").select("id, okul_no, yurt_ogrencisi, profiles!students_id_fkey(ad)").eq("class_id", gorunecekSinifId)
       : Promise.resolve({ data: [] }),
     teacher.class_id
       ? supabase.from("veli_link_requests").select("*, students!inner(class_id, profiles!students_id_fkey(ad))").eq("students.class_id", teacher.class_id).eq("durum", "bekliyor")
@@ -689,8 +735,8 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   // ders_programi_select_moderator zaten bunu açıkça karşılıyor.
   let okulOgretmenleri: { id: string; ad: string; brans: string }[] = [];
   let secilenOgretmenProgrami: DersProgramiSatiri[] = [];
-  if (aktifBolum === "ogretmenler" && role === "mudur" && !dershaneMi) {
-    const { data: ogretmenlerHam } = await supabase
+  if (aktifBolum === "ogretmenler" && (role === "mudur" || rehberOgretmenMi) && !dershaneMi) {
+    const { data: ogretmenlerHam } = await okulOkumaClient
       .from("teachers")
       .select("id, brans, profiles!teachers_id_fkey(ad)")
       .eq("school_id", teacher.school_id)
@@ -700,7 +746,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       .map((o) => ({ id: o.id, ad: o.profiles?.ad ?? "İsimsiz", brans: o.brans }))
       .sort((a, b) => a.ad.localeCompare(b.ad, "tr"));
     if (secilenOgretmenId) {
-      secilenOgretmenProgrami = await ogretmenProgramiGetir(supabase, secilenOgretmenId);
+      secilenOgretmenProgrami = await ogretmenProgramiGetir(okulOkumaClient, secilenOgretmenId);
     }
   }
 
@@ -725,6 +771,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       okulOgretmenleri={okulOgretmenleri}
       secilenOgretmenId={secilenOgretmenId}
       secilenOgretmenProgrami={secilenOgretmenProgrami}
+      rehberOgretmenMi={rehberOgretmenMi}
     />
   );
 }

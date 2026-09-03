@@ -75,7 +75,7 @@ export function OgretmenPanel({
   role, bekleyenTalepler, ogrenciler, sinifAdi, siniflar, gorunecekSinifId, kendiSinifId, kendiSinifiMi,
   ogretmenDersleri, bekleyenOnaylar, verdigimGorevler, konuOnerileri, aktifBolum,
   dersProgramiSatirlari, yurtNobetiSatirlari, dershaneMi,
-  okulOgretmenleri, secilenOgretmenId, secilenOgretmenProgrami,
+  okulOgretmenleri, secilenOgretmenId, secilenOgretmenProgrami, rehberOgretmenMi = false,
 }: {
   role: "ogretmen" | "mudur";
   bekleyenTalepler: (VeliLinkRequest & { ogrenci_ad: string })[];
@@ -102,6 +102,7 @@ export function OgretmenPanel({
   okulOgretmenleri?: { id: string; ad: string; brans: string }[];
   secilenOgretmenId?: string;
   secilenOgretmenProgrami?: DersProgramiSatiri[];
+  rehberOgretmenMi?: boolean;
 }) {
   const router = useRouter();
   const [uretilenKodlar, setUretilenKodlar] = useState<Record<string, string>>({});
@@ -146,10 +147,10 @@ export function OgretmenPanel({
   // olduğu bir sınıf görüntüleniyorsa (bkz. migration 0047 RLS kuralı).
   const gorevVerilebilirMi = kendiSinifiMi || ogretmenDersleri.some((d) => d.classId === gorunecekSinifId);
 
-  const duyuruMumkunMu = role === "mudur" || !!kendiSinifId;
+  const duyuruMumkunMu = role === "mudur" || rehberOgretmenMi || !!kendiSinifId;
   // Müdür kapsamı seçebiliyor: tüm okul / seviye / belirli şube. Öğretmende
   // kapsam sabit (kendi sınıfı) olduğu için seçici hiç gösterilmiyor.
-  const duyuruKapsamSecenekleri = role === "mudur"
+  const duyuruKapsamSecenekleri = role === "mudur" || rehberOgretmenMi
     ? [
         { deger: "okul", etiket: "Tüm okul" },
         { deger: "9", etiket: "9. Sınıflar" },
@@ -172,7 +173,7 @@ export function OgretmenPanel({
               <span className="sfec-hosgeldin-kapi h-7 w-7" aria-hidden="true" />
             </span>
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: TEXT_MUTED }}>Eğitimci paneli</div>
+              <div className="text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: TEXT_MUTED }}>{rehberOgretmenMi ? "Rehber öğretmen paneli" : "Eğitimci paneli"}</div>
               <h1 className="mt-0.5 text-xl font-extrabold sm:text-2xl" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Hoş geldin hocam</h1>
             </div>
           </div>
@@ -181,8 +182,8 @@ export function OgretmenPanel({
 
       {aktifBolum === "duyurular" && duyuruMumkunMu && (
         <section id="duyurular" className="sfec-section"><DuyuruFormu
-          baslik={role === "mudur" ? "Okula duyuru gönder" : "Sınıfınıza duyuru gönder"}
-          aciklama={role === "mudur"
+          baslik={rehberOgretmenMi ? "Rehber Öğretmen duyurusu gönder" : role === "mudur" ? "Okula duyuru gönder" : "Sınıfınıza duyuru gönder"}
+          aciklama={role === "mudur" || rehberOgretmenMi
             ? "Okul veya sınıf kapsamını ve duyurunun öğrenciye, veliye ya da ikisine birden gideceğini seçebilirsiniz."
             : "Kendi sınıfınız için duyurunun öğrenciye, veliye ya da ikisine birden gideceğini seçebilirsiniz."}
           gonder={ogretmenDuyuruGonder}
@@ -277,7 +278,7 @@ export function OgretmenPanel({
         />
       )}
 
-      {aktifBolum === "ogretmenler" && role === "mudur" && (
+      {aktifBolum === "ogretmenler" && (role === "mudur" || rehberOgretmenMi) && (
         <OgretmenProgramlariBolumu
           ogretmenler={okulOgretmenleri ?? []}
           secilenOgretmenId={secilenOgretmenId}

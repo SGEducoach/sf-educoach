@@ -77,6 +77,7 @@ export async function duyuruGonder(
   gonderenId?: string,
   aliciTuru: DuyuruAliciTuru = "hepsi",
   kategori?: DuyuruKategorisi,
+  meta?: { schoolId?: string | null; gonderenRol?: string; gonderenAdi?: string; hedef?: string },
 ): Promise<{ ogrenciSayisi: number; veliSayisi: number }> {
   if (ogrenciIdleri.length === 0) return { ogrenciSayisi: 0, veliSayisi: 0 };
 
@@ -108,7 +109,7 @@ export async function duyuruGonder(
 
   const { data: duyuru, error: duyuruHatasi } = await admin
     .from("duyurular")
-    .insert({ gonderen_id: gonderenId ?? null, baslik, mesaj: govde })
+    .insert({ gonderen_id: gonderenId ?? null, baslik, mesaj: govde, school_id: meta?.schoolId ?? null, gonderen_rol: meta?.gonderenRol ?? null, gonderen_adi: meta?.gonderenAdi ?? null, hedef: meta?.hedef ?? null, alici_sayisi: ogrenciAlicilari.length + veliAlicilari.size })
     .select("id")
     .single();
   if (!duyuruHatasi && duyuru) {

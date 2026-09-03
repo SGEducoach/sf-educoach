@@ -26,6 +26,7 @@ export interface DershaneAnaSayfaVerisi {
   // Sadece bu kurumda GERÇEKTEN öğrencisi olan kademeler (örn. kurumda
   // sadece 9-10. sınıf varsa 11-12 hiç dönmez, boş çizgi göstermez).
   kademeler: { seviye: string; noktalar: HaftalikNokta[] }[];
+  siniflar: { id: string; ad: string; noktalar: HaftalikNokta[] }[];
 }
 
 function gunFarkiHesapla(bugun: string, tarih: string): number {
@@ -69,20 +70,24 @@ export async function dershaneAnaSayfaVerisiGetir(
 
   const { data: ogrencilerHam } = await admin
     .from("students")
-    .select("id, classes(seviye)")
+    .select("id, classes(id,seviye,sube)")
     .eq("school_id", schoolId);
-  type OgrenciRow = { id: string; classes: { seviye: string } | null };
+  type OgrenciRow = { id: string; classes: { id:string; seviye: string; sube:string } | null };
   const ogrenciler = (ogrencilerHam ?? []) as unknown as OgrenciRow[];
   const seviyeMap = new Map<string, string>();
-  for (const o of ogrenciler) if (o.classes) seviyeMap.set(o.id, o.classes.seviye);
+  const sinifMap = new Map<string, {id:string;ad:string}>();
+  for (const o of ogrenciler) if (o.classes) { seviyeMap.set(o.id, o.classes.seviye); sinifMap.set(o.id,{id:o.classes.id,ad:`${o.classes.seviye}-${o.classes.sube}`}); }
   const studentIds = ogrenciler.map((o) => o.id);
   const gorulenSeviyeler = [...new Set(seviyeMap.values())].sort();
+  const gorulenSiniflar = [...new Map([...sinifMap.values()].map(x=>[x.id,x])).values()].sort((a,b)=>a.ad.localeCompare(b.ad,"tr",{numeric:true}));
 
   const genelBucket = new Map<number, Biriken>();
   const kademeBucket = new Map<string, Map<number, Biriken>>();
+  const sinifBucket = new Map<string, Map<number, Biriken>>();
   for (const seviye of gorulenSeviyeler) kademeBucket.set(seviye, new Map());
+  for (const sinif of gorulenSiniflar) sinifBucket.set(sinif.id,new Map());
 
-  function bicimEkle(idx: number, seviye: string | null, deltaNet: number, deltaDeneme: number, deltaSoru: number) {
+  function bicimEkle(idx: number, seviye: string | null, sinifId:string|null, deltaNet: number, deltaDeneme: number, deltaSoru: number) {
     const guncelle = (m: Map<number, Biriken>) => {
       const mevcut = m.get(idx) ?? bosBiriken();
       mevcut.netToplam += deltaNet;
@@ -92,6 +97,7 @@ export async function dershaneAnaSayfaVerisiGetir(
     };
     guncelle(genelBucket);
     if (seviye) { const m = kademeBucket.get(seviye); if (m) guncelle(m); }
+    if (sinifId) { const m=sinifBucket.get(sinifId); if(m) guncelle(m); }
   }
 
   if (studentIds.length > 0) {
@@ -108,12 +114,12 @@ export async function dershaneAnaSayfaVerisiGetir(
       const idx = bucketIndexHesapla(bugun, d.tarih);
       if (idx === null) continue;
       const net = d.deneme_ders_sonuclari.reduce((t, s) => t + netHesapla(s.dogru, s.yanlis), 0);
-      bicimEkle(idx, seviyeMap.get(d.student_id) ?? null, net, 1, 0);
+      bicimEkle(idx, seviyeMap.get(d.student_id) ?? null, sinifMap.get(d.student_id)?.id??null, net, 1, 0);
     }
     for (const s of (sorularHam ?? []) as unknown as SoruRow[]) {
       const idx = bucketIndexHesapla(bugun, s.tarih);
       if (idx === null) continue;
-      bicimEkle(idx, seviyeMap.get(s.student_id) ?? null, 0, 0, s.dogru + s.yanlis);
+      bicimEkle(idx, seviyeMap.get(s.student_id) ?? null, sinifMap.get(s.student_id)?.id??null, 0, 0, s.dogru + s.yanlis);
     }
   }
 
@@ -121,5 +127,6 @@ export async function dershaneAnaSayfaVerisiGetir(
     ogrenciSayisi: studentIds.length,
     genel: noktalariOlustur(bugun, genelBucket),
     kademeler: gorulenSeviyeler.map((seviye) => ({ seviye, noktalar: noktalariOlustur(bugun, kademeBucket.get(seviye)!) })),
+    siniflar: gorulenSiniflar.map(s=>({id:s.id,ad:s.ad,noktalar:noktalariOlustur(bugun,sinifBucket.get(s.id)!)})),
   };
 }

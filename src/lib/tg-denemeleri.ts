@@ -1,4 +1,6 @@
 import { tgDenemeDosyaUrl, type TgDenemeIlani } from "@/lib/tg-deneme-ilanlari";
+import { tgDenemeBitisTarihi } from "@/lib/tg-deneme-tarih";
+import { bugununTarihiTR } from "@/lib/tarih";
 
 export interface TgDenemeHaberi {
   id: string;
@@ -152,20 +154,15 @@ export const TG_DENEME_HABERLERI: TgDenemeHaberi[] = [
 // (en yeni ilan en önde) ekleniyor; statik takvim listesi bilinçli olarak
 // hiç değiştirilmedi/silinmedi, sonuna aynen ekleniyor. Arşivleme (20
 // ilan sınırı) SADECE admin ilanları için geçerli — bkz. tg-deneme-ilanlari.ts.
-export function tgDenemeAkisiOlustur(dbIlanlari: TgDenemeIlani[]): TgDenemeHaberi[] {
+export function tgDenemeAkisiOlustur(dbIlanlari: TgDenemeIlani[], bugun = bugununTarihiTR()): TgDenemeHaberi[] {
   const donusturulmus: TgDenemeHaberi[] = dbIlanlari.map((ilan) => ({
     id: `ilan-${ilan.id}`,
     kategori: "Duyuru",
     baslik: ilan.baslik,
     aciklama: ilan.aciklama,
-    // Kullanıcı isteği (27.08.2026): "tarih ,başlık,alt metin" — statik
-    // takvim kayıtlarıyla aynı üçlü format. "tarih seçmeli olmasın, bazen
-    // aralık bazen tek tarih" — admin'in serbest yazdığı metin aynen
-    // gösteriliyor. Karşılığında makine tarafından karşılaştırılabilir bir
-    // bitiş tarihi YOK — bu ilanlar için "GEÇTİ" damgası hiç uygulanmıyor
-    // (sonTarih hep uzak bir sentinel).
+    // Serbest metin korunur; açık bitiş tarihi varsa akıştan zamanında çıkarılır.
     tarihEtiketi: ilan.tarih,
-    sonTarih: "9999-12-31",
+    sonTarih: tgDenemeBitisTarihi(ilan.tarih) ?? "9999-12-31",
     gorsel: ilan.dosyaTipi === "resim" ? tgDenemeDosyaUrl(ilan.dosyaYolu) : "",
     genislik: ilan.genislik ?? 1200,
     yukseklik: ilan.yukseklik ?? 1600,
@@ -173,5 +170,5 @@ export function tgDenemeAkisiOlustur(dbIlanlari: TgDenemeIlani[]): TgDenemeHaber
     kaynakHref: ilan.dosyaTipi === "pdf" ? tgDenemeDosyaUrl(ilan.dosyaYolu) : undefined,
     dosyaTipi: ilan.dosyaTipi,
   }));
-  return [...donusturulmus, ...TG_DENEME_HABERLERI];
+  return [...donusturulmus, ...TG_DENEME_HABERLERI].filter(ilan => ilan.sonTarih >= bugun);
 }

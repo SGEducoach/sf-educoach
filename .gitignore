@@ -44,3 +44,7 @@ next-env.d.ts
 # kaynak dokümanlar (müfredat PDF'leri vb.) — kod deposuna dahil değil,
 # telif/boyut nedeniyle GitHub'a gitmesin
 /dokumanlar/
+
+# Geçici XLS okuyucu ve yerel SQL doğrulama bağımlılıkları
+/tmp/xls-reader/
+/tmp/sql-tests/

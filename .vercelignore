@@ -1,0 +1,20 @@
+# Yerel anahtarlar ve kişisel veriler yayımlanmaz.
+.env*
+dokumanlar
+dokumanlar/**
+tmp
+tmp/**
+output
+output/**
+scripts
+scripts/**
+/supabase
+/supabase/**
+/*.pdf
+*.lnk
+.claude
+.claude/**
+.codex
+.codex/**
+.agents
+.agents/**

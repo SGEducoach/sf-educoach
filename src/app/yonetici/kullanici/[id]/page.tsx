@@ -16,7 +16,7 @@ import { ProfiliYonetToggle } from "@/components/yonetici/ProfiliYonetToggle";
 import type { KullaniciSonuc } from "@/app/yonetici/actions";
 import { ogretmenProgramiGetir, yurtNobetiGetir } from "@/lib/ders-programi";
 import { BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, TEXT, TEXT_MUTED } from "@/lib/theme";
-import type { UserRole } from "@/lib/types";
+import type { UserRole, KurumTuru } from "@/lib/types";
 
 const ROL_ETIKET: Record<UserRole, string> = { ogrenci: "Öğrenci", ogretmen: "Öğretmen", veli: "Veli", mudur: "Müdür", admin: "Yönetici" };
 
@@ -34,19 +34,19 @@ async function kullaniciSonucInsa(
   const { data: moderatorKaydi } = await admin.from("school_moderators").select("profile_id").eq("profile_id", profil.id).maybeSingle();
   const taban: KullaniciSonuc = {
     id: profil.id, ad: profil.ad, email: profil.email, telefon: profil.telefon, role, aktif: profil.aktif,
-    okulAdi: null, okulId: null, sinifAdi: null, sinifId: null, okulNo: null, brans: null,
+    okulAdi: null, okulId: null, kurumTuru: null, sinifAdi: null, sinifId: null, okulNo: null, brans: null,
     yurtOgrencisi: null, aytAlan: null, hedefBolum: null, hedefNetTyt: null, hedefNetAyt: null,
     moderatorMu: !!moderatorKaydi,
   };
   if (role === "ogrenci") {
     const { data } = await admin.from("students")
-      .select("okul_no, school_id, class_id, yurt_ogrencisi, ayt_alan, hedef_bolum, hedef_net_tyt, hedef_net_ayt, schools(ad), classes(seviye, sube)")
+      .select("okul_no, school_id, class_id, yurt_ogrencisi, ayt_alan, hedef_bolum, hedef_net_tyt, hedef_net_ayt, schools(ad, tur), classes(seviye, sube)")
       .eq("id", profil.id).maybeSingle();
     if (!data) return taban;
-    const okul = data.schools as unknown as { ad: string } | null;
+    const okul = data.schools as unknown as { ad: string; tur: KurumTuru } | null;
     const sinif = data.classes as unknown as { seviye: string; sube: string } | null;
     return {
-      ...taban, okulAdi: okul?.ad ?? null, okulId: data.school_id, sinifAdi: sinif ? `${sinif.seviye}-${sinif.sube}` : null,
+      ...taban, okulAdi: okul?.ad ?? null, okulId: data.school_id, kurumTuru: okul?.tur ?? null, sinifAdi: sinif ? `${sinif.seviye}-${sinif.sube}` : null,
       sinifId: data.class_id, okulNo: data.okul_no, yurtOgrencisi: data.yurt_ogrencisi, aytAlan: data.ayt_alan,
       hedefBolum: data.hedef_bolum, hedefNetTyt: data.hedef_net_tyt, hedefNetAyt: data.hedef_net_ayt,
     };
@@ -109,7 +109,7 @@ type AdminClient = ReturnType<typeof createAdminClient>;
 
 async function OgrenciSayfasi({ admin, userId, ad }: { admin: AdminClient; userId: string; ad: string }) {
   const [{ data: ogrenci }, { data: konular }, { data: sorular }, { data: denemeler }] = await Promise.all([
-    admin.from("students").select("okul_no, ayt_alan, hedef_bolum, schools(ad), classes(seviye, sube)").eq("id", userId).maybeSingle(),
+    admin.from("students").select("okul_no, ayt_alan, hedef_bolum, schools(ad, tur), classes(seviye, sube)").eq("id", userId).maybeSingle(),
     admin.from("konu_calismalar").select("id, tarih, ders, konu, sure_dakika").eq("student_id", userId).order("tarih", { ascending: false }).limit(5),
     admin.from("soru_cozumleri").select("id, tarih, ders, dogru, yanlis, sure_dakika").eq("student_id", userId).order("tarih", { ascending: false }).limit(5),
     admin.from("denemeler").select("id, tarih, tur").eq("student_id", userId).order("tarih", { ascending: false }).limit(5),
@@ -120,13 +120,13 @@ async function OgrenciSayfasi({ admin, userId, ad }: { admin: AdminClient; userI
     konuHakimiyetiOzetiGetir(admin as Parameters<typeof konuHakimiyetiOzetiGetir>[0], userId),
     kohortKarsilastirmasiGetir(admin as Parameters<typeof kohortKarsilastirmasiGetir>[0], userId),
   ]);
-  const okul = ogrenci.schools as unknown as { ad: string } | null;
+  const okul = ogrenci.schools as unknown as { ad: string; tur: KurumTuru } | null;
   const sinif = ogrenci.classes as unknown as { seviye: string; sube: string } | null;
   return <>
     <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       <Bilgi icon={School} etiket="Okul" deger={okul?.ad ?? "—"} />
       <Bilgi icon={Users} etiket="Sınıf" deger={sinif ? `${sinif.seviye}-${sinif.sube}` : "—"} />
-      <Bilgi icon={UserRound} etiket="Okul no" deger={ogrenci.okul_no} />
+      <Bilgi icon={UserRound} etiket={okul?.tur === "dershane" ? "Kullanıcı adı" : "Okul no"} deger={ogrenci.okul_no} />
       <Bilgi icon={CheckCircle2} etiket="Hedef" deger={ogrenci.hedef_bolum ? ogrenci.hedef_bolum.toLocaleUpperCase("tr-TR") : "—"} />
     </section>
     <AnalizPaneli veri={analiz} ogrenciAdi={ad}

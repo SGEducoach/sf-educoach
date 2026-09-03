@@ -45,11 +45,8 @@ export default function LoginForm() {
   const [hata, setHata] = useState<string | null>(null);
   const [yukleniyor, setYukleniyor] = useState(false);
 
-  // Şifremi unuttum — SADECE öğretmen/müdür (gerçek e-postayla giriş yapan
-  // roller). Öğrenci ve veli (dershane'de sentetik/teslim edilemez e-posta
-  // kullanıyor, okulda da self-service reset kasıtlı olarak yok) yerine
-  // yetkili moderatöre yönlendiriliyor — bkz. yonetici/actions.ts:130-132
-  // yorumundaki tasarım kararı.
+  // Kullanıcıya bağlantı yerine 30 dakika geçerli bir şifre gönderilir.
+  // Geçici şifre ilk kez kullanılana kadar mevcut şifre geçerliliğini korur.
   const [sifirlamaModu, setSifirlamaModu] = useState(false);
   const [sifirlamaYukleniyor, setSifirlamaYukleniyor] = useState(false);
   const [sifirlamaSonuc, setSifirlamaSonuc] = useState<{ tur: "basari" | "hata"; mesaj: string } | null>(null);
@@ -77,36 +74,23 @@ export default function LoginForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kurumTuru]);
 
-  // Müdür normalde "Okul Kodu" ile giriş yapıyor (gerçek e-postasını hiç
-  // yazmıyor) — sıfırlama bağlantısı yine de gerçek bir e-postaya gitmeli.
-  // Bu yüzden burada de resolve_mudur_email RPC'si (login akışıyla AYNI)
-  // kullanılıp okul kodundan gerçek e-posta çözülüyor; öğretmen zaten
-  // e-postasını doğrudan yazıyor, ek bir çözümlemeye gerek yok.
   async function sifirlamaGonder(e: React.FormEvent) {
     e.preventDefault();
     setSifirlamaSonuc(null);
     setSifirlamaYukleniyor(true);
 
-    let hedefEmail = email.trim();
-    if (role === "mudur") {
-      const { data: cozulenEmail } = await supabase.rpc("resolve_mudur_email", { p_okul_kodu: okulNo.trim() });
-      if (!cozulenEmail) {
-        setSifirlamaYukleniyor(false);
-        setSifirlamaSonuc({ tur: "hata", mesaj: `${KURUM_ETIKET[kurumTuru].kod} hatalı.` });
-        return;
-      }
-      hedefEmail = cozulenEmail as string;
-    }
-
-    const { error } = await supabase.auth.resetPasswordForEmail(hedefEmail, {
-      redirectTo: `${window.location.origin}/sifre-sifirla`,
+    const response = await fetch("/api/sifre-sifirla", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role, email: email.trim(), okulNo: okulNo.trim() }),
     });
+    const sonuc = await response.json() as { error?: string; message?: string };
     setSifirlamaYukleniyor(false);
-    if (error) {
-      setSifirlamaSonuc({ tur: "hata", mesaj: "Sıfırlama bağlantısı gönderilemedi. Lütfen tekrar deneyin." });
+    if (!response.ok) {
+      setSifirlamaSonuc({ tur: "hata", mesaj: sonuc.error ?? "Geçici şifre gönderilemedi. Lütfen tekrar deneyin." });
       return;
     }
-    setSifirlamaSonuc({ tur: "basari", mesaj: "Kayıtlı e-posta adresinize bir şifre sıfırlama bağlantısı gönderildi." });
+    setSifirlamaSonuc({ tur: "basari", mesaj: sonuc.message ?? "Geçici şifre kayıtlı e-posta adresinize gönderildi." });
   }
 
   async function girisYap(e: React.FormEvent) {
@@ -248,8 +232,8 @@ export default function LoginForm() {
           <form onSubmit={sifirlamaGonder} className="rounded-3xl p-6 flex flex-col gap-4" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
             <p style={{ color: TEXT_MUTED }} className="text-xs">
               {role === "mudur"
-                ? `${KURUM_ETIKET[kurumTuru].kod}'nuzu girin, kayıtlı e-posta adresinize bir sıfırlama bağlantısı gönderelim.`
-                : "E-posta adresinizi girin, size bir şifre sıfırlama bağlantısı gönderelim."}
+                ? `${KURUM_ETIKET[kurumTuru].kod}'nuzu girin, geçici şifrenizi kayıtlı e-posta adresinize gönderelim.`
+                : "Kayıtlı e-posta adresinizi girin, 30 dakika geçerli geçici şifrenizi gönderelim."}
             </p>
             {role === "mudur" ? (
               <label className="flex flex-col gap-1">
@@ -272,7 +256,7 @@ export default function LoginForm() {
             <button type="submit" disabled={sifirlamaYukleniyor}
               className="sfec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60"
               style={{ background: MINT, color: MINT_ON }}>
-              {sifirlamaYukleniyor ? "Gönderiliyor..." : "Sıfırlama bağlantısı gönder"}
+              {sifirlamaYukleniyor ? "Gönderiliyor..." : "Geçici şifre gönder"}
             </button>
             <button type="button" onClick={() => { setSifirlamaModu(false); setSifirlamaSonuc(null); }}
               className="text-xs font-semibold text-center" style={{ color: TEXT_MUTED }}>
@@ -373,16 +357,11 @@ export default function LoginForm() {
             </>
           )}
 
-          {(role === "ogretmen" || role === "mudur") && (
+          {!(role === "veli" && veliAsama === "sifreBelirle") && (
             <button type="button" onClick={() => { setSifirlamaModu(true); setHata(null); setSifirlamaSonuc(null); }}
               className="text-xs font-semibold self-end -mt-2" style={{ color: MINT }}>
               Şifremi unuttum
             </button>
-          )}
-          {(role === "ogrenci" || role === "veli") && (
-            <p style={{ color: TEXT_MUTED }} className="text-[11px] -mt-2">
-              Şifrenizi unuttuysanız kurumunuzun yetkili moderatörüyle iletişime geçin.
-            </p>
           )}
 
           {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}

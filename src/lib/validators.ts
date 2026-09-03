@@ -26,6 +26,13 @@ export function kullaniciAdiGecerliMi(v: string) {
 }
 export const KULLANICI_ADI_IPUCU = "En az 6 karakter, boşluksuz (harf/rakam/_ kullanabilirsiniz).";
 
+export function ogrenciGirisKimligiHatasi(v: string, kurumTuru: "okul" | "dershane"): string | null {
+  if (kurumTuru === "dershane") {
+    return kullaniciAdiGecerliMi(v) ? null : "Kullanıcı adı 6-32 karakter olmalı; yalnızca harf, rakam ve alt çizgi (_) içerebilir.";
+  }
+  return okulNoGecerliMi(v) ? null : "Okul numarası 1-5 haneli bir sayı olmalı.";
+}
+
 // Türkçe'ye özel büyük harf dönüşümü (i → İ, ı → I) — düz .toUpperCase()
 // bunu yanlış yapar (i → I). Ad/soyad kayıtlarını normalize etmek ve
 // izinli isim listesiyle karşılaştırmak için kullanılıyor. Fazla boşlukları

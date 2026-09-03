@@ -22,12 +22,14 @@ import {
 import { AYT_ALAN_ETIKET, BRANS_LISTESI } from "@/lib/types";
 import type { AytAlan, UserRole } from "@/lib/types";
 import { BG0, BG1, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
+import { KULLANICI_ADI_IPUCU } from "@/lib/validators";
 
 const ROL_ETIKET: Record<UserRole, string> = {
   ogrenci: "Öğrenci", ogretmen: "Öğretmen", veli: "Veli", mudur: "Müdür", admin: "Admin",
 };
 
 export function KullaniciDetayYonetimi({ kullanici }: { kullanici: KullaniciSonuc }) {
+  const dershaneMi = kullanici.kurumTuru === "dershane";
   const [ad, setAd] = useState(kullanici.ad);
   const [email, setEmail] = useState(kullanici.email ?? "");
   const [telefon, setTelefon] = useState(kullanici.telefon ?? "");
@@ -95,7 +97,12 @@ export function KullaniciDetayYonetimi({ kullanici }: { kullanici: KullaniciSonu
         <Alan etiket="Ad soyad" value={ad} onChange={setAd} />
         <Alan etiket="E-posta" value={email} onChange={setEmail} type="email" />
         <Alan etiket="Telefon" value={telefon} onChange={setTelefon} />
-        {kullanici.role === "ogrenci" && <Alan etiket="Okul numarası" value={okulNo} onChange={setOkulNo} />}
+        {kullanici.role === "ogrenci" && <div className="flex flex-col gap-1">
+          <Alan etiket={dershaneMi ? "Kullanıcı adı" : "Okul numarası"} value={okulNo} onChange={setOkulNo} />
+          <span className="text-[10px]" style={{ color: TEXT_MUTED }}>
+            {dershaneMi ? KULLANICI_ADI_IPUCU + " En fazla 32 karakter." : "1-5 haneli okul numarası."}
+          </span>
+        </div>}
         {kullanici.role === "ogrenci" && <Alan etiket="Hedef bölüm" value={hedefBolum} onChange={setHedefBolum} />}
         {kullanici.role === "ogrenci" && <Alan etiket="Hedef net (TYT)" value={hedefNetTyt} onChange={setHedefNetTyt} type="number" />}
         {kullanici.role === "ogrenci" && <Alan etiket="Hedef net (AYT)" value={hedefNetAyt} onChange={setHedefNetAyt} type="number" />}
