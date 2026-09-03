@@ -43,7 +43,7 @@ import { DershaneAnaSayfa } from "@/components/dashboard/DershaneAnaSayfa";
 import { DenemeSuresiSonaErdiEkrani } from "@/components/DenemeSuresiSonaErdiEkrani";
 import { RehberlikPaneli } from "@/components/dashboard/RehberlikPaneli";
 import { REHBER_BRANSI } from "@/lib/rehberlik";
-import { DuyuruGecmisi } from "@/components/dashboard/DuyuruGecmisi";
+import { OgrenciProfilim } from "@/components/dashboard/OgrenciProfilim";
 import { EtkinlikPaneli } from "@/components/dashboard/EtkinlikPaneli";
 import { etkinlikBransiMi } from "@/lib/etkinlik";
 import type { EtkinlikAtamasi, EtkinlikGrubu, EtkinlikOgrencisi } from "@/lib/etkinlik";
@@ -155,8 +155,12 @@ export default async function DashboardPage({
       <div className="mx-auto flex min-h-[calc(100dvh-6.75rem)] w-full max-w-[100rem] flex-1 items-stretch gap-6 px-4 py-6 sm:px-6 lg:py-7">
         <DashboardYanMenu role={role} kurumTuru={kurumTuru} brans={brans} aktifBolum={aktifBolum} />
         <main id="ana-icerik" className="sfec-dashboard-main min-h-[calc(100dvh-10.25rem)] min-w-0 w-full flex-1 flex flex-col gap-6">
-          {aktifBolum === "duyuru-gecmisi" ? (
-            <DuyuruGecmisi />
+          {/* Kullanıcı isteği (03.09.2026): Duyuru Geçmişi artık YALNIZCA admin
+              panelinde (bkz. duyuru-gecmisi-actions.ts) — müdür menüsünden ve
+              bu dallanmadan kaldırıldı. Yerine öğrencinin kendi "Profilim"
+              ekranı geldi (sadece şifre değiştirme). */}
+          {aktifBolum === "profil" ? (
+            <OgrenciProfilim userId={user.id} ad={profile.ad} />
           ) : aktifBolum === "tg-denemeleri" ? (
             <TgDenemeleri bugun={bugununTarihiTR()} dbIlanlar={await tgDenemeIlanlariGetir(supabase)} />
           ) : (

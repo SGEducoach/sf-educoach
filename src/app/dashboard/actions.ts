@@ -179,12 +179,37 @@ export async function sinifOgretmeniAta(ogretmenId: string, classId: string | nu
 // için onay e-postası GÖNDERİLMEZ (bounce riski yok) — geçici şifre burada
 // üretilip admin'e bir kerelik gösterilir, admin bunu ilgili kişiye iletir.
 
+// Resmî öğrenci listesi trigger'ı (migration 0089/0096) için "bu kaydı
+// yetkili bir yönetici açtı" sinyali. Bayrağın KENDİSİ user_metadata'da
+// taşınamaz (kendi kaydını yapan öğrenci signUp sırasında istediğini
+// yazabilir); bu yüzden rastgele bir jeton üretilip yalnızca service-role'ün
+// yazabildiği yonetici_ekleme_jetonlari tablosuna kaydediliyor, trigger da
+// jetonun gerçekten orada olduğunu doğruluyor. Jeton tarayıcıya hiç gitmez.
+type AdminClient = ReturnType<typeof createAdminClient>;
+
+async function yoneticiEklemeJetonu(admin: AdminClient, actorId: string): Promise<string> {
+  const jeton = crypto.randomUUID();
+  await admin.from("yonetici_ekleme_jetonlari").insert({ jeton, olusturan_id: actorId });
+  // Eski jetonları temizle — trigger zaten 15 dakikadan eskisini geçersiz
+  // sayıyor, tablo süresiz büyümesin.
+  await admin.from("yonetici_ekleme_jetonlari").delete().lt("created_at", new Date(Date.now() - 60 * 60 * 1000).toISOString());
+  return jeton;
+}
+
 function manuelEklemeHatasi(mesaj: string): string {
-  if (mesaj.includes("already been registered") || mesaj.includes("already registered")) {
+  const m = (mesaj ?? "").trim();
+  if (m.includes("already been registered") || m.includes("already registered")) {
     return "Bu e-posta zaten kayıtlı.";
   }
-  if (mesaj.includes("okul_no")) return "Bu okul numarası zaten kullanılıyor.";
-  return mesaj;
+  if (m.includes("okul_no")) return "Bu okul numarası zaten kullanılıyor.";
+  // Kullanıcı bulgusu (03.09.2026): Supabase, veritabanı tetikleyicisi hata
+  // verdiğinde gövdesiz bir 500 döndürüyor ve supabase-js bunu message="{}"
+  // yapıyor — ekranda anlamsız kırmızı bir "{}" görünüyordu. Ham/boş mesaj
+  // artık kullanıcıya asla gösterilmiyor.
+  if (!m || m === "{}") {
+    return "Hesap oluşturulamadı. Bilgileri kontrol edip tekrar deneyin; sorun sürerse aynı ad veya numarayla kayıtlı bir öğrenci olup olmadığına bakın.";
+  }
+  return m;
 }
 
 export async function ogretmenEkleManuel(input: {
@@ -234,6 +259,7 @@ export async function ogrenciEkleManuel(input: {
   const hedefBolum = hedefBolumNormalize(input.hedefBolum);
 
   const sifre = rastgeleSifre();
+  const jeton = await yoneticiEklemeJetonu(admin, user.id);
   let createdUserId: string | undefined;
   try {
     const { data: created, error } = await admin.auth.admin.createUser({
@@ -242,6 +268,7 @@ export async function ogrenciEkleManuel(input: {
         role: "ogrenci", ad, telefon: input.telefon || null, school_id: input.schoolId, class_id: input.classId,
         okul_no: input.okulNo, ayt_alan: input.aytAlan, hedef_bolum: hedefBolum,
         admin_ekledi: true, // izinli öğrenci listesi kontrolünden muaf (bkz. migration 0026)
+        yonetici_jetonu: jeton, // resmî liste kontrolünden muaf (bkz. migration 0096)
       },
     });
     if (error) return { error: manuelEklemeHatasi(error.message), sifre: null };
@@ -303,6 +330,7 @@ export async function dershaneOgrenciKesinKaydet(input: {
   if (mevcutYaniti.data) return { error: "Bu kullanıcı adı dershanede zaten kullanılıyor.", ...bosSonuc };
 
   const sifre = rastgeleSifre();
+  const jeton = await yoneticiEklemeJetonu(admin, user.id);
   const email = `${crypto.randomUUID()}@ogrenci.sgeducoach.internal`;
   const { data: created, error: hesapHatasi } = await admin.auth.admin.createUser({
     email,
@@ -320,6 +348,7 @@ export async function dershaneOgrenciKesinKaydet(input: {
       hedef_bolum: "Belirtilmedi",
       gecici_sifre: true,
       admin_ekledi: true,
+      yonetici_jetonu: jeton, // resmî liste kontrolünden muaf (bkz. migration 0096)
     },
   });
   if (hesapHatasi || !created.user) {
@@ -533,6 +562,9 @@ export async function ogrencileriTopluEkle(input: {
 
   const sonuclar: TopluOgrenciSonuc[] = [];
   let basariliSayisi = 0;
+  // Tüm satırlar aynı yönetici işlemine ait — tek jeton yeterli
+  // (trigger jetonu 15 dakika geçerli sayıyor, bkz. migration 0096).
+  const jeton = await yoneticiEklemeJetonu(admin, user.id);
 
   // Auth admin API'sinin eşzamanlı isteklerde oran sınırına takılmaması için
   // satırlar sırayla (paralel değil) işleniyor — sınıf boyutu (~20-35)
@@ -553,6 +585,7 @@ export async function ogrencileriTopluEkle(input: {
         role: "ogrenci", ad, telefon: null, school_id: input.schoolId, class_id: input.classId,
         okul_no: okulNo, ayt_alan: input.aytAlan, hedef_bolum: "",
         admin_ekledi: true, // izinli öğrenci listesi kontrolünden muaf (bkz. migration 0026)
+        yonetici_jetonu: jeton, // resmî liste kontrolünden muaf (bkz. migration 0096)
       },
     });
     if (error) {

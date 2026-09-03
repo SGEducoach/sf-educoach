@@ -279,9 +279,14 @@ export async function moderatorOgretmenBransDegistir(teacherId: string, brans: s
 // ============ Öğretmen/öğrenci ekleme (kendi kurumuna, admin'in
 // ogretmenEkleManuel/ogrenciEkleManuel akışının okul-sınırlı eşdeğeri) ============
 function manuelEklemeHatasi(mesaj: string): string {
-  if (mesaj.includes("already been registered") || mesaj.includes("already registered")) return "Bu e-posta zaten kayıtlı.";
-  if (mesaj.includes("okul_no")) return "Bu okul numarası zaten kullanılıyor.";
-  return mesaj;
+  const m = (mesaj ?? "").trim();
+  if (m.includes("already been registered") || m.includes("already registered")) return "Bu e-posta zaten kayıtlı.";
+  if (m.includes("okul_no")) return "Bu okul numarası zaten kullanılıyor.";
+  // Supabase, veritabanı tetikleyicisi hata verdiğinde gövdesiz 500 döndürüyor
+  // ve supabase-js bunu message="{}" yapıyor (bkz. dashboard/actions.ts'teki
+  // aynı isimli fonksiyon) — ham/boş mesaj kullanıcıya gösterilmiyor.
+  if (!m || m === "{}") return "Hesap oluşturulamadı. Bilgileri kontrol edip tekrar deneyin; sorun sürerse aynı ad veya numarayla kayıtlı bir öğrenci olup olmadığına bakın.";
+  return m;
 }
 
 export async function moderatorOgretmenEkle(input: { ad: string; email: string; telefon: string; brans: string }, targetSchoolId?: string) {
@@ -320,12 +325,18 @@ export async function moderatorOgrenciEkle(input: {
   const hedefBolum = hedefBolumNormalize(input.hedefBolum);
 
   const sifre = rastgeleSifre();
+  // Resmî öğrenci listesi trigger'ı için yetkili yönetici jetonu — yalnızca
+  // service-role'ün yazabildiği tabloda karşılığı var (bkz. migration 0096
+  // ve src/app/dashboard/actions.ts yoneticiEklemeJetonu).
+  const jeton = crypto.randomUUID();
+  await admin.from("yonetici_ekleme_jetonlari").insert({ jeton, olusturan_id: user.id });
   const { data: created, error } = await admin.auth.admin.createUser({
     email, password: sifre, email_confirm: true,
     user_metadata: {
       role: "ogrenci", ad, telefon: input.telefon || null, school_id: schoolId, class_id: input.classId,
       okul_no: input.okulNo, ayt_alan: input.aytAlan, hedef_bolum: hedefBolum,
       admin_ekledi: true, // izinli öğrenci listesi kontrolünden muaf (bkz. migration 0026)
+      yonetici_jetonu: jeton, // resmî liste kontrolünden muaf (bkz. migration 0096)
     },
   });
   if (error) return { error: manuelEklemeHatasi(error.message), sifre: null };

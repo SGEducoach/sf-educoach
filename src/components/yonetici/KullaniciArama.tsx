@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useTransition } from "react";
 import Link from "next/link";
-import { Search, Users, KeyRound, EyeOff, Eye, Copy, Check, ArrowRightLeft, Trash2, Settings, Building2, ChevronLeft, MailWarning } from "lucide-react";
+import { Search, Users, KeyRound, EyeOff, Eye, Copy, Check, ArrowRightLeft, Trash2, Settings, Building2, ChevronLeft, ChevronRight, MailWarning } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH, LILAC, LILAC_TEXT } from "@/lib/theme";
 import { kullaniciAra, sifreSifirla, sifreBelirle, kullaniciEpostaKaydet, hesapAktiflikDegistir, hesapSil, okulSiniflari, ogrenciSinifTasi, ogretmenBransDegistir, yonetimOkullariGetir, type KullaniciSonuc, type YonetimOkulu } from "@/app/yonetici/actions";
 import { BRANS_LISTESI } from "@/lib/types";
@@ -31,7 +31,15 @@ const ROL_ETIKET: Record<UserRole, string> = {
 // tuşu veya sekme yenilemesi FARK ETMEKSİZİN son bakılan liste geri gelir.
 const OTURUM_ANAHTARI = "sfec_yonetici_kullanici_arama";
 
-interface KayitliDurum { schoolId: string | null; rol: UserRole | "hepsi" | null; sinifId: string; sorgu: string }
+// Kullanıcı isteği (03.09.2026): "tüm kullanıcılar listelendiği için belirli
+// bir sayıdan sonra sayfalara ayrılsın, her sayfada kaç kişi görüneceği sağ
+// üstteki butonlarla seçilebilsin". Sayfalama TAMAMEN İSTEMCİ TARAFINDA:
+// kullaniciAra() zaten kurum+rol kapsamının tamamını (en fazla 1000 satır)
+// tek seferde getiriyor, bu yüzden sayfa değiştirmek yeni bir sorgu açmıyor.
+const SAYFA_BOYUTLARI = [20, 50, 100] as const;
+const VARSAYILAN_SAYFA_BOYUTU = 20;
+
+interface KayitliDurum { schoolId: string | null; rol: UserRole | "hepsi" | null; sinifId: string; sorgu: string; sayfaBoyutu?: number }
 
 function durumOku(): KayitliDurum | null {
   if (typeof window === "undefined") return null;
@@ -67,6 +75,8 @@ export function KullaniciArama() {
   const [aramaYapildi, setAramaYapildi] = useState(false);
   const [hata, setHata] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [sayfaBoyutu, setSayfaBoyutu] = useState<number>(kayitli?.sayfaBoyutu ?? VARSAYILAN_SAYFA_BOYUTU);
+  const [sayfa, setSayfa] = useState(1);
 
   useEffect(() => {
     // Bu Next.js sürümünde server action'lar useEffect içinden çağrılırken
@@ -88,10 +98,17 @@ export function KullaniciArama() {
   }, []);
 
   useEffect(() => {
-    durumYaz({ schoolId, rol, sinifId, sorgu });
-  }, [schoolId, rol, sinifId, sorgu]);
+    durumYaz({ schoolId, rol, sinifId, sorgu, sayfaBoyutu });
+  }, [schoolId, rol, sinifId, sorgu, sayfaBoyutu]);
 
   const seciliOkul = okullar.find((o) => o.id === schoolId) ?? null;
+
+  const sayfaSayisi = Math.max(1, Math.ceil(sonuclar.length / sayfaBoyutu));
+  // Liste kısaldığında (arama daraltıldı, kullanıcı silindi) son sayfada
+  // kalıp boş ekran görmemek için sayfa numarası her render'da sınırlanıyor.
+  const aktifSayfa = Math.min(sayfa, sayfaSayisi);
+  const ilkSira = (aktifSayfa - 1) * sayfaBoyutu;
+  const sayfadakiler = sonuclar.slice(ilkSira, ilkSira + sayfaBoyutu);
 
   function ara(q: string, r: UserRole | "hepsi", sinif: string) {
     if (!schoolId) return;
@@ -106,6 +123,7 @@ export function KullaniciArama() {
       if (res.error) return setHata(res.error);
 
       setSonuclar(res.sonuclar);
+      setSayfa(1);
       setAramaYapildi(true);
     });
   }
@@ -116,6 +134,7 @@ export function KullaniciArama() {
     setSinifId("");
     setSorgu("");
     setSonuclar([]);
+    setSayfa(1);
     setAramaYapildi(false);
   }
 
@@ -214,9 +233,47 @@ export function KullaniciArama() {
               ) : aramaYapildi && sonuclar.length === 0 ? (
                 <p style={{ color: TEXT_MUTED }} className="text-sm py-3 text-center">Sonuç bulunamadı.</p>
               ) : sonuclar.length > 0 ? (
-                <div className="flex flex-col gap-2">
-                  {sonuclar.map((k) => <KullaniciSatiri key={k.id} kullanici={k} />)}
-                </div>
+                <>
+                  <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
+                    <span style={{ color: TEXT_MUTED }} className="text-[11px] font-semibold">
+                      {sonuclar.length} kullanıcı · {ilkSira + 1}-{ilkSira + sayfadakiler.length} arası gösteriliyor
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Sayfa başına</span>
+                      {SAYFA_BOYUTLARI.map((n) => {
+                        const aktif = sayfaBoyutu === n;
+                        return (
+                          <button key={n} type="button" onClick={() => { setSayfaBoyutu(n); setSayfa(1); }}
+                            aria-pressed={aktif}
+                            className="sfec-btn text-[11px] font-bold px-2.5 py-1.5 rounded-full"
+                            style={{ background: aktif ? MINT : "rgba(255,255,255,0.06)", color: aktif ? MINT_ON : TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
+                            {n}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    {sayfadakiler.map((k) => <KullaniciSatiri key={k.id} kullanici={k} />)}
+                  </div>
+
+                  {sayfaSayisi > 1 && (
+                    <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+                      <button type="button" disabled={aktifSayfa <= 1} onClick={() => setSayfa(aktifSayfa - 1)}
+                        className="sfec-btn flex items-center gap-1 text-[11px] font-bold px-3 py-1.5 rounded-full disabled:opacity-40"
+                        style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
+                        <ChevronLeft size={12} /> Önceki
+                      </button>
+                      <span style={{ color: TEXT }} className="text-[11px] font-bold tabular-nums">Sayfa {aktifSayfa} / {sayfaSayisi}</span>
+                      <button type="button" disabled={aktifSayfa >= sayfaSayisi} onClick={() => setSayfa(aktifSayfa + 1)}
+                        className="sfec-btn flex items-center gap-1 text-[11px] font-bold px-3 py-1.5 rounded-full disabled:opacity-40"
+                        style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
+                        Sonraki <ChevronRight size={12} />
+                      </button>
+                    </div>
+                  )}
+                </>
               ) : null}
             </>
           )}

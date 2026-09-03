@@ -64,6 +64,10 @@ const OGRENCI_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "analiz", href: "/dashboard/analiz", etiket: "Analiz / Rapor", ikon: "analiz" },
   { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Konu Haritası", ikon: "ai" },
   { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "TG Denemeler", ikon: "takvim" },
+  // Kullanıcı isteği (03.09.2026): öğrenci kendi profilini görebilsin ama
+  // SADECE şifresini değiştirebilsin — okul no, sınıf, ad gibi kimlik
+  // bilgileri salt-okunur (bkz. OgrenciProfilim).
+  { bolum: "profil", href: "/dashboard/profil", etiket: "Profilim", ikon: "profil" },
 ];
 
 const VELI_MENUSU: DashboardMenuOgesi[] = [
@@ -112,7 +116,6 @@ const MUDUR_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "ogretmenler", href: "/dashboard/ogretmenler", etiket: "Öğretmenler", ikon: "ogretmen" },
   { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Konu Haritası", ikon: "ai" },
   { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Duyurular", ikon: "duyuru" },
-  { bolum: "duyuru-gecmisi", href: "/dashboard/duyuru-gecmisi", etiket: "Duyuru Geçmişi", ikon: "gecmis" },
   { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "TG Denemeler", ikon: "takvim" },
 ];
 
@@ -195,7 +198,7 @@ export function dashboardMenusu(role: UserRole, kurumTuru?: KurumTuru, brans?: s
 
 export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
   "gorevler", "planlar", "veri-girisi", "konu-hakimiyeti", "analiz", "yapay-zeka", "rozetler", "tg-denemeleri",
-  "duyurular", "talepler", "onaylar", "dersler", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler", "rehberlik", "etkinlikler", "duyuru-gecmisi",
+  "duyurular", "talepler", "onaylar", "dersler", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler", "rehberlik", "etkinlikler", "profil",
 ]);
 
 // /yonetici/[bolum] catch-all için — "rozetler" burada YOK, çünkü admin'in

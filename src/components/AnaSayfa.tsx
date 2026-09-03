@@ -1,7 +1,6 @@
 "use client";
-import Link from "next/link";
-import Image from "next/image";
-import { GraduationCap, Mail, Rss, School, Users, UserRoundCheck } from "lucide-react";
+import { GraduationCap, School, Users, UserRoundCheck } from "lucide-react";
+import { SiteUstNavigasyon, SiteAltligi } from "@/components/SiteUstNavigasyon";
 import { AnaSayfaSlider } from "@/components/AnaSayfaSlider";
 import { AnaSayfaTgAkisi } from "@/components/AnaSayfaTgAkisi";
 import { AnaSayfaDuyurular } from "@/components/AnaSayfaDuyurular";
@@ -9,7 +8,7 @@ import type { AnaSayfaSliderGorseli } from "@/lib/ana-sayfa";
 import type { TgDenemeIlani } from "@/lib/tg-deneme-ilanlari";
 import type { AnaSayfaDuyurusu } from "@/lib/ana-sayfa-duyurulari";
 
-const LACIVERT="#0F2540",TURKUAZ="#14B8B0",BEYAZ="#FFF",GRI="#3F4B5A";
+const LACIVERT="#0F2540",BEYAZ="#FFF",GRI="#3F4B5A";
 const roller=[
  {ad:"Öğrenci",Icon:GraduationCap,renk:"#2563EB",zemin:"#EFF6FF",metin:"Kimseyle yarışmadan, kendi hedefi ve gelişim hızına göre kişiye özel çalışma takibi."},
  {ad:"Öğretmen",Icon:UserRoundCheck,renk:"#7C3AED",zemin:"#F5F3FF",metin:"Öğrencilerin çalışma, soru ve deneme verilerini izleyerek doğru zamanda yönlendirme."},
@@ -19,12 +18,7 @@ const roller=[
 export function AnaSayfa({baslik,govde,sliderGecisSaniye,sliderGorselleri,tgIlanlar,duyurular}:{baslik:string;govde:string;sliderGecisSaniye:number;sliderGorselleri:AnaSayfaSliderGorseli[];tgIlanlar:TgDenemeIlani[];duyurular:AnaSayfaDuyurusu[]}){
  const paragraflar=govde.split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean);
  return <div className="flex min-h-dvh flex-col" style={{background:BEYAZ}}>
-  <header className="flex items-center justify-between gap-3 px-5 py-4 sm:px-10"><Image src="/logo.png" alt="SeFu Koç" width={512} height={512} className="h-10 w-auto object-contain sm:h-12" priority/>
-   {/* Kullanıcı isteği (03.09.2026): Blog ve İletişim bağlantıları header'da
-       GİRİŞ YAP'ın solunda — iç bağlantı, arama motorunun yeni blog
-       yazılarını bulmasını hızlandırıyor. Mobilde yer dar olduğu için
-       gizleniyor, footer'da her boyutta duruyor. */}
-   <nav className="flex items-center gap-4"><Link href="/blog" className="hidden items-center gap-1.5 text-sm font-bold sm:flex" style={{color:LACIVERT}}><Rss size={15}/> Blog</Link><Link href="/iletisim" className="hidden items-center gap-1.5 text-sm font-bold sm:flex" style={{color:LACIVERT}}><Mail size={15}/> İletişim</Link><Link href="/login" className="rounded-full px-6 py-2.5 text-sm font-bold" style={{background:TURKUAZ,color:BEYAZ}}>GİRİŞ YAP</Link></nav></header>
+  <SiteUstNavigasyon/>
   <AnaSayfaSlider gorseller={sliderGorselleri} gecisSaniye={sliderGecisSaniye}/>
   <main>
    <section className="mx-auto max-w-6xl px-5 pb-12 pt-10 sm:px-8 sm:pb-16 sm:pt-14">
@@ -39,6 +33,6 @@ export function AnaSayfa({baslik,govde,sliderGecisSaniye,sliderGorselleri,tgIlan
    </section>
    <section className="border-t border-[#E4E9EE] bg-[#F7FAFB]"><div className="mx-auto max-w-5xl px-5 py-14 sm:px-8 sm:py-20"><h2 className="text-balance text-2xl font-extrabold leading-tight sm:text-3xl" style={{color:LACIVERT,fontFamily:"var(--font-baloo)"}}>{baslik}</h2><div className="mt-5 space-y-4">{paragraflar.map((p,i)=><p key={i} className="text-base leading-7 sm:text-lg" style={{color:GRI}}>{p}</p>)}</div></div></section>
   </main>
-  <footer className="mt-auto flex flex-col items-center gap-2 px-5 py-6 text-center text-xs" style={{color:GRI}}><nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1"><Link href="/blog" className="inline-flex items-center gap-1 font-semibold"><Rss size={12}/> Blog</Link><Link href="/iletisim" className="inline-flex items-center gap-1 font-semibold"><Mail size={12}/> İletişim</Link><Link href="/login" className="font-semibold">Giriş Yap</Link></nav><span>© {new Date().getFullYear()} www.sefukoc.com. Tüm hakları saklıdır.</span></footer>
+  <SiteAltligi/>
  </div>;
 }
