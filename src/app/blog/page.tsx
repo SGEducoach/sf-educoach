@@ -30,7 +30,12 @@ export default async function BlogListesi() {
 
   return (
     <SayfaKabugu>
-      <section className="mx-auto max-w-5xl px-5 py-12 sm:px-8 sm:py-16">
+      {/* Kullanıcı isteği (03.09.2026): "soldaki boşlukla eşit şekilde sağda da
+          boşluk", "çerçeveyi kaldır, sadece altta bir yöntemle sonraki
+          yazıdan ayrılsın" — kart/çerçeve yerine klasik blog akışı: tek
+          sütun, simetrik yan boşluk (yazı sayfasıyla aynı max-w-3xl),
+          yazılar arasında yalnız alt çizgi. */}
+      <section className="mx-auto max-w-3xl px-5 py-12 sm:px-8 sm:py-16">
         <h1 className="text-3xl font-extrabold sm:text-4xl" style={{ color: LACIVERT, fontFamily: "var(--font-baloo)" }}>SeFu Blog</h1>
         <p className="mt-3 max-w-2xl text-base leading-7" style={{ color: GRI }}>
           YKS hazırlık süreci, net artırma, sınav takvimi ve verimli çalışma üzerine yazılar.
@@ -39,20 +44,20 @@ export default async function BlogListesi() {
         {yazilar.length === 0 ? (
           <p className="mt-10 text-sm" style={{ color: GRI }}>Henüz yazı yayınlanmadı.</p>
         ) : (
-          <div className="mt-9 grid gap-5 sm:grid-cols-2">
-            {yazilar.map((y) => (
-              <article key={y.id} className="overflow-hidden rounded-3xl border border-[#DDE7EA] bg-white shadow-sm">
+          <div className="mt-8 flex flex-col">
+            {yazilar.map((y, i) => (
+              <article key={y.id}
+                className={i < yazilar.length - 1 ? "border-b pb-9 mb-9" : ""}
+                style={i < yazilar.length - 1 ? { borderColor: "#E4E9EE" } : undefined}>
                 <Link href={`/blog/${y.slug}`} className="block">
                   {y.kapakGorseli && (
                     // eslint-disable-next-line @next/next/no-img-element -- yönetilen Supabase Storage görseli
-                    <img src={blogGorselUrl(y.kapakGorseli)} alt="" className="h-44 w-full object-cover" loading="lazy" />
+                    <img src={blogGorselUrl(y.kapakGorseli)} alt="" className="mb-5 h-56 w-full rounded-2xl object-cover sm:h-64" loading="lazy" />
                   )}
-                  <div className="flex flex-col gap-2 p-5">
-                    {y.yayinTarihi && <span className="text-[11px] font-bold" style={{ color: TURKUAZ }}>{tarihFormatla(y.yayinTarihi)}</span>}
-                    <h2 className="text-lg font-extrabold leading-snug" style={{ color: LACIVERT }}>{y.baslik}</h2>
-                    <p className="text-sm leading-6" style={{ color: GRI }}>{y.ozet}</p>
-                    <span className="mt-1 text-sm font-bold" style={{ color: TURKUAZ }}>Devamını oku →</span>
-                  </div>
+                  {y.yayinTarihi && <span className="text-[11px] font-bold" style={{ color: TURKUAZ }}>{tarihFormatla(y.yayinTarihi)}</span>}
+                  <h2 className="mt-1 text-xl font-extrabold leading-snug sm:text-2xl" style={{ color: LACIVERT }}>{y.baslik}</h2>
+                  <p className="mt-2 text-base leading-7" style={{ color: GRI }}>{y.ozet}</p>
+                  <span className="mt-3 inline-block text-sm font-bold" style={{ color: TURKUAZ }}>Devamını oku →</span>
                 </Link>
               </article>
             ))}
