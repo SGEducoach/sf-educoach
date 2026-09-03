@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AnaSayfa } from "@/components/AnaSayfa";
+import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { anaSayfaAyarlariniGetir, anaSayfaSliderGorselleriGetir } from "@/lib/ana-sayfa";
 import { tgDenemeIlanlariGetir } from "@/lib/tg-deneme-ilanlari";
 import { anaSayfaDuyurulariniGetir } from "@/lib/ana-sayfa-duyurulari";
@@ -24,13 +25,17 @@ export default async function Home() {
   ]);
 
   return (
-    <AnaSayfa
-      baslik={ayarlar.baslik}
-      govde={ayarlar.govde}
-      sliderGecisSaniye={ayarlar.sliderGecisSaniye}
-      sliderGorselleri={sliderGorselleri}
-      tgIlanlar={tgIlanlar}
-      duyurular={duyurular}
-    />
+    <>
+      <AnaSayfa
+        baslik={ayarlar.baslik}
+        govde={ayarlar.govde}
+        sliderGecisSaniye={ayarlar.sliderGecisSaniye}
+        sliderGorselleri={sliderGorselleri}
+        tgIlanlar={tgIlanlar}
+        duyurular={duyurular}
+      />
+      {/* Ölçüm etiketi yalnızca herkese açık sayfalarda — bkz. GoogleAnalytics */}
+      <GoogleAnalytics />
+    </>
   );
 }

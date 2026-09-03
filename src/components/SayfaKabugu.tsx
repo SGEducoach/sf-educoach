@@ -1,4 +1,5 @@
 import { SiteUstNavigasyon, SiteAltligi } from "@/components/SiteUstNavigasyon";
+import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 
 // Blog ve İletişim gibi herkese açık sayfaların ortak kabuğu — ana sayfayla
 // aynı header/footer. Kullanıcı isteği (03.09.2026): üst başlıkta ORTALANMIŞ
@@ -11,6 +12,7 @@ export function SayfaKabugu({ children }: { children: React.ReactNode }) {
       <SiteUstNavigasyon />
       <main className="flex-1">{children}</main>
       <SiteAltligi />
+      <GoogleAnalytics />
     </div>
   );
 }
