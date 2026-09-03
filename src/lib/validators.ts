@@ -75,9 +75,14 @@ export const TELEFON_IPUCU = "Sadece rakam, 10-11 hane (örn. 5xxxxxxxxx).";
 // Gerçekten e-posta alabilen bir adres mi — dershane öğrenci/veli
 // hesaplarında kullanılan sentetik "@...internal" adresleri şifre
 // sıfırlama için kullanılamaz (bkz. OgretmenEpostaUyarisi).
+// Kullanıcı bulgusu (02.09.2026): "@" kontrolü tek başına yetmiyordu —
+// "ad soyad@ornek" gibi girdiler buradan geçip Supabase'de 400 ile
+// reddediliyor, kullanıcıya İngilizce ham hata düşüyordu.
+const EPOSTA_DESENI = /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]{2,}$/;
+
 export function teslimEdilebilirEpostaMi(value: string | null | undefined) {
   const email = value?.trim().toLowerCase() ?? "";
-  return email.includes("@") && !email.endsWith(".internal");
+  return EPOSTA_DESENI.test(email) && !email.endsWith(".internal");
 }
 
 // Admin'in manuel eklediği öğretmen/öğrenci hesapları için geçici şifre

@@ -4,6 +4,23 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { teslimEdilebilirEpostaMi } from "@/lib/validators";
 
+// Supabase/Postgres ham hatalarini kullaniciya gosterilebilir Turkce
+// mesaja cevirir. Bos veya "{}" gelen govdeler de burada yakalanir.
+function epostaHatasiniCevir(mesaj: string | null | undefined): string {
+  const m = (mesaj ?? "").trim().toLowerCase();
+  if (!m || m === "{}" || m.includes("already been registered") || m.includes("already registered")
+    || m.includes("duplicate key") || m.includes("unique constraint")) {
+    return "Bu e-posta adresi başka bir hesapta kayıtlı. Farklı bir adres girin.";
+  }
+  if (m.includes("invalid format") || m.includes("validate email")) {
+    return "E-posta adresi geçersiz görünüyor (örnek: adiniz@ornek.com).";
+  }
+  if (m.includes("rate limit")) {
+    return "Çok fazla deneme yapıldı. Birkaç dakika sonra tekrar deneyin.";
+  }
+  return "E-posta kaydedilemedi. Adresi kontrol edip tekrar deneyin.";
+}
+
 export async function ogretmenEpostasiniTeyitEt(yeniEmail?: string): Promise<{ error: string | null; email: string | null }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -20,15 +37,28 @@ export async function ogretmenEpostasiniTeyitEt(yeniEmail?: string): Promise<{ e
   }
 
   const email = (yeniEmail?.trim() || profil.email || "").toLowerCase();
-  if (!teslimEdilebilirEpostaMi(email)) return { error: "Geçerli, e-posta alabilen bir adres girin.", email: null };
+  if (!teslimEdilebilirEpostaMi(email)) {
+    return { error: "Geçerli bir e-posta adresi girin (örnek: adiniz@ornek.com).", email: null };
+  }
 
   if (email !== profil.email?.toLowerCase()) {
+    // Kullanıcı bulgusu (02.09.2026): adres BAŞKA bir hesapta kayıtlıysa
+    // Supabase 500 + boş gövde döndürüyor, SDK bunu message="{}" yapıyor ve
+    // ekranda kırmızı bir "{}" görünüyordu. Çakışmayı önce burada yakalayıp
+    // anlaşılır bir mesaj veriyoruz; yine de kaçan hatalar aşağıda Türkçeye
+    // çevriliyor — ham/boş mesaj kullanıcıya asla gösterilmiyor.
+    const { data: cakisanProfil } = await admin
+      .from("profiles").select("id").ilike("email", email).neq("id", user.id).maybeSingle();
+    if (cakisanProfil) {
+      return { error: "Bu e-posta adresi başka bir hesapta kayıtlı. Farklı bir adres girin.", email: null };
+    }
+
     const { error: authError } = await admin.auth.admin.updateUserById(user.id, { email, email_confirm: true });
-    if (authError) return { error: authError.message, email: null };
+    if (authError) return { error: epostaHatasiniCevir(authError.message), email: null };
     const { error: profilError } = await admin.from("profiles").update({ email }).eq("id", user.id);
     if (profilError) {
       if (profil.email) await admin.auth.admin.updateUserById(user.id, { email: profil.email, email_confirm: true });
-      return { error: profilError.message, email: null };
+      return { error: epostaHatasiniCevir(profilError.message), email: null };
     }
   }
 
