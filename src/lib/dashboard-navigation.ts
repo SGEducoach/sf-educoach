@@ -147,7 +147,6 @@ const ADMIN_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "talepler", href: "/yonetici/talepler", etiket: "Veli talepleri", ikon: "talep" },
   { bolum: "pdf-eslesme", href: "/yonetici/pdf-eslesme", etiket: "PDF Eşleştirme", ikon: "eslestir" },
   { bolum: "okullar", href: "/yonetici/okullar", etiket: "Okullar", ikon: "okul" },
-  { bolum: "moderatorler", href: "/yonetici/moderatorler", etiket: "Moderatörler", ikon: "moderator" },
   { bolum: "kurallar", href: "/yonetici/kurallar", etiket: "Kurallar", ikon: "kural" },
   { bolum: "hata-bildirimleri", href: "/yonetici/hata-bildirimleri", etiket: "Hata Bildirimleri", ikon: "hata" },
   { bolum: "rozetler", href: "/yonetici/rozetler", etiket: "Rozetler", ikon: "rozet" },
@@ -163,6 +162,9 @@ const ADMIN_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "islem-gecmisi", href: "/yonetici/islem-gecmisi", etiket: "İşlem Geçmişi", ikon: "gecmis" },
   { bolum: "site-ayarlari", href: "/yonetici/site-ayarlari", etiket: "Site ayarları", ikon: "ayarlar" },
   { bolum: "adminler", href: "/yonetici/adminler", etiket: "Adminler", ikon: "admin" },
+  // Kullanıcı isteği (03.09.2026): Moderatörler, Adminler'in hemen altına
+  // taşındı — ikisi de yetki yönetimi, menüde yan yana dursun.
+  { bolum: "moderatorler", href: "/yonetici/moderatorler", etiket: "Moderatörler", ikon: "moderator" },
   { bolum: "profil", href: "/yonetici/profil", etiket: "Profilim", ikon: "profil" },
   // Kullanıcı isteği (03.09.2026): "blog en aşağı alınsın" — SeFu Blog
   // (her yazı Google için ayrı bir sayfa, bkz. src/app/blog).
