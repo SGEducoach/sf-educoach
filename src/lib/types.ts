@@ -347,8 +347,14 @@ export const BRANS_LISTESI = [
   "Fizik",
   "Kimya",
   "Biyoloji",
-  "Türkçe",
-  "Edebiyat",
+  // Kullanıcı isteği (03.09.2026): öğretmen branşı olarak "Türkçe" ve
+  // "Edebiyat" ayrı ayrı listeleniyordu; lisede branş tektir (MEB adı:
+  // Türk Dili ve Edebiyatı), ayrı "Türkçe öğretmeni" ortaokul branşıdır.
+  // DİKKAT: bu yalnızca ÖĞRETMEN BRANŞI listesi. Ders/konu taksonomisinde
+  // Türkçe (TYT) ve Edebiyat (AYT) AYRI kalmalı — sınavda ayrı bölümler,
+  // konu listeleri/TYT-AYT filtreleri/net ağırlıkları buna dayanıyor
+  // (bkz. konu-hakimiyeti.ts, analiz-motoru.ts, mufredat-konulari.json).
+  "Türk Dili ve Edebiyatı",
   "Tarih",
   "Coğrafya",
   "Felsefe",
