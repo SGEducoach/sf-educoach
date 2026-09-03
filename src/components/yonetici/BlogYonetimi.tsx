@@ -1,7 +1,7 @@
 "use client";
 
 import { startTransition, useEffect, useState, useTransition } from "react";
-import { Newspaper, Trash2, Eye, EyeOff, Save, X, ExternalLink } from "lucide-react";
+import { Rss, Trash2, Eye, EyeOff, Save, X, ExternalLink } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH, LILAC } from "@/lib/theme";
 import { blogYazilariniYonetimIcinGetir, blogYazisiKaydet, blogYazisiYayinDurumu, blogYazisiSil } from "@/app/yonetici/blog-actions";
 import { blogGorselUrl, tarihFormatla, type BlogYazisi } from "@/lib/blog";
@@ -28,7 +28,7 @@ export function BlogYonetimi() {
     <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <div className="flex h-7 w-7 items-center justify-center rounded-full" style={{ background: "rgba(199,182,255,0.15)" }}>
-          <Newspaper size={13} color={LILAC} />
+          <Rss size={13} color={LILAC} />
         </div>
         <span className="text-[15px] font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>SeFu Blog</span>
         <a href="/blog" target="_blank" rel="noreferrer" className="flex items-center gap-1 text-[11px] font-semibold" style={{ color: TEXT_MUTED }}>

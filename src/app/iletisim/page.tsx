@@ -10,7 +10,7 @@ const TABAN = "https://www.sefukoc.com";
 // Kullanıcı isteği (03.09.2026): v1'de yalnız iletişim bilgisi. Mesaj formu,
 // Google Workspace (bilgi@sefukoc.com / yonetici@sefukoc.com) alındıktan
 // sonraki adıma bırakıldı.
-const EPOSTA = "sedatguler40@gmail.com";
+const EPOSTA = "sefukoc@gmail.com";
 
 export const metadata: Metadata = {
   title: "İletişim | SeFu Koç",
