@@ -19,7 +19,12 @@ const roller=[
 export function AnaSayfa({baslik,govde,sliderGecisSaniye,sliderGorselleri,tgIlanlar,duyurular}:{baslik:string;govde:string;sliderGecisSaniye:number;sliderGorselleri:AnaSayfaSliderGorseli[];tgIlanlar:TgDenemeIlani[];duyurular:AnaSayfaDuyurusu[]}){
  const paragraflar=govde.split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean);
  return <div className="flex min-h-dvh flex-col" style={{background:BEYAZ}}>
-  <header className="flex items-center justify-between px-5 py-4 sm:px-10"><Image src="/logo.png" alt="SeFu Koç" width={512} height={512} className="h-10 w-auto object-contain sm:h-12" priority/><Link href="/login" className="rounded-full px-6 py-2.5 text-sm font-bold" style={{background:TURKUAZ,color:BEYAZ}}>GİRİŞ YAP</Link></header>
+  <header className="flex items-center justify-between gap-3 px-5 py-4 sm:px-10"><Image src="/logo.png" alt="SeFu Koç" width={512} height={512} className="h-10 w-auto object-contain sm:h-12" priority/>
+   {/* Kullanıcı isteği (03.09.2026): Blog ve İletişim bağlantıları header'da
+       GİRİŞ YAP'ın solunda — iç bağlantı, arama motorunun yeni blog
+       yazılarını bulmasını hızlandırıyor. Mobilde yer dar olduğu için
+       gizleniyor, footer'da her boyutta duruyor. */}
+   <nav className="flex items-center gap-4"><Link href="/blog" className="hidden text-sm font-bold sm:block" style={{color:LACIVERT}}>Blog</Link><Link href="/iletisim" className="hidden text-sm font-bold sm:block" style={{color:LACIVERT}}>İletişim</Link><Link href="/login" className="rounded-full px-6 py-2.5 text-sm font-bold" style={{background:TURKUAZ,color:BEYAZ}}>GİRİŞ YAP</Link></nav></header>
   <AnaSayfaSlider gorseller={sliderGorselleri} gecisSaniye={sliderGecisSaniye}/>
   <main>
    <section className="mx-auto max-w-6xl px-5 pb-12 pt-10 sm:px-8 sm:pb-16 sm:pt-14">
@@ -34,6 +39,6 @@ export function AnaSayfa({baslik,govde,sliderGecisSaniye,sliderGorselleri,tgIlan
    </section>
    <section className="border-t border-[#E4E9EE] bg-[#F7FAFB]"><div className="mx-auto max-w-5xl px-5 py-14 sm:px-8 sm:py-20"><h2 className="text-balance text-2xl font-extrabold leading-tight sm:text-3xl" style={{color:LACIVERT,fontFamily:"var(--font-baloo)"}}>{baslik}</h2><div className="mt-5 space-y-4">{paragraflar.map((p,i)=><p key={i} className="text-base leading-7 sm:text-lg" style={{color:GRI}}>{p}</p>)}</div></div></section>
   </main>
-  <footer className="mt-auto px-5 py-6 text-center text-xs" style={{color:GRI}}>© {new Date().getFullYear()} www.sefukoc.com. Tüm hakları saklıdır.</footer>
+  <footer className="mt-auto flex flex-col items-center gap-2 px-5 py-6 text-center text-xs" style={{color:GRI}}><nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1"><Link href="/blog" className="font-semibold">Blog</Link><Link href="/iletisim" className="font-semibold">İletişim</Link><Link href="/login" className="font-semibold">Giriş Yap</Link></nav><span>© {new Date().getFullYear()} www.sefukoc.com. Tüm hakları saklıdır.</span></footer>
  </div>;
 }

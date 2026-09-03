@@ -27,6 +27,7 @@ export type DashboardBolumu =
   | "okullar"
   | "moderatorler"
   | "icerik"
+  | "blog"
   | "kurallar"
   | "profil"
   // Faz G (2026-08-25) — hata bildirimleri, admin panelinde ayrı bölüm.
@@ -43,7 +44,7 @@ export type DashboardBolumu =
 export type DashboardIkonu =
   | "ana-sayfa" | "gorev" | "plan" | "veri" | "hakimiyet" | "analiz" | "ai" | "rozet" | "takvim" | "duyuru" | "talep" | "onay" | "ders"
   | "ogretmen" | "ogrenci" | "deneme"
-  | "kullanici" | "eslestir" | "okul" | "moderator" | "icerik" | "kural" | "profil" | "hata"
+  | "kullanici" | "eslestir" | "okul" | "moderator" | "icerik" | "blog" | "kural" | "profil" | "hata"
   | "ayarlar" | "admin" | "gecmis" | "rehberlik";
 
 export interface DashboardMenuOgesi {
@@ -154,6 +155,9 @@ const ADMIN_MENUSU: DashboardMenuOgesi[] = [
   // olarak yeniden adlandırıldı ve Konu Haritası'nın hemen üstüne taşındı
   // (önceden Moderatörler'in altındaydı, ikisi arasında 3 öge vardı).
   { bolum: "icerik", href: "/yonetici/icerik", etiket: "Konu özetleri", ikon: "icerik" },
+  // Kullanıcı isteği (03.09.2026): SeFu Blog — her yazı Google için ayrı
+  // bir sayfa (bkz. src/app/blog, src/app/sitemap.ts).
+  { bolum: "blog", href: "/yonetici/blog", etiket: "Blog", ikon: "blog" },
   { bolum: "yapay-zeka", href: "/yonetici/yapay-zeka", etiket: "Konu Haritası", ikon: "ai" },
   // Faz 3 (2026-08-26) — İşlem Geçmişi ("Son işlemler"in taşındığı yer),
   // Site ayarları (bakım modu) ve Adminler (admin hesapları SADECE burada
@@ -197,6 +201,6 @@ export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
 // mantığı olan bir route (bkz. o dosyadaki okul seçici) — literal route
 // dinamik [bolum]'dan her zaman önceliklidir, çakışma olmaz.
 export const YONETICI_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
-  "kullanicilar", "talepler", "pdf-eslesme", "okullar", "moderatorler", "icerik", "kurallar", "profil", "hata-bildirimleri",
+  "kullanicilar", "talepler", "pdf-eslesme", "okullar", "moderatorler", "icerik", "blog", "kurallar", "profil", "hata-bildirimleri",
   "duyuru-gecmisi", "islem-gecmisi", "site-ayarlari", "adminler",
 ]);

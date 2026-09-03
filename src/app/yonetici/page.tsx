@@ -10,6 +10,7 @@ import { ModeratorlerListesi } from "@/components/yonetici/ModeratorlerListesi";
 import { PlatformIstatistikleri } from "@/components/yonetici/PlatformIstatistikleri";
 import { KonuAnlatimYonetimi } from "@/components/yonetici/KonuAnlatimYonetimi";
 import { MufredatHiyerarsiYonetimi } from "@/components/yonetici/MufredatHiyerarsiYonetimi";
+import { BlogYonetimi } from "@/components/yonetici/BlogYonetimi";
 import { KurallarYonetimi } from "@/components/yonetici/KurallarYonetimi";
 import { HataBildirimleriYonetimi } from "@/components/yonetici/HataBildirimleriYonetimi";
 import { DershaneDenemeSuresiAyari } from "@/components/yonetici/DershaneDenemeSuresiAyari";
@@ -127,6 +128,7 @@ export default async function YoneticiPage({
               <MufredatHiyerarsiYonetimi />
             </section>
           )}
+          {aktifBolum === "blog" && <section className="sfec-section"><BlogYonetimi /></section>}
           {aktifBolum === "kurallar" && <KurallarYonetimi />}
           {aktifBolum === "hata-bildirimleri" && <section className="sfec-section"><HataBildirimleriYonetimi /></section>}
           {aktifBolum === "duyuru-gecmisi" && <section className="sfec-section"><DuyuruGecmisi /></section>}
