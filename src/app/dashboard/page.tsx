@@ -94,7 +94,23 @@ export default async function DashboardPage({
   // TÜM roller için çözülüyor (öncesinde sadece müdür) — dershane 1
   // haftalık deneme süresi (bkz. deneme-suresi.ts) öğrenci/veli/öğretmen
   // için de kontrol edilmesi gerektiğinden.
-  const kurumTuru = await kurumTuruGetir(supabase, user.id, role);
+  // Performans (2026-09-04): bu dört okuma birbirinden bağımsız (hepsi
+  // yalnızca user.id/role'e bağlı) — eskiden ardışık await oldukları için
+  // TTFB'ye art arda ekleniyorlardı, şimdi Promise.all ile aynı anda
+  // gidiyorlar. Dershane deneme süresi kontrolü kurumTuru'na BAĞLI
+  // olduğundan bilinçli olarak hâlâ sonrasında, ayrı bekleniyor.
+  const [kurumTuru, { data: ogretmenBransHam }, { data: moderatorYetkisi }, { count: okunmamisMesajSayisiHam }] = await Promise.all([
+    kurumTuruGetir(supabase, user.id, role),
+    role === "ogretmen"
+      ? supabase.from("teachers").select("brans").eq("id", user.id).maybeSingle()
+      : Promise.resolve({ data: null }),
+    role === "ogretmen" || role === "mudur"
+      ? supabase.from("school_moderators").select("school_id").eq("profile_id", user.id).maybeSingle()
+      : Promise.resolve({ data: null }),
+    // Yanlış giriş bildirimi artık öğrenci hariç TÜM rollere gidebiliyor
+    // (bkz. api/giris/route.ts) — TÜM roller için sayılıyor.
+    supabase.from("duyuru_aliciler").select("*", { count: "exact", head: true }).eq("profile_id", user.id).eq("okundu", false),
+  ]);
 
   // Dershane 1 haftalık deneme süresi (2026-08-25 kullanıcı isteği, bkz.
   // migration 0065) — SADECE dershane rolleri, okul hiç etkilenmez. Zaten
@@ -117,27 +133,12 @@ export default async function DashboardPage({
   // 2026-08-26 kullanıcı isteği — Rehber Öğretmen branşına özel menü ögesi
   // (bkz. dashboard-navigation.ts REHBERLIK_MENU_OGESI) branş bilgisine
   // bağlı olduğundan menü geçerliliği kontrolünden ÖNCE çekiliyor.
-  const { data: ogretmenBransHam } = (role === "ogretmen")
-    ? await supabase.from("teachers").select("brans").eq("id", user.id).maybeSingle()
-    : { data: null };
   const brans = ogretmenBransHam?.brans;
   const varsayilanBolum: DashboardBolumu = (role === "mudur" && kurumTuru !== "dershane") || (role === "ogretmen" && brans === REHBER_BRANSI)
     ? "kurum-performansi" : "ozet";
   const aktifBolum = (params.bolum ?? varsayilanBolum) as DashboardBolumu;
   if (!dashboardMenusu(role, kurumTuru, brans).some((oge) => oge.bolum === aktifBolum)) redirect("/dashboard");
   const donem = (["haftalik", "aylik", "tum"].includes(params.donem ?? "") ? params.donem : "tum") as RaporDonemi;
-  const { data: moderatorYetkisi } = (role === "ogretmen" || role === "mudur")
-    ? await supabase.from("school_moderators").select("school_id").eq("profile_id", user.id).maybeSingle()
-    : { data: null };
-
-  // Kullanıcı isteği (26.08.2026): yanlış giriş bildirimi artık öğrenci
-  // hariç tüm rollere gidebiliyor (bkz. api/giris/route.ts) — bu sorgu
-  // artık TÜM roller için çalışıyor, sadece öğrenci/veliyle sınırlı değil.
-  const { count: okunmamisMesajSayisiHam } = await supabase
-    .from("duyuru_aliciler")
-    .select("*", { count: "exact", head: true })
-    .eq("profile_id", user.id)
-    .eq("okundu", false);
   const okunmamisMesajSayisi = okunmamisMesajSayisiHam ?? 0;
 
   return (

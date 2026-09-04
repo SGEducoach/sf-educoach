@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -12,10 +12,13 @@ import { DUYURU_MIN_UZUNLUK, duyuruGonderimIzniKontrol } from "@/lib/duyuru-guve
 import { dersSoruSayisi, sinifSiraKarsilastir } from "@/lib/types";
 import type { AytAlan, DenemeTuru, DenemeZorlugu, UserRole, KurumTuru } from "@/lib/types";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
-import { tgDenemeArsiviGetir, type TgDenemeIlani } from "@/lib/tg-deneme-ilanlari";
+import { tgDenemeArsiviGetir, TG_DENEME_ONBELLEK_ETIKETI, type TgDenemeIlani } from "@/lib/tg-deneme-ilanlari";
 import { anaSayfaAyarlariniGetir, anaSayfaSliderGorselleriGetir, type AnaSayfaAyarlari, type AnaSayfaSliderGorseli } from "@/lib/ana-sayfa";
 import { anaSayfaDuyurulariniGetir, type AnaSayfaDuyurusu } from "@/lib/ana-sayfa-duyurulari";
 import { SITE_TEMA_ANAHTAR, temaRengiGecerliMi } from "@/lib/site-tema";
+import { APP_AYARLARI_ONBELLEK_ETIKETI } from "@/lib/app-ayarlari";
+import { ANA_SAYFA_ONBELLEK_ETIKETI } from "@/lib/ana-sayfa";
+import { YONETICI_DUYURU_ONBELLEK_ETIKETI } from "@/lib/site-duyuru";
 
 const DUYURU_MAKS_UZUNLUK = 500;
 
@@ -717,7 +720,9 @@ export async function siteTemaRengiDegistir(renk: string): Promise<{ error: stri
   });
   if (error) return { error: error.message };
   await auditLogYaz(supabase, user.id, "site_tema_rengi_degistir", { renk });
-  // Tüm sayfalar kök layout üzerinden boyandığı için layout'u yenile.
+  // 60 sn önbellekli ayar okumasını anında tazele + tüm sayfalar kök
+  // layout üzerinden boyandığı için layout'u yenile.
+  revalidateTag(APP_AYARLARI_ONBELLEK_ETIKETI, "max");
   revalidatePath("/", "layout");
   return { error: null };
 }
@@ -1106,6 +1111,7 @@ export async function kurallarGuncelle(yeniMetin: string): Promise<{ error: stri
   if (error) return { error: error.message, versiyon: null };
 
   await auditLogYaz(supabase, user.id, "kurallar_metni_guncelle", { versiyon: yeniVersiyon });
+  revalidateTag(APP_AYARLARI_ONBELLEK_ETIKETI, "max"); // 60 sn'lik ayar önbelleğini tazele
   revalidatePath("/yonetici");
   revalidatePath("/signup");
   return { error: null, versiyon: yeniVersiyon };
@@ -1465,6 +1471,7 @@ export async function adminDuyuruGonder(
     .update({ aktif_duyuru_metni: mesajTemiz, aktif_duyuru_bitis: bitis, aktif_duyuru_kurum_id: kurumId })
     .eq("id", 1);
   if (bannerError) return { error: bannerError.message, ...bosSonuc };
+  revalidateTag(YONETICI_DUYURU_ONBELLEK_ETIKETI, "max"); // 60 sn'lik duyuru önbelleğini tazele
 
   await auditLogYaz(supabase, user.id, "admin_duyuru_gonder", {
     ogrenci_sayisi: sonuc.ogrenciSayisi, veli_sayisi: sonuc.veliSayisi, mesaj: mesajTemiz, kurum_id: kurumId, sure_saat: sureSaat,
@@ -1494,6 +1501,7 @@ export async function yoneticiAktifDuyuruSil(): Promise<{ error: string | null }
     .eq("id", 1);
   if (error) return { error: error.message };
   await auditLogYaz(supabase, user.id, "admin_duyuru_kaldir", {});
+  revalidateTag(YONETICI_DUYURU_ONBELLEK_ETIKETI, "max");
   revalidatePath("/yonetici");
   return { error: null };
 }
@@ -1691,6 +1699,7 @@ export async function tgDenemeIlaniEkle(formData: FormData): Promise<{ error: st
   }
 
   await auditLogYaz(supabase, user.id, "tg_deneme_ilani_ekle", { dosya_yolu: dosyaYolu, dosya_tipi: dosyaTipi });
+  revalidateTag(TG_DENEME_ONBELLEK_ETIKETI, "max");
   revalidatePath("/");
   revalidatePath("/dashboard", "layout");
   revalidatePath("/yonetici", "layout");
@@ -1712,6 +1721,7 @@ export async function tgDenemeIlaniSil(id: string): Promise<{ error: string | nu
     if (silmeHatasi) console.warn("TG deneme ilanı dosyası silinemedi (kayıt zaten silindi):", silmeHatasi.message);
   }
   await auditLogYaz(supabase, user.id, "tg_deneme_ilani_sil", { id });
+  revalidateTag(TG_DENEME_ONBELLEK_ETIKETI, "max");
   revalidatePath("/");
   revalidatePath("/dashboard", "layout");
   revalidatePath("/yonetici", "layout");
@@ -1756,6 +1766,7 @@ export async function anaSayfaAyarlariniGuncelle(input: {
   });
   if (error) return { error: error.message };
   await auditLogYaz(supabase, user.id, "ana_sayfa_ayarlari_guncelle", {});
+  revalidateTag(ANA_SAYFA_ONBELLEK_ETIKETI, "max");
   revalidatePath("/");
   revalidatePath("/yonetici");
   return { error: null };
@@ -1796,6 +1807,7 @@ export async function anaSayfaSliderGorseliEkle(formData: FormData): Promise<{ e
   }
 
   await auditLogYaz(supabase, user.id, "ana_sayfa_slider_gorseli_ekle", { dosya_yolu: dosyaYolu });
+  revalidateTag(ANA_SAYFA_ONBELLEK_ETIKETI, "max");
   revalidatePath("/");
   revalidatePath("/yonetici");
   return { error: null };
@@ -1811,6 +1823,7 @@ export async function anaSayfaSliderGorselSil(id: string): Promise<{ error: stri
     if (silmeHatasi) console.warn("Ana sayfa slider görseli silinemedi (kayıt zaten silindi):", silmeHatasi.message);
   }
   await auditLogYaz(supabase, user.id, "ana_sayfa_slider_gorseli_sil", { id });
+  revalidateTag(ANA_SAYFA_ONBELLEK_ETIKETI, "max");
   revalidatePath("/");
   revalidatePath("/yonetici");
   return { error: null };
@@ -1822,10 +1835,10 @@ export async function anaSayfaDuyurusuKaydet(input:{id:string|null;baslik:string
  if(baslik.length>120||icerik.length>2000)return {error:"Başlık en fazla 120, içerik en fazla 2000 karakter olabilir.",duyurular:[]};
  const sorgu=input.id?admin.from("ana_sayfa_duyurulari").update({baslik,icerik,updated_at:new Date().toISOString()}).eq("id",input.id):admin.from("ana_sayfa_duyurulari").insert({baslik,icerik});
  const {error}=await sorgu;if(error)return {error:error.message,duyurular:[]};
- await auditLogYaz(supabase,user.id,input.id?"ana_sayfa_duyurusu_guncelle":"ana_sayfa_duyurusu_ekle",{id:input.id});revalidatePath("/");revalidatePath("/yonetici");
+ await auditLogYaz(supabase,user.id,input.id?"ana_sayfa_duyurusu_guncelle":"ana_sayfa_duyurusu_ekle",{id:input.id});revalidateTag(ANA_SAYFA_ONBELLEK_ETIKETI, "max");revalidatePath("/");revalidatePath("/yonetici");
  return {error:null,duyurular:await anaSayfaDuyurulariniGetir(admin)};
 }
 export async function anaSayfaDuyurusuSil(id:string):Promise<{error:string|null;duyurular:AnaSayfaDuyurusu[]}>{
  const {supabase,user,admin}=await requireAdmin();const {error}=await admin.from("ana_sayfa_duyurulari").delete().eq("id",id);if(error)return {error:error.message,duyurular:[]};
- await auditLogYaz(supabase,user.id,"ana_sayfa_duyurusu_sil",{id});revalidatePath("/");revalidatePath("/yonetici");return {error:null,duyurular:await anaSayfaDuyurulariniGetir(admin)};
+ await auditLogYaz(supabase,user.id,"ana_sayfa_duyurusu_sil",{id});revalidateTag(ANA_SAYFA_ONBELLEK_ETIKETI, "max");revalidatePath("/");revalidatePath("/yonetici");return {error:null,duyurular:await anaSayfaDuyurulariniGetir(admin)};
 }

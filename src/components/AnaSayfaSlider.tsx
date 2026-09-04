@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import { anaSayfaDosyaUrl, type AnaSayfaSliderGorseli } from "@/lib/ana-sayfa";
 import styles from "./AnaSayfaSlider.module.css";
@@ -43,8 +44,12 @@ export function AnaSayfaSlider({ gorseller, gecisSaniye }: { gorseller: AnaSayfa
         const index = baslangic + i;
         return <button key={g.id} type="button" className={styles.kart} data-active={index === aktif}
           aria-label={`${index + 1}. görseli büyüt`} aria-pressed={index === aktif} onClick={() => git(index)}>
-          {/* eslint-disable-next-line @next/next/no-img-element -- Yönetilen Supabase Storage görseli */}
-          <img src={anaSayfaDosyaUrl(g.dosyaYolu)} alt="" draggable={false} />
+          {/* Performans (2026-09-04): next/image ile otomatik boyutlandırma
+              + modern format; kart "position: relative" (modül CSS) olduğundan
+              fill kullanılıyor. İlk ekranda görünen kart sayısı 3: yalnızca
+              onlar öncelikli (LCP), kalanlar lazy. */}
+          <Image src={anaSayfaDosyaUrl(g.dosyaYolu)} alt="" fill draggable={false}
+            sizes="(max-width: 640px) 90vw, 33vw" priority={index < 3} />
         </button>;
       })}
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { Radio } from "lucide-react";
 import { tgDenemeAkisiOlustur } from "@/lib/tg-denemeleri";
 import type { TgDenemeIlani } from "@/lib/tg-deneme-ilanlari";
@@ -45,8 +46,10 @@ export function AnaSayfaTgAkisi({ dbIlanlar }: { dbIlanlar: TgDenemeIlani[] }) {
               {haber.dosyaTipi === "pdf" ? (
                 <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold" style={{ color: METIN_GRI }}>PDF</div>
               ) : (
-                // eslint-disable-next-line @next/next/no-img-element -- next/image harici Storage domainini reddediyor (bkz. TgDenemeleri.tsx)
-                <img src={haber.gorsel} alt="" className="absolute inset-0 h-full w-full object-contain" />
+                // Performans (2026-09-04): remotePatterns eklendiğinden artık
+                // next/image kullanılabiliyor — kartın altında kalan küçük
+                // görsel, lazy yeterli.
+                <Image src={haber.gorsel} alt="" fill className="object-contain" sizes="(max-width: 640px) 90vw, 40vw" />
               )}
             </div>
             <div className="flex w-full min-w-0 flex-col gap-3 text-center sm:min-h-0 sm:flex-1">
