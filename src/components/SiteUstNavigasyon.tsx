@@ -7,9 +7,9 @@ import { usePathname } from "next/navigation";
 import { Mail, Menu, Rss, X } from "lucide-react";
 
 // Kullanıcı isteği (04.09.2026): navigasyon ORTADA değil, eskisi gibi sağda
-// (GİRİŞ YAP'ın solunda) duruyor; mobilde üç bağlantı hamburger menüye
-// taşındı; "Ana Sayfa" bağlantısında ikon yok (logo zaten ana sayfaya
-// gidiyor, ikinci bir ev ikonu gereksiz görünüyordu).
+// (GİRİŞ YAP'ın solunda) duruyor; mobilde bağlantılar hamburger menüde.
+// "Ana Sayfa" bağlantısı tamamen kaldırıldı (logo zaten ana sayfaya
+// gidiyor, ikinci bir bağlantı gereksiz görünüyordu).
 // Bu başlık YALNIZCA herkese açık sayfalarda (/, /blog, /blog/[slug],
 // /iletisim) kullanılıyor; giriş sonrası panel kendi Header'ıyla çalışıyor
 // (src/components/dashboard/Header.tsx) ve buradan hiç etkilenmiyor.
@@ -19,8 +19,7 @@ const BEYAZ = "#FFFFFF";
 const GRI = "#3F4B5A";
 const CIZGI = "#E9EFF3";
 
-const BAGLANTILAR: { href: string; etiket: string; Icon: typeof Rss | null }[] = [
-  { href: "/", etiket: "Ana Sayfa", Icon: null },
+const BAGLANTILAR: { href: string; etiket: string; Icon: typeof Rss }[] = [
   { href: "/blog", etiket: "Blog", Icon: Rss },
   { href: "/iletisim", etiket: "İletişim", Icon: Mail },
 ];
