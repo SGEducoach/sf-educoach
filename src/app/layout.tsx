@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
 import "./globals.css";
 import { GlobalIslemGostergesi } from "@/components/GlobalIslemGostergesi";
+import { siteTemaRengiGetir } from "@/lib/app-ayarlari";
+import { temaRengiAc, VARSAYILAN_TEMA_RENGI } from "@/lib/site-tema";
 
 // Not: değişken isimleri (--font-nunito, --font-baloo) kod tabanında onlarca
 // yerde referans veriliyor; tekrar adlandırmak yerine ikisini de Montserrat'a
@@ -44,13 +46,24 @@ export const viewport = {
   themeColor: "#08090b",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // Admin'in panelden seçtiği ana tema (zemin) rengi — app_ayarlari'dan
+  // sunucuda okunur, ilk boyamadan önce :root değişkenlerini ezer
+  // (flaş/yanlış renk olmaz). Kabuk ve menügradyanı seçilen rengin hafif
+  // açılmış türevleriyle uyumlu tutulur. Bkz. src/lib/site-tema.ts.
+  const temaRengi = await siteTemaRengiGetir();
+  const temaCss =
+    temaRengi === VARSAYILAN_TEMA_RENGI
+      ? null // varsayılanda globals.css'teki :root aynen geçerli
+      : `:root{--background:${temaRengi};--sfec-bg0:${temaRengi};--sfec-shell-bg:${temaRengi};--sfec-nav-bg:linear-gradient(135deg, ${temaRengi} 0%, ${temaRengiAc(temaRengi, 5)} 50%, ${temaRengi} 100%);}`;
+
   return (
     <html
       lang="tr"
       className={`${montserratGovde.variable} ${montserratBaslik.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans">
+        {temaCss && <style dangerouslySetInnerHTML={{ __html: temaCss }} />}
         <a href="#ana-icerik" className="sfec-skip-link">İçeriğe geç</a>
         {children}
         <GlobalIslemGostergesi />

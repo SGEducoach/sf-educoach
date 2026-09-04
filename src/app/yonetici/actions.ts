@@ -15,6 +15,7 @@ import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
 import { tgDenemeArsiviGetir, type TgDenemeIlani } from "@/lib/tg-deneme-ilanlari";
 import { anaSayfaAyarlariniGetir, anaSayfaSliderGorselleriGetir, type AnaSayfaAyarlari, type AnaSayfaSliderGorseli } from "@/lib/ana-sayfa";
 import { anaSayfaDuyurulariniGetir, type AnaSayfaDuyurusu } from "@/lib/ana-sayfa-duyurulari";
+import { SITE_TEMA_ANAHTAR, temaRengiGecerliMi } from "@/lib/site-tema";
 
 const DUYURU_MAKS_UZUNLUK = 500;
 
@@ -697,6 +698,27 @@ export async function siteKapaliDegistir(kapali: boolean): Promise<{ error: stri
   if (error) return { error: error.message };
   await auditLogYaz(supabase, user.id, kapali ? "site_bakima_al" : "site_ac", {});
   revalidatePath("/yonetici");
+  return { error: null };
+}
+
+// ============ Site ayarları: ana tema (arka plan) rengi ============
+// Admin, sitenin siyahlı ana temasını 6 sabit pastel tondan birine
+// çevirir. Değer app_ayarlari tablosunda tutulur (bkz.
+// src/lib/site-tema.ts); RootLayout her istekte okuyup :root CSS
+// değişkenlerini ezer.
+export async function siteTemaRengiDegistir(renk: string): Promise<{ error: string | null }> {
+  if (!temaRengiGecerliMi(renk)) return { error: "Geçersiz renk seçimi." };
+  const { supabase, user, admin } = await requireAdmin();
+  const { error } = await admin.from("app_ayarlari").upsert({
+    anahtar: SITE_TEMA_ANAHTAR,
+    deger: renk,
+    guncelleyen_id: user.id,
+    updated_at: new Date().toISOString(),
+  });
+  if (error) return { error: error.message };
+  await auditLogYaz(supabase, user.id, "site_tema_rengi_degistir", { renk });
+  // Tüm sayfalar kök layout üzerinden boyandığı için layout'u yenile.
+  revalidatePath("/", "layout");
   return { error: null };
 }
 

@@ -22,6 +22,8 @@ import { dershaneDenemeSuresiGetir, siteAyarlariGetir, anaSayfaAyarlariGetir } f
 import { AnaSayfaAyarlariYonetimi } from "@/components/yonetici/AnaSayfaAyarlariYonetimi";
 import { AnaSayfaDuyuruYonetimi } from "@/components/yonetici/AnaSayfaDuyuruYonetimi";
 import { anaSayfaDuyurulariniGetir } from "@/lib/ana-sayfa-duyurulari";
+import { siteTemaRengiGetir } from "@/lib/app-ayarlari";
+import { VARSAYILAN_TEMA_RENGI } from "@/lib/site-tema";
 import { suresiDolduMu } from "@/lib/deneme-suresi";
 import { AdminProfilim } from "@/components/yonetici/AdminProfilim";
 import { YoneticiGirisForm } from "@/components/yonetici/YoneticiGirisForm";
@@ -82,6 +84,7 @@ export default async function YoneticiPage({
 
   const { bitis: dershaneDenemeBitisi } = aktifBolum === "ozet" ? await dershaneDenemeSuresiGetir() : { bitis: null };
   const { kapali: siteKapali } = aktifBolum === "site-ayarlari" ? await siteAyarlariGetir() : { kapali: false };
+  const siteTemaRengi = aktifBolum === "site-ayarlari" ? await siteTemaRengiGetir() : VARSAYILAN_TEMA_RENGI;
   const { ayarlar: anaSayfaAyarlari, gorseller: anaSayfaGorselleri } = aktifBolum === "site-ayarlari"
     ? await anaSayfaAyarlariGetir()
     : { ayarlar: { baslik: "", govde: "", sliderGecisSaniye: 6 }, gorseller: [] };
@@ -135,7 +138,7 @@ export default async function YoneticiPage({
           {aktifBolum === "islem-gecmisi" && <section className="sfec-section"><IslemGecmisi /></section>}
           {aktifBolum === "site-ayarlari" && (
             <section className="sfec-section">
-              <SiteAyarlariYonetimi kapaliBaslangic={siteKapali} />
+              <SiteAyarlariYonetimi kapaliBaslangic={siteKapali} temaRengiBaslangic={siteTemaRengi} />
               <AnaSayfaAyarlariYonetimi ayarlarBaslangic={anaSayfaAyarlari} gorsellerBaslangic={anaSayfaGorselleri} />
               <AnaSayfaDuyuruYonetimi baslangic={anaSayfaDuyurulari} />
             </section>
