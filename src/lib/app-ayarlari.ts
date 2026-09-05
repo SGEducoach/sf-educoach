@@ -1,6 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { anonSunucuOkuyucu } from "@/lib/supabase/anon-server";
-import { SITE_TEMA_ANAHTAR, temaRengiGecerliMi, VARSAYILAN_TEMA_RENGI } from "@/lib/site-tema";
+import { SITE_TEMA_ANAHTAR, temaBul, type SiteTemasi } from "@/lib/site-tema";
 
 // app_ayarlari genel amaçlı key/value ayar tablosu — select herkese açık
 // (RLS: using (true)), yazma sadece admin (service-role, bkz.
@@ -31,10 +31,10 @@ export async function appAyariGetir(anahtar: string): Promise<string | null> {
   return onbellekliAyarOku(anahtar);
 }
 
-// Site ana temasının zemin rengi (admin paneli → Site ayarları). Palet
-// ve varsayılan src/lib/site-tema.ts'te; okuma burada çünkü site-tema.ts
-// istemci bileşenleri tarafından da paylaşılıyor.
-export async function siteTemaRengiGetir(): Promise<string> {
-  const deger = await appAyariGetir(SITE_TEMA_ANAHTAR);
-  return deger && temaRengiGecerliMi(deger) ? deger : VARSAYILAN_TEMA_RENGI;
+// Site ana teması (admin paneli → Site ayarları). Palet ve varsayılan
+// src/lib/site-tema.ts'te; okuma burada çünkü site-tema.ts istemci
+// bileşenleri tarafından da paylaşılıyor. Kayıt bulunamazsa ya da eski
+// (hex) formattaysa temaBul varsayılan "gece-siyahi" temasına düşürür.
+export async function siteTemaGetir(): Promise<SiteTemasi> {
+  return temaBul(await appAyariGetir(SITE_TEMA_ANAHTAR));
 }

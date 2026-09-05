@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
 import "./globals.css";
 import { GlobalIslemGostergesi } from "@/components/GlobalIslemGostergesi";
-import { siteTemaRengiGetir } from "@/lib/app-ayarlari";
-import { temaRengiAc, VARSAYILAN_TEMA_RENGI } from "@/lib/site-tema";
+import { siteTemaGetir } from "@/lib/app-ayarlari";
+import { temaCssUret } from "@/lib/site-tema";
 
 // Not: değişken isimleri (--font-nunito, --font-baloo) kod tabanında onlarca
 // yerde referans veriliyor; tekrar adlandırmak yerine ikisini de Montserrat'a
@@ -22,17 +22,17 @@ const montserratBaslik = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "SeFu Koç | YKS Hazırlık ve Öğrenci Takip Platformu",
-  description: "SeFu Koç ile konu çalışmalarını, soru çözümlerini ve deneme netlerini takip edin. Öğrenci, veli ve öğretmen aynı platformda gelişimi izlesin.",
+  title: "Sefu Koç",
+  // ... diğer alanlarınız (açıklama, vs.)
+  
+  // Bu iki satırı buraya ekleyin, en alta
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "SeFu Koç",
+    title: "www.sefukoc.com",
   },
-  icons: {
-    apple: "/apple-touch-icon.png",
-  },
+};  // <-- Nesne EN SONRA kapanmalı
 };
 
 // Bulgu 11 kararı (23 Ağustos 2026): açık tema kaldırıldı, site tek bir
@@ -47,15 +47,12 @@ export const viewport = {
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  // Admin'in panelden seçtiği ana tema (zemin) rengi — app_ayarlari'dan
-  // sunucuda okunur, ilk boyamadan önce :root değişkenlerini ezer
-  // (flaş/yanlış renk olmaz). Kabuk ve menügradyanı seçilen rengin hafif
-  // açılmış türevleriyle uyumlu tutulur. Bkz. src/lib/site-tema.ts.
-  const temaRengi = await siteTemaRengiGetir();
-  const temaCss =
-    temaRengi === VARSAYILAN_TEMA_RENGI
-      ? null // varsayılanda globals.css'teki :root aynen geçerli
-      : `:root{--background:${temaRengi};--sfec-bg0:${temaRengi};--sfec-shell-bg:${temaRengi};--sfec-nav-bg:linear-gradient(135deg, ${temaRengi} 0%, ${temaRengiAc(temaRengi, 5)} 50%, ${temaRengi} 100%);}`;
+  // Admin'in panelden seçtiği site teması — app_ayarlari'dan sunucuda
+  // okunur, ilk boyamadan önce :root değişkenlerini ezer (flaş/yanlış
+  // renk olmaz). Tema artık zeminle sınırlı değil: kutu içi (bg1/bg1-alt),
+  // kenarlıklar, metin/font renkleri ve marka (logo) renkleri de tema
+  // tanımından gelir. Bkz. src/lib/site-tema.ts.
+  const temaCss = temaCssUret(await siteTemaGetir());
 
   return (
     <html

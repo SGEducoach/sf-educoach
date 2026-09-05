@@ -15,7 +15,7 @@ import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
 import { tgDenemeArsiviGetir, TG_DENEME_ONBELLEK_ETIKETI, type TgDenemeIlani } from "@/lib/tg-deneme-ilanlari";
 import { anaSayfaAyarlariniGetir, anaSayfaSliderGorselleriGetir, type AnaSayfaAyarlari, type AnaSayfaSliderGorseli } from "@/lib/ana-sayfa";
 import { anaSayfaDuyurulariniGetir, type AnaSayfaDuyurusu } from "@/lib/ana-sayfa-duyurulari";
-import { SITE_TEMA_ANAHTAR, temaRengiGecerliMi } from "@/lib/site-tema";
+import { SITE_TEMA_ANAHTAR, temaGecerliMi } from "@/lib/site-tema";
 import { APP_AYARLARI_ONBELLEK_ETIKETI } from "@/lib/app-ayarlari";
 import { ANA_SAYFA_ONBELLEK_ETIKETI } from "@/lib/ana-sayfa";
 import { YONETICI_DUYURU_ONBELLEK_ETIKETI } from "@/lib/site-duyuru";
@@ -704,22 +704,23 @@ export async function siteKapaliDegistir(kapali: boolean): Promise<{ error: stri
   return { error: null };
 }
 
-// ============ Site ayarları: ana tema (arka plan) rengi ============
-// Admin, sitenin siyahlı ana temasını 6 sabit pastel tondan birine
-// çevirir. Değer app_ayarlari tablosunda tutulur (bkz.
+// ============ Site ayarları: site teması ============
+// Admin, site temasını 7 sabit üniversite/nostalji temasından birine
+// çevirir (zemin + kutu içi + kenarlık + font renkleri birlikte değişir).
+// Değer app_ayarlari tablosunda tema kimliği olarak tutulur (bkz.
 // src/lib/site-tema.ts); RootLayout her istekte okuyup :root CSS
 // değişkenlerini ezer.
-export async function siteTemaRengiDegistir(renk: string): Promise<{ error: string | null }> {
-  if (!temaRengiGecerliMi(renk)) return { error: "Geçersiz renk seçimi." };
+export async function siteTemasiDegistir(temaId: string): Promise<{ error: string | null }> {
+  if (!temaGecerliMi(temaId)) return { error: "Geçersiz tema seçimi." };
   const { supabase, user, admin } = await requireAdmin();
   const { error } = await admin.from("app_ayarlari").upsert({
     anahtar: SITE_TEMA_ANAHTAR,
-    deger: renk,
+    deger: temaId,
     guncelleyen_id: user.id,
     updated_at: new Date().toISOString(),
   });
   if (error) return { error: error.message };
-  await auditLogYaz(supabase, user.id, "site_tema_rengi_degistir", { renk });
+  await auditLogYaz(supabase, user.id, "site_tema_degistir", { tema: temaId });
   // 60 sn önbellekli ayar okumasını anında tazele + tüm sayfalar kök
   // layout üzerinden boyandığı için layout'u yenile.
   revalidateTag(APP_AYARLARI_ONBELLEK_ETIKETI, "max");
