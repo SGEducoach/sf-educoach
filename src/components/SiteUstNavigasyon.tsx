@@ -4,12 +4,15 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Mail, Menu, Rss, X } from "lucide-react";
+import { Home, Mail, Menu, Rss, X } from "lucide-react";
 
 // Kullanıcı isteği (04.09.2026): navigasyon ORTADA değil, eskisi gibi sağda
-// (GİRİŞ YAP'ın solunda) duruyor; mobilde bağlantılar hamburger menüde.
-// "Ana Sayfa" bağlantısı tamamen kaldırıldı (logo zaten ana sayfaya
-// gidiyor, ikinci bir bağlantı gereksiz görünüyordu).
+// (GİRİŞ YAP'ın solunda) duruyor; masaüstünde Ana Sayfa/Blog/İletişim yan
+// yana, mobilde ÜÇÜ DE hamburger menüde (GİRİŞ YAP mobilde de görünür
+// kalıyor — ana çağrı butonu, menünün içine gömülmüyor).
+// Başlık SABİT (sticky): sayfa sonuna kadar kaydırıldığında bile üstte
+// duruyor, böylece uzun blog yazısının sonundan tek tıkla başka bir
+// sayfaya geçilebiliyor.
 // Bu başlık YALNIZCA herkese açık sayfalarda (/, /blog, /blog/[slug],
 // /iletisim) kullanılıyor; giriş sonrası panel kendi Header'ıyla çalışıyor
 // (src/components/dashboard/Header.tsx) ve buradan hiç etkilenmiyor.
@@ -20,6 +23,7 @@ const GRI = "#3F4B5A";
 const CIZGI = "#E9EFF3";
 
 const BAGLANTILAR: { href: string; etiket: string; Icon: typeof Rss }[] = [
+  { href: "/", etiket: "Ana Sayfa", Icon: Home },
   { href: "/blog", etiket: "Blog", Icon: Rss },
   { href: "/iletisim", etiket: "İletişim", Icon: Mail },
 ];
@@ -35,7 +39,7 @@ export function SiteUstNavigasyon() {
   const [acik, setAcik] = useState(false);
 
   return (
-    <header className="border-b" style={{ borderColor: CIZGI, background: BEYAZ }}>
+    <header className="sticky top-0 z-40 border-b" style={{ borderColor: CIZGI, background: BEYAZ }}>
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-5 py-3.5 sm:px-8 sm:py-4">
         <Link href="/" aria-label="Ana sayfa" className="shrink-0">
           <Image src="/logo.png" alt="SeFu Koç" width={512} height={512} className="h-10 w-auto object-contain sm:h-12" priority />
