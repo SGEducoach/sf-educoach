@@ -23,16 +23,12 @@ const montserratBaslik = Montserrat({
 
 export const metadata: Metadata = {
   title: "Sefu Koç",
-  // ... diğer alanlarınız (açıklama, vs.)
-  
-  // Bu iki satırı buraya ekleyin, en alta
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "www.sefukoc.com",
   },
-};  // <-- Nesne EN SONRA kapanmalı
 };
 
 // Bulgu 11 kararı (23 Ağustos 2026): açık tema kaldırıldı, site tek bir
