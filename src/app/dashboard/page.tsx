@@ -755,6 +755,19 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
     }
   }
 
+  // Sınıf öğretmeni öğrenci programını görsün — revizyon_2 madde 3
+  let secilenOgrenciProgrami: any[] = [];
+  if (secilenOgrenciId && role === "ogretmen" && !dershaneMi) {
+    const { data } = await supabase
+      .from("gorev_atamalari")
+      .select("id, ogrenci_tarih, ogrenci_baslangic_saat, ogrenci_bitis_saat, programa_eklendi_mi, gorevler!inner(tur, ders, konu, tarih, son_tarih)")
+      .eq("student_id", secilenOgrenciId)
+      .eq("programa_eklendi_mi", true)
+      .order("ogrenci_tarih", { ascending: true })
+      .limit(200);
+    secilenOgrenciProgrami = data ?? [];
+  }
+
   return (
     <OgretmenPanel
       role={role}
@@ -777,6 +790,8 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       secilenOgretmenId={secilenOgretmenId}
       secilenOgretmenProgrami={secilenOgretmenProgrami}
       rehberOgretmenMi={rehberOgretmenMi}
+      secilenOgrenciId={secilenOgrenciId}
+      secilenOgrenciProgrami={secilenOgrenciProgrami}
     />
   );
 }

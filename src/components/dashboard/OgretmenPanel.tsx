@@ -78,6 +78,7 @@ export function OgretmenPanel({
   ogretmenDersleri, bekleyenOnaylar, verdigimGorevler, konuOnerileri, aktifBolum,
   dersProgramiSatirlari, yurtNobetiSatirlari, dershaneMi,
   okulOgretmenleri, secilenOgretmenId, secilenOgretmenProgrami, rehberOgretmenMi = false,
+  secilenOgrenciId, secilenOgrenciProgrami,
 }: {
   role: "ogretmen" | "mudur";
   bekleyenTalepler: (VeliLinkRequest & { ogrenci_ad: string })[];
@@ -105,6 +106,8 @@ export function OgretmenPanel({
   secilenOgretmenId?: string;
   secilenOgretmenProgrami?: DersProgramiSatiri[];
   rehberOgretmenMi?: boolean;
+  secilenOgrenciId?: string;
+  secilenOgrenciProgrami?: any[];
 }) {
   const router = useRouter();
   const [uretilenKodlar, setUretilenKodlar] = useState<Record<string, string>>({});
@@ -348,6 +351,24 @@ export function OgretmenPanel({
                 )}
               </div>
             ))}
+          </div>
+        )}
+        {secilenOgrenciId && secilenOgrenciProgrami && secilenOgrenciProgrami.length > 0 && (
+          <div className="mt-6 sfec-section sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+            <div className="mb-3 flex items-center gap-2">
+              <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: MINT_BG }}>
+                <BookMarked size={13} color={MINT} />
+              </div>
+              <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Seçilen öğrencinin programı</span>
+            </div>
+            <div className="flex flex-col gap-2">
+              {secilenOgrenciProgrami.map((p: any) => (
+                <div key={p.id} className="rounded-xl p-3" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
+                  <div style={{ color: TEXT }} className="text-sm font-semibold">{p.gorevler?.ders ?? "—"} · {p.gorevler?.konu ?? "—"}</div>
+                  <div style={{ color: TEXT_MUTED }} className="text-xs">{p.ogrenci_tarih} {p.ogrenci_baslangic_saat}-{p.ogrenci_bitis_saat} · {p.gorevler?.tur}</div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>}
