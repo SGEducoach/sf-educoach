@@ -808,13 +808,36 @@ export async function ogrenciYurtDurumuGuncelle(studentId: string, yurtOgrencisi
   return { error: null };
 }
 
-// Soru çözümü "gördüm" onayı — RLS (soru_cozumleri_update_ogretmen_onay)
-// sadece kendi sınıfındaki öğrencinin kaydına izin veriyor.
+// Soru çözümü "gördüm" onayı: ilgili sınıf ve derse bir branş öğretmeni
+// atanmışsa yalnız o öğretmen; atanmamışsa sınıf öğretmeni onaylayabilir.
+// Admin istemcisi yalnız ayrıntılı yetki doğrulamasından sonra kullanılır;
+// böylece eski, sadece sınıf öğretmenine izin veren RLS kuralı branş
+// öğretmenini yanlışlıkla engellemez.
 export async function soruCozumuOnayla(id: string) {
   const { supabase, user } = await requireUser();
-  const { error } = await supabase.from("soru_cozumleri")
+  const admin = createAdminClient();
+  const [{ data: teacher }, { data: soru }] = await Promise.all([
+    supabase.from("teachers").select("class_id, school_id").eq("id", user.id).maybeSingle(),
+    admin.from("soru_cozumleri").select("id, student_id, ders, kaynak, onaylandi_mi").eq("id", id).maybeSingle(),
+  ]);
+  if (!teacher) return { error: "Öğretmen kaydı bulunamadı." };
+  if (!soru || soru.kaynak !== "ogrenci") return { error: "Onaylanacak öğrenci kaydı bulunamadı." };
+  if (soru.onaylandi_mi) return { error: null };
+
+  const { data: ogrenci } = await admin.from("students").select("class_id, school_id").eq("id", soru.student_id).maybeSingle();
+  if (!ogrenci || ogrenci.school_id !== teacher.school_id) return { error: "Bu öğrenci için onay yetkiniz yok." };
+  const { data: dersAtamalari } = await admin.from("ogretmen_dersleri").select("teacher_id, ders").eq("class_id", ogrenci.class_id);
+  const dersAnahtari = (deger: string) => deger.trim().toLocaleLowerCase("tr-TR").replace(/\s+/g, " ");
+  const ilgiliBransOgretmenleri = (dersAtamalari ?? []).filter((atama) => dersAnahtari(atama.ders) === dersAnahtari(soru.ders));
+  const yetkili = ilgiliBransOgretmenleri.length > 0
+    ? ilgiliBransOgretmenleri.some((atama) => atama.teacher_id === user.id)
+    : teacher.class_id === ogrenci.class_id;
+  if (!yetkili) return { error: ilgiliBransOgretmenleri.length > 0 ? "Bu kayıt ilgili branş öğretmeninin onayını bekliyor." : "Bu kayıt yalnızca sınıf öğretmeni tarafından onaylanabilir." };
+
+  const { error } = await admin.from("soru_cozumleri")
     .update({ onaylandi_mi: true, onaylayan_id: user.id, onaylanma_at: new Date().toISOString() })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("onaylandi_mi", false);
   if (error) return { error: error.message };
   revalidatePath("/dashboard");
   return { error: null };

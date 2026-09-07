@@ -259,7 +259,7 @@ export function OgretmenPanel({
       {aktifBolum === "onaylar" && role === "ogretmen" && (
         <VerdigimGorevlerBolumu gorevler={verdigimGorevler ?? []} />
       )}
-      {aktifBolum === "onaylar" && role === "ogretmen" && kendiSinifId && <BekleyenOnaylarBolumu onaylar={bekleyenOnaylar} />}
+      {aktifBolum === "onaylar" && role === "ogretmen" && <BekleyenOnaylarBolumu onaylar={bekleyenOnaylar} />}
 
       {aktifBolum === "gorevler" && role === "ogretmen" && (
         <div className="sfec-fade rounded-2xl p-3 flex items-center justify-between gap-3 flex-wrap" style={{ background: BG1, border: `2px solid ${BORDER}` }}>

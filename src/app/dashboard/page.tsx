@@ -639,26 +639,37 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   const gorunecekSinifId = secilenSinifId || (rehberOgretmenMi ? null : teacher.class_id) || sinifListesi[0]?.id || null;
   const kendiSinifiMi = gorunecekSinifId === teacher.class_id;
 
-  const [{ data: ogrenciler }, { data: talepler }, { data: ogretmenDersleriHam }, { data: bekleyenOnaylarHam }] = await Promise.all([
+  // Öğrencinin soru çözümü, o sınıf ve derse atanmış branş öğretmeni varsa
+  // yalnız o öğretmenin; yoksa sınıf öğretmeninin onayına düşer. Önce bu
+  // öğretmenin branş atamalarını alıyoruz; böylece sınıf öğretmeni olmayan
+  // branş öğretmeni de kendi dersinin bekleyen kayıtlarını görebilir.
+  type OgretmenDersiRow = { id: string; teacher_id: string; class_id: string; ders: string };
+  const { data: ogretmenDersleriHam } = await supabase
+    .from("ogretmen_dersleri")
+    .select("id, teacher_id, class_id, ders")
+    .eq("teacher_id", userId);
+  const kendiDersAtamalari = (ogretmenDersleriHam as unknown as OgretmenDersiRow[] | null) ?? [];
+  const onayAdayiSinifIdleri = [...new Set([teacher.class_id, ...kendiDersAtamalari.map((d) => d.class_id)].filter((id): id is string => !!id))];
+  const onayAdmin = createAdminClient();
+
+  const [{ data: ogrenciler }, { data: talepler }, { data: bekleyenOnaylarHam }, { data: sinifDersAtamalariHam }] = await Promise.all([
     gorunecekSinifId
       ? okulOkumaClient.from("students").select("id, okul_no, yurt_ogrencisi, profiles!students_id_fkey(ad)").eq("class_id", gorunecekSinifId)
       : Promise.resolve({ data: [] }),
     teacher.class_id
       ? supabase.from("veli_link_requests").select("*, students!inner(class_id, profiles!students_id_fkey(ad))").eq("students.class_id", teacher.class_id).eq("durum", "bekliyor")
       : Promise.resolve({ data: [] }),
-    // Faz 2 (§4): öğretmenin branş dersi verdiği sınıflar (çoklu, homeroom'dan
-    // bağımsız — bkz. migration 0045).
-    supabase.from("ogretmen_dersleri").select("id, class_id, ders").eq("teacher_id", userId),
-    // Faz 2 (§4): "gördüm" onayı bekleyen, öğrencinin kendi girdiği soru
-    // çözümleri — sadece homeroom (kendi sınıfı) kapsamında.
-    teacher.class_id
-      ? supabase.from("soru_cozumleri")
+    aktifBolum === "onaylar" && onayAdayiSinifIdleri.length
+      ? onayAdmin.from("soru_cozumleri")
           .select("id, student_id, ders, dogru, yanlis, bos, tarih, students!inner(class_id, profiles!students_id_fkey(ad))")
-          .eq("students.class_id", teacher.class_id)
+          .in("students.class_id", onayAdayiSinifIdleri)
           .eq("kaynak", "ogrenci")
           .eq("onaylandi_mi", false)
           .order("tarih", { ascending: false })
-          .limit(30)
+          .limit(100)
+      : Promise.resolve({ data: [] }),
+    aktifBolum === "onaylar" && onayAdayiSinifIdleri.length
+      ? onayAdmin.from("ogretmen_dersleri").select("teacher_id, class_id, ders").in("class_id", onayAdayiSinifIdleri)
       : Promise.resolve({ data: [] }),
   ]);
 
@@ -680,17 +691,26 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   const gorunenSinif = sinifListesi.find((s) => s.id === gorunecekSinifId);
   const sinifAdi = gorunenSinif ? `${gorunenSinif.seviye}-${gorunenSinif.sube}` : null;
 
-  type OgretmenDersiRow = { id: string; class_id: string; ders: string };
-  const ogretmenDersleri = ((ogretmenDersleriHam as unknown as OgretmenDersiRow[]) ?? []).map((d) => {
+  const ogretmenDersleri = kendiDersAtamalari.map((d) => {
     const sinif = sinifListesi.find((s) => s.id === d.class_id);
     return { id: d.id, classId: d.class_id, ders: d.ders, sinifAdi: sinif ? `${sinif.seviye}-${sinif.sube}` : "—" };
   });
 
   type BekleyenOnayRow = {
     id: string; student_id: string; ders: string; dogru: number; yanlis: number; bos: number; tarih: string;
-    students: { profiles: { ad: string } | null } | null;
+    students: { class_id: string; profiles: { ad: string } | null } | null;
   };
-  const bekleyenOnaylar = ((bekleyenOnaylarHam as unknown as BekleyenOnayRow[]) ?? []).map((s) => ({
+  type SinifDersAtamasiRow = { teacher_id: string; class_id: string; ders: string };
+  const dersAnahtari = (deger: string) => deger.trim().toLocaleLowerCase("tr-TR").replace(/\s+/g, " ");
+  const sinifDersAtamalari = (sinifDersAtamalariHam as unknown as SinifDersAtamasiRow[] | null) ?? [];
+  const bekleyenOnaylar = ((bekleyenOnaylarHam as unknown as BekleyenOnayRow[]) ?? []).filter((s) => {
+    const classId = s.students?.class_id;
+    if (!classId) return false;
+    const dersinOgretmenleri = sinifDersAtamalari.filter((atama) => atama.class_id === classId && dersAnahtari(atama.ders) === dersAnahtari(s.ders));
+    return dersinOgretmenleri.length > 0
+      ? dersinOgretmenleri.some((atama) => atama.teacher_id === userId)
+      : teacher.class_id === classId;
+  }).map((s) => ({
     id: s.id, studentId: s.student_id, ders: s.ders, dogru: s.dogru, yanlis: s.yanlis, bos: s.bos, tarih: s.tarih,
     ogrenciAd: s.students?.profiles?.ad ?? "İsimsiz",
   }));
