@@ -14,7 +14,7 @@ import {
   BRANS_LISTESI, GOREV_DURUMU_ETIKET, GOREV_TURU_ETIKET,
   type GorevDurumu, type GorevTuru, type SinifSeviyesi, type VeliLinkRequest,
 } from "@/lib/types";
-import { bugununTarihiTR } from "@/lib/tarih";
+import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
 import type { DashboardBolumu } from "@/lib/dashboard-navigation";
 import { DersProgramiGrid } from "@/components/dashboard/DersProgramiGrid";
 import { YurtNobetiTablosu } from "@/components/dashboard/YurtNobetiTablosu";
@@ -128,6 +128,7 @@ export function OgretmenPanel({
   const [hata, setHata] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [silPending, startSilTransition] = useTransition();
+  const [haftaBaslangic, setHaftaBaslangic] = useState<string>(bugununTarihiTR());
 
   function onayla(talep: VeliLinkRequest & { ogrenci_ad: string }) {
     setHata(null);
@@ -309,6 +310,58 @@ export function OgretmenPanel({
             <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Ajandam</span>
           </div>
           <Takvim yurtNobetiSatirlari={yurtNobetiSatirlari} />
+        </section>
+      )}
+
+      {aktifBolum === "planlar" && secilenOgrenciId && (
+        <section className="sfec-section sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: MINT_BG }}>
+                <BookMarked size={13} color={MINT} />
+              </div>
+              <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Öğrenci Programı</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button className="sfec-btn px-3 py-1.5 text-xs" aria-label="Önceki hafta" style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }} onClick={() => setHaftaBaslangic(tarihEkle(haftaBaslangic, -7))}>‹</button>
+              <span className="text-xs font-semibold" style={{ color: TEXT_MUTED }}>Hafta</span>
+              <button className="sfec-btn px-3 py-1.5 text-xs" aria-label="Sonraki hafta" style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }} onClick={() => setHaftaBaslangic(tarihEkle(haftaBaslangic, 7))}>›</button>
+            </div>
+          </div>
+          {(() => {
+            const gunler = Array.from({ length: 7 }, (_, i) => tarihEkle(haftaBaslangic, i));
+            const programMap = new Map<string, any[]>();
+            (secilenOgrenciProgrami ?? []).forEach((p: any) => {
+              if (!p.ogrenci_tarih) return;
+              const arr = programMap.get(p.ogrenci_tarih) ?? [];
+              arr.push(p);
+              programMap.set(p.ogrenci_tarih, arr);
+            });
+            return (
+              <div className="overflow-x-auto">
+                <div className="grid grid-cols-7 gap-2 min-w-[700px]">
+                  {gunler.map((g) => {
+                    const entries = (programMap.get(g) ?? []).sort((a: any, b: any) => (a.ogrenci_baslangic_saat ?? "").localeCompare(b.ogrenci_baslangic_saat ?? ""));
+                    return (
+                      <div key={g} className="rounded-xl p-2" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
+                        <div className="text-[11px] font-bold mb-1" style={{ color: TEXT_MUTED }}>{new Date(`${g}T00:00:00`).toLocaleDateString("tr-TR", { weekday: "short" })} {g.split("-")[2]}</div>
+                        <div className="flex flex-col gap-1.5">
+                          {entries.length === 0 && <div className="text-[10px]" style={{ color: TEXT_MUTED }}>Boş</div>}
+                          {entries.map((p: any) => (
+                            <div key={p.id} className="rounded-lg p-2" style={{ background: BG0, border: `1px solid ${BORDER}` }}>
+                              <div className="text-[11px] font-semibold" style={{ color: TEXT }}>{p.gorevler?.ders ?? "—"}</div>
+                              <div className="text-[10px]" style={{ color: TEXT_MUTED }}>{p.ogrenci_baslangic_saat?.slice(0,5)}-{p.ogrenci_bitis_saat?.slice(0,5)}</div>
+                              <div className="text-[10px] truncate" style={{ color: TEXT_MUTED }}>{p.gorevler?.konu ?? ""}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
         </section>
       )}
 
