@@ -758,7 +758,9 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   // Sınıf öğretmeni öğrenci programını görsün — revizyon_2 madde 3
   let secilenOgrenciProgrami: any[] = [];
   if (secilenOgrenciId && role === "ogretmen" && !dershaneMi) {
-    const { data } = await supabase
+    const { createAdminClient } = await import("@/lib/supabase/admin");
+    const admin = createAdminClient();
+    const { data } = await admin
       .from("gorev_atamalari")
       .select("id, ogrenci_tarih, ogrenci_baslangic_saat, ogrenci_bitis_saat, programa_eklendi_mi, gorevler!inner(tur, ders, konu, tarih, son_tarih)")
       .eq("student_id", secilenOgrenciId)
