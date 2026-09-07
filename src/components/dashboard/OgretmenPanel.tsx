@@ -21,7 +21,7 @@ import { YurtNobetiTablosu } from "@/components/dashboard/YurtNobetiTablosu";
 import { programGunleri } from "@/lib/ders-programi";
 import type { DersProgramiSatiri, YurtNobetiSatiri } from "@/lib/ders-programi";
 import { Takvim } from "@/components/dashboard/Takvim";
-import type { TakvimEtkinligi } from "@/components/dashboard/Takvim";
+import { SosyalEtkinlikler } from "@/components/dashboard/SosyalEtkinlikler";
 
 interface OgrenciSatiri {
   id: string;
@@ -292,7 +292,9 @@ export function OgretmenPanel({
         />
       )}
 
-      {role === "ogretmen" && (
+      {aktifBolum === "yarismalar" && <SosyalEtkinlikler />}
+
+      {aktifBolum === "takvim" && (
         <section id="takvim" className="sfec-section sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
           <div className="mb-4 flex items-center gap-2">
             <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: MINT_BG }}>
@@ -301,6 +303,25 @@ export function OgretmenPanel({
             <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Ajanda</span>
           </div>
           <Takvim yurtNobetiSatirlari={yurtNobetiSatirlari} />
+        </section>
+      )}
+
+      {aktifBolum === "planlar" && secilenOgrenciId && (
+        <section className="sfec-section sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+          <div className="mb-4 flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: MINT_BG }}>
+              <BookMarked size={13} color={MINT} />
+            </div>
+            <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Öğrenci Programı</span>
+          </div>
+          <div className="flex flex-col gap-2">
+            {secilenOgrenciProgrami && secilenOgrenciProgrami.length > 0 ? secilenOgrenciProgrami.map((p: any) => (
+              <div key={p.id} className="rounded-xl p-3" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
+                <div style={{ color: TEXT }} className="text-sm font-semibold">{p.gorevler?.ders ?? "—"} · {p.gorevler?.konu ?? "—"}</div>
+                <div style={{ color: TEXT_MUTED }} className="text-xs">{p.ogrenci_tarih} {p.ogrenci_baslangic_saat}-{p.ogrenci_bitis_saat} · {p.gorevler?.tur}</div>
+              </div>
+            )) : <p style={{ color: TEXT_MUTED }} className="text-sm">Program kaydı bulunamadı.</p>}
+          </div>
         </section>
       )}
 
@@ -338,7 +359,7 @@ export function OgretmenPanel({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {ogrencilerOkulNoSirali(ogrenciler).map((o) => (
               <div key={o.id} className="rounded-xl flex items-center justify-between gap-2 pr-1.5" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
-                <button onClick={() => router.push(`/dashboard?bolum=ozet&sinif=${gorunecekSinifId}&ogrenci=${o.id}`)}
+                <button onClick={() => router.push(`/dashboard?bolum=planlar&sinif=${gorunecekSinifId}&ogrenci=${o.id}`)}
                   className="sfec-btn flex-1 min-w-0 px-3.5 py-2.5 flex items-center justify-between text-left">
                   <span style={{ color: TEXT }} className="text-sm font-semibold truncate">{o.ad}</span>
                   <span style={{ color: TEXT_MUTED }} className="text-xs shrink-0 ml-2">#{o.okul_no}</span>
