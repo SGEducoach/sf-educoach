@@ -312,8 +312,6 @@ export function OgretmenPanel({
         </section>
       )}
 
-      {aktifBolum === "planlar" && secilenOgrenciId && <OgrenciAylikProgrami ogrenciAdi={secilenOgrenciAdi} program={secilenOgrenciProgrami} />}
-
       {aktifBolum === "ozet" && <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div className="flex items-center gap-2">
