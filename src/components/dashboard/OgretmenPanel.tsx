@@ -20,6 +20,8 @@ import { DersProgramiGrid } from "@/components/dashboard/DersProgramiGrid";
 import { YurtNobetiTablosu } from "@/components/dashboard/YurtNobetiTablosu";
 import { programGunleri } from "@/lib/ders-programi";
 import type { DersProgramiSatiri, YurtNobetiSatiri } from "@/lib/ders-programi";
+import { Takvim } from "@/components/dashboard/Takvim";
+import type { TakvimEtkinligi } from "@/components/dashboard/Takvim";
 
 interface OgrenciSatiri {
   id: string;
@@ -285,6 +287,18 @@ export function OgretmenPanel({
           program={secilenOgretmenProgrami ?? []}
           dershaneMi={!!dershaneMi}
         />
+      )}
+
+      {role === "ogretmen" && (
+        <section id="takvim" className="sfec-section sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+          <div className="mb-4 flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: MINT_BG }}>
+              <CalendarPlus size={13} color={MINT} />
+            </div>
+            <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Ajanda</span>
+          </div>
+          <Takvim yurtNobetiSatirlari={yurtNobetiSatirlari} />
+        </section>
       )}
 
       {aktifBolum === "ozet" && <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>

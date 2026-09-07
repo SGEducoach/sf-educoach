@@ -39,7 +39,8 @@ export type DashboardBolumu =
   // 2026-08-26 kullanıcı isteği — Rehber Öğretmen branşına özel bölüm.
   | "rehberlik"
   | "etkinlikler"
-  | "duyuru-gecmisi";
+  | "duyuru-gecmisi"
+  | "takvim";
 
 export type DashboardIkonu =
   | "ana-sayfa" | "gorev" | "plan" | "veri" | "hakimiyet" | "analiz" | "ai" | "rozet" | "takvim" | "duyuru" | "talep" | "onay" | "ders"
@@ -88,6 +89,10 @@ const OGRETMEN_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "talepler", href: "/dashboard/talepler", etiket: "Veli talepleri", ikon: "talep" },
   { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "TG Denemeler", ikon: "takvim" },
 ];
+
+// Revizyon_2 madde 1 — Ajanda (takvim) menü ögesi yalnızca OKUL öğretmenlerine
+// açık (sosyal etkinlik/yarışma bölümü okul kurumlarında faal olacağı için).
+const TAKVIM_MENU_OGESI: DashboardMenuOgesi = { bolum: "takvim", href: "/dashboard/takvim", etiket: "Ajanda", ikon: "takvim" };
 
 const MUDUR_MENUSU: DashboardMenuOgesi[] = [
   // 2026-08-25 kullanıcı isteği: "dershane müdürünün ana sayfası okul
@@ -190,7 +195,7 @@ const REHBER_OGRETMEN_MENUSU: DashboardMenuOgesi[] = [
 export function dashboardMenusu(role: UserRole, kurumTuru?: KurumTuru, brans?: string): DashboardMenuOgesi[] {
   if (role === "ogrenci") return kurumTuru === "okul" ? [...OGRENCI_MENUSU, { bolum:"etkinlikler", href:"/dashboard/etkinlikler", etiket:"Etkinlikler", ikon:"takvim" }] : OGRENCI_MENUSU;
   if (role === "veli") return VELI_MENUSU;
-  if (role === "ogretmen") return brans === REHBER_BRANSI ? REHBER_OGRETMEN_MENUSU : kurumTuru === "okul" && etkinlikBransiMi(brans) ? [...OGRETMEN_MENUSU, { bolum:"etkinlikler", href:"/dashboard/etkinlikler", etiket:"Etkinlik Grupları", ikon:"takvim" }] : OGRETMEN_MENUSU;
+  if (role === "ogretmen") return brans === REHBER_BRANSI ? REHBER_OGRETMEN_MENUSU : kurumTuru === "okul" && etkinlikBransiMi(brans) ? [...OGRETMEN_MENUSU, TAKVIM_MENU_OGESI, { bolum:"etkinlikler", href:"/dashboard/etkinlikler", etiket:"Etkinlik Grupları", ikon:"takvim" }] : kurumTuru === "okul" ? [...OGRETMEN_MENUSU, TAKVIM_MENU_OGESI] : OGRETMEN_MENUSU;
   if (role === "mudur") return kurumTuru === "dershane" ? DERSHANE_MUDUR_MENUSU : MUDUR_MENUSU;
   if (role === "admin") return ADMIN_MENUSU;
   return [];
@@ -198,7 +203,7 @@ export function dashboardMenusu(role: UserRole, kurumTuru?: KurumTuru, brans?: s
 
 export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
   "gorevler", "planlar", "veri-girisi", "konu-hakimiyeti", "analiz", "yapay-zeka", "rozetler", "tg-denemeleri",
-  "duyurular", "talepler", "onaylar", "dersler", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler", "rehberlik", "etkinlikler", "profil",
+  "duyurular", "talepler", "onaylar", "dersler", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler", "rehberlik", "etkinlikler", "profil", "takvim",
 ]);
 
 // /yonetici/[bolum] catch-all için — "rozetler" burada YOK, çünkü admin'in
