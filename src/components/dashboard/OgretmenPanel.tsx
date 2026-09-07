@@ -14,7 +14,7 @@ import {
   BRANS_LISTESI, GOREV_DURUMU_ETIKET, GOREV_TURU_ETIKET,
   type GorevDurumu, type GorevTuru, type SinifSeviyesi, type VeliLinkRequest,
 } from "@/lib/types";
-import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
+import { bugununTarihiTR } from "@/lib/tarih";
 import type { DashboardBolumu } from "@/lib/dashboard-navigation";
 import { DersProgramiGrid } from "@/components/dashboard/DersProgramiGrid";
 import { YurtNobetiTablosu } from "@/components/dashboard/YurtNobetiTablosu";
@@ -128,7 +128,6 @@ export function OgretmenPanel({
   const [hata, setHata] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [silPending, startSilTransition] = useTransition();
-  const [haftaBaslangic, setHaftaBaslangic] = useState<string>(bugununTarihiTR());
 
   function onayla(talep: VeliLinkRequest & { ogrenci_ad: string }) {
     setHata(null);
@@ -280,15 +279,7 @@ export function OgretmenPanel({
         <GorevVerBolumu ogrenciler={ogrenciler} konuOnerileri={konuOnerileri} />
       )}
 
-      {(aktifBolum === "takvim" || aktifBolum === "dersler") && role === "ogretmen" && (
-        <DerslerimBolumu
-          dersler={ogretmenDersleri}
-          siniflar={siniflar}
-          dersProgramiSatirlari={dersProgramiSatirlari ?? []}
-          yurtNobetiSatirlari={yurtNobetiSatirlari ?? []}
-          dershaneMi={!!dershaneMi}
-        />
-      )}
+      {(aktifBolum === "takvim" || aktifBolum === "dersler") && <AjandamBolumu role={role} dersler={ogretmenDersleri} siniflar={siniflar} dersProgramiSatirlari={dersProgramiSatirlari ?? []} yurtNobetiSatirlari={yurtNobetiSatirlari ?? []} dershaneMi={!!dershaneMi} />}
 
       {aktifBolum === "ogretmenler" && (role === "mudur" || rehberOgretmenMi) && (
         <OgretmenProgramlariBolumu
@@ -299,71 +290,7 @@ export function OgretmenPanel({
         />
       )}
 
-      {aktifBolum === "yarismalar" && <SosyalEtkinlikler />}
-
-      {aktifBolum === "takvim" && (
-        <section id="takvim" className="sfec-section sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-          <div className="mb-4 flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: MINT_BG }}>
-              <CalendarPlus size={13} color={MINT} />
-            </div>
-            <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Ajandam</span>
-          </div>
-          <Takvim yurtNobetiSatirlari={yurtNobetiSatirlari} />
-        </section>
-      )}
-
-      {aktifBolum === "planlar" && secilenOgrenciId && (
-        <section className="sfec-section sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-          <div className="mb-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: MINT_BG }}>
-                <BookMarked size={13} color={MINT} />
-              </div>
-              <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Öğrenci Programı</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <button className="sfec-btn px-3 py-1.5 text-xs" aria-label="Önceki hafta" style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }} onClick={() => setHaftaBaslangic(tarihEkle(haftaBaslangic, -7))}>‹</button>
-              <span className="text-xs font-semibold" style={{ color: TEXT_MUTED }}>Hafta</span>
-              <button className="sfec-btn px-3 py-1.5 text-xs" aria-label="Sonraki hafta" style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }} onClick={() => setHaftaBaslangic(tarihEkle(haftaBaslangic, 7))}>›</button>
-            </div>
-          </div>
-          {(() => {
-            const gunler = Array.from({ length: 7 }, (_, i) => tarihEkle(haftaBaslangic, i));
-            const programMap = new Map<string, any[]>();
-            (secilenOgrenciProgrami ?? []).forEach((p: any) => {
-              if (!p.ogrenci_tarih) return;
-              const arr = programMap.get(p.ogrenci_tarih) ?? [];
-              arr.push(p);
-              programMap.set(p.ogrenci_tarih, arr);
-            });
-            return (
-              <div className="overflow-x-auto">
-                <div className="grid grid-cols-7 gap-2 min-w-[700px]">
-                  {gunler.map((g) => {
-                    const entries = (programMap.get(g) ?? []).sort((a: any, b: any) => (a.ogrenci_baslangic_saat ?? "").localeCompare(b.ogrenci_baslangic_saat ?? ""));
-                    return (
-                      <div key={g} className="rounded-xl p-2" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
-                        <div className="text-[11px] font-bold mb-1" style={{ color: TEXT_MUTED }}>{new Date(`${g}T00:00:00`).toLocaleDateString("tr-TR", { weekday: "short" })} {g.split("-")[2]}</div>
-                        <div className="flex flex-col gap-1.5">
-                          {entries.length === 0 && <div className="text-[10px]" style={{ color: TEXT_MUTED }}>Boş</div>}
-                          {entries.map((p: any) => (
-                            <div key={p.id} className="rounded-lg p-2" style={{ background: BG0, border: `1px solid ${BORDER}` }}>
-                              <div className="text-[11px] font-semibold" style={{ color: TEXT }}>{p.gorevler?.ders ?? "—"}</div>
-                              <div className="text-[10px]" style={{ color: TEXT_MUTED }}>{p.ogrenci_baslangic_saat?.slice(0,5)}-{p.ogrenci_bitis_saat?.slice(0,5)}</div>
-                              <div className="text-[10px] truncate" style={{ color: TEXT_MUTED }}>{p.gorevler?.konu ?? ""}</div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })()}
-        </section>
-      )}
+      {aktifBolum === "planlar" && secilenOgrenciId && <OgrenciAylikProgrami ogrenciAdi={secilenOgrenciAdi} program={secilenOgrenciProgrami} />}
 
       {aktifBolum === "ozet" && <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
@@ -399,7 +326,7 @@ export function OgretmenPanel({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {ogrencilerOkulNoSirali(ogrenciler).map((o) => (
               <div key={o.id} className="rounded-xl flex items-center justify-between gap-2 pr-1.5" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
-                <button onClick={() => router.push(`/dashboard?bolum=ozet&sinif=${gorunecekSinifId}&ogrenci=${o.id}`)}
+                <button onClick={() => router.push(`/dashboard?bolum=planlar&sinif=${gorunecekSinifId}&ogrenci=${o.id}`)}
                   className="sfec-btn flex-1 min-w-0 px-3.5 py-2.5 flex items-center justify-between text-left">
                   <span style={{ color: TEXT }} className="text-sm font-semibold truncate">{o.ad}</span>
                   <span style={{ color: TEXT_MUTED }} className="text-xs shrink-0 ml-2">#{o.okul_no}</span>
@@ -730,6 +657,46 @@ function OgretmenProgramlariBolumu({ ogretmenler, secilenOgretmenId, program, de
       )}
     </div>
   );
+}
+
+function AjandamBolumu({ role, dersler, siniflar, dersProgramiSatirlari, yurtNobetiSatirlari, dershaneMi }: {
+  role: "ogretmen" | "mudur"; dersler: OgretmenDersiSatiri[]; siniflar: SinifSatiri[];
+  dersProgramiSatirlari: DersProgramiSatiri[]; yurtNobetiSatirlari: YurtNobetiSatiri[]; dershaneMi: boolean;
+}) {
+  type Sekme = "takvim" | "ders" | "sosyal";
+  const [sekme, setSekme] = useState<Sekme>("takvim");
+  const sekmeler: { id: Sekme; ad: string }[] = [
+    { id: "takvim", ad: "Takvim" },
+    ...(role === "ogretmen" ? [{ id: "ders" as const, ad: "Ders programım" }] : []),
+    { id: "sosyal", ad: "Sosyal görevler" },
+  ];
+  return <section id="takvim" className="sfec-section sfec-fade rounded-3xl p-4 sm:p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+    <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-2"><div className="grid h-8 w-8 place-items-center rounded-full" style={{ background: MINT_BG }}><CalendarPlus size={15} color={MINT}/></div><h1 className="text-xl font-extrabold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Ajandam</h1></div><div className="flex max-w-full gap-1 overflow-x-auto rounded-2xl p-1" style={{ background: BG0, border: `1px solid ${BORDER}` }}>{sekmeler.map(s => <button key={s.id} type="button" onClick={() => setSekme(s.id)} className="shrink-0 rounded-xl px-3 py-2 text-xs font-bold" style={{ background: sekme === s.id ? MINT : "transparent", color: sekme === s.id ? MINT_ON : TEXT_MUTED }}>{s.ad}</button>)}</div></div>
+    {sekme === "takvim" && <Takvim yurtNobetiSatirlari={yurtNobetiSatirlari}/>}
+    {sekme === "ders" && role === "ogretmen" && <DerslerimBolumu dersler={dersler} siniflar={siniflar} dersProgramiSatirlari={dersProgramiSatirlari} yurtNobetiSatirlari={yurtNobetiSatirlari} dershaneMi={dershaneMi}/>}
+    {sekme === "sosyal" && <SosyalEtkinlikler/>}
+  </section>;
+}
+
+function OgrenciAylikProgrami({ ogrenciAdi, program }: { ogrenciAdi?: string | null; program?: OgrenciProgramSatiri[] | null }) {
+  const [ay, setAy] = useState(bugununTarihiTR().slice(0, 7));
+  if (program === null) return <div className="rounded-3xl p-6 text-center" style={{ background: BG1, border: `2px solid ${BORDER}` }}><p className="text-sm font-semibold" style={{ color: BLUSH }}>Yalnızca sınıf öğretmeni kendi sınıfındaki öğrencilerin programını görüntüleyebilir.</p></div>;
+  const [yil, ayNo] = ay.split("-").map(Number);
+  const ilk = `${ay}-01`;
+  const bos = (new Date(`${ilk}T12:00:00`).getDay() + 6) % 7;
+  const sonGun = new Date(yil, ayNo, 0).getDate();
+  const gunler = [
+    ...Array.from({ length: bos }, (_, i) => { const d = new Date(yil, ayNo - 1, 1 - bos + i); return d.toISOString().slice(0, 10); }),
+    ...Array.from({ length: sonGun }, (_, i) => `${ay}-${String(i + 1).padStart(2, "0")}`),
+  ];
+  while (gunler.length % 7) { const d = new Date(`${gunler.at(-1)}T12:00:00`); d.setDate(d.getDate() + 1); gunler.push(d.toISOString().slice(0, 10)); }
+  const degistir = (yon: number) => { const d = new Date(yil, ayNo - 1 + yon, 1); setAy(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`); };
+  const map = new Map<string, OgrenciProgramSatiri[]>();
+  for (const p of program ?? []) if (p.ogrenci_tarih) map.set(p.ogrenci_tarih, [...(map.get(p.ogrenci_tarih) ?? []), p]);
+  return <section className="rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-lg font-extrabold" style={{ color: TEXT }}>{ogrenciAdi ?? "Öğrenci"} · Aylık Program</h1><p className="text-xs" style={{ color: TEXT_MUTED }}>Öğrencinin “Program yap” alanındaki aylık görünüm.</p></div><div className="flex items-center gap-2"><button aria-label="Önceki ay" onClick={() => degistir(-1)} className="grid h-9 w-9 place-items-center rounded-full" style={{ border: `1px solid ${BORDER_STRONG}` }}><ChevronLeft size={16}/></button><button onClick={() => setAy(bugununTarihiTR().slice(0, 7))} className="min-w-36 text-sm font-extrabold capitalize" style={{ color: TEXT }}>{new Date(`${ilk}T12:00:00`).toLocaleDateString("tr-TR", { month: "long", year: "numeric" })}</button><button aria-label="Sonraki ay" onClick={() => degistir(1)} className="grid h-9 w-9 place-items-center rounded-full" style={{ border: `1px solid ${BORDER_STRONG}` }}><ChevronRight size={16}/></button></div></div>
+    <div className="overflow-x-auto"><div className="grid min-w-[760px] grid-cols-7 gap-1">{["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"].map(g => <div key={g} className="py-2 text-center text-xs font-bold" style={{ color: TEXT_MUTED }}>{g}</div>)}{gunler.map(g => { const kayitlar = (map.get(g) ?? []).sort((a, b) => (a.ogrenci_baslangic_saat ?? "").localeCompare(b.ogrenci_baslangic_saat ?? "")); return <div key={g} className="min-h-32 rounded-xl p-2" style={{ background: g === bugununTarihiTR() ? MINT_BG : BG0, border: `1px solid ${BORDER}`, opacity: g.startsWith(ay) ? 1 : .35 }}><div className="mb-1 text-xs font-bold" style={{ color: TEXT }}>{Number(g.slice(-2))}</div><div className="space-y-1">{kayitlar.map(p => <div key={p.id} className="rounded-lg px-2 py-1.5 text-[11px] leading-4" style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}`, color: TEXT }}><strong className="block">{p.gorevler?.ders ?? "Program"}</strong>{p.ogrenci_baslangic_saat && <span style={{ color: MINT }}>{p.ogrenci_baslangic_saat.slice(0, 5)}{p.ogrenci_bitis_saat ? `–${p.ogrenci_bitis_saat.slice(0, 5)}` : ""}</span>}{p.gorevler?.konu && <span className="block break-words" style={{ color: TEXT_MUTED }}>{p.gorevler.konu}</span>}</div>)}</div></div> })}</div></div>
+  </section>;
 }
 
 function DerslerimBolumu({ dersler, siniflar, dersProgramiSatirlari, yurtNobetiSatirlari, dershaneMi }: {

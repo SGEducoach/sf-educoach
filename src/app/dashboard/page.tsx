@@ -766,7 +766,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
     const admin = createAdminClient();
     const { data: secilenOgrenci } = await admin.from("students").select("id,class_id,school_id,profiles!students_id_fkey(ad)").eq("id",secilenOgrenciId).maybeSingle();
     const profil = secilenOgrenci?.profiles as unknown as {ad:string}|null;
-    if (!teacher.class_id || secilenOgrenci?.class_id !== teacher.class_id || secilenOgrenci.school_id !== teacher.school_id) {
+    if (!teacher.class_id || secilenOgrenci?.class_id !== teacher.class_id || secilenOgrenci?.school_id !== teacher.school_id) {
       secilenOgrenciProgrami = null;
     } else {
       secilenOgrenciAdi = profil?.ad ?? "Öğrenci";

@@ -84,7 +84,6 @@ const OGRETMEN_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "rozetler", href: "/dashboard/rozetler", etiket: "Rozetler", ikon: "rozet" },
   { bolum: "gorevler", href: "/dashboard/gorevler", etiket: "Ödev ver", ikon: "gorev" },
   { bolum: "onaylar", href: "/dashboard/onaylar", etiket: "Bekleyen onaylar", ikon: "onay" },
-  { bolum: "dersler", href: "/dashboard/dersler", etiket: "Derslerim", ikon: "ders" },
   { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Konu Haritası", ikon: "ai" },
   { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Duyurular", ikon: "duyuru" },
   { bolum: "talepler", href: "/dashboard/talepler", etiket: "Veli talepleri", ikon: "talep" },
@@ -93,8 +92,7 @@ const OGRETMEN_MENUSU: DashboardMenuOgesi[] = [
 
 // Revizyon_2 madde 1 — Ajanda (takvim) menü ögesi yalnızca OKUL öğretmenlerine
 // açık (sosyal etkinlik/yarışma bölümü okul kurumlarında faal olacağı için).
-const TAKVIM_MENU_OGESI: DashboardMenuOgesi = { bolum: "takvim", href: "/dashboard/takvim", etiket: "Ajanda", ikon: "takvim" };
-const YARISMA_MENU_OGESI: DashboardMenuOgesi = { bolum: "yarismalar", href: "/dashboard/yarismalar", etiket: "Sosyal Etkinlikler", ikon: "takvim" };
+const TAKVIM_MENU_OGESI: DashboardMenuOgesi = { bolum: "takvim", href: "/dashboard/takvim", etiket: "Ajandam", ikon: "takvim" };
 
 const MUDUR_MENUSU: DashboardMenuOgesi[] = [
   // 2026-08-25 kullanıcı isteği: "dershane müdürünün ana sayfası okul
@@ -192,15 +190,14 @@ const REHBER_OGRETMEN_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Rehber Öğretmen Duyurusu", ikon: "duyuru" },
   { bolum: "rehberlik", href: "/dashboard/rehberlik", etiket: "Bireysel Mesaj", ikon: "rehberlik" },
   { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "TG Denemeler", ikon: "takvim" },
-  YARISMA_MENU_OGESI,
   TAKVIM_MENU_OGESI,
 ];
 
 export function dashboardMenusu(role: UserRole, kurumTuru?: KurumTuru, brans?: string): DashboardMenuOgesi[] {
   if (role === "ogrenci") return kurumTuru === "okul" ? [...OGRENCI_MENUSU, { bolum:"etkinlikler", href:"/dashboard/etkinlikler", etiket:"Etkinlikler", ikon:"takvim" }] : OGRENCI_MENUSU;
   if (role === "veli") return VELI_MENUSU;
-  if (role === "ogretmen") return brans === REHBER_BRANSI ? REHBER_OGRETMEN_MENUSU : kurumTuru === "okul" && etkinlikBransiMi(brans) ? [...OGRETMEN_MENUSU, YARISMA_MENU_OGESI, TAKVIM_MENU_OGESI, { bolum:"etkinlikler", href:"/dashboard/etkinlikler", etiket:"Etkinlik Grupları", ikon:"takvim" }] : kurumTuru === "okul" ? [...OGRETMEN_MENUSU, YARISMA_MENU_OGESI, TAKVIM_MENU_OGESI] : OGRETMEN_MENUSU;
-  if (role === "mudur") return kurumTuru === "dershane" ? DERSHANE_MUDUR_MENUSU : [...MUDUR_MENUSU, YARISMA_MENU_OGESI, TAKVIM_MENU_OGESI];
+  if (role === "ogretmen") return brans === REHBER_BRANSI ? REHBER_OGRETMEN_MENUSU : kurumTuru === "okul" && etkinlikBransiMi(brans) ? [...OGRETMEN_MENUSU, TAKVIM_MENU_OGESI, { bolum:"etkinlikler", href:"/dashboard/etkinlikler", etiket:"Etkinlik Grupları", ikon:"takvim" }] : kurumTuru === "okul" ? [...OGRETMEN_MENUSU, TAKVIM_MENU_OGESI] : OGRETMEN_MENUSU;
+  if (role === "mudur") return kurumTuru === "dershane" ? DERSHANE_MUDUR_MENUSU : [...MUDUR_MENUSU, TAKVIM_MENU_OGESI];
   if (role === "admin") return ADMIN_MENUSU;
   return [];
 }
