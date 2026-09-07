@@ -722,9 +722,11 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   // öğretmen (müdür değil) de düşebildiğinden kurumTuru burada da kontrol
   // ediliyor.
   const dershaneMi = kurumTuru === "dershane";
-  const [dersProgramiSatirlari, yurtNobetiSatirlari] = aktifBolum === "dersler" && role === "ogretmen"
+  const dersVerisiGerekli = aktifBolum === "dersler" && role === "ogretmen";
+  const nobetVerisiGerekli = aktifBolum === "takvim" || dersVerisiGerekli;
+  const [dersProgramiSatirlari, yurtNobetiSatirlari] = dersVerisiGerekli || nobetVerisiGerekli
     ? await Promise.all([
-        ogretmenProgramiGetir(supabase, userId),
+        dersVerisiGerekli ? ogretmenProgramiGetir(supabase, userId) : Promise.resolve([]),
         dershaneMi ? Promise.resolve([]) : yurtNobetiGetir(supabase, userId),
       ])
     : [[], []];

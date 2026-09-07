@@ -1,126 +1,22 @@
 "use client";
-
-import { useEffect, useMemo, useState, useTransition } from "react";
-import { CalendarDays, CalendarRange, ListTree, ChevronLeft, ChevronRight, Plus, Trash2, Trophy } from "lucide-react";
-import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
-import { yarismaEkle, yarismaSil } from "@/app/dashboard/yarisma-actions";
-import { createClient } from "@/lib/supabase/client";
-import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, PEACH, PEACH_BG, SKY, SKY_BG, TEXT, TEXT_MUTED } from "@/lib/theme";
-
-type Gorunum = "gunluk" | "haftalik" | "aylik";
-
-export interface TakvimEtkinligi {
-  id: string;
-  isim: string;
-  tur: "proje" | "yarisma" | "program";
-  tarih: string;
-  sonBasvuruTarihi: string | null;
-  ekleyenAd: string;
-  okundu: boolean;
-  kendiMi: boolean;
+import {useEffect,useMemo,useState} from "react";
+import {CalendarDays,ChevronLeft,ChevronRight} from "lucide-react";
+import {sosyalEtkinlikleriGetir,type SosyalEtkinlik} from "@/app/dashboard/yarisma-actions";
+import type {YurtNobetiSatiri} from "@/lib/ders-programi";
+import {bugununTarihiTR,tarihEkle} from "@/lib/tarih";
+import {BG0,BG1_ALT,BORDER,BORDER_STRONG,MINT,MINT_BG,MINT_ON,SKY,SKY_BG,TEXT,TEXT_MUTED} from "@/lib/theme";
+type Gorunum="gunluk"|"haftalik"|"aylik"; type Kayit={id:string;isim:string;tarih:string;tur:string;aktif:boolean};
+const GUNLER=["Pzt","Sal","Çar","Per","Cum","Cmt","Paz"];
+const yaz=(t:string)=>new Date(`${t}T12:00:00`).toLocaleDateString("tr-TR",{day:"numeric",month:"long",year:"numeric"});
+export function Takvim({yurtNobetiSatirlari=[]}:{yurtNobetiSatirlari?:YurtNobetiSatiri[]}){
+ const [gorunum,setGorunum]=useState<Gorunum>("gunluk"),[gun,setGun]=useState(bugununTarihiTR()),[etkinlikler,setEtkinlikler]=useState<SosyalEtkinlik[]>([]),[hata,setHata]=useState<string|null>(null);
+ useEffect(()=>{sosyalEtkinlikleriGetir().then(r=>{setEtkinlikler(r.etkinlikler);setHata(r.error)})},[]);
+ const kayitlar=useMemo<Kayit[]>(()=>[...etkinlikler.filter(e=>e.okundu).map(e=>({id:e.id,isim:e.isim,tarih:e.tarih,tur:e.tur,aktif:e.aktif})),...yurtNobetiSatirlari.filter(n=>n.tarih).map(n=>({id:`n-${n.id}`,isim:"Yurt nöbeti",tarih:n.tarih!,tur:"nobet",aktif:n.tarih!>=bugununTarihiTR()}))].sort((a,b)=>a.tarih.localeCompare(b.tarih)),[etkinlikler,yurtNobetiSatirlari]);
+ const haftaBas=useMemo(()=>{const d=new Date(`${gun}T12:00:00`),g=d.getDay();return tarihEkle(gun,g===0?-6:1-g)},[gun]);
+ const hafta=useMemo(()=>Array.from({length:7},(_,i)=>tarihEkle(haftaBas,i)),[haftaBas]);
+ const ay=useMemo(()=>{const [y,m]=gun.split("-").map(Number),ilk=new Date(y,m-1,1),bos=(ilk.getDay()+6)%7;return Array.from({length:42},(_,i)=>{const d=new Date(y,m-1,1-bos+i);return d.toISOString().slice(0,10)})},[gun]);
+ const ileri=(n:number)=>{if(gorunum==="gunluk")setGun(tarihEkle(gun,n));else if(gorunum==="haftalik")setGun(tarihEkle(gun,n*7));else{const d=new Date(`${gun}T12:00:00`);d.setMonth(d.getMonth()+n);setGun(d.toISOString().slice(0,10))}};
+ return <div className="flex flex-col gap-4"><div className="flex flex-wrap items-center justify-between gap-3"><div className="flex gap-1.5">{([["gunluk","Günlük"],["haftalik","Haftalık"],["aylik","Aylık"]] as [Gorunum,string][]).map(([id,ad])=><button key={id} onClick={()=>setGorunum(id)} className="rounded-full px-3 py-2 text-xs font-bold" style={{background:gorunum===id?MINT:BG1_ALT,color:gorunum===id?MINT_ON:TEXT,border:`1px solid ${BORDER_STRONG}`}}>{ad}</button>)}</div><div className="flex items-center gap-2"><button aria-label="Önceki" onClick={()=>ileri(-1)} className="grid h-8 w-8 place-items-center rounded-full" style={{border:`1px solid ${BORDER_STRONG}`}}><ChevronLeft size={15}/></button><button onClick={()=>setGun(bugununTarihiTR())} className="text-xs font-bold" style={{color:MINT}}>Bugün</button><button aria-label="Sonraki" onClick={()=>ileri(1)} className="grid h-8 w-8 place-items-center rounded-full" style={{border:`1px solid ${BORDER_STRONG}`}}><ChevronRight size={15}/></button></div></div>
+ {hata&&<p role="alert" className="text-sm" style={{color:"#e45b72"}}>{hata}</p>}{gorunum==="gunluk"&&<GunListesi gunler={[gun]} kayitlar={kayitlar}/>} {gorunum==="haftalik"&&<GunListesi gunler={hafta} kayitlar={kayitlar}/>} {gorunum==="aylik"&&<div><h2 className="mb-3 text-center font-extrabold" style={{color:TEXT}}>{new Date(`${gun.slice(0,7)}-01T12:00:00`).toLocaleDateString("tr-TR",{month:"long",year:"numeric"})}</h2><div className="grid grid-cols-7 gap-1">{GUNLER.map(g=><div key={g} className="py-1 text-center text-[10px] font-bold" style={{color:TEXT_MUTED}}>{g}</div>)}{ay.map(g=>{const ks=kayitlar.filter(k=>k.tarih===g),ayni=g.slice(0,7)===gun.slice(0,7);return <button key={g} onClick={()=>{setGun(g);setGorunum("gunluk")}} className="min-h-20 rounded-xl p-1.5 text-left sm:min-h-24" style={{background:g===bugununTarihiTR()?MINT_BG:BG0,border:`1px solid ${g===gun?MINT:BORDER}`,opacity:ayni?1:.42}}><span className="text-[11px] font-bold" style={{color:TEXT}}>{Number(g.slice(-2))}</span>{ks.slice(0,2).map(k=><div key={k.id} className="mt-1 truncate rounded px-1 py-0.5 text-[9px]" style={{background:k.tur==="nobet"?SKY_BG:MINT_BG,color:k.tur==="nobet"?SKY:MINT,opacity:k.aktif?1:.55}}>{k.isim}</div>)}{ks.length>2&&<div className="text-[9px]" style={{color:TEXT_MUTED}}>+{ks.length-2}</div>}</button>})}</div></div>}{!kayitlar.length&&<p className="rounded-2xl p-5 text-center text-sm" style={{color:TEXT_MUTED,background:BG0}}>Okuduğunuz görevler ve yurt nöbetleriniz burada görünecek.</p>}</div>
 }
-
-const TUR_ETIKET = { proje: "Proje", yarisma: "Yarışma", program: "Program" } as const;
-const GUN_KISA = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
-
-export function Takvim({ yurtNobetiSatirlari }: { yurtNobetiSatirlari?: any[] }) {
-  const [gorunum, setGorunum] = useState<Gorunum>("gunluk");
-  const [seciliGun, setSeciliGun] = useState(bugununTarihiTR());
-  const [etkinlikler, setEtkinlikler] = useState<TakvimEtkinligi[]>([]);
-  const [pending, startTransition] = useTransition();
-  const supabase = createClient();
-
-  useEffect(() => {
-    async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data: t } = await supabase.from("teachers").select("school_id").eq("id", user.id).maybeSingle();
-      if (!t?.school_id) return;
-      const { data: y } = await supabase.from("yarismalar")
-        .select("id,isim,tur,tarih,son_basvuru_tarihi,teacher_id,profiles!yarismalar_teacher_id_fkey(ad)")
-        .eq("school_id", t.school_id)
-        .order("tarih", { ascending: true });
-      const mapped: TakvimEtkinligi[] = (y ?? []).map((r: any) => ({
-        id: r.id,
-        isim: r.isim,
-        tur: r.tur,
-        tarih: r.tarih,
-        sonBasvuruTarihi: r.son_basvuru_tarihi,
-        ekleyenAd: r.profiles?.ad ?? "Bilinmiyor",
-        okundu: false,
-        kendiMi: r.teacher_id === user.id,
-      }));
-      setEtkinlikler(mapped);
-    }
-    load();
-  }, []);
-
-  const nobetTarihleri = useMemo(() => (yurtNobetiSatirlari ?? []).map((s: any) => s.tarih), [yurtNobetiSatirlari]);
-  const nobetVarMi = (tarih: string) => nobetTarihleri.includes(tarih);
-
-  const tarihtekiler = (tarih: string) => etkinlikler.filter(e => e.tarih === tarih || e.sonBasvuruTarihi === tarih);
-  const haftaBas = useMemo(() => {
-    const d = new Date(`${seciliGun}T12:00:00Z`);
-    const gun = d.getUTCDay();
-    return tarihEkle(seciliGun, gun === 0 ? -6 : 1 - gun);
-  }, [seciliGun]);
-  const haftaGunleri = useMemo(() => Array.from({ length: 7 }, (_, i) => tarihEkle(haftaBas, i)), [haftaBas]);
-
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-2 flex-wrap">
-        <div className="flex gap-1.5">
-          {(["gunluk","haftalik","aylik"] as Gorunum[]).map(g => (
-            <button key={g} onClick={()=>setGorunum(g)} className="sfec-btn text-xs font-bold px-3 py-1.5 rounded-full" style={{ background: gorunum===g?MINT:BG1_ALT, color: gorunum===g?MINT_ON:TEXT_MUTED, border:`2px solid ${BORDER_STRONG}` }}>
-              {g[0].toUpperCase()+g.slice(1)}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {gorunum==="gunluk" && (
-        <div className="rounded-2xl p-3" style={{ background: BG0, border:`2px solid ${BORDER}` }}>
-          <div className="flex items-center gap-2 mb-2">
-            <button onClick={()=>setSeciliGun(tarihEkle(seciliGun,-1))} className="sfec-btn w-7 h-7 rounded-full" style={{ background: BG1_ALT, border:`2px solid ${BORDER_STRONG}` }}><ChevronLeft size={13}/></button>
-            <span style={{ color: TEXT }} className="text-sm font-bold">{new Date(`${seciliGun}T12:00:00Z`).toLocaleDateString("tr-TR",{day:"numeric",month:"long",year:"numeric"})}</span>
-            <button onClick={()=>setSeciliGun(tarihEkle(seciliGun,1))} className="sfec-btn w-7 h-7 rounded-full" style={{ background: BG1_ALT, border:`2px solid ${BORDER_STRONG}` }}><ChevronRight size={13}/></button>
-          </div>
-          {nobetVarMi(seciliGun) && <div className="mb-2 text-xs font-semibold" style={{ color: SKY }}>Yurt nöbeti</div>}
-          <div className="flex flex-col gap-2">
-            {tarihtekiler(seciliGun).length===0 ? <p style={{ color: TEXT_MUTED }} className="text-sm">Kayıt yok</p> : tarihtekiler(seciliGun).map(e=>(
-              <div key={e.id} className="rounded-xl p-2" style={{ background: BG1_ALT, border:`2px solid ${BORDER}` }}>
-                <div style={{ color: TEXT }} className="text-sm font-semibold">{e.isim} <span style={{ color: TEXT_MUTED }}>· {TUR_ETIKET[e.tur]}</span></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <EtkinlikEkleFormu />
-    </div>
-  );
-}
-
-function EtkinlikEkleFormu() {
-  const [isim,setIsim]=useState("");
-  const [tur,setTur]=useState<"proje"|"yarisma"|"program">("program");
-  const [tarih,setTarih]=useState("");
-  const [pending,startTransition]=useTransition();
-  const [msg,setMsg]=useState<string|null>(null);
-  return (
-    <form onSubmit={(e)=>{e.preventDefault(); startTransition(async()=>{const r=await yarismaEkle({isim,tur,tarih}); setMsg(r.error??"Eklendi");})}} className="rounded-2xl p-4" style={{ background: BG1, border:`2px solid ${BORDER}` }}>
-      <div className="flex items-center gap-2 mb-2"><Trophy size={14} color={MINT}/><span style={{color:TEXT}} className="text-sm font-bold">Etkinlik ekle</span></div>
-      <div className="grid gap-2">
-        <input value={isim} onChange={e=>setIsim(e.target.value)} placeholder="Etkinlik adı" className="text-sm px-2.5 py-1.5 rounded-xl" style={{ background: BG1_ALT, color: TEXT, border:`2px solid ${BORDER_STRONG}` }}/>
-        <select value={tur} onChange={e=>setTur(e.target.value as any)} className="text-sm px-2.5 py-1.5 rounded-xl" style={{ background: BG1_ALT, color: TEXT, border:`2px solid ${BORDER_STRONG}` }}>
-          <option value="proje">Proje</option>
-          <option value="yarisma">Yarışma</option>
-          <option value="program">Program</option>
-        </select>
-        <input type="date" value={tarih} onChange={e=>setTarih(e.target.value)} className="text-sm px-2.5 py-1.5 rounded-xl" style={{ background: BG1_ALT, color: TEXT, border:`2px solid ${BORDER_STRONG}` }}/>
-        <button disabled={pending||!isim||!tarih} className="sfec-btn text-xs font-bold px-3 py-1.5 rounded-full" style={{ background: MINT, color: MINT_ON }}>{pending?"Ekleniyor":"Ekle"}</button>
-        {msg && <span className="text-xs" style={{ color: PEACH }}>{msg}</span>}
-      </div>
-    </form>
-  );
-}
+function GunListesi({gunler,kayitlar}:{gunler:string[];kayitlar:Kayit[]}){return <div className="space-y-2">{gunler.map(g=>{const ks=kayitlar.filter(k=>k.tarih===g);return <section key={g} className="rounded-2xl p-3" style={{background:BG0,border:`1px solid ${BORDER}`}}><h3 className="text-sm font-bold" style={{color:TEXT}}>{yaz(g)} <span className="font-normal" style={{color:TEXT_MUTED}}>· {new Date(`${g}T12:00:00`).toLocaleDateString("tr-TR",{weekday:"long"})}</span></h3><div className="mt-2 space-y-2">{ks.length?ks.map(k=><div key={k.id} className="flex items-center gap-2 rounded-xl p-2.5" style={{background:BG1_ALT,opacity:k.aktif?1:.55}}><CalendarDays size={15} color={k.tur==="nobet"?SKY:MINT}/><div><div className="text-sm font-semibold" style={{color:TEXT}}>{k.isim}</div><div className="text-[10px]" style={{color:TEXT_MUTED}}>{k.tur==="nobet"?"Yurt nöbeti":k.tur==="yarisma"?"Yarışma":k.tur==="proje"?"Proje":"Program"}{!k.aktif?" · Tarihi geçti":""}</div></div></div>):<p className="text-xs" style={{color:TEXT_MUTED}}>Kayıt yok.</p>}</div></section>})}</div>}

@@ -13,6 +13,7 @@ import { AYT_ALAN_ETIKET, BRANS_LISTESI } from "@/lib/types";
 import type { AytAlan, SinifSeviyesi } from "@/lib/types";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 import { teslimEdilebilirEpostaMi } from "@/lib/validators";
+import { SosyalEtkinlikler } from "@/components/dashboard/SosyalEtkinlikler";
 
 export function ModeratorPanel({ okulAdi, kullanicilar, schoolId }: {
   okulAdi: string; kullanicilar: ModeratorKullanici[];
@@ -72,6 +73,8 @@ export function ModeratorPanel({ okulAdi, kullanicilar, schoolId }: {
       <p style={{ color: TEXT_MUTED }} className="mt-2 text-xs leading-relaxed">Yetkiniz yalnız bu okulun öğrenci, öğretmen, müdür ve bağlı velileriyle sınırlıdır. Başka okulların kayıtları görüntülenmez veya değiştirilemez.</p>
     </div>
     {mesaj && <div className="rounded-xl p-3 text-xs font-bold" style={{ color: mesaj.startsWith("Hata") ? BLUSH : MINT, background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>{mesaj}</div>}
+
+    {!schoolId && <SosyalEtkinlikler okumaOnayi={false} />}
 
     {/* Kullanıcı isteği (26.08.2026): "Kurum ayarları + Öğretmen ekle +
         Öğrenci ekle tek çerçevede toplansın" — üç ayrı kart yerine tek
