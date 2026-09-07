@@ -137,7 +137,8 @@ export default async function DashboardPage({
   const varsayilanBolum: DashboardBolumu = (role === "mudur" && kurumTuru !== "dershane") || (role === "ogretmen" && brans === REHBER_BRANSI)
     ? "kurum-performansi" : "ozet";
   const aktifBolum = (params.bolum ?? varsayilanBolum) as DashboardBolumu;
-  if (!dashboardMenusu(role, kurumTuru, brans).some((oge) => oge.bolum === aktifBolum)) redirect("/dashboard");
+  const ogrenciProgramiGizliRotasi = role === "ogretmen" && aktifBolum === "planlar" && !!params.ogrenci;
+  if (!dashboardMenusu(role, kurumTuru, brans).some((oge) => oge.bolum === aktifBolum) && !ogrenciProgramiGizliRotasi) redirect("/dashboard");
   const donem = (["haftalik", "aylik", "tum"].includes(params.donem ?? "") ? params.donem : "tum") as RaporDonemi;
   const okunmamisMesajSayisi = okunmamisMesajSayisiHam ?? 0;
 
@@ -572,7 +573,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
 
   // "Öğrenci profili görüntüle" (analiz sayfası, ?ogrenci=) hem okul hem
   // dershane müdürü için ORTAK — dershane dalına geçmeden önce ele alınır.
-  if (secilenOgrenciId) {
+  if (secilenOgrenciId && aktifBolum !== "planlar") {
     const { data: ogrenci } = await okulOkumaClient
       .from("students")
       .select("id, profiles!students_id_fkey(ad)")
@@ -722,7 +723,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   // öğretmen (müdür değil) de düşebildiğinden kurumTuru burada da kontrol
   // ediliyor.
   const dershaneMi = kurumTuru === "dershane";
-  const dersVerisiGerekli = aktifBolum === "dersler" && role === "ogretmen";
+  const dersVerisiGerekli = (aktifBolum === "takvim" || aktifBolum === "dersler") && role === "ogretmen";
   const nobetVerisiGerekli = aktifBolum === "takvim" || dersVerisiGerekli;
   const [dersProgramiSatirlari, yurtNobetiSatirlari] = dersVerisiGerekli || nobetVerisiGerekli
     ? await Promise.all([
@@ -758,18 +759,26 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   }
 
   // Sınıf öğretmeni öğrenci programını görsün — revizyon_2 madde 3
-  let secilenOgrenciProgrami: any[] = [];
+  type OgrenciProgramSatiri = { id:string; ogrenci_tarih:string|null; ogrenci_baslangic_saat:string|null; ogrenci_bitis_saat:string|null; programa_eklendi_mi:boolean; gorevler:{tur:string;ders:string;konu:string|null;tarih:string;son_tarih:string}|null };
+  let secilenOgrenciProgrami: OgrenciProgramSatiri[] | null = [];
+  let secilenOgrenciAdi: string | null = null;
   if (secilenOgrenciId && role === "ogretmen" && !dershaneMi) {
-    const { createAdminClient } = await import("@/lib/supabase/admin");
     const admin = createAdminClient();
-    const { data } = await admin
+    const { data: secilenOgrenci } = await admin.from("students").select("id,class_id,school_id,profiles!students_id_fkey(ad)").eq("id",secilenOgrenciId).maybeSingle();
+    const profil = secilenOgrenci?.profiles as unknown as {ad:string}|null;
+    if (!teacher.class_id || secilenOgrenci?.class_id !== teacher.class_id || secilenOgrenci.school_id !== teacher.school_id) {
+      secilenOgrenciProgrami = null;
+    } else {
+      secilenOgrenciAdi = profil?.ad ?? "Öğrenci";
+      const { data } = await admin
       .from("gorev_atamalari")
       .select("id, ogrenci_tarih, ogrenci_baslangic_saat, ogrenci_bitis_saat, programa_eklendi_mi, gorevler!inner(tur, ders, konu, tarih, son_tarih)")
       .eq("student_id", secilenOgrenciId)
       .eq("programa_eklendi_mi", true)
       .order("ogrenci_tarih", { ascending: true })
       .limit(200);
-    secilenOgrenciProgrami = data ?? [];
+      secilenOgrenciProgrami = (data as unknown as OgrenciProgramSatiri[]) ?? [];
+    }
   }
 
   return (
@@ -796,6 +805,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       rehberOgretmenMi={rehberOgretmenMi}
       secilenOgrenciId={secilenOgrenciId}
       secilenOgrenciProgrami={secilenOgrenciProgrami}
+      secilenOgrenciAdi={secilenOgrenciAdi}
     />
   );
 }
