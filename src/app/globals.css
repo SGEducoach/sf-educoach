@@ -12,8 +12,8 @@
   --sfec-bg0: #08090b;
   --sfec-bg1: #111316;
   --sfec-bg1-alt: #191a1d;
-  --sfec-border: #315d6d;
-  --sfec-border-strong: #78c9e8;
+  --sfec-border: #111316;
+  --sfec-border-strong: #111316;
   --sfec-text: #c2e9f8;
   --sfec-text-muted: #8fc6d9;
   --sfec-mint: #c2e9f8;
@@ -336,6 +336,17 @@ input[type="file"]:active::-webkit-file-upload-button {
   transition:
     box-shadow 0.2s ease,
     transform 0.2s ease;
+}
+
+/* Tema çerçeveleri yüzeyle aynı renkte kalır. Ayrım, renkli kontur yerine
+   katmanın büyüklüğüne uygun yumuşak bir gölgeyle sağlanır. Inline stillerde
+   kullanılan iki ortak çerçeve değişkeni bu sayede bütün panellerde ve form
+   alanlarında aynı davranışı gösterir. */
+[style*="var(--sfec-border)"] {
+  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.18);
+}
+[style*="var(--sfec-border-strong)"] {
+  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.14);
 }
 
 /* Uygulamadaki öğrenci listeleri aynı sade satır düzenini kullanır. Kart

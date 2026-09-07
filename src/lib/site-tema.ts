@@ -60,7 +60,7 @@ export const SITE_TEMA_PALETI: SiteTemasi[] = [
     degisken: {
       background: "#08090b", foreground: "#c2e9f8",
       bg0: "#08090b", bg1: "#111316", bg1Alt: "#191a1d",
-      border: "#315d6d", borderStrong: "#78c9e8",
+      border: "#111316", borderStrong: "#111316",
       text: "#c2e9f8", textMuted: "#8fc6d9",
       mint: "#c2e9f8", mintOn: "#0b3b4d", mintBg: "rgba(194, 233, 248, 0.18)",
       seafoam: "#78c9e8", shellBg: "#0b0c0f",
@@ -76,7 +76,7 @@ export const SITE_TEMA_PALETI: SiteTemasi[] = [
     degisken: {
       background: "#0a1a32", foreground: "#e3f1ff",
       bg0: "#0a1a32", bg1: "#10254a", bg1Alt: "#16305c",
-      border: "#3d76b8", borderStrong: "#8fd0ff",
+      border: "#10254a", borderStrong: "#10254a",
       text: "#e3f1ff", textMuted: "#9cc3e8",
       mint: "#aee0ff", mintOn: "#083a6b", mintBg: "rgba(174, 224, 255, 0.18)",
       seafoam: "#8fd0ff", shellBg: "#071124",
@@ -92,7 +92,7 @@ export const SITE_TEMA_PALETI: SiteTemasi[] = [
     degisken: {
       background: "#081c12", foreground: "#d9f7e5",
       bg0: "#081c12", bg1: "#0e2a1c", bg1Alt: "#143626",
-      border: "#3d8f66", borderStrong: "#8fe6b4",
+      border: "#0e2a1c", borderStrong: "#0e2a1c",
       text: "#d9f7e5", textMuted: "#94d4b1",
       mint: "#aef2cd", mintOn: "#0b4a2c", mintBg: "rgba(174, 242, 205, 0.16)",
       seafoam: "#8fe6b4", shellBg: "#060f0a",
@@ -108,7 +108,7 @@ export const SITE_TEMA_PALETI: SiteTemasi[] = [
     degisken: {
       background: "#1c0d0f", foreground: "#ffe9e2",
       bg0: "#1c0d0f", bg1: "#2b1417", bg1Alt: "#381a1e",
-      border: "#a05a55", borderStrong: "#f0a095",
+      border: "#2b1417", borderStrong: "#2b1417",
       text: "#ffe9e2", textMuted: "#e2a89b",
       mint: "#ffc7bb", mintOn: "#5c1712", mintBg: "rgba(255, 199, 187, 0.16)",
       seafoam: "#f0a095", shellBg: "#14090a",
@@ -124,7 +124,7 @@ export const SITE_TEMA_PALETI: SiteTemasi[] = [
     degisken: {
       background: "#0b0f2a", foreground: "#e8eaff",
       bg0: "#0b0f2a", bg1: "#12184a", bg1Alt: "#1a2260",
-      border: "#5a5fb8", borderStrong: "#ffd766",
+      border: "#12184a", borderStrong: "#12184a",
       text: "#e8eaff", textMuted: "#aab0e6",
       mint: "#ffd766", mintOn: "#4a3800", mintBg: "rgba(255, 215, 102, 0.16)",
       seafoam: "#aab0e6", shellBg: "#080b22",
@@ -140,7 +140,7 @@ export const SITE_TEMA_PALETI: SiteTemasi[] = [
     degisken: {
       background: "#062226", foreground: "#d4f7fa",
       bg0: "#062226", bg1: "#0a3238", bg1Alt: "#0f3f47",
-      border: "#2f8f9c", borderStrong: "#5fe0e8",
+      border: "#0a3238", borderStrong: "#0a3238",
       text: "#d4f7fa", textMuted: "#88cbd2",
       mint: "#8ff0f5", mintOn: "#074a52", mintBg: "rgba(143, 240, 245, 0.16)",
       seafoam: "#5fe0e8", shellBg: "#041618",
@@ -160,7 +160,7 @@ export const SITE_TEMA_PALETI: SiteTemasi[] = [
     degisken: {
       background: "#eaf4fc", foreground: "#0a1e3d",
       bg0: "#eaf4fc", bg1: "#ffffff", bg1Alt: "#dcebf7",
-      border: "#5b8cbf", borderStrong: "#1a365d",
+      border: "#ffffff", borderStrong: "#ffffff",
       text: "#0a1e3d", textMuted: "#3d5a80",
       mint: "#1a365d", mintOn: "#f0f8ff", mintBg: "rgba(43, 90, 140, 0.14)",
       seafoam: "#2b5a8c", shellBg: "#dcebf7",
