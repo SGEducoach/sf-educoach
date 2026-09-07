@@ -749,60 +749,61 @@ function DerslerimBolumu({ dersler, siniflar, dersProgramiSatirlari, yurtNobetiS
         <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: MINT_BG }}>
           <BookMarked size={13} color={MINT} />
         </div>
-        <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Girdiğim sınıflar ve derslerim</span>
+        <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Ders Programım</span>
       </div>
-
-      {gosterilecekler.length === 0 ? (
-        <p style={{ color: TEXT_MUTED }} className="text-sm mb-3">Henüz eklenmiş bir branş dersiniz yok.</p>
-      ) : (
-        <div className="flex flex-wrap gap-2 mb-4">
-          {gosterilecekler.map((d) => (
-            <div key={d.id} className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full" style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
-              {d.sinifAdi} · {d.ders}
-              <button type="button" onClick={() => sil(d.id)} disabled={pending} title="Kaldır" className="sfec-btn disabled:opacity-60">
-                <X size={12} color={TEXT_MUTED} />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <form onSubmit={ekle} className="flex flex-wrap items-end gap-2.5">
-        <label className="flex flex-col gap-1">
-          <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Sınıf</span>
-          <select value={sinifId} onChange={(e) => setSinifId(e.target.value)}
-            className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
-            {siniflar.map((s) => <option key={s.id} value={s.id}>{s.seviye}-{s.sube}</option>)}
-          </select>
-        </label>
-        <label className="flex flex-col gap-1">
-          <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Ders</span>
-          <select value={ders} onChange={(e) => setDers(e.target.value)}
-            className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
-            {BRANS_LISTESI.map((d) => <option key={d} value={d}>{d}</option>)}
-          </select>
-        </label>
-        <button type="submit" disabled={pending || !sinifId}
-          className="sfec-btn flex items-center gap-1 text-xs font-bold px-3.5 py-1.5 rounded-full disabled:opacity-60"
-          style={{ background: MINT, color: MINT_ON }}>
-          <Plus size={13} /> {pending ? "Ekleniyor..." : "Ekle"}
-        </button>
-        {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
-      </form>
 
       {/* Ders Programı (2026-08-25 kullanıcı isteği) — salt-okunur, admin/
           dershane müdürü elle doldurur. Öğretmen sadece kendi haftalık
           programını görür. */}
-      <div className="mt-5 flex flex-col gap-2">
-        <span style={{ color: TEXT_MUTED }} className="text-[10px] font-bold uppercase tracking-wide">Ders Programım</span>
-        <DersProgramiGrid gunler={programGunleri(dershaneMi)} satirlar={dersProgramiSatirlari} />
-      </div>
+      <DersProgramiGrid gunler={programGunleri(dershaneMi)} satirlar={dersProgramiSatirlari} />
 
       {!dershaneMi && (
         <div className="mt-4">
           <YurtNobetiTablosu satirlar={yurtNobetiSatirlari} />
         </div>
       )}
+
+      <div className="mt-6 border-t pt-5" style={{ borderColor: BORDER }}>
+        <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="mb-4 text-[15px] font-bold">Girdiğim sınıflar ve derslerim</h2>
+
+        {gosterilecekler.length === 0 ? (
+          <p style={{ color: TEXT_MUTED }} className="text-sm mb-3">Henüz eklenmiş bir branş dersiniz yok.</p>
+        ) : (
+          <div className="flex flex-wrap gap-2 mb-4">
+            {gosterilecekler.map((d) => (
+              <div key={d.id} className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full" style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
+                {d.sinifAdi} · {d.ders}
+                <button type="button" onClick={() => sil(d.id)} disabled={pending} title="Kaldır" className="sfec-btn disabled:opacity-60">
+                  <X size={12} color={TEXT_MUTED} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <form onSubmit={ekle} className="flex flex-wrap items-end gap-2.5">
+          <label className="flex flex-col gap-1">
+            <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Sınıf</span>
+            <select value={sinifId} onChange={(e) => setSinifId(e.target.value)}
+              className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
+              {siniflar.map((s) => <option key={s.id} value={s.id}>{s.seviye}-{s.sube}</option>)}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1">
+            <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Ders</span>
+            <select value={ders} onChange={(e) => setDers(e.target.value)}
+              className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
+              {BRANS_LISTESI.map((d) => <option key={d} value={d}>{d}</option>)}
+            </select>
+          </label>
+          <button type="submit" disabled={pending || !sinifId}
+            className="sfec-btn flex items-center gap-1 text-xs font-bold px-3.5 py-1.5 rounded-full disabled:opacity-60"
+            style={{ background: MINT, color: MINT_ON }}>
+            <Plus size={13} /> {pending ? "Ekleniyor..." : "Ekle"}
+          </button>
+          {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
+        </form>
+      </div>
     </div>
   );
 }
