@@ -326,13 +326,17 @@ export function OgretmenPanel({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {ogrencilerOkulNoSirali(ogrenciler).map((o) => (
               <div key={o.id} className="rounded-xl flex items-center justify-between gap-2 pr-1.5" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
-                <button onClick={() => router.push(`/dashboard?bolum=planlar&sinif=${gorunecekSinifId}&ogrenci=${o.id}`)}
+                <button onClick={() => router.push(`/dashboard?bolum=ozet&sinif=${gorunecekSinifId}&ogrenci=${o.id}`)}
                   className="sfec-btn flex-1 min-w-0 px-3.5 py-2.5 flex items-center justify-between text-left">
                   <span style={{ color: TEXT }} className="text-sm font-semibold truncate">{o.ad}</span>
                   <span style={{ color: TEXT_MUTED }} className="text-xs shrink-0 ml-2">#{o.okul_no}</span>
                 </button>
                 {kendiSinifiMi && (
                   <>
+                    <button type="button" title={`${o.ad} adlı öğrencinin aylık programını görüntüle`} aria-label={`${o.ad} programını görüntüle`} onClick={() => router.push(`/dashboard/planlar?sinif=${gorunecekSinifId}&ogrenci=${o.id}`)}
+                      className="sfec-btn grid h-8 w-8 shrink-0 place-items-center rounded-full" style={{ background: MINT_BG, color: MINT, border: `1px solid ${BORDER_STRONG}` }}>
+                      <CalendarPlus size={14} />
+                    </button>
                     <YurtOgrencisiButonu ogrenciId={o.id} yurtOgrencisi={o.yurtOgrencisi} />
                     <OgrenciTasiButonu ogrenciId={o.id} kendiSinifId={kendiSinifId} siniflar={siniflar} />
                   </>
@@ -663,12 +667,12 @@ function AjandamBolumu({ role, dersler, siniflar, dersProgramiSatirlari, yurtNob
   role: "ogretmen" | "mudur"; dersler: OgretmenDersiSatiri[]; siniflar: SinifSatiri[];
   dersProgramiSatirlari: DersProgramiSatiri[]; yurtNobetiSatirlari: YurtNobetiSatiri[]; dershaneMi: boolean;
 }) {
-  type Sekme = "takvim" | "ders" | "sosyal";
-  const [sekme, setSekme] = useState<Sekme>("takvim");
+  type Sekme = "ders" | "takvim" | "sosyal";
+  const [sekme, setSekme] = useState<Sekme>(role === "ogretmen" ? "ders" : "takvim");
   const sekmeler: { id: Sekme; ad: string }[] = [
+    ...(role === "ogretmen" ? [{ id: "ders" as const, ad: "Derslerim" }] : []),
     { id: "takvim", ad: "Takvim" },
-    ...(role === "ogretmen" ? [{ id: "ders" as const, ad: "Ders programım" }] : []),
-    { id: "sosyal", ad: "Sosyal görevler" },
+    { id: "sosyal", ad: "Görevler" },
   ];
   return <section id="takvim" className="sfec-section sfec-fade rounded-3xl p-4 sm:p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
     <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-2"><div className="grid h-8 w-8 place-items-center rounded-full" style={{ background: MINT_BG }}><CalendarPlus size={15} color={MINT}/></div><h1 className="text-xl font-extrabold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Ajandam</h1></div><div className="flex max-w-full gap-1 overflow-x-auto rounded-2xl p-1" style={{ background: BG0, border: `1px solid ${BORDER}` }}>{sekmeler.map(s => <button key={s.id} type="button" onClick={() => setSekme(s.id)} className="shrink-0 rounded-xl px-3 py-2 text-xs font-bold" style={{ background: sekme === s.id ? MINT : "transparent", color: sekme === s.id ? MINT_ON : TEXT_MUTED }}>{s.ad}</button>)}</div></div>
