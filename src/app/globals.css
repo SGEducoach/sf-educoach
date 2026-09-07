@@ -338,6 +338,32 @@ input[type="file"]:active::-webkit-file-upload-button {
     transform 0.2s ease;
 }
 
+/* Uygulamadaki öğrenci listeleri aynı sade satır düzenini kullanır. Kart
+   çerçeveleri yerine tek bir alt ayırıcı vardır; satır fareyle veya klavyeyle
+   seçildiğinde hafifçe öne çıkar. Ayrıntı alanları satırın doğal akışında,
+   doğrudan öğrencinin altında açılır. */
+.sfec-ogrenci-listesi {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.sfec-ogrenci-satiri {
+  border-bottom: 1px solid var(--sfec-border);
+  transition: transform 0.18s ease, background 0.18s ease, padding 0.18s ease;
+}
+.sfec-ogrenci-satiri:last-child {
+  border-bottom: 0;
+}
+@media (hover: hover) {
+  .sfec-ogrenci-satiri:hover {
+    background: var(--sfec-bg1-alt);
+    transform: translateY(-2px);
+  }
+}
+.sfec-ogrenci-satiri:focus-within {
+  background: var(--sfec-bg1-alt);
+}
+
 /* Yapay Zeka Analizi promosu — twinkle eden sparkle ikonları + yumuşak
    nefes alan (breathing) arka plan parıltısı. */
 @keyframes sfecTwinkle {

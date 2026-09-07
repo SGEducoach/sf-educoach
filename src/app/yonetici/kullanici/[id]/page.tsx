@@ -15,7 +15,7 @@ import { GeriDonButonu } from "@/components/yonetici/GeriDonButonu";
 import { ProfiliYonetToggle } from "@/components/yonetici/ProfiliYonetToggle";
 import type { KullaniciSonuc } from "@/app/yonetici/actions";
 import { ogretmenProgramiGetir, yurtNobetiGetir } from "@/lib/ders-programi";
-import { BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, TEXT, TEXT_MUTED } from "@/lib/theme";
+import { BG1, BG1_ALT, BORDER, MINT, TEXT, TEXT_MUTED } from "@/lib/theme";
 import type { UserRole, KurumTuru } from "@/lib/types";
 
 const ROL_ETIKET: Record<UserRole, string> = { ogrenci: "Öğrenci", ogretmen: "Öğretmen", veli: "Veli", mudur: "Müdür", admin: "Yönetici" };
@@ -165,7 +165,7 @@ async function OgretmenSayfasi({ admin, userId }: { admin: AdminClient; userId: 
     {!dershaneMi && (
       <YurtNobetiTablosu satirlar={yurtNobeti} duzenlenebilir={false} />
     )}
-    <section className="rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}><h2 className="mb-3 text-base font-bold" style={{ color: TEXT }}>{data.class_id ? "Sınıfındaki öğrenciler" : "Okuldaki öğrenciler"}</h2><div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{liste.length === 0 && <p className="text-sm" style={{ color: TEXT_MUTED }}>Öğrenci bulunamadı.</p>}{liste.map((o) => <Link key={o.id} href={`/yonetici/kullanici/${o.id}`} className="rounded-xl p-3 text-sm" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}`, color: TEXT }}><strong>{o.profiles?.ad ?? "İsimsiz"}</strong><div className="mt-1 text-xs" style={{ color: TEXT_MUTED }}>{o.classes ? `${o.classes.seviye}-${o.classes.sube}` : "—"} · #{o.okul_no}</div></Link>)}</div></section>
+    <section className="rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}><h2 className="mb-3 text-base font-bold" style={{ color: TEXT }}>{data.class_id ? "Sınıfındaki öğrenciler" : "Okuldaki öğrenciler"}</h2><div className="sfec-ogrenci-listesi">{liste.length === 0 && <p className="text-sm" style={{ color: TEXT_MUTED }}>Öğrenci bulunamadı.</p>}{liste.map((o) => <Link key={o.id} href={`/yonetici/kullanici/${o.id}`} className="sfec-ogrenci-satiri flex items-center justify-between gap-3 px-2 py-3 text-sm" style={{ color: TEXT }}><strong className="min-w-0 truncate">{o.profiles?.ad ?? "İsimsiz"}</strong><span className="max-w-[55%] shrink-0 truncate text-xs" style={{ color: TEXT_MUTED }}>{o.classes ? `${o.classes.seviye}-${o.classes.sube}` : "—"} · #{o.okul_no}</span></Link>)}</div></section>
   </>;
 }
 
@@ -173,7 +173,7 @@ async function VeliSayfasi({ admin, userId }: { admin: AdminClient; userId: stri
   const { data } = await admin.from("parent_students").select("students(id, okul_no, profiles!students_id_fkey(ad), schools(ad), classes(seviye, sube))").eq("parent_id", userId);
   type Row = { students: { id: string; okul_no: string; profiles: { ad: string } | null; schools: { ad: string } | null; classes: { seviye: string; sube: string } | null } | null };
   const satirlar = (data as unknown as Row[]) ?? [];
-  return <section className="rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}><h2 className="mb-3 text-base font-bold" style={{ color: TEXT }}>Bağlı öğrenciler</h2><div className="flex flex-col gap-2">{satirlar.length === 0 && <p className="text-sm" style={{ color: TEXT_MUTED }}>Bağlı öğrenci yok.</p>}{satirlar.map((r) => r.students && <Link key={r.students.id} href={`/yonetici/kullanici/${r.students.id}`} className="rounded-xl p-3" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}`, color: TEXT }}><strong>{r.students.profiles?.ad ?? "İsimsiz"}</strong><div className="mt-1 text-xs" style={{ color: TEXT_MUTED }}>{r.students.schools?.ad ?? "—"} · {r.students.classes ? `${r.students.classes.seviye}-${r.students.classes.sube}` : "—"} · #{r.students.okul_no}</div></Link>)}</div></section>;
+  return <section className="rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}><h2 className="mb-3 text-base font-bold" style={{ color: TEXT }}>Bağlı öğrenciler</h2><div className="sfec-ogrenci-listesi">{satirlar.length === 0 && <p className="text-sm" style={{ color: TEXT_MUTED }}>Bağlı öğrenci yok.</p>}{satirlar.map((r) => r.students && <Link key={r.students.id} href={`/yonetici/kullanici/${r.students.id}`} className="sfec-ogrenci-satiri flex items-center justify-between gap-3 px-2 py-3" style={{ color: TEXT }}><strong className="min-w-0 truncate">{r.students.profiles?.ad ?? "İsimsiz"}</strong><span className="max-w-[55%] shrink-0 truncate text-right text-xs" style={{ color: TEXT_MUTED }}>{r.students.schools?.ad ?? "—"} · {r.students.classes ? `${r.students.classes.seviye}-${r.students.classes.sube}` : "—"} · #{r.students.okul_no}</span></Link>)}</div></section>;
 }
 
 function Bilgi({ icon: Icon, etiket, deger }: { icon: typeof School; etiket: string; deger: string }) { return <div className="rounded-2xl p-4" style={{ background: BG1, border: `2px solid ${BORDER}` }}><Icon size={17} color={MINT} /><div className="mt-2 text-[10px] font-bold uppercase" style={{ color: TEXT_MUTED }}>{etiket}</div><div className="mt-1 text-sm font-bold" style={{ color: TEXT }}>{deger}</div></div>; }

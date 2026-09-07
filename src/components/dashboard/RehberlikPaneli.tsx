@@ -134,12 +134,12 @@ export function RehberlikPaneli({ ogrenciler }: { ogrenciler: RehberlikOgrencisi
                 <button type="button" onClick={() => toggleSinif(sinifAdi)} className="sfec-btn flex items-center gap-1.5 mb-2 text-xs font-bold" style={{ color: TEXT }}>
                   {sinifTumuSecili ? <SquareCheckBig size={13} color={MINT} /> : <Square size={13} color={TEXT_MUTED} />} {sinifAdi} <span style={{ color: TEXT_MUTED }} className="font-normal">({ogrencilerBuSinif.length})</span>
                 </button>
-                <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
+                <div className="sfec-ogrenci-listesi">
                   {ogrencilerBuSinif.map((o) => {
                     const isSecili = secili.has(o.id);
                     return (
                       <button key={o.id} type="button" onClick={() => toggleOgrenci(o.id)}
-                        className="sfec-btn flex items-center gap-1.5 text-left rounded-lg px-2 py-1.5 text-xs"
+                        className="sfec-btn sfec-ogrenci-satiri flex items-center gap-1.5 px-2 py-2 text-left text-xs"
                         style={{ background: isSecili ? MINT_BG : "transparent", color: isSecili ? TEXT : TEXT_MUTED }}>
                         {isSecili ? <Check size={12} color={MINT} className="shrink-0" /> : <Square size={12} className="shrink-0" />} {o.ad}
                       </button>

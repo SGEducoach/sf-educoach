@@ -111,9 +111,9 @@ export function IzinliOgrenciListesi({ schoolId }: { schoolId: string }) {
             )}
           </div>
           {isimler.length > 0 && (
-            <div className="max-h-40 overflow-y-auto flex flex-col gap-1">
+            <div className="sfec-ogrenci-listesi max-h-40 overflow-y-auto">
               {isimler.map((ad) => (
-                <div key={ad} className="flex items-center justify-between rounded-lg px-2.5 py-1" style={{ background: BG0 }}>
+                <div key={ad} className="sfec-ogrenci-satiri flex items-center justify-between px-2.5 py-2">
                   <span style={{ color: TEXT }} className="text-[11px]">{ad}</span>
                   <button type="button" onClick={() => sil(ad)} disabled={pending}
                     className="sfec-btn w-5 h-5 rounded-full flex items-center justify-center disabled:opacity-60" style={{ background: "rgba(255,255,255,0.06)" }}>

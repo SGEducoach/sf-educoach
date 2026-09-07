@@ -957,12 +957,12 @@ function GorevVerBolumu({ ogrenciler, konuOnerileri }: {
               {tumuSeciliMi ? "Seçimi kaldır" : "Tümünü seç (toplu görev)"}
             </button>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-40 overflow-y-auto rounded-xl p-2" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
+          <div className="sfec-ogrenci-listesi max-h-40 overflow-y-auto">
             {ogrenciler.map((o) => {
               const isSecili = secili.has(o.id);
               return (
                 <button key={o.id} type="button" onClick={() => ogrenciToggle(o.id)}
-                  className="sfec-btn flex items-center gap-1.5 text-xs font-semibold px-2 py-1.5 rounded-lg text-left"
+                  className="sfec-btn sfec-ogrenci-satiri flex items-center gap-1.5 px-2 py-2 text-left text-xs font-semibold"
                   style={{ background: isSecili ? MINT : "transparent", color: isSecili ? MINT_ON : TEXT }}>
                   {isSecili && <Check size={11} className="shrink-0" />} <span className="truncate">{o.ad}</span>
                 </button>

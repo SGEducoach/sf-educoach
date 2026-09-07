@@ -866,13 +866,13 @@ async function VeliIcerik({ userId, ad, secilenOgrenciId, donem, aktifBolum }: {
         {cocuklar.length === 0 ? (
           <p style={{ color: TEXT_MUTED }} className="text-sm">Henüz bağlı bir öğrenci yok.</p>
         ) : (
-          <div className="flex flex-wrap gap-2">
+          <div className="sfec-ogrenci-listesi">
             {cocuklar.map((c, i) => {
               const secili = c.students?.id === seciliId;
               return (
                 <Link key={i} href={`${aktifBolum === "analiz" ? "/dashboard/analiz" : "/dashboard"}?ogrenci=${c.students?.id}`}
-                  className="sfec-btn rounded-xl px-3.5 py-2.5 text-sm font-semibold"
-                  style={{ color: secili ? MINT : TEXT, background: secili ? MINT_BG : "rgba(255,255,255,0.04)", border: `1px solid ${secili ? MINT : "transparent"}` }}>
+                  className="sfec-btn sfec-ogrenci-satiri px-2 py-3 text-sm font-semibold"
+                  style={{ color: secili ? MINT : TEXT, background: secili ? MINT_BG : "transparent" }}>
                   {c.students?.profiles?.ad} <span style={{ color: TEXT_MUTED }} className="font-normal">· #{c.students?.okul_no}</span>
                 </Link>
               );

@@ -822,14 +822,14 @@ function DenemeTopluGirisFormu({ siniflar }: { siniflar: SinifSatiri[] }) {
       )}
 
       {filtrelenmisOgrenciler.length > 0 && (
-        <div className="flex flex-col gap-1.5 max-h-72 overflow-y-auto">
+        <div className="sfec-ogrenci-listesi max-h-72 overflow-y-auto">
           <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wide px-1" style={{ color: TEXT_MUTED }}>
             <span className="flex-1">Öğrenci</span>
             <span className="w-16 text-center">Doğru</span>
             <span className="w-16 text-center">Yanlış</span>
           </div>
           {filtrelenmisOgrenciler.map((o) => (
-            <div key={o.id} className="flex items-center gap-2 rounded-xl px-2.5 py-1.5" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
+            <div key={o.id} className="sfec-ogrenci-satiri flex items-center gap-2 px-2.5 py-2">
               <span style={{ color: TEXT }} className="text-xs font-semibold flex-1">{o.ad} <span style={{ color: TEXT_MUTED }} className="font-normal">#{o.okulNo}</span></span>
               <input type="number" min={0} max={maxSoru} value={girisler[o.id]?.dogru ?? ""} onChange={(e) => alanGuncelle(o.id, "dogru", e.target.value)}
                 className="w-16 text-xs px-2 py-1 rounded-lg outline-none text-center" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }} />

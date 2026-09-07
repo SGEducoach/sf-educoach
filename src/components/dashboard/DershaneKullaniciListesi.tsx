@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { BarChart3, CalendarClock, KeyRound, Trash2, UserCheck, UserX } from "lucide-react";
+import { BarChart3, CalendarClock, ChevronDown, ChevronUp, KeyRound, Trash2, UserCheck, UserX } from "lucide-react";
 import { moderatorAktiflikDegistir, moderatorHesapSil, moderatorSifreSifirla, type ModeratorKullanici } from "@/app/moderator/actions";
 import { DersProgramiYonetimi } from "@/components/dashboard/DersProgramiYonetimi";
 import type { DersProgramiSatiri } from "@/lib/ders-programi";
@@ -26,6 +26,7 @@ export function DershaneKullaniciListesi({ kullanicilar, kategori, siniflar, der
   const [pending, startTransition] = useTransition();
   const [mesaj, setMesaj] = useState<string | null>(null);
   const [acikProgramId, setAcikProgramId] = useState<string | null>(null);
+  const [acikOgrenciId, setAcikOgrenciId] = useState<string | null>(null);
   // Kullanıcı isteği (26.08.2026): "öğrenciler kısmı düzgün çalışmıyor,
   // farklı bir sınıf seçildiğinde..." — incelemede aslında bir yönlendirme
   // hatası değil, sınıf/şube bazlı bir filtrenin HİÇ olmaması sorunuydu
@@ -65,18 +66,27 @@ export function DershaneKullaniciListesi({ kullanicilar, kategori, siniflar, der
           Bu sınıfta kayıtlı öğrenci yok.
         </div>
       ) : (
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+      <div className={kategori === "ogrenci" ? "sfec-ogrenci-listesi" : "grid grid-cols-1 gap-2 sm:grid-cols-2"}>
         {gosterilenler.map((k) => (
-          <div key={k.id} className={`rounded-2xl p-3.5 ${acikProgramId === k.id ? "sm:col-span-2" : ""}`} style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-            <div style={{ color: TEXT }} className="text-sm font-bold">{k.ad}</div>
-            <div style={{ color: TEXT_MUTED }} className="text-xs">{k.detay}{!k.aktif && " · Pasif"}</div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {kategori === "ogrenci" && (
+          <div key={k.id}
+            className={kategori === "ogrenci" ? "sfec-ogrenci-satiri px-2 py-1" : `rounded-2xl p-3.5 ${acikProgramId === k.id ? "sm:col-span-2" : ""}`}
+            style={kategori === "ogrenci" ? undefined : { background: BG1, border: `2px solid ${BORDER}` }}>
+            {kategori === "ogrenci" ? <button type="button" onClick={() => setAcikOgrenciId(acikOgrenciId === k.id ? null : k.id)} aria-expanded={acikOgrenciId === k.id}
+              className="group flex w-full items-center justify-between gap-3 py-2 text-left">
+              <span style={{ color: TEXT }} className="min-w-0 truncate text-sm font-bold group-hover:font-extrabold">{k.ad}</span>
+              <span className="flex shrink-0 items-center gap-2 text-xs" style={{ color: TEXT_MUTED }}>{!k.aktif && "Pasif · "}{k.sinif ?? "—"}{acikOgrenciId === k.id ? <ChevronUp size={15} color={MINT}/> : <ChevronDown size={15}/>}</span>
+            </button> : <>
+              <div style={{ color: TEXT }} className="text-sm font-bold">{k.ad}</div>
+              <div style={{ color: TEXT_MUTED }} className="text-xs">{k.detay}{!k.aktif && " · Pasif"}</div>
+            </>}
+            {(kategori !== "ogrenci" || acikOgrenciId === k.id) && <div className="mt-2 flex flex-wrap gap-2 pb-2">
+              {kategori === "ogrenci" && (<>
+                <div className="w-full text-xs" style={{ color: TEXT_MUTED }}>{k.detay}{!k.aktif && " · Pasif"}</div>
                 <Link href={`/dashboard?ogrenci=${k.id}`}
                   className="sfec-btn flex-1 flex items-center justify-center gap-1 rounded-lg px-2 py-2 text-[11px] font-bold" style={{ color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
                   <BarChart3 size={12} /> Profil / Analiz
                 </Link>
-              )}
+              </>)}
               {kategori === "ogretmen" && (
                 <button onClick={() => setAcikProgramId(acikProgramId === k.id ? null : k.id)}
                   className="sfec-btn flex-1 flex items-center justify-center gap-1 rounded-lg px-2 py-2 text-[11px] font-bold"
@@ -107,7 +117,7 @@ export function DershaneKullaniciListesi({ kullanicilar, kategori, siniflar, der
               }} className="sfec-btn rounded-lg px-3 py-2 text-[11px] font-bold" style={{ color: BLUSH, border: `2px solid ${BORDER_STRONG}` }}>
                 <Trash2 className="mr-1 inline" size={12} />Sil
               </button>
-            </div>
+            </div>}
             {kategori === "ogretmen" && acikProgramId === k.id && (
               <div className="mt-3">
                 <DersProgramiYonetimi teacherId={k.id} dershaneMi siniflar={siniflar ?? []} satirlar={dersProgramlari?.[k.id] ?? []} />
