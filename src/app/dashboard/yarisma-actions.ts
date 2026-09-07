@@ -8,7 +8,7 @@ import { bildirimGonder } from "@/lib/bildirim-gonder";
 import { pushGonderProfile } from "@/lib/push-send";
 import { bugununTarihiTR } from "@/lib/tarih";
 
-export type YarismaTuru = "proje" | "yarisma" | "program";
+export type YarismaTuru = "proje" | "yarisma" | "program" | "diger";
 export type AtanabilirOgretmen = { id: string; ad: string; brans: string };
 export type SosyalEtkinlik = {
   id: string; isim: string; tur: YarismaTuru; tarih: string;
@@ -51,7 +51,7 @@ function yenile() {
 function girdiyiDogrula(input: EtkinlikGirdisi): string | null {
   const isim = input.isim.trim();
   if (isim.length < 2 || isim.length > 200) return "Etkinlik adı 2-200 karakter olmalıdır.";
-  if (!["proje", "yarisma", "program"].includes(input.tur)) return "Geçerli bir etkinlik türü seçin.";
+  if (!["proje", "yarisma", "program", "diger"].includes(input.tur)) return "Geçerli bir etkinlik türü seçin.";
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input.tarih)) return "Geçerli bir etkinlik tarihi girin.";
   if (input.sonBasvuruTarihi && !/^\d{4}-\d{2}-\d{2}$/.test(input.sonBasvuruTarihi)) return "Son başvuru tarihi geçersiz.";
   return null;

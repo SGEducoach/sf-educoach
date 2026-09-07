@@ -4,13 +4,19 @@ import {CalendarDays,ChevronLeft,ChevronRight} from "lucide-react";
 import {sosyalEtkinlikleriGetir,type SosyalEtkinlik} from "@/app/dashboard/yarisma-actions";
 import type {YurtNobetiSatiri} from "@/lib/ders-programi";
 import {bugununTarihiTR,tarihEkle} from "@/lib/tarih";
-import {BG0,BG1_ALT,BORDER,BORDER_STRONG,MINT,MINT_BG,MINT_ON,SKY,SKY_BG,TEXT,TEXT_MUTED} from "@/lib/theme";
+import {BG0,BG1_ALT,BORDER,BORDER_STRONG,BLUSH,BLUSH_BG,MINT,MINT_BG,MINT_ON,SKY,SKY_BG,TEXT,TEXT_MUTED} from "@/lib/theme";
 type Gorunum="gunluk"|"haftalik"|"aylik";type Kayit={id:string;isim:string;tarih:string;tur:string;aktif:boolean};
 const GUNLER=["Pzt","Sal","Çar","Per","Cum","Cmt","Paz"],yaz=(t:string,o:Intl.DateTimeFormatOptions)=>new Date(`${t}T12:00:00`).toLocaleDateString("tr-TR",o);
 export function Takvim({yurtNobetiSatirlari=[]}:{yurtNobetiSatirlari?:YurtNobetiSatiri[]}){
  const [gorunum,setGorunum]=useState<Gorunum>("aylik"),[ay,setAy]=useState(bugununTarihiTR().slice(0,7)),[etkinlikler,setEtkinlikler]=useState<SosyalEtkinlik[]>([]),[hata,setHata]=useState<string|null>(null);
  useEffect(()=>{sosyalEtkinlikleriGetir().then(r=>{setEtkinlikler(r.etkinlikler);setHata(r.error)})},[]);
- const kayitlar=useMemo<Kayit[]>(()=>[...etkinlikler.map(e=>({id:e.id,isim:e.isim,tarih:e.tarih,tur:e.tur,aktif:e.aktif})),...yurtNobetiSatirlari.filter(n=>n.tarih).map(n=>({id:`n-${n.id}`,isim:"Yurt nöbeti",tarih:n.tarih!,tur:"nobet",aktif:n.tarih!>=bugununTarihiTR()}))],[etkinlikler,yurtNobetiSatirlari]);
+ const kayitlar=useMemo<Kayit[]>(()=>[
+  ...etkinlikler.flatMap(e=>[
+   {id:e.id,isim:`Görev: ${e.isim}`,tarih:e.tarih,tur:e.tur,aktif:e.aktif},
+   ...(e.sonBasvuruTarihi?[{id:`${e.id}-son`,isim:`Son başvuru: ${e.isim}`,tarih:e.sonBasvuruTarihi,tur:"son-basvuru",aktif:e.sonBasvuruTarihi>=bugununTarihiTR()}]:[]),
+  ]),
+  ...yurtNobetiSatirlari.filter(n=>n.tarih).map(n=>({id:`n-${n.id}`,isim:"Yurt nöbeti",tarih:n.tarih!,tur:"nobet",aktif:n.tarih!>=bugununTarihiTR()})),
+ ],[etkinlikler,yurtNobetiSatirlari]);
  const ayGunleri=useMemo(()=>{const[y,m]=ay.split("-").map(Number),son=new Date(y,m,0).getDate();return Array.from({length:son},(_,i)=>`${ay}-${String(i+1).padStart(2,"0")}`)},[ay]);
  const tabloGunleri=useMemo(()=>{const ilk=ayGunleri[0],bos=(new Date(`${ilk}T12:00:00`).getDay()+6)%7;return [...Array.from({length:bos},(_,i)=>tarihEkle(ilk,i-bos)),...ayGunleri,...Array.from({length:(7-(bos+ayGunleri.length)%7)%7},(_,i)=>tarihEkle(ayGunleri.at(-1)!,i+1))]},[ayGunleri]);
  const haftalar=useMemo(()=>Array.from({length:Math.ceil(tabloGunleri.length/7)},(_,i)=>tabloGunleri.slice(i*7,i*7+7)),[tabloGunleri]);
@@ -22,4 +28,4 @@ export function Takvim({yurtNobetiSatirlari=[]}:{yurtNobetiSatirlari?:YurtNobeti
  {gorunum==="aylik"&&<div className="overflow-x-auto"><div className="grid min-w-[760px] grid-cols-7 gap-1">{GUNLER.map(g=><div key={g} className="py-2 text-center text-xs font-bold" style={{color:TEXT_MUTED}}>{g}</div>)}{tabloGunleri.map(g=>{const ks=getir(g),ayni=g.startsWith(ay);return <div key={g} className="min-h-32 rounded-xl p-2" style={{background:g===bugununTarihiTR()?MINT_BG:BG0,border:`1px solid ${BORDER}`,opacity:ayni?1:.35}}><div className="mb-1 text-xs font-bold" style={{color:TEXT}}>{Number(g.slice(-2))}</div><div className="space-y-1">{ks.map(k=><Etiket key={k.id} kayit={k}/>)}</div></div>})}</div></div>}
  {!kayitlar.length&&<p className="rounded-2xl p-5 text-center text-sm" style={{background:BG0,color:TEXT_MUTED}}>Atanan görevleriniz ve yurt nöbetleriniz burada görünecek.</p>}</div>}
 function GunSatiri({gun,kayitlar,sade=false}:{gun:string;kayitlar:Kayit[];sade?:boolean}){return <div className={`grid gap-3 p-3 ${sade?"sm:grid-cols-[140px_1fr]":"sm:grid-cols-[180px_1fr] rounded-2xl"}`} style={sade?{background:BG0}:{background:BG0,border:`1px solid ${BORDER}`}}><div><div className="text-sm font-extrabold capitalize" style={{color:TEXT}}>{yaz(gun,{weekday:"long"})}</div><div className="text-xs" style={{color:TEXT_MUTED}}>{yaz(gun,{day:"numeric",month:"long"})}</div></div><div className="flex flex-wrap gap-2">{kayitlar.length?kayitlar.map(k=><Etiket key={k.id} kayit={k}/>):<span className="self-center text-xs" style={{color:TEXT_MUTED}}>Plan yok</span>}</div></div>}
-function Etiket({kayit:k}:{kayit:Kayit}){const nobet=k.tur==="nobet";return <div className="flex min-w-0 items-start gap-1.5 rounded-lg px-2 py-2 text-xs font-bold leading-4" style={{background:nobet?SKY_BG:MINT_BG,color:nobet?SKY:TEXT,opacity:k.aktif?1:.58,border:`1px solid ${nobet?SKY:MINT}`}}><CalendarDays size={13} className="mt-0.5 shrink-0"/><span className="whitespace-normal break-words">{k.isim}{!k.aktif?" · Geçmiş":""}</span></div>}
+function Etiket({kayit:k}:{kayit:Kayit}){const nobet=k.tur==="nobet",son=k.tur==="son-basvuru";const renk=nobet?SKY:son?BLUSH:MINT,zemin=nobet?SKY_BG:son?BLUSH_BG:MINT_BG;return <div className="flex min-w-0 items-start gap-1.5 rounded-lg px-2 py-2 text-xs font-bold leading-4" style={{background:zemin,color:son?BLUSH:nobet?SKY:TEXT,opacity:k.aktif?1:.58,border:`1px solid ${renk}`}}><CalendarDays size={13} className="mt-0.5 shrink-0"/><span className="whitespace-normal break-words">{k.isim}{!k.aktif?" · Geçmiş":""}</span></div>}

@@ -3,6 +3,7 @@ import webpush from "web-push";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { KATEGORI_GERIYE_DONUK_SINIR } from "@/lib/types";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
+import { bildirimGonder } from "@/lib/bildirim-gonder";
 
 // Yurt öğrencisi hafta içi telefonuna erişemiyor — bugün hafta sonu
 // (Cmt/Paz) değilse konu/soru hatırlatmaları onlar için bastırılıyor
@@ -221,6 +222,52 @@ export async function GET(request: Request) {
     // için ayrı bir "gönderildi" bayrağına gerek yok. bildirim_yaklasan_gorev
     // tercihini kapatan öğrenciye gönderilmiyor (migration 0077).
     const bugunISO = bugununTarihiTR();
+
+    // Sosyal görev hatırlatmaları: son başvuru tarihi varsa o tarih,
+    // yoksa doğrudan görev tarihi esas alınır. 7, 3 ve 1 günlük eşikler
+    // ayrı ayrı kaydedildiği için cron tekrar çalışsa bile aynı öğretmene
+    // aynı uyarı ikinci kez gitmez. Geç oluşturulan görev doğal olarak
+    // sıradaki uygun eşikten başlar (ör. 4 gün kala oluşturulduysa 3 ve 1).
+    type SosyalGorevRow = {
+      id: string; isim: string; tarih: string; son_basvuru_tarihi: string | null;
+      yarisma_ogretmen_atamalari: { teacher_id: string }[];
+    };
+    const { data: sosyalGorevler, error: sosyalGorevHatasi } = await admin
+      .from("yarismalar")
+      .select("id, isim, tarih, son_basvuru_tarihi, yarisma_ogretmen_atamalari(teacher_id)");
+    if (sosyalGorevHatasi) {
+      detaylar.push(`Sosyal görev hatırlatmaları okunamadı: ${sosyalGorevHatasi.message}`);
+    } else {
+      const birGunMs = 24 * 60 * 60 * 1000;
+      const bugunMs = new Date(`${bugunISO}T12:00:00Z`).getTime();
+      for (const gorev of (sosyalGorevler as unknown as SosyalGorevRow[]) ?? []) {
+        const sonBasvuruVar = !!gorev.son_basvuru_tarihi;
+        const hedefTarih = gorev.son_basvuru_tarihi ?? gorev.tarih;
+        const kalanGun = Math.round((new Date(`${hedefTarih}T12:00:00Z`).getTime() - bugunMs) / birGunMs);
+        if (![7, 3, 1].includes(kalanGun)) continue;
+
+        for (const atama of gorev.yarisma_ogretmen_atamalari ?? []) {
+          const { error: kayitHatasi } = await admin.from("yarisma_hatirlatmalari").insert({
+            yarisma_id: gorev.id, teacher_id: atama.teacher_id, hedef_tarih: hedefTarih, kalan_gun: kalanGun,
+          });
+          if (kayitHatasi) {
+            if (kayitHatasi.code !== "23505") detaylar.push(`${gorev.isim}: hatırlatma kayıt hatası — ${kayitHatasi.message}`);
+            continue;
+          }
+
+          const baslik = sonBasvuruVar
+            ? `Son başvuru tarihine ${kalanGun} gün kaldı.`
+            : `Görev tarihine ${kalanGun} gün kaldı.`;
+          const govde = `${gorev.isim} · ${new Date(`${hedefTarih}T12:00:00`).toLocaleDateString("tr-TR")}`;
+          await Promise.all([
+            pushGonder(atama.teacher_id, baslik, govde),
+            bildirimGonder(admin, atama.teacher_id, "sistem", baslik, govde),
+          ]);
+          gonderilen++;
+        }
+      }
+    }
+
     const yarinISO = tarihEkle(bugunISO, 1);
     const { data: yaklasanGorevler } = await admin
       .from("gorev_atamalari")
