@@ -6,7 +6,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip,
   ResponsiveContainer, BarChart, Bar, Legend, PieChart, Pie, Cell,
 } from "recharts";
-import { Sparkles, Clock, Target, TrendingUp, TrendingDown, Minus, Printer, ListChecks, Gauge, Lightbulb, Flag, ShieldAlert } from "lucide-react";
+import { Sparkles, Clock, Target, TrendingUp, TrendingDown, Minus, Printer, ListChecks, Gauge, Lightbulb, Flag, ShieldAlert, CalendarPlus } from "lucide-react";
 import type { AnalizVerisi, RaporDonemi } from "@/lib/analiz";
 import { RAPOR_DONEMI_ETIKET } from "@/lib/analiz";
 import { HEDEFE_YAKINLIK_ETIKET, VERIMLILIK_ETIKET } from "@/lib/types";
@@ -152,11 +152,26 @@ export function AnalizPaneli({
             </button>
           ))}
         </div>
-        <button type="button" onClick={() => window.print()}
-          className="sfec-btn flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-full"
-          style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
-          <Printer size={13} /> Yazdır / PDF olarak kaydet
-        </button>
+        <div className="flex items-center gap-2">
+          {ogretmenGorunumu && (() => {
+            const ogrenciId = searchParams.get("ogrenci");
+            const sinifId = searchParams.get("sinif");
+            if (!ogrenciId) return null;
+            return (
+              <button type="button"
+                onClick={() => router.push(`/dashboard?bolum=planlar&sinif=${sinifId ?? ""}&ogrenci=${ogrenciId}`)}
+                className="sfec-btn flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-full"
+                style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
+                <CalendarPlus size={13} /> Programını gör
+              </button>
+            );
+          })()}
+          <button type="button" onClick={() => window.print()}
+            className="sfec-btn flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-full"
+            style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
+            <Printer size={13} /> Yazdır / PDF olarak kaydet
+          </button>
+        </div>
       </div>
 
       {ogretmenGorunumu && <OgretmenGorunumuKarti risk={riskSonucu} kohort={kohortKarsilastirma} />}
