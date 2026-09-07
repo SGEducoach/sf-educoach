@@ -128,6 +128,7 @@ export function OgretmenPanel({
   const [hata, setHata] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [silPending, startSilTransition] = useTransition();
+  const [acikSinifOgrenciId, setAcikSinifOgrenciId] = useState<string | null>(null);
 
   function onayla(talep: VeliLinkRequest & { ogrenci_ad: string }) {
     setHata(null);
@@ -323,26 +324,32 @@ export function OgretmenPanel({
         {ogrenciler.length === 0 ? (
           <p style={{ color: TEXT_MUTED }} className="text-sm py-4 text-center">Bu sınıfta kayıtlı öğrenci yok.</p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {ogrencilerOkulNoSirali(ogrenciler).map((o) => (
-              <div key={o.id} className="rounded-xl flex items-center justify-between gap-2 pr-1.5" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
-                <button onClick={() => router.push(`/dashboard?bolum=ozet&sinif=${gorunecekSinifId}&ogrenci=${o.id}`)}
-                  className="sfec-btn flex-1 min-w-0 px-3.5 py-2.5 flex items-center justify-between text-left">
-                  <span style={{ color: TEXT }} className="text-sm font-semibold truncate">{o.ad}</span>
-                  <span style={{ color: TEXT_MUTED }} className="text-xs shrink-0 ml-2">#{o.okul_no}</span>
+          <div>
+            {ogrencilerOkulNoSirali(ogrenciler).map((o) => {
+              const acik = acikSinifOgrenciId === o.id;
+              return <div key={o.id} className="transition-all duration-200" style={{ borderBottom: `1px solid ${BORDER}` }}>
+                <button type="button" onClick={() => setAcikSinifOgrenciId(acik ? null : o.id)} aria-expanded={acik}
+                  className="group flex w-full items-center justify-between gap-3 px-2 py-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:px-3"
+                  style={{ background: acik ? BG1_ALT : "transparent" }}>
+                  <span className="min-w-0 truncate text-sm font-semibold transition-colors group-hover:font-bold" style={{ color: TEXT }}>{o.ad}</span>
+                  <span className="flex shrink-0 items-center gap-2 text-xs" style={{ color: TEXT_MUTED }}>#{o.okul_no}{acik ? <ChevronUp size={15} color={MINT} /> : <ChevronDown size={15} />}</span>
                 </button>
-                {kendiSinifiMi && (
-                  <>
-                    <button type="button" title={`${o.ad} adlı öğrencinin aylık programını görüntüle`} aria-label={`${o.ad} programını görüntüle`} onClick={() => router.push(`/dashboard/planlar?sinif=${gorunecekSinifId}&ogrenci=${o.id}`)}
-                      className="sfec-btn grid h-8 w-8 shrink-0 place-items-center rounded-full" style={{ background: MINT_BG, color: MINT, border: `1px solid ${BORDER_STRONG}` }}>
-                      <CalendarPlus size={14} />
+                {acik && <div className="sfec-fade flex flex-wrap items-center gap-2 px-2 pb-3 pt-1">
+                  <button type="button" onClick={() => router.push(`/dashboard?bolum=ozet&sinif=${gorunecekSinifId}&ogrenci=${o.id}`)}
+                    className="sfec-btn rounded-full px-3 py-1.5 text-xs font-bold" style={{ background: SKY_BG, color: SKY }}>
+                    Öğrenci bilgileri
+                  </button>
+                  {kendiSinifiMi && <>
+                    <button type="button" onClick={() => router.push(`/dashboard/planlar?sinif=${gorunecekSinifId}&ogrenci=${o.id}`)}
+                      className="sfec-btn flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-bold" style={{ background: MINT_BG, color: MINT }}>
+                      <CalendarPlus size={13} /> Aylık program
                     </button>
                     <YurtOgrencisiButonu ogrenciId={o.id} yurtOgrencisi={o.yurtOgrencisi} />
                     <OgrenciTasiButonu ogrenciId={o.id} kendiSinifId={kendiSinifId} siniflar={siniflar} />
-                  </>
-                )}
-              </div>
-            ))}
+                  </>}
+                </div>}
+              </div>;
+            })}
           </div>
         )}
         {secilenOgrenciId && secilenOgrenciProgrami && secilenOgrenciProgrami.length > 0 && (
@@ -354,7 +361,7 @@ export function OgretmenPanel({
               <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Seçilen öğrencinin programı</span>
             </div>
             <div className="flex flex-col gap-2">
-              {secilenOgrenciProgrami.map((p: any) => (
+              {secilenOgrenciProgrami.map((p) => (
                 <div key={p.id} className="rounded-xl p-3" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
                   <div style={{ color: TEXT }} className="text-sm font-semibold">{p.gorevler?.ders ?? "—"} · {p.gorevler?.konu ?? "—"}</div>
                   <div style={{ color: TEXT_MUTED }} className="text-xs">{p.ogrenci_tarih} {p.ogrenci_baslangic_saat}-{p.ogrenci_bitis_saat} · {p.gorevler?.tur}</div>

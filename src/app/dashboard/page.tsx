@@ -630,25 +630,30 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
     );
   }
 
-  const { data: siniflar } = await okulOkumaClient
-    .from("classes")
-    .select("id, seviye, sube")
-    .eq("school_id", teacher.school_id);
-
-  const sinifListesi = ((siniflar ?? []) as { id: string; seviye: string; sube: string }[]).sort(sinifSiraKarsilastir);
-  const gorunecekSinifId = secilenSinifId || (rehberOgretmenMi ? null : teacher.class_id) || sinifListesi[0]?.id || null;
+  type OgretmenDersiRow = { id: string; teacher_id: string; class_id: string; ders: string };
+  const [{ data: siniflar }, { data: ogretmenDersleriHam }] = await Promise.all([
+    okulOkumaClient.from("classes").select("id, seviye, sube").eq("school_id", teacher.school_id),
+    supabase.from("ogretmen_dersleri").select("id, teacher_id, class_id, ders").eq("teacher_id", userId),
+  ]);
+  const kendiDersAtamalari = (ogretmenDersleriHam as unknown as OgretmenDersiRow[] | null) ?? [];
+  const tumSiniflar = ((siniflar ?? []) as { id: string; seviye: string; sube: string }[]).sort(sinifSiraKarsilastir);
+  // Normal öğretmen yalnız sınıf öğretmenliği yaptığı veya ders verdiği
+  // sınıfları görür. Rehber öğretmenin kurum geneli erişimi önceki açık
+  // kullanıcı kararına göre korunur; müdür de tüm okul sınıflarını görür.
+  const erisilebilirSinifIdleri = new Set([teacher.class_id, ...kendiDersAtamalari.map((d) => d.class_id)].filter((id): id is string => !!id));
+  const sinifListesi = role === "ogretmen" && !rehberOgretmenMi
+    ? tumSiniflar.filter((sinif) => erisilebilirSinifIdleri.has(sinif.id))
+    : tumSiniflar;
+  const secilenSinifErisilebilir = secilenSinifId && sinifListesi.some((sinif) => sinif.id === secilenSinifId) ? secilenSinifId : null;
+  const varsayilanSinifId = teacher.class_id && sinifListesi.some((sinif) => sinif.id === teacher.class_id)
+    ? teacher.class_id
+    : sinifListesi[0]?.id ?? null;
+  const gorunecekSinifId = secilenSinifErisilebilir || varsayilanSinifId;
   const kendiSinifiMi = gorunecekSinifId === teacher.class_id;
 
   // Öğrencinin soru çözümü, o sınıf ve derse atanmış branş öğretmeni varsa
-  // yalnız o öğretmenin; yoksa sınıf öğretmeninin onayına düşer. Önce bu
-  // öğretmenin branş atamalarını alıyoruz; böylece sınıf öğretmeni olmayan
-  // branş öğretmeni de kendi dersinin bekleyen kayıtlarını görebilir.
-  type OgretmenDersiRow = { id: string; teacher_id: string; class_id: string; ders: string };
-  const { data: ogretmenDersleriHam } = await supabase
-    .from("ogretmen_dersleri")
-    .select("id, teacher_id, class_id, ders")
-    .eq("teacher_id", userId);
-  const kendiDersAtamalari = (ogretmenDersleriHam as unknown as OgretmenDersiRow[] | null) ?? [];
+  // yalnız o öğretmenin; yoksa sınıf öğretmeninin onayına düşer. Branş
+  // öğretmeni sınıf öğretmeni olmasa da kendi dersinin kayıtlarını görebilir.
   const onayAdayiSinifIdleri = [...new Set([teacher.class_id, ...kendiDersAtamalari.map((d) => d.class_id)].filter((id): id is string => !!id))];
   const onayAdmin = createAdminClient();
 
