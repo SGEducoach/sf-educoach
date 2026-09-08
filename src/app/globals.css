@@ -353,24 +353,29 @@ input[type="file"]:active::-webkit-file-upload-button {
    çerçeveleri yerine tek bir alt ayırıcı vardır; satır fareyle veya klavyeyle
    seçildiğinde hafifçe öne çıkar. Ayrıntı alanları satırın doğal akışında,
    doğrudan öğrencinin altında açılır. */
+.sfec-liste,
 .sfec-ogrenci-listesi {
   display: flex;
   flex-direction: column;
   gap: 0;
 }
+.sfec-liste-satiri,
 .sfec-ogrenci-satiri {
   border-bottom: 1px solid var(--sfec-border);
   transition: transform 0.18s ease, background 0.18s ease, padding 0.18s ease;
 }
+.sfec-liste-satiri:last-child,
 .sfec-ogrenci-satiri:last-child {
   border-bottom: 0;
 }
 @media (hover: hover) {
+  .sfec-liste-satiri:hover,
   .sfec-ogrenci-satiri:hover {
     background: var(--sfec-bg1-alt);
     transform: translateY(-2px);
   }
 }
+.sfec-liste-satiri:focus-within,
 .sfec-ogrenci-satiri:focus-within {
   background: var(--sfec-bg1-alt);
 }

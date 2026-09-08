@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Search, BookOpen, RefreshCw, Save, ChevronDown, ChevronUp } from "lucide-react";
-import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH, LILAC } from "@/lib/theme";
+import { BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH, LILAC } from "@/lib/theme";
 import { konuAnlatimlariAra, konuAnlatimiDetay, konuAnlatimiGuncelle, konuAnlatimiYenidenUret, type KonuAnlatimiSatiri } from "@/app/yonetici/actions";
 
 // 190+ üretilmiş konu anlatımı içeriğini tek tek gözden geçirip
@@ -54,7 +54,7 @@ export function KonuAnlatimYonetimi() {
       ) : aramaYapildi && satirlar.length === 0 ? (
         <p style={{ color: TEXT_MUTED }} className="text-sm py-3 text-center">Sonuç bulunamadı.</p>
       ) : satirlar.length > 0 ? (
-        <div className="flex flex-col gap-2">
+        <div className="sfec-liste">
           {satirlar.map((s) => (
             <KonuSatiri key={s.id} satir={s} acik={acikId === s.id} onToggle={() => setAcikId(acikId === s.id ? null : s.id)} />
           ))}
@@ -106,7 +106,7 @@ function KonuSatiri({ satir, acik, onToggle }: { satir: KonuAnlatimiSatiri; acik
   }
 
   return (
-    <div className="rounded-xl px-3.5 py-2.5" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
+    <div className="sfec-liste-satiri px-2 py-3">
       {/* Kullanıcı bulgusu (29.08.2026): "konu özetlerinde konunun üzerine
           gelince aktifleşen konu çerçeve dışına taşıyor" — global .sfec-btn
           hover'ı (transform: scale(1.04)) bu satırın kendi rounded-xl

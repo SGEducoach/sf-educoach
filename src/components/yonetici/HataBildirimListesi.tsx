@@ -4,7 +4,7 @@ import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Check } from "lucide-react";
 import { hataBildirimiCozulduIsaretle, type HataBildirimSonuc } from "@/app/yonetici/actions";
-import { BG0, BG1_ALT, BORDER, MINT, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
+import { BG0, MINT, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
 import type { UserRole } from "@/lib/types";
 
 const ROL_ETIKET: Record<UserRole, string> = {
@@ -21,7 +21,7 @@ function tarihFormat(iso: string) {
 // gerekmiyor (önceden "Çözülenler" bölümü için vardı).
 export function HataBildirimListesi({ bildirimler }: { bildirimler: HataBildirimSonuc[] }) {
   return (
-    <div className="flex flex-col gap-3">
+    <div className="sfec-liste">
       {bildirimler.map((b) => <Satir key={b.id} bildirim={b} />)}
     </div>
   );
@@ -32,7 +32,7 @@ function Satir({ bildirim }: { bildirim: HataBildirimSonuc }) {
   const [pending, startTransition] = useTransition();
 
   return (
-    <div className="rounded-2xl p-4" style={{ background: BG1_ALT, border: `2px solid ${BORDER}` }}>
+    <div className="sfec-liste-satiri px-2 py-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <div style={{ color: TEXT }} className="text-sm font-bold">{bildirim.bildirenAd ?? "—"} <span style={{ color: TEXT_MUTED }} className="font-normal">· {ROL_ETIKET[bildirim.bildirenRol]}</span></div>

@@ -208,7 +208,7 @@ export function Gorevlerim({ gorevler, gorunum, haftaBaslangic, aytAlan, sinifSe
           {planSayfasi ? "Bu gün için program yok." : "Bu gün için ödev yok."}
         </p>
       ) : (
-        <div className="flex flex-col gap-2.5 mb-2.5">
+        <div className="sfec-liste mb-2.5">
           {gunGorevleri.map((g) => {
             const Icon = TUR_IKON[g.tur];
             const renk = DURUM_RENK[g.durum];
@@ -217,7 +217,7 @@ export function Gorevlerim({ gorevler, gorunum, haftaBaslangic, aytAlan, sinifSe
               : null;
             return (
               <button key={g.atamaId} type="button" onClick={() => setDetayGorev(g)}
-                className="sfec-btn w-full rounded-2xl p-3.5 flex items-start justify-between gap-3 flex-wrap text-left"
+                className="sfec-btn sfec-liste-satiri flex w-full items-start justify-between gap-3 px-2 py-3 text-left"
                 style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
                 <div className="flex items-start gap-2.5 min-w-0">
                   <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ background: renk.bg }}>

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ChevronRight, ShieldCheck } from "lucide-react";
 import { moderatorluOkullarGetir } from "@/app/yonetici/moderatorler-actions";
 import { ModeratorAtamaFormu } from "@/components/yonetici/ModeratorAtamaFormu";
-import { BG1, BG1_ALT, BORDER, BORDER_STRONG, TEXT, TEXT_MUTED } from "@/lib/theme";
+import { BG1, BORDER, TEXT, TEXT_MUTED } from "@/lib/theme";
 
 // Admin panelinde "Moderatörler" bölümü — okul isimleriyle sıralanır,
 // bir okula tıklayınca o okulun moderatör paneline (/moderator?okul=...)
@@ -18,11 +18,10 @@ export async function ModeratorlerListesi() {
       {okullar.length === 0
         ? <p style={{ color: TEXT_MUTED }} className="text-sm">Henüz moderatörü olan bir okul yok.</p>
         : (
-          <div className="flex flex-col gap-2">
+          <div className="sfec-liste">
             {okullar.map((o) => (
               <Link key={o.schoolId} href={`/moderator?okul=${o.schoolId}`}
-                className="sfec-btn flex items-center justify-between gap-2 rounded-2xl p-3.5"
-                style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
+                className="sfec-btn sfec-liste-satiri flex items-center justify-between gap-2 px-2 py-3">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <ShieldCheck size={16} color={TEXT_MUTED} className="shrink-0" />
                   <div className="min-w-0">

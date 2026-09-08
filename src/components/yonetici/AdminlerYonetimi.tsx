@@ -44,7 +44,7 @@ export function AdminlerYonetimi() {
       {adminler === null ? (
         <p style={{ color: TEXT_MUTED }} className="text-sm py-3 text-center">Yükleniyor...</p>
       ) : (
-        <div className="mt-2 flex flex-col gap-2">
+        <div className="sfec-liste mt-2">
           {adminler.map((a) => <AdminSatiri key={a.id} admin={a} onDegisti={yukle} />)}
         </div>
       )}
@@ -123,7 +123,7 @@ function AdminSatiri({ admin: a, onDegisti }: { admin: AdminHesabi; onDegisti: (
   }
 
   return (
-    <div className="rounded-xl px-3.5 py-2.5 flex flex-col gap-2" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}`, opacity: a.aktif ? 1 : 0.6 }}>
+    <div className="sfec-liste-satiri flex flex-col gap-2 px-2 py-3" style={{ opacity: a.aktif ? 1 : 0.6 }}>
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">

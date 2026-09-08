@@ -141,11 +141,11 @@ export function TgDenemeYonetimi() {
           <Archive size={12} /> İlanları yönet (yayın ve arşiv)
         </button>
         {arsivAcik && (
-          <div className="mt-2 rounded-2xl p-3 max-h-72 overflow-y-auto flex flex-col gap-2" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
+          <div className="sfec-liste mt-2 max-h-72 overflow-y-auto">
             {arsivPending && !arsiv && <p style={{ color: TEXT_MUTED }} className="text-xs text-center py-2">Yükleniyor...</p>}
             {arsiv?.length === 0 && <p style={{ color: TEXT_MUTED }} className="text-xs text-center py-2">Kayıtlı ilan yok.</p>}
             {arsiv?.map((i) => (
-              <div key={i.id} className="flex items-center gap-2.5 rounded-xl p-2.5" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
+              <div key={i.id} className="sfec-liste-satiri flex items-center gap-2.5 px-2 py-3">
                 {i.dosyaTipi === "pdf" ? <FileText size={16} color={TEXT_MUTED} className="shrink-0" /> : <ImageIcon size={16} color={TEXT_MUTED} className="shrink-0" />}
                 <div className="min-w-0 flex-1">
                   <p style={{ color: TEXT }} className="text-xs font-bold leading-snug truncate">{i.baslik}</p>

@@ -4,7 +4,7 @@ import { startTransition, useEffect, useState } from "react";
 import { ChevronDown, History, ShieldCheck } from "lucide-react";
 import { islemGecmisiGetir, type IslemKaydiDetayli } from "@/app/yonetici/actions";
 import { EYLEM_ETIKET } from "@/lib/islem-gecmisi";
-import { BG1, BG1_ALT, BLUSH_BG, BLUSH, BORDER, BORDER_STRONG, LILAC, LILAC_BG, TEXT, TEXT_MUTED } from "@/lib/theme";
+import { BG1, BLUSH_BG, BLUSH, BORDER, LILAC, LILAC_BG, TEXT, TEXT_MUTED } from "@/lib/theme";
 
 // Faz 3 (2026-08-26 kullanıcı isteği) — "Okullar & Duyuru kategorisindeki
 // Son işlemler kısmı İşlem Geçmişi'ne taşınacak. Admin burada bir işleme
@@ -38,7 +38,7 @@ export function IslemGecmisi() {
       ) : kayitlar.length === 0 ? (
         <p style={{ color: TEXT_MUTED }} className="text-sm py-3 text-center">Henüz işlem kaydı yok.</p>
       ) : (
-        <div className="flex flex-col gap-1.5">
+        <div className="sfec-liste">
           {kayitlar.map((k) => {
             const acik = acikId === k.id;
             // Kullanıcı isteği (2026-08-26): "İşlem detayı kod olarak
@@ -48,7 +48,7 @@ export function IslemGecmisi() {
             const duyuruMesajiVarMi = k.eylem === "admin_duyuru_gonder" || k.eylem === "rehber_mesaj_gonder";
             const duyuruMesaji = duyuruMesajiVarMi && typeof k.detay?.mesaj === "string" ? k.detay.mesaj : null;
             return (
-              <div key={k.id} className="rounded-xl overflow-hidden" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
+              <div key={k.id} className="sfec-liste-satiri overflow-hidden">
                 <button type="button" onClick={() => duyuruMesaji && setAcikId(acik ? null : k.id)}
                   className="w-full flex items-center justify-between flex-wrap gap-1.5 px-3.5 py-2 text-xs text-left" style={{ cursor: duyuruMesaji ? "pointer" : "default" }}>
                   <span style={{ color: TEXT }} className="font-semibold flex items-center gap-1.5 flex-wrap">

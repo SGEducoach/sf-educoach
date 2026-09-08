@@ -7,7 +7,7 @@ import {
   duyuruGecmistenKaldir,
   type DuyuruGecmisiSatiri,
 } from "@/app/duyuru-gecmisi-actions";
-import { BG0, BG1, BG1_ALT, BLUSH, BORDER, BORDER_STRONG, MINT, TEXT, TEXT_MUTED } from "@/lib/theme";
+import { BG0, BG1, BLUSH, BORDER, BORDER_STRONG, MINT, TEXT, TEXT_MUTED } from "@/lib/theme";
 
 export function DuyuruGecmisi() {
   const [veri, setVeri] = useState<DuyuruGecmisiSatiri[]>([]);
@@ -79,14 +79,14 @@ export function DuyuruGecmisi() {
       </div>
 
       {hata && <p className="mt-3 text-sm" style={{ color: BLUSH }}>{hata}</p>}
-      <div className="mt-4 flex flex-col gap-3">
+      <div className="sfec-liste mt-4">
         {yukleniyor && veri.length === 0 && <p style={{ color: TEXT_MUTED }}>Yükleniyor...</p>}
         {!yukleniyor && liste.length === 0 && <p style={{ color: TEXT_MUTED }}>Duyuru kaydı bulunamadı.</p>}
         {liste.map((duyuru) => (
           <article
             key={duyuru.id}
-            className="rounded-2xl p-4"
-            style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}`, opacity: duyuru.silindi ? 0.65 : 1 }}
+            className="sfec-liste-satiri px-2 py-3"
+            style={{ opacity: duyuru.silindi ? 0.65 : 1 }}
           >
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>

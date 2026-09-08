@@ -563,9 +563,9 @@ function HizDogrulukKarti({ satirlar }: { satirlar: AnalizVerisi["dersHizDogrulu
       {satirlar.length === 0 ? (
         <BosDurum />
       ) : (
-        <div className="flex flex-col gap-2">
+        <div className="sfec-liste">
           {satirlar.map((s) => (
-            <div key={s.ders} className="rounded-2xl px-3.5 py-2.5 flex items-center justify-between gap-2 flex-wrap" style={{ background: BG1_ALT, border: `1px solid ${BORDER}` }}>
+            <div key={s.ders} className="sfec-liste-satiri flex items-center justify-between gap-2 px-2 py-3">
               <div className="min-w-0">
                 <div style={{ color: TEXT }} className="text-sm font-semibold">{s.ders}</div>
                 <div style={{ color: TEXT_MUTED }} className="text-[11px] mt-0.5">

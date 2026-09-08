@@ -54,7 +54,7 @@ export function BlogYonetimi() {
       ) : yazilar.length === 0 ? (
         <p className="py-3 text-center text-sm" style={{ color: TEXT_MUTED }}>Henüz yazı yok. Sağ üstten &quot;Yeni yazı&quot; ile başlayın.</p>
       ) : (
-        <div className="mt-3 flex flex-col gap-2">
+        <div className="sfec-liste mt-3">
           {yazilar.map((y) => (
             <YaziSatiri key={y.id} yazi={y}
               onDuzenle={() => { setDuzenlenen(y); setFormAcik(true); }}
@@ -72,7 +72,7 @@ function YaziSatiri({ yazi, onDuzenle, onDegisti, onHata }: {
   const [pending, startPending] = useTransition();
 
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-xl px-3.5 py-2.5" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
+    <div className="sfec-liste-satiri flex flex-wrap items-center gap-3 px-2 py-3">
       {yazi.kapakGorseli && (
         // eslint-disable-next-line @next/next/no-img-element -- yönetilen Supabase Storage görseli
         <img src={blogGorselUrl(yazi.kapakGorseli)} alt="" className="h-12 w-16 shrink-0 rounded-lg object-cover" />

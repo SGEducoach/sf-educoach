@@ -146,7 +146,7 @@ export function ModeratorPanel({ okulAdi, kullanicilar, schoolId }: {
       </div>
       <p style={{ color: TEXT_MUTED }} className="mt-3 text-xs font-semibold">Listelenen kişi: <strong style={{ color: TEXT }}>{gosterilenler.length}</strong></p>
     </div>
-    <div className={sekme === "ogrenci" ? "sfec-ogrenci-listesi" : "grid grid-cols-1 gap-2 sm:grid-cols-2"}>
+    <div className="sfec-liste">
       {sayfadakiler.map(k => <KullaniciKarti key={k.id} kullanici={k} schoolId={schoolId} onMesaj={setMesaj} />)}
       {gosterilenler.length === 0 && <div className="col-span-full rounded-2xl p-6 text-center text-sm" style={{ color: TEXT_MUTED, background: BG1, border: `2px solid ${BORDER}` }}>Bu filtrelere uygun kullanıcı bulunamadı.</div>}
     </div>
@@ -414,22 +414,22 @@ function KullaniciKarti({ kullanici: k, schoolId, onMesaj }: { kullanici: Modera
   const [epostaKayitli, setEpostaKayitli] = useState(teslimEdilebilirEpostaMi(k.email));
   const [eposta, setEposta] = useState(teslimEdilebilirEpostaMi(k.email) ? k.email ?? "" : "");
   const [satirAcik, setSatirAcik] = useState(false);
-  const ogrenciMi = k.kategori === "ogrenci";
+  const sadeSatirMi = true;
 
   return (
-    <div className={ogrenciMi ? "sfec-ogrenci-satiri px-2 py-1" : "rounded-2xl p-3.5"}
-      style={ogrenciMi ? undefined : { background: BG1, border: `2px solid ${BORDER}` }}>
-      {ogrenciMi ? <button type="button" onClick={() => setSatirAcik((v) => !v)} aria-expanded={satirAcik}
+    <div className={sadeSatirMi ? "sfec-liste-satiri px-2 py-1" : "rounded-2xl p-3.5"}
+      style={sadeSatirMi ? undefined : { background: BG1, border: `2px solid ${BORDER}` }}>
+      {sadeSatirMi ? <button type="button" onClick={() => setSatirAcik((v) => !v)} aria-expanded={satirAcik}
         className="group flex w-full items-center justify-between gap-3 py-2 text-left">
-        <span style={{ color: TEXT }} className="min-w-0 truncate text-sm font-bold group-hover:font-extrabold">{k.ad}</span>
-        <span className="flex shrink-0 items-center gap-2 text-xs" style={{ color: TEXT_MUTED }}>{k.sinif ?? "—"}<ChevronDown size={15} style={{ transform: satirAcik ? "rotate(180deg)" : undefined, transition: "transform 0.15s" }}/></span>
+        <span style={{ color: TEXT }} className="min-w-0 truncate text-sm font-bold group-hover:font-extrabold">{k.ad}{k.moderatorMu && <span className="ml-1 text-[9px] font-bold" style={{ color: MINT }}>Moderatör</span>}</span>
+        <span className="flex max-w-[48%] shrink-0 items-center gap-2 truncate text-xs" style={{ color: TEXT_MUTED }}>{k.sinif ?? k.detay}<ChevronDown size={15} className="shrink-0" style={{ transform: satirAcik ? "rotate(180deg)" : undefined, transition: "transform 0.15s" }}/></span>
       </button> : <><div style={{ color: TEXT }} className="text-sm font-bold flex items-center gap-1.5 flex-wrap">
         {k.ad}
         {k.moderatorMu && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5" style={{ background: MINT, color: MINT_ON }}><ShieldCheck size={9}/> Moderatör</span>}
       </div>
       <div style={{ color: TEXT_MUTED }} className="text-xs">{k.detay}</div></>}
-      {(!ogrenciMi || satirAcik) && <>
-      {ogrenciMi && <div style={{ color: TEXT_MUTED }} className="pb-1 text-xs">{k.detay}</div>}
+      {(!sadeSatirMi || satirAcik) && <>
+      {sadeSatirMi && <div style={{ color: TEXT_MUTED }} className="pb-1 text-xs">{k.detay}</div>}
       {!epostaKayitli && (
         <div className="mt-2 flex flex-col gap-2 rounded-lg p-2 sm:flex-row sm:items-end" style={{ background: "rgba(225,29,72,0.08)", border: `1px solid ${BLUSH}` }}>
           <div className="flex min-w-0 flex-1 items-start gap-2">

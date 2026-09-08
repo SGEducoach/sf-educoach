@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { ChevronDown, ChevronUp, ListTree, Plus, Trash2 } from "lucide-react";
-import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH, LILAC } from "@/lib/theme";
+import { BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH, LILAC } from "@/lib/theme";
 import {
   mufredatDersleriGetir, mufredatUstBasliklariGetir, mufredatAltKonularGetir,
   mufredatAltKonuEkle, mufredatAltKonuSil,
@@ -59,7 +59,7 @@ export function MufredatHiyerarsiYonetimi() {
       {pending ? (
         <p style={{ color: TEXT_MUTED }} className="text-sm py-3 text-center">Yükleniyor...</p>
       ) : (
-        <div className="flex flex-col gap-2">
+        <div className="sfec-liste">
           {satirlar.map((s) => (
             <UstBaslikSatiri key={s.konu} satir={s}
               acik={acikKonu === s.konu} onToggle={() => setAcikKonu(acikKonu === s.konu ? null : s.konu)} />
@@ -112,7 +112,7 @@ function UstBaslikSatiri({ satir, acik, onToggle }: { satir: MufredatUstBaslikSa
   }
 
   return (
-    <div className="rounded-xl px-3.5 py-2.5" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
+    <div className="sfec-liste-satiri px-2 py-3">
       {/* Kullanıcı bulgusu (29.08.2026): "konu özetlerinde konunun üzerine
           gelince aktifleşen konu çerçeve dışına taşıyor" — aynı sfec-btn
           hover taşması burada da vardı (bkz. KonuAnlatimYonetimi.tsx'teki
@@ -131,13 +131,13 @@ function UstBaslikSatiri({ satir, acik, onToggle }: { satir: MufredatUstBaslikSa
       </button>
 
       {acik && (
-        <div className="mt-3 flex flex-col gap-2">
+        <div className="sfec-liste mt-3">
           {yukleniyor ? (
             <p style={{ color: TEXT_MUTED }} className="text-xs py-2 text-center">Yükleniyor...</p>
           ) : (
             <>
               {altBasliklar.map((a) => (
-                <div key={a.id} className="flex items-center justify-between gap-2 rounded-lg px-2.5 py-1.5" style={{ background: BG0 }}>
+                <div key={a.id} className="sfec-liste-satiri flex items-center justify-between gap-2 px-2 py-2.5">
                   <span style={{ color: TEXT }} className="text-xs">{a.altBaslik}</span>
                   <button type="button" disabled={pending} onClick={() => sil(a.id)} title="Sil" style={{ color: BLUSH }}>
                     <Trash2 size={13} />

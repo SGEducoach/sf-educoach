@@ -2,7 +2,7 @@
 
 import { startTransition, useEffect, useState, useTransition } from "react";
 import { UserCheck, Check, X, Copy } from "lucide-react";
-import { BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH, LILAC } from "@/lib/theme";
+import { BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH, LILAC } from "@/lib/theme";
 import { veliTalepleriGetir, veliTalebiAdminOnayla, veliTalebiReddet, type VeliTalebiSonuc } from "@/app/yonetici/actions";
 
 const DURUM_ETIKET: Record<VeliTalebiSonuc["durum"], string> = {
@@ -55,7 +55,7 @@ export function VeliTalepleri() {
       ) : talepler.length === 0 ? (
         <p style={{ color: TEXT_MUTED }} className="text-sm py-3 text-center">Henüz veli talebi yok.</p>
       ) : (
-        <div className="flex flex-col gap-2">
+        <div className="sfec-liste">
           {[...bekleyenler, ...digerleri].map((t) => (
             <TalepSatiri key={t.id} talep={t} onGuncelle={(patch) => satirGuncelle(t.id, patch)} />
           ))}
@@ -100,7 +100,7 @@ function TalepSatiri({ talep, onGuncelle }: { talep: VeliTalebiSonuc; onGuncelle
   }
 
   return (
-    <div className="rounded-xl px-3.5 py-2.5 flex flex-col gap-2" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
+    <div className="sfec-liste-satiri flex flex-col gap-2 px-2 py-3">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <div style={{ color: TEXT }} className="text-sm font-semibold">

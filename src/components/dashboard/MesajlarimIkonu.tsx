@@ -99,14 +99,14 @@ export function MesajlarimIkonu({ baslangicSayisi }: { baslangicSayisi: number }
                 {yukleniyor && <p style={{ color: TEXT_MUTED }} className="text-xs text-center py-4">Yükleniyor...</p>}
                 {!yukleniyor && duyurular?.length === 0 && <p style={{ color: TEXT_MUTED }} className="text-xs text-center py-4">Yeni mesajınız yok.</p>}
                 <div className="mt-2 flex flex-col gap-2">
-                  {duyurular?.map((d) => (
+                  <div className="sfec-liste">{duyurular?.map((d) => (
                   <button key={d.id} type="button" onClick={() => setSecilenMesaj(d)}
-                    className="sfec-btn w-full rounded-xl p-2.5 text-left" style={{ background: "rgba(13,148,136,0.05)", border: `2px solid ${BORDER}` }}>
+                    className="sfec-btn sfec-liste-satiri w-full px-2 py-3 text-left">
                     <div style={{ color: TEXT }} className="text-xs font-bold mb-0.5">{d.baslik}</div>
                     <div style={{ color: TEXT_MUTED }} className="text-xs leading-relaxed line-clamp-2">{d.mesaj}</div>
                     <div style={{ color: TEXT_MUTED }} className="text-[10px] mt-1">{new Date(d.created_at).toLocaleString("tr-TR")}</div>
                   </button>
-                  ))}
+                  ))}</div>
                 </div>
               </>
             )}

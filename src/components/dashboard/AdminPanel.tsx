@@ -140,7 +140,7 @@ export function AdminPanel({
               {ogretmenListesi.length === 0 ? (
                 <p style={{ color: TEXT_MUTED }} className="text-sm py-3 text-center">Henüz kayıtlı öğretmen yok.</p>
               ) : (
-                <div className="flex flex-col gap-2">
+                <div className="sfec-liste">
                   {ogretmenListesi.map((o) => (
                     <OgretmenSatir key={o.id} ogretmen={o} siniflar={siniflar} />
                   ))}
@@ -269,7 +269,7 @@ function OgretmenSatir({ ogretmen, siniflar }: { ogretmen: OgretmenSatiri; sinif
   }
 
   return (
-    <div className="rounded-xl px-3.5 py-2.5 flex items-center justify-between flex-wrap gap-2" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
+    <div className="sfec-liste-satiri flex items-center justify-between gap-2 px-2 py-3">
       <div>
         <div style={{ color: TEXT }} className="text-sm font-semibold">
           {ogretmen.ad} {ogretmen.mudurMu && <span style={{ color: LILAC }} className="text-[10px] font-bold ml-1">Müdür</span>}

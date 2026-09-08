@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { SifreDegistir } from "@/components/SifreDegistir";
 import { AYT_ALAN_ETIKET } from "@/lib/types";
 import type { AytAlan } from "@/lib/types";
-import { BG1, BG1_ALT, BORDER, BORDER_STRONG, TEXT, TEXT_MUTED } from "@/lib/theme";
+import { BG1, BORDER, TEXT, TEXT_MUTED } from "@/lib/theme";
 
 // Kullanıcı isteği (03.09.2026): "Öğrenci panelinde profilimi düzenle kısmı
 // gelecek. Sadece şifre değiştirebilecek. Numarasına vs dokunamaz."
@@ -41,9 +41,9 @@ export async function OgrenciProfilim({ userId, ad }: { userId: string; ad: stri
           varsa okul/dershane yöneticinize başvurun.
         </p>
 
-        <dl className="mt-4 grid gap-2.5 sm:grid-cols-2">
+        <dl className="sfec-liste mt-4">
           {satirlar.map(({ etiket, deger }) => (
-            <div key={etiket} className="rounded-2xl px-3.5 py-2.5" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
+            <div key={etiket} className="sfec-liste-satiri px-2 py-3">
               <dt className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: TEXT_MUTED }}>{etiket}</dt>
               <dd className="mt-0.5 text-sm font-semibold" style={{ color: TEXT }}>{deger}</dd>
             </div>

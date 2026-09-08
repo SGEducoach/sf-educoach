@@ -204,7 +204,7 @@ export function BildirimAyarlari({ role }: { role: UserRole }) {
               </button>
             )}
 
-            <div className="flex flex-col gap-1.5">
+            <div className="sfec-liste">
               {bildirimler === null ? (
                 <p style={{ color: TEXT_MUTED }} className="text-xs py-3 text-center">Yükleniyor...</p>
               ) : bildirimler.length === 0 ? (
@@ -214,7 +214,7 @@ export function BildirimAyarlari({ role }: { role: UserRole }) {
                   const BildirimIkonu = TUR_IKON[b.tur] ?? Bell;
                   return (
                     <button key={b.id} type="button" onClick={() => !b.okundu && birOkunduIsaretle(b.id)}
-                      className="sfec-btn flex items-start gap-2 rounded-xl px-2.5 py-2 text-left"
+                      className="sfec-btn sfec-liste-satiri flex items-start gap-2 px-2 py-3 text-left"
                       style={{ background: b.okundu ? "transparent" : BG0, border: `2px solid ${BORDER_STRONG}` }}>
                       <BildirimIkonu size={14} className="mt-0.5 shrink-0" color={b.okundu ? TEXT_MUTED : MINT} />
                       <div className="min-w-0 flex-1">

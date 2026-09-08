@@ -360,9 +360,9 @@ export function OgretmenPanel({
               </div>
               <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Seçilen öğrencinin programı</span>
             </div>
-            <div className="flex flex-col gap-2">
+            <div className="sfec-liste">
               {secilenOgrenciProgrami.map((p) => (
-                <div key={p.id} className="rounded-xl p-3" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
+                <div key={p.id} className="sfec-liste-satiri px-2 py-3">
                   <div style={{ color: TEXT }} className="text-sm font-semibold">{p.gorevler?.ders ?? "—"} · {p.gorevler?.konu ?? "—"}</div>
                   <div style={{ color: TEXT_MUTED }} className="text-xs">{p.ogrenci_tarih} {p.ogrenci_baslangic_saat}-{p.ogrenci_bitis_saat} · {p.gorevler?.tur}</div>
                 </div>
@@ -490,12 +490,12 @@ function VerdigimGorevlerBolumu({ gorevler }: { gorevler: VerdigimGorevSatiri[] 
       {gorevler.length === 0 ? (
         <p style={{ color: TEXT_MUTED }} className="py-4 text-center text-sm">Henüz ödev vermediniz.</p>
       ) : (
-        <div className="flex flex-col gap-2">
+        <div className="sfec-liste">
           {gorevler.map((g) => {
             const acik = acikId === g.id;
             const tamamlanan = g.atamalar.filter((a) => a.durum === "tamamlandi").length;
             return (
-              <div key={g.id} className="rounded-2xl" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
+              <div key={g.id} className="sfec-liste-satiri overflow-hidden">
                 <button type="button" onClick={() => setAcikId(acik ? null : g.id)}
                   className="sfec-btn flex w-full items-center justify-between gap-3 p-3.5 text-left">
                   <div className="min-w-0">
@@ -574,12 +574,12 @@ function BekleyenOnaylarBolumu({ onaylar }: { onaylar: BekleyenOnaySatiri[] }) {
       {ogrenciListesi.length === 0 ? (
         <p style={{ color: TEXT_MUTED }} className="text-sm py-4 text-center">Onay bekleyen soru çözümü yok.</p>
       ) : (
-        <div className="flex flex-col gap-2">
+        <div className="sfec-liste">
           {ogrenciListesi.map((g) => {
             const acik = acikOgrenciId === g.studentId;
             const bekleyenSayisi = g.kayitlar.filter((k) => !onaylanan.has(k.id)).length;
             return (
-              <div key={g.studentId} className="rounded-2xl overflow-hidden" style={{ background: BG1_ALT, border: `2px solid ${BORDER}` }}>
+              <div key={g.studentId} className="sfec-liste-satiri overflow-hidden">
                 <button type="button" onClick={() => setAcikOgrenciId(acik ? null : g.studentId)}
                   className="sfec-btn w-full flex items-center justify-between gap-2 p-3 text-left">
                   <span style={{ color: TEXT }} className="text-sm font-semibold">{g.ogrenciAd}</span>
@@ -593,11 +593,11 @@ function BekleyenOnaylarBolumu({ onaylar }: { onaylar: BekleyenOnaySatiri[] }) {
                   </div>
                 </button>
                 {acik && (
-                  <div className="flex flex-col gap-2 px-3 pb-3">
+                  <div className="sfec-liste px-3 pb-3">
                     {g.kayitlar.map((o) => {
                       const onaylandi = onaylanan.has(o.id);
                       return (
-                        <div key={o.id} className="rounded-xl p-2.5 flex items-center justify-between flex-wrap gap-2" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
+                        <div key={o.id} className="sfec-liste-satiri flex items-center justify-between gap-2 px-2 py-3">
                           <div>
                             <div style={{ color: TEXT }} className="text-xs font-semibold">{o.ders}</div>
                             <div style={{ color: TEXT_MUTED }} className="text-[11px] mt-0.5">D:{o.dogru} Y:{o.yanlis} B:{o.bos} · {o.tarih}</div>

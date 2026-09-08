@@ -64,14 +64,14 @@ export function ModeratorAtamaFormu() {
       </select>
       {mesaj && <div style={{ color: mesaj.startsWith("Hata") ? BLUSH : MINT }} className="text-xs font-bold mt-2">{mesaj}</div>}
       {schoolId && (
-        <div className="mt-3 flex flex-col gap-2">
+        <div className="sfec-liste mt-3">
           {gosterilecekOgretmenler === null ? (
             <p style={{ color: TEXT_MUTED }} className="text-xs">Yükleniyor...</p>
           ) : gosterilecekOgretmenler.length === 0 ? (
             <p style={{ color: TEXT_MUTED }} className="text-xs">Bu okulda öğretmen/müdür kaydı yok.</p>
           ) : (
             gosterilecekOgretmenler.map((o) => (
-              <div key={o.id} className="flex items-center justify-between gap-2 rounded-xl px-3 py-2" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
+              <div key={o.id} className="sfec-liste-satiri flex items-center justify-between gap-2 px-2 py-3">
                 <div className="min-w-0">
                   <div style={{ color: TEXT }} className="text-xs font-bold truncate">{o.ad}</div>
                   <div style={{ color: TEXT_MUTED }} className="text-[11px]">{o.mudurMu ? "Müdür" : o.brans}</div>

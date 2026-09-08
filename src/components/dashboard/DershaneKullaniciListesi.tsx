@@ -66,27 +66,23 @@ export function DershaneKullaniciListesi({ kullanicilar, kategori, siniflar, der
           Bu sınıfta kayıtlı öğrenci yok.
         </div>
       ) : (
-      <div className={kategori === "ogrenci" ? "sfec-ogrenci-listesi" : "grid grid-cols-1 gap-2 sm:grid-cols-2"}>
+      <div className="sfec-liste">
         {gosterilenler.map((k) => (
           <div key={k.id}
-            className={kategori === "ogrenci" ? "sfec-ogrenci-satiri px-2 py-1" : `rounded-2xl p-3.5 ${acikProgramId === k.id ? "sm:col-span-2" : ""}`}
-            style={kategori === "ogrenci" ? undefined : { background: BG1, border: `2px solid ${BORDER}` }}>
-            {kategori === "ogrenci" ? <button type="button" onClick={() => setAcikOgrenciId(acikOgrenciId === k.id ? null : k.id)} aria-expanded={acikOgrenciId === k.id}
+            className="sfec-liste-satiri px-2 py-1">
+            <button type="button" onClick={() => setAcikOgrenciId(acikOgrenciId === k.id ? null : k.id)} aria-expanded={acikOgrenciId === k.id}
               className="group flex w-full items-center justify-between gap-3 py-2 text-left">
               <span style={{ color: TEXT }} className="min-w-0 truncate text-sm font-bold group-hover:font-extrabold">{k.ad}</span>
-              <span className="flex shrink-0 items-center gap-2 text-xs" style={{ color: TEXT_MUTED }}>{!k.aktif && "Pasif · "}{k.sinif ?? "—"}{acikOgrenciId === k.id ? <ChevronUp size={15} color={MINT}/> : <ChevronDown size={15}/>}</span>
-            </button> : <>
-              <div style={{ color: TEXT }} className="text-sm font-bold">{k.ad}</div>
-              <div style={{ color: TEXT_MUTED }} className="text-xs">{k.detay}{!k.aktif && " · Pasif"}</div>
-            </>}
-            {(kategori !== "ogrenci" || acikOgrenciId === k.id) && <div className="mt-2 flex flex-wrap gap-2 pb-2">
-              {kategori === "ogrenci" && (<>
-                <div className="w-full text-xs" style={{ color: TEXT_MUTED }}>{k.detay}{!k.aktif && " · Pasif"}</div>
+              <span className="flex max-w-[48%] shrink-0 items-center gap-2 truncate text-xs" style={{ color: TEXT_MUTED }}>{!k.aktif && "Pasif · "}{k.sinif ?? k.detay}{acikOgrenciId === k.id ? <ChevronUp size={15} className="shrink-0" color={MINT}/> : <ChevronDown size={15} className="shrink-0"/>}</span>
+            </button>
+            {acikOgrenciId === k.id && <div className="mt-2 flex flex-wrap gap-2 pb-2">
+              <div className="w-full text-xs" style={{ color: TEXT_MUTED }}>{k.detay}{!k.aktif && " · Pasif"}</div>
+              {kategori === "ogrenci" && (
                 <Link href={`/dashboard?ogrenci=${k.id}`}
                   className="sfec-btn flex-1 flex items-center justify-center gap-1 rounded-lg px-2 py-2 text-[11px] font-bold" style={{ color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
                   <BarChart3 size={12} /> Profil / Analiz
                 </Link>
-              </>)}
+              )}
               {kategori === "ogretmen" && (
                 <button onClick={() => setAcikProgramId(acikProgramId === k.id ? null : k.id)}
                   className="sfec-btn flex-1 flex items-center justify-center gap-1 rounded-lg px-2 py-2 text-[11px] font-bold"

@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { History, Megaphone, Send, X } from "lucide-react";
-import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
+import { BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 import type { DuyuruAliciTuru } from "@/lib/push-send";
 
 const MAKS_UZUNLUK = 500;
@@ -138,11 +138,11 @@ export function DuyuruFormu({
             <History size={12} /> Gönderilen duyurular
           </button>
           {gecmisAcik && (
-            <div className="mt-2 rounded-2xl p-3 max-h-56 overflow-y-auto flex flex-col gap-2" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
+            <div className="sfec-liste mt-2 max-h-56 overflow-y-auto">
               {gecmisPending && <p style={{ color: TEXT_MUTED }} className="text-xs text-center py-2">Yükleniyor...</p>}
               {!gecmisPending && gecmis?.length === 0 && <p style={{ color: TEXT_MUTED }} className="text-xs text-center py-2">Henüz gönderilmiş duyuru yok.</p>}
               {!gecmisPending && gecmis?.map((d) => (
-                <div key={d.id} className="rounded-xl p-2.5" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
+                <div key={d.id} className="sfec-liste-satiri px-2 py-3">
                   <div className="flex items-center justify-between gap-2">
                     <span style={{ color: TEXT }} className="text-xs font-bold">{d.baslik}</span>
                     <span style={{ color: TEXT_MUTED }} className="text-[10px] shrink-0">{new Date(d.createdAt).toLocaleString("tr-TR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</span>

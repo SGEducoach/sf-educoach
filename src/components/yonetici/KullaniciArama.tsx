@@ -254,7 +254,7 @@ export function KullaniciArama() {
                     </div>
                   </div>
 
-                  <div className={rol === "ogrenci" ? "sfec-ogrenci-listesi" : "flex flex-col gap-2"}>
+                  <div className="sfec-liste">
                     {sayfadakiler.map((k) => <KullaniciSatiri key={k.id} kullanici={k} />)}
                   </div>
 
@@ -301,7 +301,7 @@ function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
   const [eposta, setEposta] = useState(teslimEdilebilirEpostaMi(kullanici.email) ? kullanici.email ?? "" : "");
   const [epostaPending, startEpostaTransition] = useTransition();
   const [satirAcik, setSatirAcik] = useState(false);
-  const ogrenciMi = kullanici.role === "ogrenci";
+  const sadeSatirMi = true;
 
   function epostaKaydet() {
     setHata(null);
@@ -364,14 +364,14 @@ function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
   if (silindi) return null;
 
   return (
-    <div className={ogrenciMi ? "sfec-ogrenci-satiri flex flex-col px-2 py-1" : "rounded-xl px-3.5 py-2.5 flex flex-col gap-2"}
-      style={ogrenciMi ? { opacity: aktif ? 1 : 0.6 } : { background: BG1_ALT, border: `2px solid ${BORDER_STRONG}`, opacity: aktif ? 1 : 0.6 }}>
+    <div className={sadeSatirMi ? "sfec-liste-satiri flex flex-col px-2 py-1" : "rounded-xl px-3.5 py-2.5 flex flex-col gap-2"}
+      style={sadeSatirMi ? { opacity: aktif ? 1 : 0.6 } : { background: BG1_ALT, border: `2px solid ${BORDER_STRONG}`, opacity: aktif ? 1 : 0.6 }}>
       <div className="flex items-center justify-between flex-wrap gap-2">
-        {ogrenciMi ? (
+        {sadeSatirMi ? (
           <button type="button" onClick={() => setSatirAcik((v) => !v)} aria-expanded={satirAcik}
             className="group flex min-w-0 flex-1 items-center justify-between gap-3 py-2 text-left">
             <span className="min-w-0 truncate text-sm font-semibold transition-colors group-hover:font-bold" style={{ color: TEXT }}>
-              {kullanici.ad}{!aktif && <span style={{ color: BLUSH }} className="ml-1 text-[10px] font-bold">Pasif</span>}
+              {kullanici.ad}<span style={{ color: LILAC_TEXT }} className="ml-1 text-[10px] font-bold">{ROL_ETIKET[kullanici.role]}</span>{!aktif && <span style={{ color: BLUSH }} className="ml-1 text-[10px] font-bold">Pasif</span>}
             </span>
             <span className="flex shrink-0 items-center gap-2 text-xs" style={{ color: TEXT_MUTED }}>
               {kullanici.okulNo && `#${kullanici.okulNo}`}{satirAcik ? <ChevronUp size={15} color={MINT} /> : <ChevronDown size={15} />}
@@ -387,9 +387,9 @@ function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
             {[kullanici.email, kullanici.okulAdi, kullanici.sinifAdi, kullanici.okulNo && `#${kullanici.okulNo}`, kullanici.brans].filter(Boolean).join(" · ")}
           </div>
         </Link>}
-        {(!ogrenciMi || satirAcik) && <div className="flex items-center gap-1.5 flex-wrap">
-          {ogrenciMi && <Link href={`/yonetici/kullanici/${kullanici.id}`} className="sfec-btn rounded-full px-2.5 py-1.5 text-[11px] font-bold"
-            style={{ background: MINT_BG, color: TEXT }}>Öğrenci bilgileri</Link>}
+        {(!sadeSatirMi || satirAcik) && <div className="flex items-center gap-1.5 flex-wrap">
+          {sadeSatirMi && <Link href={`/yonetici/kullanici/${kullanici.id}`} className="sfec-btn rounded-full px-2.5 py-1.5 text-[11px] font-bold"
+            style={{ background: MINT_BG, color: TEXT }}>Kullanıcı bilgileri</Link>}
           <button type="button" onClick={sifreSifirlaTikla} disabled={sifrePending || !epostaKayitli} title={epostaKayitli ? "Rastgele yeni şifre oluştur" : "Önce e-posta kaydedin"}
             className="sfec-btn flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-full disabled:opacity-60"
             style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
@@ -425,11 +425,11 @@ function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
         </div>}
       </div>
 
-      {ogrenciMi && satirAcik && <div className="px-1 text-xs" style={{ color: TEXT_MUTED }}>
+      {sadeSatirMi && satirAcik && <div className="px-1 text-xs" style={{ color: TEXT_MUTED }}>
         {[kullanici.email, kullanici.okulAdi, kullanici.sinifAdi].filter(Boolean).join(" · ")}
       </div>}
 
-      {(!ogrenciMi || satirAcik) && !epostaKayitli && (
+      {(!sadeSatirMi || satirAcik) && !epostaKayitli && (
         <div className="flex flex-col gap-2 rounded-xl p-3 sm:flex-row sm:items-end" style={{ background: "rgba(225,29,72,0.08)", border: `1px solid ${BLUSH}` }}>
           <div className="flex min-w-0 flex-1 items-start gap-2">
             <MailWarning size={15} className="mt-0.5 shrink-0" color={BLUSH} />
@@ -446,16 +446,16 @@ function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
         </div>
       )}
 
-      {(!ogrenciMi || satirAcik) && hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
+      {(!sadeSatirMi || satirAcik) && hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
 
-      {(!ogrenciMi || satirAcik) && duzenleAcik && kullanici.role === "ogrenci" && (
+      {(!sadeSatirMi || satirAcik) && duzenleAcik && kullanici.role === "ogrenci" && (
         <OgrenciSinifTasiFormu studentId={kullanici.id} okulId={kullanici.okulId} suankiSinifId={kullanici.sinifId} onDone={() => setDuzenleAcik(false)} />
       )}
       {duzenleAcik && (kullanici.role === "ogretmen" || kullanici.role === "mudur") && (
         <OgretmenBransFormu teacherId={kullanici.id} suankiBrans={kullanici.brans} onDone={() => setDuzenleAcik(false)} />
       )}
 
-      {(!ogrenciMi || satirAcik) && elleSifreAcik && (
+      {(!sadeSatirMi || satirAcik) && elleSifreAcik && (
         <div className="rounded-xl p-2.5 flex items-center gap-2 flex-wrap" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
           <input type="text" value={elleSifre} onChange={(e) => setElleSifre(e.target.value)} placeholder="Yeni şifre (en az 8, harf+rakam+özel işaret)"
             className="min-w-0 flex-1 rounded-lg px-2.5 py-2 text-xs outline-none" style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }} />
@@ -465,7 +465,7 @@ function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
           </button>
         </div>
       )}
-      {(!ogrenciMi || satirAcik) && yeniSifre && (
+      {(!sadeSatirMi || satirAcik) && yeniSifre && (
         <div className="rounded-xl p-2.5 flex items-center justify-between gap-2 flex-wrap" style={{ background: MINT_BG, border: `1px solid ${MINT}` }}>
           <div className="text-xs" style={{ color: TEXT }}>
             Yeni şifre: <strong>{yeniSifre}</strong>
@@ -478,7 +478,7 @@ function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
           </button>
         </div>
       )}
-      {(!ogrenciMi || satirAcik) && detayAcik && <KullaniciDetayYonetimi kullanici={kullanici} />}
+      {(!sadeSatirMi || satirAcik) && detayAcik && <KullaniciDetayYonetimi kullanici={kullanici} />}
     </div>
   );
 }
