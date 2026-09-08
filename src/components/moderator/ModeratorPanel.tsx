@@ -421,7 +421,7 @@ function KullaniciKarti({ kullanici: k, schoolId, onMesaj }: { kullanici: Modera
       style={sadeSatirMi ? undefined : { background: BG1, border: `2px solid ${BORDER}` }}>
       {sadeSatirMi ? <button type="button" onClick={() => setSatirAcik((v) => !v)} aria-expanded={satirAcik}
         className="group flex w-full items-center justify-between gap-3 py-2 text-left">
-        <span style={{ color: TEXT }} className="min-w-0 truncate text-sm font-bold group-hover:font-extrabold">{k.ad}{k.moderatorMu && <span className="ml-1 text-[9px] font-bold" style={{ color: MINT }}>Moderatör</span>}</span>
+        <span style={{ color: TEXT }} className="min-w-0 truncate text-sm font-bold group-hover:font-extrabold">{k.ad}<span className="ml-1 text-[9px] font-semibold" style={{ color: TEXT_MUTED }}>{k.kullaniciKodu}</span>{k.moderatorMu && <span className="ml-1 text-[9px] font-bold" style={{ color: MINT }}>Moderatör</span>}</span>
         <span className="flex max-w-[48%] shrink-0 items-center gap-2 truncate text-xs" style={{ color: TEXT_MUTED }}>{k.sinif ?? k.detay}<ChevronDown size={15} className="shrink-0" style={{ transform: satirAcik ? "rotate(180deg)" : undefined, transition: "transform 0.15s" }}/></span>
       </button> : <><div style={{ color: TEXT }} className="text-sm font-bold flex items-center gap-1.5 flex-wrap">
         {k.ad}
@@ -429,7 +429,7 @@ function KullaniciKarti({ kullanici: k, schoolId, onMesaj }: { kullanici: Modera
       </div>
       <div style={{ color: TEXT_MUTED }} className="text-xs">{k.detay}</div></>}
       {(!sadeSatirMi || satirAcik) && <>
-      {sadeSatirMi && <div style={{ color: TEXT_MUTED }} className="pb-1 text-xs">{k.detay}</div>}
+      {sadeSatirMi && <div style={{ color: TEXT_MUTED }} className="pb-1 text-xs">{k.kullaniciKodu} · {k.detay}</div>}
       {!epostaKayitli && (
         <div className="mt-2 flex flex-col gap-2 rounded-lg p-2 sm:flex-row sm:items-end" style={{ background: "rgba(225,29,72,0.08)", border: `1px solid ${BLUSH}` }}>
           <div className="flex min-w-0 flex-1 items-start gap-2">

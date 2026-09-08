@@ -131,7 +131,7 @@ function AdminSatiri({ admin: a, onDegisti }: { admin: AdminHesabi; onDegisti: (
             <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: LILAC_BG, color: LILAC }}>Admin</span>
             {!a.aktif && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ color: BLUSH }}>Pasif</span>}
           </div>
-          <div style={{ color: TEXT_MUTED }} className="text-xs mt-0.5">{[a.email, a.telefon].filter(Boolean).join(" · ") || "İletişim bilgisi yok"}</div>
+          <div style={{ color: TEXT_MUTED }} className="text-xs mt-0.5">{[a.kullaniciKodu, a.email, a.telefon].filter(Boolean).join(" · ")}</div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
           <button type="button" onClick={rastgeleSifreTikla} disabled={pending} title="Rastgele yeni şifre oluştur"

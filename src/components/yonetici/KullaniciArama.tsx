@@ -198,7 +198,7 @@ export function KullaniciArama() {
                   <input
                     value={sorgu}
                     onChange={(e) => { setSorgu(e.target.value); ara(e.target.value, rol, sinifId); }}
-                    placeholder="Ad veya e-posta ile ara (en az 2 karakter)..."
+                    placeholder="Ad, e-posta veya kullanıcı koduyla ara..."
                     className="text-sm pl-9 pr-3 py-2 rounded-xl outline-none w-full"
                     style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}
                   />
@@ -371,7 +371,7 @@ function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
           <button type="button" onClick={() => setSatirAcik((v) => !v)} aria-expanded={satirAcik}
             className="group flex min-w-0 flex-1 items-center justify-between gap-3 py-2 text-left">
             <span className="min-w-0 truncate text-sm font-semibold transition-colors group-hover:font-bold" style={{ color: TEXT }}>
-              {kullanici.ad}<span style={{ color: LILAC_TEXT }} className="ml-1 text-[10px] font-bold">{ROL_ETIKET[kullanici.role]}</span>{!aktif && <span style={{ color: BLUSH }} className="ml-1 text-[10px] font-bold">Pasif</span>}
+              {kullanici.ad}<span style={{ color: LILAC_TEXT }} className="ml-1 text-[10px] font-bold">{ROL_ETIKET[kullanici.role]}</span><span style={{ color: TEXT_MUTED }} className="ml-1 text-[10px] font-semibold">{kullanici.kullaniciKodu}</span>{!aktif && <span style={{ color: BLUSH }} className="ml-1 text-[10px] font-bold">Pasif</span>}
             </span>
             <span className="flex shrink-0 items-center gap-2 text-xs" style={{ color: TEXT_MUTED }}>
               {kullanici.okulNo && `#${kullanici.okulNo}`}{satirAcik ? <ChevronUp size={15} color={MINT} /> : <ChevronDown size={15} />}
@@ -384,7 +384,7 @@ function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
             {!aktif && <span style={{ color: BLUSH }} className="text-[10px] font-bold ml-1">Pasif</span>}
           </div>
           <div style={{ color: TEXT_MUTED }} className="text-xs mt-0.5">
-            {[kullanici.email, kullanici.okulAdi, kullanici.sinifAdi, kullanici.okulNo && `#${kullanici.okulNo}`, kullanici.brans].filter(Boolean).join(" · ")}
+            {[kullanici.kullaniciKodu, kullanici.email, kullanici.okulAdi, kullanici.sinifAdi, kullanici.okulNo && `#${kullanici.okulNo}`, kullanici.brans].filter(Boolean).join(" · ")}
           </div>
         </Link>}
         {(!sadeSatirMi || satirAcik) && <div className="flex items-center gap-1.5 flex-wrap">

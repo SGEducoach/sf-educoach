@@ -23,11 +23,12 @@ async function requireAdmin() {
 export interface OkulModeratorGrubu {
   schoolId: string;
   okulAdi: string;
-  moderatorler: { id: string; ad: string }[];
+  moderatorler: { id: string; ad: string; kullaniciKodu: string }[];
 }
 
 export interface OkulOgretmeni {
   id: string;
+  kullaniciKodu: string;
   ad: string;
   brans: string;
   mudurMu: boolean;
@@ -42,14 +43,14 @@ export async function okulOgretmenleriModeratorlukGetir(schoolId: string): Promi
   const { admin } = await requireAdmin();
   const { data: ogretmenler, error } = await admin
     .from("teachers")
-    .select("id, brans, profiles!teachers_id_fkey(ad, role)")
+    .select("id, brans, profiles!teachers_id_fkey(ad, role, kullanici_kodu)")
     .eq("school_id", schoolId);
   if (error) return { error: error.message, ogretmenler: [] };
   const { data: moderatorler } = await admin.from("school_moderators").select("profile_id").eq("school_id", schoolId);
   const moderatorSet = new Set((moderatorler ?? []).map((m) => m.profile_id));
-  type Row = { id: string; brans: string; profiles: { ad: string; role: string } | null };
+  type Row = { id: string; brans: string; profiles: { ad: string; role: string; kullanici_kodu: string } | null };
   const liste = ((ogretmenler as unknown as Row[]) ?? []).map((o) => ({
-    id: o.id, ad: o.profiles?.ad ?? "İsimsiz", brans: o.brans,
+    id: o.id, kullaniciKodu: o.profiles?.kullanici_kodu ?? "—", ad: o.profiles?.ad ?? "İsimsiz", brans: o.brans,
     mudurMu: o.profiles?.role === "mudur", moderatorMu: moderatorSet.has(o.id),
   })).sort((a, b) => a.ad.localeCompare(b.ad, "tr"));
   return { error: null, ogretmenler: liste };
@@ -81,16 +82,16 @@ export async function moderatorluOkullarGetir(): Promise<{ error: string | null;
   // ismi açıkça belirtiliyor.
   const { data, error } = await admin
     .from("school_moderators")
-    .select("profile_id, school_id, schools(ad), profiles!school_moderators_profile_id_fkey(ad)");
+    .select("profile_id, school_id, schools(ad), profiles!school_moderators_profile_id_fkey(ad, kullanici_kodu)");
   if (error) return { error: error.message, okullar: [] };
 
-  type Row = { profile_id: string; school_id: string; schools: { ad: string } | null; profiles: { ad: string } | null };
+  type Row = { profile_id: string; school_id: string; schools: { ad: string } | null; profiles: { ad: string; kullanici_kodu: string } | null };
   const gruplar = new Map<string, OkulModeratorGrubu>();
   for (const r of (data ?? []) as unknown as Row[]) {
     if (!gruplar.has(r.school_id)) {
       gruplar.set(r.school_id, { schoolId: r.school_id, okulAdi: r.schools?.ad ?? "Bilinmiyor", moderatorler: [] });
     }
-    gruplar.get(r.school_id)!.moderatorler.push({ id: r.profile_id, ad: r.profiles?.ad ?? "İsimsiz" });
+    gruplar.get(r.school_id)!.moderatorler.push({ id: r.profile_id, ad: r.profiles?.ad ?? "İsimsiz", kullaniciKodu: r.profiles?.kullanici_kodu ?? "—" });
   }
   return { error: null, okullar: [...gruplar.values()].sort((a, b) => a.okulAdi.localeCompare(b.okulAdi, "tr")) };
 }

@@ -74,7 +74,7 @@ export function ModeratorAtamaFormu() {
               <div key={o.id} className="sfec-liste-satiri flex items-center justify-between gap-2 px-2 py-3">
                 <div className="min-w-0">
                   <div style={{ color: TEXT }} className="text-xs font-bold truncate">{o.ad}</div>
-                  <div style={{ color: TEXT_MUTED }} className="text-[11px]">{o.mudurMu ? "Müdür" : o.brans}</div>
+                  <div style={{ color: TEXT_MUTED }} className="text-[11px]">{o.kullaniciKodu} · {o.mudurMu ? "Müdür" : o.brans}</div>
                 </div>
                 <button type="button" disabled={pending} onClick={() => toggle(o)}
                   className="sfec-btn shrink-0 flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-bold disabled:opacity-60"

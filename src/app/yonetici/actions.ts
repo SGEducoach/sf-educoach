@@ -46,6 +46,7 @@ async function auditLogYaz(
 
 export interface KullaniciSonuc {
   id: string;
+  kullaniciKodu: string;
   ad: string;
   email: string | null;
   telefon: string | null;
@@ -117,14 +118,14 @@ export async function kullaniciAra(sorgu: string, rolFiltre: UserRole | "hepsi",
 
   let query = supabase
     .from("profiles")
-    .select("id, ad, email, telefon, role, aktif")
+    .select("id, kullanici_kodu, ad, email, telefon, role, aktif")
     .neq("role", "admin")
     .in("id", kurumKapsamindakiIdler)
     .order("ad")
     .limit(1000);
 
   if (q.length >= 2) {
-    query = query.or(`ad.ilike.%${q}%,email.ilike.%${q}%`);
+    query = query.or(`ad.ilike.%${q}%,email.ilike.%${q}%,kullanici_kodu.ilike.%${q}%`);
   }
 
   if (rolFiltre !== "hepsi") {
@@ -133,7 +134,7 @@ export async function kullaniciAra(sorgu: string, rolFiltre: UserRole | "hepsi",
   const { data: profiller, error } = await query;
   if (error) return { error: error.message, sonuclar: [] };
 
-  const satirlar = (profiller ?? []) as { id: string; ad: string; email: string | null; telefon: string | null; role: UserRole; aktif: boolean }[];
+  const satirlar = (profiller ?? []) as { id: string; kullanici_kodu: string; ad: string; email: string | null; telefon: string | null; role: UserRole; aktif: boolean }[];
   const ogrenciIdleri = satirlar.filter((s) => s.role === "ogrenci").map((s) => s.id);
   const ogretmenIdleri = satirlar.filter((s) => s.role === "ogretmen" || s.role === "mudur").map((s) => s.id);
 
@@ -163,7 +164,7 @@ export async function kullaniciAra(sorgu: string, rolFiltre: UserRole | "hepsi",
     const o = ogrenciMap.get(s.id);
     const t = ogretmenMap.get(s.id);
     return {
-      id: s.id, ad: s.ad, email: s.email, telefon: s.telefon, role: s.role, aktif: s.aktif,
+      id: s.id, kullaniciKodu: s.kullanici_kodu, ad: s.ad, email: s.email, telefon: s.telefon, role: s.role, aktif: s.aktif,
       okulAdi: o?.schools?.ad ?? t?.schools?.ad ?? null,
       okulId: o?.school_id ?? t?.school_id ?? null,
       kurumTuru: o?.schools?.tur ?? null,
@@ -786,6 +787,7 @@ export async function kullaniciRolDegistir(input: {
 // hesapları SADECE bu bölümde listelenir.
 export interface AdminHesabi {
   id: string;
+  kullaniciKodu: string;
   ad: string;
   email: string | null;
   telefon: string | null;
@@ -795,9 +797,9 @@ export interface AdminHesabi {
 
 export async function adminleriGetir(): Promise<{ error: string | null; adminler: AdminHesabi[] }> {
   const { admin } = await requireAdmin();
-  const { data, error } = await admin.from("profiles").select("id, ad, email, telefon, aktif, created_at").eq("role", "admin").order("created_at");
+  const { data, error } = await admin.from("profiles").select("id, kullanici_kodu, ad, email, telefon, aktif, created_at").eq("role", "admin").order("created_at");
   if (error) return { error: error.message, adminler: [] };
-  return { error: null, adminler: (data ?? []).map((a) => ({ id: a.id, ad: a.ad, email: a.email, telefon: a.telefon, aktif: a.aktif, createdAt: a.created_at })) };
+  return { error: null, adminler: (data ?? []).map((a) => ({ id: a.id, kullaniciKodu: a.kullanici_kodu, ad: a.ad, email: a.email, telefon: a.telefon, aktif: a.aktif, createdAt: a.created_at })) };
 }
 
 export async function adminHesapOlustur(input: { ad: string; email: string }): Promise<{ error: string | null; sifre: string | null }> {

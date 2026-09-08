@@ -9,6 +9,7 @@ import type { AytAlan, SinifSeviyesi, UserRole } from "@/lib/types";
 
 export interface ModeratorKullanici {
   id: string;
+  kullaniciKodu: string;
   ad: string;
   role: UserRole;
   aktif: boolean;
@@ -73,7 +74,7 @@ export async function moderatorKullanicilariGetir(targetSchoolId?: string): Prom
     .filter((id) => id !== user.id);
   if (!ids.length) return { okulAdi, kullanicilar: [] };
   const [{ data: profiles }, { data: moderatorler }] = await Promise.all([
-    admin.from("profiles").select("id, ad, email, role, aktif").in("id", ids).neq("role", "admin"),
+    admin.from("profiles").select("id, kullanici_kodu, ad, email, role, aktif").in("id", ids).neq("role", "admin"),
     admin.from("school_moderators").select("profile_id").in("profile_id", ids),
   ]);
   const studentMap = new Map((students ?? []).map(s => [s.id, s]));
@@ -81,12 +82,12 @@ export async function moderatorKullanicilariGetir(targetSchoolId?: string): Prom
   const moderatorIdSeti = new Set((moderatorler ?? []).map((m) => m.profile_id));
   return {
     okulAdi,
-    kullanicilar: ((profiles ?? []) as { id: string; ad: string; email: string | null; role: UserRole; aktif: boolean }[]).map(p => {
+    kullanicilar: ((profiles ?? []) as { id: string; kullanici_kodu: string; ad: string; email: string | null; role: UserRole; aktif: boolean }[]).map(p => {
       const s = studentMap.get(p.id) as { okul_no: string; yurt_ogrencisi: boolean; classes: { seviye: string; sube: string } | null } | undefined;
       const t = teacherMap.get(p.id) as { brans: string; classes: { seviye: string; sube: string } | null } | undefined;
       const sinif = s?.classes ? `${s.classes.seviye}-${s.classes.sube}` : t?.classes ? `${t.classes.seviye}-${t.classes.sube}` : null;
       return {
-        id: p.id, ad: p.ad, email: p.email, role: p.role, aktif: p.aktif, sinif,
+        id: p.id, kullaniciKodu: p.kullanici_kodu, ad: p.ad, email: p.email, role: p.role, aktif: p.aktif, sinif,
         kategori: s ? "ogrenci" as const : t ? "ogretmen" as const : "veli" as const,
         detay: s ? `Öğrenci · #${s.okul_no}${sinif ? ` · ${sinif}` : ""}` : t ? `${p.role === "mudur" ? "Müdür" : "Öğretmen"} · ${t.brans}${sinif ? ` · ${sinif}` : ""}` : "Veli",
         yurtOgrencisi: s?.yurt_ogrencisi ?? false,

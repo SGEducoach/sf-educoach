@@ -26,7 +26,7 @@ export async function ModeratorlerListesi() {
                   <ShieldCheck size={16} color={TEXT_MUTED} className="shrink-0" />
                   <div className="min-w-0">
                     <div style={{ color: TEXT }} className="text-sm font-bold truncate">{o.okulAdi}</div>
-                    <div style={{ color: TEXT_MUTED }} className="text-xs truncate">{o.moderatorler.map((m) => m.ad).join(", ")}</div>
+                    <div style={{ color: TEXT_MUTED }} className="text-xs truncate">{o.moderatorler.map((m) => `${m.ad} (${m.kullaniciKodu})`).join(", ")}</div>
                   </div>
                 </div>
                 <ChevronRight size={16} color={TEXT_MUTED} className="shrink-0" />

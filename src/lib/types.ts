@@ -40,6 +40,7 @@ export function sinifSiraKarsilastir(a: { seviye: string; sube: string }, b: { s
 
 export interface Profile {
   id: string;
+  kullanici_kodu: string;
   ad: string;
   email: string | null;
   telefon: string | null;

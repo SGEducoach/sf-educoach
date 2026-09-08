@@ -28,12 +28,12 @@ const ROL_ETIKET: Record<UserRole, string> = { ogrenci: "Öğrenci", ogretmen: "
 // arama için tasarlandığından doğrudan reuse edilmiyor).
 async function kullaniciSonucInsa(
   admin: ReturnType<typeof createAdminClient>,
-  profil: { id: string; ad: string; email: string | null; telefon: string | null; aktif: boolean },
+  profil: { id: string; kullanici_kodu: string; ad: string; email: string | null; telefon: string | null; aktif: boolean },
   role: UserRole,
 ): Promise<KullaniciSonuc> {
   const { data: moderatorKaydi } = await admin.from("school_moderators").select("profile_id").eq("profile_id", profil.id).maybeSingle();
   const taban: KullaniciSonuc = {
-    id: profil.id, ad: profil.ad, email: profil.email, telefon: profil.telefon, role, aktif: profil.aktif,
+    id: profil.id, kullaniciKodu: profil.kullanici_kodu, ad: profil.ad, email: profil.email, telefon: profil.telefon, role, aktif: profil.aktif,
     okulAdi: null, okulId: null, kurumTuru: null, sinifAdi: null, sinifId: null, okulNo: null, brans: null,
     yurtOgrencisi: null, aytAlan: null, hedefBolum: null, hedefNetTyt: null, hedefNetAyt: null,
     moderatorMu: !!moderatorKaydi,
@@ -69,7 +69,7 @@ export default async function KullaniciGoruntulemeSayfasi({ params }: { params: 
   if (!yonetici || yonetici.role !== "admin") redirect("/");
 
   const admin = createAdminClient();
-  const { data: profil } = await admin.from("profiles").select("id, ad, email, telefon, role, aktif, created_at").eq("id", id).maybeSingle();
+  const { data: profil } = await admin.from("profiles").select("id, kullanici_kodu, ad, email, telefon, role, aktif, created_at").eq("id", id).maybeSingle();
   if (!profil || profil.role === "admin") notFound();
   const role = profil.role as UserRole;
   const kullaniciSonuc = await kullaniciSonucInsa(admin, profil, role);
@@ -89,7 +89,7 @@ export default async function KullaniciGoruntulemeSayfasi({ params }: { params: 
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: BG1_ALT }}><UserRound size={21} color={MINT} /></div>
                 <div className="min-w-0">
                   <h1 className="text-xl font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>{profil.ad}</h1>
-                  <p className="mt-1 text-xs" style={{ color: TEXT_MUTED }}>{ROL_ETIKET[role]}{kullaniciSonuc.moderatorMu ? " · Moderatör" : ""} · {profil.aktif ? "Aktif hesap" : "Pasif hesap"}</p>
+                  <p className="mt-1 text-xs" style={{ color: TEXT_MUTED }}>{profil.kullanici_kodu} · {ROL_ETIKET[role]}{kullaniciSonuc.moderatorMu ? " · Moderatör" : ""} · {profil.aktif ? "Aktif hesap" : "Pasif hesap"}</p>
                   <p className="mt-1 break-all text-xs" style={{ color: TEXT_MUTED }}>{[profil.email, profil.telefon].filter(Boolean).join(" · ") || "İletişim bilgisi yok"}</p>
                 </div>
               </div>
