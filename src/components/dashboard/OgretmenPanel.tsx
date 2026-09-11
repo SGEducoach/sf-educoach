@@ -22,7 +22,7 @@ import { programGunleri } from "@/lib/ders-programi";
 import type { DersProgramiSatiri, YurtNobetiSatiri } from "@/lib/ders-programi";
 import { Takvim } from "@/components/dashboard/Takvim";
 import { SosyalEtkinlikler } from "@/components/dashboard/SosyalEtkinlikler";
-import { YaziliAnaliziWizard } from "@/components/dashboard/YaziliAnaliziWizard";
+import { YaziliAnaliziSekmesi } from "@/components/dashboard/YaziliAnaliziSekmesi";
 
 interface OgrenciSatiri {
   id: string;
@@ -692,7 +692,7 @@ function AjandamBolumu({ role, dersler, siniflar, dersProgramiSatirlari, yurtNob
     {sekme === "takvim" && <Takvim yurtNobetiSatirlari={yurtNobetiSatirlari}/>}
     {sekme === "ders" && role === "ogretmen" && <DerslerimBolumu dersler={dersler} siniflar={siniflar} dersProgramiSatirlari={dersProgramiSatirlari} yurtNobetiSatirlari={yurtNobetiSatirlari} dershaneMi={dershaneMi}/>}
     {sekme === "sosyal" && <SosyalEtkinlikler/>}
-    {sekme === "yazili" && role === "ogretmen" && <YaziliAnaliziWizard sinifOptions={yaziliSiniflari} dersOptions={yaziliDersleri}/>}
+    {sekme === "yazili" && role === "ogretmen" && <YaziliAnaliziSekmesi sinifOptions={yaziliSiniflari} dersOptions={yaziliDersleri}/>}
   </section>;
 }
 

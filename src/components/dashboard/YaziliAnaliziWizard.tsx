@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { YaziliSinavForm } from "./YaziliSinavForm";
 import { PuanGirisEkrani } from "./PuanGirisEkrani";
 import { TemsiliOgrenciSecici } from "./TemsiliOgrenciSecici";
@@ -27,14 +28,18 @@ const BOS_FORM = {
 export function YaziliAnaliziWizard({
   sinifOptions,
   dersOptions,
+  onKaydedildi,
 }: {
   sinifOptions?: { id: string; ad: string }[];
   dersOptions?: string[];
+  // Kayıt başarılı olunca (ör. kaydedilen yazılılar listesini tazelemek için).
+  onKaydedildi?: (sinavId: string) => void;
 } = {}) {
   const [step, setStep] = useState(1); // 1: Sınav bilgisi, 2: Toplam puanlar, 3: Soru puanları, 4: Analiz / Kayıt
   const [error, setError] = useState<string | null>(null);
-  const [kaydedildi, setKaydedildi] = useState(false);
+  const [kaydedilenId, setKaydedilenId] = useState<string | null>(null);
   const [formData, setFormData] = useState(BOS_FORM);
+  const kaydedildi = kaydedilenId !== null;
 
   // Fetch logged-in teacher ID
   useEffect(() => {
@@ -92,7 +97,7 @@ export function YaziliAnaliziWizard({
 
   const yeniAnaliz = () => {
     setFormData((prev) => ({ ...BOS_FORM, ogretmenId: prev.ogretmenId }));
-    setKaydedildi(false);
+    setKaydedilenId(null);
     setError(null);
     setStep(1);
   };
@@ -114,8 +119,9 @@ export function YaziliAnaliziWizard({
         maxPuanlar: formData.maxPuanlar,
         kazanimlar: formData.kazanimlar,
       });
-      if (result.error) throw new Error(result.error);
-      setKaydedildi(true);
+      if (result.error || !result.sinavId) throw new Error(result.error ?? "Yazılı analizi kaydedilemedi.");
+      setKaydedilenId(result.sinavId);
+      onKaydedildi?.(result.sinavId);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Bir hata oluştu.");
     }
@@ -197,10 +203,13 @@ export function YaziliAnaliziWizard({
           onSave={handleSubmit}
         />
       )}
-      {kaydedildi && (
+      {kaydedilenId && (
         <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3 text-sm" role="status">
           <span>Yazılı analizi kaydedildi.</span>
-          <button type="button" onClick={yeniAnaliz} className="sfec-btn rounded-xl px-4 py-2">Yeni yazılı analizi</button>
+          <div className="flex flex-wrap gap-2">
+            <Link href={`/dashboard/yazili-analizi/${kaydedilenId}`} className="sfec-btn rounded-xl px-4 py-2 font-bold">Raporu aç</Link>
+            <button type="button" onClick={yeniAnaliz} className="sfec-btn rounded-xl px-4 py-2">Yeni yazılı analizi</button>
+          </div>
         </div>
       )}
       {!kaydedildi && (
