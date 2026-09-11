@@ -357,10 +357,17 @@ export async function getSinifOgrencileri(
     return { error: ogrencilerError.message, ogrenciler: [] };
   }
 
-  const ogrenciler = (ogrencilerData ?? []).map((o) => ({
-    id: o.id,
-    ad: o.profiles?.[0]?.ad ?? "Bilinmeyen",
-  }));
+  type OgrenciProfilSatiri = {
+    id: string;
+    profiles: { ad: string } | { ad: string }[] | null;
+  };
+  const ogrenciler = ((ogrencilerData ?? []) as unknown as OgrenciProfilSatiri[]).map((o) => {
+    const profil = Array.isArray(o.profiles) ? o.profiles[0] : o.profiles;
+    return {
+      id: o.id,
+      ad: profil?.ad?.trim() || "İsimsiz öğrenci",
+    };
+  });
 
   return { error: null, ogrenciler };
 }

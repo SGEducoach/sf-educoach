@@ -23,7 +23,7 @@ export function PuanGirisEkrani({
   const handleChange = (id: string, value: string) => {
     const num = parseInt(value, 10);
     if (isNaN(num) || num < 0 || num > maxTotal) {
-      setError(`Score must be between 0 and ${maxTotal}`);
+      setError(`Puan 0 ile ${maxTotal} arasında olmalıdır.`);
       return;
     }
     setError(null);
@@ -34,13 +34,13 @@ export function PuanGirisEkrani({
     // Ensure all students have a score
     const missing = ogrenciler.find((o) => !(o.id in ogrenciPuanlar));
     if (missing) {
-      setError("Please enter a score for all students");
+      setError("Tüm öğrenciler için puan girin.");
       return;
     }
     // Validate each score
     for (const [id, puan] of Object.entries(ogrenciPuanlar)) {
       if (puan < 0 || puan > maxTotal) {
-        setError(`Student ${id} score is out of range`);
+        setError(`${id} numaralı öğrencinin puanı geçersiz.`);
         return;
       }
     }
@@ -54,9 +54,9 @@ export function PuanGirisEkrani({
 
   return (
     <div>
-      <h2>Enter Total Scores for Each Student</h2>
+      <h2>Öğrenci toplam puanları</h2>
       <p className="text-TEXT_MUTED mb-4">
-        Maximum possible total score: {maxTotal}
+        Alınabilecek en yüksek toplam puan: {maxTotal}
       </p>
       <div className="space-y-4">
         {ogrenciler.map((ogr) => (
@@ -64,7 +64,7 @@ export function PuanGirisEkrani({
             <div className="flex justify-between items-start">
               <div>
                 <label className={labelStyle}>{ogr.ad}</label>
-                <p className="text-xs text-TEXT_MUTED">ID: {ogr.id}</p>
+                <p className="text-xs text-TEXT_MUTED">Öğrenci kimliği: {ogr.id}</p>
               </div>
               <div className="w-20">
                 <input
@@ -89,7 +89,7 @@ export function PuanGirisEkrani({
 
       <div className="mt-4 flex justify-end">
         <button type="button" onClick={handleSubmit} className="sfec-btn w-fit rounded-xl px-4 py-2">
-          Continue
+          Devam et
         </button>
       </div>
     </div>
