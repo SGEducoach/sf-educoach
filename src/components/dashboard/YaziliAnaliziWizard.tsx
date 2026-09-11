@@ -144,6 +144,7 @@ export function YaziliAnaliziWizard({
       <PuanGirisEkrani
         ogrenciler={formData.ogrenciler}
         maxPuanlar={formData.maxPuanlar}
+        sinifId={formData.sinifId}
         onChange={(ogrenciler) => {
           setFormData((prev) => ({
             ...prev,
