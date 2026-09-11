@@ -4,6 +4,16 @@ import { createClient } from "@/lib/supabase/server";
 import type { Kaynak } from "@/lib/types";
 import { akilliTahminV1 } from "@/lib/yazili-estimation-algoritmasi";
 
+// Supabase (PostgREST) çok-bire ve bire-bir gömülü ilişkileri NESNE olarak
+// döndürür, ama supabase-js'in tip çıkarımı (şema tipi verilmediğinde)
+// bunları DİZİ diye işaretler. `iliski?.[0]` diye okumak çalışma anında hep
+// undefined verir — bu dosyada öğrenci adlarının "Bilinmeyen", sınıf
+// listesinin boş görünmesinin sebebi buydu. İki biçimi de karşılar.
+function tekIliski<T>(deger: T | T[] | null | undefined): T | null {
+  if (deger == null) return null;
+  return Array.isArray(deger) ? (deger[0] ?? null) : deger;
+}
+
 export async function getAktifKullaniciId(): Promise<{ error: string | null; userId: string | null }> {
   const supabase = await createClient();
   const { data: { user }, error } = await supabase.auth.getUser();
@@ -232,7 +242,7 @@ export async function yaziliSinavGetir(
   // Öğrencileri getir (sınıfın öğrencileri değil, bu sınavın öğrencileri)
   const { data: ogrencilerData, error: ogrencilerError } = await supabase
     .from("yazili_ogrenci_sonuclari")
-    .select("id, ogrenci_id, toplam_puan, temsilci_mi, students!inner(ad)")
+    .select("id, ogrenci_id, toplam_puan, temsilci_mi, students!inner(profiles!students_id_fkey(ad))")
     .eq("yazili_sinav_id", sinavId);
 
   if (ogrencilerError) {
@@ -241,7 +251,7 @@ export async function yaziliSinavGetir(
 
   const ogrenciler = ogrencilerData.map((ogr) => ({
     id: ogr.ogrenci_id,
-    ad: ogr.students?.[0]?.ad ?? "Bilinmeyen",
+    ad: tekIliski(tekIliski(ogr.students)?.profiles)?.ad?.trim() || "İsimsiz öğrenci",
     toplamPuan: ogr.toplam_puan,
     temsilciMi: ogr.temsilci_mi,
   }));
@@ -318,12 +328,9 @@ export async function getOgretmenDersleri(
   // Build siniflar map (unique class_id with name)
   const sinifMap = new Map<string, string>();
   ogretmenDersleri?.forEach((od) => {
-    if (od.classes) {
-      const sinif = od.classes[0];
-      if (!sinif) return;
-      const ad = `${sinif.seviye}-${sinif.sube}`;
-      sinifMap.set(od.class_id, ad);
-    }
+    const sinif = tekIliski(od.classes);
+    if (!sinif) return;
+    sinifMap.set(od.class_id, `${sinif.seviye}-${sinif.sube}`);
   });
 
   const siniflar: { id: string; ad: string }[] = Array.from(sinifMap.entries()).map(
