@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useState, useTransition } from "react";
 import Link from "next/link";
-import { ArrowLeft, FileText, Plus } from "lucide-react";
+import { ArrowLeft, FileText, Plus, Trash2 } from "lucide-react";
 import { YaziliAnaliziWizard } from "@/components/dashboard/YaziliAnaliziWizard";
-import { yaziliSinavlariniListele, type YaziliSinavOzeti } from "@/app/dashboard/yazili-rapor-actions";
+import { yaziliSinavlariniListele, yaziliSinavSil, type YaziliSinavOzeti } from "@/app/dashboard/yazili-rapor-actions";
 import { dersGorunenAd, GECME_NOTU } from "@/lib/yazili-rapor-hesap";
 import { BG1_ALT, BLUSH, BORDER_STRONG, MINT, TEXT, TEXT_MUTED } from "@/lib/theme";
 
@@ -16,8 +16,9 @@ const sayi = (v: number) => v.toLocaleString("tr-TR", { maximumFractionDigits: 1
 
 // Kullanıcı bulgusu (11.09.2026): "kaydedildi ama nerede olduğunu göremedim".
 // Yazılı Analizi sekmesi artık önce kaydedilen yazılıları listeliyor; her
-// satır A4 raporunu (/dashboard/yazili-analizi/[id]) açıyor. Yeni analiz
-// sihirbazı "Yeni yazılı analizi" ile açılıyor.
+// satır A4 raporunu (/dashboard/yazili-analizi/[id]) açıyor, yanındaki çöp
+// kutusu yazılıyı siliyor ("testler silinebilsin"). Yeni analiz sihirbazı
+// "Yeni yazılı analizi" ile açılıyor.
 export function YaziliAnaliziSekmesi({
   sinifOptions,
   dersOptions,
@@ -28,7 +29,9 @@ export function YaziliAnaliziSekmesi({
   const [gorunum, setGorunum] = useState<"liste" | "yeni">("liste");
   const [sinavlar, setSinavlar] = useState<YaziliSinavOzeti[] | null>(null);
   const [hata, setHata] = useState<string | null>(null);
+  const [silinenId, setSilinenId] = useState<string | null>(null);
   const [yukleniyor, startYukleme] = useTransition();
+  const [, startSilme] = useTransition();
 
   // Bu Next.js sürümünde useEffect'ten çağrılan server action'lar
   // startTransition içinde olmalı (bkz. KullaniciArama yorumu).
@@ -43,6 +46,24 @@ export function YaziliAnaliziSekmesi({
   useEffect(() => {
     yukle();
   }, [yukle]);
+
+  const sil = (s: YaziliSinavOzeti) => {
+    const onay = window.confirm(
+      `"${s.ad}" (${s.sinifAdi}, ${tarihTR(s.tarih)}) silinsin mi?\n\nSoru puanları ve rapor da silinir. Bu işlem geri alınamaz.`
+    );
+    if (!onay) return;
+    setHata(null);
+    setSilinenId(s.id);
+    startSilme(async () => {
+      const sonuc = await yaziliSinavSil(s.id);
+      setSilinenId(null);
+      if (sonuc.error) {
+        setHata(sonuc.error);
+        return;
+      }
+      setSinavlar((onceki) => onceki?.filter((x) => x.id !== s.id) ?? onceki);
+    });
+  };
 
   if (gorunum === "yeni") {
     return (
@@ -78,31 +99,40 @@ export function YaziliAnaliziSekmesi({
         </p>
       ) : (
         <ul className="flex flex-col gap-2">
-          {sinavlar.map((s) => (
-            <li key={s.id}>
-              <Link href={`/dashboard/yazili-analizi/${s.id}`}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-xl p-3"
-                style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}` }}>
-                <div className="min-w-0">
-                  <p className="text-sm font-bold" style={{ color: TEXT }}>{s.ad}</p>
-                  <p className="text-xs" style={{ color: TEXT_MUTED }}>
-                    {dersGorunenAd(s.ders)} · {s.sinifAdi} · {tarihTR(s.tarih)} · {s.ogrenciSayisi} öğrenci
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-4 text-xs tabular-nums" style={{ color: TEXT_MUTED }}>
-                  {s.ortalama !== null && (
-                    <span>Ortalama <strong style={{ color: TEXT }}>{sayi(s.ortalama)}</strong>{s.maxToplam !== 100 && ` / ${s.maxToplam}`}</span>
-                  )}
-                  {s.basariYuzdesi !== null && (
-                    <span>Başarı <strong style={{ color: s.basariYuzdesi < GECME_NOTU ? BLUSH : MINT }}>%{sayi(s.basariYuzdesi)}</strong></span>
-                  )}
-                  <span className="inline-flex items-center gap-1 font-bold" style={{ color: MINT }}>
-                    <FileText size={14} /> Raporu aç
-                  </span>
-                </div>
-              </Link>
-            </li>
-          ))}
+          {sinavlar.map((s) => {
+            const siliniyor = silinenId === s.id;
+            return (
+              <li key={s.id} className="flex items-stretch gap-2" style={{ opacity: siliniyor ? 0.5 : 1 }}>
+                <Link href={`/dashboard/yazili-analizi/${s.id}`}
+                  className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-3 rounded-xl p-3"
+                  style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}` }}>
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold" style={{ color: TEXT }}>{s.ad}</p>
+                    <p className="text-xs" style={{ color: TEXT_MUTED }}>
+                      {dersGorunenAd(s.ders)} · {s.sinifAdi} · {tarihTR(s.tarih)} · {s.ogrenciSayisi} öğrenci
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-4 text-xs tabular-nums" style={{ color: TEXT_MUTED }}>
+                    {s.ortalama !== null && (
+                      <span>Ortalama <strong style={{ color: TEXT }}>{sayi(s.ortalama)}</strong>{s.maxToplam !== 100 && ` / ${s.maxToplam}`}</span>
+                    )}
+                    {s.basariYuzdesi !== null && (
+                      <span>Başarı <strong style={{ color: s.basariYuzdesi < GECME_NOTU ? BLUSH : MINT }}>%{sayi(s.basariYuzdesi)}</strong></span>
+                    )}
+                    <span className="inline-flex items-center gap-1 font-bold" style={{ color: MINT }}>
+                      <FileText size={14} /> Raporu aç
+                    </span>
+                  </div>
+                </Link>
+                <button type="button" onClick={() => sil(s)} disabled={siliniyor}
+                  aria-label={`${s.ad} yazılısını sil`} title="Yazılıyı sil"
+                  className="inline-flex shrink-0 items-center justify-center rounded-xl px-3 disabled:opacity-60"
+                  style={{ border: `1px solid ${BLUSH}`, color: BLUSH }}>
+                  <Trash2 size={16} />
+                </button>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { GECME_NOTU, yuzlugeCevir } from "@/lib/yazili-rapor-hesap";
+import { UUID_DESENI } from "@/lib/yazili-sinif-ogrencileri";
 
 export interface YaziliSinavOzeti {
   id: string;
@@ -66,4 +67,28 @@ export async function yaziliSinavlariniListele(): Promise<{ error: string | null
       };
     }),
   };
+}
+
+// Kullanıcı isteği (11.09.2026): "testler silinebilsin". Öğretmen yalnızca
+// KENDİ oluşturduğu yazılıyı siler; RLS ayrıca o sınıfın o dersine kayıtlı
+// olmayı şart koşuyor (yazili_sinavlar_delete). Sorular ve öğrenci/soru
+// sonuçları ON DELETE CASCADE ile AYNI işlemde silinir — yetim kayıt kalmaz.
+export async function yaziliSinavSil(sinavId: string): Promise<{ error: string | null }> {
+  if (!UUID_DESENI.test(sinavId)) return { error: "Geçersiz yazılı." };
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Oturum bulunamadı." };
+
+  const { data, error } = await supabase
+    .from("yazili_sinavlar")
+    .delete()
+    .eq("id", sinavId)
+    .eq("ogretmen_id", user.id)
+    .select("id");
+  if (error) {
+    console.error("yazılı silme hatası:", error);
+    return { error: "Yazılı silinemedi. Lütfen tekrar deneyin." };
+  }
+  if (!data?.length) return { error: "Yazılı bulunamadı ya da silme yetkiniz yok." };
+  return { error: null };
 }
