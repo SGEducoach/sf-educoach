@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
   donemBaslangici, erisimKarari, gunEkle, istanbulBugun, olcumDonemiMi, yaziliOlcumMesaji, yediGunPenceresiBaslangici,
-  YAZILI_KILIT_MESAJI,
+  YAZILI_ENGEL_BASLANGIC, YAZILI_KILIT_MESAJI,
 } from "./yazili-erisim-hesap";
 
 describe("erisimKarari — üç şartın hepsi gerekli", () => {
@@ -26,10 +26,11 @@ describe("tarih pencereleri", () => {
     expect(yediGunPenceresiBaslangici("2026-03-03")).toBe("2026-02-25");
     expect(gunEkle("2026-12-31", 1)).toBe("2027-01-01");
   });
-  test("ölçüm süresi 25 Eylül'de biter", () => {
-    expect(olcumDonemiMi("2026-09-11")).toBe(true);
-    expect(olcumDonemiMi("2026-09-24")).toBe(true);
-    expect(olcumDonemiMi("2026-09-25")).toBe(false);
+  test("ölçüm süresi 25 Ekim 2026'da biter (kullanıcı isteğiyle 25 Eylül'den uzatıldı)", () => {
+    expect(YAZILI_ENGEL_BASLANGIC).toBe("2026-10-25");
+    expect(olcumDonemiMi("2026-09-25")).toBe(true);
+    expect(olcumDonemiMi("2026-10-24")).toBe(true);
+    expect(olcumDonemiMi("2026-10-25")).toBe(false);
   });
   test("İstanbul günü: UTC gece yarısından önce Türkiye'de ertesi gün", () => {
     expect(istanbulBugun(new Date("2026-09-10T22:30:00Z"))).toBe("2026-09-11");
@@ -39,5 +40,6 @@ describe("tarih pencereleri", () => {
 describe("mesajlar", () => {
   test("kilit mesajı kullanıcının ifadesi", () =>
     expect(YAZILI_KILIT_MESAJI).toBe("Sistemi kullanma yetkiniz yoktur. SeFu Koç yazılı analizi, öğrencisinin takibini düzenli yapan öğretmenler içindir."));
-  test("ölçüm mesajı tarihi gün.ay.yıl yazar", () => expect(yaziliOlcumMesaji("2026-09-25")).toMatch(/^25\.09\.2026 tarihinden itibaren/));
+  test("ölçüm mesajı tarihi gün.ay.yıl yazar", () =>
+    expect(yaziliOlcumMesaji(YAZILI_ENGEL_BASLANGIC)).toMatch(/^25\.10\.2026 tarihinden itibaren/));
 });

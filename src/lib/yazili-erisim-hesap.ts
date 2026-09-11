@@ -4,10 +4,11 @@
 //   * son 7 günde en az 3 farklı gün panele giriş,
 //   * bu dönem en az 10 görev,
 //   * bu dönem en az 10 farklı öğrencinin profilini görüntüleme.
-// Giriş/profil sayımı sıfırdan başladığı için engel 2 haftalık ölçüm
-// süresinden sonra devreye girer. Veriyi okuyan taraf: yazili-erisim.ts.
+// Giriş/profil sayımı sıfırdan başladığı için engel bir ölçüm süresinden
+// sonra devreye girer — kullanıcı isteğiyle 25.09'dan 25.10.2026'ya
+// uzatıldı. Veriyi okuyan taraf: yazili-erisim.ts.
 
-export const YAZILI_ENGEL_BASLANGIC = "2026-09-25";
+export const YAZILI_ENGEL_BASLANGIC = "2026-10-25";
 
 export const YAZILI_ESIKLERI = { aktifGun7: 3, gorevDonem: 10, profilDonem: 10 } as const;
 

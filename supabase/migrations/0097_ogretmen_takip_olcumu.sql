@@ -4,8 +4,9 @@
 --   * bu dönem en az 10 görev verme (gorevler.olusturan_ogretmen_id),
 --   * bu dönem en az 10 farklı öğrencinin profilini görüntüleme.
 -- Giriş günleri ve profil görüntülemeleri bugüne kadar hiç kaydedilmiyordu
--- (auth.audit_log_entries boş); bu iki tablo onları tutar. Engel 2 haftalık
--- ölçüm süresinden sonra (25.09.2026) devreye girer — bkz. src/lib/yazili-erisim.ts.
+-- (auth.audit_log_entries boş); bu iki tablo onları tutar. Engel bir ölçüm
+-- süresinden sonra (25.10.2026; ilk karar 25.09 idi, kullanıcı isteğiyle
+-- uzatıldı) devreye girer — bkz. src/lib/yazili-erisim-hesap.ts.
 --
 -- GÜVENLİK: anon/authenticated rollerine HİÇBİR izin ve politika yok —
 -- satırları yalnızca sunucu (servis anahtarı) yazar ve okur. Öğretmene yazma
