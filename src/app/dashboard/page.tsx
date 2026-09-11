@@ -44,6 +44,7 @@ import { DenemeSuresiSonaErdiEkrani } from "@/components/DenemeSuresiSonaErdiEkr
 import { RehberlikPaneli } from "@/components/dashboard/RehberlikPaneli";
 import { REHBER_BRANSI } from "@/lib/rehberlik";
 import { OgrenciProfilim } from "@/components/dashboard/OgrenciProfilim";
+import { ogretmenAktifGunuKaydet, ogrenciProfilGoruntulemesiKaydet } from "@/lib/ogretmen-takip";
 import { EtkinlikPaneli } from "@/components/dashboard/EtkinlikPaneli";
 import { etkinlikBransiMi } from "@/lib/etkinlik";
 import type { EtkinlikAtamasi, EtkinlikGrubu, EtkinlikOgrencisi } from "@/lib/etkinlik";
@@ -139,6 +140,9 @@ export default async function DashboardPage({
   const aktifBolum = (params.bolum ?? varsayilanBolum) as DashboardBolumu;
   const ogrenciProgramiGizliRotasi = role === "ogretmen" && aktifBolum === "planlar" && !!params.ogrenci;
   if (!dashboardMenusu(role, kurumTuru, brans).some((oge) => oge.bolum === aktifBolum) && !ogrenciProgramiGizliRotasi) redirect("/dashboard");
+  // Yazılı analizi dürüstlük engeli: öğretmenin panele girdiği günler sayılır
+  // (bkz. src/lib/ogretmen-takip.ts, yazili-erisim.ts).
+  if (role === "ogretmen") ogretmenAktifGunuKaydet(user.id);
   const donem = (["haftalik", "aylik", "tum"].includes(params.donem ?? "") ? params.donem : "tum") as RaporDonemi;
   const okunmamisMesajSayisi = okunmamisMesajSayisiHam ?? 0;
 
@@ -585,6 +589,9 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
     const o = ogrenci as unknown as OgrenciRow | null;
 
     if (o) {
+      // Yazılı analizi dürüstlük engeli: öğrenci öğretmenin okulunda doğrulanıp
+      // profili gösterildiği için görüntüleme sayılır (bkz. ogretmen-takip.ts).
+      if (role === "ogretmen") ogrenciProfilGoruntulemesiKaydet(userId, secilenOgrenciId);
       const [analiz, konuHakimiyetiOzeti, kohort] = await Promise.all([
         analizVerisiGetir(okulOkumaClient, secilenOgrenciId, donem),
         konuHakimiyetiOzetiGetir(okulOkumaClient, secilenOgrenciId),

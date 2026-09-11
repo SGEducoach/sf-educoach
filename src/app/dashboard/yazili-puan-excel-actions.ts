@@ -3,6 +3,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { adNormalize } from "@/lib/validators";
 import { sinifOgrencileriniGetir, UUID_DESENI, yaziliKullanicisi } from "@/lib/yazili-sinif-ogrencileri";
+import { yaziliErisimi } from "@/lib/yazili-erisim";
+import { YAZILI_KILIT_MESAJI } from "@/lib/yazili-erisim-hesap";
 
 export interface ExcelPuanSonucu {
   error: string | null;
@@ -36,7 +38,10 @@ function hucreMetni(deger: unknown): string {
 // kişiye aitse adla (aynı adlı iki öğrenci asla tahminle eşleşmez).
 export async function yaziliPuanlariniExceldenOku(formData: FormData): Promise<ExcelPuanSonucu> {
   const supabase = await createClient();
-  if (!(await yaziliKullanicisi(supabase))) return { error: "Bu işlem için öğretmen girişi gerekiyor.", ...BOS_SONUC };
+  const ogretmenId = await yaziliKullanicisi(supabase);
+  if (!ogretmenId) return { error: "Bu işlem için öğretmen girişi gerekiyor.", ...BOS_SONUC };
+  // Dürüstlük engeli (bkz. lib/yazili-erisim.ts).
+  if (!(await yaziliErisimi(ogretmenId)).izinli) return { error: YAZILI_KILIT_MESAJI, ...BOS_SONUC };
 
   const sinifId = String(formData.get("sinifId") ?? "");
   const maxToplam = Number(formData.get("maxToplam"));

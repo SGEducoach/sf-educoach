@@ -1,6 +1,8 @@
 import ExcelJS from "exceljs";
 import { createClient } from "@/lib/supabase/server";
 import { sinifOgrencileriniGetir, UUID_DESENI, yaziliKullanicisi } from "@/lib/yazili-sinif-ogrencileri";
+import { yaziliErisimi } from "@/lib/yazili-erisim";
+import { YAZILI_KILIT_MESAJI } from "@/lib/yazili-erisim-hesap";
 
 // exceljs Node API'sini kullanıyor (Buffer, dosya üretimi) — edge runtime'da
 // çalışmaz.
@@ -21,9 +23,12 @@ export async function GET(request: Request) {
   if (!UUID_DESENI.test(sinifId)) return new Response("Geçersiz sınıf.", { status: 400 });
 
   const supabase = await createClient();
-  if (!(await yaziliKullanicisi(supabase))) {
+  const ogretmenId = await yaziliKullanicisi(supabase);
+  if (!ogretmenId) {
     return new Response("Bu işlem için öğretmen girişi gerekiyor.", { status: 403 });
   }
+  // Dürüstlük engeli (bkz. lib/yazili-erisim.ts).
+  if (!(await yaziliErisimi(ogretmenId)).izinli) return new Response(YAZILI_KILIT_MESAJI, { status: 403 });
 
   const { error, sinifAdi, ogrenciler } = await sinifOgrencileriniGetir(supabase, sinifId);
   if (error) return new Response("Öğrenci listesi alınamadı.", { status: 500 });

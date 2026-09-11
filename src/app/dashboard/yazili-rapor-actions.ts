@@ -3,6 +3,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { GECME_NOTU, yuzlugeCevir } from "@/lib/yazili-rapor-hesap";
 import { UUID_DESENI } from "@/lib/yazili-sinif-ogrencileri";
+import { yaziliErisimi } from "@/lib/yazili-erisim";
+import type { YaziliErisim } from "@/lib/yazili-erisim-hesap";
 
 export interface YaziliSinavOzeti {
   id: string;
@@ -19,11 +21,19 @@ export interface YaziliSinavOzeti {
 // Kullanıcı bulgusu (11.09.2026): "kaydedildi ama nerede olduğunu göremedim"
 // — kaydedilen yazılılar hiçbir ekranda listelenmiyordu. Öğretmenin KENDİ
 // oluşturduğu sınavlar; okuma RLS'e tabi normal client ile (yazılı tabloları
-// yalnızca o sınıfın o dersine kayıtlı öğretmene açık).
-export async function yaziliSinavlariniListele(): Promise<{ error: string | null; sinavlar: YaziliSinavOzeti[] }> {
+// yalnızca o sınıfın o dersine kayıtlı öğretmene açık). Dürüstlük engeli
+// kapalıysa liste hiç gönderilmez, yalnızca erişim durumu döner.
+export async function yaziliSinavlariniListele(): Promise<{
+  error: string | null;
+  sinavlar: YaziliSinavOzeti[];
+  erisim: YaziliErisim | null;
+}> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Oturum bulunamadı.", sinavlar: [] };
+  if (!user) return { error: "Oturum bulunamadı.", sinavlar: [], erisim: null };
+
+  const erisim = await yaziliErisimi(user.id);
+  if (!erisim.izinli) return { error: null, sinavlar: [], erisim };
 
   const { data: sinavlar, error } = await supabase
     .from("yazili_sinavlar")
@@ -32,8 +42,8 @@ export async function yaziliSinavlariniListele(): Promise<{ error: string | null
     .order("tarih", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(200);
-  if (error) return { error: "Kayıtlı yazılılar alınamadı.", sinavlar: [] };
-  if (!sinavlar?.length) return { error: null, sinavlar: [] };
+  if (error) return { error: "Kayıtlı yazılılar alınamadı.", sinavlar: [], erisim };
+  if (!sinavlar?.length) return { error: null, sinavlar: [], erisim };
 
   const idler = sinavlar.map((s) => s.id);
   const [{ data: sorular }, { data: sonuclar }] = await Promise.all([
@@ -48,6 +58,7 @@ export async function yaziliSinavlariniListele(): Promise<{ error: string | null
 
   return {
     error: null,
+    erisim,
     sinavlar: sinavlar.map((s) => {
       const sinifHam = s.classes as unknown as { seviye: string; sube: string } | { seviye: string; sube: string }[] | null;
       const sinif = Array.isArray(sinifHam) ? sinifHam[0] : sinifHam;
@@ -73,6 +84,7 @@ export async function yaziliSinavlariniListele(): Promise<{ error: string | null
 // KENDİ oluşturduğu yazılıyı siler; RLS ayrıca o sınıfın o dersine kayıtlı
 // olmayı şart koşuyor (yazili_sinavlar_delete). Sorular ve öğrenci/soru
 // sonuçları ON DELETE CASCADE ile AYNI işlemde silinir — yetim kayıt kalmaz.
+// Dürüstlük engeli silmeyi kısıtlamaz: öğretmen kendi kaydını her zaman silebilir.
 export async function yaziliSinavSil(sinavId: string): Promise<{ error: string | null }> {
   if (!UUID_DESENI.test(sinavId)) return { error: "Geçersiz yazılı." };
   const supabase = await createClient();

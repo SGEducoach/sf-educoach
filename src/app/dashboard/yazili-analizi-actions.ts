@@ -3,6 +3,8 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Kaynak } from "@/lib/types";
 import { soruPuaniHatasi, soruPuanlariniHesapla, GIRIS_MODLARI, type GirisModu } from "@/lib/yazili-soru-puanlari";
+import { yaziliErisimi } from "@/lib/yazili-erisim";
+import { YAZILI_KILIT_MESAJI } from "@/lib/yazili-erisim-hesap";
 
 // Supabase (PostgREST) çok-bire ve bire-bir gömülü ilişkileri NESNE olarak
 // döndürür, ama supabase-js'in tip çıkarımı (şema tipi verilmediğinde)
@@ -43,6 +45,8 @@ export async function yaziliSinavOlustur(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Oturum açılmadı", sinavId: null };
   if (input.ogretmenId !== user.id) return { error: "Oturum öğretmen kimliğiyle eşleşmiyor", sinavId: null };
+  // Dürüstlük engeli (bkz. lib/yazili-erisim.ts): arayüz atlansa bile sunucu kaydetmez.
+  if (!(await yaziliErisimi(user.id)).izinli) return { error: YAZILI_KILIT_MESAJI, sinavId: null };
 
   // Yetkilendirme: öğretmenin ilgili sınıf/ders için ogretmen_dersleri'te kayıtlı olup olmadığını kontrol et
   const { data: ogretmenDersi, error: ogretmenDersiError } = await supabase
