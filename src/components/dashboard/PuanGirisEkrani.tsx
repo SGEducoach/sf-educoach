@@ -37,10 +37,12 @@ export function PuanGirisEkrani({
       setError("Tüm öğrenciler için puan girin.");
       return;
     }
-    // Validate each score
-    for (const [id, puan] of Object.entries(ogrenciPuanlar)) {
+    // Validate each score — hata mesajı öğrenciyi ADIYLA anıyor; ham kimlik
+    // (UUID) öğretmen için anlamsız.
+    for (const o of ogrenciler) {
+      const puan = ogrenciPuanlar[o.id];
       if (puan < 0 || puan > maxTotal) {
-        setError(`${id} numaralı öğrencinin puanı geçersiz.`);
+        setError(`${o.ad} için girilen puan geçersiz (0-${maxTotal} arası olmalı).`);
         return;
       }
     }
@@ -61,13 +63,11 @@ export function PuanGirisEkrani({
       <div className="space-y-4">
         {ogrenciler.map((ogr) => (
           <div key={ogr.id} className="border p-3 rounded">
-            <div className="flex justify-between items-start">
-              <div>
-                <label className={labelStyle}>{ogr.ad}</label>
-                <p className="text-xs text-TEXT_MUTED">Öğrenci kimliği: {ogr.id}</p>
-              </div>
+            <div className="flex justify-between items-center">
+              <label htmlFor={`puan-${ogr.id}`} className={labelStyle}>{ogr.ad}</label>
               <div className="w-20">
                 <input
+                  id={`puan-${ogr.id}`}
                   type="number"
                   value={ogrenciPuanlar[ogr.id] ?? 0}
                   onChange={(e) => handleChange(ogr.id, e.target.value)}
