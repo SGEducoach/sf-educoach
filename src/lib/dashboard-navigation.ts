@@ -25,7 +25,6 @@ export type DashboardBolumu =
   | "duyuru-gecmisi"
   | "takvim"
   | "yarismalar"
-  | "yazili-analizi"
   // YÖNETİCİ (admin) paneline özel — bkz. ADMIN_MENUSU
   | "kullanicilar"
   | "google-analytics"
@@ -204,8 +203,10 @@ export function dashboardMenusu(role: UserRole, kurumTuru?: KurumTuru, brans?: s
 
 export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
   "gorevler", "planlar", "veri-girisi", "konu-hakimiyeti", "analiz", "yapay-zeka", "rozetler", "tg-denemeleri",
-  "duyurular", "talepler", "onaylar", "dersler", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler", "rehberlik", "etkinlikler", "yazili-analizi", "profil", "takvim", "yarismalar",
+  "duyurular", "talepler", "onaylar", "dersler", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler", "rehberlik", "etkinlikler", "profil", "takvim", "yarismalar",
 ]);
+// Yazılı analizinin ayrı sayfası yok (kullanıcı kararı 11.09.2026: yalnızca
+// öğretmene özel) — öğretmen Ajandam > Yazılı Analizi sekmesinden girer.
 
 // /yonetici/[bolum] catch-all için — "rozetler" burada YOK, çünkü admin'in
 // kendi çok-okullu rozet sayfası (/yonetici/rozetler) zaten ayrı, kendi
