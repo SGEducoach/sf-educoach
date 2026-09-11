@@ -120,32 +120,49 @@ export async function yaziliSinavOlustur(
     }
   }
 
+  // DİKKAT: parametre adları KÜÇÜK HARF olmalı. Fonksiyon tırnaksız
+  // tanımlandığı için Postgres adları küçültüyor (p_sinifid, p_ogretmenid…),
+  // PostgREST ise adları harf duyarlı eşleştiriyor. camelCase gönderildiğinde
+  // fonksiyon bulunamıyor (HTTP 404, PGRST202) ve kayıt modül eklendiğinden
+  // beri hiç çalışmıyordu (11.09.2026'da canlıda doğrulandı).
   try {
     const rpcResult = await supabase
       .rpc("yazili_sinav_olustur", {
-        p_sinifId: input.sinifId,
+        p_sinifid: input.sinifId,
         p_ders: input.ders,
         p_ad: input.ad,
         p_tarih: input.tarih,
-        p_ogretmenId: input.ogretmenId,
+        p_ogretmenid: input.ogretmenId,
         p_ogrencier: p_ogrencier,
-        p_temsiliOgrenciIds: temsiliIdler,
-        p_temsiliOgrenciSkorlar: Object.fromEntries(temsiliIdler.map((id) => [id, input.temsiliOgrenciSkorlar[id]])),
-        p_maxPuanlar: input.maxPuanlar,
+        p_temsiliogrenciids: temsiliIdler,
+        p_temsiliogrenciskorlar: Object.fromEntries(temsiliIdler.map((id) => [id, input.temsiliOgrenciSkorlar[id]])),
+        p_maxpuanlar: input.maxPuanlar,
         p_kazanimlar: input.kazanimlar.map((kazanim) => kazanim.trim()),
-        p_soruSonuclari: p_soruSonuclari,
+        p_sorusonuclari: p_soruSonuclari,
       });
 
+    // Supabase'in hata nesnesi Error sınıfından DEĞİL (düz nesne). Eskiden
+    // throw edilip "err instanceof Error" kontrolüne takıldığı için gerçek
+    // mesaj yutuluyor, ekranda yalnızca "Beklenmeyen bir hata oluştu"
+    // görünüyordu. Mesaj artık doğrudan iletiliyor; RPC'nin kendi RAISE
+    // mesajları zaten Türkçe.
     if (rpcResult.error) {
-      throw rpcResult.error;
+      console.error("yazili_sinav_olustur RPC hatası:", rpcResult.error);
+      return { error: rpcResult.error.message || "Yazılı analizi kaydedilemedi.", sinavId: null };
     }
     const sinavId = rpcResult.data as string | null;
     if (!sinavId) {
-      throw new Error("RPC returned null sinavId");
+      return { error: "Yazılı analizi kaydedilemedi (sınav kimliği dönmedi).", sinavId: null };
     }
     return { error: null, sinavId };
   } catch (err: unknown) {
-    return { error: err instanceof Error ? err.message : "Beklenmeyen bir hata oluştu", sinavId: null };
+    console.error("yazili_sinav_olustur beklenmeyen hata:", err);
+    const mesaj = err instanceof Error
+      ? err.message
+      : err && typeof err === "object" && "message" in err && typeof (err as { message: unknown }).message === "string"
+        ? (err as { message: string }).message
+        : "";
+    return { error: mesaj || "Beklenmeyen bir hata oluştu", sinavId: null };
   }
 }
 
