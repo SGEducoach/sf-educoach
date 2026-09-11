@@ -7,6 +7,22 @@ import { TemsiliOgrenciSecici } from "./TemsiliOgrenciSecici";
 import { YaziliAnaliziPanel } from "./YaziliAnaliziPanel";
 import { getAktifKullaniciId, yaziliSinavOlustur } from "@/app/dashboard/yazili-analizi-actions";
 import { getSinifOgrencileri } from "@/app/dashboard/yazili-analizi-actions";
+import { soruPuaniGerekenler, type GirisModu } from "@/lib/yazili-soru-puanlari";
+
+const BOS_FORM = {
+  sinifId: "",
+  ders: "",
+  ad: "",
+  tarih: "",
+  ogretmenId: "", // will be filled from auth
+  ogrenciler: [] as { id: string; ad: string }[], // list of students in class (with name)
+  ogrenciPuanlar: {} as Record<string, number>, // map of student id to total score
+  mod: null as GirisModu | null, // soru puanı giriş yöntemi (3. adım)
+  temsiliOgrenciIds: [] as string[],
+  temsiliOgrenciSkorlar: {} as Record<string, number[]>,
+  maxPuanlar: [] as number[],
+  kazanimlar: [] as string[],
+};
 
 export function YaziliAnaliziWizard({
   sinifOptions,
@@ -15,22 +31,10 @@ export function YaziliAnaliziWizard({
   sinifOptions?: { id: string; ad: string }[];
   dersOptions?: string[];
 } = {}) {
-  const [step, setStep] = useState(1); // 1: Exam Info, 2: Student Totals, 3: Rep Scores, 4: Analysis / Save
-  const [isLoading, setIsLoading] = useState(false);
+  const [step, setStep] = useState(1); // 1: Sınav bilgisi, 2: Toplam puanlar, 3: Soru puanları, 4: Analiz / Kayıt
   const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
-    sinifId: "",
-    ders: "",
-    ad: "",
-    tarih: "",
-    ogretmenId: "", // will be filled from auth
-    ogrenciler: [] as { id: string; ad: string }[], // list of students in class (with name)
-    ogrenciPuanlar: {} as Record<string, number>, // map of student id to total score
-    temsiliOgrenciIds: [] as string[],
-    temsiliOgrenciSkorlar: {} as Record<string, number[]>,
-    maxPuanlar: [] as number[],
-    kazanimlar: [] as string[],
-  });
+  const [kaydedildi, setKaydedildi] = useState(false);
+  const [formData, setFormData] = useState(BOS_FORM);
 
   // Fetch logged-in teacher ID
   useEffect(() => {
@@ -62,11 +66,12 @@ export function YaziliAnaliziWizard({
         if (result.error) {
           setError(result.error);
         } else {
-          setFormData((prev) => ({ ...prev, ogrenciler: result.ogrenciler }));
-          // Reset totals when class changes
+          // Sınıf değişince önceki sınıfın puanları ve seçimleri sıfırlanır.
           setFormData((prev) => ({
             ...prev,
+            ogrenciler: result.ogrenciler,
             ogrenciPuanlar: {},
+            mod: null,
             temsiliOgrenciIds: [],
             temsiliOgrenciSkorlar: {},
           }));
@@ -85,44 +90,34 @@ export function YaziliAnaliziWizard({
     setStep((prev) => Math.max(prev - 1, 1));
   };
 
+  const yeniAnaliz = () => {
+    setFormData((prev) => ({ ...BOS_FORM, ogretmenId: prev.ogretmenId }));
+    setKaydedildi(false);
+    setError(null);
+    setStep(1);
+  };
+
   const handleSubmit = async () => {
-    setIsLoading(true);
     setError(null);
     try {
-      // Ensure we have ogretmenId (should be set from useEffect)
-      if (!formData.ogretmenId) {
-        throw new Error("Oturum bulunamadı.");
-      }
-      // Prepare ogrenciler with totals
-      const ogrencilerWithTotals = formData.ogrenciler.map((ogr) => ({
-        id: ogr.id,
-        toplamPuan: formData.ogrenciPuanlar[ogr.id] ?? 0,
-      }));
-      // Validate that all students have a score (should be already validated in step 2)
-      const missingScore = ogrencilerWithTotals.some((o) => o.toplamPuan === null || o.toplamPuan === undefined);
-      if (missingScore) {
-        throw new Error("Tüm öğrencilerin puanlarını girin.");
-      }
+      if (!formData.ogretmenId) throw new Error("Oturum bulunamadı.");
+      if (!formData.mod) throw new Error("Soru puanı giriş yöntemini seçin.");
       const result = await yaziliSinavOlustur({
         sinifId: formData.sinifId,
         ders: formData.ders,
         ad: formData.ad,
         tarih: formData.tarih,
         ogretmenId: formData.ogretmenId,
-        ogrenciler: ogrencilerWithTotals,
-        temsiliOgrenciIds: formData.temsiliOgrenciIds,
+        ogrenciler: formData.ogrenciler.map((ogr) => ({ id: ogr.id, toplamPuan: formData.ogrenciPuanlar[ogr.id] ?? 0 })),
+        mod: formData.mod,
         temsiliOgrenciSkorlar: formData.temsiliOgrenciSkorlar,
         maxPuanlar: formData.maxPuanlar,
         kazanimlar: formData.kazanimlar,
       });
       if (result.error) throw new Error(result.error);
-      // Success
-      alert("Yazılı analizi başarıyla kaydedildi.");
-      // Redirect to the saved exam view
+      setKaydedildi(true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Bir hata oluştu.");
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -145,6 +140,7 @@ export function YaziliAnaliziWizard({
         ogrenciler={formData.ogrenciler}
         maxPuanlar={formData.maxPuanlar}
         sinifId={formData.sinifId}
+        baslangicPuanlar={formData.ogrenciPuanlar}
         onChange={(ogrenciler) => {
           setFormData((prev) => ({
             ...prev,
@@ -157,63 +153,61 @@ export function YaziliAnaliziWizard({
     </div>
   );
 
-  const renderStep3 = () => (
-    <div>
-      <h2>Temsilî öğrenci puanları</h2>
-      {formData.ogrenciler.length === 0 ? (
-        <p className="text-TEXT_MUTED">Önce bir sınıf seçin.</p>
-      ) : (
-        <TemsiliOgrenciSecici
-          ogrenciler={formData.ogrenciler}
-          maxPuanlar={formData.maxPuanlar}
-          onOgrenciSec={(ids) => {
-            setFormData((prev) => ({
-              ...prev,
-              temsiliOgrenciIds: ids,
-            }));
-          }}
-          onSkorDegisti={(id, skorlar) => {
-            setFormData((prev) => ({
-              ...prev,
-              temsiliOgrenciSkorlar: {
-                ...prev.temsiliOgrenciSkorlar,
-                [id]: skorlar,
-              },
-            }));
-          }}
-        />
-      )}
-      <div className="flex justify-between mt-4">
-        <button type="button" onClick={goToPrev} className="sfec-btn rounded-xl px-4 py-2">Geri</button>
-        <button type="button" onClick={goToNext} className="sfec-btn rounded-xl px-4 py-2">Devam et</button>
-      </div>
-    </div>
-  );
+  const renderStep3 = () =>
+    formData.ogrenciler.length === 0 ? (
+      <p className="text-TEXT_MUTED">Önce bir sınıf seçin.</p>
+    ) : (
+      <TemsiliOgrenciSecici
+        ogrenciler={formData.ogrenciler}
+        toplamlar={formData.ogrenciPuanlar}
+        maxPuanlar={formData.maxPuanlar}
+        kazanimlar={formData.kazanimlar}
+        baslangicModu={formData.mod}
+        baslangicSkorlar={formData.temsiliOgrenciSkorlar}
+        onGeri={goToPrev}
+        onTamam={(mod, skorlar) => {
+          const toplamlar = formData.ogrenciler.map((o) => ({ id: o.id, toplam: formData.ogrenciPuanlar[o.id] ?? 0 }));
+          setFormData((prev) => ({
+            ...prev,
+            mod,
+            temsiliOgrenciSkorlar: skorlar,
+            temsiliOgrenciIds: soruPuaniGerekenler(mod, toplamlar),
+          }));
+          goToNext();
+        }}
+      />
+    );
 
   const renderStep4 = () => (
     <div>
-      <h2>Analiz ve kayıt</h2>
-      {formData.ogrenciler.length === 0 || Object.keys(formData.ogrenciPuanlar).length === 0 ? (
+      {formData.ogrenciler.length === 0 || Object.keys(formData.ogrenciPuanlar).length === 0 || !formData.mod ? (
         <p className="text-TEXT_MUTED">Önceki adımları tamamlayın.</p>
       ) : (
         <YaziliAnaliziPanel
           ogrenciler={formData.ogrenciler.map((o) => ({
             id: o.id,
+            ad: o.ad,
             toplamPuan: formData.ogrenciPuanlar[o.id] ?? 0,
           }))}
-          temsiliOgrenciIds={formData.temsiliOgrenciIds}
+          mod={formData.mod}
           temsiliOgrenciSkorlar={formData.temsiliOgrenciSkorlar}
           maxPuanlar={formData.maxPuanlar}
           kazanimlar={formData.kazanimlar}
+          kaydedildi={kaydedildi}
           onSave={handleSubmit}
         />
       )}
-      <div className="flex justify-between mt-4">
-        <button type="button" onClick={goToPrev} className="sfec-btn rounded-xl px-4 py-2">Geri</button>
-        <button type="button" onClick={handleSubmit} disabled={isLoading} className="sfec-btn rounded-xl px-4 py-2">
-          {isLoading ? "Kaydediliyor…" : "Kaydet ve bitir"}
-        </button>
-      </div>
+      {kaydedildi && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3 text-sm" role="status">
+          <span>Yazılı analizi kaydedildi.</span>
+          <button type="button" onClick={yeniAnaliz} className="sfec-btn rounded-xl px-4 py-2">Yeni yazılı analizi</button>
+        </div>
+      )}
+      {!kaydedildi && (
+        <div className="mt-4 flex justify-start">
+          <button type="button" onClick={goToPrev} className="sfec-btn rounded-xl px-4 py-2">Geri</button>
+        </div>
+      )}
     </div>
   );
 
@@ -234,7 +228,7 @@ export function YaziliAnaliziWizard({
 
   return (
     <div className="space-y-6">
-      {error && <p className="text-sm text-peach">{error}</p>}
+      {error && <p className="text-sm text-peach" role="alert">{error}</p>}
       {renderBody()}
     </div>
   );

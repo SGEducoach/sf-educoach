@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import type { Kaynak } from "@/lib/types";
-import { akilliTahminV1 } from "@/lib/yazili-estimation-algoritmasi";
+import { soruPuaniHatasi, soruPuanlariniHesapla, GIRIS_MODLARI, type GirisModu } from "@/lib/yazili-soru-puanlari";
 
 // Supabase (PostgREST) çok-bire ve bire-bir gömülü ilişkileri NESNE olarak
 // döndürür, ama supabase-js'in tip çıkarımı (şema tipi verilmediğinde)
@@ -33,7 +33,7 @@ export async function yaziliSinavOlustur(
     tarih: string; // YYYY-MM-DD
     ogretmenId: string; // oturumdaki öğretmen ID
     ogrenciler: { id: string; toplamPuan: number }[]; // sınıfın tüm öğrencileri ve gerçek toplam puanlar
-    temsiliOgrenciIds: string[]; // seçilen temsilî öğrenci ID listesi
+    mod: GirisModu; // soru puanı giriş modu: tek-tek | temsili | otomatik (bkz. lib/yazili-soru-puanlari.ts)
     temsiliOgrenciSkorlar: Record<string, number[]>; // ogrenciId -> [soru1Puan, soru2Puan, ...]
     maxPuanlar: number[]; // her sorunun maksimum puanı (sıra ile)
     kazanimlar: string[]; // her sorunun kazanımı (sıra ile)
@@ -61,11 +61,8 @@ export async function yaziliSinavOlustur(
   if (input.ogrenciler.length === 0) {
     return { error: "Öğrenci listesi boş", sinavId: null };
   }
-  if (input.temsiliOgrenciIds.length === 0) {
-    return { error: "En az bir représentantî öğrenci seçilmelidir", sinavId: null };
-  }
-  if (input.temsiliOgrenciIds.some((id) => !input.ogrenciler.some((ogr) => ogr.id === id))) {
-    return { error: "Temsilî öğrenci listesi sınıfın öğrencileri içinde değil", sinavId: null };
+  if (!GIRIS_MODLARI.includes(input.mod)) {
+    return { error: "Geçersiz soru puanı giriş yöntemi", sinavId: null };
   }
   const m = input.maxPuanlar.length;
   if (m === 0) {
@@ -77,56 +74,28 @@ export async function yaziliSinavOlustur(
   // Her öğrencinin toplam puanının 0 ve sınav maksimumu arasında olduğunu kontrol et
   const maxTotal = input.maxPuanlar.reduce((sum, max) => sum + max, 0);
   for (const ogr of input.ogrenciler) {
-    if (ogr.toplamPuan < 0 || ogr.toplamPuan > maxTotal) {
+    if (!Number.isInteger(ogr.toplamPuan) || ogr.toplamPuan < 0 || ogr.toplamPuan > maxTotal) {
       return { error: `Öğrenci ${ogr.id} için toplam puan geçersiz`, sinavId: null };
     }
   }
-  // Temsilî öğrencilerin skorları uzunluk kontrolü ve toplam puan eşliği
-  for (const ogrId of input.temsiliOgrenciIds) {
-    const skorlar = input.temsiliOgrenciSkorlar[ogrId];
-    if (!skorlar || skorlar.length !== m) {
-      return { error: `Temsilî öğrenci ${ogrId} için skor listesi uzunluğu hatalı`, sinavId: null };
-    }
-    const skorToplam = skorlar.reduce((sum, p) => sum + p, 0);
-    const ogrenci = input.ogrenciler.find((o) => o.id === ogrId);
-    if (!ogrenci) {
-      return { error: `Temsilî öğrenci ${ogrId} bulunamadı`, sinavId: null };
-    }
-    if (skorToplam !== ogrenci.toplamPuan) {
-      return { error: `Temsilî öğrenci ${ogrId} için skor toplamı gerçek toplam puanla eşleşmiyor`, sinavId: null };
-    }
-    // Her skorun 0 ve maxPuan arasında olduğunu kontrol et
-    for (let j = 0; j < m; j++) {
-      const p = skorlar[j];
-      if (p < 0 || p > input.maxPuanlar[j]) {
-        return { error: `Temsilî öğrenci ${ogrId} ${j + 1}. soru puanı geçersiz`, sinavId: null };
-      }
-    }
+  // Soru puanları: üç giriş modunun hepsi TEK kaynaktan (lib/yazili-soru-puanlari)
+  // — önizlemede görülen ile kaydedilen birebir aynı. Hangi öğrencilerin puanının
+  // "girilen" (actual) olduğunu istemcinin listesi değil, mod + toplamlar belirler.
+  const ogrenciToplamlari = input.ogrenciler.map((ogr) => ({ id: ogr.id, toplam: ogr.toplamPuan }));
+  const soruGirdisi = { mod: input.mod, ogrenciler: ogrenciToplamlari, temsiliSkorlar: input.temsiliOgrenciSkorlar, maxPuanlar: input.maxPuanlar };
+  const soruHatasi = soruPuaniHatasi(soruGirdisi);
+  if (soruHatasi) return { error: soruHatasi, sinavId: null };
+  let hesap: ReturnType<typeof soruPuanlariniHesapla>;
+  try {
+    hesap = soruPuanlariniHesapla(soruGirdisi);
+  } catch (err: unknown) {
+    return { error: err instanceof Error ? err.message : "Soru puanları hesaplanamadı", sinavId: null };
   }
+  const temsiliIdler = [...hesap.gercekIdler];
 
-  // 4. Tüm öğrenciler için tahmini skorları hesapla (akilliTahminV1)
-  // Temsilî öğrenci verisini hazırla
-  const temsiliOgrenciler: { id: string; toplam: number; skorlar: number[] }[] = input.temsiliOgrenciIds.map((ogrId) => {
-    const ogr = input.ogrenciler.find((o) => o.id === ogrId)!;
-    return {
-      id: ogrId,
-      toplam: ogr.toplamPuan,
-      skorlar: input.temsiliOgrenciSkorlar[ogrId],
-    };
-  });
-  const ogrencilerToplam: { id: string; toplam: number }[] = input.ogrenciler.map((ogr) => ({
-    id: ogr.id,
-    toplam: ogr.toplamPuan,
-  }));
-  const tahminSonucu = akilliTahminV1(ogrencilerToplam, temsiliOgrenciler, input.maxPuanlar);
-
-  // RPC parametrelerini hazırla
   // p_ogrencier: [{"id":"<uuid>","toplamPuan":<int>}, ...]
-  const p_ogrencier = input.ogrenciler.map(ogr => ({ id: ogr.id, toplamPuan: ogr.toplamPuan }));
-  // p_temsiliOgrenciIds: already string[]
-  // p_temsiliOgrenciSkorlar: already Record<string, number[]>
-  // p_maxPuanlar: already number[]
-  // p_soruSonuclari: [{"ogrenci_id":"<uuid>","sira":<int>,"puan":<int>,"kaynak":"actual|estimated","estimation_version":"v1|null"}, ...]
+  const p_ogrencier = input.ogrenciler.map((ogr) => ({ id: ogr.id, toplamPuan: ogr.toplamPuan }));
+  // p_soruSonuclari: [{"ogrenci_id":"<uuid>","sira":<int>,"puan":<int>,"kaynak":"actual|estimated","estimation_version":"v1|oransal-v1|null"}, ...]
   const p_soruSonuclari: Array<{
     ogrenci_id: string;
     sira: number;
@@ -134,22 +103,19 @@ export async function yaziliSinavOlustur(
     kaynak: Kaynak;
     estimation_version: string | null;
   }> = [];
-
   for (const ogr of input.ogrenciler) {
-    const isTemsili = input.temsiliOgrenciIds.includes(ogr.id);
-    const skorlar = isTemsili
-      ? input.temsiliOgrenciSkorlar[ogr.id]
-      : tahminSonucu[ogr.id];
-    if (!skorlar) {
-      return { error: `Öğrenci ${ogr.id} için skorlar hesaplanamadı`, sinavId: null };
+    const skorlar = hesap.skorlar[ogr.id];
+    if (!skorlar || skorlar.length !== m) {
+      return { error: "Bir öğrencinin soru puanları hesaplanamadı", sinavId: null };
     }
+    const gercek = hesap.gercekIdler.has(ogr.id);
     for (let j = 0; j < m; j++) {
       p_soruSonuclari.push({
         ogrenci_id: ogr.id,
         sira: j + 1,
         puan: skorlar[j],
-        kaynak: isTemsili ? "actual" : "estimated",
-        estimation_version: isTemsili ? null : "v1",
+        kaynak: gercek ? "actual" : "estimated",
+        estimation_version: gercek ? null : hesap.tahminSurumu,
       });
     }
   }
@@ -163,8 +129,8 @@ export async function yaziliSinavOlustur(
         p_tarih: input.tarih,
         p_ogretmenId: input.ogretmenId,
         p_ogrencier: p_ogrencier,
-        p_temsiliOgrenciIds: input.temsiliOgrenciIds,
-        p_temsiliOgrenciSkorlar: input.temsiliOgrenciSkorlar,
+        p_temsiliOgrenciIds: temsiliIdler,
+        p_temsiliOgrenciSkorlar: Object.fromEntries(temsiliIdler.map((id) => [id, input.temsiliOgrenciSkorlar[id]])),
         p_maxPuanlar: input.maxPuanlar,
         p_kazanimlar: input.kazanimlar.map((kazanim) => kazanim.trim()),
         p_soruSonuclari: p_soruSonuclari,

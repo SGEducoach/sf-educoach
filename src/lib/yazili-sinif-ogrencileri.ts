@@ -42,11 +42,13 @@ export async function sinifOgrencileriniGetir(
   return { error: null, sinifAdi: sinif ? `${sinif.seviye}-${sinif.sube}` : null, ogrenciler };
 }
 
-// Yazılı analizi yalnızca öğretmen panelinde açılıyor (OgretmenPanel,
-// role === "ogretmen"); müdür de okuyabilsin diye ikisi kabul ediliyor.
+// Kullanıcı kararı (11.09.2026): "sadece öğretmen girsin" — puan şablonunu
+// indirme ve Excel'den yükleme YALNIZCA öğretmen rolüne açık (müdür dahil
+// değil). Sihirbaz da zaten yalnızca öğretmen panelinde açılıyor
+// (OgretmenPanel, role === "ogretmen").
 export async function yaziliKullanicisi(supabase: SupabaseSunucu): Promise<string | null> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
   const { data: profil } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
-  return profil?.role === "ogretmen" || profil?.role === "mudur" ? user.id : null;
+  return profil?.role === "ogretmen" ? user.id : null;
 }

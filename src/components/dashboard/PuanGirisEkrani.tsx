@@ -11,15 +11,19 @@ export function PuanGirisEkrani({
   ogrenciler,
   maxPuanlar,
   sinifId,
+  baslangicPuanlar,
   onChange,
 }: {
   ogrenciler: { id: string; ad: string }[];
   maxPuanlar: number[];
   sinifId: string;
+  // 3. adımdan "Geri" ile dönüldüğünde girilen/Excel'den yüklenen puanlar
+  // kaybolmasın diye önceki değerlerle başlar.
+  baslangicPuanlar?: Record<string, number>;
   onChange: (ogrencilerWithTotals: { id: string; toplamPuan: number }[]) => void;
 }) {
   const [ogrenciPuanlar, setOgrenciPuanlar] = useState<Record<string, number>>(
-    () => Object.fromEntries(ogrenciler.map((o) => [o.id, 0]))
+    () => Object.fromEntries(ogrenciler.map((o) => [o.id, baslangicPuanlar?.[o.id] ?? 0]))
   );
   const [error, setError] = useState<string | null>(null);
   const [yukleme, setYukleme] = useState<ExcelPuanSonucu | null>(null);
