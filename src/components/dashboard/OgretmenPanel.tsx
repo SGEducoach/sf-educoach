@@ -22,6 +22,7 @@ import { programGunleri } from "@/lib/ders-programi";
 import type { DersProgramiSatiri, YurtNobetiSatiri } from "@/lib/ders-programi";
 import { Takvim } from "@/components/dashboard/Takvim";
 import { SosyalEtkinlikler } from "@/components/dashboard/SosyalEtkinlikler";
+import { YaziliAnaliziWizard } from "@/components/dashboard/YaziliAnaliziWizard";
 
 interface OgrenciSatiri {
   id: string;
@@ -674,18 +675,20 @@ function AjandamBolumu({ role, dersler, siniflar, dersProgramiSatirlari, yurtNob
   role: "ogretmen" | "mudur"; dersler: OgretmenDersiSatiri[]; siniflar: SinifSatiri[];
   dersProgramiSatirlari: DersProgramiSatiri[]; yurtNobetiSatirlari: YurtNobetiSatiri[]; dershaneMi: boolean;
 }) {
-  type Sekme = "ders" | "takvim" | "sosyal";
+  type Sekme = "ders" | "takvim" | "sosyal" | "yazili";
   const [sekme, setSekme] = useState<Sekme>(role === "ogretmen" ? "ders" : "takvim");
   const sekmeler: { id: Sekme; ad: string }[] = [
     ...(role === "ogretmen" ? [{ id: "ders" as const, ad: "Derslerim" }] : []),
     { id: "takvim", ad: "Takvim" },
     { id: "sosyal", ad: "Görevler" },
+    ...(role === "ogretmen" ? [{ id: "yazili" as const, ad: "Yazılı Analizi" }] : []),
   ];
   return <section id="takvim" className="sfec-section sfec-fade rounded-3xl p-4 sm:p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
     <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-2"><div className="grid h-8 w-8 place-items-center rounded-full" style={{ background: MINT_BG }}><CalendarPlus size={15} color={MINT}/></div><h1 className="text-xl font-extrabold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Ajandam</h1></div><div className="flex max-w-full gap-1 overflow-x-auto rounded-2xl p-1" style={{ background: BG0, border: `1px solid ${BORDER}` }}>{sekmeler.map(s => <button key={s.id} type="button" onClick={() => setSekme(s.id)} className="shrink-0 rounded-xl px-3 py-2 text-xs font-bold" style={{ background: sekme === s.id ? MINT : "transparent", color: sekme === s.id ? MINT_ON : TEXT_MUTED }}>{s.ad}</button>)}</div></div>
     {sekme === "takvim" && <Takvim yurtNobetiSatirlari={yurtNobetiSatirlari}/>}
     {sekme === "ders" && role === "ogretmen" && <DerslerimBolumu dersler={dersler} siniflar={siniflar} dersProgramiSatirlari={dersProgramiSatirlari} yurtNobetiSatirlari={yurtNobetiSatirlari} dershaneMi={dershaneMi}/>}
     {sekme === "sosyal" && <SosyalEtkinlikler/>}
+    {sekme === "yazili" && role === "ogretmen" && <YaziliAnaliziWizard/>}
   </section>;
 }
 

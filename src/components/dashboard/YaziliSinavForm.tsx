@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { getOgretmenDersleri } from "@/app/dashboard/yazili-analizi-actions";
+import { BG0, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 
-const inputStyle = "border rounded px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-MINT focus:ring-offset-2";
-const labelStyle = "block text-sm font-medium text-TEXT_MUTED mb-1";
+const inputClass = "w-full rounded-xl px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-offset-1";
+const inputStyle = { background: BG0, color: TEXT, border: `1px solid ${BORDER_STRONG}`, "--tw-ring-color": MINT } as React.CSSProperties;
+const labelClass = "mb-1.5 block text-xs font-bold";
 
 export function YaziliSinavForm({
   onChange,
@@ -42,6 +44,9 @@ export function YaziliSinavForm({
 
   // Fetch teacher's classes and subjects
   useEffect(() => {
+    if (!formData.ogretmenId) {
+      return;
+    }
     const loadData = async () => {
       try {
         setLoading(true);
@@ -52,12 +57,11 @@ export function YaziliSinavForm({
         } else {
           setSinifOptions(data.siniflar ?? []);
           setDersOptions(data.dersler ?? []);
-          if (!form.sinifId && data.siniflar?.[0]) {
-            setForm((prev) => ({ ...prev, sinifId: data.siniflar[0].id }));
-          }
-          if (!form.ders && data.dersler?.[0]) {
-            setForm((prev) => ({ ...prev, ders: data.dersler[0] }));
-          }
+          setForm((prev) => ({
+            ...prev,
+            sinifId: prev.sinifId || data.siniflar[0]?.id || "",
+            ders: prev.ders || data.dersler[0] || "",
+          }));
         }
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : "Failed to load data");
@@ -96,11 +100,11 @@ export function YaziliSinavForm({
     e.preventDefault();
     // Validate
     if (!form.sinifId || !form.ders || !form.ad || !form.tarih) {
-      setError("All fields are required");
+      setError("Sınıf, ders, sınav adı ve tarih alanları zorunludur.");
       return;
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(form.tarih)) {
-      setError("Date must be in YYYY-MM-DD format");
+      setError("Geçerli bir sınav tarihi seçin.");
       return;
     }
     if (form.sorular.some((soru) => soru.maxPuan <= 0)) {
@@ -124,21 +128,23 @@ export function YaziliSinavForm({
   };
 
   if (loading) {
-    return <div className="text-center py-4">Loading...</div>;
+    return <div className="rounded-2xl p-6 text-center text-sm" style={{ background: BG1_ALT, color: TEXT_MUTED }}>Sınıf ve ders bilgileri yükleniyor…</div>;
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5">
+      <div className="grid gap-4 sm:grid-cols-2">
       <div>
-        <label className={labelStyle}>S��n��f</label>
+        <label className={labelClass} style={{ color: TEXT_MUTED }}>Sınıf</label>
         <select
           name="sinifId"
           value={form.sinifId}
           onChange={handleChange}
-          className={inputStyle}
+          className={inputClass}
+          style={inputStyle}
           disabled={loading}
         >
-          <option value="">Select a class</option>
+          <option value="">Sınıf seçin</option>
           {sinifOptions.map((s) => (
             <option key={s.id} value={s.id}>
               {s.ad}
@@ -148,73 +154,79 @@ export function YaziliSinavForm({
       </div>
 
       <div>
-        <label className={labelStyle}>Ders</label>
+        <label className={labelClass} style={{ color: TEXT_MUTED }}>Ders</label>
         <select
           name="ders"
           value={form.ders}
           onChange={handleChange}
-          className={inputStyle}
+          className={inputClass}
+          style={inputStyle}
           disabled={loading}
         >
-          <option value="">Select a subject</option>
+          <option value="">Ders seçin</option>
           {dersOptions.map((d) => (
             <option key={d} value={d}>
-              {d}
+              {d === "Türkçe" ? "Türk Dili ve Edebiyatı" : d}
             </option>
           ))}
         </select>
       </div>
+      </div>
 
+      <div className="grid gap-4 sm:grid-cols-2">
       <div>
-        <label className={labelStyle}>S��nav Ad��</label>
+        <label className={labelClass} style={{ color: TEXT_MUTED }}>Sınav adı</label>
         <input
           name="ad"
           value={form.ad}
           onChange={handleChange}
-          className={inputStyle}
-          placeholder="Example: Yaz��l�� Deneme 1"
+          className={inputClass}
+          style={inputStyle}
+          placeholder="Örn. 1. dönem 1. yazılı"
         />
       </div>
 
       <div>
-        <label className={labelStyle}>Tarih (YYYY-MM-DD)</label>
+        <label className={labelClass} style={{ color: TEXT_MUTED }}>Sınav tarihi</label>
         <input
           name="tarih"
           type="date"
           value={form.tarih}
           onChange={handleChange}
-          className={inputStyle}
+          className={inputClass}
+          style={inputStyle}
         />
       </div>
+      </div>
 
-      <div className="space-y-3">
-        <label className={labelStyle}>Soru sayısı</label>
+      <div className="space-y-3 rounded-2xl p-4" style={{ background: BG1_ALT, border: `1px solid ${BORDER}` }}>
+        <div className="max-w-40"><label className={labelClass} style={{ color: TEXT_MUTED }}>Soru sayısı</label>
         <input type="number" min={1} max={100} value={form.sorular.length}
-          onChange={(event) => soruSayisiniDegistir(event.target.value)} className={inputStyle} />
+          onChange={(event) => soruSayisiniDegistir(event.target.value)} className={inputClass} style={inputStyle} /></div>
         {form.sorular.map((soru, index) => (
-          <div key={index} className="grid gap-2 rounded-xl border p-3 sm:grid-cols-[120px_1fr]">
-            <label className={labelStyle}>
-              Soru {index + 1} puanı
+          <div key={index} className="grid gap-3 rounded-xl p-3 sm:grid-cols-[140px_1fr]" style={{ background: BG0, border: `1px solid ${BORDER}` }}>
+            <label className={labelClass} style={{ color: TEXT_MUTED }}>
+              {index + 1}. soru puanı
               <input type="number" min={1} value={soru.maxPuan}
-                onChange={(event) => soruyuDegistir(index, "maxPuan", event.target.value)} className={inputStyle} />
+                onChange={(event) => soruyuDegistir(index, "maxPuan", event.target.value)} className={inputClass} style={inputStyle} />
             </label>
-            <label className={labelStyle}>
-              Soru {index + 1} kazanımı
+            <label className={labelClass} style={{ color: TEXT_MUTED }}>
+              {index + 1}. soru kazanımı
               <input value={soru.kazanim}
                 onChange={(event) => soruyuDegistir(index, "kazanim", event.target.value)}
-                className={inputStyle} placeholder="Örn. Birinci dereceden denklemleri çözer." />
+                className={inputClass} style={inputStyle} placeholder="Örn. Birinci dereceden denklemleri çözer." />
             </label>
           </div>
         ))}
         {error && (
-          <div className="mt-1 text-xs text-peach">
+          <div role="alert" className="mt-1 rounded-xl px-3 py-2 text-xs" style={{ color: BLUSH, border: `1px solid ${BLUSH}` }}>
             {error}
           </div>
         )}
       </div>
 
       <div className="flex justify-end">
-        <button type="submit" className="sfec-btn w-fit rounded-xl px-4 py-2">
+        <button type="submit" className="sfec-btn w-fit rounded-full px-5 py-2.5 text-sm font-bold" style={{ background: MINT, color: MINT_ON }}>
           Devam Et
         </button>
       </div>

@@ -33,12 +33,12 @@ export function YaziliAnaliziWizard() {
         const result = await getAktifKullaniciId();
         if (result.error) throw new Error(result.error);
         if (!result.userId) {
-          setError("Unable to get current user");
+          setError("Oturum bilgisi alınamadı.");
           return;
         }
         setFormData((prev) => ({ ...prev, ogretmenId: result.userId! }));
       } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : "Failed to get user");
+        setError(err instanceof Error ? err.message : "Oturum bilgisi alınamadı.");
       }
     };
     loadUser();
@@ -66,7 +66,7 @@ export function YaziliAnaliziWizard() {
           }));
         }
       } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : "Failed to load students");
+        setError(err instanceof Error ? err.message : "Öğrenciler yüklenemedi.");
       }
     };
     loadStudents();
@@ -85,7 +85,7 @@ export function YaziliAnaliziWizard() {
     try {
       // Ensure we have ogretmenId (should be set from useEffect)
       if (!formData.ogretmenId) {
-        throw new Error("User not authenticated");
+        throw new Error("Oturum bulunamadı.");
       }
       // Prepare ogrenciler with totals
       const ogrencilerWithTotals = formData.ogrenciler.map((ogr) => ({
@@ -95,7 +95,7 @@ export function YaziliAnaliziWizard() {
       // Validate that all students have a score (should be already validated in step 2)
       const missingScore = ogrencilerWithTotals.some((o) => o.toplamPuan === null || o.toplamPuan === undefined);
       if (missingScore) {
-        throw new Error("Please enter scores for all students");
+        throw new Error("Tüm öğrencilerin puanlarını girin.");
       }
       const result = await yaziliSinavOlustur({
         sinifId: formData.sinifId,
@@ -111,10 +111,10 @@ export function YaziliAnaliziWizard() {
       });
       if (result.error) throw new Error(result.error);
       // Success
-      alert("Exam saved successfully");
+      alert("Yazılı analizi başarıyla kaydedildi.");
       // Redirect to the saved exam view
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      setError(err instanceof Error ? err.message : "Bir hata oluştu.");
     } finally {
       setIsLoading(false);
     }
@@ -122,7 +122,7 @@ export function YaziliAnaliziWizard() {
 
   const renderStep1 = () => (
     <div>
-      <h2>Exam Information</h2>
+      <div className="mb-5"><h1 className="text-xl font-extrabold">Yazılı analizi</h1><p className="mt-1 text-sm text-TEXT_MUTED">Sınav bilgilerini, soru puanlarını ve kazanımları girin.</p></div>
       <YaziliSinavForm
         onChange={(data) => setFormData((prev) => ({ ...prev, ...data }))}
         onComplete={goToNext}
@@ -150,9 +150,9 @@ export function YaziliAnaliziWizard() {
 
   const renderStep3 = () => (
     <div>
-      <h2>Representative Student Scores</h2>
+      <h2>Temsilî öğrenci puanları</h2>
       {formData.ogrenciler.length === 0 ? (
-        <p className="text-TEXT_MUTED">Please select a class first.</p>
+        <p className="text-TEXT_MUTED">Önce bir sınıf seçin.</p>
       ) : (
         <TemsiliOgrenciSecici
           ogrenciler={formData.ogrenciler}
@@ -175,17 +175,17 @@ export function YaziliAnaliziWizard() {
         />
       )}
       <div className="flex justify-between mt-4">
-        <button type="button" onClick={goToPrev} className="sfec-btn rounded-xl px-4 py-2">Back</button>
-        <button type="button" onClick={goToNext} className="sfec-btn rounded-xl px-4 py-2">Continue</button>
+        <button type="button" onClick={goToPrev} className="sfec-btn rounded-xl px-4 py-2">Geri</button>
+        <button type="button" onClick={goToNext} className="sfec-btn rounded-xl px-4 py-2">Devam et</button>
       </div>
     </div>
   );
 
   const renderStep4 = () => (
     <div>
-      <h2>Analysis and Save</h2>
+      <h2>Analiz ve kayıt</h2>
       {formData.ogrenciler.length === 0 || Object.keys(formData.ogrenciPuanlar).length === 0 ? (
-        <p className="text-TEXT_MUTED">Please complete previous steps.</p>
+        <p className="text-TEXT_MUTED">Önceki adımları tamamlayın.</p>
       ) : (
         <YaziliAnaliziPanel
           ogrenciler={formData.ogrenciler.map((o) => ({
@@ -200,9 +200,9 @@ export function YaziliAnaliziWizard() {
         />
       )}
       <div className="flex justify-between mt-4">
-        <button type="button" onClick={goToPrev} className="sfec-btn rounded-xl px-4 py-2">Back</button>
+        <button type="button" onClick={goToPrev} className="sfec-btn rounded-xl px-4 py-2">Geri</button>
         <button type="button" onClick={handleSubmit} disabled={isLoading} className="sfec-btn rounded-xl px-4 py-2">
-          {isLoading ? "Saving..." : "Save and Finish"}
+          {isLoading ? "Kaydediliyor…" : "Kaydet ve bitir"}
         </button>
       </div>
     </div>

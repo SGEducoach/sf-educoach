@@ -301,6 +301,9 @@ export async function getOgretmenDersleri(
   siniflar: { id: string; ad: string }[];
   dersler: string[];
 }> {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(ogretmenId)) {
+    return { error: null, siniflar: [], dersler: [] };
+  }
   const supabase = await createClient();
   // Get teacher's class-subject mappings
   const { data: ogretmenDersleri, error: ogretmenDersleriError } = await supabase
