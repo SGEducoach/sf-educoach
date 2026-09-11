@@ -683,12 +683,16 @@ function AjandamBolumu({ role, dersler, siniflar, dersProgramiSatirlari, yurtNob
     { id: "sosyal", ad: "Görevler" },
     ...(role === "ogretmen" ? [{ id: "yazili" as const, ad: "Yazılı Analizi" }] : []),
   ];
+  const yaziliSiniflari = Array.from(
+    new Map(dersler.map((ders) => [ders.classId, { id: ders.classId, ad: ders.sinifAdi }])).values()
+  );
+  const yaziliDersleri = Array.from(new Set(dersler.map((ders) => ders.ders))).sort((a, b) => a.localeCompare(b, "tr"));
   return <section id="takvim" className="sfec-section sfec-fade rounded-3xl p-4 sm:p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
     <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-2"><div className="grid h-8 w-8 place-items-center rounded-full" style={{ background: MINT_BG }}><CalendarPlus size={15} color={MINT}/></div><h1 className="text-xl font-extrabold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Ajandam</h1></div><div className="flex max-w-full gap-1 overflow-x-auto rounded-2xl p-1" style={{ background: BG0, border: `1px solid ${BORDER}` }}>{sekmeler.map(s => <button key={s.id} type="button" onClick={() => setSekme(s.id)} className="shrink-0 rounded-xl px-3 py-2 text-xs font-bold" style={{ background: sekme === s.id ? MINT : "transparent", color: sekme === s.id ? MINT_ON : TEXT_MUTED }}>{s.ad}</button>)}</div></div>
     {sekme === "takvim" && <Takvim yurtNobetiSatirlari={yurtNobetiSatirlari}/>}
     {sekme === "ders" && role === "ogretmen" && <DerslerimBolumu dersler={dersler} siniflar={siniflar} dersProgramiSatirlari={dersProgramiSatirlari} yurtNobetiSatirlari={yurtNobetiSatirlari} dershaneMi={dershaneMi}/>}
     {sekme === "sosyal" && <SosyalEtkinlikler/>}
-    {sekme === "yazili" && role === "ogretmen" && <YaziliAnaliziWizard/>}
+    {sekme === "yazili" && role === "ogretmen" && <YaziliAnaliziWizard sinifOptions={yaziliSiniflari} dersOptions={yaziliDersleri}/>}
   </section>;
 }
 

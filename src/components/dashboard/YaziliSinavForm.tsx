@@ -12,9 +12,13 @@ export function YaziliSinavForm({
   onChange,
   onComplete,
   formData,
+  hazirSiniflar,
+  hazirDersler,
 }: {
   onChange: (data: Partial<typeof formData>) => void;
   onComplete: () => void;
+  hazirSiniflar?: { id: string; ad: string }[];
+  hazirDersler?: string[];
   formData: {
     sinifId: string;
     ders: string;
@@ -28,9 +32,9 @@ export function YaziliSinavForm({
     kazanimlar: string[];
   };
 }) {
-  const [sinifOptions, setSinifOptions] = useState<{ id: string; ad: string }[]>([]);
-  const [dersOptions, setDersOptions] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [sinifOptions, setSinifOptions] = useState<{ id: string; ad: string }[]>(hazirSiniflar ?? []);
+  const [dersOptions, setDersOptions] = useState<string[]>(hazirDersler ?? []);
+  const [loading, setLoading] = useState(!hazirSiniflar);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     sinifId: formData.sinifId,
@@ -44,6 +48,7 @@ export function YaziliSinavForm({
 
   // Fetch teacher's classes and subjects
   useEffect(() => {
+    if (hazirSiniflar && hazirDersler) return;
     if (!formData.ogretmenId) {
       return;
     }
@@ -71,7 +76,7 @@ export function YaziliSinavForm({
     };
 
     loadData();
-  }, [formData.ogretmenId]); // form defaults are intentionally applied only when the teacher changes
+  }, [formData.ogretmenId, hazirDersler, hazirSiniflar]); // form defaults are intentionally applied only when the teacher changes
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;

@@ -8,7 +8,13 @@ import { YaziliAnaliziPanel } from "./YaziliAnaliziPanel";
 import { getAktifKullaniciId, yaziliSinavOlustur } from "@/app/dashboard/yazili-analizi-actions";
 import { getSinifOgrencileri } from "@/app/dashboard/yazili-analizi-actions";
 
-export function YaziliAnaliziWizard() {
+export function YaziliAnaliziWizard({
+  sinifOptions,
+  dersOptions,
+}: {
+  sinifOptions?: { id: string; ad: string }[];
+  dersOptions?: string[];
+} = {}) {
   const [step, setStep] = useState(1); // 1: Exam Info, 2: Student Totals, 3: Rep Scores, 4: Analysis / Save
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -127,6 +133,8 @@ export function YaziliAnaliziWizard() {
         onChange={(data) => setFormData((prev) => ({ ...prev, ...data }))}
         onComplete={goToNext}
         formData={formData}
+        hazirSiniflar={sinifOptions}
+        hazirDersler={dersOptions}
       />
     </div>
   );

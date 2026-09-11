@@ -85,7 +85,6 @@ const OGRETMEN_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "gorevler", href: "/dashboard/gorevler", etiket: "Ödev ver", ikon: "gorev" },
   { bolum: "onaylar", href: "/dashboard/onaylar", etiket: "Bekleyen onaylar", ikon: "onay" },
   { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Konu Haritası", ikon: "ai" },
-  { bolum: "yazili-analizi", href: "/dashboard/yazili-analizi", etiket: "Yazılı Analizi", ikon: "analiz" },
   { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Duyurular", ikon: "duyuru" },
   { bolum: "talepler", href: "/dashboard/talepler", etiket: "Veli talepleri", ikon: "talep" },
   { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "TG Denemeler", ikon: "takvim" },
@@ -121,7 +120,6 @@ const MUDUR_MENUSU: DashboardMenuOgesi[] = [
   // düzenleyebiliyordu).
   { bolum: "ogretmenler", href: "/dashboard/ogretmenler", etiket: "Öğretmenler", ikon: "ogretmen" },
   { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Konu Haritası", ikon: "ai" },
-  { bolum: "yazili-analizi", href: "/dashboard/yazili-analizi", etiket: "Yazılı Analizi", ikon: "analiz" },
   { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Duyurular", ikon: "duyuru" },
   { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "TG Denemeler", ikon: "takvim" },
 ];
