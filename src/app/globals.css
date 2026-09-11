@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import "tailwindcss" source("../");
 
 /* SeFu Koç renk teması — SADECE GECE. Bulgu 11 kararı (23 Ağustos 2026):
    açık tema kaldırıldı, site artık tek bir sabit koyu füme zemin üzerinde

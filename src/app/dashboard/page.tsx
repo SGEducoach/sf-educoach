@@ -390,41 +390,41 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
 
   return (
     <div className="min-h-full flex flex-col gap-6">
-      {aktifBolum === "ozet" && <>
-        <section className="sfec-dashboard-hero sfec-fade rounded-3xl p-6 sm:p-8 print:hidden">
-          <div className="relative z-10 flex min-h-36 items-center justify-between gap-6 flex-wrap">
-            <div className="flex items-center gap-4 sm:gap-5 min-w-0">
-              <div className="flex h-16 w-16 sm:h-20 sm:w-20 shrink-0 items-center justify-center rounded-3xl"
-                style={{ background: MINT_BG, border: `2px solid ${BORDER_STRONG}` }}>
-                <span className="sfec-hosgeldin-kapi h-11 w-11 sm:h-14 sm:w-14" aria-hidden="true" />
-              </div>
-              <div className="min-w-0">
-                <div className="mb-1 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: TEXT_MUTED }}>
-                  <Sparkles size={13} color={MINT} /> Öğrenci paneli
+      {aktifBolum === "ozet" && (
+        <>
+          <section className="sfec-dashboard-hero sfec-fade rounded-3xl p-6 sm:p-8 print:hidden">
+            <div className="relative z-10 flex min-h-36 items-center justify-between gap-6 flex-wrap">
+              <div className="flex items-center gap-4 sm:gap-5 min-w-0">
+                <div className="flex h-16 w-16 sm:h-20 sm:w-20 shrink-0 items-center justify-center rounded-3xl"
+                  style={{ background: MINT_BG, border: `2px solid ${BORDER_STRONG}` }}>
+                  <span className="sfec-hosgeldin-kapi h-11 w-11 sm:h-14 sm:w-14" aria-hidden="true" />
                 </div>
-                <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="truncate text-2xl sm:text-3xl font-extrabold">
-                  Hoş geldin {ad.split(" ")[0]}
-                </h1>
-                <p className="mt-1 text-sm" style={{ color: TEXT_MUTED }}>{s.schools?.ad ?? "Okul bilgisi bekleniyor"}</p>
+                <div className="min-w-0">
+                  <div className="mb-1 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: TEXT_MUTED }}>
+                    <Sparkles size={13} color={MINT} /> Öğrenci paneli
+                  </div>
+                  <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="truncate text-2xl sm:text-3xl font-extrabold">
+                    Hoş geldin {ad.split(" ")[0]}
+                  </h1>
+                  <p className="mt-1 text-sm" style={{ color: TEXT_MUTED }}>{s.schools?.ad ?? "Okul bilgisi bekleniyor"}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2 sm:min-w-80">
+                <Bilgi etiket="Sınıf" deger={s.classes ? `${s.classes.seviye}-${s.classes.sube}` : "—"} />
+                <Bilgi etiket="Okul No" deger={s.okul_no} />
+                <Bilgi etiket="AYT Alanı" deger={AYT_ALAN_ETIKET[s.ayt_alan]} />
+                <Bilgi etiket="Hedef" deger={s.hedef_bolum ? s.hedef_bolum.toLocaleUpperCase("tr-TR") : "Belirlenmedi"} />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2 sm:min-w-80">
-              <Bilgi etiket="Sınıf" deger={s.classes ? `${s.classes.seviye}-${s.classes.sube}` : "—"} />
-              <Bilgi etiket="Okul No" deger={s.okul_no} />
-              <Bilgi etiket="AYT Alanı" deger={AYT_ALAN_ETIKET[s.ayt_alan]} />
-              <Bilgi etiket="Hedef" deger={s.hedef_bolum ? s.hedef_bolum.toLocaleUpperCase("tr-TR") : "Belirlenmedi"} />
-            </div>
-          </div>
-        </section>
-
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 print:hidden" aria-label="Haftalık öğrenci özeti">
-          <OzetIstatistikKarti Icon={CalendarCheck2} etiket="Konu çalışma" deger={`${analiz.buHaftaKonuDakika} dk`} aciklama="Son 7 gün" />
-          <OzetIstatistikKarti Icon={ListChecks} etiket="Çözülen soru" deger={String(analiz.buHaftaSoru)} aciklama="Son 7 gün" />
-          <OzetIstatistikKarti Icon={Target} etiket="Son deneme neti" deger={analiz.sonDenemeNet === null ? "—" : String(analiz.sonDenemeNet)} aciklama="En güncel sonuç" />
-          <OzetIstatistikKarti Icon={BarChart3} etiket="Bekleyen ödev" deger={String(gorevlerimListesi.filter((g) => g.kaynak === "gorev" && g.durum === "bekliyor").length)} aciklama="Bu hafta" />
-        </section>
-      </>}
-
+          </section>
+          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 print:hidden" aria-label="Haftalık öğrenci özeti">
+            <OzetIstatistikKarti Icon={CalendarCheck2} etiket="Konu çalışma" deger={`${analiz.buHaftaKonuDakika} dk`} aciklama="Son 7 gün" />
+            <OzetIstatistikKarti Icon={ListChecks} etiket="Çözülen soru" deger={String(analiz.buHaftaSoru)} aciklama="Son 7 gün" />
+            <OzetIstatistikKarti Icon={Target} etiket="Son deneme neti" deger={analiz.sonDenemeNet === null ? "—" : String(analiz.sonDenemeNet)} aciklama="En güncel sonuç" />
+            <OzetIstatistikKarti Icon={BarChart3} etiket="Bekleyen ödev" deger={String(gorevlerimListesi.filter((g) => g.kaynak === "gorev" && g.durum === "bekliyor").length)} aciklama="Bu hafta" />
+          </section>
+        </>
+      )}
       {(aktifBolum === "gorevler" || aktifBolum === "planlar") && <section className="print:hidden">
         <Gorevlerim
           gorevler={gorevlerimListesi}

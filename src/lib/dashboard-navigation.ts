@@ -20,6 +20,12 @@ export type DashboardBolumu =
   | "ogretmenler"
   | "ogrenciler"
   | "denemeler"
+  | "rehberlik"
+  | "etkinlikler"
+  | "duyuru-gecmisi"
+  | "takvim"
+  | "yarismalar"
+  | "yazili-analizi"
   // YÖNETİCİ (admin) paneline özel — bkz. ADMIN_MENUSU
   | "kullanicilar"
   | "google-analytics"
@@ -35,13 +41,7 @@ export type DashboardBolumu =
   // Faz 3 (2026-08-26) — okul admin rolü genişletmesi.
   | "site-ayarlari"
   | "adminler"
-  | "islem-gecmisi"
-  // 2026-08-26 kullanıcı isteği — Rehber Öğretmen branşına özel bölüm.
-  | "rehberlik"
-  | "etkinlikler"
-  | "duyuru-gecmisi"
-  | "takvim"
-  | "yarismalar";
+  | "islem-gecmisi";
 
 export type DashboardIkonu =
   | "ana-sayfa" | "gorev" | "plan" | "veri" | "hakimiyet" | "analiz" | "ai" | "rozet" | "takvim" | "duyuru" | "talep" | "onay" | "ders"
@@ -85,6 +85,7 @@ const OGRETMEN_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "gorevler", href: "/dashboard/gorevler", etiket: "Ödev ver", ikon: "gorev" },
   { bolum: "onaylar", href: "/dashboard/onaylar", etiket: "Bekleyen onaylar", ikon: "onay" },
   { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Konu Haritası", ikon: "ai" },
+  { bolum: "yazili-analizi", href: "/dashboard/yazili-analizi", etiket: "Yazılı Analizi", ikon: "analiz" },
   { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Duyurular", ikon: "duyuru" },
   { bolum: "talepler", href: "/dashboard/talepler", etiket: "Veli talepleri", ikon: "talep" },
   { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "TG Denemeler", ikon: "takvim" },
@@ -120,6 +121,7 @@ const MUDUR_MENUSU: DashboardMenuOgesi[] = [
   // düzenleyebiliyordu).
   { bolum: "ogretmenler", href: "/dashboard/ogretmenler", etiket: "Öğretmenler", ikon: "ogretmen" },
   { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Konu Haritası", ikon: "ai" },
+  { bolum: "yazili-analizi", href: "/dashboard/yazili-analizi", etiket: "Yazılı Analizi", ikon: "analiz" },
   { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Duyurular", ikon: "duyuru" },
   { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "TG Denemeler", ikon: "takvim" },
 ];
@@ -144,7 +146,7 @@ const DERSHANE_MUDUR_MENUSU: DashboardMenuOgesi[] = [
 
 // Admin (yönetici) paneli de artık diğer roller gibi tek bir sol menü +
 // aktif bölüm mantığıyla çalışıyor (bkz. src/app/yonetici/page.tsx) —
-// önceden tek bir sayfada üst üste dizilmiş bölümlerdi. "talepler" ve
+// önceden tek bir sayfada üst üte dizilmiş bölümlerdi. "talepler" ve
 // "rozetler" diğer rollerle aynı bölüm adını (ve ikonunu) kasıtlı olarak
 // paylaşıyor, aynı kavram (veli talebi / rozet görüntüleme) sadece kapsamı
 // platform genelinde.
@@ -204,7 +206,7 @@ export function dashboardMenusu(role: UserRole, kurumTuru?: KurumTuru, brans?: s
 
 export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
   "gorevler", "planlar", "veri-girisi", "konu-hakimiyeti", "analiz", "yapay-zeka", "rozetler", "tg-denemeleri",
-  "duyurular", "talepler", "onaylar", "dersler", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler", "rehberlik", "etkinlikler", "profil", "takvim", "yarismalar",
+  "duyurular", "talepler", "onaylar", "dersler", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler", "rehberlik", "etkinlikler", "yazili-analizi", "profil", "takvim", "yarismalar",
 ]);
 
 // /yonetici/[bolum] catch-all için — "rozetler" burada YOK, çünkü admin'in

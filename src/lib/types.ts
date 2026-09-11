@@ -208,12 +208,6 @@ export const HEDEFE_YAKINLIK_ETIKET: Record<HedefeYakinlik, string> = {
   uzak: "Uzak",
 };
 
-// Konu Hakimiyeti (Faz H) — öğrencinin müfredat konuları için KALICI
-// hakimiyet beyanı, konu_calismalar.hedefe_yakinlik'ten (bir çalışma
-// oturumunun o anki değerlendirmesi) BAĞIMSIZ. Ölçek tipi aynı
-// (hedefe_yakinlik reuse ediliyor, bkz. migration 0055) ama etiketler
-// bu ekrana özel — Konu Çalışma'daki "Yetersiz/Orta/Yeterli" ile aynı
-// anlamı taşıyor.
 export const HAKIMIYET_SEVIYESI_ETIKET: Record<HedefeYakinlik, string> = {
   uzak: "Yetersiz",
   belirsiz: "Orta",
@@ -222,19 +216,22 @@ export const HAKIMIYET_SEVIYESI_ETIKET: Record<HedefeYakinlik, string> = {
 
 export type OgrenmeSekli = "derste" | "video" | "kitap" | "dershane";
 export const OGRENME_SEKLI_ETIKET: Record<OgrenmeSekli, string> = {
-  derste: "Derste",
-  video: "Video",
-  kitap: "Kitap",
-  dershane: "Dershane",
+  derste: "Derste", video: "Video", kitap: "Kitap", dershane: "Dershane",
 };
 export const OGRENME_SEKLI_LISTESI: OgrenmeSekli[] = ["derste", "video", "kitap", "dershane"];
-
 export type TekrarDurumu = "tekrar_edebilirim" | "yuzeysel_bakarim" | "gerek_yok";
 export const TEKRAR_DURUMU_ETIKET: Record<TekrarDurumu, string> = {
   tekrar_edebilirim: "Tekrar edebilirim",
   yuzeysel_bakarim: "Yüzeysel bakarım",
   gerek_yok: "Gerek yok",
 };
+
+// Konu Hakimiyeti (Faz H) — öğrencinin müfredat konuları için KALICI
+// hakimiyet beyanı, konu_calismalar.hedefe_yakinlik'ten (bir çalışma
+// oturumunun o anki değerlendirmesi) BAĞIMSIZ. Ölçek tipi aynı
+// (hedefe_yakinlik reuse ediliyor, bkz. migration 0055) ama etiketler
+// bu ekrana özel — Konu Çalışma'daki "Yetersiz/Orta/Yeterli" ile aynı
+// anlamı taşıyor.
 
 // Konu bilme/bilmeme göstergesi — "Konuya hakimiyet" (hedefe_yakinlik)
 // seçiminden HEMEN SONRA, seçilen değere özel 2. aşama bir takip sorusu
@@ -435,3 +432,44 @@ export const KATEGORI_GERIYE_DONUK_SINIR: Record<"konu" | "soru" | "deneme", num
 // Soru çözümü rozeti, TYT'nin bu 5 "çekirdek" dersinde AYRI AYRI son 3 günün
 // toplamına bakıyor — hepsi eşiği geçmeden tier atlanmıyor.
 export const SORU_ROZET_DERSLERI = ["Türkçe", "Matematik", "Fizik", "Kimya", "Biyoloji"] as const;
+
+// Yazılı Analizi Modülü Tipleri
+export type Kaynak = 'actual' | 'estimated';
+
+export interface YaziliSinav {
+  id: string;
+  class_id: string;
+  ogretmen_id: string | null;
+  ad: string;
+  tarih: string; // YYYY-MM-DD
+  ders: string;
+  created_at: string;
+}
+
+export interface YaziliSoru {
+  id: string;
+  yazili_sinav_id: string;
+  sira: number;
+  max_puan: number;
+  kazanim: string;
+}
+
+export interface YaziliOgrenciSonucu {
+  id: string;
+  yazili_sinav_id: string;
+  ogrenci_id: string;
+  toplam_puan: number;
+  temsilci_mi: boolean;
+  created_at: string;
+}
+
+export interface YaziliSoruSonucu {
+  id: string;
+  yazili_sinav_id: string;
+  ogrenci_id: string;
+  soru_id: string;
+  puan: number;
+  kaynak: Kaynak;
+  estimation_version: string | null;
+  created_at: string;
+}
