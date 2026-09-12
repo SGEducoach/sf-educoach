@@ -12,6 +12,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireDershaneMudur } from "@/lib/dershane-auth";
 import type { DersProgramiGunu } from "@/lib/ders-programi";
 import { YURT_NOBETI_SIRA_SAYISI, YURT_NOBETI_SUTUN_SAYISI } from "@/lib/ders-programi";
+import { ogretmeneBildirimGonder } from "@/lib/ogretmen-bildirim";
+import { PROGRAM_BILDIRIMI } from "@/lib/ogretmen-bildirim-sablon";
 
 async function requireUser() {
   const supabase = await createClient();
@@ -98,6 +100,31 @@ export async function dersProgramiSil(id: string) {
   revalidatePath("/dashboard");
   revalidatePath("/yonetici");
   return { error: null };
+}
+
+// "Öğretmene bildir" (kullanıcı kararı 12.09.2026): program hücre hücre
+// düzenlendiği için bildirim her kayıtta değil, yönetici butona basınca
+// bir kez gider. Öğretmene daha önce program bildirimi gittiyse "değişti",
+// gitmediyse "yüklendi" (üyelikte aktarılan program da bildirim yazar).
+export async function dersProgramiDegisikliginiBildir(teacherId: string) {
+  const yetki = await requireDersProgramiYetkisi();
+  if (yetki.error !== null) return { error: yetki.error, mesaj: null };
+  const { admin, schoolId } = yetki;
+
+  const { data: ogretmen } = await admin.from("teachers").select("school_id").eq("id", teacherId).maybeSingle();
+  if (!ogretmen) return { error: "Öğretmen bulunamadı.", mesaj: null };
+  if (schoolId && ogretmen.school_id !== schoolId) return { error: "Bu öğretmen sizin kurumunuza ait değil.", mesaj: null };
+
+  const [{ count: dersSayisi }, { count: oncekiBildirim }] = await Promise.all([
+    admin.from("ogretmen_ders_programi").select("id", { count: "exact", head: true }).eq("teacher_id", teacherId),
+    admin.from("bildirimler").select("id", { count: "exact", head: true }).eq("profile_id", teacherId).eq("tur", "ders_programi"),
+  ]);
+  if (!dersSayisi) return { error: "Öğretmenin programında ders yok; bildirim gönderilmedi.", mesaj: null };
+
+  const metin = oncekiBildirim ? PROGRAM_BILDIRIMI.degisti : PROGRAM_BILDIRIMI.yuklendi;
+  const sonuc = await ogretmeneBildirimGonder(admin, teacherId, "ders_programi", metin.baslik, metin.mesaj);
+  if (sonuc.error) return { error: sonuc.error, mesaj: null };
+  return { error: null, mesaj: `Öğretmene "${metin.baslik}" bildirimi ve e-postası gönderildi.` };
 }
 
 // Yurt Nöbeti — öğretmenin kendi öz-yönetimi, sadece 2×6 tarih hücresi

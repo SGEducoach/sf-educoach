@@ -2,9 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarClock, X } from "lucide-react";
+import { BellRing, CalendarClock, X } from "lucide-react";
 import { DersProgramiGrid } from "@/components/dashboard/DersProgramiGrid";
-import { dersProgramiEkle, dersProgramiSil } from "@/app/dashboard/ders-programi-actions";
+import { dersProgramiDegisikliginiBildir, dersProgramiEkle, dersProgramiSil } from "@/app/dashboard/ders-programi-actions";
 import { DERS_SAATI_DILIMLERI, GUN_ETIKET, programGunleri } from "@/lib/ders-programi";
 import type { DersProgramiGunu, DersProgramiSatiri } from "@/lib/ders-programi";
 import { BRANS_LISTESI } from "@/lib/types";
@@ -22,6 +22,7 @@ export function DersProgramiYonetimi({ teacherId, dershaneMi, siniflar, satirlar
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [hata, setHata] = useState<string | null>(null);
+  const [bilgi, setBilgi] = useState<string | null>(null);
   const [acikHucre, setAcikHucre] = useState<{ gun: DersProgramiGunu; sira: number } | null>(null);
   const [classId, setClassId] = useState(siniflar[0]?.id ?? "");
   const [ders, setDers] = useState<string>(BRANS_LISTESI[0]);
@@ -39,6 +40,17 @@ export function DersProgramiYonetimi({ teacherId, dershaneMi, siniflar, satirlar
     setAcikHucre({ gun, sira });
   }
 
+  // Hücre kayıtları bildirim göndermez; yönetici düzenlemeyi bitirince bir kez bildirir.
+  function bildir() {
+    if (!window.confirm("Öğretmene ders programı bildirimi ve e-postası gönderilsin mi?")) return;
+    setHata(null);
+    setBilgi(null);
+    startTransition(async () => {
+      const r = await dersProgramiDegisikliginiBildir(teacherId);
+      if (r.error) setHata(r.error); else setBilgi(r.mesaj);
+    });
+  }
+
   function kaydet() {
     if (!acikHucre) return;
     if (!classId) return setHata("Sınıf seçin.");
@@ -54,6 +66,13 @@ export function DersProgramiYonetimi({ teacherId, dershaneMi, siniflar, satirlar
     <div className="flex flex-col gap-2">
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
       <DersProgramiGrid gunler={programGunleri(dershaneMi)} satirlar={satirlar} duzenlenebilir onHucreTikla={hucreTikla} />
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="button" onClick={bildir} disabled={pending || satirlar.length === 0}
+          className="sfec-btn inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+          <BellRing size={13} /> Öğretmene bildir
+        </button>
+        {bilgi && <span style={{ color: MINT }} className="text-xs font-semibold">{bilgi}</span>}
+      </div>
 
       {acikHucre && (
         <div className="fixed inset-0 z-[400] flex items-center justify-center px-4" style={{ background: "rgba(0,0,0,0.55)" }} onClick={() => setAcikHucre(null)}>

@@ -45,6 +45,7 @@ import { RehberlikPaneli } from "@/components/dashboard/RehberlikPaneli";
 import { REHBER_BRANSI } from "@/lib/rehberlik";
 import { OgrenciProfilim } from "@/components/dashboard/OgrenciProfilim";
 import { ogretmenAktifGunuKaydet, ogrenciProfilGoruntulemesiKaydet } from "@/lib/ogretmen-takip";
+import { bekleyenOgretmenBildirimleriniGonder } from "@/lib/ogretmen-bildirim";
 import { EtkinlikPaneli } from "@/components/dashboard/EtkinlikPaneli";
 import { etkinlikBransiMi } from "@/lib/etkinlik";
 import type { EtkinlikAtamasi, EtkinlikGrubu, EtkinlikOgrencisi } from "@/lib/etkinlik";
@@ -143,6 +144,8 @@ export default async function DashboardPage({
   // Yazılı analizi dürüstlük engeli: öğretmenin panele girdiği günler sayılır
   // (bkz. src/lib/ogretmen-takip.ts, yazili-erisim.ts).
   if (role === "ogretmen") ogretmenAktifGunuKaydet(user.id);
+  // Üyelikte aktarılan ders programının anlık bildirimi ve e-postası (bkz. migration 0104).
+  if (role === "ogretmen") bekleyenOgretmenBildirimleriniGonder(user.id);
   const donem = (["haftalik", "aylik", "tum"].includes(params.donem ?? "") ? params.donem : "tum") as RaporDonemi;
   const okunmamisMesajSayisi = okunmamisMesajSayisiHam ?? 0;
 
