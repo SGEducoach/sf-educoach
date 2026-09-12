@@ -85,20 +85,9 @@ body {
   color: var(--foreground);
 }
 
-/* Cümle olmayan arayüz metinleri başlık düzeninde gösterilir. Sayfa dili
-   Türkçe olduğu için tarayıcı i/İ dönüşümünü Türkçe yazımına göre uygular. */
-:where(
-  h1, h2, h3, h4, h5, h6,
-  button,
-  input[type="button"], input[type="submit"],
-  legend, summary, caption, th,
-  nav a,
-  [role="button"], [role="tab"], [role="menuitem"],
-  select, option,
-  .uppercase
-) {
-  text-transform: capitalize;
-}
+/* Metinlerin yazım biçimi içerikte tanımlanır. Genel bir capitalize kuralı
+   cümlelerdeki her kelimeyi büyük harfle başlatıp Türkçe yazımı bozuyordu.
+   Gerçek başlık/etiket vurguları gerektiği yerde açıkça tanımlanır. */
 
 .sfec-dashboard-shell {
   background: var(--sfec-shell-bg);
@@ -417,6 +406,55 @@ input[type="file"]:active::-webkit-file-upload-button {
   fill: transparent !important;
   filter: none !important;
   opacity: 0 !important;
+}
+
+/* Analiz kartları animasyon nedeniyle ayrı katman oluşturur. Sağ sütundaki
+   grafiklerin bilgi balonu sola açıldığında komşu kartın altında kalmasın. */
+.sfec-grafik-karti {
+  position: relative;
+  z-index: 1;
+}
+.sfec-grafik-karti:focus-within,
+.sfec-grafik-karti:hover {
+  z-index: 20;
+}
+
+/* Aylık öğrenci programı mobilde yatay, merkez odaklı akar. Yan günler
+   görünür kalır; merkeze gelen gün büyür ve okumaya hazır hale gelir. */
+.sfec-mobil-aylik-akis {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 14%;
+  padding: 0.75rem 14% 1.1rem;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+.sfec-mobil-aylik-akis::-webkit-scrollbar {
+  display: none;
+}
+.sfec-mobil-aylik-gun {
+  flex: 0 0 72%;
+  height: 14rem;
+  overflow: hidden;
+  scroll-snap-align: center;
+  border-radius: 1rem;
+  padding: 0.75rem;
+  text-align: left;
+  opacity: 0.48;
+  transform: scale(0.9);
+  transition: transform 0.22s ease, opacity 0.22s ease, border-color 0.22s ease;
+}
+.sfec-mobil-aylik-gun--aktif {
+  z-index: 2;
+  opacity: 1;
+  transform: scale(1);
+}
+@media (min-width: 640px) {
+  .sfec-mobil-aylik-akis {
+    display: none;
+  }
 }
 
 .sfec-mascot-scene {

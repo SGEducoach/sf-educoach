@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { UserPlus, Check, Users, Eye, Plus, X, BookMarked, BedDouble, ClipboardCheck, ListChecks, ArrowRightLeft, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, CalendarPlus } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, PEACH, PEACH_BG, SKY, SKY_BG, TEXT, TEXT_MUTED, BLUSH, BLUSH_BG } from "@/lib/theme";
@@ -709,7 +709,9 @@ function AjandamBolumu({ role, dersler, siniflar, dersProgramiSatirlari, yurtNob
 
 function OgrenciAylikProgrami({ ogrenciAdi, program }: { ogrenciAdi?: string | null; program?: OgrenciProgramSatiri[] | null }) {
   const [ay, setAy] = useState(bugununTarihiTR().slice(0, 7));
-  if (program === null) return <div className="rounded-3xl p-6 text-center" style={{ background: BG1, border: `2px solid ${BORDER}` }}><p className="text-sm font-semibold" style={{ color: BLUSH }}>Yalnızca sınıf öğretmeni kendi sınıfındaki öğrencilerin programını görüntüleyebilir.</p></div>;
+  const [seciliGun, setSeciliGun] = useState<string | null>(null);
+  const [ortadakiGun, setOrtadakiGun] = useState(bugununTarihiTR());
+  const mobilAkisRef = useRef<HTMLDivElement>(null);
   const [yil, ayNo] = ay.split("-").map(Number);
   const ilk = `${ay}-01`;
   const bos = (new Date(`${ilk}T12:00:00`).getDay() + 6) % 7;
@@ -719,12 +721,63 @@ function OgrenciAylikProgrami({ ogrenciAdi, program }: { ogrenciAdi?: string | n
     ...Array.from({ length: sonGun }, (_, i) => `${ay}-${String(i + 1).padStart(2, "0")}`),
   ];
   while (gunler.length % 7) { const d = new Date(`${gunler.at(-1)}T12:00:00`); d.setDate(d.getDate() + 1); gunler.push(d.toISOString().slice(0, 10)); }
-  const degistir = (yon: number) => { const d = new Date(yil, ayNo - 1 + yon, 1); setAy(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`); };
+  const degistir = (yon: number) => {
+    const d = new Date(yil, ayNo - 1 + yon, 1);
+    const yeniAy = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    setSeciliGun(null);
+    setOrtadakiGun(`${yeniAy}-01`);
+    setAy(yeniAy);
+  };
+  const buguneGit = () => {
+    const bugun = bugununTarihiTR();
+    setSeciliGun(null);
+    setOrtadakiGun(bugun);
+    setAy(bugun.slice(0, 7));
+  };
   const map = new Map<string, OgrenciProgramSatiri[]>();
   for (const p of program ?? []) if (p.ogrenci_tarih) map.set(p.ogrenci_tarih, [...(map.get(p.ogrenci_tarih) ?? []), p]);
+
+  useEffect(() => {
+    const hedef = gunler.includes(bugununTarihiTR()) ? bugununTarihiTR() : `${ay}-01`;
+    const kimlik = window.requestAnimationFrame(() => {
+      mobilAkisRef.current?.querySelector<HTMLElement>(`[data-program-gunu="${hedef}"]`)?.scrollIntoView({ inline: "center", block: "nearest" });
+    });
+    return () => window.cancelAnimationFrame(kimlik);
+  // Ay değiştiğinde oluşturulan gün dizisi de yenilenir; ay bağımlılığı yeterlidir.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ay]);
+
+  function mobilOrtayiBul() {
+    const alan = mobilAkisRef.current;
+    if (!alan) return;
+    const orta = alan.getBoundingClientRect().left + alan.clientWidth / 2;
+    let enYakin = { gun: ortadakiGun, fark: Number.POSITIVE_INFINITY };
+    for (const eleman of alan.querySelectorAll<HTMLElement>("[data-program-gunu]")) {
+      const kutu = eleman.getBoundingClientRect();
+      const fark = Math.abs(kutu.left + kutu.width / 2 - orta);
+      if (fark < enYakin.fark) enYakin = { gun: eleman.dataset.programGunu ?? ortadakiGun, fark };
+    }
+    if (enYakin.gun !== ortadakiGun) setOrtadakiGun(enYakin.gun);
+  }
+
+  const gunIcerigi = (g: string, ayrintili = false) => {
+    const kayitlar = (map.get(g) ?? []).sort((a, b) => (a.ogrenci_baslangic_saat ?? "").localeCompare(b.ogrenci_baslangic_saat ?? ""));
+    const gorunenler = ayrintili ? kayitlar : kayitlar.slice(0, 2);
+    return <>
+      <div className="space-y-1">{gorunenler.map(p => <div key={p.id} className="overflow-hidden rounded-lg px-2 py-1.5 text-[11px] leading-4" style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}`, color: TEXT }}><strong className="block truncate">{p.gorevler?.ders ?? "Program"}</strong>{p.ogrenci_baslangic_saat && <span className="block truncate" style={{ color: MINT }}>{p.ogrenci_baslangic_saat.slice(0, 5)}{p.ogrenci_bitis_saat ? `–${p.ogrenci_bitis_saat.slice(0, 5)}` : ""}</span>}{p.gorevler?.konu && <span className={`block ${ayrintili ? "break-words" : "truncate"}`} style={{ color: TEXT_MUTED }}>{p.gorevler.konu}</span>}</div>)}</div>
+      {!ayrintili && kayitlar.length > 2 && <span className="mt-1 block text-[10px] font-bold" style={{ color: MINT }}>+{kayitlar.length - 2} kayıt · Günü aç</span>}
+      {ayrintili && kayitlar.length === 0 && <p className="py-8 text-center text-sm" style={{ color: TEXT_MUTED }}>Bu gün için program yok.</p>}
+    </>;
+  };
+
+  if (program === null) return <div className="rounded-3xl p-6 text-center" style={{ background: BG1, border: `2px solid ${BORDER}` }}><p className="text-sm font-semibold" style={{ color: BLUSH }}>Yalnızca sınıf öğretmeni kendi sınıfındaki öğrencilerin programını görüntüleyebilir.</p></div>;
   return <section className="rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-    <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-lg font-extrabold" style={{ color: TEXT }}>{ogrenciAdi ?? "Öğrenci"} · Aylık Program</h1><p className="text-xs" style={{ color: TEXT_MUTED }}>Öğrencinin “Program yap” alanındaki aylık görünüm.</p></div><div className="flex items-center gap-2"><button aria-label="Önceki ay" onClick={() => degistir(-1)} className="grid h-9 w-9 place-items-center rounded-full" style={{ border: `1px solid ${BORDER_STRONG}` }}><ChevronLeft size={16}/></button><button onClick={() => setAy(bugununTarihiTR().slice(0, 7))} className="min-w-36 text-sm font-extrabold capitalize" style={{ color: TEXT }}>{new Date(`${ilk}T12:00:00`).toLocaleDateString("tr-TR", { month: "long", year: "numeric" })}</button><button aria-label="Sonraki ay" onClick={() => degistir(1)} className="grid h-9 w-9 place-items-center rounded-full" style={{ border: `1px solid ${BORDER_STRONG}` }}><ChevronRight size={16}/></button></div></div>
-    <div className="overflow-x-auto"><div className="grid min-w-[760px] grid-cols-7 gap-1">{["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"].map(g => <div key={g} className="py-2 text-center text-xs font-bold" style={{ color: TEXT_MUTED }}>{g}</div>)}{gunler.map(g => { const kayitlar = (map.get(g) ?? []).sort((a, b) => (a.ogrenci_baslangic_saat ?? "").localeCompare(b.ogrenci_baslangic_saat ?? "")); return <div key={g} className="min-h-32 rounded-xl p-2" style={{ background: g === bugununTarihiTR() ? MINT_BG : BG0, border: `1px solid ${BORDER}`, opacity: g.startsWith(ay) ? 1 : .35 }}><div className="mb-1 text-xs font-bold" style={{ color: TEXT }}>{Number(g.slice(-2))}</div><div className="space-y-1">{kayitlar.map(p => <div key={p.id} className="rounded-lg px-2 py-1.5 text-[11px] leading-4" style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}`, color: TEXT }}><strong className="block">{p.gorevler?.ders ?? "Program"}</strong>{p.ogrenci_baslangic_saat && <span style={{ color: MINT }}>{p.ogrenci_baslangic_saat.slice(0, 5)}{p.ogrenci_bitis_saat ? `–${p.ogrenci_bitis_saat.slice(0, 5)}` : ""}</span>}{p.gorevler?.konu && <span className="block break-words" style={{ color: TEXT_MUTED }}>{p.gorevler.konu}</span>}</div>)}</div></div> })}</div></div>
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-lg font-extrabold" style={{ color: TEXT }}>{ogrenciAdi ?? "Öğrenci"} · {seciliGun ? "Günlük program" : "Aylık program"}</h1><p className="text-xs" style={{ color: TEXT_MUTED }}>{seciliGun ? new Date(`${seciliGun}T12:00:00`).toLocaleDateString("tr-TR", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) : "Öğrencinin “Program yap” alanındaki aylık görünümü."}</p></div>{seciliGun ? <button type="button" onClick={() => setSeciliGun(null)} className="inline-flex items-center gap-1 rounded-full px-3 py-2 text-xs font-bold" style={{ border: `1px solid ${BORDER_STRONG}`, color: TEXT }}><ChevronLeft size={15}/>Aylık takvime dön</button> : <div className="flex items-center gap-2"><button aria-label="Önceki ay" onClick={() => degistir(-1)} className="grid h-9 w-9 place-items-center rounded-full" style={{ border: `1px solid ${BORDER_STRONG}` }}><ChevronLeft size={16}/></button><button onClick={buguneGit} className="min-w-36 text-sm font-extrabold" style={{ color: TEXT }}>{new Date(`${ilk}T12:00:00`).toLocaleDateString("tr-TR", { month: "long", year: "numeric" })}</button><button aria-label="Sonraki ay" onClick={() => degistir(1)} className="grid h-9 w-9 place-items-center rounded-full" style={{ border: `1px solid ${BORDER_STRONG}` }}><ChevronRight size={16}/></button></div>}</div>
+    {seciliGun ? <div className="rounded-2xl p-3" style={{ background: BG0, border: `1px solid ${BORDER}` }}>{gunIcerigi(seciliGun, true)}</div> : <>
+      <div className="hidden grid-cols-7 gap-1 sm:grid">{["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"].map(g => <div key={g} className="py-2 text-center text-xs font-bold" style={{ color: TEXT_MUTED }}>{g}</div>)}{gunler.map(g => <button type="button" key={g} onClick={() => setSeciliGun(g)} className="h-32 min-w-0 overflow-hidden rounded-xl p-2 text-left align-top" style={{ background: g === bugununTarihiTR() ? MINT_BG : BG0, border: `1px solid ${BORDER}`, opacity: g.startsWith(ay) ? 1 : .35 }} aria-label={`${g} gününün programını aç`}><div className="mb-1 text-xs font-bold" style={{ color: TEXT }}>{Number(g.slice(-2))}</div>{gunIcerigi(g)}</button>)}</div>
+      <div ref={mobilAkisRef} onScroll={mobilOrtayiBul} className="sfec-mobil-aylik-akis sm:hidden" aria-label="Aylık program günleri">{gunler.filter(g => g.startsWith(ay)).map(g => <button type="button" key={g} data-program-gunu={g} onClick={() => setSeciliGun(g)} className={`sfec-mobil-aylik-gun ${g === ortadakiGun ? "sfec-mobil-aylik-gun--aktif" : ""}`} style={{ background: g === bugununTarihiTR() ? MINT_BG : BG0, border: `1px solid ${g === ortadakiGun ? MINT : BORDER}` }}><span className="mb-3 block text-center text-xs font-bold" style={{ color: TEXT }}>{new Date(`${g}T12:00:00`).toLocaleDateString("tr-TR", { weekday: "long", day: "numeric", month: "long" })}</span>{gunIcerigi(g)}</button>)}</div>
+      <p className="mt-2 text-center text-[10px] sm:hidden" style={{ color: TEXT_MUTED }}>Günler arasında kaydırın. Ortadaki güne dokunarak günlük görünümü açın.</p>
+    </>}
   </section>;
 }
 
