@@ -10,6 +10,7 @@ import type { GorevTuru, GorevDurumu, AytAlan } from "@/lib/types";
 import { KonuCalismaForm, SoruCozumuForm, DenemeForm } from "@/components/dashboard/OgrenciVeriGirisi";
 import { MaskotKonusmaBalonu } from "@/components/dashboard/MaskotKonusmaBalonu";
 import { planEkle, gorevProgramaEkle } from "@/app/dashboard/gorev-actions";
+import { rehberProgramEkle } from "@/app/dashboard/rehber-ogrenci-actions";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
 import { saatiDakikayaCevir } from "@/lib/saat-araligi";
 
@@ -600,7 +601,9 @@ function GorevTamamlamaModal({ gorev, aytAlan, sinifSeviyesi, dersListesi, konuO
 // Öğrencinin kendi planını eklediği form — öğretmen görevinden farklı
 // olarak saat aralığı ZORUNLU; sunucu tarafı aynı gün çakışan bir saat
 // aralığına izin vermiyor (bkz. planEkle, gorev-actions.ts).
-function PlanEkleModal({ tarih, dersListesi, konuOnerileri, gerekYokListesi, onKapat }: {
+export function PlanEkleModal({ tarih, dersListesi, konuOnerileri, gerekYokListesi, onKapat, rehberOgrenciId }: {
+  // Dershane rehberi öğrencinin programına kilitli kalem ekler (rehberProgramEkle).
+  rehberOgrenciId?: string;
   tarih: string;
   dersListesi: string[];
   konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
@@ -626,11 +629,12 @@ function PlanEkleModal({ tarih, dersListesi, konuOnerileri, gerekYokListesi, onK
 
   function kaydet() {
     startTransition(async () => {
-      const res = await planEkle({
+      const plan = {
         tur, ders, konu: konu || undefined,
         hedefSoruSayisi: hedefSoru ? Number(hedefSoru) : undefined,
         tarih, baslangicSaat, bitisSaat, aciklama: aciklama || undefined,
-      });
+      };
+      const res = rehberOgrenciId ? await rehberProgramEkle({ ogrenciId: rehberOgrenciId, ...plan }) : await planEkle(plan);
       if (res.error) setHata(res.error);
       else { setBasari("Programa eklendi."); setTimeout(onKapat, 1000); }
     });

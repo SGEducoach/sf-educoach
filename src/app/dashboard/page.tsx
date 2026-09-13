@@ -43,6 +43,8 @@ import { DershaneAnaSayfa } from "@/components/dashboard/DershaneAnaSayfa";
 import { DenemeSuresiSonaErdiEkrani } from "@/components/DenemeSuresiSonaErdiEkrani";
 import { RehberlikPaneli } from "@/components/dashboard/RehberlikPaneli";
 import { REHBER_BRANSI } from "@/lib/rehberlik";
+import { RehberOgrenciTakibi } from "@/components/dashboard/RehberOgrenciTakibi";
+import { rehberOgrenciTakibiVerisiGetir } from "@/lib/dershane-rehber";
 import { OgrenciProfilim } from "@/components/dashboard/OgrenciProfilim";
 import { ogretmenAktifGunuKaydet, ogrenciProfilGoruntulemesiKaydet } from "@/lib/ogretmen-takip";
 import { bekleyenOgretmenBildirimleriniGonder } from "@/lib/ogretmen-bildirim";
@@ -488,6 +490,21 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
 
   const rehberOgretmenMi = role === "ogretmen" && brans === REHBER_BRANSI;
   const okulOkumaClient = rehberOgretmenMi ? createAdminClient() : supabase;
+
+  // Dershane rehberlik servisi (kullanıcı isteği 13.09.2026): öğrenci adına
+  // ödev, veri girişi ve program. Yetki sunucu işlemlerinde ayrıca doğrulanır
+  // (bkz. rehber-ogrenci-actions.ts, lib/dershane-rehber.ts).
+  if (aktifBolum === "ogrenci-takibi") {
+    if (!rehberOgretmenMi || kurumTuru !== "dershane") {
+      return (
+        <div className="sfec-fade rounded-3xl p-6 text-center" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+          <p style={{ color: TEXT_MUTED }} className="text-sm">Bu bölüm yalnızca dershane rehber öğretmenine açıktır.</p>
+        </div>
+      );
+    }
+    const { ogrenciler, secilen } = await rehberOgrenciTakibiVerisiGetir(teacher.school_id, secilenOgrenciId);
+    return <RehberOgrenciTakibi ogrenciler={ogrenciler} secilen={secilen} konuOnerileri={MUFREDAT_KONULARI} />;
+  }
 
   if (aktifBolum === "etkinlikler") {
     if (role !== "ogretmen" || kurumTuru !== "okul" || !etkinlikBransiMi(brans)) {

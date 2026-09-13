@@ -25,6 +25,7 @@ export type DashboardBolumu =
   | "duyuru-gecmisi"
   | "takvim"
   | "yarismalar"
+  | "ogrenci-takibi"
   // YÖNETİCİ (admin) paneline özel — bkz. ADMIN_MENUSU
   | "kullanicilar"
   | "google-analytics"
@@ -192,10 +193,18 @@ const REHBER_OGRETMEN_MENUSU: DashboardMenuOgesi[] = [
   TAKVIM_MENU_OGESI,
 ];
 
+// Dershane rehberlik servisi (kullanıcı isteği 13.09.2026): öğrenci adına
+// ödev, veri girişi ve program — yalnızca DERSHANE rehber öğretmenine.
+const DERSHANE_REHBER_MENUSU: DashboardMenuOgesi[] = [
+  ...REHBER_OGRETMEN_MENUSU.slice(0, 2),
+  { bolum: "ogrenci-takibi", href: "/dashboard/ogrenci-takibi", etiket: "Öğrenci Takibi", ikon: "gorev" },
+  ...REHBER_OGRETMEN_MENUSU.slice(2),
+];
+
 export function dashboardMenusu(role: UserRole, kurumTuru?: KurumTuru, brans?: string): DashboardMenuOgesi[] {
   if (role === "ogrenci") return kurumTuru === "okul" ? [...OGRENCI_MENUSU, { bolum:"etkinlikler", href:"/dashboard/etkinlikler", etiket:"Etkinlikler", ikon:"takvim" }] : OGRENCI_MENUSU;
   if (role === "veli") return VELI_MENUSU;
-  if (role === "ogretmen") return brans === REHBER_BRANSI ? REHBER_OGRETMEN_MENUSU : kurumTuru === "okul" && etkinlikBransiMi(brans) ? [...OGRETMEN_MENUSU, TAKVIM_MENU_OGESI, { bolum:"etkinlikler", href:"/dashboard/etkinlikler", etiket:"Etkinlik Grupları", ikon:"takvim" }] : kurumTuru === "okul" ? [...OGRETMEN_MENUSU, TAKVIM_MENU_OGESI] : OGRETMEN_MENUSU;
+  if (role === "ogretmen") return brans === REHBER_BRANSI ? (kurumTuru === "dershane" ? DERSHANE_REHBER_MENUSU : REHBER_OGRETMEN_MENUSU) : kurumTuru === "okul" && etkinlikBransiMi(brans) ? [...OGRETMEN_MENUSU, TAKVIM_MENU_OGESI, { bolum:"etkinlikler", href:"/dashboard/etkinlikler", etiket:"Etkinlik Grupları", ikon:"takvim" }] : kurumTuru === "okul" ? [...OGRETMEN_MENUSU, TAKVIM_MENU_OGESI] : OGRETMEN_MENUSU;
   if (role === "mudur") return kurumTuru === "dershane" ? DERSHANE_MUDUR_MENUSU : [...MUDUR_MENUSU, TAKVIM_MENU_OGESI];
   if (role === "admin") return ADMIN_MENUSU;
   return [];
@@ -203,7 +212,7 @@ export function dashboardMenusu(role: UserRole, kurumTuru?: KurumTuru, brans?: s
 
 export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
   "gorevler", "planlar", "veri-girisi", "konu-hakimiyeti", "analiz", "yapay-zeka", "rozetler", "tg-denemeleri",
-  "duyurular", "talepler", "onaylar", "dersler", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler", "rehberlik", "etkinlikler", "profil", "takvim", "yarismalar",
+  "duyurular", "talepler", "onaylar", "dersler", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler", "rehberlik", "etkinlikler", "profil", "takvim", "yarismalar", "ogrenci-takibi",
 ]);
 // Yazılı analizinin ayrı sayfası yok (kullanıcı kararı 11.09.2026: yalnızca
 // öğretmene özel) — öğretmen Ajandam > Yazılı Analizi sekmesinden girer.

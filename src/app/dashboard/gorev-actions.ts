@@ -4,54 +4,14 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { GorevTuru } from "@/lib/types";
-import { saatiDakikayaCevir, saatAraliklariCakisiyor } from "@/lib/saat-araligi";
+import { saatiDakikayaCevir } from "@/lib/saat-araligi";
+import { programaCakisiyorMu } from "@/lib/program-cakisma";
 
 async function requireUser() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   return { supabase, user };
-}
-
-// Program Yap (27.08.2026) — bir öğrencinin PROGRAMA EKLENMİŞ (programa_eklendi_mi=true)
-// tüm görev/planları kendi ogrenci_tarih/ogrenci_baslangic_saat/ogrenci_bitis_saat
-// sütunlarında kendine yeterli duruyor (bkz. migration 0081) — hem planEkle hem
-// gorevProgramaEkle AYNI bu fonksiyonla çakışma kontrolü yapıyor, tek yerden.
-async function programaCakisiyorMu(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  studentId: string,
-  tarih: string,
-  baslangicSaat: string,
-  bitisSaat: string,
-  haricAtamaId?: string,
-): Promise<{ error: string | null; cakisiyor: boolean }> {
-  let sorgu = supabase
-    .from("gorev_atamalari")
-    .select("ogrenci_baslangic_saat, ogrenci_bitis_saat")
-    .eq("student_id", studentId)
-    .eq("programa_eklendi_mi", true)
-    .eq("ogrenci_tarih", tarih);
-  if (haricAtamaId) sorgu = sorgu.neq("id", haricAtamaId);
-  const { data, error } = await sorgu;
-  if (error) return { error: error.message, cakisiyor: false };
-
-  const gorevCakisiyor = ((data ?? []) as { ogrenci_baslangic_saat: string | null; ogrenci_bitis_saat: string | null }[]).some((r) =>
-    !!r.ogrenci_baslangic_saat && !!r.ogrenci_bitis_saat &&
-    saatAraliklariCakisiyor(r.ogrenci_baslangic_saat, r.ogrenci_bitis_saat, baslangicSaat, bitisSaat),
-  );
-  if (gorevCakisiyor) return { error: null, cakisiyor: true };
-
-  // Kabul edilmiş Beden Eğitimi/Müzik çalışmaları da öğrencinin programını
-  // kapatır. Böylece öğrenci daha sonra aynı saate kişisel plan ekleyemez.
-  const { count: etkinlikSayisi, error: etkinlikHatasi } = await supabase
-    .from("etkinlik_calisma_atamalari")
-    .select("id,etkinlik_calismalari!inner(tarih,baslangic_saat,bitis_saat)", { count: "exact", head: true })
-    .eq("student_id", studentId).eq("durum", "kabul")
-    .eq("etkinlik_calismalari.tarih", tarih)
-    .lt("etkinlik_calismalari.baslangic_saat", bitisSaat)
-    .gt("etkinlik_calismalari.bitis_saat", baslangicSaat);
-  if (etkinlikHatasi) return { error: etkinlikHatasi.message, cakisiyor: false };
-  return { error: null, cakisiyor: (etkinlikSayisi ?? 0) > 0 };
 }
 
 // Öğretmen bir veya birden çok öğrenciye (toplu görev) aynı görevi verir —
@@ -199,12 +159,14 @@ export async function gorevProgramaEkle(input: {
   // engelleyecek olsa da hatayı burada anlamlı bir mesajla döndürelim).
   const { data: atama, error: atamaHatasi } = await supabase
     .from("gorev_atamalari")
-    .select("id")
+    .select("id, rehber_yerlestirdi")
     .eq("id", input.atamaId)
     .eq("student_id", user.id)
     .maybeSingle();
   if (atamaHatasi) return { error: atamaHatasi.message };
   if (!atama) return { error: "Görev bulunamadı." };
+  // Dershane rehberinin yerleştirdiği kalem kilitli (migration 0107 tetikleyicisi de engeller).
+  if (atama.rehber_yerlestirdi) return { error: "Bu program rehberlik servisi tarafından hazırlandı; saatini değiştiremezsiniz." };
 
   const { error: cakismaHatasi, cakisiyor } = await programaCakisiyorMu(
     supabase, user.id, input.tarih, input.baslangicSaat, input.bitisSaat, input.atamaId,

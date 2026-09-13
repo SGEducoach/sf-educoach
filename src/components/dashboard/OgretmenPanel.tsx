@@ -24,7 +24,7 @@ import { Takvim } from "@/components/dashboard/Takvim";
 import { SosyalEtkinlikler } from "@/components/dashboard/SosyalEtkinlikler";
 import { YaziliAnaliziSekmesi } from "@/components/dashboard/YaziliAnaliziSekmesi";
 
-interface OgrenciSatiri {
+export interface OgrenciSatiri {
   id: string;
   ad: string;
   okul_no: string;
@@ -931,8 +931,10 @@ export function SinifEkleFormu({ schoolId }: { schoolId: string }) {
 // (checkbox ile, "Tümünü seç" toplu görev karşılığı) seçilip aynı görev
 // hepsine birden atanıyor. Öğrenci tarafında bu görev, ilgili mevcut veri
 // giriş formundan (Konu/Soru/Deneme) tamamlanıyor (bkz. Gorevlerim.tsx).
-function GorevVerBolumu({ ogrenciler, konuOnerileri }: {
+export function GorevVerBolumu({ ogrenciler, konuOnerileri, gorevVerEylemi = gorevVer }: {
   ogrenciler: OgrenciSatiri[]; konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
+  // Dershane rehberi kendi yetki kontrolüyle ödev verir (bkz. rehber-ogrenci-actions.ts rehberGorevVer).
+  gorevVerEylemi?: (input: Parameters<typeof gorevVer>[0]) => Promise<{ error: string | null }>;
 }) {
   const [secili, setSecili] = useState<Set<string>>(new Set());
   const [tur, setTur] = useState<GorevTuru>("soru");
@@ -991,7 +993,7 @@ function GorevVerBolumu({ ogrenciler, konuOnerileri }: {
     if (secili.size === 0) return setHata("En az bir öğrenci seçin.");
     if (!ders.trim()) return setHata("Ders seçin.");
     startTransition(async () => {
-      const res = await gorevVer({
+      const res = await gorevVerEylemi({
         studentIds: Array.from(secili),
         tur, ders, konu: konu || undefined,
         hedefSoruSayisi: hedefSoru ? Number(hedefSoru) : undefined,

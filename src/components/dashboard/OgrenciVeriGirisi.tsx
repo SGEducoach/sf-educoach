@@ -15,6 +15,8 @@ import {
 import {
   konuCalismaEkle, soruCozumuEkle, denemeEkle, haftalikVerimlilikEkle, konuAnlatimiGetir,
 } from "@/app/dashboard/veri-actions";
+import { rehberDenemeEkle, rehberKonuCalismaEkle, rehberSoruCozumuEkle } from "@/app/dashboard/rehber-ogrenci-actions";
+import { REHBER_GERIYE_DONUK_GUN } from "@/lib/rehberlik";
 import { YukleniyorOverlay } from "@/components/YukleniyorOverlay";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
 
@@ -186,7 +188,7 @@ function KonuOneriDropdown({ oneriler, aktif, onSec }: {
 // Akış: önce ders+konu seçilir (eksik olduğun konuyu SEN bulursun), "Konuyu
 // oku" ile o an AI anlatımı gösterilir; süre ve konuya hakimiyet — yani
 // konuyu ne kadar anladığın — bunu OKUDUKTAN/çalıştıktan SONRA girilir.
-export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, sinifSeviyesi, mufredatAltKonulari, gerekYokListesi, onBasari, prefillDers, prefillKonu, gorevAtamaId }: {
+export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, sinifSeviyesi, mufredatAltKonulari, gerekYokListesi, onBasari, prefillDers, prefillKonu, gorevAtamaId, rehberOgrenciId }: {
   dersListesi: string[]; konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
   konuSayaclari?: Record<string, { tamamlanan: number; toplam: number }>;
   sinifSeviyesi?: string | null;
@@ -197,6 +199,8 @@ export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, sin
   gerekYokListesi?: string[];
   onBasari: (m: string, s: boolean) => void;
   prefillDers?: string; prefillKonu?: string; gorevAtamaId?: string;
+  // Dershane rehberinin öğrenci adına girişi (bkz. rehber-ogrenci-actions.ts).
+  rehberOgrenciId?: string;
 }) {
   const [ders, setDers] = useState(prefillDers ?? "");
   const [konu, setKonu] = useState(prefillKonu ?? "");
@@ -305,7 +309,7 @@ export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, sin
 
   function kaydet(formData: FormData) {
     startTransition(async () => {
-      const res = await konuCalismaEkle(formData);
+      const res = rehberOgrenciId ? await rehberKonuCalismaEkle(rehberOgrenciId, formData) : await konuCalismaEkle(formData);
       if (res.error) return setHata(res.error);
       onBasari("Konu çalışması kaydedildi.", res.verimlilikSorulsunMu);
       setKonu(""); setAramaMetni(""); setUstBaslik(""); setAnlatim(null); setAnlatimSeviye(null); setAnlatimAcik(false); setHedefeYakinlik("belirsiz"); setTakipCevabi(TAKIP_SORUSU.belirsiz.secenekler[0][0]); setYayinevi(""); setTarih(bugununTarihi());
@@ -336,7 +340,7 @@ export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, sin
 
   return (
     <form action={submit} className="flex flex-col gap-3">
-      <GecmisTarihSecici tarih={tarih} setTarih={setTarih} geriyeMaksGun={KATEGORI_GERIYE_DONUK_SINIR.konu} />
+      <GecmisTarihSecici tarih={tarih} setTarih={setTarih} geriyeMaksGun={rehberOgrenciId ? REHBER_GERIYE_DONUK_GUN : KATEGORI_GERIYE_DONUK_SINIR.konu} />
       <label className="flex flex-col gap-1">
         <div className="flex items-center gap-1.5 flex-wrap">
           <Etiket>Ders</Etiket>
@@ -462,10 +466,12 @@ export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, sin
   );
 }
 
-export function SoruCozumuForm({ dersListesi, konuOnerileri, onBasari, prefillDers, prefillKonu, gorevAtamaId }: {
+export function SoruCozumuForm({ dersListesi, konuOnerileri, onBasari, prefillDers, prefillKonu, gorevAtamaId, rehberOgrenciId }: {
   dersListesi: string[]; konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
   onBasari: (m: string, s: boolean) => void;
   prefillDers?: string; prefillKonu?: string; gorevAtamaId?: string;
+  // Dershane rehberinin öğrenci adına girişi (bkz. rehber-ogrenci-actions.ts).
+  rehberOgrenciId?: string;
 }) {
   const [ders, setDers] = useState(prefillDers ?? "");
   const [dogru, setDogru] = useState("");
@@ -501,7 +507,7 @@ export function SoruCozumuForm({ dersListesi, konuOnerileri, onBasari, prefillDe
     formData.set("tarih", tarih);
     if (gorevAtamaId) formData.set("gorevAtamaId", gorevAtamaId);
     startTransition(async () => {
-      const res = await soruCozumuEkle(formData);
+      const res = rehberOgrenciId ? await rehberSoruCozumuEkle(rehberOgrenciId, formData) : await soruCozumuEkle(formData);
       if (res.error) setHata(res.error);
       else {
         onBasari(`Soru çözümü kaydedildi (net: ${net}).`, res.verimlilikSorulsunMu);
@@ -512,7 +518,7 @@ export function SoruCozumuForm({ dersListesi, konuOnerileri, onBasari, prefillDe
 
   return (
     <form action={submit} className="flex flex-col gap-3">
-      <GecmisTarihSecici tarih={tarih} setTarih={setTarih} geriyeMaksGun={KATEGORI_GERIYE_DONUK_SINIR.soru} />
+      <GecmisTarihSecici tarih={tarih} setTarih={setTarih} geriyeMaksGun={rehberOgrenciId ? REHBER_GERIYE_DONUK_GUN : KATEGORI_GERIYE_DONUK_SINIR.soru} />
       <label className="flex flex-col gap-1"><Etiket>Ders</Etiket>
         <Secim value={ders} onChange={(e) => { setDers(e.target.value); setKonu(""); setAramaMetni(""); }} required>
           <option value="" disabled>Seçiniz</option>
@@ -566,8 +572,10 @@ export function SoruCozumuForm({ dersListesi, konuOnerileri, onBasari, prefillDe
 // Matematik/Fen Bilimleri) SADECE birini seçip o branşın tek sonucunu
 // girer (bkz. 9_10_sinif_ekleme_senaryosu.pdf 7.1 "Ürün kararı") — 11-12
 // TYT/AYT akışı (birden çok ders aynı anda) değişmeden kalıyor.
-export function DenemeForm({ aytAlan, sinifSeviyesi, onBasari, gorevAtamaId }: {
+export function DenemeForm({ aytAlan, sinifSeviyesi, onBasari, gorevAtamaId, rehberOgrenciId }: {
   aytAlan: AytAlan; sinifSeviyesi?: string | null; onBasari: (m: string, s: boolean) => void; gorevAtamaId?: string;
+  // Dershane rehberinin öğrenci adına girişi (bkz. rehber-ogrenci-actions.ts).
+  rehberOgrenciId?: string;
 }) {
   // Sınıf seviyesine göre hangi deneme türleri girilebilir — kullanıcı
   // isteği (24.08.2026): Branş Denemesi sadece 9-10-11. sınıf, TYT/AYT
@@ -625,7 +633,9 @@ export function DenemeForm({ aytAlan, sinifSeviyesi, onBasari, gorevAtamaId }: {
       yanlis: Number(sonuclar[d]?.yanlis ?? 0),
     }));
     startTransition(async () => {
-      const res = await denemeEkle(tur, yayinevi.trim(), hedefeYakinlik, zorluk, dersSonuclari, tarih, zorla, gorevAtamaId);
+      const res = rehberOgrenciId
+        ? await rehberDenemeEkle(rehberOgrenciId, tur, yayinevi.trim(), hedefeYakinlik, zorluk, dersSonuclari, tarih, zorla)
+        : await denemeEkle(tur, yayinevi.trim(), hedefeYakinlik, zorluk, dersSonuclari, tarih, zorla, gorevAtamaId);
       if (res.error) { setHata(res.error); setBenzerUyari(false); }
       else if (res.benzerUyari) { setBenzerUyari(true); }
       else {
@@ -648,7 +658,7 @@ export function DenemeForm({ aytAlan, sinifSeviyesi, onBasari, gorevAtamaId }: {
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
-      <GecmisTarihSecici tarih={tarih} setTarih={setTarih} geriyeMaksGun={KATEGORI_GERIYE_DONUK_SINIR.deneme} />
+      <GecmisTarihSecici tarih={tarih} setTarih={setTarih} geriyeMaksGun={rehberOgrenciId ? REHBER_GERIYE_DONUK_GUN : KATEGORI_GERIYE_DONUK_SINIR.deneme} />
       {/* Kullanıcı isteği: TYT/AYT ve Branş'ın giriş şekli birebir aynı —
           tek Yayınevi alanı + (varsa) tür seçici, ikisi de aynı 2 sütunlu
           satırda. Sadece TEK tür mümkünse (9-10. sınıf → sadece Branş)
