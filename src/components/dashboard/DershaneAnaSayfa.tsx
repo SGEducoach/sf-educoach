@@ -81,7 +81,7 @@ export function DershaneAnaSayfa({ veri }: { veri: DershaneAnaSayfaVerisi }) {
                 <CartesianGrid strokeDasharray="3 3" stroke={BORDER} vertical={false} />
                 <XAxis dataKey="tarih" tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={{ stroke: BORDER }} tickLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={false} tickLine={false} />
-                <RTooltip cursor={false} allowEscapeViewBox={{ x: true, y: true }}
+                <RTooltip cursor={false}
                   contentStyle={{ fontSize: 12, borderRadius: 12, border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT }}
                   labelStyle={{ color: TEXT_MUTED }} itemStyle={{ color: TEXT }} />
                 <Legend wrapperStyle={{ fontSize: 11, color: TEXT_MUTED }} />
@@ -113,7 +113,7 @@ export function DershaneAnaSayfa({ veri }: { veri: DershaneAnaSayfaVerisi }) {
                 <CartesianGrid strokeDasharray="3 3" stroke={BORDER} vertical={false} />
                 <XAxis dataKey="tarih" tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={{ stroke: BORDER }} tickLine={false} />
                 <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={false} tickLine={false} />
-                <RTooltip cursor={false} allowEscapeViewBox={{ x: true, y: true }}
+                <RTooltip cursor={false}
                   contentStyle={{ fontSize: 12, borderRadius: 12, border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT }}
                   labelStyle={{ color: TEXT_MUTED }} itemStyle={{ color: TEXT }} />
                 <Legend wrapperStyle={{ fontSize: 11, color: TEXT_MUTED }} />

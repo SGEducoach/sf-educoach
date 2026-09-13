@@ -26,18 +26,19 @@ export async function yaziliRaporuGetir(sinavId: string): Promise<YaziliRapor | 
 
   const [{ data: sorular }, { data: sonuclar }, { data: soruSonuclari }] = await Promise.all([
     supabase.from("yazili_sorular").select("id, sira, max_puan, kazanim").eq("yazili_sinav_id", sinavId),
-    supabase.from("yazili_ogrenci_sonuclari").select("ogrenci_id, toplam_puan").eq("yazili_sinav_id", sinavId),
-    supabase.from("yazili_soru_sonuclari").select("ogrenci_id, soru_id, puan, kaynak, estimation_version").eq("yazili_sinav_id", sinavId),
+    supabase.from("yazili_ogrenci_sonuclari").select("liste_ogrenci_id, toplam_puan").eq("yazili_sinav_id", sinavId),
+    supabase.from("yazili_soru_sonuclari").select("liste_ogrenci_id, soru_id, puan, kaynak, estimation_version").eq("yazili_sinav_id", sinavId),
   ]);
 
   const admin = createAdminClient();
-  const ogrenciIdleri = (sonuclar ?? []).map((s) => s.ogrenci_id as string);
+  // Öğrenci kimliği okul öğrenci listesi satırı (hesabı olmayanlar dahil, migration 0105).
+  const ogrenciIdleri = (sonuclar ?? []).map((s) => s.liste_ogrenci_id as string);
   const [{ data: sinif }, { data: ogretmen }, { data: ogretmenProfili }, { data: ogrenciSatirlari }] = await Promise.all([
     admin.from("classes").select("seviye, sube, school_id, schools(ad)").eq("id", sinav.class_id).maybeSingle(),
     admin.from("teachers").select("brans").eq("id", sinav.ogretmen_id).maybeSingle(),
     admin.from("profiles").select("ad").eq("id", sinav.ogretmen_id).maybeSingle(),
     ogrenciIdleri.length
-      ? admin.from("students").select("id, okul_no, profiles!students_id_fkey(ad)").in("id", ogrenciIdleri)
+      ? admin.from("okul_ogrenci_listesi").select("id, okul_no, ad_soyad").in("id", ogrenciIdleri)
       : Promise.resolve({ data: [] as unknown[] }),
   ]);
 
@@ -58,9 +59,9 @@ export async function yaziliRaporuGetir(sinavId: string): Promise<YaziliRapor | 
     }
   }
 
-  type OgrenciSatiri = { id: string; okul_no: string | null; profiles: { ad: string | null } | { ad: string | null }[] | null };
+  type OgrenciSatiri = { id: string; okul_no: string | null; ad_soyad: string | null };
   const ogrenciBilgisi = new Map(
-    ((ogrenciSatirlari ?? []) as OgrenciSatiri[]).map((o) => [o.id, { okulNo: (o.okul_no ?? "").trim(), ad: tek(o.profiles)?.ad?.trim() || "İsimsiz öğrenci" }])
+    ((ogrenciSatirlari ?? []) as OgrenciSatiri[]).map((o) => [o.id, { okulNo: (o.okul_no ?? "").trim(), ad: o.ad_soyad?.trim() || "İsimsiz öğrenci" }])
   );
   const okul = tek((sinif as { schools?: { ad: string } | { ad: string }[] | null } | null)?.schools);
 
@@ -73,11 +74,11 @@ export async function yaziliRaporuGetir(sinavId: string): Promise<YaziliRapor | 
     mudurAdi,
     sorular: (sorular ?? []).map((s) => ({ id: s.id, sira: s.sira, maxPuan: s.max_puan, kazanim: s.kazanim })),
     ogrenciler: (sonuclar ?? []).map((s) => {
-      const bilgi = ogrenciBilgisi.get(s.ogrenci_id);
-      return { id: s.ogrenci_id, ad: bilgi?.ad ?? "İsimsiz öğrenci", okulNo: bilgi?.okulNo ?? "", toplam: s.toplam_puan };
+      const bilgi = ogrenciBilgisi.get(s.liste_ogrenci_id);
+      return { id: s.liste_ogrenci_id, ad: bilgi?.ad ?? "İsimsiz öğrenci", okulNo: bilgi?.okulNo ?? "", toplam: s.toplam_puan };
     }),
     soruSonuclari: (soruSonuclari ?? []).map((r) => ({
-      ogrenciId: r.ogrenci_id, soruId: r.soru_id, puan: r.puan, kaynak: r.kaynak, surum: r.estimation_version,
+      ogrenciId: r.liste_ogrenci_id, soruId: r.soru_id, puan: r.puan, kaynak: r.kaynak, surum: r.estimation_version,
     })),
   });
 }

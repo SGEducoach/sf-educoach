@@ -5,6 +5,7 @@ import type { Kaynak } from "@/lib/types";
 import { soruPuaniHatasi, soruPuanlariniHesapla, GIRIS_MODLARI, type GirisModu } from "@/lib/yazili-soru-puanlari";
 import { yaziliErisimi } from "@/lib/yazili-erisim";
 import { YAZILI_KILIT_MESAJI } from "@/lib/yazili-erisim-hesap";
+import { sinifOgrencileriniGetir } from "@/lib/yazili-sinif-ogrencileri";
 
 // Supabase (PostgREST) çok-bire ve bire-bir gömülü ilişkileri NESNE olarak
 // döndürür, ama supabase-js'in tip çıkarımı (şema tipi verilmediğinde)
@@ -48,17 +49,25 @@ export async function yaziliSinavOlustur(
   // Dürüstlük engeli (bkz. lib/yazili-erisim.ts): arayüz atlansa bile sunucu kaydetmez.
   if (!(await yaziliErisimi(user.id)).izinli) return { error: YAZILI_KILIT_MESAJI, sinavId: null };
 
-  // Yetkilendirme: öğretmenin ilgili sınıf/ders için ogretmen_dersleri'te kayıtlı olup olmadığını kontrol et
-  const { data: ogretmenDersi, error: ogretmenDersiError } = await supabase
+  // Sınıf listesinde okulun bütün sınıfları var (OgretmenPanel). Öğretmen bu
+  // sınıf/dersi Derslerim'e henüz eklemediyse kayıtta eklenir — öğretmen bunu
+  // Derslerim'den zaten kendisi yapabiliyor; RLS (ogretmen_dersleri_insert_own)
+  // sınıfın öğretmenin okuluna ait olduğunu doğrular. Kayıt RPC'si ve yazılı
+  // tablolarının RLS'i bu satırı şart koşuyor.
+  const { data: ogretmenDersi } = await supabase
     .from("ogretmen_dersleri")
     .select("id")
     .eq("teacher_id", input.ogretmenId)
     .eq("class_id", input.sinifId)
     .eq("ders", input.ders)
-    .single();
-
-  if (ogretmenDersiError || !ogretmenDersi) {
-    return { error: "Bu sınıf ve ders için yetkiniz yok", sinavId: null };
+    .maybeSingle();
+  if (!ogretmenDersi) {
+    const { error: dersEklemeHatasi } = await supabase
+      .from("ogretmen_dersleri")
+      .insert({ teacher_id: input.ogretmenId, class_id: input.sinifId, ders: input.ders });
+    if (dersEklemeHatasi && dersEklemeHatasi.code !== "23505") {
+      return { error: "Bu sınıf ve ders için yetkiniz yok", sinavId: null };
+    }
   }
 
   // Girdi doğrulamaları
@@ -229,7 +238,7 @@ export async function yaziliSinavGetir(
   // Öğrencileri getir (sınıfın öğrencileri değil, bu sınavın öğrencileri)
   const { data: ogrencilerData, error: ogrencilerError } = await supabase
     .from("yazili_ogrenci_sonuclari")
-    .select("id, ogrenci_id, toplam_puan, temsilci_mi, students!inner(profiles!students_id_fkey(ad))")
+    .select("id, liste_ogrenci_id, toplam_puan, temsilci_mi, okul_ogrenci_listesi(ad_soyad)")
     .eq("yazili_sinav_id", sinavId);
 
   if (ogrencilerError) {
@@ -237,8 +246,8 @@ export async function yaziliSinavGetir(
   }
 
   const ogrenciler = ogrencilerData.map((ogr) => ({
-    id: ogr.ogrenci_id,
-    ad: tekIliski(tekIliski(ogr.students)?.profiles)?.ad?.trim() || "İsimsiz öğrenci",
+    id: ogr.liste_ogrenci_id,
+    ad: tekIliski(ogr.okul_ogrenci_listesi)?.ad_soyad?.trim() || "İsimsiz öğrenci",
     toplamPuan: ogr.toplam_puan,
     temsilciMi: ogr.temsilci_mi,
   }));
@@ -264,7 +273,7 @@ export async function yaziliSinavGetir(
   // Soru sonuçlarını getir
   const { data: soruSonuclariData, error: soruSonuclariError } = await supabase
     .from("yazili_soru_sonuclari")
-    .select("ogrenci_id, soru_id, puan, kaynak, estimation_version")
+    .select("liste_ogrenci_id, soru_id, puan, kaynak, estimation_version")
     .eq("yazili_sinav_id", sinavId);
 
   if (soruSonuclariError) {
@@ -272,7 +281,7 @@ export async function yaziliSinavGetir(
   }
 
   const soruSonuclari = soruSonuclariData.map((ss) => ({
-    ogrenciId: ss.ogrenci_id,
+    ogrenciId: ss.liste_ogrenci_id,
     soruId: ss.soru_id,
     puan: ss.puan,
     kaynak: ss.kaynak as Kaynak,
@@ -333,7 +342,8 @@ export async function getOgretmenDersleri(
 }
 
 /**
- * Belirli bir sınıfın öğrencilerini (id ve ad) döndürür.
+ * Belirli bir sınıfın öğrencilerini (id ve ad) döndürür — hesabı olmayanlar
+ * dahil, okul öğrenci listesinden (bkz. lib/yazili-sinif-ogrencileri.ts).
  */
 export async function getSinifOgrencileri(
   sinifId: string
@@ -342,26 +352,7 @@ export async function getSinifOgrencileri(
   ogrenciler: { id: string; ad: string }[];
 }> {
   const supabase = await createClient();
-  const { data: ogrencilerData, error: ogrencilerError } = await supabase
-    .from("students")
-    .select("id, profiles!students_id_fkey(ad)")
-    .eq("class_id", sinifId);
-
-  if (ogrencilerError) {
-    return { error: ogrencilerError.message, ogrenciler: [] };
-  }
-
-  type OgrenciProfilSatiri = {
-    id: string;
-    profiles: { ad: string } | { ad: string }[] | null;
-  };
-  const ogrenciler = ((ogrencilerData ?? []) as unknown as OgrenciProfilSatiri[]).map((o) => {
-    const profil = Array.isArray(o.profiles) ? o.profiles[0] : o.profiles;
-    return {
-      id: o.id,
-      ad: profil?.ad?.trim() || "İsimsiz öğrenci",
-    };
-  });
-
-  return { error: null, ogrenciler };
+  const { error, ogrenciler } = await sinifOgrencileriniGetir(supabase, sinifId);
+  if (error) return { error, ogrenciler: [] };
+  return { error: null, ogrenciler: ogrenciler.map((o) => ({ id: o.id, ad: o.ad })) };
 }

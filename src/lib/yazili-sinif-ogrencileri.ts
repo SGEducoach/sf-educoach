@@ -16,25 +16,23 @@ export interface YaziliSinifOgrencisi {
 // şablona yazılan liste ile yüklemede eşleştirilen liste aynı sorgudan
 // gelsin. Okuma RLS'e tabi normal client ile — getSinifOgrencileri ile aynı
 // kapsam; kullanıcının göremediği bir sınıf boş liste döner.
-// `profiles` gömmesi: students↔profiles arasında birden fazla ilişki var,
-// FK ipucu şart; bire-bir ilişki çalışma anında NESNE döner (tip dizi
-// gösterse de) — bkz. yazili-analizi-actions.ts tekIliski.
+// Kaynak okul öğrenci listesi (migration 0105, kullanıcı kararı 13.09.2026:
+// "kayıtlı olsun olmasın bütün sınıf yer alsın") — hesabı olmayan öğrenciler
+// de listede. Öğrenci kimliği hesabın değil LİSTE satırının id'si; yazılı
+// sonuçları (liste_ogrenci_id) ve kayıt RPC'si bu kimliği kullanır.
 export async function sinifOgrencileriniGetir(
   supabase: SupabaseSunucu,
   sinifId: string,
 ): Promise<{ error: string | null; sinifAdi: string | null; ogrenciler: YaziliSinifOgrencisi[] }> {
   const [{ data: sinif }, { data, error }] = await Promise.all([
     supabase.from("classes").select("seviye, sube").eq("id", sinifId).maybeSingle(),
-    supabase.from("students").select("id, okul_no, profiles!students_id_fkey(ad)").eq("class_id", sinifId),
+    supabase.from("okul_ogrenci_listesi").select("id, okul_no, ad_soyad").eq("class_id", sinifId),
   ]);
   if (error) return { error: error.message, sinifAdi: null, ogrenciler: [] };
 
-  type Satir = { id: string; okul_no: string | null; profiles: { ad: string | null } | { ad: string | null }[] | null };
-  const ogrenciler = ((data ?? []) as unknown as Satir[])
-    .map((o) => {
-      const profil = Array.isArray(o.profiles) ? o.profiles[0] : o.profiles;
-      return { id: o.id, ad: profil?.ad?.trim() || "İsimsiz öğrenci", okulNo: (o.okul_no ?? "").trim() };
-    })
+  type Satir = { id: string; okul_no: string | null; ad_soyad: string | null };
+  const ogrenciler = ((data ?? []) as Satir[])
+    .map((o) => ({ id: o.id, ad: o.ad_soyad?.trim() || "İsimsiz öğrenci", okulNo: (o.okul_no ?? "").trim() }))
     // Okul numarasına göre (sayısal); numarası sayı olmayanlar (dershane
     // kullanıcı adları) sona, kendi içinde ada göre.
     .sort((a, b) => (Number(a.okulNo) || Infinity) - (Number(b.okulNo) || Infinity) || a.ad.localeCompare(b.ad, "tr"));
