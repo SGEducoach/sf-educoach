@@ -26,7 +26,8 @@ export async function sinifOgrencileriniGetir(
 ): Promise<{ error: string | null; sinifAdi: string | null; ogrenciler: YaziliSinifOgrencisi[] }> {
   const [{ data: sinif }, { data, error }] = await Promise.all([
     supabase.from("classes").select("seviye, sube").eq("id", sinifId).maybeSingle(),
-    supabase.from("okul_ogrenci_listesi").select("id, okul_no, ad_soyad").eq("class_id", sinifId),
+    // yazili_disinda: öğrenci olarak kalan ama yazılı analizine alınmayanlar (test hesapları, migration 0106).
+    supabase.from("okul_ogrenci_listesi").select("id, okul_no, ad_soyad").eq("class_id", sinifId).eq("yazili_disinda", false),
   ]);
   if (error) return { error: error.message, sinifAdi: null, ogrenciler: [] };
 
