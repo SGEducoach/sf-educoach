@@ -8,11 +8,13 @@ import { REHBER_GERIYE_DONUK_GUN } from "@/lib/rehberlik";
 import { SURE_UST_SINIR, SORU_SAYISI_UST_SINIR, TAKIP_SORUSU, dersSoruSayisi } from "@/lib/types";
 import type { DenemeTuru, DenemeZorlugu, GorevTuru, HedefeYakinlik, TakipCevabi } from "@/lib/types";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
+import { rozetKontrolVeBildir } from "@/lib/rozet-bildirim";
 
 // Dershane rehberlik servisi (kullanıcı isteği 13.09.2026) — rehber öğretmen
 // öğrenci adına ödev verir, program yapar, veri girer. Kullanıcı kararları:
-//   * veri analizde sayılır, rozet/seride sayılmaz (giren_rehber_id dolu,
-//     rozet fonksiyonları hariç tutar — migration 0107),
+//   * veri analizde ve rozet/seride sayılır — "rehber güvenilir kullanıcı"
+//     (migration 0108); rozet kontrolü ve veli bildirimi öğrencinin kendi
+//     girişindeki gibi çalışır. Haftalık verimlilik anketi sayacına girmez,
 //   * rehber 30 gün geriye dönük girebilir,
 //   * rehberin girdiği soru çözümü onaylı sayılır,
 //   * rehberin program kalemini öğrenci taşıyamaz (rehber_yerlestirdi).
@@ -202,6 +204,7 @@ export async function rehberKonuCalismaEkle(ogrenciId: string, formData: FormDat
     takip_cevabi: takipCevabi, yayinevi, tarih, giren_rehber_id: yetki.rehberId,
   });
   if (error) return veriSonucu(error.message);
+  await rozetKontrolVeBildir(yetki.admin, ogrenciId);
   revalidatePath("/dashboard");
   return veriSonucu(null);
 }
@@ -240,6 +243,7 @@ export async function rehberSoruCozumuEkle(ogrenciId: string, formData: FormData
     onaylandi_mi: true, onaylayan_id: yetki.rehberId, onaylanma_at: new Date().toISOString(),
   });
   if (error) return veriSonucu(error.message);
+  await rozetKontrolVeBildir(yetki.admin, ogrenciId);
   revalidatePath("/dashboard");
   return veriSonucu(null);
 }
@@ -299,6 +303,7 @@ export async function rehberDenemeEkle(
     return veriSonucu(sonucHatasi.message);
   }
 
+  await rozetKontrolVeBildir(admin, ogrenciId);
   revalidatePath("/dashboard");
   return veriSonucu(null);
 }

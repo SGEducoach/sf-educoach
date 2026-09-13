@@ -17,8 +17,8 @@ import type { RehberOgrenci, RehberSecilenOgrenci } from "@/lib/dershane-rehber"
 // Dershane rehberlik servisi (kullanıcı isteği 13.09.2026): dershane
 // öğretmenleri öğrenci takibine genelde bakmadığı ve öğrenciler veri
 // girişine direndiği için rehber öğretmen öğrenci adına ödev verir, veri
-// girer, program yapar. Veri analizde sayılır, rozette sayılmaz; program
-// kalemini öğrenci yalnızca tamamlar (bkz. migration 0107).
+// girer, program yapar. Veri analizde ve rozette sayılır (migration 0108);
+// program kalemini öğrenci yalnızca tamamlar (bkz. migration 0107).
 type Sekme = "odev" | "veri" | "program";
 type VeriSekmesi = "konu" | "soru" | "deneme";
 
@@ -111,7 +111,7 @@ export function RehberOgrenciTakibi({ ogrenciler, secilen, konuOnerileri }: {
         <div className="mb-4">
           <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-extrabold">Öğrenci Takibi</h1>
           <p style={{ color: TEXT_MUTED }} className="text-xs mt-1">
-            Öğrenci adına ödev verin, veri girin ve program yapın. Girdiğiniz veriler öğrencinin analizinde sayılır, rozetlerine sayılmaz.
+            Öğrenci adına ödev verin, veri girin ve program yapın. Girdiğiniz veriler öğrencinin analizinde ve rozetlerinde sayılır.
           </p>
         </div>
         <div className="flex gap-1 p-1 rounded-full" style={{ background: BG0, border: `2px solid ${BORDER}` }}>
