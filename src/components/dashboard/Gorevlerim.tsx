@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ChevronLeft, ChevronRight, BookOpen, PenLine, ClipboardList, X, Clock, Plus, CalendarDays, Rows3 } from "lucide-react";
+import { ChevronLeft, ChevronRight, BookOpen, PenLine, ClipboardList, X, Clock, Plus, CalendarDays, Rows3, BrainCircuit } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, PEACH, PEACH_BG, BLUSH, BLUSH_BG, TEXT, TEXT_MUTED } from "@/lib/theme";
 import { GOREV_TURU_ETIKET, GOREV_DURUMU_ETIKET } from "@/lib/types";
 import type { GorevTuru, GorevDurumu, AytAlan } from "@/lib/types";
@@ -13,6 +13,7 @@ import { planEkle, gorevProgramaEkle } from "@/app/dashboard/gorev-actions";
 import { rehberProgramEkle } from "@/app/dashboard/rehber-ogrenci-actions";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
 import { saatiDakikayaCevir } from "@/lib/saat-araligi";
+import { SefuOtoProgramModal } from "@/components/dashboard/SefuOtoProgramModal";
 
 export interface GorevSatiri {
   atamaId: string;
@@ -106,6 +107,7 @@ export function Gorevlerim({ gorevler, gorunum, haftaBaslangic, aytAlan, sinifSe
   const [acikGorev, setAcikGorev] = useState<GorevSatiri | null>(null);
   const [detayGorev, setDetayGorev] = useState<GorevSatiri | null>(null);
   const [planModalAcik, setPlanModalAcik] = useState(false);
+  const [otoProgramAcik, setOtoProgramAcik] = useState(false);
   const [haftalikGorunum, setHaftalikGorunum] = useState(false);
   const planSayfasi = gorunum === "planlar";
   // Program Yap (27.08.2026): "planlar" sekmesi artık kaynak'a değil
@@ -249,11 +251,18 @@ export function Gorevlerim({ gorevler, gorunum, haftaBaslangic, aytAlan, sinifSe
       )}
 
       {planSayfasi && (
-        <button type="button" onClick={() => setPlanModalAcik(true)}
-          className="sfec-btn w-full flex items-center justify-center gap-1.5 text-xs font-bold py-2.5 rounded-2xl"
-          style={{ background: "transparent", color: TEXT_MUTED, border: `2px dashed ${BORDER_STRONG}` }}>
-          <Plus size={14} /> Program ekle
-        </button>
+        <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+          <button type="button" onClick={() => setOtoProgramAcik(true)}
+            className="sfec-btn flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-sm font-extrabold"
+            style={{ background: MINT, color: MINT_ON, boxShadow: `0 8px 22px ${MINT_BG}` }}>
+            <BrainCircuit size={17} /> SeFu oto program yap
+          </button>
+          <button type="button" onClick={() => setPlanModalAcik(true)}
+            className="sfec-btn flex items-center justify-center gap-1.5 rounded-2xl px-4 py-2.5 text-xs font-bold"
+            style={{ background: "transparent", color: TEXT_MUTED, border: `2px dashed ${BORDER_STRONG}` }}>
+            <Plus size={14} /> Tek çalışma ekle
+          </button>
+        </div>
       )}
 
       {detayGorev && createPortal(
@@ -290,6 +299,11 @@ export function Gorevlerim({ gorevler, gorunum, haftaBaslangic, aytAlan, sinifSe
           gerekYokListesi={gerekYokListesi}
           onKapat={() => setPlanModalAcik(false)}
         />,
+        document.body,
+      )}
+
+      {planSayfasi && otoProgramAcik && createPortal(
+        <SefuOtoProgramModal ilkHafta={haftaBaslangic} onKapat={() => setOtoProgramAcik(false)} />,
         document.body,
       )}
     </div>
