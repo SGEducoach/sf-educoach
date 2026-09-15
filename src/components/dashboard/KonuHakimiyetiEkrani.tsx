@@ -12,7 +12,7 @@ import {
 } from "@/lib/types";
 import type { AytAlan, HedefeYakinlik, OgrenmeSekli, TekrarDurumu } from "@/lib/types";
 import { Etiket, SecenekSecici } from "@/components/dashboard/OgrenciVeriGirisi";
-import { konuHakimiyetiKaydet } from "@/app/dashboard/konu-hakimiyeti-actions";
+import { konuHakimiyetiKaydet, konuHakimiyetiKapsamKaydet } from "@/app/dashboard/konu-hakimiyeti-actions";
 import { satirTytdeGosterilsinMi, satirAytdeGosterilsinMi } from "@/lib/konu-hakimiyeti";
 import type { KonuHakimiyetiSatiri } from "@/lib/konu-hakimiyeti";
 import { BG0, BG1, BG1_ALT, BLUSH, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, BUTTER, BUTTER_BG, PEACH, PEACH_BG, SKY, SKY_BG, TEXT, TEXT_MUTED } from "@/lib/theme";
@@ -35,13 +35,17 @@ export function KonuHakimiyetiEkrani({ satirlar, tamGorunum, aytAlan }: { satirl
 
   const dersler = useMemo(() => Array.from(new Set(sinavaGoreSatirlar.map((s) => s.ders))), [sinavaGoreSatirlar]);
   const [seciliDers, setSeciliDers] = useState<string>("tum");
+  const [seciliSeviye, setSeciliSeviye] = useState("tum");
+  const seviyeler = [...new Set(sinavaGoreSatirlar.filter((s) => seciliDers === "tum" || s.ders === seciliDers).map((s) => s.seviye))];
 
   function sinavDegistir(s: "TYT" | "AYT") {
     setSeciliSinav(s);
     setSeciliDers("tum"); // önceki dersin seçimi yeni sınav kapsamında geçersiz olabilir
+    setSeciliSeviye("tum");
   }
 
-  const gorunenSatirlar = seciliDers === "tum" ? sinavaGoreSatirlar : sinavaGoreSatirlar.filter((s) => s.ders === seciliDers);
+  const gorunenSatirlar = sinavaGoreSatirlar.filter((s) => (seciliDers === "tum" || s.ders === seciliDers)
+    && (seciliSeviye === "tum" || s.seviye === seciliSeviye));
   const hakimSayisi = gorunenSatirlar.filter((s) => s.hakimiyetSeviyesi === "yakin").length;
   const toplam = gorunenSatirlar.length;
   const yuzde = toplam > 0 ? Math.round((hakimSayisi / toplam) * 100) : 0;
@@ -49,7 +53,7 @@ export function KonuHakimiyetiEkrani({ satirlar, tamGorunum, aytAlan }: { satirl
   const ustBasliklar = useMemo(() => {
     const map = new Map<string, { ders: string; ustKonu: string; satirlar: KonuHakimiyetiSatiri[] }>();
     for (const s of gorunenSatirlar) {
-      const anahtar = `${s.ders}|${s.ustKonu}`;
+      const anahtar = `${s.ders}|${s.seviye}|${s.ustKonu}`;
       const mevcut = map.get(anahtar);
       if (mevcut) mevcut.satirlar.push(s);
       else map.set(anahtar, { ders: s.ders, ustKonu: s.ustKonu, satirlar: [s] });
@@ -95,12 +99,22 @@ export function KonuHakimiyetiEkrani({ satirlar, tamGorunum, aytAlan }: { satirl
             ))}
           </div>
         )}
-        <select value={seciliDers} onChange={(e) => setSeciliDers(e.target.value)}
+        <select value={seciliDers} onChange={(e) => { setSeciliDers(e.target.value); setSeciliSeviye("tum"); }}
           className="text-sm px-3 py-2 rounded-xl outline-none w-full sm:w-auto mb-4"
           style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
           <option value="tum">Tüm dersler</option>
           {dersler.map((d) => <option key={d} value={d}>{d}</option>)}
         </select>
+        <select aria-label="Konu sınıfı" value={seciliSeviye} onChange={(e) => setSeciliSeviye(e.target.value)}
+          className="mb-4 w-full rounded-xl px-3 py-2 text-sm outline-none sm:ml-2 sm:w-auto"
+          style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+          <option value="tum">Tüm sınıflar</option>
+          {seviyeler.map((s) => <option key={s}>{s}</option>)}
+        </select>
+        {seciliDers !== "tum" && seciliSeviye !== "tum" ? (
+          <KapsamOnayi key={`${seciliDers}|${seciliSeviye}|${seciliSinav}`} ders={seciliDers} seviye={seciliSeviye}
+            satirlar={satirlar.filter((s) => s.ders === seciliDers && s.seviye === seciliSeviye)} eksikSecimi />
+        ) : <p className="mb-4 text-xs" style={{ color: TEXT_MUTED }}>“Eksik konularımı seç” için önce bir ders ve sınıf seçin. Üst başlıkları ayrıca onaylayabilirsiniz.</p>}
 
         <div className="flex items-center gap-6 flex-wrap">
           <div className="relative shrink-0" style={{ width: 130, height: 130 }}>
@@ -133,7 +147,7 @@ export function KonuHakimiyetiEkrani({ satirlar, tamGorunum, aytAlan }: { satirl
             <p style={{ color: TEXT_MUTED }} className="text-sm">Bu kapsamda henüz gösterilecek konu yok.</p>
           </div>
         ) : (
-          ustBasliklar.map((u) => <UstBaslikGrubu key={`${u.ders}|${u.ustKonu}`} ders={u.ders} ustKonu={u.ustKonu} satirlar={u.satirlar} />)
+          ustBasliklar.map((u) => <UstBaslikGrubu key={`${u.ders}|${u.satirlar[0]?.seviye}|${u.ustKonu}`} ders={u.ders} ustKonu={u.ustKonu} satirlar={u.satirlar} />)
         )}
       </div>
     </div>
@@ -141,11 +155,7 @@ export function KonuHakimiyetiEkrani({ satirlar, tamGorunum, aytAlan }: { satirl
 }
 
 function UstBaslikGrubu({ ders, ustKonu, satirlar }: { ders: string; ustKonu: string; satirlar: KonuHakimiyetiSatiri[] }) {
-  // Kullanıcı isteği: "hepsini işaretle" toplu işaretleme kaldırıldı —
-  // bazı üst başlıklarda görünüp bazılarında görünmemesi kafa karıştırıcı
-  // bulundu. Her alt konu artık sadece tek tek işaretleniyor; tamamen
-  // "Yeterli" olan gruplar yine listenin altına iniyor (bkz. ustBasliklar
-  // sıralaması, KonuHakimiyetiEkrani).
+  // Toplu onay yalnız bu üst başlığın aynı sınıftaki alt konularını kapsar.
   const coklu = satirlar.length > 1 || satirlar[0]?.konu !== ustKonu;
   // Kullanıcı isteği: konunun hangi sınıfa ait olduğu görünmüyordu — grup
   // içindeki tüm alt konular aynı üst başlıktan geldiği için hep aynı
@@ -165,11 +175,60 @@ function UstBaslikGrubu({ ders, ustKonu, satirlar }: { ders: string; ustKonu: st
           </span>
         )}
       </div>
+      {seviye && <div className="px-4 pt-3"><KapsamOnayi ders={ders} seviye={seviye} ustKonu={ustKonu} satirlar={satirlar} /></div>}
       <div className="flex flex-col divide-y" style={{ borderColor: BORDER }}>
-        {satirlar.map((s) => <KonuSatiri key={s.konu} satir={s} />)}
+        {satirlar.map((s) => <KonuSatiri key={`${s.konu}|${s.guncellenmeTarihi}`} satir={s} />)}
       </div>
     </div>
   );
+}
+
+function KapsamOnayi({ ders, seviye, ustKonu, satirlar, eksikSecimi = false }: {
+  ders: string; seviye: string; ustKonu?: string; satirlar: KonuHakimiyetiSatiri[]; eksikSecimi?: boolean;
+}) {
+  const [acik, setAcik] = useState(false);
+  const [eksikler, setEksikler] = useState<string[]>(() => satirlar.filter((s) => s.hakimiyetSeviyesi === "uzak" || s.hakimiyetSeviyesi === "belirsiz").map((s) => s.konu));
+  const [onay, setOnay] = useState(false);
+  const [hata, setHata] = useState<string | null>(null);
+  const [mesaj, setMesaj] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+  const router = useRouter();
+  const kapsam = `${ders} · ${seviye}${ustKonu ? ` · ${ustKonu}` : ""}`;
+  function kaydet() {
+    setHata(null);
+    startTransition(async () => {
+      const sonuc = await konuHakimiyetiKapsamKaydet({ ders, seviye, ustKonu, eksikKonular: eksikSecimi ? eksikler : [] });
+      if (sonuc.error) return setHata(sonuc.error);
+      setMesaj(`${sonuc.hakimSayisi} konu hâkim olarak kaydedildi.`);
+      setAcik(false); setOnay(false); router.refresh();
+    });
+  }
+  return <div className="mb-3">
+    <button type="button" disabled={pending} onClick={() => { setAcik(!acik); setOnay(!eksikSecimi); setMesaj(null); }}
+      className="sfec-btn rounded-xl px-3 py-2 text-xs font-bold" style={{ background: MINT_BG, color: MINT, border: `1px solid ${MINT}` }}>
+      {eksikSecimi ? "Eksik konularımı seç" : "Bu üst başlığa hâkimim"}
+    </button>
+    {mesaj && <p role="status" className="mt-2 text-xs" style={{ color: MINT }}>{mesaj}</p>}
+    {acik && <div className="mt-2 rounded-2xl p-3" style={{ background: BG0, border: `1px solid ${BORDER_STRONG}` }}>
+      <p className="text-xs font-bold" style={{ color: TEXT }}>Kapsam: {kapsam}</p>
+      {eksikSecimi && !onay && <>
+        <p className="my-2 text-xs" style={{ color: TEXT_MUTED }}>Yalnız eksik konuları işaretle. İşaretlemediklerin son onayla hâkim sayılacak.</p>
+        <div className="max-h-80 overflow-y-auto">{satirlar.map((s) => <label key={s.konu} className="flex cursor-pointer items-start gap-2 border-b py-2 text-xs" style={{ color: TEXT, borderColor: BORDER }}>
+          <input type="checkbox" checked={eksikler.includes(s.konu)} onChange={(e) => setEksikler(e.target.checked ? [...eksikler, s.konu] : eksikler.filter((k) => k !== s.konu))} />
+          <span><span className="block font-semibold">{s.konu}</span>{s.ustKonu !== s.konu && <span className="text-[10px]" style={{ color: TEXT_MUTED }}>{s.ustKonu}</span>}</span>
+        </label>)}</div>
+        <button type="button" onClick={() => setOnay(true)} className="sfec-btn mt-3 rounded-xl px-3 py-2 text-xs font-bold" style={{ background: MINT, color: MINT_ON }}>Seçimi incele</button>
+      </>}
+      {onay && <>
+        <p className="my-3 text-xs leading-relaxed" style={{ color: TEXT }}>{satirlar.length - (eksikSecimi ? eksikler.length : 0)} konu hâkim sayılacak{eksikSecimi ? `, ${eksikler.length} konu eksik olarak işaretlenecek` : ""}. Diğer ders ve sınıflar etkilenmez. Çalışma kaydı oluşturulmaz.</p>
+        {eksikSecimi && eksikler.length > 0 && <p className="mb-3 text-xs" style={{ color: TEXT_MUTED }}>Eksikler: {eksikler.join(", ")}</p>}
+        <div className="flex flex-wrap gap-2"><button type="button" disabled={pending} onClick={kaydet} className="sfec-btn rounded-xl px-3 py-2 text-xs font-bold disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>{pending ? "Kaydediliyor..." : "Onayla ve kaydet"}</button>
+          {eksikSecimi && <button type="button" disabled={pending} onClick={() => setOnay(false)} className="sfec-btn px-3 py-2 text-xs" style={{ color: TEXT_MUTED }}>Seçime dön</button>}</div>
+      </>}
+      <button type="button" disabled={pending} onClick={() => setAcik(false)} className="sfec-btn mt-2 text-xs" style={{ color: TEXT_MUTED }}>Vazgeç</button>
+      {hata && <p role="alert" className="mt-2 text-xs" style={{ color: BLUSH }}>{hata}</p>}
+    </div>}
+  </div>;
 }
 
 function KonuSatiri({ satir }: { satir: KonuHakimiyetiSatiri }) {
