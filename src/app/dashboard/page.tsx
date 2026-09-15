@@ -21,7 +21,7 @@ import { dogrulukRozetSeviyesiHesapla } from "@/lib/analiz-motoru";
 import { ogrencininZayifKonulariGetir, konuHaritasiGetir } from "@/lib/konu-raporu";
 import { konuHakimiyetiGetir, konuHakimiyetiOzetiGetir, tamGorunumMu, gerekYokHaritasiGetir } from "@/lib/konu-hakimiyeti";
 import { KonuHakimiyetiEkrani } from "@/components/dashboard/KonuHakimiyetiEkrani";
-import { AYT_ALAN_ETIKET, sinifSiraKarsilastir, dokuzOnSinifMi, maarifHiyerarsiSinifMi, TYT_DERSLERI, AYT_DERSLERI } from "@/lib/types";
+import { AYT_ALAN_ETIKET, sinifSiraKarsilastir, dokuzOnSinifMi, TYT_DERSLERI, AYT_DERSLERI } from "@/lib/types";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
 import type { AytAlan, KurumTuru, UserRole } from "@/lib/types";
 import { BG1, BG1_ALT, BORDER, BORDER_STRONG, TEXT, TEXT_MUTED, MINT, MINT_BG } from "@/lib/theme";
@@ -331,7 +331,8 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
   // kalıyor — ama küçük ve dar kapsamlı bir sorgu, toplam süreye
   // önceki haliyle kıyasla ihmal edilebilir bir katkısı var.
   let mufredatAltKonulari: { ders: string; ustKonu: string; altBaslik: string }[] = [];
-  if (aktifBolum === "veri-girisi" && maarifHiyerarsiSinifMi(s.classes?.seviye ?? null)) {
+  // 12. sınıf öğrencisi de filtreyle 9–11. sınıf alt konularına dönebilir.
+  if (aktifBolum === "veri-girisi" && ["9", "10", "11", "12"].includes(s.classes?.seviye ?? "")) {
     const { data: altKonularHam } = await supabase.from("mufredat_alt_konular").select("ders, ust_konu, alt_baslik").order("sira");
     mufredatAltKonulari = ((altKonularHam as { ders: string; ust_konu: string; alt_baslik: string }[]) ?? [])
       .map((r) => ({ ders: r.ders, ustKonu: r.ust_konu, altBaslik: r.alt_baslik }));

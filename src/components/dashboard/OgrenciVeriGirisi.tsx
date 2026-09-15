@@ -111,6 +111,17 @@ export function OgrenciVeriGirisi({ aytAlan, konuOnerileri, sinifSeviyesi, konuS
   const [verimlilikSor, setVerimlilikSor] = useState(false);
   const [basari, setBasari] = useState<string | null>(null);
 
+  const sinifNo = Number(sinifSeviyesi);
+  const sinifFiltresiAktif = Number.isInteger(sinifNo) && sinifNo >= 9 && sinifNo <= 12;
+  const [konuSinifi, setKonuSinifi] = useState(sinifSeviyesi ?? "12");
+  const filtreliKonuOnerileri = sinifFiltresiAktif
+    ? konuOnerileri.filter((k) => {
+      const no = /^(\d+)\. Sınıf$/.exec(k.seviye ?? "");
+      // Sınıf etiketi bulunmayan ortak TYT ve serbest konular korunur.
+      return !no || Number(no[1]) === Number(konuSinifi);
+    })
+    : konuOnerileri;
+
   const dokuzOnMu = dokuzOnSinifMi(sinifSeviyesi);
   // 9-10. sınıfta AYT alanı ayrımı yok — TYT_DERSLERI zaten Fen/Sosyal'i
   // kendi alt derslerine (Fizik/Kimya/Biyoloji, Tarih/Coğrafya/Din
@@ -153,8 +164,15 @@ export function OgrenciVeriGirisi({ aytAlan, konuOnerileri, sinifSeviyesi, konuS
           })}
         </div>
 
-        {sekme === "konu" && <KonuCalismaForm dersListesi={dersListesi} konuOnerileri={konuOnerileri} konuSayaclari={konuSayaclari} sinifSeviyesi={sinifSeviyesi} mufredatAltKonulari={mufredatAltKonulari} gerekYokListesi={gerekYokListesi} onBasari={basariGoster} />}
-        {sekme === "soru" && <SoruCozumuForm dersListesi={dersListesi} konuOnerileri={konuOnerileri} onBasari={basariGoster} />}
+        {sinifFiltresiAktif && sekme !== "deneme" && <label className="mb-4 flex flex-col gap-1 sm:max-w-xs">
+          <Etiket>Konu sınıfı</Etiket>
+          <Secim value={konuSinifi} onChange={(e) => setKonuSinifi(e.target.value)}>
+            {Array.from({ length: sinifNo - 8 }, (_, i) => String(9 + i)).map((s) => <option key={s} value={s}>{s}. sınıf{s === sinifSeviyesi ? " (Mevcut sınıfım)" : ""}</option>)}
+          </Secim>
+          <span className="text-[10px]" style={{ color: TEXT_MUTED }}>Önceki sınıfların konularını da seçebilirsin. Sınıfı değiştirdiğinde açık formdaki girişler sıfırlanır.</span>
+        </label>}
+        {sekme === "konu" && <KonuCalismaForm key={`konu-${konuSinifi}`} dersListesi={dersListesi} konuOnerileri={filtreliKonuOnerileri} konuSayaclari={konuSayaclari} sinifSeviyesi={sinifFiltresiAktif ? konuSinifi : sinifSeviyesi} mufredatAltKonulari={mufredatAltKonulari} gerekYokListesi={gerekYokListesi} onBasari={basariGoster} />}
+        {sekme === "soru" && <SoruCozumuForm key={`soru-${konuSinifi}`} dersListesi={dersListesi} konuOnerileri={filtreliKonuOnerileri} onBasari={basariGoster} />}
         {sekme === "deneme" && <DenemeForm aytAlan={aytAlan} sinifSeviyesi={sinifSeviyesi} onBasari={basariGoster} />}
       </div>
 
