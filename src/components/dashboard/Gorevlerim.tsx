@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, BookOpen, PenLine, ClipboardList, X, Clock, Plus, CalendarDays, Rows3, BrainCircuit } from "lucide-react";
@@ -477,11 +477,41 @@ function HaftalikZamanPlani({ gunler, gorevler, bugun, planSayfasi, onGunSec, on
   onGunSec: (gun: string) => void;
   onGorevAc: (gorev: GorevSatiri) => void;
 }) {
+  const kaydirmaAlani = useRef<HTMLDivElement>(null);
+  const acilanHafta = useRef<string | null>(null);
+  const ilkCalisma = gorevler
+    .filter((g) => gunler.includes(g.tarih) && cizelgedekiDakika(g.baslangicSaat) !== null && saatiDakikayaCevir(g.bitisSaat) !== null)
+    .sort((a, b) => (cizelgedekiDakika(a.baslangicSaat) ?? 0) - (cizelgedekiDakika(b.baslangicSaat) ?? 0) || a.tarih.localeCompare(b.tarih))[0];
+  const hedefDakika = Math.max(0, (cizelgedekiDakika(ilkCalisma?.baslangicSaat ?? "16:00") ?? 660) - 30);
+  const hedefGun = ilkCalisma ? gunler.indexOf(ilkCalisma.tarih) : 0;
+  const haftaAnahtari = gunler[0];
+
+  function ilkCalismayaGit() {
+    const alan = kaydirmaAlani.current;
+    if (!alan) return;
+    const sutun = alan.querySelector<HTMLElement>(`[data-haftalik-gun="${hedefGun}"]`);
+    alan.scrollTo({ top: hedefDakika / 60 * SAAT_YUKSEKLIGI, left: sutun ? Math.max(0, sutun.offsetLeft - 56) : 0, behavior: "smooth" });
+  }
+
+  useEffect(() => {
+    if (acilanHafta.current === haftaAnahtari) return;
+    const alan = kaydirmaAlani.current;
+    if (!alan) return;
+    acilanHafta.current = haftaAnahtari;
+    const sutun = alan.querySelector<HTMLElement>(`[data-haftalik-gun="${hedefGun}"]`);
+    alan.scrollTop = hedefDakika / 60 * SAAT_YUKSEKLIGI;
+    alan.scrollLeft = sutun ? Math.max(0, sutun.offsetLeft - 56) : 0;
+  }, [haftaAnahtari, hedefDakika, hedefGun]);
+
   return (
     <div className="mb-3 overflow-hidden rounded-3xl">
-      <div className="overflow-x-auto overscroll-x-contain">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2 px-3">
+        <span className="text-[11px]" style={{ color: TEXT_MUTED }}>{ilkCalisma ? "Çizelge ilk çalışmanın saatinde açılır. Tüm saatler için yukarı veya aşağı kaydırın." : gorevler.length ? "Saati belirtilmeyen çalışmalar günlük görünümde yer alır." : "Bu hafta henüz program yok."}</span>
+        {ilkCalisma && <button type="button" onClick={ilkCalismayaGit} className="sfec-btn rounded-full px-3 py-1.5 text-[11px] font-bold" style={{ background: MINT_BG, color: MINT }}><Clock size={11} className="mr-1 inline" /> İlk çalışmaya git</button>}
+      </div>
+      <div ref={kaydirmaAlani} className="relative overflow-auto overscroll-contain" style={{ height: "min(70dvh, 620px)", minHeight: 300 }} aria-label="Haftalık program, 24 saat kaydırılabilir çizelge">
         <div className="min-w-[84rem] p-2.5">
-          <div className="ml-10 grid grid-cols-7 gap-2 mb-2">
+          <div className="sticky top-0 z-10 ml-10 grid grid-cols-7 gap-2 mb-2" style={{ background: BG1 }}>
             {gunler.map((gun, gunIndex) => (
               <button key={gun} type="button" onClick={() => onGunSec(gun)}
                 title={planSayfasi ? "Bu güne program ekle" : "Günü seç"}
@@ -502,8 +532,7 @@ function HaftalikZamanPlani({ gunler, gorevler, bugun, planSayfasi, onGunSec, on
           <div className="sfec-takvim-ic-cerceve rounded-[1.4rem] p-2.5">
             <div className="flex" aria-label="Haftalık 05.00–05.00 çalışma planı">
               <div className="relative w-10 shrink-0" style={{ height: GUN_YUKSEKLIGI }} aria-hidden="true">
-                <span className="absolute left-0 top-0 -translate-y-1/2 text-[9px] font-bold" style={{ color: TEXT_MUTED }}>05.00</span>
-                <span className="absolute bottom-0 left-0 translate-y-1/2 text-[9px] font-bold" style={{ color: TEXT_MUTED }}>05.00</span>
+                {Array.from({ length: 25 }, (_, i) => <span key={i} className="absolute left-0 text-[9px] font-bold" style={{ top: i * SAAT_YUKSEKLIGI, color: TEXT_MUTED }}>{String((5 + i) % 24).padStart(2, "0")}.00</span>)}
               </div>
               <div className="grid min-w-0 flex-1 grid-cols-7 gap-2">
               {gunler.map((gun, gunIndex) => {
@@ -516,7 +545,7 @@ function HaftalikZamanPlani({ gunler, gorevler, bugun, planSayfasi, onGunSec, on
                   : gunIndex % 2 === 0 ? MINT : PEACH;
 
                 return (
-                  <div key={gun} className="relative overflow-hidden" style={{ height: GUN_YUKSEKLIGI }}
+                  <div key={gun} data-haftalik-gun={gunIndex} className="relative overflow-hidden" style={{ height: GUN_YUKSEKLIGI }}
                     aria-label={`${gunAdi(gun)} günü 05.00–05.00 plan alanı`}>
                     {zamanliGorevler.map((g) => {
                       const baslangic = cizelgedekiDakika(g.baslangicSaat) ?? 0;
