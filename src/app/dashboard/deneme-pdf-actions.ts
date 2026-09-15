@@ -6,7 +6,7 @@
 // eşleşmeyen satırlar admin'e (site admini, /yonetici) düşer, orada elle
 // düzeltilir — bkz. pdf_deneme_eslesme_bekleyenler (migration 0051).
 import { revalidatePath } from "next/cache";
-import { requireDershaneMudur } from "@/lib/dershane-auth";
+import { requireDenemeYuklemeYetkisi } from "@/lib/dershane-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAnthropicClient } from "@/lib/anthropic";
 import { adNormalize } from "@/lib/validators";
@@ -293,8 +293,8 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
   okunamayan: number;
   bekleyen: number;
 }> {
-  const { user, admin, schoolId } = await requireDershaneMudur();
-  if (!admin || !schoolId) return { error: "Bu işlem için dershane müdürü yetkisi gerekiyor.", ...BOS_SONUC };
+  const { user, admin, schoolId } = await requireDenemeYuklemeYetkisi(String(formData.get("schoolId") ?? ""));
+  if (!admin || !schoolId) return { error: "Deneme yükleme yetkiniz yok veya kurum seçilmedi.", ...BOS_SONUC };
   const adminClient = admin;
 
   const dosya = formData.get("dosya") as File | null;
@@ -554,6 +554,7 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
   });
 
   revalidatePath("/dashboard");
+  revalidatePath("/yonetici", "layout");
   return {
     error: null,
     toplam: ayristirilan.length,
@@ -602,8 +603,8 @@ export async function denemeExcelIceriAktar(formData: FormData): Promise<{
   okunamayan: number;
   bekleyen: number;
 }> {
-  const { user, admin, schoolId } = await requireDershaneMudur();
-  if (!admin || !schoolId) return { error: "Bu işlem için dershane müdürü yetkisi gerekiyor.", ...BOS_SONUC };
+  const { user, admin, schoolId } = await requireDenemeYuklemeYetkisi(String(formData.get("schoolId") ?? ""));
+  if (!admin || !schoolId) return { error: "Deneme yükleme yetkiniz yok veya kurum seçilmedi.", ...BOS_SONUC };
 
   const dosya = formData.get("dosya") as File | null;
   const yayinevi = String(formData.get("yayinevi") ?? "").trim();
@@ -704,6 +705,7 @@ export async function denemeExcelIceriAktar(formData: FormData): Promise<{
   });
 
   revalidatePath("/dashboard");
+  revalidatePath("/yonetici", "layout");
   return {
     error: null,
     toplam: ayristirilan.length,

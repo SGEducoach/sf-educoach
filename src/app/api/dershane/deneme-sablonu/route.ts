@@ -1,6 +1,6 @@
 import ExcelJS from "exceljs";
 import { NextRequest } from "next/server";
-import { requireDershaneMudur } from "@/lib/dershane-auth";
+import { requireDenemeYuklemeYetkisi } from "@/lib/dershane-auth";
 import { gecerliDersler } from "@/lib/deneme-dersleri";
 import type { DenemeTuru } from "@/lib/types";
 
@@ -14,9 +14,9 @@ export const runtime = "nodejs";
 // BRANS) query param olarak geliyor çünkü ders listesi türe göre değişiyor
 // (bkz. gecerliDersler) — şablon o türe özel üretiliyor.
 export async function GET(request: NextRequest) {
-  const { admin, schoolId } = await requireDershaneMudur();
+  const { admin, schoolId } = await requireDenemeYuklemeYetkisi(request.nextUrl.searchParams.get("schoolId") ?? undefined);
   if (!admin || !schoolId) {
-    return new Response("Bu işlem için dershane müdürü yetkisi gerekiyor.", { status: 403 });
+    return new Response("Deneme yükleme yetkiniz yok veya kurum seçilmedi.", { status: 403 });
   }
 
   const turParam = request.nextUrl.searchParams.get("tur");

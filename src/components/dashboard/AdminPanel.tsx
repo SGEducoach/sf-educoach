@@ -13,6 +13,7 @@ import {
   denemeBildirimGonder, type SinifOgrencisi, type DenemeBildirimSonucu,
 } from "@/app/yonetici/actions";
 import { SinifEkleFormu } from "@/components/dashboard/OgretmenPanel";
+import { DershaneDenemePdfFormu } from "@/components/dashboard/DershaneDenemePdfFormu";
 import { bugununTarihiTR } from "@/lib/tarih";
 import { IzinliOgrenciListesi } from "@/components/yonetici/IzinliOgrenciListesi";
 import { AYT_ALAN_ETIKET, BRANS_LISTESI, TYT_DERSLERI, AYT_DERSLERI, BRANS_DENEMESI_DERSLERI, DENEME_ZORLUGU_ETIKET, dersSoruSayisi, dokuzOnSinifMi } from "@/lib/types";
@@ -156,6 +157,11 @@ export function AdminPanel({
             <div className="mt-3 flex flex-col gap-3">
               <OgrenciTopluEkleFormu schoolId={gorunenOkul.id} siniflar={siniflar} />
               <DenemeTopluGirisFormu siniflar={siniflar} />
+              <details key={gorunenOkul.id} className="rounded-2xl p-4" style={{ background: BG1_ALT, border: `2px solid ${BORDER}` }}>
+                <summary className="cursor-pointer text-sm font-bold" style={{ color: TEXT }}>Excel/PDF ile toplu deneme yükle</summary>
+                <p className="my-3 text-xs" style={{ color: TEXT_MUTED }}>Sonuçlar yalnızca seçili kurumun öğrencileriyle eşleştirilir: {gorunenOkul.ad}.</p>
+                <DershaneDenemePdfFormu schoolId={gorunenOkul.id} />
+              </details>
               <IzinliOgrenciListesi schoolId={gorunenOkul.id} />
             </div>
           </>

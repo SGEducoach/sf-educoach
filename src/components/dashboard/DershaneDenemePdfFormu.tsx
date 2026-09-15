@@ -11,9 +11,9 @@ import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT,
 // denemeExcelIceriAktar. İkisi de aynı ad-soyad eşleştirme/inceleme kuyruğu
 // mantığını kullanır (kullanıcı isteği, 27.08.2026: "sonuçlar excel olarak
 // da yüklenebilecek").
-export function DershaneDenemePdfFormu() {
+export function DershaneDenemePdfFormu({ schoolId }: { schoolId?: string }) {
   const dosyaRef = useRef<HTMLInputElement>(null);
-  const [mod, setMod] = useState<"pdf" | "excel">("pdf");
+  const [mod, setMod] = useState<"pdf" | "excel">(schoolId ? "excel" : "pdf");
   const [yayinevi, setYayinevi] = useState("");
   const [tarih, setTarih] = useState("");
   const [tur, setTur] = useState<"TYT" | "AYT" | "BRANS">("TYT");
@@ -41,6 +41,7 @@ export function DershaneDenemePdfFormu() {
     formData.set("yayinevi", yayinevi.trim());
     formData.set("tarih", tarih);
     formData.set("tur", tur);
+    if (schoolId) formData.set("schoolId", schoolId);
 
     setYukleniyor(true);
     const yanit = mod === "pdf" ? await denemePdfIceriAktar(formData) : await denemeExcelIceriAktar(formData);
@@ -87,11 +88,14 @@ export function DershaneDenemePdfFormu() {
 
       <form onSubmit={yukle} className="flex flex-col gap-3">
         {mod === "excel" && (
-          <a href={`/api/dershane/deneme-sablonu?tur=${tur}`}
+          <a href={`/api/dershane/deneme-sablonu?tur=${tur}${schoolId ? `&schoolId=${encodeURIComponent(schoolId)}` : ""}`}
             className="text-xs font-semibold underline self-start" style={{ color: MINT }}>
             {tur} için boş Excel şablonunu indir
           </a>
         )}
+        <p className="text-xs" style={{ color: TEXT_MUTED }}>
+          {mod === "excel" ? "Excel dosyasını indirilen şablona göre hazırlayın. Excel işlemi yapay zekâ kullanmaz." : "PDF ayrıştırma yapay zekâ kullanır ve API kullanım maliyeti oluşturabilir."}
+        </p>
         <label className="flex flex-col gap-1">
           <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">
             {mod === "pdf" ? "Deneme sonuç PDF'i" : "Deneme sonuç Excel'i (.xlsx)"}

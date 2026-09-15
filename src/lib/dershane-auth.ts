@@ -25,3 +25,16 @@ export async function requireDershaneMudur() {
   if (school?.tur !== "dershane") return { supabase, user, admin: null, schoolId: null };
   return { supabase, user, admin: createAdminClient(), schoolId: teacher.school_id as string };
 }
+
+// Admin hedef kurumu seçebilir; müdürün hedefi daima kendi kurumudur.
+export async function requireDenemeYuklemeYetkisi(hedefSchoolId?: string) {
+  const { supabase, user } = await requireUser();
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  if (profile?.role !== "admin") return requireDershaneMudur();
+  if (!hedefSchoolId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(hedefSchoolId)) {
+    return { supabase, user, admin: null, schoolId: null };
+  }
+  const admin = createAdminClient();
+  const { data: school } = await admin.from("schools").select("id").eq("id", hedefSchoolId).single();
+  return { supabase, user, admin: school ? admin : null, schoolId: school?.id as string | undefined ?? null };
+}
