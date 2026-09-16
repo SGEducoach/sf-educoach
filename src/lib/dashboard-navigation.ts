@@ -3,6 +3,7 @@ import { REHBER_BRANSI } from "@/lib/rehberlik";
 import { etkinlikBransiMi } from "@/lib/etkinlik";
 
 export type DashboardBolumu =
+  | "mesajlar"
   | "ozet"
   | "gorevler"
   | "planlar"
@@ -149,6 +150,7 @@ const DERSHANE_MUDUR_MENUSU: DashboardMenuOgesi[] = [
 // paylaşıyor, aynı kavram (veli talebi / rozet görüntüleme) sadece kapsamı
 // platform genelinde.
 const ADMIN_MENUSU: DashboardMenuOgesi[] = [
+  { bolum: "mesajlar", href: "/yonetici/mesajlar", etiket: "Mesajlar", ikon: "duyuru" },
   { bolum: "ozet", href: "/yonetici", etiket: "Genel bakış", ikon: "ana-sayfa" },
   { bolum: "google-analytics", href: "/yonetici/google-analytics", etiket: "Google Analytics", ikon: "analiz" },
   { bolum: "kullanicilar", href: "/yonetici/kullanicilar", etiket: "Kullanıcılar", ikon: "kullanici" },
@@ -222,6 +224,7 @@ export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
 // mantığı olan bir route (bkz. o dosyadaki okul seçici) — literal route
 // dinamik [bolum]'dan her zaman önceliklidir, çakışma olmaz.
 export const YONETICI_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
+  "mesajlar",
   "kullanicilar", "talepler", "pdf-eslesme", "okullar", "moderatorler", "icerik", "blog", "kurallar", "profil", "hata-bildirimleri",
   "duyuru-gecmisi", "islem-gecmisi", "site-ayarlari", "adminler",
 ]);

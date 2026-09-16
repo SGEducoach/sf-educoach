@@ -6,6 +6,7 @@ import { signOut } from "@/app/dashboard/actions";
 import { MesajlarimIkonu } from "@/components/dashboard/MesajlarimIkonu";
 import { BildirimAyarlari } from "@/components/dashboard/BildirimAyarlari";
 import { HataBildirButonu } from "@/components/dashboard/HataBildirButonu";
+import { YoneticiIletisimButonu } from "@/components/dashboard/YoneticiIletisimButonu";
 import type { KurumTuru, UserRole } from "@/lib/types";
 import { MobilMenu } from "@/components/dashboard/MobilMenu";
 import { OturumZamanAsimi } from "@/components/OturumZamanAsimi";
@@ -81,6 +82,7 @@ export async function Header({ ad, role, kurumTuru, brans, okunmamisMesajSayisi 
                 <Link href="/moderator" title="Moderatör paneli" className="sfec-btn flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3" style={{ background: MINT_BG, border: `2px solid ${BORDER}` }}><ShieldCheck size={16} color={MINT}/><span style={{ color: MINT }} className="text-[11px] font-bold">Moderatör Paneli</span></Link>
               )}
               <HataBildirButonu />
+              {role !== "admin" && (role === "mudur" || moderatorMu) && <YoneticiIletisimButonu />}
               <BildirimAyarlari role={role} />
               {/* Kullanıcı isteği (26.08.2026, Bildirimler yeniden tasarımı — devam):
                   yanlış giriş bildirimi artık Bildirimler'e gidiyor (bkz.

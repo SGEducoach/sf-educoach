@@ -30,6 +30,7 @@ import { YoneticiGirisForm } from "@/components/yonetici/YoneticiGirisForm";
 import { YoneticiDuyuruPaneli } from "@/components/yonetici/YoneticiDuyuruPaneli";
 import { TgDenemeYonetimi } from "@/components/yonetici/TgDenemeYonetimi";
 import { dashboardMenusu } from "@/lib/dashboard-navigation";
+import { YoneticiMesajlar } from "@/components/dashboard/YoneticiMesajlar";
 import type { DashboardBolumu } from "@/lib/dashboard-navigation";
 import { sinifSiraKarsilastir } from "@/lib/types";
 
@@ -114,6 +115,7 @@ export default async function YoneticiPage({
             </>
           )}
           {aktifBolum === "kullanicilar" && <section className="sfec-section"><KullaniciArama /></section>}
+          {aktifBolum === "mesajlar" && <section className="sfec-section"><YoneticiMesajlar /></section>}
           {aktifBolum === "talepler" && <VeliTalepleri />}
           {aktifBolum === "pdf-eslesme" && <section className="sfec-section"><PdfEslesmeYonetimi /></section>}
           {aktifBolum === "okullar" && (
