@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
 import "./globals.css";
 import { GlobalIslemGostergesi } from "@/components/GlobalIslemGostergesi";
-import { siteTemaGetir } from "@/lib/app-ayarlari";
+import { seoAnahtarKelimeleriGetir, siteTemaGetir } from "@/lib/app-ayarlari";
 import { temaCssUret } from "@/lib/site-tema";
 
 // Not: değişken isimleri (--font-nunito, --font-baloo) kod tabanında onlarca
@@ -21,15 +21,19 @@ const montserratBaslik = Montserrat({
   weight: ["600", "700", "800", "900"],
 });
 
-export const metadata: Metadata = {
-  title: "Sefu Koç",
-  manifest: "/manifest.json",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "black-translucent",
-    title: "www.sefukoc.com",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: "SeFu Koç",
+    description: "YKS hazırlık, öğrenci koçluğu ve okul temelli öğrenci takip platformu.",
+    keywords: await seoAnahtarKelimeleriGetir(),
+    manifest: "/manifest.json",
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "black-translucent",
+      title: "SeFu Koç",
+    },
+  };
+}
 
 // Bulgu 11 kararı (23 Ağustos 2026): açık tema kaldırıldı, site tek bir
 // sabit koyu temayla çalışıyor. Önceden burada ayrıca sistem tercihine

@@ -1,6 +1,10 @@
 import { unstable_cache } from "next/cache";
 import { anonSunucuOkuyucu } from "@/lib/supabase/anon-server";
 import { SITE_TEMA_ANAHTAR, temaBul, type SiteTemasi } from "@/lib/site-tema";
+import {
+  SEO_ANAHTAR_KELIMELER_ANAHTAR,
+  kayitliSeoAnahtarKelimeleriniOku,
+} from "@/lib/seo-ayarlari";
 
 // app_ayarlari genel amaçlı key/value ayar tablosu — select herkese açık
 // (RLS: using (true)), yazma sadece admin (service-role, bkz.
@@ -37,4 +41,10 @@ export async function appAyariGetir(anahtar: string): Promise<string | null> {
 // (hex) formattaysa temaBul varsayılan "gece-siyahi" temasına düşürür.
 export async function siteTemaGetir(): Promise<SiteTemasi> {
   return temaBul(await appAyariGetir(SITE_TEMA_ANAHTAR));
+}
+
+export async function seoAnahtarKelimeleriGetir(): Promise<string[]> {
+  return kayitliSeoAnahtarKelimeleriniOku(
+    await appAyariGetir(SEO_ANAHTAR_KELIMELER_ANAHTAR),
+  );
 }

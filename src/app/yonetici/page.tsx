@@ -22,7 +22,7 @@ import { dershaneDenemeSuresiGetir, siteAyarlariGetir, anaSayfaAyarlariGetir } f
 import { AnaSayfaAyarlariYonetimi } from "@/components/yonetici/AnaSayfaAyarlariYonetimi";
 import { AnaSayfaDuyuruYonetimi } from "@/components/yonetici/AnaSayfaDuyuruYonetimi";
 import { anaSayfaDuyurulariniGetir } from "@/lib/ana-sayfa-duyurulari";
-import { siteTemaGetir } from "@/lib/app-ayarlari";
+import { seoAnahtarKelimeleriGetir, siteTemaGetir } from "@/lib/app-ayarlari";
 import { VARSAYILAN_TEMA } from "@/lib/site-tema";
 import { suresiDolduMu } from "@/lib/deneme-suresi";
 import { AdminProfilim } from "@/components/yonetici/AdminProfilim";
@@ -86,6 +86,7 @@ export default async function YoneticiPage({
   const { bitis: dershaneDenemeBitisi } = aktifBolum === "ozet" ? await dershaneDenemeSuresiGetir() : { bitis: null };
   const { kapali: siteKapali } = aktifBolum === "site-ayarlari" ? await siteAyarlariGetir() : { kapali: false };
   const siteTemaId = aktifBolum === "site-ayarlari" ? (await siteTemaGetir()).id : VARSAYILAN_TEMA.id;
+  const seoAnahtarKelimeleri = aktifBolum === "site-ayarlari" ? await seoAnahtarKelimeleriGetir() : [];
   const { ayarlar: anaSayfaAyarlari, gorseller: anaSayfaGorselleri } = aktifBolum === "site-ayarlari"
     ? await anaSayfaAyarlariGetir()
     : { ayarlar: { baslik: "", govde: "", sliderGecisSaniye: 6 }, gorseller: [] };
@@ -140,7 +141,11 @@ export default async function YoneticiPage({
           {aktifBolum === "islem-gecmisi" && <section className="sfec-section"><IslemGecmisi /></section>}
           {aktifBolum === "site-ayarlari" && (
             <section className="sfec-section">
-              <SiteAyarlariYonetimi kapaliBaslangic={siteKapali} temaIdBaslangic={siteTemaId} />
+              <SiteAyarlariYonetimi
+                kapaliBaslangic={siteKapali}
+                temaIdBaslangic={siteTemaId}
+                seoAnahtarKelimeleriBaslangic={seoAnahtarKelimeleri}
+              />
               <AnaSayfaAyarlariYonetimi ayarlarBaslangic={anaSayfaAyarlari} gorsellerBaslangic={anaSayfaGorselleri} />
               <AnaSayfaDuyuruYonetimi baslangic={anaSayfaDuyurulari} />
             </section>

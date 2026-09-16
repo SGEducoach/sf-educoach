@@ -17,6 +17,7 @@ import { anaSayfaAyarlariniGetir, anaSayfaSliderGorselleriGetir, type AnaSayfaAy
 import { anaSayfaDuyurulariniGetir, type AnaSayfaDuyurusu } from "@/lib/ana-sayfa-duyurulari";
 import { SITE_TEMA_ANAHTAR, temaGecerliMi } from "@/lib/site-tema";
 import { APP_AYARLARI_ONBELLEK_ETIKETI } from "@/lib/app-ayarlari";
+import { SEO_ANAHTAR_KELIMELER_ANAHTAR, seoAnahtarKelimeleriniAyristir } from "@/lib/seo-ayarlari";
 import { ANA_SAYFA_ONBELLEK_ETIKETI } from "@/lib/ana-sayfa";
 import { YONETICI_DUYURU_ONBELLEK_ETIKETI } from "@/lib/site-duyuru";
 
@@ -727,6 +728,32 @@ export async function siteTemasiDegistir(temaId: string): Promise<{ error: strin
   revalidateTag(APP_AYARLARI_ONBELLEK_ETIKETI, "max");
   revalidatePath("/", "layout");
   return { error: null };
+}
+
+// ============ Site ayarları: SEO anahtar kelimeleri ============
+export async function seoAnahtarKelimeleriKaydet(ham: string): Promise<{
+  error: string | null;
+  kelimeler: string[];
+}> {
+  const sonuc = seoAnahtarKelimeleriniAyristir(ham);
+  if (sonuc.error) return sonuc;
+
+  const { supabase, user, admin } = await requireAdmin();
+  const { error } = await admin.from("app_ayarlari").upsert({
+    anahtar: SEO_ANAHTAR_KELIMELER_ANAHTAR,
+    deger: JSON.stringify(sonuc.kelimeler),
+    guncelleyen_id: user.id,
+    updated_at: new Date().toISOString(),
+  });
+  if (error) return { error: error.message, kelimeler: [] };
+
+  await auditLogYaz(supabase, user.id, "seo_anahtar_kelimeleri_guncelle", {
+    adet: sonuc.kelimeler.length,
+  });
+  revalidateTag(APP_AYARLARI_ONBELLEK_ETIKETI, "max");
+  revalidatePath("/", "layout");
+  revalidatePath("/yonetici");
+  return sonuc;
 }
 
 // ============ Rol değiştirme (Faz 3, 2026-08-26) ============
