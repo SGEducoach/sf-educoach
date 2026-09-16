@@ -1,4 +1,4 @@
-import { saatiDakikayaCevir } from "./saat-araligi";
+import { saatiDakikayaCevir, saatAraligiSuresi } from "./saat-araligi";
 
 // SeFu Oto Program (kullanıcı isteği 13.09.2026) — öğrencinin seçtiği günler,
 // zaman aralıkları ve derslerle programı otomatik kurar. Saf fonksiyonlar:
@@ -66,7 +66,8 @@ export interface OtoProgramVerisi {
 }
 
 export function dakikayiSaateCevir(dakika: number): string {
-  return `${String(Math.floor(dakika / 60)).padStart(2, "0")}:${String(dakika % 60).padStart(2, "0")}`;
+  const normalize = ((dakika % (24 * 60)) + 24 * 60) % (24 * 60);
+  return `${String(Math.floor(normalize / 60)).padStart(2, "0")}:${String(normalize % 60).padStart(2, "0")}`;
 }
 
 export const CEYREK_SAATLER: string[] = Array.from({ length: 96 }, (_, i) => dakikayiSaateCevir(i * 15));
@@ -99,9 +100,11 @@ export function periyotHatasi(periyotlar: Periyot[], okulSaatiKapali: boolean, e
     if (baslangic === null || bitis === null || baslangic % 15 !== 0 || bitis % 15 !== 0) {
       return `${etiket} ${i + 1}. aralığın saatleri 15 dakikalık adımlarla seçilmeli.`;
     }
-    if (bitis - baslangic < BLOK_DAKIKA) return `${etiket} ${i + 1}. aralık en az ${BLOK_DAKIKA} dakika olmalı.`;
-    if (okulSaatiKapali && okulSaatiyleCakisir(baslangic, bitis)) return `${etiket} ${i + 1}. aralık okul saatine (07.00–16.00) denk geliyor.`;
-    araliklar.push([baslangic, bitis]);
+    const sure = saatAraligiSuresi(p.baslangic, p.bitis);
+    if (sure === null || sure < BLOK_DAKIKA) return `${etiket} ${i + 1}. aralık en az ${BLOK_DAKIKA} dakika olmalı.`;
+    const gercekBitis = baslangic + sure;
+    if (okulSaatiKapali && okulSaatiyleCakisir(baslangic, gercekBitis)) return `${etiket} ${i + 1}. aralık okul saatine (07.00–16.00) denk geliyor.`;
+    araliklar.push([baslangic, gercekBitis]);
   }
   araliklar.sort((a, b) => a[0] - b[0]);
   for (let i = 1; i < araliklar.length; i++) {
@@ -152,9 +155,10 @@ function araliklariTopla(araliklar: DoluAralik[]): Map<string, [number, number][
   for (const a of araliklar) {
     const baslangic = saatiDakikayaCevir(a.baslangic);
     const bitis = saatiDakikayaCevir(a.bitis);
-    if (baslangic === null || bitis === null || bitis <= baslangic) continue;
+    const sure = saatAraligiSuresi(a.baslangic, a.bitis);
+    if (baslangic === null || bitis === null || !sure) continue;
     const liste = harita.get(a.tarih) ?? [];
-    liste.push([baslangic, bitis]);
+    liste.push([baslangic, baslangic + sure]);
     harita.set(a.tarih, liste);
   }
   return harita;
@@ -171,8 +175,8 @@ function slotlariUret(veri: OtoProgramVerisi, ayar: OtoProgramAyari): Slot[] {
       const engeller = [...(dolu.get(tarih) ?? [])];
       if (veri.okulOgrencisi && gun < 5) engeller.push([OKUL_SAATI.baslangic, OKUL_SAATI.bitis]);
       const periyotlar = (gun < 5 ? ayar.haftaIciPeriyotlari : ayar.haftaSonuPeriyotlari)
-        .map((p) => [saatiDakikayaCevir(p.baslangic), saatiDakikayaCevir(p.bitis)] as const)
-        .filter((p): p is readonly [number, number] => p[0] !== null && p[1] !== null && p[1] > p[0])
+        .map((p) => { const bas = saatiDakikayaCevir(p.baslangic); const sure = saatAraligiSuresi(p.baslangic, p.bitis); return [bas, bas === null || !sure ? null : bas + sure] as const; })
+        .filter((p): p is readonly [number, number] => p[0] !== null && p[1] !== null)
         .sort((a, b) => a[0] - b[0]);
       periyotlar.forEach(([periyotBaslangic, periyotBitis], periyot) => {
         let t = periyotBaslangic;
@@ -289,7 +293,7 @@ export function otoProgramOlustur(veri: OtoProgramVerisi, ayar: OtoProgramAyari)
 export function blokDakikasi(blok: Pick<ProgramBlogu, "baslangic" | "bitis">): number {
   const baslangic = saatiDakikayaCevir(blok.baslangic);
   const bitis = saatiDakikayaCevir(blok.bitis);
-  return baslangic === null || bitis === null ? 0 : Math.max(0, bitis - baslangic);
+  return baslangic === null || bitis === null ? 0 : (saatAraligiSuresi(blok.baslangic, blok.bitis) ?? 0);
 }
 
 // Günlük yük göstergesi: hafta içi okul öğrencisinde 4 saat, diğerlerinde 8 saat üstü uyarı.
@@ -318,9 +322,11 @@ export function bloklariDogrula(bloklar: ProgramBlogu[], veri: OtoProgramVerisi)
     if (b.tarih < veri.bugun) return `${etiket}: geçmiş bir güne kalem eklenemez.`;
     const baslangic = saatiDakikayaCevir(b.baslangic);
     const bitis = saatiDakikayaCevir(b.bitis);
-    if (baslangic === null || bitis === null || bitis <= baslangic) return `${etiket}: saat aralığı geçersiz.`;
-    if (bitis - baslangic > EN_UZUN_BLOK_DAKIKA) return `${etiket}: bir kalem en fazla ${EN_UZUN_BLOK_DAKIKA} dakika olabilir.`;
-    if (veri.okulOgrencisi && haftaninGunu(b.tarih) < 5 && okulSaatiyleCakisir(baslangic, bitis)) {
+    const sure = saatAraligiSuresi(b.baslangic, b.bitis);
+    if (baslangic === null || bitis === null || !sure) return `${etiket}: saat aralığı geçersiz.`;
+    const gercekBitis = baslangic + sure;
+    if (sure > EN_UZUN_BLOK_DAKIKA) return `${etiket}: bir kalem en fazla ${EN_UZUN_BLOK_DAKIKA} dakika olabilir.`;
+    if (veri.okulOgrencisi && haftaninGunu(b.tarih) < 5 && okulSaatiyleCakisir(baslangic, gercekBitis)) {
       return `${etiket}: hafta içi 07.00–16.00 okul saatine denk geliyor.`;
     }
     if (b.tur !== "konu" && b.tur !== "soru") return `${etiket}: geçersiz kalem türü.`;
@@ -333,10 +339,10 @@ export function bloklariDogrula(bloklar: ProgramBlogu[], veri: OtoProgramVerisi)
     } else if (!veri.dersListesi.includes(b.ders)) {
       return `${etiket}: ${b.ders} ders listenizde yok.`;
     }
-    if ((dolu.get(b.tarih) ?? []).some(([db, ds]) => baslangic < ds && bitis > db)) return `${etiket}: bu saatte programınızda başka bir iş var.`;
+    if ((dolu.get(b.tarih) ?? []).some(([db, ds]) => baslangic < ds && gercekBitis > db)) return `${etiket}: bu saatte programınızda başka bir iş var.`;
     const oncekiler = gunBloklari.get(b.tarih) ?? [];
-    if (oncekiler.some(([ob, os]) => baslangic < os && bitis > ob)) return `${etiket}: aynı saate iki kalem denk geliyor.`;
-    oncekiler.push([baslangic, bitis]);
+    if (oncekiler.some(([ob, os]) => baslangic < os && gercekBitis > ob)) return `${etiket}: aynı saate iki kalem denk geliyor.`;
+    oncekiler.push([baslangic, gercekBitis]);
     gunBloklari.set(b.tarih, oncekiler);
   }
   return null;

@@ -40,7 +40,7 @@ function saatSirasiHatali(baslangicSaat?: string, bitisSaat?: string): boolean {
   if (!baslangicSaat || !bitisSaat) return false;
   const baslangic = saatiDakikayaCevir(baslangicSaat);
   const bitis = saatiDakikayaCevir(bitisSaat);
-  return baslangic === null || bitis === null || bitis <= baslangic;
+  return baslangic === null || bitis === null || bitis === baslangic;
 }
 
 // Ödev: tek gorevler satırı + öğrenci başına atama (gorevVer ile aynı yapı),

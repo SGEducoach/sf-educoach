@@ -2153,9 +2153,9 @@ alter table public.gorevler add constraint gorevler_olusturan_tek check (
 alter table public.gorevler add constraint gorevler_ogrenci_plani_saat_zorunlu check (
   olusturan_ogrenci_id is null or (baslangic_saat is not null and bitis_saat is not null)
 );
-alter table public.gorevler add constraint gorevler_saat_sirali check (
-  baslangic_saat is null or bitis_saat is null or bitis_saat > baslangic_saat
-);
+  alter table public.gorevler add constraint gorevler_saat_sirali check (
+    baslangic_saat is null or bitis_saat is null or bitis_saat <> baslangic_saat
+  );
 
 drop policy if exists "gorevler_insert_own" on public.gorevler;
 create policy "gorevler_insert_own" on public.gorevler

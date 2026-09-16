@@ -690,8 +690,8 @@ export function PlanEkleModal({ tarih, dersListesi, konuOnerileri, gerekYokListe
     if (!baslangicSaat || !bitisSaat) return setHata("Başlangıç ve bitiş saati zorunludur.");
     const baslangicDakika = saatiDakikayaCevir(baslangicSaat);
     const bitisDakika = saatiDakikayaCevir(bitisSaat);
-    if (baslangicDakika === null || bitisDakika === null || bitisDakika <= baslangicDakika) {
-      return setHata("Bitiş saati başlangıçtan sonra olmalı.");
+    if (baslangicDakika === null || bitisDakika === null || bitisDakika === baslangicDakika) {
+      return setHata("Başlangıç ve bitiş saati aynı olamaz.");
     }
     if (konu && gerekYokListesi?.includes(`${ders}|${konu}`)) {
       setOnayGerekli(true);

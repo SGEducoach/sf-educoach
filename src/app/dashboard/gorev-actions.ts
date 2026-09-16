@@ -96,8 +96,8 @@ export async function planEkle(input: {
   if (!input.baslangicSaat || !input.bitisSaat) return { error: "Başlangıç ve bitiş saati zorunludur." };
   const baslangicDakika = saatiDakikayaCevir(input.baslangicSaat);
   const bitisDakika = saatiDakikayaCevir(input.bitisSaat);
-  if (baslangicDakika === null || bitisDakika === null || bitisDakika <= baslangicDakika) {
-    return { error: "Bitiş saati başlangıçtan sonra olmalı." };
+  if (baslangicDakika === null || bitisDakika === null || bitisDakika === baslangicDakika) {
+    return { error: "Başlangıç ve bitiş saati aynı olamaz." };
   }
 
   const { error: cakismaHatasi, cakisiyor } = await programaCakisiyorMu(supabase, user.id, input.tarih, input.baslangicSaat, input.bitisSaat);
@@ -151,8 +151,8 @@ export async function gorevProgramaEkle(input: {
   if (!input.baslangicSaat || !input.bitisSaat) return { error: "Başlangıç ve bitiş saati zorunludur." };
   const baslangicDakika = saatiDakikayaCevir(input.baslangicSaat);
   const bitisDakika = saatiDakikayaCevir(input.bitisSaat);
-  if (baslangicDakika === null || bitisDakika === null || bitisDakika <= baslangicDakika) {
-    return { error: "Bitiş saati başlangıçtan sonra olmalı." };
+  if (baslangicDakika === null || bitisDakika === null || bitisDakika === baslangicDakika) {
+    return { error: "Başlangıç ve bitiş saati aynı olamaz." };
   }
 
   // Atama gerçekten bu öğrenciye mi ait, doğrula (RLS zaten update'i
