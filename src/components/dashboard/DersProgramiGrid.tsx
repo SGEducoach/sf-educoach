@@ -1,7 +1,7 @@
 "use client";
 
 import { DERS_SAATI_DILIMLERI, GUN_ETIKET } from "@/lib/ders-programi";
-import type { DersProgramiGunu, DersProgramiSatiri } from "@/lib/ders-programi";
+import type { DersProgramiGunu, DersProgramiSatiri, OkulNobeti } from "@/lib/ders-programi";
 import { BG0, BG1_ALT, BORDER, BORDER_STRONG, MINT_BG, TEXT, TEXT_MUTED } from "@/lib/theme";
 import { Plus, X } from "lucide-react";
 
@@ -11,9 +11,10 @@ import { Plus, X } from "lucide-react";
 // Derslerim görünümü) VEYA düzenlenebilir (admin/dershane müdürü) modda
 // çalışır — ikisi de aynı hücre yerleşimini kullanır ki görünüm tutarlı
 // kalsın.
-export function DersProgramiGrid({ gunler, satirlar, duzenlenebilir, onHucreTikla }: {
+export function DersProgramiGrid({ gunler, satirlar, nobetler, duzenlenebilir, onHucreTikla }: {
   gunler: DersProgramiGunu[];
   satirlar: DersProgramiSatiri[];
+  nobetler?: OkulNobeti[];
   duzenlenebilir?: boolean;
   onHucreTikla?: (gun: DersProgramiGunu, sira: number, mevcut: DersProgramiSatiri | null) => void;
 }) {
@@ -22,6 +23,18 @@ export function DersProgramiGrid({ gunler, satirlar, duzenlenebilir, onHucreTikl
 
   return (
     <div className="overflow-x-auto rounded-2xl" style={{ border: `2px solid ${BORDER}` }}>
+      {/* Okul nöbeti, ders programı PDF'inde programın yanında yazıyor —
+          tablonun başlığında gösteriliyor (kullanıcı isteği 17.09.2026). */}
+      {nobetler && nobetler.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 px-3 py-2 text-[11px]" style={{ background: MINT_BG, borderBottom: `2px solid ${BORDER}` }}>
+          <span className="font-bold uppercase tracking-wide" style={{ color: TEXT_MUTED }}>Nöbet</span>
+          {nobetler.map((n) => (
+            <span key={`${n.gun}|${n.yer}`} className="rounded-lg px-2 py-0.5 font-semibold" style={{ background: BG0, color: TEXT }}>
+              {GUN_ETIKET[n.gun]} · {n.yer}
+            </span>
+          ))}
+        </div>
+      )}
       <table className="w-full text-left" style={{ borderCollapse: "collapse", minWidth: `${120 + DERS_SAATI_DILIMLERI.length * 96}px` }}>
         <thead>
           <tr style={{ background: BG1_ALT }}>

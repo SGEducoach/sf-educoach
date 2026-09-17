@@ -55,6 +55,9 @@ export interface DersProgramiSatiri {
   dersSaatiSira: number;
   sinifAdi: string;
   ders: string;
+  // 'pdf' ise program okulun yüklediği listeden geliyor ve elle
+  // değiştirilemez (kullanıcı kararı 17.09.2026, bkz. migration 0112).
+  kaynak?: "elle" | "pdf";
 }
 
 // Yurt Nöbeti — sadece okul, basit 2 sütun × 6 bölümlük tarih defteri
@@ -80,14 +83,38 @@ export async function yurtNobetiGetir(supabase: SupabaseC, teacherId: string): P
 export async function ogretmenProgramiGetir(supabase: SupabaseC, teacherId: string): Promise<DersProgramiSatiri[]> {
   const { data } = await supabase
     .from("ogretmen_ders_programi")
-    .select("id, gun, ders_saati_sira, ders, classes(seviye, sube)")
+    .select("id, gun, ders_saati_sira, ders, kaynak, classes(seviye, sube)")
     .eq("teacher_id", teacherId);
-  type Row = { id: string; gun: DersProgramiGunu; ders_saati_sira: number; ders: string; classes: { seviye: string; sube: string } | null };
+  type Row = { id: string; gun: DersProgramiGunu; ders_saati_sira: number; ders: string; kaynak: "elle" | "pdf" | null; classes: { seviye: string; sube: string } | null };
   return ((data as unknown as Row[]) ?? []).map((r) => ({
     id: r.id,
     gun: r.gun,
     dersSaatiSira: r.ders_saati_sira,
     sinifAdi: r.classes ? `${r.classes.seviye}-${r.classes.sube}` : "—",
     ders: r.ders,
+    kaynak: r.kaynak ?? "elle",
   }));
+}
+
+// Okul nöbeti (gün + yer) — ders programı PDF'inde yazıyor, programın
+// üstünde gösteriliyor (kullanıcı isteği 17.09.2026: "tablonun uygun bir
+// yerine"). Yurt nöbeti görevleri ise tarih bazlı belletmen listesinden.
+export interface OkulNobeti { gun: DersProgramiGunu; yer: string }
+
+export async function okulNobetiGetir(supabase: SupabaseC, teacherId: string): Promise<OkulNobeti[]> {
+  const { data } = await supabase
+    .from("ogretmen_okul_nobetleri")
+    .select("gun, yer")
+    .eq("teacher_id", teacherId);
+  return ((data as OkulNobeti[]) ?? []);
+}
+
+export async function yurtNobetGorevleriGetir(supabase: SupabaseC, teacherId: string, baslangic: string): Promise<string[]> {
+  const { data } = await supabase
+    .from("yurt_nobet_gorevleri")
+    .select("tarih")
+    .eq("teacher_id", teacherId)
+    .gte("tarih", baslangic)
+    .order("tarih");
+  return ((data as { tarih: string }[]) ?? []).map((r) => r.tarih);
 }

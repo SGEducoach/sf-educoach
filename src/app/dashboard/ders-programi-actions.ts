@@ -59,6 +59,13 @@ export async function dersProgramiEkle(input: {
   ]);
   if (!ogretmen) return { error: "Öğretmen bulunamadı." };
   if (!sinif) return { error: "Sınıf bulunamadı." };
+  // Kullanıcı kararı (17.09.2026): PDF'ten yüklenen program elle değiştirilmez.
+  const { count: pdfSatiri } = await admin
+    .from("ogretmen_ders_programi")
+    .select("id", { count: "exact", head: true })
+    .eq("teacher_id", input.teacherId)
+    .eq("kaynak", "pdf");
+  if (pdfSatiri) return { error: "Bu program okulun yüklediği PDF'ten geliyor; elle değiştirilemez. Değişiklik için yeni PDF yükleyin." };
   if (schoolId && (ogretmen.school_id !== schoolId || sinif.school_id !== schoolId)) {
     return { error: "Bu öğretmen/sınıf sizin kurumunuza ait değil." };
   }
@@ -85,14 +92,20 @@ export async function dersProgramiSil(id: string) {
   if (yetki.error !== null) return { error: yetki.error };
   const { admin, schoolId } = yetki;
 
+  const { data: silinecek } = await admin
+    .from("ogretmen_ders_programi")
+    .select("kaynak, teacher_id, teachers!inner(school_id)")
+    .eq("id", id)
+    .maybeSingle();
+  if (!silinecek) return { error: "Kayıt bulunamadı." };
+  // PDF'ten yüklenen program elle değiştirilmez (kullanıcı kararı 17.09.2026).
+  if ((silinecek as { kaynak?: string }).kaynak === "pdf") {
+    return { error: "Bu program okulun yüklediği PDF'ten geliyor; elle değiştirilemez. Değişiklik için yeni PDF yükleyin." };
+  }
   if (schoolId) {
-    const { data: kayit } = await admin
-      .from("ogretmen_ders_programi")
-      .select("teacher_id, teachers!inner(school_id)")
-      .eq("id", id)
-      .maybeSingle();
-    const teacherSchoolId = (kayit as unknown as { teachers: { school_id: string } } | null)?.teachers?.school_id;
-    if (!kayit || teacherSchoolId !== schoolId) return { error: "Bu kayıt sizin kurumunuza ait değil." };
+    const teacherSchoolId = (silinecek as unknown as { teachers: { school_id: string } | { school_id: string }[] } | null)?.teachers;
+    const okulId = Array.isArray(teacherSchoolId) ? teacherSchoolId[0]?.school_id : teacherSchoolId?.school_id;
+    if (okulId !== schoolId) return { error: "Bu kayıt sizin kurumunuza ait değil." };
   }
 
   const { error } = await admin.from("ogretmen_ders_programi").delete().eq("id", id);

@@ -26,6 +26,9 @@ export function DersProgramiYonetimi({ teacherId, dershaneMi, siniflar, satirlar
   const [acikHucre, setAcikHucre] = useState<{ gun: DersProgramiGunu; sira: number } | null>(null);
   const [classId, setClassId] = useState(siniflar[0]?.id ?? "");
   const [ders, setDers] = useState<string>(BRANS_LISTESI[0]);
+  // PDF'ten yüklenen program elle değiştirilmez (kullanıcı kararı
+  // 17.09.2026); sunucu da reddediyor, burada arayüz de kilitleniyor.
+  const pdftenGeldi = satirlar.some((s) => s.kaynak === "pdf");
 
   function hucreTikla(gun: DersProgramiGunu, sira: number, mevcut: DersProgramiSatiri | null) {
     setHata(null);
@@ -65,7 +68,13 @@ export function DersProgramiYonetimi({ teacherId, dershaneMi, siniflar, satirlar
   return (
     <div className="flex flex-col gap-2">
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
-      <DersProgramiGrid gunler={programGunleri(dershaneMi)} satirlar={satirlar} duzenlenebilir onHucreTikla={hucreTikla} />
+      {pdftenGeldi && (
+        <div className="rounded-xl px-3 py-2 text-[11px] font-semibold" style={{ background: BG1, color: TEXT_MUTED, border: `2px solid ${BORDER}` }}>
+          Bu program okulun yüklediği PDF&apos;ten geliyor; elle değiştirilemez. Değişiklik için yönetici yeni PDF yükler.
+        </div>
+      )}
+      <DersProgramiGrid gunler={programGunleri(dershaneMi)} satirlar={satirlar}
+        duzenlenebilir={!pdftenGeldi} onHucreTikla={pdftenGeldi ? undefined : hucreTikla} />
       <div className="flex flex-wrap items-center gap-2">
         <button type="button" onClick={bildir} disabled={pending || satirlar.length === 0}
           className="sfec-btn inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>

@@ -36,7 +36,8 @@ import type { DashboardBolumu } from "@/lib/dashboard-navigation";
 import { RozetGoruntulemePaneli } from "@/components/dashboard/RozetGoruntulemePaneli";
 import { kurumRozetGorunumuGetir, veliRozetGorunumuGetir } from "@/lib/rozet-gorunumu";
 import { dershaneDenemeBitisGetir, suresiDolduMu, kurumTuruGetir } from "@/lib/deneme-suresi";
-import { ogretmenProgramiGetir, yurtNobetiGetir } from "@/lib/ders-programi";
+import { ogretmenProgramiGetir, okulNobetiGetir, yurtNobetGorevleriGetir, yurtNobetiGetir } from "@/lib/ders-programi";
+import type { OkulNobeti } from "@/lib/ders-programi";
 import type { DersProgramiSatiri } from "@/lib/ders-programi";
 import { dershaneAnaSayfaVerisiGetir } from "@/lib/dershane-ana-sayfa";
 import { DershaneAnaSayfa } from "@/components/dashboard/DershaneAnaSayfa";
@@ -778,12 +779,17 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   const dershaneMi = kurumTuru === "dershane";
   const dersVerisiGerekli = (aktifBolum === "takvim" || aktifBolum === "dersler") && role === "ogretmen";
   const nobetVerisiGerekli = aktifBolum === "takvim" || dersVerisiGerekli;
-  const [dersProgramiSatirlari, yurtNobetiSatirlari] = dersVerisiGerekli || nobetVerisiGerekli
+  // Okulun yüklediği nöbetler (17.09.2026): okul nöbeti programın başlığında,
+  // yurt nöbeti görevleri (bugünden sonrası) programın altında gösterilir.
+  const bugun = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Istanbul" });
+  const [dersProgramiSatirlari, yurtNobetiSatirlari, okulNobetleri, yurtNobetGorevleri] = dersVerisiGerekli || nobetVerisiGerekli
     ? await Promise.all([
         dersVerisiGerekli ? ogretmenProgramiGetir(supabase, userId) : Promise.resolve([]),
         dershaneMi ? Promise.resolve([]) : yurtNobetiGetir(supabase, userId),
+        dersVerisiGerekli ? okulNobetiGetir(supabase, userId) : Promise.resolve([]),
+        dershaneMi ? Promise.resolve([]) : yurtNobetGorevleriGetir(supabase, userId, bugun),
       ])
-    : [[], []];
+    : [[], [], [], []];
 
   // Okul müdürünün "Öğretmenler" bölümü (2026-08-25 kullanıcı isteği:
   // "dershane ve okul müdürü öğretmenlerin programlarını görsün") —
@@ -796,6 +802,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   // ders_programi_select_moderator zaten bunu açıkça karşılıyor.
   let okulOgretmenleri: { id: string; ad: string; brans: string }[] = [];
   let secilenOgretmenProgrami: DersProgramiSatiri[] = [];
+  let secilenOgretmenNobetleri: OkulNobeti[] = [];
   if (aktifBolum === "ogretmenler" && (role === "mudur" || rehberOgretmenMi) && !dershaneMi) {
     const { data: ogretmenlerHam } = await okulOkumaClient
       .from("teachers")
@@ -807,7 +814,10 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       .map((o) => ({ id: o.id, ad: o.profiles?.ad ?? "İsimsiz", brans: o.brans }))
       .sort((a, b) => a.ad.localeCompare(b.ad, "tr"));
     if (secilenOgretmenId) {
-      secilenOgretmenProgrami = await ogretmenProgramiGetir(okulOkumaClient, secilenOgretmenId);
+      [secilenOgretmenProgrami, secilenOgretmenNobetleri] = await Promise.all([
+        ogretmenProgramiGetir(okulOkumaClient, secilenOgretmenId),
+        okulNobetiGetir(okulOkumaClient, secilenOgretmenId),
+      ]);
     }
   }
 
@@ -851,10 +861,13 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       aktifBolum={aktifBolum}
       dersProgramiSatirlari={dersProgramiSatirlari}
       yurtNobetiSatirlari={yurtNobetiSatirlari}
+      okulNobetleri={okulNobetleri}
+      yurtNobetGorevleri={yurtNobetGorevleri}
       dershaneMi={dershaneMi}
       okulOgretmenleri={okulOgretmenleri}
       secilenOgretmenId={secilenOgretmenId}
       secilenOgretmenProgrami={secilenOgretmenProgrami}
+      secilenOgretmenNobetleri={secilenOgretmenNobetleri}
       rehberOgretmenMi={rehberOgretmenMi}
       secilenOgrenciId={secilenOgrenciId}
       secilenOgrenciProgrami={secilenOgrenciProgrami}

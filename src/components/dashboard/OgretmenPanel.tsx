@@ -19,7 +19,7 @@ import type { DashboardBolumu } from "@/lib/dashboard-navigation";
 import { DersProgramiGrid } from "@/components/dashboard/DersProgramiGrid";
 import { YurtNobetiTablosu } from "@/components/dashboard/YurtNobetiTablosu";
 import { programGunleri } from "@/lib/ders-programi";
-import type { DersProgramiSatiri, YurtNobetiSatiri } from "@/lib/ders-programi";
+import type { DersProgramiSatiri, OkulNobeti, YurtNobetiSatiri } from "@/lib/ders-programi";
 import { Takvim } from "@/components/dashboard/Takvim";
 import { SosyalEtkinlikler } from "@/components/dashboard/SosyalEtkinlikler";
 import { YaziliAnaliziSekmesi } from "@/components/dashboard/YaziliAnaliziSekmesi";
@@ -81,8 +81,8 @@ function ogrencilerOkulNoSirali(ogrenciler: OgrenciSatiri[]): OgrenciSatiri[] {
 export function OgretmenPanel({
   role, bekleyenTalepler, ogrenciler, sinifAdi, siniflar, gorunecekSinifId, kendiSinifId, kendiSinifiMi,
   ogretmenDersleri, bekleyenOnaylar, verdigimGorevler, konuOnerileri, aktifBolum,
-  dersProgramiSatirlari, yurtNobetiSatirlari, dershaneMi,
-  okulOgretmenleri, secilenOgretmenId, secilenOgretmenProgrami, rehberOgretmenMi = false,
+  dersProgramiSatirlari, yurtNobetiSatirlari, okulNobetleri, yurtNobetGorevleri, dershaneMi,
+  okulOgretmenleri, secilenOgretmenId, secilenOgretmenProgrami, secilenOgretmenNobetleri, rehberOgretmenMi = false,
   secilenOgrenciId, secilenOgrenciProgrami,
   secilenOgrenciAdi,
 }: {
@@ -105,12 +105,17 @@ export function OgretmenPanel({
   // kullanılıyor, diğer bölümlerde boş dizi/false gelir.
   dersProgramiSatirlari?: DersProgramiSatiri[];
   yurtNobetiSatirlari?: YurtNobetiSatiri[];
+  // PDF ile yüklenen nöbetler (17.09.2026): okul nöbeti programın
+  // başlığında, yurt nöbeti görevleri programın altında listelenir.
+  okulNobetleri?: OkulNobeti[];
+  yurtNobetGorevleri?: string[];
   dershaneMi?: boolean;
   // Okul müdürünün "Öğretmenler" bölümü (2026-08-25) — salt-okunur ders
   // programı görüntüleme, sadece role==="mudur" + "ogretmenler" bölümünde.
   okulOgretmenleri?: { id: string; ad: string; brans: string }[];
   secilenOgretmenId?: string;
   secilenOgretmenProgrami?: DersProgramiSatiri[];
+  secilenOgretmenNobetleri?: OkulNobeti[];
   rehberOgretmenMi?: boolean;
   secilenOgrenciId?: string;
   secilenOgrenciProgrami?: OgrenciProgramSatiri[] | null;
@@ -281,13 +286,14 @@ export function OgretmenPanel({
         <GorevVerBolumu ogrenciler={ogrenciler} konuOnerileri={konuOnerileri} />
       )}
 
-      {(aktifBolum === "takvim" || aktifBolum === "dersler") && <AjandamBolumu role={role} dersler={ogretmenDersleri} siniflar={siniflar} dersProgramiSatirlari={dersProgramiSatirlari ?? []} yurtNobetiSatirlari={yurtNobetiSatirlari ?? []} dershaneMi={!!dershaneMi} />}
+      {(aktifBolum === "takvim" || aktifBolum === "dersler") && <AjandamBolumu role={role} dersler={ogretmenDersleri} siniflar={siniflar} dersProgramiSatirlari={dersProgramiSatirlari ?? []} yurtNobetiSatirlari={yurtNobetiSatirlari ?? []} okulNobetleri={okulNobetleri ?? []} yurtNobetGorevleri={yurtNobetGorevleri ?? []} dershaneMi={!!dershaneMi} />}
 
       {aktifBolum === "ogretmenler" && (role === "mudur" || rehberOgretmenMi) && (
         <OgretmenProgramlariBolumu
           ogretmenler={okulOgretmenleri ?? []}
           secilenOgretmenId={secilenOgretmenId}
           program={secilenOgretmenProgrami ?? []}
+          nobetler={secilenOgretmenNobetleri ?? []}
           dershaneMi={!!dershaneMi}
         />
       )}
@@ -630,10 +636,11 @@ function BekleyenOnaylarBolumu({ onaylar }: { onaylar: BekleyenOnaySatiri[] }) {
 // "dershane ve okul müdürü öğretmenlerin programlarını görsün") —
 // salt-okunur: sadece admin ve dershane müdürü elle ekleyebiliyor
 // (kullanıcı kararı, bkz. migration 0066 yorumu), okul müdürü sadece görür.
-function OgretmenProgramlariBolumu({ ogretmenler, secilenOgretmenId, program, dershaneMi }: {
+function OgretmenProgramlariBolumu({ ogretmenler, secilenOgretmenId, program, nobetler, dershaneMi }: {
   ogretmenler: { id: string; ad: string; brans: string }[];
   secilenOgretmenId?: string;
   program: DersProgramiSatiri[];
+  nobetler: OkulNobeti[];
   dershaneMi: boolean;
 }) {
   const router = useRouter();
@@ -664,16 +671,17 @@ function OgretmenProgramlariBolumu({ ogretmenler, secilenOgretmenId, program, de
           <div className="mb-3" style={{ color: TEXT_MUTED }}>
             <span className="text-xs font-semibold">{secilen?.ad}</span> <span className="text-xs">· {secilen?.brans}</span>
           </div>
-          <DersProgramiGrid gunler={programGunleri(dershaneMi)} satirlar={program} />
+          <DersProgramiGrid gunler={programGunleri(dershaneMi)} satirlar={program} nobetler={nobetler} />
         </>
       )}
     </div>
   );
 }
 
-function AjandamBolumu({ role, dersler, siniflar, dersProgramiSatirlari, yurtNobetiSatirlari, dershaneMi }: {
+function AjandamBolumu({ role, dersler, siniflar, dersProgramiSatirlari, yurtNobetiSatirlari, okulNobetleri, yurtNobetGorevleri, dershaneMi }: {
   role: "ogretmen" | "mudur"; dersler: OgretmenDersiSatiri[]; siniflar: SinifSatiri[];
-  dersProgramiSatirlari: DersProgramiSatiri[]; yurtNobetiSatirlari: YurtNobetiSatiri[]; dershaneMi: boolean;
+  dersProgramiSatirlari: DersProgramiSatiri[]; yurtNobetiSatirlari: YurtNobetiSatiri[];
+  okulNobetleri: OkulNobeti[]; yurtNobetGorevleri: string[]; dershaneMi: boolean;
 }) {
   type Sekme = "ders" | "takvim" | "sosyal" | "yazili";
   const sekmeler: { id: Sekme; ad: string }[] = [
@@ -699,7 +707,7 @@ function AjandamBolumu({ role, dersler, siniflar, dersProgramiSatirlari, yurtNob
   return <section id="takvim" className="sfec-section sfec-fade rounded-3xl p-4 sm:p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
     <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-2"><div className="grid h-8 w-8 place-items-center rounded-full" style={{ background: MINT_BG }}><CalendarPlus size={15} color={MINT}/></div><h1 className="text-xl font-extrabold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Ajandam</h1></div><div className="flex max-w-full gap-1 overflow-x-auto rounded-2xl p-1" style={{ background: BG0, border: `1px solid ${BORDER}` }}>{sekmeler.map(s => <button key={s.id} type="button" onClick={() => sekmeSec(s.id)} className="shrink-0 rounded-xl px-3 py-2 text-xs font-bold" style={{ background: sekme === s.id ? MINT : "transparent", color: sekme === s.id ? MINT_ON : TEXT_MUTED }}>{s.ad}</button>)}</div></div>
     {sekme === "takvim" && <Takvim yurtNobetiSatirlari={yurtNobetiSatirlari}/>}
-    {sekme === "ders" && role === "ogretmen" && <DerslerimBolumu dersler={dersler} siniflar={siniflar} dersProgramiSatirlari={dersProgramiSatirlari} yurtNobetiSatirlari={yurtNobetiSatirlari} dershaneMi={dershaneMi}/>}
+    {sekme === "ders" && role === "ogretmen" && <DerslerimBolumu dersler={dersler} siniflar={siniflar} dersProgramiSatirlari={dersProgramiSatirlari} yurtNobetiSatirlari={yurtNobetiSatirlari} okulNobetleri={okulNobetleri} yurtNobetGorevleri={yurtNobetGorevleri} dershaneMi={dershaneMi}/>}
     {sekme === "sosyal" && <SosyalEtkinlikler/>}
     {sekme === "yazili" && role === "ogretmen" && <YaziliAnaliziSekmesi sinifOptions={yaziliSiniflari} dersOptions={yaziliDersleri}/>}
   </section>;
@@ -779,11 +787,13 @@ function OgrenciAylikProgrami({ ogrenciAdi, program }: { ogrenciAdi?: string | n
   </section>;
 }
 
-function DerslerimBolumu({ dersler, siniflar, dersProgramiSatirlari, yurtNobetiSatirlari, dershaneMi }: {
+function DerslerimBolumu({ dersler, siniflar, dersProgramiSatirlari, yurtNobetiSatirlari, okulNobetleri, yurtNobetGorevleri, dershaneMi }: {
   dersler: OgretmenDersiSatiri[];
   siniflar: SinifSatiri[];
   dersProgramiSatirlari: DersProgramiSatiri[];
   yurtNobetiSatirlari: YurtNobetiSatiri[];
+  okulNobetleri: OkulNobeti[];
+  yurtNobetGorevleri: string[];
   dershaneMi: boolean;
 }) {
   const [sinifId, setSinifId] = useState(siniflar[0]?.id ?? "");
@@ -824,7 +834,22 @@ function DerslerimBolumu({ dersler, siniflar, dersProgramiSatirlari, yurtNobetiS
       {/* Ders Programı (2026-08-25 kullanıcı isteği) — salt-okunur, admin/
           dershane müdürü elle doldurur. Öğretmen sadece kendi haftalık
           programını görür. */}
-      <DersProgramiGrid gunler={programGunleri(dershaneMi)} satirlar={dersProgramiSatirlari} />
+      <DersProgramiGrid gunler={programGunleri(dershaneMi)} satirlar={dersProgramiSatirlari} nobetler={okulNobetleri} />
+
+      {/* Yurt nöbeti görevleri okulun yüklediği belletmen listesinden gelir
+          (17.09.2026); altındaki tablo öğretmenin kendi tuttuğu defter. */}
+      {yurtNobetGorevleri.length > 0 && (
+        <div className="mt-4 rounded-2xl p-3" style={{ background: BG1_ALT, border: `2px solid ${BORDER}` }}>
+          <div className="mb-2 text-[11px] font-bold uppercase tracking-wide" style={{ color: TEXT_MUTED }}>Yurt nöbeti görevlerim</div>
+          <div className="flex flex-wrap gap-1.5">
+            {yurtNobetGorevleri.map((t) => (
+              <span key={t} className="rounded-lg px-2 py-0.5 text-[11px] font-semibold" style={{ background: MINT_BG, color: TEXT }}>
+                {new Date(t + "T00:00:00").toLocaleDateString("tr-TR", { day: "2-digit", month: "long", weekday: "short" })}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {!dershaneMi && (
         <div className="mt-4">

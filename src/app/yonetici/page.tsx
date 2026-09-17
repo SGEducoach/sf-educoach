@@ -10,6 +10,7 @@ import { ModeratorlerListesi } from "@/components/yonetici/ModeratorlerListesi";
 import { PlatformIstatistikleri } from "@/components/yonetici/PlatformIstatistikleri";
 import { KonuAnlatimYonetimi } from "@/components/yonetici/KonuAnlatimYonetimi";
 import { MufredatHiyerarsiYonetimi } from "@/components/yonetici/MufredatHiyerarsiYonetimi";
+import { NobetProgramYukleme } from "@/components/yonetici/NobetProgramYukleme";
 import { BlogYonetimi } from "@/components/yonetici/BlogYonetimi";
 import { KurallarYonetimi } from "@/components/yonetici/KurallarYonetimi";
 import { HataBildirimleriYonetimi } from "@/components/yonetici/HataBildirimleriYonetimi";
@@ -126,6 +127,16 @@ export default async function YoneticiPage({
               siniflar={((siniflar ?? []) as { id: string; seviye: string; sube: string }[]).sort(sinifSiraKarsilastir)}
               ogretmenListesi={ogretmenListesi}
             /></section>
+          )}
+          {/* Ders programı + nöbet listesi PDF yükleme (kullanıcı isteği
+              17.09.2026) — seçili okul için, AdminPanel'in altında. */}
+          {aktifBolum === "okullar" && gorunecekOkulId && (
+            <section className="sfec-section">
+              <NobetProgramYukleme
+                okulId={gorunecekOkulId}
+                okulAdi={okulListesi.find((o) => o.id === gorunecekOkulId)?.ad ?? ""}
+              />
+            </section>
           )}
           {aktifBolum === "moderatorler" && <section className="sfec-section"><ModeratorlerListesi /></section>}
           {aktifBolum === "icerik" && (
