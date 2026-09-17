@@ -11,9 +11,12 @@ export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const sabitler: MetadataRoute.Sitemap = [
-    { url: TABAN, lastModified: new Date(), changeFrequency: "weekly", priority: 1 },
-    { url: `${TABAN}/blog`, lastModified: new Date(), changeFrequency: "daily", priority: 0.9 },
-    { url: `${TABAN}/iletisim`, lastModified: new Date(), changeFrequency: "yearly", priority: 0.5 },
+    // Değişiklik tarihi bilinmeyen sabit sayfalarda lastModified göndermiyoruz.
+    // Her sitemap isteğinde "şimdi" yazmak Google'a yanıltıcı değişiklik
+    // sinyali veriyordu. Blog yazılarında gerçek updated_at korunuyor.
+    { url: TABAN, changeFrequency: "weekly", priority: 1 },
+    { url: `${TABAN}/blog`, changeFrequency: "daily", priority: 0.9 },
+    { url: `${TABAN}/iletisim`, changeFrequency: "yearly", priority: 0.5 },
   ];
 
   try {

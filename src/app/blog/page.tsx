@@ -12,6 +12,7 @@ export const metadata: Metadata = {
   title: "SeFu Blog | YKS, Sınav ve Çalışma Rehberi",
   description: "YKS hazırlık, net artırma, sınav takvimi ve verimli çalışma üzerine SeFu Koç blog yazıları.",
   alternates: { canonical: "https://www.sefukoc.com/blog" },
+  robots: { index: true, follow: true },
   openGraph: {
     title: "SeFu Blog | YKS, Sınav ve Çalışma Rehberi",
     description: "YKS hazırlık, net artırma, sınav takvimi ve verimli çalışma üzerine yazılar.",
@@ -30,6 +31,25 @@ export default async function BlogListesi() {
 
   return (
     <SayfaKabugu>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Blog",
+            name: "SeFu Blog",
+            url: "https://www.sefukoc.com/blog",
+            blogPost: yazilar.map((y) => ({
+              "@type": "BlogPosting",
+              headline: y.baslik,
+              description: y.ozet,
+              url: `https://www.sefukoc.com/blog/${y.slug}`,
+              datePublished: y.yayinTarihi ?? y.createdAt,
+              dateModified: y.updatedAt,
+            })),
+          }),
+        }}
+      />
       {/* Kullanıcı isteği (03.09.2026): "soldaki boşlukla eşit şekilde sağda da
           boşluk", "çerçeveyi kaldır, sadece altta bir yöntemle sonraki
           yazıdan ayrılsın" — kart/çerçeve yerine klasik blog akışı: tek

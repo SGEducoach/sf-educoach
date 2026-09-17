@@ -32,6 +32,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title: `${yazi.baslik} | SeFu Blog`,
     description: yazi.ozet,
     alternates: { canonical: `${TABAN}/blog/${yazi.slug}` },
+    robots: { index: true, follow: true },
     openGraph: {
       title: yazi.baslik,
       description: yazi.ozet,
