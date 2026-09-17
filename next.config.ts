@@ -44,6 +44,13 @@ const nextConfig: NextConfig = {
   // tutuluyor: pdfjs-dist'in kendi iç Node/tarayıcı ortam algılamasını
   // (dinamik require çağrıları) bundling bozmasın diye.
   serverExternalPackages: ["pdfjs-dist"],
+  // pdfjs'in worker dosyası (2.3 MB) sadece PDF okuyan sayfaların fonksiyon
+  // paketine dahil edilsin — kod tarafında zaten açıkça import ediliyor
+  // (bkz. pdf-oge.ts), bu satır izlemenin kaçırmasına karşı güvence.
+  outputFileTracingIncludes: {
+    "/yonetici/**": ["./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs"],
+    "/dashboard/**": ["./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs"],
+  },
 };
 
 export default nextConfig;

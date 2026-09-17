@@ -48,11 +48,21 @@ function pdfjsPolyfilleriKur(): void {
   }
 }
 
+// Worker: pdfjs worker verilmediğinde pdf.worker.mjs'i dosya yolundan
+// yüklemeye çalışıyor ve Vercel'de o dosya fonksiyon paketinde olmadığı için
+// çöküyor (17.09.2026 nöbet PDF yüklemesinde keşfedildi). Worker modülünü
+// açıkça import edip globalThis.pdfjsWorker'a koyuyoruz — pdfjs önce oraya
+// bakıyor. Aynı çözüm src/lib/pdf-oge.ts'te de var.
 let getDocumentSozu: Promise<typeof GetDocumentFn> | null = null;
 function pdfjsGetDocument(): Promise<typeof GetDocumentFn> {
   if (!getDocumentSozu) {
     pdfjsPolyfilleriKur();
-    getDocumentSozu = import("pdfjs-dist/legacy/build/pdf.mjs").then((m) => m.getDocument);
+    getDocumentSozu = (async () => {
+      const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+      const g = globalThis as unknown as Record<string, unknown>;
+      g.pdfjsWorker ??= await import("pdfjs-dist/legacy/build/pdf.worker.mjs");
+      return pdfjs.getDocument;
+    })();
   }
   return getDocumentSozu;
 }

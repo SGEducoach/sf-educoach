@@ -18,11 +18,28 @@ type GetDocumentTuru = (parametreler: { data: Uint8Array; disableFontFace?: bool
   }>;
 };
 
+// pdfjs, worker verilmediğinde "fake worker"ı pdf.worker.mjs'i DOSYA
+// YOLUNDAN dinamik yükleyerek kuruyor; Vercel'in fonksiyon paketine o dosya
+// dahil edilmediği için canlıda "Setting up fake worker failed: Cannot find
+// module .../pdf.worker.mjs" ile çöküyordu (17.09.2026, nöbet PDF yüklemesi).
+// pdfjs önce globalThis.pdfjsWorker'a bakıyor: worker modülünü burada açıkça
+// import edip oraya koyunca hem dosya yoluna hiç bakılmıyor hem de sabit
+// belirteç sayesinde dosya fonksiyon paketine izleniyor.
+async function workeriKur(): Promise<void> {
+  const g = globalThis as unknown as Record<string, unknown>;
+  if (g.pdfjsWorker) return;
+  g.pdfjsWorker = await import("pdfjs-dist/legacy/build/pdf.worker.mjs");
+}
+
 let getDocumentSozu: Promise<GetDocumentTuru> | null = null;
 function pdfjsGetDocument(): Promise<GetDocumentTuru> {
   if (!getDocumentSozu) {
     pdfjsPolyfilleriKur();
-    getDocumentSozu = import("pdfjs-dist/legacy/build/pdf.mjs").then((m) => m.getDocument as unknown as GetDocumentTuru);
+    getDocumentSozu = (async () => {
+      const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+      await workeriKur();
+      return pdfjs.getDocument as unknown as GetDocumentTuru;
+    })();
   }
   return getDocumentSozu;
 }
