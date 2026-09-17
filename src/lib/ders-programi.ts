@@ -109,12 +109,14 @@ export async function okulNobetiGetir(supabase: SupabaseC, teacherId: string): P
   return ((data as OkulNobeti[]) ?? []);
 }
 
-export async function yurtNobetGorevleriGetir(supabase: SupabaseC, teacherId: string, baslangic: string): Promise<string[]> {
+export interface YurtNobetGorevi { id: string; tarih: string }
+
+export async function yurtNobetGorevleriGetir(supabase: SupabaseC, teacherId: string, baslangic: string): Promise<YurtNobetGorevi[]> {
   const { data } = await supabase
     .from("yurt_nobet_gorevleri")
-    .select("tarih")
+    .select("id, tarih")
     .eq("teacher_id", teacherId)
     .gte("tarih", baslangic)
     .order("tarih");
-  return ((data as { tarih: string }[]) ?? []).map((r) => r.tarih);
+  return (data as YurtNobetGorevi[]) ?? [];
 }

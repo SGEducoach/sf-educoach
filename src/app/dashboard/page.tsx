@@ -791,6 +791,28 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       ])
     : [[], [], [], []];
 
+  // Öğretmen kendi yurt nöbetini yalnızca aynı okuldaki başka bir aktif
+  // öğretmene devredebilir. Liste yalnız Ajandam/Derslerim açıldığında
+  // hazırlanır; sunucu action hedefi ve nöbet sahipliğini yeniden doğrular.
+  let nobetDevirOgretmenleri: { id: string; ad: string; brans: string }[] = [];
+  if (dersVerisiGerekli && !dershaneMi) {
+    const admin = createAdminClient();
+    const { data: devirAdaylari } = await admin
+      .from("teachers")
+      .select("id, brans, profiles!teachers_id_fkey(ad, role, aktif)")
+      .eq("school_id", teacher.school_id)
+      .neq("id", userId);
+    type DevirAdayi = {
+      id: string;
+      brans: string | null;
+      profiles: { ad: string | null; role: string | null; aktif: boolean | null } | null;
+    };
+    nobetDevirOgretmenleri = ((devirAdaylari ?? []) as unknown as DevirAdayi[])
+      .filter((o) => o.profiles?.role === "ogretmen" && o.profiles.aktif === true)
+      .map((o) => ({ id: o.id, ad: o.profiles?.ad ?? "İsimsiz", brans: o.brans ?? "" }))
+      .sort((a, b) => a.ad.localeCompare(b.ad, "tr"));
+  }
+
   // Okul müdürünün "Öğretmenler" bölümü (2026-08-25 kullanıcı isteği:
   // "dershane ve okul müdürü öğretmenlerin programlarını görsün") —
   // dershane müdürü zaten kendi ayrı panelinde (DershaneMudurPaneli)
@@ -863,6 +885,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       yurtNobetiSatirlari={yurtNobetiSatirlari}
       okulNobetleri={okulNobetleri}
       yurtNobetGorevleri={yurtNobetGorevleri}
+      nobetDevirOgretmenleri={nobetDevirOgretmenleri}
       dershaneMi={dershaneMi}
       okulOgretmenleri={okulOgretmenleri}
       secilenOgretmenId={secilenOgretmenId}
