@@ -3,15 +3,16 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
-  ArrowDown, ArrowUp, BrainCircuit, CalendarDays, Check, ChevronLeft, ChevronRight,
+  ArrowDown, ArrowLeftRight, ArrowUp, BrainCircuit, CalendarDays, Check, ChevronLeft, ChevronRight,
   Plus, RefreshCw, Sparkles, Trash2, X,
 } from "lucide-react";
 import { otoProgramHazirla, otoProgramUygula } from "@/app/dashboard/oto-program-actions";
 import {
   CEYREK_SAATLER, DERS_AGIRLIGI_ETIKET, GUN_ADLARI,
-  ayarHatasi, blokDakikasi, bloklariDogrula, gunEkle, gunlukYukUyarisi,
+  ayarHatasi, blokDakikasi, bloklariDogrula, dakikayiSaateCevir, gunEkle, gunlukYukUyarisi,
   haftaninPazartesisi, otoProgramOlustur,
 } from "@/lib/oto-program";
+import { saatAraligiSuresi, saatiDakikayaCevir } from "@/lib/saat-araligi";
 import type {
   DersAgirligi, OtoProgramAyari, OtoProgramVerisi, Periyot, ProgramBlogu, ProgramKapsami,
 } from "@/lib/oto-program";
@@ -164,8 +165,50 @@ export function SefuOtoProgramModal({ ilkHafta, onKapat }: { ilkHafta: string; o
     setAyar({ ...ayar, dersler: yeni });
   }
 
+  // "Sonraki haftaya/aya taşı": önceki programın ayarlarıyla, bittiği haftadan
+  // sonraki dönem için program yeniden kurulur ve doğrudan önizlemeye geçilir.
+  function sonrakiDonemeTasi() {
+    const son = veri?.sonProgram;
+    if (!son) return;
+    const sonraki = gunEkle(haftaninPazartesisi(son.bitisTarihi), 7);
+    const yeniBaslangic = sonraki < bugunPazartesi ? bugunPazartesi : sonraki;
+    setHata(null);
+    startTransition(async () => {
+      const sonuc = await otoProgramHazirla(yeniBaslangic, son.kapsam);
+      if (sonuc.error || !sonuc.veri) return setHata(sonuc.error ?? "Program verisi alınamadı.");
+      const ayarSorunu = ayarHatasi(son.ayar, sonuc.veri.okulOgrencisi, sonuc.veri.dersListesi);
+      if (ayarSorunu) return setHata(`Önceki program taşınamadı: ${ayarSorunu}`);
+      const uretilen = otoProgramOlustur(sonuc.veri, son.ayar);
+      if (uretilen.length === 0) return setHata("Önceki programın saatlerinde yeni dönemde uygun çalışma aralığı bulunamadı.");
+      setBaslangicTarihi(yeniBaslangic);
+      setKapsam(son.kapsam);
+      setVeri(sonuc.veri);
+      setAyar(son.ayar);
+      setBloklar(uretilen);
+      setAdim(3);
+    });
+  }
+
+  // Elle düzeltmeler anında doğrulanır; kurala uymayan değişiklik uygulanmaz, nedeni gösterilir.
+  function bloklariGuncelle(yeni: ProgramBlogu[]) {
+    if (veri && yeni.length > 0) {
+      const sorun = bloklariDogrula(yeni, veri);
+      if (sorun) return setHata(sorun);
+    }
+    setHata(null);
+    setBloklar(yeni);
+  }
+
   function bloguDegistir(anahtar: string, yama: Partial<ProgramBlogu>) {
-    setBloklar((onceki) => onceki.map((b) => b.anahtar === anahtar ? { ...b, ...yama } : b));
+    bloklariGuncelle(bloklar.map((b) => b.anahtar === anahtar ? { ...b, ...yama } : b));
+  }
+
+  // Başlangıç değişince süre korunur, bitiş birlikte kayar.
+  function baslangiciDegistir(blok: ProgramBlogu, baslangic: string) {
+    const sure = saatAraligiSuresi(blok.baslangic, blok.bitis);
+    const yeniBaslangic = saatiDakikayaCevir(baslangic);
+    if (sure === null || yeniBaslangic === null) return bloguDegistir(blok.anahtar, { baslangic });
+    bloguDegistir(blok.anahtar, { baslangic, bitis: dakikayiSaateCevir(yeniBaslangic + sure) });
   }
 
   function uygula() {
@@ -234,7 +277,7 @@ export function SefuOtoProgramModal({ ilkHafta, onKapat }: { ilkHafta: string; o
             </div>
           ) : adim === 1 && veri ? (
             <div className="grid gap-4">
-              {veri.sonProgram && <Alan className="flex flex-wrap items-center justify-between gap-3"><div><div className="text-xs font-extrabold" style={{ color: TEXT }}>Önceki ayarlarınız hazır</div><div className="text-[10px]" style={{ color: TEXT_MUTED }}>{veri.sonProgram.kapsam === "aylik" ? "Aylık" : "Haftalık"} program · {veri.sonProgram.baslangicTarihi}</div></div><button type="button" onClick={() => setAyar(veri.sonProgram!.ayar)} className="sfec-btn rounded-full px-3 py-1.5 text-[11px] font-bold" style={{ background: MINT_BG, color: MINT, border: `1px solid ${MINT}` }}>Ayarları bu döneme taşı</button></Alan>}
+              {veri.sonProgram && <Alan className="flex flex-wrap items-center justify-between gap-3"><div><div className="text-xs font-extrabold" style={{ color: TEXT }}>Önceki programınız</div><div className="text-[10px]" style={{ color: TEXT_MUTED }}>{veri.sonProgram.kapsam === "aylik" ? "Aylık" : "Haftalık"} program · {tarihYaz(veri.sonProgram.baslangicTarihi)} – {tarihYaz(veri.sonProgram.bitisTarihi)}</div></div><div className="flex flex-wrap gap-2"><button type="button" onClick={() => setAyar(veri.sonProgram!.ayar)} disabled={pending} className="sfec-btn rounded-full px-3 py-1.5 text-[11px] font-bold disabled:opacity-50" style={{ background: BG0, color: TEXT_MUTED, border: `1px solid ${BORDER_STRONG}` }}>Ayarları kullan</button><button type="button" onClick={sonrakiDonemeTasi} disabled={pending} className="sfec-btn rounded-full px-3 py-1.5 text-[11px] font-bold disabled:opacity-50" style={{ background: MINT_BG, color: MINT, border: `1px solid ${MINT}` }}>{veri.sonProgram.kapsam === "aylik" ? "Sonraki aya taşı" : "Sonraki haftaya taşı"}</button></div></Alan>}
               <fieldset>
                 <legend className="mb-2 text-xs font-bold" style={{ color: TEXT }}>Çalışacağınız günler</legend>
                 <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
@@ -280,10 +323,10 @@ export function SefuOtoProgramModal({ ilkHafta, onKapat }: { ilkHafta: string; o
                   <thead style={{ background: BG1_ALT, color: TEXT_MUTED }}><tr>{["Tarih", "Saat", "Tür", "Ders", ""].map((h) => <th key={h} className="px-2 py-2 text-[10px] font-extrabold uppercase tracking-wide">{h}</th>)}</tr></thead>
                   <tbody>{bloklar.map((b) => <tr key={b.anahtar} style={{ borderTop: `1px solid ${BORDER}` }}>
                     <td className="p-2"><select value={b.tarih} onChange={(e) => bloguDegistir(b.anahtar, { tarih: e.target.value })} className="w-28 rounded-lg px-1.5 py-1.5 text-[10px] outline-none" style={{ background: BG0, color: TEXT, border: `1px solid ${BORDER}` }}>{donemTarihleri.map((t) => <option key={t} value={t}>{tarihYaz(t)}</option>)}</select></td>
-                    <td className="p-2"><div className="flex items-center gap-1"><select value={b.baslangic} onChange={(e) => bloguDegistir(b.anahtar, { baslangic: e.target.value })} className="rounded-lg px-1 py-1.5 text-[10px] outline-none" style={{ background: BG0, color: TEXT, border: `1px solid ${BORDER}` }}>{DUZENLEME_SAATLERI.map((s) => <option key={s}>{s}</option>)}</select><span style={{ color: TEXT_MUTED }}>–</span><select value={b.bitis} onChange={(e) => bloguDegistir(b.anahtar, { bitis: e.target.value })} className="rounded-lg px-1 py-1.5 text-[10px] outline-none" style={{ background: BG0, color: TEXT, border: `1px solid ${BORDER}` }}>{DUZENLEME_SAATLERI.map((s) => <option key={s}>{s}</option>)}</select></div></td>
-                    <td className="p-2"><span className="whitespace-nowrap rounded-full px-2 py-1 text-[9px] font-bold" style={{ background: b.tur === "konu" ? MINT_BG : PEACH_BG, color: b.tur === "konu" ? MINT : PEACH }}>{b.tur === "konu" ? "Konu çalışması" : "Soru çözümü"}</span></td>
+                    <td className="p-2"><div className="flex items-center gap-1"><select value={b.baslangic} onChange={(e) => baslangiciDegistir(b, e.target.value)} className="rounded-lg px-1 py-1.5 text-[10px] outline-none" style={{ background: BG0, color: TEXT, border: `1px solid ${BORDER}` }}>{DUZENLEME_SAATLERI.map((s) => <option key={s}>{s}</option>)}</select><span style={{ color: TEXT_MUTED }}>–</span><select value={b.bitis} onChange={(e) => bloguDegistir(b.anahtar, { bitis: e.target.value })} className="rounded-lg px-1 py-1.5 text-[10px] outline-none" style={{ background: BG0, color: TEXT, border: `1px solid ${BORDER}` }}>{DUZENLEME_SAATLERI.map((s) => <option key={s}>{s}</option>)}</select></div></td>
+                    <td className="p-2"><button type="button" disabled={Boolean(b.atamaId)} title={b.atamaId ? "Öğretmen ödevinin türü değiştirilemez" : "Türü değiştir"} onClick={() => bloguDegistir(b.anahtar, { tur: b.tur === "konu" ? "soru" : "konu" })} className="sfec-btn inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-1 text-[9px] font-bold disabled:cursor-default" style={{ background: b.tur === "konu" ? MINT_BG : PEACH_BG, color: b.tur === "konu" ? MINT : PEACH }}>{b.tur === "konu" ? "Konu çalışması" : "Soru çözümü"}{!b.atamaId && <ArrowLeftRight size={9} />}</button></td>
                     <td className="p-2"><select disabled={Boolean(b.atamaId)} value={b.ders} onChange={(e) => bloguDegistir(b.anahtar, { ders: e.target.value })} className="w-32 rounded-lg px-1.5 py-1.5 text-[10px] outline-none disabled:opacity-70" style={{ background: BG0, color: TEXT, border: `1px solid ${BORDER}` }}>{veri.dersListesi.map((d) => <option key={d}>{d}</option>)}</select></td>
-                    <td className="p-2"><button type="button" title="Kalemi kaldır" onClick={() => setBloklar((onceki) => onceki.filter((x) => x.anahtar !== b.anahtar))} className="sfec-btn flex h-7 w-7 items-center justify-center rounded-full" style={{ background: BLUSH_BG, color: BLUSH }}><Trash2 size={12} /></button></td>
+                    <td className="p-2"><button type="button" title="Kalemi kaldır" onClick={() => bloklariGuncelle(bloklar.filter((x) => x.anahtar !== b.anahtar))} className="sfec-btn flex h-7 w-7 items-center justify-center rounded-full" style={{ background: BLUSH_BG, color: BLUSH }}><Trash2 size={12} /></button></td>
                   </tr>)}</tbody>
                 </table>
               </div>
