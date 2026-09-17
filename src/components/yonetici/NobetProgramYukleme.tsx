@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { CalendarDays, FileUp, Plus, ShieldAlert, Trash2 } from "lucide-react";
+import { CalendarDays, FileUp, Link2, Plus, ShieldAlert, Trash2 } from "lucide-react";
 import {
-  dersProgramiPdfYukle, nobetleriGetir, okulNobetiKaydet, okulNobetiSil,
-  yurtNobetiKaydet, yurtNobetiPdfYukle, yurtNobetiSil,
+  bekleyenProgramiHesabaUygula, dersProgramiPdfYukle, nobetiHesabaBagla, nobetleriGetir,
+  okulNobetiKaydet, okulNobetiSil, yurtNobetiKaydet, yurtNobetiPdfYukle, yurtNobetiSil,
 } from "@/app/dashboard/nobet-program-actions";
 import type { NobetGorunumu, ProgramYuklemeOzeti, YurtNobetiYuklemeOzeti } from "@/lib/nobet-yukleme";
 import { GUN_ETIKET, programGunleri } from "@/lib/ders-programi";
@@ -40,6 +40,32 @@ function Uyarilar({ uyarilar }: { uyarilar: string[] }) {
 
 const girdiStili = { background: BG0, color: TEXT, border: `2px solid ${BORDER_STRONG}` };
 
+// Eşleşmeyen kayıt için hesap seçici — aynı adda iki hesap olduğunda
+// yöneticinin hangisine yazılacağını seçmesini sağlar.
+function HesapSecici({ ogretmenler, adSoyad, onSec, disabled }: {
+  ogretmenler: { id: string; ad: string; brans: string; rol: string }[];
+  adSoyad: string;
+  onSec: (teacherId: string) => void;
+  disabled?: boolean;
+}) {
+  // Aynı soyadı/adı taşıyanlar üste gelsin; liste yine de tam kalsın.
+  const kucuk = adSoyad.toLocaleLowerCase("tr");
+  const parcalar = kucuk.split(" ").filter((p) => p.length > 2);
+  const sirali = [...ogretmenler].sort((a, b) => {
+    const puan = (ad: string) => parcalar.filter((p) => ad.toLocaleLowerCase("tr").includes(p)).length;
+    return puan(b.ad) - puan(a.ad);
+  });
+  return (
+    <select defaultValue="" disabled={disabled} onChange={(e) => onSec(e.target.value)}
+      className="rounded-lg px-2 py-1 text-[11px] font-bold" style={girdiStili} title="Hesaba bağla">
+      <option value="">Hesaba bağla…</option>
+      {sirali.map((o) => (
+        <option key={o.id} value={o.id}>{o.ad} · {o.brans}{o.rol === "admin" ? " (admin)" : ""}</option>
+      ))}
+    </select>
+  );
+}
+
 export function NobetProgramYukleme({ okulId, okulAdi }: { okulId: string; okulAdi: string }) {
   const [pending, startTransition] = useTransition();
   const [hata, setHata] = useState<string | null>(null);
@@ -47,6 +73,7 @@ export function NobetProgramYukleme({ okulId, okulAdi }: { okulId: string; okulA
   const [yurtOzeti, setYurtOzeti] = useState<YurtNobetiYuklemeOzeti | null>(null);
   const [nobetler, setNobetler] = useState<NobetGorunumu | null>(null);
   const [bildir, setBildir] = useState(true);
+  const [bilgi, setBilgi] = useState<string | null>(null);
   const programGirdisi = useRef<HTMLInputElement>(null);
   const yurtGirdisi = useRef<HTMLInputElement>(null);
 
@@ -136,6 +163,32 @@ export function NobetProgramYukleme({ okulId, okulAdi }: { okulId: string; okulA
     });
   }
 
+  // Aynı adda birden fazla hesap varsa (ör. hem admin hem öğretmen hesabı)
+  // sistem tahmin etmiyor; dogru hesap buradan seçilip bağlanıyor.
+  function bagla(tur: "okul" | "yurt", id: string, teacherId: string) {
+    if (!teacherId) return;
+    setHata(null);
+    startTransition(async () => {
+      const r = await nobetiHesabaBagla({ tur, id, teacherId, okulId });
+      if (r.error) return setHata(r.error);
+      nobetleriTazele();
+    });
+  }
+
+  function programiUygula(adAnahtari: string, adSoyad: string, teacherId: string) {
+    if (!teacherId) return;
+    const secilen = nobetler?.ogretmenler.find((o) => o.id === teacherId);
+    if (!window.confirm(`${adSoyad} adına bekleyen ders programı ${secilen?.ad} (${secilen?.brans}) hesabına uygulansın mı? Bu hesabın mevcut programı silinip yenisi yazılır.`)) return;
+    setHata(null);
+    setBilgi(null);
+    startTransition(async () => {
+      const r = await bekleyenProgramiHesabaUygula({ adAnahtari, teacherId, okulId });
+      if (r.error) return setHata(r.error);
+      setBilgi(`${adSoyad}: ${r.satir} ders saati ${secilen?.ad} hesabına yazıldı, aynı addaki nöbetler de bağlandı.`);
+      nobetleriTazele();
+    });
+  }
+
   function sil(tur: "okul" | "yurt", id: string, etiket: string) {
     if (!window.confirm(`${etiket} nöbeti silinsin mi?`)) return;
     setHata(null);
@@ -157,6 +210,28 @@ export function NobetProgramYukleme({ okulId, okulAdi }: { okulId: string; okulA
         <div className="flex items-start gap-2 rounded-xl p-3 text-xs font-semibold" style={{ background: BLUSH, color: TEXT }}>
           <ShieldAlert size={14} /> {hata}
         </div>
+      )}
+      {bilgi && (
+        <div className="rounded-xl p-3 text-xs font-semibold" style={{ background: MINT_BG, color: MINT_ON }}>{bilgi}</div>
+      )}
+
+      {nobetler && nobetler.bekleyenProgramlar.length > 0 && (
+        <Kutu baslik="Hesabı eşleşmeyen ders programları" ikon={<Link2 size={13} color={MINT} />}>
+          <p className="mb-3 text-[11px]" style={{ color: TEXT_MUTED }}>
+            Bu adların programı bekliyor: ya öğretmenin henüz hesabı yok (üye olunca kendiliğinden yansır)
+            ya da aynı adda birden fazla hesap olduğu için sistem tahmin etmedi. İkinci durumda doğru hesabı seçin.
+          </p>
+          <div className="max-h-72 space-y-1 overflow-y-auto">
+            {nobetler.bekleyenProgramlar.map((b) => (
+              <div key={b.adAnahtari} className="flex flex-wrap items-center gap-2 rounded-xl px-3 py-2 text-xs" style={{ background: BG1_ALT }}>
+                <span className="flex-1 font-semibold" style={{ color: TEXT }}>{b.adSoyad}</span>
+                <span style={{ color: TEXT_MUTED }}>{b.satir} ders saati</span>
+                <HesapSecici ogretmenler={nobetler.ogretmenler} adSoyad={b.adSoyad} disabled={pending}
+                  onSec={(teacherId) => programiUygula(b.adAnahtari, b.adSoyad, teacherId)} />
+              </div>
+            ))}
+          </div>
+        </Kutu>
       )}
 
       <Kutu baslik="Ders Programı PDF" ikon={<FileUp size={13} color={MINT} />}>
@@ -222,6 +297,10 @@ export function NobetProgramYukleme({ okulId, okulAdi }: { okulId: string; okulA
                 {GUNLER.map((g) => <option key={g} value={g}>{GUN_ETIKET[g]}</option>)}
               </select>
               <span style={{ color: TEXT_MUTED }}>{n.yer}</span>
+              {!n.bagli && nobetler && (
+                <HesapSecici ogretmenler={nobetler.ogretmenler} adSoyad={n.adSoyad} disabled={pending}
+                  onSec={(teacherId) => bagla("okul", n.id, teacherId)} />
+              )}
               <button type="button" onClick={() => sil("okul", n.id, `${n.adSoyad} ${GUN_ETIKET[n.gun]}`)} disabled={pending}
                 className="sfec-btn rounded-lg p-1" style={{ background: BG0, border: `1px solid ${BORDER_STRONG}` }} title="Sil">
                 <Trash2 size={12} color={TEXT_MUTED} />
@@ -251,6 +330,10 @@ export function NobetProgramYukleme({ okulId, okulAdi }: { okulId: string; okulA
               <input type="date" value={n.tarih} disabled={pending}
                 onChange={(e) => e.target.value && yurtNobetiTarihDegistir(n.id, n.adSoyad, e.target.value)}
                 className="rounded-lg px-2 py-1 text-[11px] font-bold" style={girdiStili} />
+              {!n.bagli && nobetler && (
+                <HesapSecici ogretmenler={nobetler.ogretmenler} adSoyad={n.adSoyad} disabled={pending}
+                  onSec={(teacherId) => bagla("yurt", n.id, teacherId)} />
+              )}
               <button type="button" onClick={() => sil("yurt", n.id, `${n.adSoyad} ${n.tarih}`)} disabled={pending}
                 className="sfec-btn rounded-lg p-1" style={{ background: BG0, border: `1px solid ${BORDER_STRONG}` }} title="Sil">
                 <Trash2 size={12} color={TEXT_MUTED} />

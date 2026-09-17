@@ -25,4 +25,8 @@ export interface YurtNobetiYuklemeOzeti {
 export interface NobetGorunumu {
   okulNobetleri: { id: string; adSoyad: string; gun: DersProgramiGunu; yer: string; bagli: boolean }[];
   yurtNobetleri: { id: string; adSoyad: string; tarih: string; bagli: boolean }[];
+  // Aynı adda birden fazla hesap olduğunda otomatik eşleşme yapılmıyor;
+  // yönetici doğru hesabı bu listeden seçer (17.09.2026).
+  ogretmenler: { id: string; ad: string; brans: string; rol: string }[];
+  bekleyenProgramlar: { adAnahtari: string; adSoyad: string; satir: number }[];
 }

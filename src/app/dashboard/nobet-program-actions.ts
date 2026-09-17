@@ -10,6 +10,7 @@ import type { ProgramGunu } from "@/lib/ders-programi-pdf";
 import { yurtNobetiPdfiniCoz } from "@/lib/yurt-nobeti-pdf";
 import type { NobetGorunumu, ProgramYuklemeOzeti, YurtNobetiYuklemeOzeti } from "@/lib/nobet-yukleme";
 import { ogretmeneBildirimGonder } from "@/lib/ogretmen-bildirim";
+import { PROGRAM_BILDIRIMI } from "@/lib/ogretmen-bildirim-sablon";
 
 // Ders programı ve nöbet listesi yükleme (kullanıcı isteği 17.09.2026) —
 // yönetici/müdür okulun MEB ders programı PDF'ini ve yurt (belletmen) nöbet
@@ -277,10 +278,27 @@ export async function nobetleriGetir(okulId?: string | null, baslangic?: string,
   if (baslangic) yurtSorgusu = yurtSorgusu.gte("tarih", baslangic);
   if (bitis) yurtSorgusu = yurtSorgusu.lte("tarih", bitis);
 
-  const [{ data: okulHam }, { data: yurtHam }] = await Promise.all([
+  const [{ data: okulHam }, { data: yurtHam }, { data: ogretmenHam }, { data: bekleyenHam }] = await Promise.all([
     admin.from("ogretmen_okul_nobetleri").select("id, ad_soyad, gun, yer, teacher_id").eq("school_id", schoolId).order("ad_soyad"),
     yurtSorgusu.order("tarih").order("ad_soyad"),
+    admin.from("teachers").select("id, brans, profiles!teachers_id_fkey(ad, role)").eq("school_id", schoolId),
+    admin.from("bekleyen_ogretmen_programlari").select("ad_soyad, ad_anahtari").eq("school_id", schoolId),
   ]);
+
+  // Aynı adda birden fazla hesap olduğunda (ör. hem admin hem öğretmen
+  // hesabı) otomatik eşleşme yapılmıyor; yönetici doğru hesabı buradan seçer.
+  type OgretmenSatiri = { id: string; brans: string | null; profiles: { ad: string | null; role: string | null } | { ad: string | null; role: string | null }[] | null };
+  const ogretmenler = ((ogretmenHam ?? []) as unknown as OgretmenSatiri[]).map((o) => {
+    const profil = Array.isArray(o.profiles) ? o.profiles[0] : o.profiles;
+    return { id: o.id, ad: profil?.ad ?? "İsimsiz", brans: o.brans ?? "", rol: profil?.role ?? "" };
+  }).sort((a, b) => a.ad.localeCompare(b.ad, "tr"));
+
+  const bekleyenSayilari = new Map<string, { adSoyad: string; satir: number }>();
+  for (const b of (bekleyenHam ?? []) as { ad_soyad: string; ad_anahtari: string }[]) {
+    const kayit = bekleyenSayilari.get(b.ad_anahtari) ?? { adSoyad: b.ad_soyad, satir: 0 };
+    kayit.satir++;
+    bekleyenSayilari.set(b.ad_anahtari, kayit);
+  }
 
   return {
     error: null,
@@ -289,8 +307,73 @@ export async function nobetleriGetir(okulId?: string | null, baslangic?: string,
         .map((n) => ({ id: n.id, adSoyad: n.ad_soyad, gun: n.gun, yer: n.yer, bagli: !!n.teacher_id })),
       yurtNobetleri: ((yurtHam ?? []) as { id: string; ad_soyad: string; tarih: string; teacher_id: string | null }[])
         .map((n) => ({ id: n.id, adSoyad: n.ad_soyad, tarih: n.tarih, bagli: !!n.teacher_id })),
+      ogretmenler,
+      bekleyenProgramlar: [...bekleyenSayilari.entries()]
+        .map(([adAnahtari, k]) => ({ adAnahtari, adSoyad: k.adSoyad, satir: k.satir }))
+        .sort((a, b) => a.adSoyad.localeCompare(b.adSoyad, "tr")),
     },
   };
+}
+
+// Eşleşmeyen nöbeti/programı doğru hesaba bağlama (17.09.2026): aynı adda
+// iki hesap olduğunda sistem bilerek tahmin etmiyor, yönetici seçiyor.
+async function okulunOgretmeniMi(admin: AdminClient, schoolId: string, teacherId: string): Promise<boolean> {
+  const { data } = await admin.from("teachers").select("id").eq("id", teacherId).eq("school_id", schoolId).maybeSingle();
+  return !!data;
+}
+
+export async function nobetiHesabaBagla(input: { tur: "okul" | "yurt"; id: string; teacherId: string; okulId?: string }): Promise<{ error: string | null }> {
+  const yetki = await yuklemeYetkisi(input.okulId ?? null);
+  if (yetki.error !== null) return { error: yetki.error };
+  const { admin, schoolId } = yetki;
+  if (!await okulunOgretmeniMi(admin, schoolId, input.teacherId)) return { error: "Seçilen hesap bu okulun öğretmeni değil." };
+
+  const tablo = input.tur === "okul" ? "ogretmen_okul_nobetleri" : "yurt_nobet_gorevleri";
+  const { error } = await admin.from(tablo).update({ teacher_id: input.teacherId }).eq("id", input.id).eq("school_id", schoolId);
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard");
+  revalidatePath("/yonetici");
+  return { error: null };
+}
+
+// Bekleyen ders programını seçilen hesaba uygular; aynı addaki nöbetleri de
+// o hesaba bağlar (bekleyen satırlar silinir, öğretmene bildirim gider).
+export async function bekleyenProgramiHesabaUygula(input: { adAnahtari: string; teacherId: string; okulId?: string; bildir?: boolean }): Promise<{ error: string | null; satir: number }> {
+  const yetki = await yuklemeYetkisi(input.okulId ?? null);
+  if (yetki.error !== null) return { error: yetki.error, satir: 0 };
+  const { admin, schoolId } = yetki;
+  if (!await okulunOgretmeniMi(admin, schoolId, input.teacherId)) return { error: "Seçilen hesap bu okulun öğretmeni değil.", satir: 0 };
+
+  const { data: bekleyen } = await admin
+    .from("bekleyen_ogretmen_programlari")
+    .select("gun, ders_saati_sira, class_id, ders, kaynak")
+    .eq("school_id", schoolId)
+    .eq("ad_anahtari", input.adAnahtari);
+  const satirlar = (bekleyen ?? []) as { gun: ProgramGunu; ders_saati_sira: number; class_id: string; ders: string; kaynak: string | null }[];
+  if (satirlar.length === 0) return { error: "Bu ada ait bekleyen program bulunamadı.", satir: 0 };
+
+  const { error: silmeHatasi } = await admin.from("ogretmen_ders_programi").delete().eq("teacher_id", input.teacherId);
+  if (silmeHatasi) return { error: silmeHatasi.message, satir: 0 };
+  const { error: eklemeHatasi } = await admin.from("ogretmen_ders_programi").insert(
+    satirlar.map((s) => ({
+      teacher_id: input.teacherId, gun: s.gun, ders_saati_sira: s.ders_saati_sira,
+      class_id: s.class_id, ders: s.ders, kaynak: s.kaynak ?? "pdf",
+    })),
+  );
+  if (eklemeHatasi) return { error: eklemeHatasi.message, satir: 0 };
+
+  await admin.from("bekleyen_ogretmen_programlari").delete().eq("school_id", schoolId).eq("ad_anahtari", input.adAnahtari);
+  await admin.from("ogretmen_okul_nobetleri").update({ teacher_id: input.teacherId })
+    .eq("school_id", schoolId).eq("ad_anahtari", input.adAnahtari).is("teacher_id", null);
+  await admin.from("yurt_nobet_gorevleri").update({ teacher_id: input.teacherId })
+    .eq("school_id", schoolId).eq("ad_anahtari", input.adAnahtari).is("teacher_id", null);
+
+  if (input.bildir !== false) {
+    await ogretmeneBildirimGonder(admin, input.teacherId, "ders_programi", PROGRAM_BILDIRIMI.yuklendi.baslik, PROGRAM_BILDIRIMI.yuklendi.mesaj);
+  }
+  revalidatePath("/dashboard");
+  revalidatePath("/yonetici");
+  return { error: null, satir: satirlar.length };
 }
 
 // Nöbetler öğretmenler arasında değişebiliyor (kullanıcı isteği): ekleme,
