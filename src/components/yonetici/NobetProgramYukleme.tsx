@@ -84,6 +84,57 @@ function tarihEtiketi(tarih: string): string {
   return new Date(tarih + "T00:00:00").toLocaleDateString("tr-TR", { day: "2-digit", month: "short" });
 }
 
+// Tek bir nöbet: tıklanınca altındaki düzenleme satırını açar.
+function NobetRozeti({ etiket, secili, disabled, onTikla }: {
+  etiket: string; secili: boolean; disabled?: boolean; onTikla: () => void;
+}) {
+  return (
+    <button type="button" onClick={onTikla} disabled={disabled} title="Düzenle / devret / sil"
+      className="sfec-btn rounded-lg px-2 py-1 text-[11px] font-semibold"
+      style={{ background: secili ? MINT : BG0, color: secili ? MINT_ON : TEXT, border: `1px solid ${secili ? MINT : BORDER_STRONG}` }}>
+      {etiket}
+    </button>
+  );
+}
+
+// Devret / değiştir / sil satırı. Ad alanı serbest metin ama okuldaki
+// öğretmenler öneri olarak geliyor; hesabı olmayan birine de devredilebilir.
+function DuzenlemeSatiri({ ogretmenler, adSoyad, onAdDegis, disabled, onKaydet, onSil, onVazgec, children }: {
+  ogretmenler: { id: string; ad: string; brans: string; rol: string }[];
+  adSoyad: string;
+  onAdDegis: (ad: string) => void;
+  disabled?: boolean;
+  onKaydet: () => void;
+  onSil: () => void;
+  onVazgec: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-2 rounded-xl p-2" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
+      <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: TEXT_MUTED }}>Nöbeti devret / düzenle</span>
+      <input list="nobet-ogretmen-onerileri" value={adSoyad} disabled={disabled} placeholder="Ad Soyad"
+        onChange={(e) => onAdDegis(e.target.value)}
+        className="min-w-[160px] flex-1 rounded-lg px-2 py-1.5 text-xs" style={girdiStili} />
+      <datalist id="nobet-ogretmen-onerileri">
+        {ogretmenler.map((o) => <option key={o.id} value={o.ad}>{o.brans}</option>)}
+      </datalist>
+      {children}
+      <button type="button" onClick={onKaydet} disabled={disabled}
+        className="sfec-btn rounded-lg px-3 py-1.5 text-xs font-bold" style={{ background: MINT, color: MINT_ON }}>
+        Kaydet
+      </button>
+      <button type="button" onClick={onSil} disabled={disabled}
+        className="sfec-btn flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold" style={{ background: BLUSH, color: TEXT }}>
+        <Trash2 size={12} /> Sil
+      </button>
+      <button type="button" onClick={onVazgec} disabled={disabled}
+        className="sfec-btn rounded-lg px-2 py-1.5 text-xs font-semibold" style={{ color: TEXT_MUTED }}>
+        Vazgeç
+      </button>
+    </div>
+  );
+}
+
 export function NobetProgramYukleme({ okulId, okulAdi }: { okulId: string; okulAdi: string }) {
   const [pending, startTransition] = useTransition();
   const [hata, setHata] = useState<string | null>(null);
@@ -97,6 +148,10 @@ export function NobetProgramYukleme({ okulId, okulAdi }: { okulId: string; okulA
 
   const [yeniOkulNobeti, setYeniOkulNobeti] = useState({ adSoyad: "", gun: "pazartesi" as DersProgramiGunu, yer: "" });
   const [yeniYurtNobeti, setYeniYurtNobeti] = useState({ adSoyad: "", tarih: "" });
+  // Nöbet devri (kullanıcı isteği 17.09.2026: "nöbetimi bir öğretmene
+  // devrettim, silme alanım yok") — bir nöbete tıklayınca kişi/gün/tarih
+  // değiştirme ve silme satırı açılıyor.
+  const [duzenlenen, setDuzenlenen] = useState<{ tur: "okul" | "yurt"; id: string; adSoyad: string; gun: DersProgramiGunu; yer: string; tarih: string } | null>(null);
 
   function nobetleriTazele() {
     startTransition(async () => {
@@ -153,15 +208,6 @@ export function NobetProgramYukleme({ okulId, okulAdi }: { okulId: string; okulA
     });
   }
 
-  function okulNobetiGunDegistir(id: string, adSoyad: string, yer: string, gun: DersProgramiGunu) {
-    setHata(null);
-    startTransition(async () => {
-      const r = await okulNobetiKaydet({ id, okulId, adSoyad, gun, yer });
-      if (r.error) return setHata(r.error);
-      nobetleriTazele();
-    });
-  }
-
   function yurtNobetiEkle() {
     setHata(null);
     startTransition(async () => {
@@ -172,11 +218,30 @@ export function NobetProgramYukleme({ okulId, okulAdi }: { okulId: string; okulA
     });
   }
 
-  function yurtNobetiTarihDegistir(id: string, adSoyad: string, tarih: string) {
+  function duzenlemeyiKaydet() {
+    if (!duzenlenen) return;
     setHata(null);
     startTransition(async () => {
-      const r = await yurtNobetiKaydet({ id, okulId, adSoyad, tarih });
+      const r = duzenlenen.tur === "okul"
+        ? await okulNobetiKaydet({ id: duzenlenen.id, okulId, adSoyad: duzenlenen.adSoyad, gun: duzenlenen.gun, yer: duzenlenen.yer })
+        : await yurtNobetiKaydet({ id: duzenlenen.id, okulId, adSoyad: duzenlenen.adSoyad, tarih: duzenlenen.tarih });
       if (r.error) return setHata(r.error);
+      setDuzenlenen(null);
+      nobetleriTazele();
+    });
+  }
+
+  function duzenleneniSil() {
+    if (!duzenlenen) return;
+    const etiket = duzenlenen.tur === "okul"
+      ? `${duzenlenen.adSoyad} · ${GUN_ETIKET[duzenlenen.gun]}`
+      : `${duzenlenen.adSoyad} · ${duzenlenen.tarih}`;
+    if (!window.confirm(`${etiket} nöbeti silinsin mi?`)) return;
+    setHata(null);
+    startTransition(async () => {
+      const r = duzenlenen.tur === "okul" ? await okulNobetiSil(duzenlenen.id, okulId) : await yurtNobetiSil(duzenlenen.id, okulId);
+      if (r.error) return setHata(r.error);
+      setDuzenlenen(null);
       nobetleriTazele();
     });
   }
@@ -201,16 +266,6 @@ export function NobetProgramYukleme({ okulId, okulAdi }: { okulId: string; okulA
       const r = await bekleyenProgramiHesabaUygula({ adAnahtari, teacherId, okulId });
       if (r.error) return setHata(r.error);
       setBilgi(`${adSoyad}: ${r.satir} ders saati ${secilen?.ad} hesabına yazıldı, aynı addaki nöbetler de bağlandı.`);
-      nobetleriTazele();
-    });
-  }
-
-  function sil(tur: "okul" | "yurt", id: string, etiket: string) {
-    if (!window.confirm(`${etiket} nöbeti silinsin mi?`)) return;
-    setHata(null);
-    startTransition(async () => {
-      const r = tur === "okul" ? await okulNobetiSil(id, okulId) : await yurtNobetiSil(id, okulId);
-      if (r.error) return setHata(r.error);
       nobetleriTazele();
     });
   }
@@ -319,19 +374,30 @@ export function NobetProgramYukleme({ okulId, okulAdi }: { okulId: string; okulA
               </div>
               <div className="flex flex-wrap items-center gap-1.5">
                 {grup.kayitlar.map((n) => (
-                  <span key={n.id} className="flex items-center gap-1 rounded-lg px-1.5 py-0.5" style={{ background: BG0 }}>
-                    <select value={n.gun} disabled={pending} onChange={(e) => okulNobetiGunDegistir(n.id, n.adSoyad, n.yer, e.target.value as DersProgramiGunu)}
-                      className="rounded px-1 py-0.5 text-[11px] font-bold" style={{ background: BG0, color: TEXT, border: "none" }}>
-                      {GUNLER.map((g) => <option key={g} value={g}>{GUN_ETIKET[g]}</option>)}
-                    </select>
-                    <span style={{ color: TEXT_MUTED }}>{n.yer}</span>
-                    <button type="button" onClick={() => sil("okul", n.id, `${n.adSoyad} ${GUN_ETIKET[n.gun]}`)} disabled={pending}
-                      className="sfec-btn rounded p-0.5" title="Sil">
-                      <Trash2 size={11} color={TEXT_MUTED} />
-                    </button>
-                  </span>
+                  <NobetRozeti key={n.id} etiket={`${GUN_ETIKET[n.gun]} · ${n.yer}`} secili={duzenlenen?.id === n.id} disabled={pending}
+                    onTikla={() => setDuzenlenen({ tur: "okul", id: n.id, adSoyad: n.adSoyad, gun: n.gun, yer: n.yer, tarih: "" })} />
                 ))}
               </div>
+              {duzenlenen?.tur === "okul" && grup.kayitlar.some((n) => n.id === duzenlenen.id) && (
+                <DuzenlemeSatiri
+                  ogretmenler={nobetler?.ogretmenler ?? []}
+                  adSoyad={duzenlenen.adSoyad}
+                  onAdDegis={(ad) => setDuzenlenen({ ...duzenlenen, adSoyad: ad })}
+                  disabled={pending}
+                  onKaydet={duzenlemeyiKaydet}
+                  onSil={duzenleneniSil}
+                  onVazgec={() => setDuzenlenen(null)}
+                >
+                  <select value={duzenlenen.gun} disabled={pending}
+                    onChange={(e) => setDuzenlenen({ ...duzenlenen, gun: e.target.value as DersProgramiGunu })}
+                    className="rounded-lg px-2 py-1.5 text-xs font-bold" style={girdiStili}>
+                    {GUNLER.map((g) => <option key={g} value={g}>{GUN_ETIKET[g]}</option>)}
+                  </select>
+                  <input value={duzenlenen.yer} disabled={pending} placeholder="Nöbet yeri"
+                    onChange={(e) => setDuzenlenen({ ...duzenlenen, yer: e.target.value })}
+                    className="min-w-[120px] flex-1 rounded-lg px-2 py-1.5 text-xs" style={girdiStili} />
+                </DuzenlemeSatiri>
+              )}
             </div>
           ))}
         </div>
@@ -364,23 +430,28 @@ export function NobetProgramYukleme({ okulId, okulAdi }: { okulId: string; okulA
                     onSec={(teacherId) => grubuBagla(grup.adSoyad, teacherId)} />
                 )}
               </div>
-              {/* Tarihler rozet olarak; rozete tıklayınca tarih değiştirilir, × ile silinir. */}
+              {/* Rozete tıklayınca altında devret / tarih değiştir / sil satırı açılır. */}
               <div className="flex flex-wrap items-center gap-1.5">
                 {grup.kayitlar.map((n) => (
-                  <span key={n.id} className="relative flex items-center gap-1 rounded-lg px-1.5 py-0.5 font-semibold" style={{ background: BG0, color: TEXT }}>
-                    <label className="cursor-pointer" title="Tarihi değiştir">
-                      {tarihEtiketi(n.tarih)}
-                      <input type="date" value={n.tarih} disabled={pending}
-                        onChange={(e) => e.target.value && yurtNobetiTarihDegistir(n.id, n.adSoyad, e.target.value)}
-                        className="absolute inset-0 h-full w-full cursor-pointer opacity-0" />
-                    </label>
-                    <button type="button" onClick={() => sil("yurt", n.id, `${n.adSoyad} ${n.tarih}`)} disabled={pending}
-                      className="sfec-btn relative z-10 rounded p-0.5" title="Sil">
-                      <Trash2 size={11} color={TEXT_MUTED} />
-                    </button>
-                  </span>
+                  <NobetRozeti key={n.id} etiket={tarihEtiketi(n.tarih)} secili={duzenlenen?.id === n.id} disabled={pending}
+                    onTikla={() => setDuzenlenen({ tur: "yurt", id: n.id, adSoyad: n.adSoyad, gun: "pazartesi", yer: "", tarih: n.tarih })} />
                 ))}
               </div>
+              {duzenlenen?.tur === "yurt" && grup.kayitlar.some((n) => n.id === duzenlenen.id) && (
+                <DuzenlemeSatiri
+                  ogretmenler={nobetler?.ogretmenler ?? []}
+                  adSoyad={duzenlenen.adSoyad}
+                  onAdDegis={(ad) => setDuzenlenen({ ...duzenlenen, adSoyad: ad })}
+                  disabled={pending}
+                  onKaydet={duzenlemeyiKaydet}
+                  onSil={duzenleneniSil}
+                  onVazgec={() => setDuzenlenen(null)}
+                >
+                  <input type="date" value={duzenlenen.tarih} disabled={pending}
+                    onChange={(e) => setDuzenlenen({ ...duzenlenen, tarih: e.target.value })}
+                    className="rounded-lg px-2 py-1.5 text-xs font-bold" style={girdiStili} />
+                </DuzenlemeSatiri>
+              )}
             </div>
           ))}
         </div>
