@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { CalendarDays, FileUp, Link2, Plus, ShieldAlert, Trash2 } from "lucide-react";
 import {
-  bekleyenProgramiHesabaUygula, dersProgramiPdfYukle, nobetiHesabaBagla, nobetleriGetir,
-  okulNobetiKaydet, okulNobetiSil, yurtNobetiKaydet, yurtNobetiPdfYukle, yurtNobetiSil,
+  bekleyenProgramiHesabaUygula, dersProgramiPdfYukle, nobetleriGetir,
+  nobetleriAdaGoreBagla, okulNobetiKaydet, okulNobetiSil, yurtNobetiKaydet, yurtNobetiPdfYukle, yurtNobetiSil,
 } from "@/app/dashboard/nobet-program-actions";
 import type { NobetGorunumu, ProgramYuklemeOzeti, YurtNobetiYuklemeOzeti } from "@/lib/nobet-yukleme";
 import { GUN_ETIKET, programGunleri } from "@/lib/ders-programi";
@@ -64,6 +64,24 @@ function HesapSecici({ ogretmenler, adSoyad, onSec, disabled }: {
       ))}
     </select>
   );
+}
+
+// Liste öğretmen bazlı gruplanıyor: aynı ad onlarca satırda tekrar etmesin
+// (kullanıcı isteği 17.09.2026 — 72 görevlik yurt listesinde okunmuyordu).
+function adaGoreGrupla<T extends { adSoyad: string; bagli: boolean }>(satirlar: T[]): { adSoyad: string; bagli: boolean; kayitlar: T[] }[] {
+  const gruplar = new Map<string, { adSoyad: string; bagli: boolean; kayitlar: T[] }>();
+  for (const satir of satirlar) {
+    const anahtar = satir.adSoyad.toLocaleLowerCase("tr");
+    const grup = gruplar.get(anahtar) ?? { adSoyad: satir.adSoyad, bagli: satir.bagli, kayitlar: [] };
+    grup.kayitlar.push(satir);
+    grup.bagli = grup.bagli && satir.bagli;
+    gruplar.set(anahtar, grup);
+  }
+  return [...gruplar.values()].sort((a, b) => a.adSoyad.localeCompare(b.adSoyad, "tr"));
+}
+
+function tarihEtiketi(tarih: string): string {
+  return new Date(tarih + "T00:00:00").toLocaleDateString("tr-TR", { day: "2-digit", month: "short" });
 }
 
 export function NobetProgramYukleme({ okulId, okulAdi }: { okulId: string; okulAdi: string }) {
@@ -163,13 +181,11 @@ export function NobetProgramYukleme({ okulId, okulAdi }: { okulId: string; okulA
     });
   }
 
-  // Aynı adda birden fazla hesap varsa (ör. hem admin hem öğretmen hesabı)
-  // sistem tahmin etmiyor; dogru hesap buradan seçilip bağlanıyor.
-  function bagla(tur: "okul" | "yurt", id: string, teacherId: string) {
+  function grubuBagla(adSoyad: string, teacherId: string) {
     if (!teacherId) return;
     setHata(null);
     startTransition(async () => {
-      const r = await nobetiHesabaBagla({ tur, id, teacherId, okulId });
+      const r = await nobetleriAdaGoreBagla({ adSoyad, teacherId, okulId });
       if (r.error) return setHata(r.error);
       nobetleriTazele();
     });
@@ -288,23 +304,34 @@ export function NobetProgramYukleme({ okulId, okulAdi }: { okulId: string; okulA
           </button>
         </div>
         {nobetler && nobetler.okulNobetleri.length === 0 && <p className="text-xs" style={{ color: TEXT_MUTED }}>Kayıtlı okul nöbeti yok.</p>}
-        <div className="max-h-72 space-y-1 overflow-y-auto">
-          {nobetler?.okulNobetleri.map((n) => (
-            <div key={n.id} className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs" style={{ background: BG1_ALT }}>
-              <span className="flex-1 font-semibold" style={{ color: TEXT }}>{n.adSoyad}{!n.bagli && <span style={{ color: TEXT_MUTED }}> (hesap yok)</span>}</span>
-              <select value={n.gun} disabled={pending} onChange={(e) => okulNobetiGunDegistir(n.id, n.adSoyad, n.yer, e.target.value as DersProgramiGunu)}
-                className="rounded-lg px-2 py-1 text-[11px] font-bold" style={girdiStili}>
-                {GUNLER.map((g) => <option key={g} value={g}>{GUN_ETIKET[g]}</option>)}
-              </select>
-              <span style={{ color: TEXT_MUTED }}>{n.yer}</span>
-              {!n.bagli && nobetler && (
-                <HesapSecici ogretmenler={nobetler.ogretmenler} adSoyad={n.adSoyad} disabled={pending}
-                  onSec={(teacherId) => bagla("okul", n.id, teacherId)} />
-              )}
-              <button type="button" onClick={() => sil("okul", n.id, `${n.adSoyad} ${GUN_ETIKET[n.gun]}`)} disabled={pending}
-                className="sfec-btn rounded-lg p-1" style={{ background: BG0, border: `1px solid ${BORDER_STRONG}` }} title="Sil">
-                <Trash2 size={12} color={TEXT_MUTED} />
-              </button>
+        <div className="max-h-80 space-y-1.5 overflow-y-auto">
+          {adaGoreGrupla(nobetler?.okulNobetleri ?? []).map((grup) => (
+            <div key={grup.adSoyad} className="rounded-xl px-3 py-2 text-xs" style={{ background: BG1_ALT }}>
+              <div className="mb-1 flex flex-wrap items-center gap-2">
+                <span className="flex-1 font-semibold" style={{ color: TEXT }}>
+                  {grup.adSoyad}
+                  {!grup.bagli && <span style={{ color: TEXT_MUTED }}> · hesapla eşleşmedi</span>}
+                </span>
+                {!grup.bagli && nobetler && (
+                  <HesapSecici ogretmenler={nobetler.ogretmenler} adSoyad={grup.adSoyad} disabled={pending}
+                    onSec={(teacherId) => grubuBagla(grup.adSoyad, teacherId)} />
+                )}
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {grup.kayitlar.map((n) => (
+                  <span key={n.id} className="flex items-center gap-1 rounded-lg px-1.5 py-0.5" style={{ background: BG0 }}>
+                    <select value={n.gun} disabled={pending} onChange={(e) => okulNobetiGunDegistir(n.id, n.adSoyad, n.yer, e.target.value as DersProgramiGunu)}
+                      className="rounded px-1 py-0.5 text-[11px] font-bold" style={{ background: BG0, color: TEXT, border: "none" }}>
+                      {GUNLER.map((g) => <option key={g} value={g}>{GUN_ETIKET[g]}</option>)}
+                    </select>
+                    <span style={{ color: TEXT_MUTED }}>{n.yer}</span>
+                    <button type="button" onClick={() => sil("okul", n.id, `${n.adSoyad} ${GUN_ETIKET[n.gun]}`)} disabled={pending}
+                      className="sfec-btn rounded p-0.5" title="Sil">
+                      <Trash2 size={11} color={TEXT_MUTED} />
+                    </button>
+                  </span>
+                ))}
+              </div>
             </div>
           ))}
         </div>
@@ -323,21 +350,37 @@ export function NobetProgramYukleme({ okulId, okulAdi }: { okulId: string; okulA
           </button>
         </div>
         {nobetler && nobetler.yurtNobetleri.length === 0 && <p className="text-xs" style={{ color: TEXT_MUTED }}>Kayıtlı yurt nöbeti yok.</p>}
-        <div className="max-h-72 space-y-1 overflow-y-auto">
-          {nobetler?.yurtNobetleri.map((n) => (
-            <div key={n.id} className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs" style={{ background: BG1_ALT }}>
-              <span className="flex-1 font-semibold" style={{ color: TEXT }}>{n.adSoyad}{!n.bagli && <span style={{ color: TEXT_MUTED }}> (hesap yok)</span>}</span>
-              <input type="date" value={n.tarih} disabled={pending}
-                onChange={(e) => e.target.value && yurtNobetiTarihDegistir(n.id, n.adSoyad, e.target.value)}
-                className="rounded-lg px-2 py-1 text-[11px] font-bold" style={girdiStili} />
-              {!n.bagli && nobetler && (
-                <HesapSecici ogretmenler={nobetler.ogretmenler} adSoyad={n.adSoyad} disabled={pending}
-                  onSec={(teacherId) => bagla("yurt", n.id, teacherId)} />
-              )}
-              <button type="button" onClick={() => sil("yurt", n.id, `${n.adSoyad} ${n.tarih}`)} disabled={pending}
-                className="sfec-btn rounded-lg p-1" style={{ background: BG0, border: `1px solid ${BORDER_STRONG}` }} title="Sil">
-                <Trash2 size={12} color={TEXT_MUTED} />
-              </button>
+        <div className="max-h-80 space-y-1.5 overflow-y-auto">
+          {adaGoreGrupla(nobetler?.yurtNobetleri ?? []).map((grup) => (
+            <div key={grup.adSoyad} className="rounded-xl px-3 py-2 text-xs" style={{ background: BG1_ALT }}>
+              <div className="mb-1 flex flex-wrap items-center gap-2">
+                <span className="flex-1 font-semibold" style={{ color: TEXT }}>
+                  {grup.adSoyad}
+                  <span style={{ color: TEXT_MUTED }}> · {grup.kayitlar.length} nöbet</span>
+                  {!grup.bagli && <span style={{ color: TEXT_MUTED }}> · hesapla eşleşmedi</span>}
+                </span>
+                {!grup.bagli && nobetler && (
+                  <HesapSecici ogretmenler={nobetler.ogretmenler} adSoyad={grup.adSoyad} disabled={pending}
+                    onSec={(teacherId) => grubuBagla(grup.adSoyad, teacherId)} />
+                )}
+              </div>
+              {/* Tarihler rozet olarak; rozete tıklayınca tarih değiştirilir, × ile silinir. */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                {grup.kayitlar.map((n) => (
+                  <span key={n.id} className="relative flex items-center gap-1 rounded-lg px-1.5 py-0.5 font-semibold" style={{ background: BG0, color: TEXT }}>
+                    <label className="cursor-pointer" title="Tarihi değiştir">
+                      {tarihEtiketi(n.tarih)}
+                      <input type="date" value={n.tarih} disabled={pending}
+                        onChange={(e) => e.target.value && yurtNobetiTarihDegistir(n.id, n.adSoyad, e.target.value)}
+                        className="absolute inset-0 h-full w-full cursor-pointer opacity-0" />
+                    </label>
+                    <button type="button" onClick={() => sil("yurt", n.id, `${n.adSoyad} ${n.tarih}`)} disabled={pending}
+                      className="sfec-btn relative z-10 rounded p-0.5" title="Sil">
+                      <Trash2 size={11} color={TEXT_MUTED} />
+                    </button>
+                  </span>
+                ))}
+              </div>
             </div>
           ))}
         </div>

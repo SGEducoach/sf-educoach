@@ -322,15 +322,21 @@ async function okulunOgretmeniMi(admin: AdminClient, schoolId: string, teacherId
   return !!data;
 }
 
-export async function nobetiHesabaBagla(input: { tur: "okul" | "yurt"; id: string; teacherId: string; okulId?: string }): Promise<{ error: string | null }> {
+// Bir ad altındaki TÜM nöbetleri (okul + yurt) tek seferde hesaba bağlar —
+// liste öğretmen bazlı gruplandığı için bağlama da grup üzerinden yapılıyor.
+export async function nobetleriAdaGoreBagla(input: { adSoyad: string; teacherId: string; okulId?: string }): Promise<{ error: string | null }> {
   const yetki = await yuklemeYetkisi(input.okulId ?? null);
   if (yetki.error !== null) return { error: yetki.error };
   const { admin, schoolId } = yetki;
   if (!await okulunOgretmeniMi(admin, schoolId, input.teacherId)) return { error: "Seçilen hesap bu okulun öğretmeni değil." };
+  const anahtar = adAnahtari(input.adSoyad);
+  if (!anahtar) return { error: "Ad okunamadı." };
 
-  const tablo = input.tur === "okul" ? "ogretmen_okul_nobetleri" : "yurt_nobet_gorevleri";
-  const { error } = await admin.from(tablo).update({ teacher_id: input.teacherId }).eq("id", input.id).eq("school_id", schoolId);
-  if (error) return { error: error.message };
+  for (const tablo of ["ogretmen_okul_nobetleri", "yurt_nobet_gorevleri"] as const) {
+    const { error } = await admin.from(tablo).update({ teacher_id: input.teacherId })
+      .eq("school_id", schoolId).eq("ad_anahtari", anahtar).is("teacher_id", null);
+    if (error) return { error: error.message };
+  }
   revalidatePath("/dashboard");
   revalidatePath("/yonetici");
   return { error: null };
