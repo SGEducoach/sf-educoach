@@ -15,6 +15,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Her sitemap isteğinde "şimdi" yazmak Google'a yanıltıcı değişiklik
     // sinyali veriyordu. Blog yazılarında gerçek updated_at korunuyor.
     { url: TABAN, changeFrequency: "weekly", priority: 1 },
+    { url: `${TABAN}/ogrenci-takip-ve-kocluk`, changeFrequency: "monthly", priority: 0.9 },
     { url: `${TABAN}/blog`, changeFrequency: "daily", priority: 0.9 },
     { url: `${TABAN}/iletisim`, changeFrequency: "yearly", priority: 0.5 },
   ];

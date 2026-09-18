@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Home, Mail, Menu, Rss, X } from "lucide-react";
+import { Home, LineChart, Mail, Menu, Rss, X } from "lucide-react";
 
 // Kullanıcı isteği (04.09.2026): navigasyon ORTADA değil, eskisi gibi sağda
 // (GİRİŞ YAP'ın solunda) duruyor; masaüstünde Ana Sayfa/Blog/İletişim yan
@@ -14,7 +14,7 @@ import { Home, Mail, Menu, Rss, X } from "lucide-react";
 // duruyor, böylece uzun blog yazısının sonundan tek tıkla başka bir
 // sayfaya geçilebiliyor.
 // Bu başlık YALNIZCA herkese açık sayfalarda (/, /blog, /blog/[slug],
-// /iletisim) kullanılıyor; giriş sonrası panel kendi Header'ıyla çalışıyor
+// /iletisim, /ogrenci-takip-ve-kocluk) kullanılıyor; giriş sonrası panel kendi Header'ıyla çalışıyor
 // (src/components/dashboard/Header.tsx) ve buradan hiç etkilenmiyor.
 const LACIVERT = "#0F2540";
 const TURKUAZ = "#14B8B0";
@@ -24,6 +24,7 @@ const CIZGI = "#E9EFF3";
 
 const BAGLANTILAR: { href: string; etiket: string; Icon: typeof Rss }[] = [
   { href: "/", etiket: "Ana Sayfa", Icon: Home },
+  { href: "/ogrenci-takip-ve-kocluk", etiket: "Öğrenci Takibi", Icon: LineChart },
   { href: "/blog", etiket: "Blog", Icon: Rss },
   { href: "/iletisim", etiket: "İletişim", Icon: Mail },
 ];
@@ -94,6 +95,7 @@ export function SiteAltligi() {
     <footer className="mt-auto flex flex-col items-center gap-2 px-5 py-6 text-center text-xs" style={{ color: GRI }}>
       <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
         <Link href="/" className="font-semibold">Ana Sayfa</Link>
+        <Link href="/ogrenci-takip-ve-kocluk" className="font-semibold">Öğrenci Takibi ve Koçluk</Link>
         <Link href="/blog" className="inline-flex items-center gap-1 font-semibold"><Rss size={12} /> Blog</Link>
         <Link href="/iletisim" className="inline-flex items-center gap-1 font-semibold"><Mail size={12} /> İletişim</Link>
         <Link href="/login" className="font-semibold">Giriş Yap</Link>
