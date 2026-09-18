@@ -95,8 +95,16 @@ body {
 
 /* Tema zeminleri birbirine yakın koyu tonlardan oluştuğu için kart ve form
    sınırlarını renk değiştirmeden ayırt eden en ince çizgi kullanılır. JSX'te
-   geçmişten kalan 2px tanımlar da panel içinde tek noktadan inceltilir. */
-.sfec-dashboard-shell [style*="border"] {
+   geçmişten kalan 2px tanımlar da panel içinde tek noktadan inceltilir.
+   YALNIZCA dört kenarı birden tanımlı ("border:") öğeler: seçici eskiden
+   [style*="border"] idi ve yalnızca alt/üst çizgisi olan öğelere (yan menü
+   başlığı, telif satırı, üst navigasyon) de dört kenardan 1px veriyordu;
+   Tailwind'in varsayılan kenarlık rengi yazı rengi olduğu için tanımsız
+   kenarlar açık renkli çerçeve olarak görünüyordu (kullanıcı bildirimi
+   18.09.2026). "border:" hem sunucu çıktısını ("border:2px") hem tarayıcının
+   yeniden yazdığı biçimi ("border: 2px") yakalar; "border-bottom:" gibi tek
+   kenarlı tanımları yakalamaz. */
+.sfec-dashboard-shell [style*="border:"] {
   border-width: 1px !important;
 }
 
