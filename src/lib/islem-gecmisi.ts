@@ -9,6 +9,7 @@ export const EYLEM_ETIKET: Record<string, string> = {
   admin_duyuru_gonder: "Duyuru gönderildi",
   admin_duyuru_kaldir: "Yönetici duyurusu kaldırıldı",
   ogretmen_duyuru_gonder: "Duyuru gönderildi (öğretmen)",
+  yurt_nobeti_devret: "Yurt nöbeti devredildi",
   mudur_duyuru_gonder: "Duyuru gönderildi (müdür)",
   rehber_mesaj_gonder: "Rehberlik mesajı gönderildi",
   ogrenci_ekle_manuel: "Öğrenci eklendi",

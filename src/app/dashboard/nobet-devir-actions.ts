@@ -96,6 +96,15 @@ export async function nobetDevret(input: {
   }
   if (!guncellenen) return { error: "Yurt nöbeti başka bir işlemde değişti. Sayfayı yenileyip tekrar deneyin." };
 
+  // Devir İşlem Geçmişi'ne yazılır: kimin kime hangi tarihi devrettiği
+  // yöneticiye sonradan görünsün (kullanıcıya verilen söz, 17.09.2026).
+  const { error: kayitHatasi } = await admin.from("admin_audit_log").insert({
+    actor_id: userId,
+    eylem: "yurt_nobeti_devret",
+    detay: { school_id: schoolId, nobet_id: input.nobetId, tarih: nobet.tarih, devreden: devredenAd, devralan: hedefAd, devralan_id: input.hedefOgretmenId },
+  });
+  if (kayitHatasi) console.error("Yurt nöbeti devri işlem kaydı yazılamadı:", kayitHatasi.message);
+
   const tarih = new Date(`${nobet.tarih}T12:00:00`).toLocaleDateString("tr-TR", {
     day: "numeric", month: "long", year: "numeric", weekday: "long",
   });
