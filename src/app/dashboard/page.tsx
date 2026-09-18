@@ -36,7 +36,7 @@ import type { DashboardBolumu } from "@/lib/dashboard-navigation";
 import { RozetGoruntulemePaneli } from "@/components/dashboard/RozetGoruntulemePaneli";
 import { kurumRozetGorunumuGetir, veliRozetGorunumuGetir } from "@/lib/rozet-gorunumu";
 import { dershaneDenemeBitisGetir, suresiDolduMu, kurumTuruGetir } from "@/lib/deneme-suresi";
-import { ogretmenProgramiGetir, okulNobetiGetir, yurtNobetGorevleriGetir, yurtNobetiGetir } from "@/lib/ders-programi";
+import { ogretmenProgramiGetir, okulNobetiGetir, yurtNobetGorevleriGetir } from "@/lib/ders-programi";
 import type { OkulNobeti } from "@/lib/ders-programi";
 import type { DersProgramiSatiri } from "@/lib/ders-programi";
 import { dershaneAnaSayfaVerisiGetir } from "@/lib/dershane-ana-sayfa";
@@ -779,17 +779,18 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   const dershaneMi = kurumTuru === "dershane";
   const dersVerisiGerekli = (aktifBolum === "takvim" || aktifBolum === "dersler") && role === "ogretmen";
   const nobetVerisiGerekli = aktifBolum === "takvim" || dersVerisiGerekli;
-  // Okulun yüklediği nöbetler (17.09.2026): okul nöbeti programın başlığında,
-  // yurt nöbeti görevleri (bugünden sonrası) programın altında gösterilir.
-  const bugun = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Istanbul" });
-  const [dersProgramiSatirlari, yurtNobetiSatirlari, okulNobetleri, yurtNobetGorevleri] = dersVerisiGerekli || nobetVerisiGerekli
+  // Okulun yüklediği nöbetler (17.09.2026): okul nöbeti programın başlığında
+  // ve takvimde haftalık; yurt nöbetleri Derslerim'de (bugünden sonrası) ve
+  // takvimde (son 2 ay dahil, geçmiş soluk görünür). Eski elle doldurulan
+  // 2×6'lık yurt nöbeti defteri 18.09.2026'da kaldırıldı.
+  const nobetBaslangic = tarihEkle(bugununTarihiTR(), -62);
+  const [dersProgramiSatirlari, okulNobetleri, yurtNobetGorevleri] = dersVerisiGerekli || nobetVerisiGerekli
     ? await Promise.all([
         dersVerisiGerekli ? ogretmenProgramiGetir(supabase, userId) : Promise.resolve([]),
-        dershaneMi ? Promise.resolve([]) : yurtNobetiGetir(supabase, userId),
-        dersVerisiGerekli ? okulNobetiGetir(supabase, userId) : Promise.resolve([]),
-        dershaneMi ? Promise.resolve([]) : yurtNobetGorevleriGetir(supabase, userId, bugun),
+        okulNobetiGetir(supabase, userId),
+        dershaneMi ? Promise.resolve([]) : yurtNobetGorevleriGetir(supabase, userId, nobetBaslangic),
       ])
-    : [[], [], [], []];
+    : [[], [], []];
 
   // Öğretmen kendi yurt nöbetini yalnızca aynı okuldaki başka bir aktif
   // öğretmene devredebilir. Liste yalnız Ajandam/Derslerim açıldığında
@@ -882,7 +883,6 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       konuOnerileri={MUFREDAT_KONULARI}
       aktifBolum={aktifBolum}
       dersProgramiSatirlari={dersProgramiSatirlari}
-      yurtNobetiSatirlari={yurtNobetiSatirlari}
       okulNobetleri={okulNobetleri}
       yurtNobetGorevleri={yurtNobetGorevleri}
       nobetDevirOgretmenleri={nobetDevirOgretmenleri}

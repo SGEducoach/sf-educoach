@@ -2,10 +2,11 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRightLeft } from "lucide-react";
-import { nobetDevret } from "@/app/dashboard/nobet-devir-actions";
+import { ArrowRightLeft, Plus, X } from "lucide-react";
+import { eklenenYurtNobetimiSil, nobetDevret, yurtNobetimiEkle } from "@/app/dashboard/nobet-devir-actions";
+import { bugununTarihiTR } from "@/lib/tarih";
 import type { YurtNobetGorevi } from "@/lib/ders-programi";
-import { BG0, BG1_ALT, BLUSH, BORDER, MINT, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
+import { BG0, BG1_ALT, BLUSH, BORDER, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
 
 type Secenek = { id: string; etiket: string };
 
@@ -91,4 +92,85 @@ export function YurtNobetDevirPaneli({
       {mesaj && <p className="mt-2 text-xs font-semibold" style={{ color: MINT }}>{mesaj}</p>}
     </div>
   );
+}
+
+// Öğretmenin "Yurt nöbetlerim" kutusu (18.09.2026): eski elle doldurulan
+// 2×6'lık defterin yerini aldı. Nöbetler okulun yüklediği listeden gelir;
+// takas dışı ek bir nöbet çıkarsa öğretmen "Nöbet ekle" ile kendine yazar ve
+// yalnızca kendi eklediğini silebilir. Devir için alttaki panel.
+export function YurtNobetlerimKutusu({
+  yurtNobetleri,
+  ogretmenler,
+}: {
+  yurtNobetleri: YurtNobetGorevi[];
+  ogretmenler: { id: string; ad: string; brans: string }[];
+}) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [tarih, setTarih] = useState("");
+  const [hata, setHata] = useState<string | null>(null);
+  const bugun = bugununTarihiTR();
+
+  function ekle() {
+    if (!tarih) return setHata("Nöbet tarihini seçin.");
+    setHata(null);
+    startTransition(async () => {
+      const r = await yurtNobetimiEkle(tarih);
+      if (r.error) return setHata(r.error);
+      setTarih("");
+      router.refresh();
+    });
+  }
+
+  function sil(n: YurtNobetGorevi) {
+    if (!window.confirm(`${tarihYaz(n.tarih)} tarihli, kendi eklediğiniz nöbet silinsin mi?`)) return;
+    setHata(null);
+    startTransition(async () => {
+      const r = await eklenenYurtNobetimiSil(n.id);
+      if (r.error) return setHata(r.error);
+      router.refresh();
+    });
+  }
+
+  return (
+    <div className="mt-4 rounded-2xl p-3" style={{ background: BG1_ALT, border: `2px solid ${BORDER}` }}>
+      <div className="mb-2 text-[11px] font-bold uppercase tracking-wide" style={{ color: TEXT_MUTED }}>Yurt nöbetlerim</div>
+      {yurtNobetleri.length === 0 ? (
+        <p className="text-xs" style={{ color: TEXT_MUTED }}>Önümüzdeki günlerde yurt nöbetiniz yok.</p>
+      ) : (
+        <div className="flex flex-wrap gap-1.5">
+          {yurtNobetleri.map((n) => (
+            <span key={n.id} className="inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-[11px] font-semibold" style={{ background: MINT_BG, color: TEXT }}>
+              {tarihYaz(n.tarih)}
+              {n.kendiEkledi && (
+                <button type="button" onClick={() => sil(n)} disabled={pending} title="Kendi eklediğiniz nöbeti silin"
+                  className="sfec-btn -mr-1 rounded p-0.5 disabled:opacity-50">
+                  <X size={11} color={TEXT_MUTED} />
+                </button>
+              )}
+            </span>
+          ))}
+        </div>
+      )}
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <input type="date" value={tarih} min={bugun} onChange={(e) => setTarih(e.target.value)} disabled={pending}
+          className="rounded-xl px-3 py-2 text-xs outline-none disabled:opacity-60"
+          style={{ background: BG0, color: TEXT, border: `1px solid ${BORDER}` }} />
+        <button type="button" onClick={ekle} disabled={pending || !tarih}
+          className="sfec-btn inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold disabled:opacity-50"
+          style={{ background: MINT, color: MINT_ON }}>
+          <Plus size={13} /> Nöbet ekle
+        </button>
+        <span className="text-[11px]" style={{ color: TEXT_MUTED }}>Listede olmayan, takas dışı ek nöbetler için.</span>
+      </div>
+      {hata && <p className="mt-2 text-xs font-semibold" style={{ color: BLUSH }}>{hata}</p>}
+
+      <YurtNobetDevirPaneli yurtNobetleri={yurtNobetleri} ogretmenler={ogretmenler} />
+    </div>
+  );
+}
+
+function tarihYaz(tarih: string): string {
+  return new Date(`${tarih}T12:00:00`).toLocaleDateString("tr-TR", { day: "2-digit", month: "long", weekday: "short" });
 }

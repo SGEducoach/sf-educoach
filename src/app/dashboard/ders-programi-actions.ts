@@ -11,7 +11,6 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireDershaneMudur } from "@/lib/dershane-auth";
 import type { DersProgramiGunu } from "@/lib/ders-programi";
-import { YURT_NOBETI_SIRA_SAYISI, YURT_NOBETI_SUTUN_SAYISI } from "@/lib/ders-programi";
 import { ogretmeneBildirimGonder } from "@/lib/ogretmen-bildirim";
 import { PROGRAM_BILDIRIMI } from "@/lib/ogretmen-bildirim-sablon";
 
@@ -138,20 +137,4 @@ export async function dersProgramiDegisikliginiBildir(teacherId: string) {
   const sonuc = await ogretmeneBildirimGonder(admin, teacherId, "ders_programi", metin.baslik, metin.mesaj);
   if (sonuc.error) return { error: sonuc.error, mesaj: null };
   return { error: null, mesaj: `Öğretmene "${metin.baslik}" bildirimi ve e-postası gönderildi.` };
-}
-
-// Yurt Nöbeti — öğretmenin kendi öz-yönetimi, sadece 2×6 tarih hücresi
-// (bkz. migration 0066 yorumu). RLS zaten teacher_id = auth.uid() ile
-// sınırlıyor, burada sadece sutun/sira aralığı doğrulanıyor.
-export async function yurtNobetiKaydet(sutun: number, sira: number, tarih: string | null) {
-  const { supabase, user } = await requireUser();
-  if (sutun < 1 || sutun > YURT_NOBETI_SUTUN_SAYISI || sira < 1 || sira > YURT_NOBETI_SIRA_SAYISI) {
-    return { error: "Geçersiz hücre." };
-  }
-  const { error } = await supabase
-    .from("ogretmen_yurt_nobeti")
-    .upsert({ teacher_id: user.id, sutun, sira, tarih: tarih || null }, { onConflict: "teacher_id,sutun,sira" });
-  if (error) return { error: error.message };
-  revalidatePath("/dashboard");
-  return { error: null };
 }

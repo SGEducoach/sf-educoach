@@ -10,11 +10,10 @@ import { AnalizPaneli } from "@/components/dashboard/AnalizPaneli";
 import { Header } from "@/components/dashboard/Header";
 import { DashboardYanMenu } from "@/components/dashboard/DashboardYanMenu";
 import { DersProgramiYonetimi } from "@/components/dashboard/DersProgramiYonetimi";
-import { YurtNobetiTablosu } from "@/components/dashboard/YurtNobetiTablosu";
 import { GeriDonButonu } from "@/components/yonetici/GeriDonButonu";
 import { ProfiliYonetToggle } from "@/components/yonetici/ProfiliYonetToggle";
 import type { KullaniciSonuc } from "@/app/yonetici/actions";
-import { ogretmenProgramiGetir, yurtNobetiGetir } from "@/lib/ders-programi";
+import { ogretmenProgramiGetir } from "@/lib/ders-programi";
 import { BG1, BG1_ALT, BORDER, MINT, TEXT, TEXT_MUTED } from "@/lib/theme";
 import type { UserRole, KurumTuru } from "@/lib/types";
 
@@ -148,11 +147,10 @@ async function OgretmenSayfasi({ admin, userId }: { admin: AdminClient; userId: 
   const dershaneMi = okul?.tur === "dershane";
   let ogrenciQuery = admin.from("students").select("id, okul_no, profiles!students_id_fkey(ad), classes(seviye, sube)").order("okul_no").limit(100);
   ogrenciQuery = data.class_id ? ogrenciQuery.eq("class_id", data.class_id) : ogrenciQuery.eq("school_id", data.school_id);
-  const [{ data: ogrenciler }, { data: okulSiniflari }, dersProgrami, yurtNobeti] = await Promise.all([
+  const [{ data: ogrenciler }, { data: okulSiniflari }, dersProgrami] = await Promise.all([
     ogrenciQuery,
     admin.from("classes").select("id, seviye, sube").eq("school_id", data.school_id),
     ogretmenProgramiGetir(admin as Parameters<typeof ogretmenProgramiGetir>[0], userId),
-    dershaneMi ? Promise.resolve([]) : yurtNobetiGetir(admin as Parameters<typeof yurtNobetiGetir>[0], userId),
   ]);
   type OgrenciRow = { id: string; okul_no: string; profiles: { ad: string } | null; classes: { seviye: string; sube: string } | null };
   const liste = (ogrenciler as unknown as OgrenciRow[]) ?? [];
@@ -162,9 +160,6 @@ async function OgretmenSayfasi({ admin, userId }: { admin: AdminClient; userId: 
       <h2 className="mb-3 text-base font-bold" style={{ color: TEXT }}>Ders programı</h2>
       <DersProgramiYonetimi teacherId={userId} dershaneMi={dershaneMi} siniflar={(okulSiniflari ?? []) as { id: string; seviye: string; sube: string }[]} satirlar={dersProgrami} />
     </section>
-    {!dershaneMi && (
-      <YurtNobetiTablosu satirlar={yurtNobeti} duzenlenebilir={false} />
-    )}
     <section className="rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}><h2 className="mb-3 text-base font-bold" style={{ color: TEXT }}>{data.class_id ? "Sınıfındaki öğrenciler" : "Okuldaki öğrenciler"}</h2><div className="sfec-ogrenci-listesi">{liste.length === 0 && <p className="text-sm" style={{ color: TEXT_MUTED }}>Öğrenci bulunamadı.</p>}{liste.map((o) => <Link key={o.id} href={`/yonetici/kullanici/${o.id}`} className="sfec-ogrenci-satiri flex items-center justify-between gap-3 px-2 py-3 text-sm" style={{ color: TEXT }}><strong className="min-w-0 truncate">{o.profiles?.ad ?? "İsimsiz"}</strong><span className="max-w-[55%] shrink-0 truncate text-xs" style={{ color: TEXT_MUTED }}>{o.classes ? `${o.classes.seviye}-${o.classes.sube}` : "—"} · #{o.okul_no}</span></Link>)}</div></section>
   </>;
 }

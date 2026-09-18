@@ -60,26 +60,6 @@ export interface DersProgramiSatiri {
   kaynak?: "elle" | "pdf";
 }
 
-// Yurt Nöbeti — sadece okul, basit 2 sütun × 6 bölümlük tarih defteri
-// (bkz. migration 0066 yorumu).
-export const YURT_NOBETI_SUTUN_SAYISI = 2;
-export const YURT_NOBETI_SIRA_SAYISI = 6;
-
-export interface YurtNobetiSatiri {
-  id: string;
-  sutun: number;
-  sira: number;
-  tarih: string | null;
-}
-
-export async function yurtNobetiGetir(supabase: SupabaseC, teacherId: string): Promise<YurtNobetiSatiri[]> {
-  const { data } = await supabase
-    .from("ogretmen_yurt_nobeti")
-    .select("id, sutun, sira, tarih")
-    .eq("teacher_id", teacherId);
-  return (data as YurtNobetiSatiri[]) ?? [];
-}
-
 export async function ogretmenProgramiGetir(supabase: SupabaseC, teacherId: string): Promise<DersProgramiSatiri[]> {
   const { data } = await supabase
     .from("ogretmen_ders_programi")
@@ -109,14 +89,23 @@ export async function okulNobetiGetir(supabase: SupabaseC, teacherId: string): P
   return ((data as OkulNobeti[]) ?? []);
 }
 
-export interface YurtNobetGorevi { id: string; tarih: string }
+// kendiEkledi: öğretmenin "Nöbet ekle" ile kendine eklediği nöbet — yalnızca
+// bunları kendisi silebilir (18.09.2026, migration 0113). Eski 2×6'lık elle
+// doldurulan yurt nöbeti defteri (ogretmen_yurt_nobeti) bununla kaldırıldı.
+export interface YurtNobetGorevi { id: string; tarih: string; kendiEkledi: boolean }
 
 export async function yurtNobetGorevleriGetir(supabase: SupabaseC, teacherId: string, baslangic: string): Promise<YurtNobetGorevi[]> {
   const { data } = await supabase
     .from("yurt_nobet_gorevleri")
-    .select("id, tarih")
+    .select("id, tarih, ekleyen_id")
     .eq("teacher_id", teacherId)
     .gte("tarih", baslangic)
     .order("tarih");
-  return (data as YurtNobetGorevi[]) ?? [];
+  return ((data as { id: string; tarih: string; ekleyen_id: string | null }[]) ?? [])
+    .map((n) => ({ id: n.id, tarih: n.tarih, kendiEkledi: n.ekleyen_id === teacherId }));
 }
+
+// Okul nöbeti haftalık tekrar eder; takvimde her hafta ilgili güne düşer.
+export const GUN_HAFTA_SIRASI: Record<DersProgramiGunu, number> = {
+  pazar: 0, pazartesi: 1, sali: 2, carsamba: 3, persembe: 4, cuma: 5, cumartesi: 6,
+};

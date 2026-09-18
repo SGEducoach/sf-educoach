@@ -17,10 +17,9 @@ import {
 import { bugununTarihiTR } from "@/lib/tarih";
 import type { DashboardBolumu } from "@/lib/dashboard-navigation";
 import { DersProgramiGrid } from "@/components/dashboard/DersProgramiGrid";
-import { YurtNobetiTablosu } from "@/components/dashboard/YurtNobetiTablosu";
-import { YurtNobetDevirPaneli } from "@/components/dashboard/NobetDevirPaneli";
+import { YurtNobetlerimKutusu } from "@/components/dashboard/NobetDevirPaneli";
 import { programGunleri } from "@/lib/ders-programi";
-import type { DersProgramiSatiri, OkulNobeti, YurtNobetGorevi, YurtNobetiSatiri } from "@/lib/ders-programi";
+import type { DersProgramiSatiri, OkulNobeti, YurtNobetGorevi } from "@/lib/ders-programi";
 import { Takvim } from "@/components/dashboard/Takvim";
 import { SosyalEtkinlikler } from "@/components/dashboard/SosyalEtkinlikler";
 import { YaziliAnaliziSekmesi } from "@/components/dashboard/YaziliAnaliziSekmesi";
@@ -82,7 +81,7 @@ function ogrencilerOkulNoSirali(ogrenciler: OgrenciSatiri[]): OgrenciSatiri[] {
 export function OgretmenPanel({
   role, bekleyenTalepler, ogrenciler, sinifAdi, siniflar, gorunecekSinifId, kendiSinifId, kendiSinifiMi,
   ogretmenDersleri, bekleyenOnaylar, verdigimGorevler, konuOnerileri, aktifBolum,
-  dersProgramiSatirlari, yurtNobetiSatirlari, okulNobetleri, yurtNobetGorevleri, dershaneMi,
+  dersProgramiSatirlari, okulNobetleri, yurtNobetGorevleri, dershaneMi,
   nobetDevirOgretmenleri,
   okulOgretmenleri, secilenOgretmenId, secilenOgretmenProgrami, secilenOgretmenNobetleri, rehberOgretmenMi = false,
   secilenOgrenciId, secilenOgrenciProgrami,
@@ -106,7 +105,6 @@ export function OgretmenPanel({
   // Ders Programı + Yurt Nöbeti (2026-08-25) — sadece "dersler" bölümünde
   // kullanılıyor, diğer bölümlerde boş dizi/false gelir.
   dersProgramiSatirlari?: DersProgramiSatiri[];
-  yurtNobetiSatirlari?: YurtNobetiSatiri[];
   // PDF ile yüklenen nöbetler (17.09.2026): okul nöbeti programın
   // başlığında, yurt nöbeti görevleri programın altında listelenir.
   okulNobetleri?: OkulNobeti[];
@@ -289,7 +287,7 @@ export function OgretmenPanel({
         <GorevVerBolumu ogrenciler={ogrenciler} konuOnerileri={konuOnerileri} />
       )}
 
-      {(aktifBolum === "takvim" || aktifBolum === "dersler") && <AjandamBolumu role={role} dersler={ogretmenDersleri} siniflar={siniflar} dersProgramiSatirlari={dersProgramiSatirlari ?? []} yurtNobetiSatirlari={yurtNobetiSatirlari ?? []} okulNobetleri={okulNobetleri ?? []} yurtNobetGorevleri={yurtNobetGorevleri ?? []} nobetDevirOgretmenleri={nobetDevirOgretmenleri ?? []} dershaneMi={!!dershaneMi} />}
+      {(aktifBolum === "takvim" || aktifBolum === "dersler") && <AjandamBolumu role={role} dersler={ogretmenDersleri} siniflar={siniflar} dersProgramiSatirlari={dersProgramiSatirlari ?? []} okulNobetleri={okulNobetleri ?? []} yurtNobetGorevleri={yurtNobetGorevleri ?? []} nobetDevirOgretmenleri={nobetDevirOgretmenleri ?? []} dershaneMi={!!dershaneMi} />}
 
       {aktifBolum === "ogretmenler" && (role === "mudur" || rehberOgretmenMi) && (
         <OgretmenProgramlariBolumu
@@ -681,9 +679,9 @@ function OgretmenProgramlariBolumu({ ogretmenler, secilenOgretmenId, program, no
   );
 }
 
-function AjandamBolumu({ role, dersler, siniflar, dersProgramiSatirlari, yurtNobetiSatirlari, okulNobetleri, yurtNobetGorevleri, nobetDevirOgretmenleri, dershaneMi }: {
+function AjandamBolumu({ role, dersler, siniflar, dersProgramiSatirlari, okulNobetleri, yurtNobetGorevleri, nobetDevirOgretmenleri, dershaneMi }: {
   role: "ogretmen" | "mudur"; dersler: OgretmenDersiSatiri[]; siniflar: SinifSatiri[];
-  dersProgramiSatirlari: DersProgramiSatiri[]; yurtNobetiSatirlari: YurtNobetiSatiri[];
+  dersProgramiSatirlari: DersProgramiSatiri[];
   okulNobetleri: OkulNobeti[]; yurtNobetGorevleri: YurtNobetGorevi[];
   nobetDevirOgretmenleri: { id: string; ad: string; brans: string }[]; dershaneMi: boolean;
 }) {
@@ -710,8 +708,8 @@ function AjandamBolumu({ role, dersler, siniflar, dersProgramiSatirlari, yurtNob
   const yaziliDersleri = Array.from(new Set(dersler.map((ders) => ders.ders))).sort((a, b) => a.localeCompare(b, "tr"));
   return <section id="takvim" className="sfec-section sfec-fade rounded-3xl p-4 sm:p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
     <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-2"><div className="grid h-8 w-8 place-items-center rounded-full" style={{ background: MINT_BG }}><CalendarPlus size={15} color={MINT}/></div><h1 className="text-xl font-extrabold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Ajandam</h1></div><div className="flex max-w-full gap-1 overflow-x-auto rounded-2xl p-1" style={{ background: BG0, border: `1px solid ${BORDER}` }}>{sekmeler.map(s => <button key={s.id} type="button" onClick={() => sekmeSec(s.id)} className="shrink-0 rounded-xl px-3 py-2 text-xs font-bold" style={{ background: sekme === s.id ? MINT : "transparent", color: sekme === s.id ? MINT_ON : TEXT_MUTED }}>{s.ad}</button>)}</div></div>
-    {sekme === "takvim" && <Takvim yurtNobetiSatirlari={yurtNobetiSatirlari}/>}
-    {sekme === "ders" && role === "ogretmen" && <DerslerimBolumu dersler={dersler} siniflar={siniflar} dersProgramiSatirlari={dersProgramiSatirlari} yurtNobetiSatirlari={yurtNobetiSatirlari} okulNobetleri={okulNobetleri} yurtNobetGorevleri={yurtNobetGorevleri} nobetDevirOgretmenleri={nobetDevirOgretmenleri} dershaneMi={dershaneMi}/>}
+    {sekme === "takvim" && <Takvim yurtNobetleri={yurtNobetGorevleri} okulNobetleri={okulNobetleri}/>}
+    {sekme === "ders" && role === "ogretmen" && <DerslerimBolumu dersler={dersler} siniflar={siniflar} dersProgramiSatirlari={dersProgramiSatirlari} okulNobetleri={okulNobetleri} yurtNobetGorevleri={yurtNobetGorevleri} nobetDevirOgretmenleri={nobetDevirOgretmenleri} dershaneMi={dershaneMi}/>}
     {sekme === "sosyal" && <SosyalEtkinlikler/>}
     {sekme === "yazili" && role === "ogretmen" && <YaziliAnaliziSekmesi sinifOptions={yaziliSiniflari} dersOptions={yaziliDersleri}/>}
   </section>;
@@ -791,11 +789,10 @@ function OgrenciAylikProgrami({ ogrenciAdi, program }: { ogrenciAdi?: string | n
   </section>;
 }
 
-function DerslerimBolumu({ dersler, siniflar, dersProgramiSatirlari, yurtNobetiSatirlari, okulNobetleri, yurtNobetGorevleri, nobetDevirOgretmenleri, dershaneMi }: {
+function DerslerimBolumu({ dersler, siniflar, dersProgramiSatirlari, okulNobetleri, yurtNobetGorevleri, nobetDevirOgretmenleri, dershaneMi }: {
   dersler: OgretmenDersiSatiri[];
   siniflar: SinifSatiri[];
   dersProgramiSatirlari: DersProgramiSatiri[];
-  yurtNobetiSatirlari: YurtNobetiSatiri[];
   okulNobetleri: OkulNobeti[];
   yurtNobetGorevleri: YurtNobetGorevi[];
   nobetDevirOgretmenleri: { id: string; ad: string; brans: string }[];
@@ -841,26 +838,14 @@ function DerslerimBolumu({ dersler, siniflar, dersProgramiSatirlari, yurtNobetiS
           programını görür. */}
       <DersProgramiGrid gunler={programGunleri(dershaneMi)} satirlar={dersProgramiSatirlari} nobetler={okulNobetleri} />
 
-      {/* Yurt nöbeti görevleri okulun yüklediği belletmen listesinden gelir
-          (17.09.2026); altındaki tablo öğretmenin kendi tuttuğu defter. */}
-      {yurtNobetGorevleri.length > 0 && (
-        <div className="mt-4 rounded-2xl p-3" style={{ background: BG1_ALT, border: `2px solid ${BORDER}` }}>
-          <div className="mb-2 text-[11px] font-bold uppercase tracking-wide" style={{ color: TEXT_MUTED }}>Yurt nöbeti görevlerim</div>
-          <div className="flex flex-wrap gap-1.5">
-            {yurtNobetGorevleri.map((nobet) => (
-              <span key={nobet.id} className="rounded-lg px-2 py-0.5 text-[11px] font-semibold" style={{ background: MINT_BG, color: TEXT }}>
-                {new Date(nobet.tarih + "T00:00:00").toLocaleDateString("tr-TR", { day: "2-digit", month: "long", weekday: "short" })}
-              </span>
-            ))}
-          </div>
-          <YurtNobetDevirPaneli yurtNobetleri={yurtNobetGorevleri} ogretmenler={nobetDevirOgretmenleri} />
-        </div>
-      )}
-
+      {/* Yurt nöbetleri okulun yüklediği belletmen listesinden gelir; eski
+          elle doldurulan 2×6'lık defter kaldırıldı (18.09.2026). Takvime
+          geçmiş nöbetler de gider, burada yalnızca bugünden sonrası. */}
       {!dershaneMi && (
-        <div className="mt-4">
-          <YurtNobetiTablosu satirlar={yurtNobetiSatirlari} />
-        </div>
+        <YurtNobetlerimKutusu
+          yurtNobetleri={yurtNobetGorevleri.filter((n) => n.tarih >= bugununTarihiTR())}
+          ogretmenler={nobetDevirOgretmenleri}
+        />
       )}
 
       <div className="mt-6 border-t pt-5" style={{ borderColor: BORDER }}>

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ogretmeneBildirimGonder } from "@/lib/ogretmen-bildirim";
-import { bugununTarihiTR } from "@/lib/tarih";
+import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
 
 type DevirBaglami =
   | { error: string; admin: null; userId: null; schoolId: null; devredenAd: null }
@@ -118,4 +118,58 @@ export async function nobetDevret(input: {
     error: null,
     warning: bildirim.error ? "Devir tamamlandı ancak öğretmen bildirimi gönderilemedi." : undefined,
   };
+}
+
+// "Nöbet ekle" (kullanıcı isteği 18.09.2026: "takas harici nöbet gelmişse
+// nöbet ekle yeterli"): öğretmen listede olmayan ek bir yurt nöbetini
+// kendine yazar. Yalnızca kendi adına ekler; ekleyen_id ile işaretlenir ki
+// yanlış girdiğinde sadece kendi eklediğini silebilsin (migration 0113).
+export async function yurtNobetimiEkle(tarih: string): Promise<{ error: string | null }> {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(tarih)) return { error: "Geçerli bir tarih seçin." };
+  const baglam = await devirBaglamiGetir();
+  if (baglam.error !== null) return { error: baglam.error };
+  const { admin, userId, schoolId, devredenAd } = baglam;
+
+  const bugun = bugununTarihiTR();
+  if (tarih < bugun) return { error: "Geçmiş bir tarihe nöbet eklenemez." };
+  if (tarih > tarihEkle(bugun, 365)) return { error: "En fazla bir yıl sonrasına nöbet eklenebilir." };
+
+  const { error } = await admin.from("yurt_nobet_gorevleri").insert({
+    school_id: schoolId, ad_soyad: devredenAd, teacher_id: userId, tarih, ekleyen_id: userId,
+  });
+  if (error) return { error: error.code === "23505" ? "Bu tarihte zaten yurt nöbetiniz var." : error.message };
+
+  await admin.from("admin_audit_log").insert({
+    actor_id: userId, eylem: "yurt_nobeti_ekle_ogretmen", detay: { school_id: schoolId, tarih, ogretmen: devredenAd },
+  });
+  revalidatePath("/dashboard");
+  revalidatePath("/yonetici");
+  return { error: null };
+}
+
+export async function eklenenYurtNobetimiSil(nobetId: string): Promise<{ error: string | null }> {
+  const baglam = await devirBaglamiGetir();
+  if (baglam.error !== null) return { error: baglam.error };
+  const { admin, userId, schoolId, devredenAd } = baglam;
+
+  // Yalnızca öğretmenin KENDİ eklediği ve hâlâ kendisine ait nöbet silinir;
+  // PDF'ten/yöneticiden gelen nöbetlerde ekleyen_id boş olduğundan eşleşmez.
+  const { data: silinen, error } = await admin
+    .from("yurt_nobet_gorevleri")
+    .delete()
+    .eq("id", nobetId)
+    .eq("school_id", schoolId)
+    .eq("teacher_id", userId)
+    .eq("ekleyen_id", userId)
+    .select("tarih")
+    .maybeSingle();
+  if (error) return { error: error.message };
+  if (!silinen) return { error: "Yalnızca kendi eklediğiniz nöbeti silebilirsiniz." };
+
+  await admin.from("admin_audit_log").insert({
+    actor_id: userId, eylem: "yurt_nobeti_sil_ogretmen", detay: { school_id: schoolId, tarih: silinen.tarih, ogretmen: devredenAd },
+  });
+  revalidatePath("/dashboard");
+  revalidatePath("/yonetici");
+  return { error: null };
 }
