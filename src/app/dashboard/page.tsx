@@ -819,10 +819,9 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   // dershane müdürü zaten kendi ayrı panelinde (DershaneMudurPaneli)
   // düzenleyebiliyordu; okul müdürü SALT-OKUNUR görsün (kullanıcının
   // ders programı için belirlediği "sadece admin ve dershane müdürü elle
-  // ekler" kuralı okul müdürünü kapsamıyor). is_ogretmen() geniş okuma
-  // izni (bkz. AGENTS.md/proje notları) sayesinde müdür herhangi bir
-  // öğretmenin ders_programi'nı normal client ile okuyabiliyor, RLS
-  // ders_programi_select_moderator zaten bunu açıkça karşılıyor.
+  // ekler" kuralı okul müdürünü kapsamıyor). Müdür kendi okulundaki
+  // öğretmenleri (teachers_select_ayni_kurum, migration 0114) ve onların
+  // ders programını (ders_programi_select_moderator) normal client ile okur.
   let okulOgretmenleri: { id: string; ad: string; brans: string }[] = [];
   let secilenOgretmenProgrami: DersProgramiSatiri[] = [];
   let secilenOgretmenNobetleri: OkulNobeti[] = [];

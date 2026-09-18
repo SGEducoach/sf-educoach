@@ -4,11 +4,12 @@
 // açılmadı — konu_zayiflik_raporu (migration 0058) deseninin aksine, düz
 // bir sorgu (analizVerisiGetir ile aynı yaklaşım): çağıranın supabase
 // client'ına (öğretmen/müdür'ün RLS-scoped client'ı VEYA admin'in
-// service-role client'ı) güveniyor. Bunun güvenli olma nedeni: mevcut RLS
-// zaten "herhangi bir öğretmen herhangi bir öğrenciyi görebilir" politikasını
-// kuruyor (denemeler_select_any_teacher / students_select_any_teacher, bkz.
-// schema.sql) — bu fonksiyon o kapsamı GENİŞLETMİYOR, sadece zaten erişilebilir
-// veriyi kohort istatistiğine dönüştürüyor. Öğrencinin KENDİ (RLS-scoped)
+// service-role client'ı) güveniyor. Bunun güvenli olma nedeni: RLS öğretmene
+// kendi kurumunun öğrencilerini okutuyor (denemeler_select_ayni_kurum /
+// students_select_ayni_kurum, migration 0114 — öncesinde "herhangi bir
+// öğretmen herhangi bir öğrenci" idi) ve kohort zaten aynı sınıf; bu
+// fonksiyon o kapsamı GENİŞLETMİYOR, sadece zaten erişilebilir veriyi kohort
+// istatistiğine dönüştürüyor. Öğrencinin KENDİ (RLS-scoped)
 // client'ıyla yanlışlıkla çağrılırsa has_student_access() sınıf arkadaşlarının
 // satırlarını zaten döndürmez (sadece kendi/bağlı veli/öğretmen) — yani bir
 // kodlama hatası veri sızıntısına DEĞİL, boş bir kohorta yol açar.

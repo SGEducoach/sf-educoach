@@ -73,9 +73,9 @@ export interface KullaniciSonuc {
 }
 
 // Okul/sınıf sınırı olmadan tüm öğrenci/öğretmen/veli/müdür hesaplarında
-// ad veya e-posta üzerinden arama. Admin dışındaki roller RLS'te zaten
-// is_ogretmen() üzerinden admin'e tam okuma izni veriyor (bkz. migration
-// 0014); burada ekstra bir RLS gerekmiyor.
+// ad veya e-posta üzerinden arama. RLS admin'e tam okuma izni veriyor
+// (is_admin(), bkz. migration 0114 *_select_ayni_kurum politikaları);
+// burada ekstra bir RLS gerekmiyor.
 // 2026-08-26 kullanıcı isteği: "admin sayfasında filtreleri kurumdan
 // başlat" — kurum artık ZORUNLU ilk filtre (bkz. KullaniciArama.tsx'teki
 // yeni kurum seçim ekranı); classId ise sadece öğrenci listesini sınıf
@@ -969,8 +969,8 @@ export async function islemGecmisiGetir(): Promise<{ error: string | null; kayit
 }
 
 // ============ Platform istatistikleri ============
-// Sayımlar normal (RLS'e tabi) client ile yapılıyor — is_ogretmen() zaten
-// admin'e profiles/konu_calismalar/soru_cozumleri/denemeler/
+// Sayımlar normal (RLS'e tabi) client ile yapılıyor — RLS (is_admin(),
+// migration 0114) admin'e profiles/konu_calismalar/soru_cozumleri/denemeler/
 // haftalik_verimlilikler üzerinde tam okuma izni veriyor. Sadece
 // veli_link_requests admin'e RLS'te açık olmadığı için orada service-role
 // kullanılıyor.
