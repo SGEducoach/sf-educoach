@@ -206,7 +206,21 @@ const DERSHANE_REHBER_MENUSU: DashboardMenuOgesi[] = [
   ...REHBER_OGRETMEN_MENUSU.slice(2),
 ];
 
-export function dashboardMenusu(role: UserRole, kurumTuru?: KurumTuru, brans?: string): DashboardMenuOgesi[] {
+// Grup Koçluk koçu (Faz 3, 18.09.2026): kurum dışı koç, tek başına grubunu
+// yönetir — "Öğretmenler ve Programlar" ile "Ajandam" (ders programı/nöbet)
+// ona anlamsız. Öğrenci yönetimi "Grubum"da, takip rehber modülünde.
+const GRUP_KOC_MENUSU: DashboardMenuOgesi[] = [
+  { bolum: "ozet", href: "/dashboard", etiket: "Grubum", ikon: "grup" },
+  { bolum: "ogrenci-takibi", href: "/dashboard/ogrenci-takibi", etiket: "Öğrenci Takibi", ikon: "gorev" },
+  { bolum: "denemeler", href: "/dashboard/denemeler", etiket: "Denemeler", ikon: "deneme" },
+  { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Konu Haritası", ikon: "ai" },
+  { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Grup Duyurusu", ikon: "duyuru" },
+  { bolum: "rehberlik", href: "/dashboard/rehberlik", etiket: "Bireysel Mesaj", ikon: "rehberlik" },
+  { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "TG Denemeler", ikon: "takvim" },
+];
+
+export function dashboardMenusu(role: UserRole, kurumTuru?: KurumTuru, brans?: string, grupMu = false): DashboardMenuOgesi[] {
+  if (role === "ogretmen" && grupMu) return GRUP_KOC_MENUSU;
   if (role === "ogrenci") return kurumTuru === "okul" ? [...OGRENCI_MENUSU, { bolum:"etkinlikler", href:"/dashboard/etkinlikler", etiket:"Etkinlikler", ikon:"takvim" }] : OGRENCI_MENUSU;
   if (role === "veli") return VELI_MENUSU;
   if (role === "ogretmen") return brans === REHBER_BRANSI ? (kurumTuru === "dershane" ? DERSHANE_REHBER_MENUSU : REHBER_OGRETMEN_MENUSU) : kurumTuru === "okul" && etkinlikBransiMi(brans) ? [...OGRETMEN_MENUSU, TAKVIM_MENU_OGESI, { bolum:"etkinlikler", href:"/dashboard/etkinlikler", etiket:"Etkinlik Grupları", ikon:"takvim" }] : kurumTuru === "okul" ? [...OGRETMEN_MENUSU, TAKVIM_MENU_OGESI] : OGRETMEN_MENUSU;

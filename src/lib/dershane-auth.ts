@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { grupKocuYazmaYetkisi } from "@/lib/grup-koc-auth";
 
 // DERSHANE MODU: dershane müdürüne özel (service-role gerektiren) işlemler
 // için ortak yetki kontrolü — admin'in requireAdmin() deseniyle aynı
@@ -27,9 +28,16 @@ export async function requireDershaneMudur() {
 }
 
 // Admin hedef kurumu seçebilir; müdürün hedefi daima kendi kurumudur.
+// Grup Koçluk koçu (Faz 3, 18.09.2026) da kendi grubu için yükleyebilir —
+// dondurulmuş ya da süresi dolmuş (salt okunur) grupta yükleme reddedilir.
 export async function requireDenemeYuklemeYetkisi(hedefSchoolId?: string) {
   const { supabase, user } = await requireUser();
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  if (profile?.role === "ogretmen") {
+    const koc = await grupKocuYazmaYetkisi();
+    if (koc.error !== null) return { supabase, user, admin: null, schoolId: null as string | null };
+    return { supabase, user, admin: koc.admin, schoolId: koc.grup.id as string | null };
+  }
   if (profile?.role !== "admin") return requireDershaneMudur();
   if (!hedefSchoolId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(hedefSchoolId)) {
     return { supabase, user, admin: null, schoolId: null };

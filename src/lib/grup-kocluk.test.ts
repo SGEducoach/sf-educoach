@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { grupGirdisiHatasi, grupKapasitesiMi, grupKoduUret, kalanGun } from "./grup-kocluk";
+import { grupGirdisiHatasi, grupKapasitesiMi, grupKoduUret, grupOgrencisiGirdisiHatasi, kalanGun } from "./grup-kocluk";
 
 describe("grupKoduUret", () => {
   test("G + 5 karakter, karışan harfler yok", () => {
@@ -42,5 +42,18 @@ describe("grupGirdisiHatasi", () => {
   test("kapasite kümesi", () => {
     expect([5, 10, 15, 20].every(grupKapasitesiMi)).toBe(true);
     expect(grupKapasitesiMi(7)).toBe(false);
+  });
+});
+
+describe("grupOgrencisiGirdisiHatasi", () => {
+  test("geçerli girdi", () => {
+    expect(grupOgrencisiGirdisiHatasi({ ad: "Ali Veli", kullaniciAdi: "ali_veli12", seviye: "11" })).toBeNull();
+  });
+  test("hatalar", () => {
+    expect(grupOgrencisiGirdisiHatasi({ ad: "Ali", kullaniciAdi: "ali_veli12", seviye: "11" })).toMatch(/soyad/);
+    expect(grupOgrencisiGirdisiHatasi({ ad: "Ali Veli", kullaniciAdi: "ali", seviye: "11" })).toMatch(/6-30/);
+    expect(grupOgrencisiGirdisiHatasi({ ad: "Ali Veli", kullaniciAdi: "alişveli", seviye: "11" })).toMatch(/Türkçe/);
+    expect(grupOgrencisiGirdisiHatasi({ ad: "Ali Veli", kullaniciAdi: "ali veli12", seviye: "11" })).toMatch(/6-30/);
+    expect(grupOgrencisiGirdisiHatasi({ ad: "Ali Veli", kullaniciAdi: "ali_veli12", seviye: "Mezun" })).toMatch(/düzey/);
   });
 });

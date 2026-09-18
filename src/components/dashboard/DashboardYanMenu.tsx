@@ -41,8 +41,8 @@ const IKONLAR: Record<DashboardIkonu, typeof Home> = {
   rehberlik: HeartHandshake,
 };
 
-export function DashboardYanMenu({ role, kurumTuru, brans, aktifBolum }: { role: UserRole; kurumTuru?: KurumTuru; brans?: string; aktifBolum: DashboardBolumu }) {
-  const menu = dashboardMenusu(role, kurumTuru, brans);
+export function DashboardYanMenu({ role, kurumTuru, brans, grupMu = false, aktifBolum }: { role: UserRole; kurumTuru?: KurumTuru; brans?: string; grupMu?: boolean; aktifBolum: DashboardBolumu }) {
+  const menu = dashboardMenusu(role, kurumTuru, brans, grupMu);
   if (menu.length === 0) return null;
   const rolBasligi: Partial<Record<UserRole, string>> = {
     ogrenci: "Öğrenci çalışma alanı",
@@ -60,7 +60,7 @@ export function DashboardYanMenu({ role, kurumTuru, brans, aktifBolum }: { role:
             üstünde logoyu gösteriyor, burada tekrarlamak gereksizdi. */}
         <div className="px-3 pt-1 pb-4 mb-2" style={{ borderBottom: `1px solid ${BORDER}` }}>
           <div className="text-sm font-extrabold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>
-            {rolBasligi[role] ?? "Çalışma alanı"}
+            {grupMu && role === "ogretmen" ? "Grup koçluk alanı" : rolBasligi[role] ?? "Çalışma alanı"}
           </div>
         </div>
         {menu.map((oge) => {

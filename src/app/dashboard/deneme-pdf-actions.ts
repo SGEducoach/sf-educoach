@@ -298,6 +298,11 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
   const { user, admin, schoolId } = await requireDenemeYuklemeYetkisi(String(formData.get("schoolId") ?? ""));
   if (!admin || !schoolId) return { error: "Deneme yükleme yetkiniz yok veya kurum seçilmedi.", ...BOS_SONUC };
   const adminClient = admin;
+  // Grup Koçluk: gruplarda PDF yükleme yok (kullanıcı kararı; Claude maliyeti) — elle ya da Excel.
+  const { data: kurum } = await admin.from("schools").select("grup_kapasitesi").eq("id", schoolId).maybeSingle();
+  if (kurum?.grup_kapasitesi != null) {
+    return { error: "Gruplarda PDF ile deneme yükleme kapalı; Excel şablonunu kullanın.", ...BOS_SONUC };
+  }
 
   const dosya = formData.get("dosya") as File | null;
   const yayinevi = String(formData.get("yayinevi") ?? "").trim();

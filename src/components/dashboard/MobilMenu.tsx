@@ -64,11 +64,12 @@ const IKONLAR: Record<DashboardIkonu, typeof Home> = {
 // bir ara genişlik oluşmaz. Renkler
 // header gibi tema değişkenlerine bağlı — açık modda beyaz metin/koyu panel
 // kullanmak (eskiden olduğu gibi) gündüz de "gece" görünümü veriyordu.
-export function MobilMenu({ ad, role, kurumTuru, brans, okunmamisMesajSayisi, moderatorMu, rolEtiketi, aktifBolum = "ozet", navigasyonGoster = true, geriDonusHref, geriDonusEtiketi }: {
+export function MobilMenu({ ad, role, kurumTuru, brans, grupMu = false, okunmamisMesajSayisi, moderatorMu, rolEtiketi, aktifBolum = "ozet", navigasyonGoster = true, geriDonusHref, geriDonusEtiketi }: {
   ad: string;
   role: UserRole;
   kurumTuru?: KurumTuru;
   brans?: string;
+  grupMu?: boolean;
   okunmamisMesajSayisi: number;
   moderatorMu: boolean;
   rolEtiketi?: string;
@@ -77,7 +78,7 @@ export function MobilMenu({ ad, role, kurumTuru, brans, okunmamisMesajSayisi, mo
   geriDonusHref?: string; geriDonusEtiketi?: string;
 }) {
   const [acik, setAcik] = useState(false);
-  const menu = navigasyonGoster ? dashboardMenusu(role, kurumTuru, brans) : [];
+  const menu = navigasyonGoster ? dashboardMenusu(role, kurumTuru, brans, grupMu) : [];
 
   return (
     <div className="relative lg:hidden">
@@ -121,7 +122,7 @@ export function MobilMenu({ ad, role, kurumTuru, brans, okunmamisMesajSayisi, mo
                 className="sfec-btn flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-[13px] font-semibold" style={{ color: TEXT }}>
                 <LayoutDashboard size={16} color={SEAFOAM} /> {geriDonusEtiketi}
               </Link>
-            ) : moderatorMu && (
+            ) : moderatorMu && !grupMu && (
               <Link href="/moderator" onClick={() => setAcik(false)}
                 className="sfec-btn flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-[13px] font-semibold" style={{ color: TEXT }}>
                 <ShieldCheck size={16} color={SEAFOAM} /> Moderatör paneli

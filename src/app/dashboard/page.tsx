@@ -45,6 +45,10 @@ import { DenemeSuresiSonaErdiEkrani } from "@/components/DenemeSuresiSonaErdiEkr
 import { RehberlikPaneli } from "@/components/dashboard/RehberlikPaneli";
 import { REHBER_BRANSI } from "@/lib/rehberlik";
 import { RehberOgrenciTakibi } from "@/components/dashboard/RehberOgrenciTakibi";
+import { GrupKocPaneli } from "@/components/dashboard/GrupKocPaneli";
+import { DershaneDenemePdfFormu } from "@/components/dashboard/DershaneDenemePdfFormu";
+import { grupKocuYetkisi } from "@/lib/grup-koc-auth";
+import { grupOgrencileriGetir } from "@/app/dashboard/grup-koc-actions";
 import { rehberOgrenciTakibiVerisiGetir } from "@/lib/dershane-rehber";
 import { OgrenciProfilim } from "@/components/dashboard/OgrenciProfilim";
 import { ogretmenAktifGunuKaydet, ogrenciProfilGoruntulemesiKaydet } from "@/lib/ogretmen-takip";
@@ -143,11 +147,13 @@ export default async function DashboardPage({
   // (bkz. dashboard-navigation.ts REHBERLIK_MENU_OGESI) branş bilgisine
   // bağlı olduğundan menü geçerliliği kontrolünden ÖNCE çekiliyor.
   const brans = ogretmenBransHam?.brans;
-  const varsayilanBolum: DashboardBolumu = (role === "mudur" && kurumTuru !== "dershane") || (role === "ogretmen" && brans === REHBER_BRANSI)
+  // Grup Koçluk koçu (Faz 3): kendi menüsü ve "Grubum" ana sayfası var.
+  const grupKocu = role === "ogretmen" && !!kurum?.grupMu;
+  const varsayilanBolum: DashboardBolumu = !grupKocu && ((role === "mudur" && kurumTuru !== "dershane") || (role === "ogretmen" && brans === REHBER_BRANSI))
     ? "kurum-performansi" : "ozet";
   const aktifBolum = (params.bolum ?? varsayilanBolum) as DashboardBolumu;
   const ogrenciProgramiGizliRotasi = role === "ogretmen" && aktifBolum === "planlar" && !!params.ogrenci;
-  if (!dashboardMenusu(role, kurumTuru, brans).some((oge) => oge.bolum === aktifBolum) && !ogrenciProgramiGizliRotasi) redirect("/dashboard");
+  if (!dashboardMenusu(role, kurumTuru, brans, grupKocu).some((oge) => oge.bolum === aktifBolum) && !ogrenciProgramiGizliRotasi) redirect("/dashboard");
   // Yazılı analizi dürüstlük engeli: öğretmenin panele girdiği günler sayılır
   // (bkz. src/lib/ogretmen-takip.ts, yazili-erisim.ts).
   if (role === "ogretmen") ogretmenAktifGunuKaydet(user.id);
@@ -164,12 +170,12 @@ export default async function DashboardPage({
           örtük bir uygulama detayı. Bu yüzden müdürde her zaman "Müdür"
           gösterilir, "Moderatör" etiketi öğretmen+moderatör kombinasyonuna
           özel kalır. */}
-      <Header ad={profile.ad} role={role} kurumTuru={kurumTuru} brans={brans} okunmamisMesajSayisi={okunmamisMesajSayisi} moderatorMu={!!moderatorYetkisi} rolEtiketi={moderatorYetkisi && role !== "mudur" ? "Moderatör" : undefined} aktifBolum={aktifBolum} />
+      <Header ad={profile.ad} role={role} kurumTuru={kurumTuru} brans={brans} grupMu={grupKocu} okunmamisMesajSayisi={okunmamisMesajSayisi} moderatorMu={!!moderatorYetkisi} rolEtiketi={moderatorYetkisi && role !== "mudur" ? "Moderatör" : undefined} aktifBolum={aktifBolum} />
       <ZorunluSifreDegisikligiKapisi gecici={profile.gecici_sifre} />
       <OgretmenEpostaUyarisi email={profile.email} goster={ogretmenEpostaUyarisi} />
       <HosgeldinPopuplari role={role} />
       <div className="mx-auto flex min-h-[calc(100dvh-6.75rem)] w-full max-w-[100rem] flex-1 items-stretch gap-6 px-4 py-6 sm:px-6 lg:py-7">
-        <DashboardYanMenu role={role} kurumTuru={kurumTuru} brans={brans} aktifBolum={aktifBolum} />
+        <DashboardYanMenu role={role} kurumTuru={kurumTuru} brans={brans} grupMu={grupKocu} aktifBolum={aktifBolum} />
         <main id="ana-icerik" className="sfec-dashboard-main min-h-[calc(100dvh-10.25rem)] min-w-0 w-full flex-1 flex flex-col gap-6">
           {/* Kullanıcı isteği (03.09.2026): Duyuru Geçmişi artık YALNIZCA admin
               panelinde (bkz. duyuru-gecmisi-actions.ts) — müdür menüsünden ve
@@ -179,6 +185,11 @@ export default async function DashboardPage({
             <OgrenciProfilim userId={user.id} ad={profile.ad} />
           ) : aktifBolum === "tg-denemeleri" ? (
             <TgDenemeleri bugun={bugununTarihiTR()} dbIlanlar={await tgDenemeIlanlariGetir(supabase)} />
+          ) : grupKocu && aktifBolum === "ozet" ? (
+            <GrupKocIcerik />
+          ) : grupKocu && aktifBolum === "denemeler" ? (
+            // Kullanıcı kararı: koçlara PDF deneme yükleme yok (Claude maliyeti); elle/Excel.
+            <section className="sfec-section"><DershaneDenemePdfFormu yalnizcaExcel /></section>
           ) : (
             <>
               {role === "ogrenci" && <OgrenciIcerik userId={user.id} ad={profile.ad} donem={donem} haftaBaslangic={haftaninPazartesisi(params.hafta)} aktifBolum={aktifBolum} />}
@@ -192,6 +203,20 @@ export default async function DashboardPage({
       </div>
     </div>
   );
+}
+
+// Grup Koçluk koçunun "Grubum" sayfası (Faz 3). Yetki ve veri sunucuda.
+async function GrupKocIcerik() {
+  const yetki = await grupKocuYetkisi();
+  if (yetki.error !== null) {
+    return (
+      <div className="sfec-fade rounded-3xl p-6 text-center" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+        <p style={{ color: TEXT_MUTED }} className="text-sm">{yetki.error}</p>
+      </div>
+    );
+  }
+  const { ogrenciler } = await grupOgrencileriGetir();
+  return <GrupKocPaneli grup={yetki.grup} ogrenciler={ogrenciler} bugun={bugununTarihiTR()} />;
 }
 
 // Eğlence etiketleri mevcut rozet RPC'sinden tamamen bağımsızdır. Yalnızca

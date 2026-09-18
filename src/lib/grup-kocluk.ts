@@ -47,3 +47,27 @@ export function grupGirdisiHatasi(g: GrupGirdisi, bugun: string): string | null 
   if (!g.taahhut) return "Koçun veri işleme taahhüdünü onaylayın.";
   return null;
 }
+
+// ---- Koç paneli (Faz 3) ----
+
+// Grup öğrencileri sınıf düzeyine göre bu şubeli sınıflarda tutulur
+// (öğrenci kaydı class_id ister; öğrenci paneli sınıf düzeyine göre değişir).
+export const GRUP_SINIF_SUBESI = "Grup";
+export const GRUP_SINIF_DUZEYLERI = ["9", "10", "11", "12"] as const;
+
+// Kullanıcı adı = students.okul_no; dershane biçim tetikleyicisiyle aynı kural
+// (en az 6, boşluksuz harf/rakam/alt çizgi). Girişte küçük harfe çevrilir.
+export function kullaniciAdiHatasi(kullaniciAdi: string): string | null {
+  if (!/^[a-zA-Z0-9_]{6,30}$/.test(kullaniciAdi.trim())) {
+    return "Kullanıcı adı 6-30 karakter olmalı; yalnızca harf (Türkçe karakter olmadan), rakam ve alt çizgi.";
+  }
+  return null;
+}
+
+export function grupOgrencisiGirdisiHatasi(g: { ad: string; kullaniciAdi: string; seviye: string }): string | null {
+  if (g.ad.trim().split(/\s+/).length < 2) return "Öğrencinin adını ve soyadını yazın.";
+  const kullaniciHatasi = kullaniciAdiHatasi(g.kullaniciAdi);
+  if (kullaniciHatasi) return kullaniciHatasi;
+  if (!(GRUP_SINIF_DUZEYLERI as readonly string[]).includes(g.seviye)) return "Sınıf düzeyi seçin.";
+  return null;
+}

@@ -43,9 +43,13 @@ async function requireModerator(targetSchoolId?: string) {
       return { user, admin, schoolId: targetSchoolId, okulAdi: okul.ad };
     }
   }
-  const { data: yetki } = await supabase.from("school_moderators").select("school_id, schools(ad)").eq("profile_id", user.id).maybeSingle();
+  const { data: yetki } = await supabase.from("school_moderators").select("school_id, schools(ad, grup_kapasitesi)").eq("profile_id", user.id).maybeSingle();
   if (!yetki) redirect("/dashboard");
-  const okul = yetki.schools as unknown as { ad: string } | null;
+  const okul = yetki.schools as unknown as { ad: string; grup_kapasitesi: number | null } | null;
+  // Grup Koçluk koçu grubunu "Grubum"dan yönetir (kapasite, dondurma ve süre
+  // kuralları orada); moderatör paneli ona kapalı — dondurulmuş/salt okunur
+  // grupta bu panelden işlem yapılamasın (Faz 3, 18.09.2026).
+  if (okul?.grup_kapasitesi != null) redirect("/dashboard");
   return { user, admin: createAdminClient(), schoolId: yetki.school_id, okulAdi: okul?.ad ?? "Okul" };
 }
 

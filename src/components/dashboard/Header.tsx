@@ -24,7 +24,7 @@ const rolEtiket: Record<UserRole, string> = {
   admin: "Yönetici",
 };
 
-export async function Header({ ad, role, kurumTuru, brans, okunmamisMesajSayisi = 0, mobilNavigasyon = true, moderatorMu = false, rolEtiketi, aktifBolum = "ozet", geriDonusHref, geriDonusEtiketi }: { ad: string; role: UserRole; kurumTuru?: KurumTuru; brans?: string; okunmamisMesajSayisi?: number; mobilNavigasyon?: boolean; moderatorMu?: boolean; rolEtiketi?: string; aktifBolum?: DashboardBolumu;
+export async function Header({ ad, role, kurumTuru, brans, grupMu = false, okunmamisMesajSayisi = 0, mobilNavigasyon = true, moderatorMu = false, rolEtiketi, aktifBolum = "ozet", geriDonusHref, geriDonusEtiketi }: { ad: string; role: UserRole; kurumTuru?: KurumTuru; brans?: string; grupMu?: boolean; okunmamisMesajSayisi?: number; mobilNavigasyon?: boolean; moderatorMu?: boolean; rolEtiketi?: string; aktifBolum?: DashboardBolumu;
   // Kullanıcı isteği (26.08.2026): moderatör panelinin KENDİ İÇİNDEKİ "Ana
   // sayfaya dön" butonu kaldırıldı, isim yanına (buraya) taşındı — hem
   // gerçek moderatör (/dashboard'a) hem admin'in okul görüntülemesi
@@ -39,7 +39,9 @@ export async function Header({ ad, role, kurumTuru, brans, okunmamisMesajSayisi 
   // sayfasında render edildiği için bu tek yer yeterli.
   const supabase = await createClient();
   const yoneticiDuyurusu = await aktifYoneticiDuyurusuGetir(supabase);
-  const gorunenRolEtiketi = role === "ogretmen" && brans === REHBER_BRANSI
+  const gorunenRolEtiketi = role === "ogretmen" && grupMu
+    ? "Grup Koçu"
+    : role === "ogretmen" && brans === REHBER_BRANSI
     ? "Rehber Öğretmen"
     : rolEtiketi ?? rolEtiket[role];
   return (
@@ -78,7 +80,7 @@ export async function Header({ ad, role, kurumTuru, brans, okunmamisMesajSayisi 
                 <Link href={geriDonusHref} title={geriDonusEtiketi} className="sfec-btn flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3" style={{ background: "rgba(255,255,255,0.06)", border: `2px solid ${BORDER}` }}>
                   <LayoutDashboard size={15} color={TEXT_MUTED}/><span style={{ color: TEXT }} className="text-[11px] font-bold">{geriDonusEtiketi}</span>
                 </Link>
-              ) : moderatorMu && (
+              ) : moderatorMu && !grupMu && (
                 <Link href="/moderator" title="Moderatör paneli" className="sfec-btn flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3" style={{ background: MINT_BG, border: `2px solid ${BORDER}` }}><ShieldCheck size={16} color={MINT}/><span style={{ color: MINT }} className="text-[11px] font-bold">Moderatör Paneli</span></Link>
               )}
               <HataBildirButonu />
@@ -100,7 +102,7 @@ export async function Header({ ad, role, kurumTuru, brans, okunmamisMesajSayisi 
               </form>
             </div>
 
-            <MobilMenu ad={ad} role={role} kurumTuru={kurumTuru} brans={brans} okunmamisMesajSayisi={okunmamisMesajSayisi} moderatorMu={moderatorMu} rolEtiketi={gorunenRolEtiketi} aktifBolum={aktifBolum} navigasyonGoster={mobilNavigasyon} />
+            <MobilMenu ad={ad} role={role} kurumTuru={kurumTuru} brans={brans} grupMu={grupMu} okunmamisMesajSayisi={okunmamisMesajSayisi} moderatorMu={moderatorMu} rolEtiketi={gorunenRolEtiketi} aktifBolum={aktifBolum} navigasyonGoster={mobilNavigasyon} />
           </div>
         </div>
       </header>

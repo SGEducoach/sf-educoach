@@ -11,9 +11,10 @@ import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT,
 // denemeExcelIceriAktar. İkisi de aynı ad-soyad eşleştirme/inceleme kuyruğu
 // mantığını kullanır (kullanıcı isteği, 27.08.2026: "sonuçlar excel olarak
 // da yüklenebilecek").
-export function DershaneDenemePdfFormu({ schoolId }: { schoolId?: string }) {
+// yalnizcaExcel: Grup Koçluk koçu (kullanıcı kararı: koçlara PDF yok, elle/Excel).
+export function DershaneDenemePdfFormu({ schoolId, yalnizcaExcel = false }: { schoolId?: string; yalnizcaExcel?: boolean }) {
   const dosyaRef = useRef<HTMLInputElement>(null);
-  const [mod, setMod] = useState<"pdf" | "excel">(schoolId ? "excel" : "pdf");
+  const [mod, setMod] = useState<"pdf" | "excel">(schoolId || yalnizcaExcel ? "excel" : "pdf");
   const [yayinevi, setYayinevi] = useState("");
   const [tarih, setTarih] = useState("");
   const [tur, setTur] = useState<"TYT" | "AYT" | "BRANS">("TYT");
@@ -73,7 +74,7 @@ export function DershaneDenemePdfFormu({ schoolId }: { schoolId?: string }) {
         </div>
       </div>
 
-      <div className="flex gap-1 p-1 rounded-full self-start" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
+      {!yalnizcaExcel && <div className="flex gap-1 p-1 rounded-full self-start" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
         <button type="button" onClick={() => { setMod("pdf"); if (dosyaRef.current) dosyaRef.current.value = ""; }}
           className="sfec-btn rounded-full px-3.5 py-1.5 text-xs font-bold"
           style={{ background: mod === "pdf" ? MINT : "transparent", color: mod === "pdf" ? MINT_ON : TEXT_MUTED }}>
@@ -84,7 +85,7 @@ export function DershaneDenemePdfFormu({ schoolId }: { schoolId?: string }) {
           style={{ background: mod === "excel" ? MINT : "transparent", color: mod === "excel" ? MINT_ON : TEXT_MUTED }}>
           Excel yükle
         </button>
-      </div>
+      </div>}
 
       <form onSubmit={yukle} className="flex flex-col gap-3">
         {mod === "excel" && (
