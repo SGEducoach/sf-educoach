@@ -22,6 +22,8 @@
 // — sınıf bazlı tekrar listelerini ve karne sayfalarını atlar.
 import type { getDocument as GetDocumentFn } from "pdfjs-dist/legacy/build/pdf.mjs";
 import type { TextItem } from "pdfjs-dist/types/src/display/api";
+import { sinifListesiSayfalariniCoz } from "./deneme-sinif-listesi";
+import type { GenisMetin, SinifListesiSonucu } from "./deneme-sinif-listesi";
 
 // pdfjs-dist'in Node/legacy build'i, HANGİ fonksiyonu çağırdığımızdan
 // bağımsız olarak, modül YÜKLENİRKEN (import anında) DOMMatrix/Path2D
@@ -277,6 +279,26 @@ function kombinasyonlar(dizi: number[], k: number): number[][] {
   const iceren = kombinasyonlar(geri, k - 1).map((c) => [ilk, ...c]);
   const icermeyen = kombinasyonlar(geri, k);
   return [...iceren, ...icermeyen];
+}
+
+// Sınıf bazlı net listeleri (okul listesi olmayan yayınevleri, 18.09.2026) —
+// çözümleme saf modülde (deneme-sinif-listesi.ts); burada yalnızca PDF'ten
+// konum + genişlik bilgisiyle metin çıkarılıyor.
+export async function sinifListeleriniAyristir(pdfBuffer: Buffer, maxSayfa = 80): Promise<SinifListesiSonucu> {
+  try {
+    const dogruBoyut = Uint8Array.from(pdfBuffer);
+    const dogument = await (await pdfjsGetDocument())({ data: dogruBoyut, standardFontDataUrl: undefined, disableFontFace: true }).promise;
+    const sayfalar: GenisMetin[][] = [];
+    for (let sayfaNo = 1; sayfaNo <= Math.min(maxSayfa, dogument.numPages); sayfaNo++) {
+      const icerik = await (await dogument.getPage(sayfaNo)).getTextContent();
+      sayfalar.push(icerik.items.filter(metinItemMi).map((it) => ({
+        str: it.str, x: it.transform[4] as number, y: it.transform[5] as number, w: it.width,
+      })));
+    }
+    return sinifListesiSayfalariniCoz(sayfalar);
+  } catch (e) {
+    return { basarili: false, ogrenciler: [], okunamayanSatir: 0, hata: `PDF okunamadı: ${e instanceof Error ? e.message : String(e)}` };
+  }
 }
 
 export async function okulListesiniAyristir(pdfBuffer: Buffer, maxSayfa = 10): Promise<OkulListesiAyristirmaSonucu> {
@@ -703,7 +725,9 @@ export async function tumKarneleriIndeksle(
 // örnek öğrenciyle (ve o öğrencide bu alanların hepsi sıfır olduğu için)
 // netleştirilemedi — bu yüzden AYT için granüler yazma YAPILMIYOR, mevcut
 // (Claude'un ürettiği birleşik 4 ders) yol aynen kullanılıyor.
-const KARNE_DERS_TYT_ESLESTIRME: Record<string, string> = {
+// Sınıf bazlı net listeleri de (deneme-sinif-listesi.ts) aynı ders adlarını
+// kullandığı için dışa açık.
+export const KARNE_DERS_TYT_ESLESTIRME: Record<string, string> = {
   "Türkçe": "Türkçe",
   "Tarih-1": "Tarih",
   "Coğrafya-1": "Coğrafya",
