@@ -24,28 +24,58 @@ export function suresiDolduMu(bitisTarihi: string | null): boolean {
 // çözer — dashboard/page.tsx ÖNCEDEN bunu SADECE müdür için yapıyordu
 // (kendi menüsü kurum türüne göre değiştiği için); deneme süresi
 // kontrolü için artık TÜM rollerde gerekiyor.
-export async function kurumTuruGetir(
+export interface KullaniciKurumu {
+  tur: KurumTuru;
+  // Grup Koçluk (18.09.2026): grup, dershanenin alt türü; kendi bitiş
+  // tarihi olduğu için platform geneli dershane deneme süresinden muaf.
+  grupMu: boolean;
+  // Yönetici grubu dondurduğunda false (schools.aktif) — grup üyeleri girişte
+  // ve panelde durdurulur; öğrencilerin kendi hesap durumu değişmez.
+  aktif: boolean;
+}
+
+export const GRUP_DONDURULDU_MESAJI =
+  "Bu grup şu an dondurulmuş durumda. Bilgi için koçunuzla ya da SeFu Koç yönetimiyle iletişime geçin.";
+
+async function okulBilgisi(supabase: SupabaseClient, schoolId: string | null | undefined): Promise<KullaniciKurumu | undefined> {
+  if (!schoolId) return undefined;
+  const { data: s } = await supabase.from("schools").select("tur, grup_kapasitesi, aktif").eq("id", schoolId).maybeSingle();
+  if (!s) return undefined;
+  return { tur: s.tur as KurumTuru, grupMu: s.grup_kapasitesi !== null, aktif: s.aktif !== false };
+}
+
+export async function kullaniciKurumuGetir(
   supabase: SupabaseClient, userId: string, role: UserRole,
-): Promise<KurumTuru | undefined> {
+): Promise<KullaniciKurumu | undefined> {
   if (role === "ogretmen" || role === "mudur") {
     const { data: t } = await supabase.from("teachers").select("school_id").eq("id", userId).maybeSingle();
-    if (!t) return undefined;
-    const { data: s } = await supabase.from("schools").select("tur").eq("id", t.school_id).maybeSingle();
-    return s?.tur as KurumTuru | undefined;
+    return okulBilgisi(supabase, t?.school_id);
   }
   if (role === "ogrenci") {
     const { data: st } = await supabase.from("students").select("school_id").eq("id", userId).maybeSingle();
-    if (!st) return undefined;
-    const { data: s } = await supabase.from("schools").select("tur").eq("id", st.school_id).maybeSingle();
-    return s?.tur as KurumTuru | undefined;
+    return okulBilgisi(supabase, st?.school_id);
   }
   if (role === "veli") {
     const { data: ps } = await supabase.from("parent_students").select("student_id").eq("parent_id", userId).limit(1).maybeSingle();
     if (!ps) return undefined;
     const { data: st } = await supabase.from("students").select("school_id").eq("id", ps.student_id).maybeSingle();
-    if (!st) return undefined;
-    const { data: s } = await supabase.from("schools").select("tur").eq("id", st.school_id).maybeSingle();
-    return s?.tur as KurumTuru | undefined;
+    return okulBilgisi(supabase, st?.school_id);
   }
   return undefined; // admin — kurum kavramına bağlı değil
+}
+
+export async function kurumTuruGetir(
+  supabase: SupabaseClient, userId: string, role: UserRole,
+): Promise<KurumTuru | undefined> {
+  return (await kullaniciKurumuGetir(supabase, userId, role))?.tur;
+}
+
+// Platform geneli dershane deneme süresi yalnızca gerçek dershanelere
+// uygulanır; gruplar kendi bitiş tarihine tabidir (Faz 8: salt okunur).
+export function denemeSuresiUygulanir(kurum: KullaniciKurumu | undefined): boolean {
+  return kurum?.tur === "dershane" && !kurum.grupMu;
+}
+
+export function grupDondurulmus(kurum: KullaniciKurumu | undefined): boolean {
+  return !!kurum?.grupMu && !kurum.aktif;
 }

@@ -35,7 +35,7 @@ import { dashboardMenusu } from "@/lib/dashboard-navigation";
 import type { DashboardBolumu } from "@/lib/dashboard-navigation";
 import { RozetGoruntulemePaneli } from "@/components/dashboard/RozetGoruntulemePaneli";
 import { kurumRozetGorunumuGetir, veliRozetGorunumuGetir } from "@/lib/rozet-gorunumu";
-import { dershaneDenemeBitisGetir, suresiDolduMu, kurumTuruGetir } from "@/lib/deneme-suresi";
+import { dershaneDenemeBitisGetir, suresiDolduMu, kullaniciKurumuGetir, denemeSuresiUygulanir, grupDondurulmus, GRUP_DONDURULDU_MESAJI } from "@/lib/deneme-suresi";
 import { ogretmenProgramiGetir, okulNobetiGetir, yurtNobetGorevleriGetir } from "@/lib/ders-programi";
 import type { OkulNobeti } from "@/lib/ders-programi";
 import type { DersProgramiSatiri } from "@/lib/ders-programi";
@@ -104,8 +104,8 @@ export default async function DashboardPage({
   // TTFB'ye art arda ekleniyorlardı, şimdi Promise.all ile aynı anda
   // gidiyorlar. Dershane deneme süresi kontrolü kurumTuru'na BAĞLI
   // olduğundan bilinçli olarak hâlâ sonrasında, ayrı bekleniyor.
-  const [kurumTuru, { data: ogretmenBransHam }, { data: moderatorYetkisi }, { count: okunmamisMesajSayisiHam }] = await Promise.all([
-    kurumTuruGetir(supabase, user.id, role),
+  const [kurum, { data: ogretmenBransHam }, { data: moderatorYetkisi }, { count: okunmamisMesajSayisiHam }] = await Promise.all([
+    kullaniciKurumuGetir(supabase, user.id, role),
     role === "ogretmen"
       ? supabase.from("teachers").select("brans").eq("id", user.id).maybeSingle()
       : Promise.resolve({ data: null }),
@@ -122,7 +122,11 @@ export default async function DashboardPage({
   // oturum açmış birinin dashboard'a her girişinde de kontrol ediliyor
   // (sadece login anında değil) — süre oturum sırasında dolarsa da anında
   // engellensin diye.
-  if (kurumTuru === "dershane") {
+  const kurumTuru = kurum?.tur;
+  // Yönetici grubu dondurduysa açık oturumlar da durdurulur (girişte de engelli).
+  if (grupDondurulmus(kurum)) return <DenemeSuresiSonaErdiEkrani mesaj={GRUP_DONDURULDU_MESAJI} />;
+  // Gruplar (Grup Koçluk) kendi bitiş tarihine tabi, bu süreden muaf.
+  if (denemeSuresiUygulanir(kurum)) {
     const bitis = await dershaneDenemeBitisGetir(supabase);
     if (suresiDolduMu(bitis)) return <DenemeSuresiSonaErdiEkrani />;
   }

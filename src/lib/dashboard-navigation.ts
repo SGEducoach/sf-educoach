@@ -32,6 +32,8 @@ export type DashboardBolumu =
   | "google-analytics"
   | "pdf-eslesme"
   | "okullar"
+  // Grup Koçluk (18.09.2026) — kurum dışı koç grupları.
+  | "grup-kocluk"
   | "moderatorler"
   | "icerik"
   | "blog"
@@ -48,7 +50,7 @@ export type DashboardIkonu =
   | "ana-sayfa" | "gorev" | "plan" | "veri" | "hakimiyet" | "analiz" | "ai" | "rozet" | "takvim" | "duyuru" | "talep" | "onay" | "ders"
   | "ogretmen" | "ogrenci" | "deneme"
   | "kullanici" | "eslestir" | "okul" | "moderator" | "icerik" | "blog" | "kural" | "profil" | "hata"
-  | "ayarlar" | "admin" | "gecmis" | "rehberlik";
+  | "ayarlar" | "admin" | "gecmis" | "rehberlik" | "grup";
 
 export interface DashboardMenuOgesi {
   bolum: DashboardBolumu;
@@ -157,6 +159,7 @@ const ADMIN_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "talepler", href: "/yonetici/talepler", etiket: "Veli talepleri", ikon: "talep" },
   { bolum: "pdf-eslesme", href: "/yonetici/pdf-eslesme", etiket: "PDF Eşleştirme", ikon: "eslestir" },
   { bolum: "okullar", href: "/yonetici/okullar", etiket: "Okullar", ikon: "okul" },
+  { bolum: "grup-kocluk", href: "/yonetici/grup-kocluk", etiket: "Grup Koçluk", ikon: "grup" },
   { bolum: "kurallar", href: "/yonetici/kurallar", etiket: "Kurallar", ikon: "kural" },
   { bolum: "hata-bildirimleri", href: "/yonetici/hata-bildirimleri", etiket: "Hata Bildirimleri", ikon: "hata" },
   { bolum: "rozetler", href: "/yonetici/rozetler", etiket: "Rozetler", ikon: "rozet" },
@@ -225,6 +228,6 @@ export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
 // dinamik [bolum]'dan her zaman önceliklidir, çakışma olmaz.
 export const YONETICI_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
   "mesajlar",
-  "kullanicilar", "talepler", "pdf-eslesme", "okullar", "moderatorler", "icerik", "blog", "kurallar", "profil", "hata-bildirimleri",
+  "kullanicilar", "talepler", "pdf-eslesme", "okullar", "grup-kocluk", "moderatorler", "icerik", "blog", "kurallar", "profil", "hata-bildirimleri",
   "duyuru-gecmisi", "islem-gecmisi", "site-ayarlari", "adminler",
 ]);

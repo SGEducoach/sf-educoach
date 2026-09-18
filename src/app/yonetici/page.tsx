@@ -11,6 +11,7 @@ import { PlatformIstatistikleri } from "@/components/yonetici/PlatformIstatistik
 import { KonuAnlatimYonetimi } from "@/components/yonetici/KonuAnlatimYonetimi";
 import { MufredatHiyerarsiYonetimi } from "@/components/yonetici/MufredatHiyerarsiYonetimi";
 import { NobetProgramYukleme } from "@/components/yonetici/NobetProgramYukleme";
+import { GrupKoclukYonetimi } from "@/components/yonetici/GrupKoclukYonetimi";
 import { BlogYonetimi } from "@/components/yonetici/BlogYonetimi";
 import { KurallarYonetimi } from "@/components/yonetici/KurallarYonetimi";
 import { HataBildirimleriYonetimi } from "@/components/yonetici/HataBildirimleriYonetimi";
@@ -64,7 +65,7 @@ export default async function YoneticiPage({
   const aktifBolum = (params.bolum ?? "ozet") as DashboardBolumu;
   if (!dashboardMenusu("admin").some((oge) => oge.bolum === aktifBolum)) redirect("/yonetici");
 
-  const { data: okullar } = await supabase.from("schools").select("id, ad, okul_kodu, tur, aktif").order("ad");
+  const { data: okullar } = await supabase.from("schools").select("id, ad, okul_kodu, tur, aktif").is("grup_kapasitesi", null).order("ad");
   const okulListesi = (okullar ?? []) as { id: string; ad: string; okul_kodu: string; tur: "okul" | "dershane"; aktif: boolean }[];
   const gorunecekOkulId = params.okul || okulListesi[0]?.id || null;
 
@@ -138,6 +139,7 @@ export default async function YoneticiPage({
               />
             </section>
           )}
+          {aktifBolum === "grup-kocluk" && <section className="sfec-section"><GrupKoclukYonetimi /></section>}
           {aktifBolum === "moderatorler" && <section className="sfec-section"><ModeratorlerListesi /></section>}
           {aktifBolum === "icerik" && (
             <section className="sfec-section flex flex-col gap-5">

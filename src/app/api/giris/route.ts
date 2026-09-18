@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { dershaneDenemeBitisGetir, suresiDolduMu, kurumTuruGetir, DENEME_SURESI_SONA_ERDI_MESAJI } from "@/lib/deneme-suresi";
+import { dershaneDenemeBitisGetir, suresiDolduMu, kullaniciKurumuGetir, denemeSuresiUygulanir, grupDondurulmus, DENEME_SURESI_SONA_ERDI_MESAJI, GRUP_DONDURULDU_MESAJI } from "@/lib/deneme-suresi";
 import { pushGonderProfile } from "@/lib/push-send";
 import { bildirimGonder } from "@/lib/bildirim-gonder";
 import { geciciSifreyiEtkinlestir } from "@/lib/gecici-sifre";
@@ -122,6 +122,7 @@ export async function POST(request: NextRequest) {
 
   let askidaMi = false;
   let denemeSuresiDoldu = false;
+  let grupDonduruldu = false;
   if (!error) {
     const { data: { user } } = await supabase.auth.getUser();
     const { data: profile } = user ? await admin.from("profiles").select("role, aktif").eq("id", user.id).maybeSingle() : { data: null };
@@ -140,8 +141,9 @@ export async function POST(request: NextRequest) {
     } else if (user && profile && profile.role !== "admin") {
       // Dershane 1 haftalık deneme süresi (bkz. deneme-suresi.ts,
       // migration 0065) — SADECE dershane rolleri, okul hiç etkilenmez.
-      const kurumTuru = await kurumTuruGetir(admin, user.id, profile.role as UserRole);
-      if (kurumTuru === "dershane") {
+      // Gruplar (Grup Koçluk) kendi bitiş tarihine tabi, bu süreden muaf.
+      const kurum = await kullaniciKurumuGetir(admin, user.id, profile.role as UserRole);
+      if (denemeSuresiUygulanir(kurum)) {
         const bitis = await dershaneDenemeBitisGetir(admin);
         if (suresiDolduMu(bitis)) {
           await supabase.auth.signOut();
@@ -149,11 +151,20 @@ export async function POST(request: NextRequest) {
           error = new Error("Deneme süresi doldu");
         }
       }
+      if (grupDondurulmus(kurum)) {
+        await supabase.auth.signOut();
+        grupDonduruldu = true;
+        error = new Error("Grup donduruldu");
+      }
     }
   }
 
   if (denemeSuresiDoldu) {
     return NextResponse.json({ error: DENEME_SURESI_SONA_ERDI_MESAJI }, { status: 403 });
+  }
+
+  if (grupDonduruldu) {
+    return NextResponse.json({ error: GRUP_DONDURULDU_MESAJI }, { status: 403 });
   }
 
   if (askidaMi) {

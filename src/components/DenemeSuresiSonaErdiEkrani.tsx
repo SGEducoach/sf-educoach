@@ -7,7 +7,8 @@ import { DENEME_SURESI_SONA_ERDI_MESAJI } from "@/lib/deneme-suresi";
 // Dershane 1 haftalık deneme süresi doldu (bkz. deneme-suresi.ts,
 // migration 0065) — dashboard/page.tsx'ten tüm dashboard shell'i
 // (Header/menü dahil) YERİNE render ediliyor, tek başına bir tam ekran.
-export function DenemeSuresiSonaErdiEkrani() {
+// mesaj: aynı ekran grubu dondurulan Grup Koçluk üyeleri için de kullanılır.
+export function DenemeSuresiSonaErdiEkrani({ mesaj = DENEME_SURESI_SONA_ERDI_MESAJI }: { mesaj?: string } = {}) {
   return (
     <div style={{ minHeight: "100vh", background: BG0 }} className="flex items-center justify-center px-4">
       <div className="w-full max-w-sm flex flex-col items-center text-center">
@@ -19,7 +20,7 @@ export function DenemeSuresiSonaErdiEkrani() {
           <div className="w-11 h-11 rounded-full flex items-center justify-center" style={{ background: BUTTER_BG }}>
             <AlertTriangle size={20} color={BUTTER} />
           </div>
-          <p style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold">{DENEME_SURESI_SONA_ERDI_MESAJI}</p>
+          <p style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold">{mesaj}</p>
           <p style={{ color: TEXT_MUTED }} className="text-xs">Sorularınız için kurumunuzun yetkilisiyle iletişime geçebilirsiniz.</p>
         </div>
       </div>
