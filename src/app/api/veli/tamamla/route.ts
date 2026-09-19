@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { grupKodundanKurumId } from "@/lib/grup-kodu";
 
 // GÜVENLİK DÜZELTMESİ (2026-08-25) — bu route ÖNCEDEN request body'sinden
 // (formdan) gelen veli_ad/veli_telefon'u DOĞRUDAN hesap oluşturmakta
@@ -15,7 +16,13 @@ import { createClient } from "@/lib/supabase/server";
 const KVKK_ONAY_VERSIYON = "v1-2026-08-05";
 
 export async function POST(request: Request) {
-  const { school_id, okul_no, kod, sifre, kvkkOnay } = await request.json();
+  const govde = await request.json();
+  const { kod, sifre, kvkkOnay } = govde;
+  const admin = createAdminClient();
+  // Grup Koçluk (Faz 6): kurum grup kodundan bulunur, kullanıcı adı küçük harf.
+  const grupMu = govde.grup_kodu !== undefined;
+  const school_id = grupMu ? await grupKodundanKurumId(admin, govde.grup_kodu) : govde.school_id;
+  const okul_no = grupMu ? String(govde.okul_no ?? "").trim().toLowerCase() : govde.okul_no;
 
   if (!school_id || !okul_no || !kod) {
     return NextResponse.json({ error: "Okul, okul no ve kod gerekli." }, { status: 400 });
@@ -26,8 +33,6 @@ export async function POST(request: Request) {
   if (kvkkOnay !== true) {
     return NextResponse.json({ error: "Devam etmek için KVKK aydınlatma metnini onaylamanız gerekiyor." }, { status: 400 });
   }
-
-  const admin = createAdminClient();
 
   // İsteği bul: durum='onaylandi', kod eşleşiyor, öğrenci okul_no eşleşiyor.
   // okul_no sadece okul içinde benzersiz olduğu için school_id ile birlikte

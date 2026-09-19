@@ -201,3 +201,38 @@ export async function grupDondur(id: string, dondur: boolean): Promise<{ error: 
   revalidatePath("/yonetici");
   return { error: null };
 }
+
+// ============ Faz 7: okul öğrencisi eşleşme onayları ============
+// Koçun eklemek istediği ad bir okul öğrencisiyle eşleşince talep buraya
+// düşer (bkz. grup-koc-actions.ts okulOgrencisiKontrolu). Onaylanırsa koç o
+// adı ekleyebilir; reddedilirse ekleyemez.
+export interface GrupOgrenciOnayi { id: string; grupAdi: string; ad: string; eslesme: string; tarih: string }
+
+export async function grupOgrenciOnaylariGetir(): Promise<{ error: string | null; onaylar: GrupOgrenciOnayi[] }> {
+  const { admin } = await requireAdmin();
+  const { data, error } = await admin.from("grup_ogrenci_onaylari")
+    .select("id, ad, eslesme, created_at, schools(ad)")
+    .eq("durum", "bekliyor")
+    .order("created_at", { ascending: true });
+  if (error) return { error: error.message, onaylar: [] };
+  type Satir = { id: string; ad: string; eslesme: string; created_at: string; schools: { ad: string } | { ad: string }[] | null };
+  return {
+    error: null,
+    onaylar: ((data ?? []) as unknown as Satir[]).map((o) => ({
+      id: o.id, ad: o.ad, eslesme: o.eslesme, tarih: o.created_at,
+      grupAdi: (Array.isArray(o.schools) ? o.schools[0]?.ad : o.schools?.ad) ?? "—",
+    })),
+  };
+}
+
+export async function grupOgrenciOnayKarari(id: string, onayla: boolean): Promise<{ error: string | null }> {
+  const { user, admin } = await requireAdmin();
+  const { data, error } = await admin.from("grup_ogrenci_onaylari")
+    .update({ durum: onayla ? "onaylandi" : "reddedildi", karar_veren_id: user.id, karar_at: new Date().toISOString() })
+    .eq("id", id).eq("durum", "bekliyor").select("school_id").maybeSingle();
+  if (error) return { error: error.message };
+  if (!data) return { error: "Talep daha önce karara bağlanmış." };
+  await islemKaydi(admin, user.id, onayla ? "grup_okul_eslesme_onayla" : "grup_okul_eslesme_reddet", { onay_id: id, school_id: data.school_id });
+  revalidatePath("/yonetici");
+  return { error: null };
+}

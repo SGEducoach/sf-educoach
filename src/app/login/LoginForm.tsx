@@ -24,8 +24,10 @@ const rolSecenekleri: { id: UserRole; ad: string; icon: typeof BookOpen }[] = [
 
 // Grup Koçluk girişi (Faz 4, 18.09.2026): kurum listesi yok; öğrenci grup
 // kodu + kullanıcı adı + şifre, koç e-posta + şifre (öğretmen hesabı).
+// Faz 6: veli de grup kodu + öğrencinin kullanıcı adı + kod/şifre ile girer.
 const grupRolSecenekleri: { id: UserRole; ad: string; icon: typeof BookOpen }[] = [
   { id: "ogrenci", ad: "Öğrenci", icon: BookOpen },
+  { id: "veli", ad: "Veli", icon: Users },
   { id: "ogretmen", ad: "Koç", icon: GraduationCap },
 ];
 
@@ -72,6 +74,10 @@ export default function LoginForm() {
   const [veliSifreYeni, setVeliSifreYeni] = useState("");
   const [veliSifreYeniTekrar, setVeliSifreYeniTekrar] = useState("");
   const [veliKvkkOnay, setVeliKvkkOnay] = useState(false);
+  // Grup velisi kod talebi (Faz 6): kayıt ekranı olmadığı için burada.
+  const [grupVeliTalepModu, setGrupVeliTalepModu] = useState(false);
+  const [grupVeliAd, setGrupVeliAd] = useState("");
+  const [grupVeliTalepMesaji, setGrupVeliTalepMesaji] = useState<string | null>(null);
 
   function veliDurumunuSifirla() {
     setVeliAsama("giris"); setVeliOnaylananAd(null);
@@ -108,6 +114,10 @@ export default function LoginForm() {
 
     // Grup öğrencisi: kurum grup kodundan sunucuda bulunur (bkz. api/giris).
     if (grupModu && role === "ogrenci") return grupOgrencisiGirisYap();
+    if (grupModu && role === "veli") {
+      if (!grupKodu.trim()) return setHata("Grup kodunu yazın.");
+      return veliGirisYap();
+    }
 
     // okul_no sadece okul içinde benzersiz olduğu için öğrenci/veli
     // girişinde okul seçimi zorunlu (bkz. migration 0023).
@@ -172,6 +182,29 @@ export default function LoginForm() {
     router.refresh();
   }
 
+  // Veli isteklerinde kurum: normalde seçilen okul, grupta grup kodu (Faz 6).
+  function veliKurumAlani() {
+    return grupModu
+      ? { grup_kodu: grupKodu.trim(), okul_no: okulNo.trim().toLowerCase() }
+      : { school_id: schoolId, okul_no: okulNo.trim() };
+  }
+
+  async function grupVeliTalepGonder(e: React.FormEvent) {
+    e.preventDefault();
+    setHata(null);
+    if (!grupKodu.trim() || !okulNo.trim() || !grupVeliAd.trim()) return setHata("Tüm alanları doldurun.");
+    setYukleniyor(true);
+    const res = await fetch("/api/veli/talep", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ grup_kodu: grupKodu.trim(), okul_no: okulNo.trim().toLowerCase(), veli_ad: grupVeliAd.trim() }),
+    });
+    const govde = await res.json() as { error?: string };
+    setYukleniyor(false);
+    if (!res.ok) return setHata(govde.error ?? "Talep gönderilemedi.");
+    setGrupVeliTalepMesaji("Talebiniz alındı. Koç onayladığında bağlantı kodu öğrencinin Mesajlarım kutusuna gelir; o kodla buradan giriş yapıp şifrenizi belirlersiniz.");
+  }
+
   // Veli girişi (29.08.2026 sadeleştirmesi): tek alan (kod state'i) —
   // önce TAZE bir kod mu diye denenir, tutarsa 2. aşama (şifre belirle)
   // açılır; tutmazsa aynı değer normal ŞİFRE olarak /api/giris'e gider.
@@ -180,7 +213,7 @@ export default function LoginForm() {
     const dogrulaRes = await fetch("/api/veli/dogrula", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ school_id: schoolId, okul_no: okulNo.trim(), kod: kod.trim() }),
+      body: JSON.stringify({ ...veliKurumAlani(), kod: kod.trim() }),
     });
     if (dogrulaRes.ok) {
       const gövde = await dogrulaRes.json() as { veliAd: string };
@@ -193,7 +226,9 @@ export default function LoginForm() {
     const response = await fetch("/api/giris", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role: "veli", schoolId, okulNo: okulNo.trim(), password: kod.trim() }),
+      body: JSON.stringify(grupModu
+        ? { role: "veli", grupKodu: grupKodu.trim(), okulNo: okulNo.trim().toLowerCase(), password: kod.trim() }
+        : { role: "veli", schoolId, okulNo: okulNo.trim(), password: kod.trim() }),
     });
     const sonuc = await response.json() as { error?: string };
     setYukleniyor(false);
@@ -212,7 +247,7 @@ export default function LoginForm() {
     const response = await fetch("/api/veli/tamamla", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ school_id: schoolId, okul_no: okulNo.trim(), kod: kod.trim(), sifre: veliSifreYeni, kvkkOnay: true }),
+      body: JSON.stringify({ ...veliKurumAlani(), kod: kod.trim(), sifre: veliSifreYeni, kvkkOnay: true }),
     });
     const sonuc = await response.json() as { error?: string };
     setYukleniyor(false);
@@ -241,11 +276,11 @@ export default function LoginForm() {
           <p className="text-xs mt-1 italic"><SeFuSlogan /></p>
         </div>
 
-        <KurumTuruSecici deger={grupModu ? undefined : kurumTuru} onChange={(t) => { setGrupModu(false); setKurumTuru(t); setSchoolId(""); setHata(null); veliDurumunuSifirla(); }} />
+        <KurumTuruSecici deger={grupModu ? undefined : kurumTuru} onChange={(t) => { setGrupModu(false); setGrupVeliTalepModu(false); setKurumTuru(t); setSchoolId(""); setHata(null); veliDurumunuSifirla(); }} />
         {/* Kullanıcı isteği (18.09.2026): okul ve dershane girişinin altında,
             ikisinin sınırlarını kapsayan "Grup Koçluk" düğmesi. */}
         <button type="button"
-          onClick={() => { setGrupModu(true); setHata(null); setSifirlamaModu(false); veliDurumunuSifirla(); if (role !== "ogrenci" && role !== "ogretmen") setRole("ogrenci"); }}
+          onClick={() => { setGrupModu(true); setHata(null); setSifirlamaModu(false); veliDurumunuSifirla(); if (role === "mudur") setRole("ogrenci"); }}
           className="sfec-btn mb-2 flex w-full items-center justify-center gap-1.5 rounded-full px-2 py-2 text-[12px] font-bold"
           style={{ background: grupModu ? MINT : MINT_BG, color: grupModu ? MINT_ON : TEXT, border: `2px solid ${BORDER}` }}>
           <UsersRound size={13} /> Grup Koçluk
@@ -256,7 +291,7 @@ export default function LoginForm() {
             const Icon = r.icon;
             const aktif = role === r.id;
             return (
-              <button key={r.id} type="button" onClick={() => { setRole(r.id); setHata(null); setSifirlamaModu(false); setSifirlamaSonuc(null); veliDurumunuSifirla(); }}
+              <button key={r.id} type="button" onClick={() => { setRole(r.id); setHata(null); setSifirlamaModu(false); setSifirlamaSonuc(null); veliDurumunuSifirla(); setGrupVeliTalepModu(false); }}
                 className="sfec-btn flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-full text-[12px] font-bold"
                 style={{ background: aktif ? MINT : "transparent", color: aktif ? MINT_ON : TEXT_MUTED }}>
                 <Icon size={13} /> {r.ad}
@@ -265,7 +300,42 @@ export default function LoginForm() {
           })}
         </div>
 
-        {sifirlamaModu ? (
+        {grupModu && role === "veli" && grupVeliTalepModu ? (
+          <form onSubmit={grupVeliTalepGonder} className="rounded-3xl p-6 flex flex-col gap-4" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+            <p style={{ color: TEXT_MUTED }} className="text-xs leading-relaxed">
+              Çocuğunuzun koçundan aldığınız grup kodunu ve çocuğunuzun kullanıcı adını yazın. Koç talebi onaylayınca bağlantı kodu çocuğunuzun Mesajlarım kutusuna gelir.
+            </p>
+            {grupVeliTalepMesaji ? (
+              <p className="rounded-xl p-3 text-xs font-semibold leading-relaxed" style={{ background: BG0, color: MINT, border: `2px solid ${BORDER_STRONG}` }}>{grupVeliTalepMesaji}</p>
+            ) : (
+              <>
+                <label className="flex flex-col gap-1">
+                  <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Veli adı soyadı</span>
+                  <input required value={grupVeliAd} onChange={(e) => setGrupVeliAd(e.target.value)}
+                    className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Grup kodu</span>
+                  <input required value={grupKodu} onChange={(e) => setGrupKodu(e.target.value.toUpperCase().replace(/\s/g, ""))} autoCapitalize="characters"
+                    className="font-mono text-sm tracking-wider px-3 py-2 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Öğrencinin kullanıcı adı</span>
+                  <input required value={okulNo} onChange={(e) => setOkulNo(e.target.value.replace(/\s/g, ""))}
+                    className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+                </label>
+                {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
+                <button type="submit" disabled={yukleniyor} className="sfec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+                  {yukleniyor ? "Gönderiliyor..." : "Kod talep et"}
+                </button>
+              </>
+            )}
+            <button type="button" onClick={() => { setGrupVeliTalepModu(false); setGrupVeliTalepMesaji(null); setHata(null); }}
+              className="text-xs font-semibold text-center" style={{ color: TEXT_MUTED }}>
+              Girişe dön
+            </button>
+          </form>
+        ) : sifirlamaModu ? (
           <form onSubmit={sifirlamaGonder} className="rounded-3xl p-6 flex flex-col gap-4" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
             <p style={{ color: TEXT_MUTED }} className="text-xs">
               {role === "mudur"
@@ -369,7 +439,7 @@ export default function LoginForm() {
             </>
           ) : (
             <>
-              {grupModu && role === "ogrenci" && (
+              {grupModu && (role === "ogrenci" || role === "veli") && (
                 <label className="flex flex-col gap-1">
                   <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Grup kodu</span>
                   <input required value={grupKodu} onChange={(e) => setGrupKodu(e.target.value.toUpperCase().replace(/\s/g, ""))}
@@ -388,7 +458,7 @@ export default function LoginForm() {
                 </label>
               )}
               <label className="flex flex-col gap-1">
-                <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">{grupModu ? "Kullanıcı adı" : role === "mudur" ? KURUM_ETIKET[kurumTuru].kod : KURUM_ETIKET[kurumTuru].no}</span>
+                <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">{grupModu ? (role === "veli" ? "Öğrencinin kullanıcı adı" : "Kullanıcı adı") : role === "mudur" ? KURUM_ETIKET[kurumTuru].kod : KURUM_ETIKET[kurumTuru].no}</span>
                 <input required value={okulNo} onChange={(e) => setOkulNo(e.target.value)}
                   className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
               </label>
@@ -431,7 +501,14 @@ export default function LoginForm() {
         </form>
         )}
 
-        {grupModu ? (
+        {grupModu && role === "veli" ? (
+          !grupVeliTalepModu && (
+            <p style={{ color: TEXT_MUTED }} className="text-xs text-center mt-5">
+              Bağlantı kodunuz yok mu?{" "}
+              <button type="button" onClick={() => { setGrupVeliTalepModu(true); setGrupVeliTalepMesaji(null); setHata(null); veliDurumunuSifirla(); }} style={{ color: MINT }} className="font-semibold">Kod talep edin</button>
+            </p>
+          )
+        ) : grupModu ? (
           <p style={{ color: TEXT_MUTED }} className="text-xs text-center mt-5">
             Grup hesapları koç tarafından açılır; kayıt ekranı yoktur.
           </p>

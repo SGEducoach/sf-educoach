@@ -2,7 +2,10 @@
 
 import { startTransition, useEffect, useState, useTransition } from "react";
 import { Check, Copy, Pause, Play, Plus, UsersRound } from "lucide-react";
-import { grupDondur, grupGuncelle, grupOlustur, gruplariGetir, type GrupSatiri } from "@/app/yonetici/grup-actions";
+import {
+  grupDondur, grupGuncelle, grupOgrenciOnayKarari, grupOgrenciOnaylariGetir, grupOlustur, gruplariGetir,
+  type GrupOgrenciOnayi, type GrupSatiri,
+} from "@/app/yonetici/grup-actions";
 import { GRUP_KAPASITELERI } from "@/lib/grup-kocluk";
 import { BG0, BG1, BG1_ALT, BLUSH, BLUSH_BG, BORDER, BORDER_STRONG, BUTTER, BUTTER_BG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
 
@@ -53,6 +56,7 @@ export function GrupKoclukYonetimi() {
         bitiş tarihi geçen grup salt okunur olur.
       </p>
 
+      <OkulEslesmeOnaylari />
       {formAcik && <GrupAcFormu onDone={() => { setFormAcik(false); yukle(); }} />}
       {hata && <p className="my-2 text-xs font-semibold" style={{ color: BLUSH }}>{hata}</p>}
 
@@ -231,6 +235,48 @@ function GrupKarti({ grup: g, onDegisti }: { grup: GrupSatiri; onDegisti: () => 
           {g.donduruldu ? <><Play size={12} /> Grubu aç</> : <><Pause size={12} /> Dondur</>}
         </button>
       </div>
+      {hata && <p className="text-xs font-semibold" style={{ color: BLUSH }}>{hata}</p>}
+    </div>
+  );
+}
+
+// Faz 7: koçun eklemek istediği ad bir okul öğrencisiyle eşleşti. Aynı adlı
+// farklı bir kişiyse onaylanır; okul öğrencisiyse reddedilir.
+function OkulEslesmeOnaylari() {
+  const [onaylar, setOnaylar] = useState<GrupOgrenciOnayi[]>([]);
+  const [hata, setHata] = useState<string | null>(null);
+  const [pending, startIslem] = useTransition();
+
+  function yukle() {
+    grupOgrenciOnaylariGetir().then((r) => { setHata(r.error); setOnaylar(r.onaylar); });
+  }
+  useEffect(() => { startTransition(yukle); }, []);
+
+  if (onaylar.length === 0 && !hata) return null;
+  return (
+    <div className="mb-3 flex flex-col gap-2 rounded-2xl p-4" style={{ background: BUTTER_BG, border: `1px solid ${BORDER}` }}>
+      <p className="text-sm font-bold" style={{ color: TEXT }}>Okul öğrencisi eşleşmesi — onay bekleyenler</p>
+      <p className="text-xs" style={{ color: TEXT_MUTED }}>
+        Koç bu adları eklemek istedi; ad bir okul öğrencisiyle eşleşiyor. Okul öğrencileri gruba eklenemez. Aynı adlı farklı bir kişi olduğundan eminseniz onaylayın.
+      </p>
+      {onaylar.map((o) => (
+        <div key={o.id} className="flex flex-wrap items-center gap-2 rounded-xl px-3 py-2" style={{ background: BG0, border: `1px solid ${BORDER}` }}>
+          <div className="min-w-0 flex-1 text-xs" style={{ color: TEXT }}>
+            <span className="font-bold">{o.ad}</span> — {o.grupAdi}
+            <div style={{ color: TEXT_MUTED }}>Eşleşme: {o.eslesme}</div>
+          </div>
+          <button type="button" disabled={pending}
+            onClick={() => startIslem(async () => { const r = await grupOgrenciOnayKarari(o.id, true); setHata(r.error); yukle(); })}
+            className="sfec-btn rounded-xl px-3 py-1.5 text-xs font-bold" style={{ background: MINT, color: MINT_ON }}>
+            Farklı kişi, onayla
+          </button>
+          <button type="button" disabled={pending}
+            onClick={() => startIslem(async () => { const r = await grupOgrenciOnayKarari(o.id, false); setHata(r.error); yukle(); })}
+            className="sfec-btn rounded-xl px-3 py-1.5 text-xs font-bold" style={{ background: BG1_ALT, color: BLUSH, border: `1px solid ${BORDER_STRONG}` }}>
+            Reddet
+          </button>
+        </div>
+      ))}
       {hata && <p className="text-xs font-semibold" style={{ color: BLUSH }}>{hata}</p>}
     </div>
   );

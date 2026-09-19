@@ -3,10 +3,11 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Check, Copy, KeyRound, Pause, Play, UserPlus, UsersRound } from "lucide-react";
+import { Check, Copy, KeyRound, Pause, Play, UserPlus, Users, UsersRound, X } from "lucide-react";
 import {
   grupOgrenciAktiflik, grupOgrenciSeviyeDegistir, grupOgrenciSifresiYenile, grupOgrencisiEkle,
-  type GrupOgrencisi,
+  grupVeliAktiflik, grupVeliTalebiOnayla, grupVeliTalebiReddet,
+  type GrupOgrencisi, type GrupVeliTalebi, type GrupVelisi,
 } from "@/app/dashboard/grup-koc-actions";
 import type { GrupBilgisi } from "@/lib/grup-koc-auth";
 import { GRUP_SINIF_DUZEYLERI, kalanGun } from "@/lib/grup-kocluk";
@@ -48,7 +49,9 @@ function GirisBilgisi({ baslik, satirlar, onKapat }: { baslik: string; satirlar:
   );
 }
 
-export function GrupKocPaneli({ grup, ogrenciler, bugun }: { grup: GrupBilgisi; ogrenciler: GrupOgrencisi[]; bugun: string }) {
+export function GrupKocPaneli({ grup, ogrenciler, bugun, veliTalepleri, veliler }: {
+  grup: GrupBilgisi; ogrenciler: GrupOgrencisi[]; bugun: string; veliTalepleri: GrupVeliTalebi[]; veliler: GrupVelisi[];
+}) {
   const aktifSayi = ogrenciler.filter((o) => o.aktif).length;
   const dolu = aktifSayi >= grup.kapasite;
   const kalan = kalanGun(grup.bitisTarihi, bugun);
@@ -110,6 +113,8 @@ export function GrupKocPaneli({ grup, ogrenciler, bugun }: { grup: GrupBilgisi; 
           </div>
         )}
       </section>
+
+      <VeliBolumu talepler={veliTalepleri} veliler={veliler} grupKodu={grup.kod} salt={grup.suresiDoldu} />
     </div>
   );
 }
@@ -254,5 +259,88 @@ function OgrenciSatiri({ ogrenci: o, grupKodu, salt }: { ogrenci: GrupOgrencisi;
       )}
       {hata && <p className="text-xs font-semibold" style={{ color: BLUSH }}>{hata}</p>}
     </div>
+  );
+}
+
+// Faz 6: veli talepleri (koç onaylar) ve bağlı veliler.
+function VeliBolumu({ talepler, veliler, grupKodu, salt }: { talepler: GrupVeliTalebi[]; veliler: GrupVelisi[]; grupKodu: string; salt: boolean }) {
+  const router = useRouter();
+  const [pending, startIslem] = useTransition();
+  const [hata, setHata] = useState<string | null>(null);
+  const [bilgi, setBilgi] = useState<string | null>(null);
+
+  function islem(fn: () => Promise<{ error: string | null }>, basari?: string) {
+    setHata(null); setBilgi(null);
+    startIslem(async () => {
+      const r = await fn();
+      if (r.error) setHata(r.error); else { if (basari) setBilgi(basari); router.refresh(); }
+    });
+  }
+
+  return (
+    <section className="sfec-section rounded-3xl p-5" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+      <h2 className="mb-1 flex items-center gap-2 text-base font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>
+        <Users size={16} color={MINT} /> Veliler
+      </h2>
+      <p className="mb-3 text-xs leading-relaxed" style={{ color: TEXT_MUTED }}>
+        Veli, giriş ekranında Grup Koçluk → Veli → &quot;Kod talep edin&quot; ile grup kodunu (<span className="font-mono font-bold">{grupKodu}</span>) ve çocuğunun kullanıcı adını yazar.
+        Onayladığınızda bağlantı kodu öğrencinin Mesajlarım kutusuna gider; kimliğini doğrulamadığınız talepleri reddedin.
+      </p>
+
+      {talepler.length > 0 && (
+        <div className="mb-3 flex flex-col gap-2">
+          <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: TEXT_MUTED }}>Bekleyen talepler</p>
+          {talepler.map((t) => (
+            <div key={t.id} className="flex flex-wrap items-center gap-2 rounded-2xl px-4 py-3" style={{ background: BUTTER_BG, border: `1px solid ${BORDER}` }}>
+              <div className="min-w-0 flex-1 text-sm" style={{ color: TEXT }}>
+                <span className="font-bold">{t.veliAd}</span>
+                <span style={{ color: TEXT_MUTED }}> → {t.ogrenciAd} (<span className="font-mono">{t.kullaniciAdi}</span>)</span>
+              </div>
+              {!salt && (
+                <>
+                  <button type="button" disabled={pending}
+                    onClick={() => { if (window.confirm(`${t.veliAd}, ${t.ogrenciAd} öğrencisinin velisi olarak onaylansın mı?`)) islem(() => grupVeliTalebiOnayla(t.id), "Onaylandı. Bağlantı kodu öğrencinin Mesajlarım kutusuna gönderildi (48 saat geçerli)."); }}
+                    className="sfec-btn flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-bold" style={{ background: MINT, color: MINT_ON }}>
+                    <Check size={12} /> Onayla
+                  </button>
+                  <button type="button" disabled={pending}
+                    onClick={() => { if (window.confirm("Talep reddedilsin mi?")) islem(() => grupVeliTalebiReddet(t.id)); }}
+                    className="sfec-btn flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-bold" style={{ background: BG0, color: BLUSH, border: `1px solid ${BORDER_STRONG}` }}>
+                    <X size={12} /> Reddet
+                  </button>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {veliler.length === 0 ? (
+        <p className="py-2 text-center text-sm" style={{ color: TEXT_MUTED }}>Henüz bağlı veli yok.</p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {veliler.map((v) => (
+            <div key={v.id} className="flex flex-wrap items-center gap-2 rounded-2xl px-4 py-3" style={{ background: BG1_ALT, border: `1px solid ${BORDER}`, opacity: v.aktif ? 1 : 0.7 }}>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-bold" style={{ color: TEXT }}>
+                  {v.ad}
+                  {!v.aktif && <span className="ml-2 rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: BLUSH_BG, color: BLUSH }}>Erişim kapalı</span>}
+                </div>
+                <div className="text-xs" style={{ color: TEXT_MUTED }}>Velisi: {v.ogrenciler.join(", ")}</div>
+              </div>
+              {!salt && (
+                <button type="button" disabled={pending}
+                  onClick={() => { if (!v.aktif || window.confirm(`${v.ad} için veli erişimi kapatılsın mı? Giriş yapamaz.`)) islem(() => grupVeliAktiflik(v.id, !v.aktif)); }}
+                  className="sfec-btn flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs font-bold" style={{ background: BG0, color: v.aktif ? BLUSH : MINT, border: `1px solid ${BORDER_STRONG}` }}>
+                  {v.aktif ? <><Pause size={12} /> Erişimi kapat</> : <><Play size={12} /> Erişimi aç</>}
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      {bilgi && <p className="mt-2 text-xs font-semibold" style={{ color: MINT }}>{bilgi}</p>}
+      {hata && <p className="mt-2 text-xs font-semibold" style={{ color: BLUSH }}>{hata}</p>}
+    </section>
   );
 }

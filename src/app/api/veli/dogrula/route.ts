@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { grupKodundanKurumId } from "@/lib/grup-kodu";
 
 // GÜVENLİK DÜZELTMESİ (2026-08-25) — /api/veli/tamamla ÖNCEDEN kod'u
 // (öğrenci+onaylı talep eşleşmesi) doğruluyordu AMA hesabı, o anda
@@ -23,15 +24,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Geçersiz istek." }, { status: 400 });
   }
 
-  const schoolId = String(body.school_id ?? "").trim();
-  const okulNo = String(body.okul_no ?? "").trim();
+  const admin = createAdminClient();
+  // Grup Koçluk (Faz 6): kurum grup kodundan bulunur.
+  const grupMu = body.grup_kodu !== undefined;
+  const schoolId = grupMu ? (await grupKodundanKurumId(admin, body.grup_kodu)) ?? "" : String(body.school_id ?? "").trim();
+  const okulNo = grupMu ? String(body.okul_no ?? "").trim().toLowerCase() : String(body.okul_no ?? "").trim();
   const kod = String(body.kod ?? "").trim().toUpperCase();
 
   if (!schoolId || !okulNo || !kod) {
     return NextResponse.json({ error: "Okul no ve kod gerekli." }, { status: 400 });
   }
 
-  const admin = createAdminClient();
   const { data: student } = await admin.from("students").select("id").eq("school_id", schoolId).eq("okul_no", okulNo).maybeSingle();
   if (!student) return NextResponse.json({ error: "Okul no veya kod hatalı." }, { status: 400 });
 

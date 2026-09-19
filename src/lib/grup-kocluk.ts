@@ -71,3 +71,14 @@ export function grupOgrencisiGirdisiHatasi(g: { ad: string; kullaniciAdi: string
   if (!(GRUP_SINIF_DUZEYLERI as readonly string[]).includes(g.seviye)) return "Sınıf düzeyi seçin.";
   return null;
 }
+
+// Faz 7: okul öğrencisi eşleşmesi için ad anahtarı. Veritabanındaki
+// public.ad_anahtari (migration 0118) ile birebir aynı olmalı: Türkçe harfler
+// sadeleşir, küçük harf, boşluklar tekleşir.
+const AD_ANAHTARI_HARFLERI: Record<string, string> = {
+  "İ": "i", I: "i", "ı": "i", "Ş": "s", "ş": "s", "Ğ": "g", "ğ": "g",
+  "Ü": "u", "ü": "u", "Ö": "o", "ö": "o", "Ç": "c", "ç": "c",
+};
+export function adAnahtari(ad: string): string {
+  return ad.split("").map((h) => AD_ANAHTARI_HARFLERI[h] ?? h).join("").toLowerCase().replace(/\s+/g, " ").trim();
+}

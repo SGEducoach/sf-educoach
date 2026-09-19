@@ -8,7 +8,8 @@
 import { revalidatePath } from "next/cache";
 import { adNormalize, rastgeleSifre, sifreGecerliMi, SIFRE_IPUCU } from "@/lib/validators";
 import { grupKocuYazmaYetkisi, grupKocuYetkisi } from "@/lib/grup-koc-auth";
-import { GRUP_SINIF_DUZEYLERI, GRUP_SINIF_SUBESI, grupOgrencisiGirdisiHatasi } from "@/lib/grup-kocluk";
+import { GRUP_SINIF_DUZEYLERI, GRUP_SINIF_SUBESI, adAnahtari, grupOgrencisiGirdisiHatasi } from "@/lib/grup-kocluk";
+import { createClient } from "@/lib/supabase/server";
 
 type Admin = NonNullable<Awaited<ReturnType<typeof grupKocuYetkisi>>["admin"]>;
 
@@ -97,6 +98,9 @@ export async function grupOgrencisiEkle(input: { ad: string; kullaniciAdi: strin
   if (!sifreGecerliMi(sifre)) return { error: `Şifre geçersiz. ${SIFRE_IPUCU}`, sifre: null };
   const kullaniciAdi = input.kullaniciAdi.trim().toLowerCase();
 
+  const okulEngeli = await okulOgrencisiKontrolu(admin, grup.id, kocId, adNormalize(input.ad));
+  if (okulEngeli) return { error: okulEngeli, sifre: null };
+
   if (await aktifOgrenciSayisi(admin, grup.id) >= grup.kapasite) {
     return { error: kapasiteMesaji("GRUP_KAPASITESI_DOLU"), sifre: null };
   }
@@ -171,6 +175,131 @@ export async function grupOgrenciSeviyeDegistir(ogrenciId: string, seviye: strin
   const { error } = await admin.from("students").update({ class_id: classId }).eq("id", ogrenciId).eq("school_id", grup.id);
   if (error) return { error: error.message };
   await islemKaydi(admin, kocId, "grup_ogrenci_sinif", { school_id: grup.id, ogrenci_id: ogrenciId, seviye });
+  revalidatePath("/dashboard");
+  return { error: null };
+}
+
+// ============ Faz 7: okul öğrencisi kontrolü ============
+// Kullanıcı kararı (18.09.2026): okul öğrencisi gruba eklenemez, dershane
+// öğrencisi serbest. Ad; okul hesapları ve okul öğrenci listeleriyle
+// karşılaştırılır (migration 0118). Eşleşirse yönetici onayına düşer; koça
+// hangi okulla eşleştiği gösterilmez. Kontrol yapılamazsa ekleme durur.
+async function okulOgrencisiKontrolu(admin: Admin, schoolId: string, kocId: string, ad: string): Promise<string | null> {
+  const anahtar = adAnahtari(ad);
+  const { data: onay } = await admin.from("grup_ogrenci_onaylari").select("durum").eq("school_id", schoolId).eq("ad_anahtari", anahtar).maybeSingle();
+  if (onay?.durum === "onaylandi") return null;
+  if (onay?.durum === "reddedildi") return "Bu öğrenci bir okul öğrencisiyle eşleştiği için SeFu Koç yönetimi eklemeyi onaylamadı. Okul öğrencileri gruplara eklenemez.";
+  if (onay?.durum === "bekliyor") return "Bu ad soyad için SeFu Koç yönetiminin onayı bekleniyor. Onaylandığında öğrenciyi ekleyebilirsiniz.";
+
+  const { data: eslesmeler, error } = await admin.rpc("okul_ogrencisi_ad_eslesmesi", { p_ad: ad });
+  if (error) {
+    console.error("okul öğrencisi kontrolü yapılamadı:", error.message);
+    return "Öğrenci kontrolü yapılamadı, biraz sonra tekrar deneyin.";
+  }
+  const satirlar = (eslesmeler ?? []) as { okul: string; kaynak: string; sayi: number }[];
+  if (satirlar.length === 0) return null;
+
+  const eslesme = satirlar.map((e) => `${e.okul} (${e.kaynak}${e.sayi > 1 ? ` ×${e.sayi}` : ""})`).join(", ");
+  const { error: kayitHatasi } = await admin.from("grup_ogrenci_onaylari")
+    .insert({ school_id: schoolId, ad, ad_anahtari: anahtar, eslesme, talep_eden_id: kocId });
+  if (kayitHatasi && kayitHatasi.code !== "23505") console.error("grup öğrenci onay talebi yazılamadı:", kayitHatasi.message);
+  await islemKaydi(admin, kocId, "grup_okul_ogrencisi_eslesti", { school_id: schoolId });
+  return "Bu ad soyad bir okul öğrencisiyle eşleşiyor; okul öğrencileri gruplara eklenemez. Farklı bir kişiyse talebiniz SeFu Koç yönetiminin onayına gönderildi, onaylanınca öğrenciyi ekleyebilirsiniz.";
+}
+
+// ============ Faz 6: veli erişimi ============
+// Kullanıcı kararı (18.09.2026): veli olsun, koç onaylar. Veli talebi girişte
+// grup kodu + öğrencinin kullanıcı adıyla açılır; koç onaylayınca bağlantı
+// kodu öğrencinin Mesajlarım kutusuna düşer (mevcut veli akışı).
+export interface GrupVeliTalebi { id: string; veliAd: string; ogrenciAd: string; kullaniciAdi: string; tarih: string }
+export interface GrupVelisi { id: string; ad: string; aktif: boolean; ogrenciler: string[] }
+
+type Tek<T> = T | T[] | null;
+const tekil = <T,>(v: Tek<T>): T | null => (Array.isArray(v) ? v[0] ?? null : v);
+
+export async function grupVelileriGetir(): Promise<{ error: string | null; talepler: GrupVeliTalebi[]; veliler: GrupVelisi[] }> {
+  const yetki = await grupKocuYetkisi();
+  if (yetki.error !== null) return { error: yetki.error, talepler: [], veliler: [] };
+  const { admin, grup } = yetki;
+
+  const { data: ogrenciler } = await admin.from("students").select("id, okul_no, profiles!students_id_fkey(ad)").eq("school_id", grup.id);
+  const ogrenciBilgi = new Map<string, { ad: string; kullaniciAdi: string }>();
+  for (const o of (ogrenciler ?? []) as unknown as { id: string; okul_no: string; profiles: Tek<{ ad: string }> }[]) {
+    ogrenciBilgi.set(o.id, { ad: tekil(o.profiles)?.ad ?? "İsimsiz", kullaniciAdi: o.okul_no });
+  }
+  const ids = [...ogrenciBilgi.keys()];
+  if (ids.length === 0) return { error: null, talepler: [], veliler: [] };
+
+  const [{ data: talepler }, { data: baglar }] = await Promise.all([
+    admin.from("veli_link_requests").select("id, student_id, veli_ad, created_at").in("student_id", ids).eq("durum", "bekliyor").order("created_at", { ascending: true }),
+    admin.from("parent_students").select("parent_id, student_id").in("student_id", ids),
+  ]);
+  const veliIdleri = [...new Set((baglar ?? []).map((b) => b.parent_id as string))];
+  const { data: veliProfilleri } = veliIdleri.length
+    ? await admin.from("profiles").select("id, ad, aktif").in("id", veliIdleri)
+    : { data: [] as { id: string; ad: string; aktif: boolean }[] };
+
+  return {
+    error: null,
+    talepler: (talepler ?? []).map((t) => ({
+      id: t.id as string, veliAd: t.veli_ad as string, tarih: t.created_at as string,
+      ogrenciAd: ogrenciBilgi.get(t.student_id as string)?.ad ?? "—",
+      kullaniciAdi: ogrenciBilgi.get(t.student_id as string)?.kullaniciAdi ?? "—",
+    })),
+    veliler: (veliProfilleri ?? []).map((v) => ({
+      id: v.id as string, ad: v.ad as string, aktif: v.aktif !== false,
+      ogrenciler: (baglar ?? []).filter((b) => b.parent_id === v.id).map((b) => ogrenciBilgi.get(b.student_id as string)?.ad ?? "—"),
+    })),
+  };
+}
+
+async function grubunVeliTalebiMi(admin: Admin, schoolId: string, talepId: string): Promise<boolean> {
+  const { data } = await admin.from("veli_link_requests").select("id, students!inner(school_id)").eq("id", talepId).eq("students.school_id", schoolId).maybeSingle();
+  return !!data;
+}
+
+export async function grupVeliTalebiOnayla(talepId: string): Promise<{ error: string | null }> {
+  const yetki = await grupKocuYazmaYetkisi();
+  if (yetki.error !== null) return { error: yetki.error };
+  const { admin, kocId, grup } = yetki;
+  if (!await grubunVeliTalebiMi(admin, grup.id, talepId)) return { error: "Talep bulunamadı." };
+  // Onay koçun kendi oturumuyla: veritabanı yetkiyi yeniden doğrular ve kodu
+  // öğrencinin Mesajlarım kutusuna koçun adıyla gönderir (migration 0117).
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("veli_talep_onayla", { p_request_id: talepId });
+  if (error) return { error: error.message };
+  await islemKaydi(admin, kocId, "grup_veli_onayla", { school_id: grup.id, talep_id: talepId });
+  revalidatePath("/dashboard");
+  return { error: null };
+}
+
+export async function grupVeliTalebiReddet(talepId: string): Promise<{ error: string | null }> {
+  const yetki = await grupKocuYazmaYetkisi();
+  if (yetki.error !== null) return { error: yetki.error };
+  const { admin, kocId, grup } = yetki;
+  if (!await grubunVeliTalebiMi(admin, grup.id, talepId)) return { error: "Talep bulunamadı." };
+  const { data, error } = await admin.from("veli_link_requests").update({ durum: "reddedildi" }).eq("id", talepId).eq("durum", "bekliyor").select("id").maybeSingle();
+  if (error) return { error: error.message };
+  if (!data) return { error: "Talep daha önce işlenmiş." };
+  await islemKaydi(admin, kocId, "grup_veli_reddet", { school_id: grup.id, talep_id: talepId });
+  revalidatePath("/dashboard");
+  return { error: null };
+}
+
+// Koç, grubundaki öğrencilerin velisinin erişimini kapatıp açabilir. Velinin
+// başka kurumda da çocuğu varsa dokunulmaz (hesap tek, karar koçun değil).
+export async function grupVeliAktiflik(veliId: string, aktif: boolean): Promise<{ error: string | null }> {
+  const yetki = await grupKocuYazmaYetkisi();
+  if (yetki.error !== null) return { error: yetki.error };
+  const { admin, kocId, grup } = yetki;
+  const { data: baglar } = await admin.from("parent_students").select("student_id, students!inner(school_id)").eq("parent_id", veliId);
+  const satirlar = (baglar ?? []) as unknown as { student_id: string; students: Tek<{ school_id: string }> }[];
+  if (satirlar.length === 0 || satirlar.some((b) => tekil(b.students)?.school_id !== grup.id)) {
+    return { error: "Bu velinin erişimini yalnızca SeFu Koç yönetimi değiştirebilir." };
+  }
+  const { error } = await admin.from("profiles").update({ aktif }).eq("id", veliId).eq("role", "veli");
+  if (error) return { error: error.message };
+  await islemKaydi(admin, kocId, aktif ? "grup_veli_aktiflestir" : "grup_veli_pasiflestir", { school_id: grup.id, veli_id: veliId });
   revalidatePath("/dashboard");
   return { error: null };
 }

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { grupGirdisiHatasi, grupKapasitesiMi, grupKoduUret, grupOgrencisiGirdisiHatasi, kalanGun } from "./grup-kocluk";
+import { adAnahtari, grupGirdisiHatasi, grupKapasitesiMi, grupKoduUret, grupOgrencisiGirdisiHatasi, kalanGun } from "./grup-kocluk";
 
 describe("grupKoduUret", () => {
   test("G + 5 karakter, karışan harfler yok", () => {
@@ -55,5 +55,13 @@ describe("grupOgrencisiGirdisiHatasi", () => {
     expect(grupOgrencisiGirdisiHatasi({ ad: "Ali Veli", kullaniciAdi: "alişveli", seviye: "11" })).toMatch(/Türkçe/);
     expect(grupOgrencisiGirdisiHatasi({ ad: "Ali Veli", kullaniciAdi: "ali veli12", seviye: "11" })).toMatch(/6-30/);
     expect(grupOgrencisiGirdisiHatasi({ ad: "Ali Veli", kullaniciAdi: "ali_veli12", seviye: "Mezun" })).toMatch(/düzey/);
+  });
+});
+
+describe("adAnahtari", () => {
+  test("Türkçe harf ve büyük/küçük harf farkı sadeleşir", () => {
+    expect(adAnahtari("  Ayşe   YILDIZ İÇEL ")).toBe("ayse yildiz icel");
+    expect(adAnahtari("ÖMER ŞAHİN")).toBe(adAnahtari("Ömer Şahin"));
+    expect(adAnahtari("Işıl Güneş")).toBe("isil gunes");
   });
 });

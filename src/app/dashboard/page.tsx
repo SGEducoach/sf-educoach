@@ -25,7 +25,7 @@ import { KonuHakimiyetiEkrani } from "@/components/dashboard/KonuHakimiyetiEkran
 import { AYT_ALAN_ETIKET, sinifSiraKarsilastir, dokuzOnSinifMi, TYT_DERSLERI, AYT_DERSLERI } from "@/lib/types";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
 import type { AytAlan, KurumTuru, UserRole } from "@/lib/types";
-import { BG1, BG1_ALT, BORDER, BORDER_STRONG, TEXT, TEXT_MUTED, MINT, MINT_BG } from "@/lib/theme";
+import { BG1, BG1_ALT, BORDER, BORDER_STRONG, TEXT, TEXT_MUTED, MINT, MINT_BG, BUTTER, BUTTER_BG } from "@/lib/theme";
 import { Gorevlerim } from "@/components/dashboard/Gorevlerim";
 import type { GorevSatiri } from "@/components/dashboard/Gorevlerim";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
@@ -36,7 +36,7 @@ import { dashboardMenusu } from "@/lib/dashboard-navigation";
 import type { DashboardBolumu } from "@/lib/dashboard-navigation";
 import { RozetGoruntulemePaneli } from "@/components/dashboard/RozetGoruntulemePaneli";
 import { kurumRozetGorunumuGetir, veliRozetGorunumuGetir } from "@/lib/rozet-gorunumu";
-import { dershaneDenemeBitisGetir, suresiDolduMu, kullaniciKurumuGetir, denemeSuresiUygulanir, grupDondurulmus, GRUP_DONDURULDU_MESAJI } from "@/lib/deneme-suresi";
+import { dershaneDenemeBitisGetir, suresiDolduMu, kullaniciKurumuGetir, denemeSuresiUygulanir, grupDondurulmus, GRUP_DONDURULDU_MESAJI, GRUP_SALT_OKUNUR_MESAJI } from "@/lib/deneme-suresi";
 import { ogretmenProgramiGetir, okulNobetiGetir, yurtNobetGorevleriGetir } from "@/lib/ders-programi";
 import type { OkulNobeti } from "@/lib/ders-programi";
 import type { DersProgramiSatiri } from "@/lib/ders-programi";
@@ -49,7 +49,7 @@ import { RehberOgrenciTakibi } from "@/components/dashboard/RehberOgrenciTakibi"
 import { GrupKocPaneli } from "@/components/dashboard/GrupKocPaneli";
 import { DershaneDenemePdfFormu } from "@/components/dashboard/DershaneDenemePdfFormu";
 import { grupKocuYetkisi } from "@/lib/grup-koc-auth";
-import { grupOgrencileriGetir } from "@/app/dashboard/grup-koc-actions";
+import { grupOgrencileriGetir, grupVelileriGetir } from "@/app/dashboard/grup-koc-actions";
 import { rehberOgrenciTakibiVerisiGetir } from "@/lib/dershane-rehber";
 import { OgrenciProfilim } from "@/components/dashboard/OgrenciProfilim";
 import { ogretmenAktifGunuKaydet, ogrenciProfilGoruntulemesiKaydet } from "@/lib/ogretmen-takip";
@@ -184,6 +184,14 @@ export default async function DashboardPage({
         ? <GrupOgrenciAktivasyonu ad={profile.ad} alanSorulur={grupAlanSorulur} />
         : <ZorunluSifreDegisikligiKapisi gecici={profile.gecici_sifre} />}
       <OgretmenEpostaUyarisi email={profile.email} goster={ogretmenEpostaUyarisi} />
+      {/* Faz 8: süresi dolan grupta öğrenci ve veli salt okunur (koçun kendi uyarısı Grubum'da). */}
+      {kurum?.grupMu && kurum.suresiDoldu && (role === "ogrenci" || role === "veli") && (
+        <div className="mx-auto w-full max-w-[100rem] px-4 pt-4 sm:px-6">
+          <p className="rounded-2xl px-4 py-3 text-sm font-semibold" style={{ background: BUTTER_BG, color: BUTTER, border: `1px solid ${BORDER}` }}>
+            {role === "veli" ? "Çocuğunuzun koçluk grubunun süresi doldu; veriler görüntülenebilir ama yeni kayıt yapılamaz." : GRUP_SALT_OKUNUR_MESAJI}
+          </p>
+        </div>
+      )}
       <HosgeldinPopuplari role={role} />
       <div className="mx-auto flex min-h-[calc(100dvh-6.75rem)] w-full max-w-[100rem] flex-1 items-stretch gap-6 px-4 py-6 sm:px-6 lg:py-7">
         <DashboardYanMenu role={role} kurumTuru={kurumTuru} brans={brans} grupMu={grupKocu} aktifBolum={aktifBolum} />
@@ -226,8 +234,8 @@ async function GrupKocIcerik() {
       </div>
     );
   }
-  const { ogrenciler } = await grupOgrencileriGetir();
-  return <GrupKocPaneli grup={yetki.grup} ogrenciler={ogrenciler} bugun={bugununTarihiTR()} />;
+  const [{ ogrenciler }, { talepler, veliler }] = await Promise.all([grupOgrencileriGetir(), grupVelileriGetir()]);
+  return <GrupKocPaneli grup={yetki.grup} ogrenciler={ogrenciler} bugun={bugununTarihiTR()} veliTalepleri={talepler} veliler={veliler} />;
 }
 
 // Eğlence etiketleri mevcut rozet RPC'sinden tamamen bağımsızdır. Yalnızca

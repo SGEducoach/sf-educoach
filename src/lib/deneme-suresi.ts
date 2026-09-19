@@ -32,16 +32,26 @@ export interface KullaniciKurumu {
   // Yönetici grubu dondurduğunda false (schools.aktif) — grup üyeleri girişte
   // ve panelde durdurulur; öğrencilerin kendi hesap durumu değişmez.
   aktif: boolean;
+  // Grup bitiş tarihi geçtiyse true: grup salt okunur (Faz 8, migration 0119).
+  suresiDoldu: boolean;
 }
+
+export const GRUP_SALT_OKUNUR_MESAJI =
+  "Grubunun süresi doldu; grup salt okunur. Verilerini görebilirsin ama yeni kayıt yapamazsın. Devam etmek için koçunla görüş.";
 
 export const GRUP_DONDURULDU_MESAJI =
   "Bu grup şu an dondurulmuş durumda. Bilgi için koçunuzla ya da SeFu Koç yönetimiyle iletişime geçin.";
 
 async function okulBilgisi(supabase: SupabaseClient, schoolId: string | null | undefined): Promise<KullaniciKurumu | undefined> {
   if (!schoolId) return undefined;
-  const { data: s } = await supabase.from("schools").select("tur, grup_kapasitesi, aktif").eq("id", schoolId).maybeSingle();
+  const { data: s } = await supabase.from("schools").select("tur, grup_kapasitesi, grup_bitis_tarihi, aktif").eq("id", schoolId).maybeSingle();
   if (!s) return undefined;
-  return { tur: s.tur as KurumTuru, grupMu: s.grup_kapasitesi !== null, aktif: s.aktif !== false };
+  const bugun = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Istanbul" });
+  const grupMu = s.grup_kapasitesi !== null;
+  return {
+    tur: s.tur as KurumTuru, grupMu, aktif: s.aktif !== false,
+    suresiDoldu: grupMu && !!s.grup_bitis_tarihi && (s.grup_bitis_tarihi as string) < bugun,
+  };
 }
 
 export async function kullaniciKurumuGetir(

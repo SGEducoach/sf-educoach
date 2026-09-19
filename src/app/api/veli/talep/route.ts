@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { adNormalize, okulNoGecerliMi } from "@/lib/validators";
+import { grupKodundanKurumId } from "@/lib/grup-kodu";
 
 const GENEL_YANIT = "Talebiniz alındı. Onaylandığında kod öğrencinin Mesajlarım kutusuna gönderilecektir.";
 
@@ -15,15 +16,25 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Geçersiz istek." }, { status: 400 });
   }
 
-  const schoolId = String(body.school_id ?? "").trim();
-  const okulNo = String(body.okul_no ?? "").trim();
+  const admin = createAdminClient();
+  // Grup Koçluk (Faz 6): kurum listesi yerine grup kodu; kullanıcı adı küçük harf.
+  const grupMu = body.grup_kodu !== undefined;
+  const schoolId = grupMu ? await grupKodundanKurumId(admin, body.grup_kodu) : String(body.school_id ?? "").trim();
+  const okulNoHam = String(body.okul_no ?? "").trim();
+  const okulNo = grupMu ? okulNoHam.toLowerCase() : okulNoHam;
   const veliAd = adNormalize(String(body.veli_ad ?? "").trim());
 
-  if (!/^[0-9a-f-]{36}$/i.test(schoolId) || !okulNoGecerliMi(okulNo) || !veliAd) {
+  // Okul numarası (okul) ya da kullanıcı adı (dershane/grup).
+  const noGecerli = okulNoGecerliMi(okulNo) || /^[a-zA-Z0-9_]{6,32}$/.test(okulNo);
+  if (!noGecerli || !veliAd) {
+    return NextResponse.json({ error: "Girilen bilgileri kontrol edin." }, { status: 400 });
+  }
+  // Bulunamayan grup kodu da kayıt taramasına karşı genel yanıt alır.
+  if (grupMu && !schoolId) return genelBasariYaniti();
+  if (!schoolId || !/^[0-9a-f-]{36}$/i.test(schoolId)) {
     return NextResponse.json({ error: "Girilen bilgileri kontrol edin." }, { status: 400 });
   }
 
-  const admin = createAdminClient();
   const { data: student } = await admin
     .from("students")
     .select("id")
