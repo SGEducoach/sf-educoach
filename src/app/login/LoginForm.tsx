@@ -4,10 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, GraduationCap, BookOpen, Users, Building2 } from "lucide-react";
+import { ArrowLeft, GraduationCap, BookOpen, Users, Building2, UsersRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { KurumTuru, School, UserRole } from "@/lib/types";
-import { BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
+import { BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 import { KURUM_ETIKET } from "@/lib/kurum";
 import { sifreGecerliMi, SIFRE_IPUCU } from "@/lib/validators";
 import { VELI_KVKK_METNI } from "@/lib/veli-kvkk";
@@ -22,6 +22,13 @@ const rolSecenekleri: { id: UserRole; ad: string; icon: typeof BookOpen }[] = [
   { id: "mudur", ad: "Müdür", icon: Building2 },
 ];
 
+// Grup Koçluk girişi (Faz 4, 18.09.2026): kurum listesi yok; öğrenci grup
+// kodu + kullanıcı adı + şifre, koç e-posta + şifre (öğretmen hesabı).
+const grupRolSecenekleri: { id: UserRole; ad: string; icon: typeof BookOpen }[] = [
+  { id: "ogrenci", ad: "Öğrenci", icon: BookOpen },
+  { id: "ogretmen", ad: "Koç", icon: GraduationCap },
+];
+
 // Kullanıcı isteği (27.08.2026): karşılama sayfasında (/) seçilen rol
 // buraya ?rol= ile taşınıyor — devamlılık hissi kaybolmasın diye.
 function baslangicRolu(searchParams: URLSearchParams): UserRole {
@@ -34,6 +41,8 @@ export default function LoginForm() {
   const searchParams = useSearchParams();
   const supabase = createClient();
   const [kurumTuru, setKurumTuru] = useState<KurumTuru>("okul");
+  const [grupModu, setGrupModu] = useState(false);
+  const [grupKodu, setGrupKodu] = useState("");
   const [role, setRole] = useState<UserRole>(() => baslangicRolu(searchParams));
 
   const [schools, setSchools] = useState<School[]>([]);
@@ -97,6 +106,9 @@ export default function LoginForm() {
     e.preventDefault();
     setHata(null);
 
+    // Grup öğrencisi: kurum grup kodundan sunucuda bulunur (bkz. api/giris).
+    if (grupModu && role === "ogrenci") return grupOgrencisiGirisYap();
+
     // okul_no sadece okul içinde benzersiz olduğu için öğrenci/veli
     // girişinde okul seçimi zorunlu (bkz. migration 0023).
     if ((role === "ogrenci" || role === "veli") && !schoolId) {
@@ -138,6 +150,23 @@ export default function LoginForm() {
     if (error) {
       setHata(error.message === "Invalid login credentials" ? "Bilgiler hatalı." : error.message);
       return;
+    }
+    router.push("/dashboard");
+    router.refresh();
+  }
+
+  async function grupOgrencisiGirisYap() {
+    if (!grupKodu.trim()) return setHata("Grup kodunu yazın.");
+    setYukleniyor(true);
+    const response = await fetch("/api/giris", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role: "ogrenci", grupKodu: grupKodu.trim(), okulNo: okulNo.trim().toLowerCase(), password }),
+    });
+    const sonuc = await response.json() as { error?: string };
+    setYukleniyor(false);
+    if (!response.ok) {
+      return setHata(!sonuc.error || sonuc.error === "Invalid login credentials" ? "Grup kodu, kullanıcı adı ya da şifre hatalı." : sonuc.error);
     }
     router.push("/dashboard");
     router.refresh();
@@ -212,10 +241,18 @@ export default function LoginForm() {
           <p className="text-xs mt-1 italic"><SeFuSlogan /></p>
         </div>
 
-        <KurumTuruSecici deger={kurumTuru} onChange={(t) => { setKurumTuru(t); setSchoolId(""); setHata(null); veliDurumunuSifirla(); }} />
+        <KurumTuruSecici deger={grupModu ? undefined : kurumTuru} onChange={(t) => { setGrupModu(false); setKurumTuru(t); setSchoolId(""); setHata(null); veliDurumunuSifirla(); }} />
+        {/* Kullanıcı isteği (18.09.2026): okul ve dershane girişinin altında,
+            ikisinin sınırlarını kapsayan "Grup Koçluk" düğmesi. */}
+        <button type="button"
+          onClick={() => { setGrupModu(true); setHata(null); setSifirlamaModu(false); veliDurumunuSifirla(); if (role !== "ogrenci" && role !== "ogretmen") setRole("ogrenci"); }}
+          className="sfec-btn mb-2 flex w-full items-center justify-center gap-1.5 rounded-full px-2 py-2 text-[12px] font-bold"
+          style={{ background: grupModu ? MINT : MINT_BG, color: grupModu ? MINT_ON : TEXT, border: `2px solid ${BORDER}` }}>
+          <UsersRound size={13} /> Grup Koçluk
+        </button>
 
         <div className="flex gap-1 p-1 rounded-full mb-4" style={{ background: "rgba(255,255,255,0.06)", border: `2px solid ${BORDER}` }}>
-          {rolSecenekleri.map((r) => {
+          {(grupModu ? grupRolSecenekleri : rolSecenekleri).map((r) => {
             const Icon = r.icon;
             const aktif = role === r.id;
             return (
@@ -332,7 +369,15 @@ export default function LoginForm() {
             </>
           ) : (
             <>
-              {(role === "ogrenci" || role === "veli") && (
+              {grupModu && role === "ogrenci" && (
+                <label className="flex flex-col gap-1">
+                  <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Grup kodu</span>
+                  <input required value={grupKodu} onChange={(e) => setGrupKodu(e.target.value.toUpperCase().replace(/\s/g, ""))}
+                    placeholder="Koçunuzun verdiği kod" autoCapitalize="characters"
+                    className="font-mono text-sm tracking-wider px-3 py-2 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+                </label>
+              )}
+              {!grupModu && (role === "ogrenci" || role === "veli") && (
                 <label className="flex flex-col gap-1">
                   <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">{KURUM_ETIKET[kurumTuru].secim}</span>
                   <select required value={schoolId} onChange={(e) => setSchoolId(e.target.value)}
@@ -343,7 +388,7 @@ export default function LoginForm() {
                 </label>
               )}
               <label className="flex flex-col gap-1">
-                <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">{role === "mudur" ? KURUM_ETIKET[kurumTuru].kod : KURUM_ETIKET[kurumTuru].no}</span>
+                <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">{grupModu ? "Kullanıcı adı" : role === "mudur" ? KURUM_ETIKET[kurumTuru].kod : KURUM_ETIKET[kurumTuru].no}</span>
                 <input required value={okulNo} onChange={(e) => setOkulNo(e.target.value)}
                   className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
               </label>
@@ -357,7 +402,9 @@ export default function LoginForm() {
             </>
           )}
 
-          {!(role === "veli" && veliAsama === "sifreBelirle") && (
+          {grupModu && role === "ogrenci" ? (
+            <p className="text-[11px] -mt-2 self-end" style={{ color: TEXT_MUTED }}>Şifreni unuttuysan koçundan yeni şifre iste.</p>
+          ) : !(role === "veli" && veliAsama === "sifreBelirle") && (
             <button type="button" onClick={() => { setSifirlamaModu(true); setHata(null); setSifirlamaSonuc(null); }}
               className="text-xs font-semibold self-end -mt-2" style={{ color: MINT }}>
               Şifremi unuttum
@@ -376,10 +423,16 @@ export default function LoginForm() {
         </form>
         )}
 
-        <p style={{ color: TEXT_MUTED }} className="text-xs text-center mt-5">
-          Hesabınız yok mu?{" "}
-          <Link href="/signup" style={{ color: MINT }} className="font-semibold">Kayıt olun</Link>
-        </p>
+        {grupModu ? (
+          <p style={{ color: TEXT_MUTED }} className="text-xs text-center mt-5">
+            Grup hesapları koç tarafından açılır; kayıt ekranı yoktur.
+          </p>
+        ) : (
+          <p style={{ color: TEXT_MUTED }} className="text-xs text-center mt-5">
+            Hesabınız yok mu?{" "}
+            <Link href="/signup" style={{ color: MINT }} className="font-semibold">Kayıt olun</Link>
+          </p>
+        )}
         <p style={{ color: TEXT_MUTED }} className="text-[10px] text-center mt-6 opacity-70">
           © 2026 www.sefukoc.com. Tüm hakları saklıdır.
         </p>

@@ -21,7 +21,10 @@ function kademeliEngelSuresi(blockCount: number): number {
 }
 
 type GirisRolu = "ogrenci" | "ogretmen" | "veli" | "mudur" | "admin";
-interface GirisGovdesi { role?: GirisRolu; schoolId?: string; okulNo?: string; email?: string; password?: string }
+// grupKodu: Grup Koçluk öğrencisi (Faz 4) — kurum listesi yerine koçun verdiği
+// kod; sunucuda kuruma çevrilir (dışarıya kod sorgulatan ayrı bir kapı yok,
+// kod denemeleri de aşağıdaki hatalı giriş sınırına takılır).
+interface GirisGovdesi { role?: GirisRolu; schoolId?: string; okulNo?: string; email?: string; password?: string; grupKodu?: string }
 
 // Kullanıcı isteği (26.08.2026): öğrenci hariç tüm rollerde (admin dahil)
 // hesap sahibine "yanlış giriş denemesi yapıldı" bildirimi düşsün.
@@ -71,6 +74,14 @@ export async function POST(request: NextRequest) {
   }
 
   const admin = createAdminClient();
+  if (body.grupKodu !== undefined) {
+    const kod = String(body.grupKodu).trim().toUpperCase();
+    const { data: grup } = kod
+      ? await admin.from("schools").select("id").eq("okul_kodu", kod).not("grup_kapasitesi", "is", null).maybeSingle()
+      : { data: null };
+    // Bulunamayan kod da normal bir hatalı giriş gibi sayılır (ayrı anahtar).
+    body.schoolId = (grup?.id as string | undefined) ?? `grup-yok:${kod}`;
+  }
   const attemptKey = anahtarOlustur(request, body);
   const { data: limit } = await admin.from("login_attempt_limits")
     .select("failed_count, window_started_at, blocked_until, block_count").eq("attempt_key", attemptKey).maybeSingle();

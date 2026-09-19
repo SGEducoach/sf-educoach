@@ -11,7 +11,8 @@ const SECENEKLER: { id: KurumTuru; ad: string; icon: typeof School }[] = [
 
 // Login/Signup'ın en üstünde, rol seçiminden önce gösterilen okul/dershane
 // toggle'ı — mevcut rol-pill görünümüyle birebir aynı (bkz. LoginForm.tsx).
-export function KurumTuruSecici({ deger, onChange }: { deger: KurumTuru; onChange: (t: KurumTuru) => void }) {
+// deger boşsa hiçbiri seçili görünmez (girişte "Grup Koçluk" seçildiğinde).
+export function KurumTuruSecici({ deger, onChange }: { deger?: KurumTuru; onChange: (t: KurumTuru) => void }) {
   return (
     <div className="flex gap-1 p-1 rounded-full mb-2" style={{ background: "rgba(255,255,255,0.06)", border: `2px solid ${BORDER}` }}>
       {SECENEKLER.map((s) => {
