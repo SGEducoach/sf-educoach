@@ -14,6 +14,7 @@ import { AnalizPaneli } from "@/components/dashboard/AnalizPaneli";
 import { HosgeldinPopuplari } from "@/components/dashboard/HosgeldinPopuplari";
 import { OgretmenEpostaUyarisi } from "@/components/dashboard/OgretmenEpostaUyarisi";
 import { ZorunluSifreDegisikligiKapisi } from "@/components/dashboard/ZorunluSifreDegisikligiKapisi";
+import { GrupOgrenciAktivasyonu } from "@/components/dashboard/GrupOgrenciAktivasyonu";
 import { analizVerisiGetir } from "@/lib/analiz";
 import type { RaporDonemi } from "@/lib/analiz";
 import { kohortKarsilastirmasiGetir } from "@/lib/analiz-kohort";
@@ -82,7 +83,7 @@ export default async function DashboardPage({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("ad, role, email, gecici_sifre")
+    .select("ad, role, email, gecici_sifre, kvkk_onay_at")
     .eq("id", user.id)
     .single();
 
@@ -149,6 +150,14 @@ export default async function DashboardPage({
   const brans = ogretmenBransHam?.brans;
   // Grup Koçluk koçu (Faz 3): kendi menüsü ve "Grubum" ana sayfası var.
   const grupKocu = role === "ogretmen" && !!kurum?.grupMu;
+  // Grup öğrencisinin ilk girişi (Faz 5): KVKK onayı verilmemişse aktivasyon
+  // ekranı (şifre + isteğe bağlı e-posta + alan + hedef + onaylar). Sonraki
+  // geçici şifrelerde (koç yeniledi) normal şifre değiştirme kapısı çıkar.
+  const grupAktivasyonu = role === "ogrenci" && !!kurum?.grupMu && !profile.kvkk_onay_at;
+  const grupOgrencisiSeviyesi = grupAktivasyonu
+    ? ((await supabase.from("students").select("classes(seviye)").eq("id", user.id).maybeSingle()).data as unknown as { classes: { seviye: string } | { seviye: string }[] | null } | null)?.classes
+    : null;
+  const grupAlanSorulur = !dokuzOnSinifMi(Array.isArray(grupOgrencisiSeviyesi) ? grupOgrencisiSeviyesi[0]?.seviye : grupOgrencisiSeviyesi?.seviye);
   const varsayilanBolum: DashboardBolumu = !grupKocu && ((role === "mudur" && kurumTuru !== "dershane") || (role === "ogretmen" && brans === REHBER_BRANSI))
     ? "kurum-performansi" : "ozet";
   const aktifBolum = (params.bolum ?? varsayilanBolum) as DashboardBolumu;
@@ -171,7 +180,9 @@ export default async function DashboardPage({
           gösterilir, "Moderatör" etiketi öğretmen+moderatör kombinasyonuna
           özel kalır. */}
       <Header ad={profile.ad} role={role} kurumTuru={kurumTuru} brans={brans} grupMu={grupKocu} okunmamisMesajSayisi={okunmamisMesajSayisi} moderatorMu={!!moderatorYetkisi} rolEtiketi={moderatorYetkisi && role !== "mudur" ? "Moderatör" : undefined} aktifBolum={aktifBolum} />
-      <ZorunluSifreDegisikligiKapisi gecici={profile.gecici_sifre} />
+      {grupAktivasyonu
+        ? <GrupOgrenciAktivasyonu ad={profile.ad} alanSorulur={grupAlanSorulur} />
+        : <ZorunluSifreDegisikligiKapisi gecici={profile.gecici_sifre} />}
       <OgretmenEpostaUyarisi email={profile.email} goster={ogretmenEpostaUyarisi} />
       <HosgeldinPopuplari role={role} />
       <div className="mx-auto flex min-h-[calc(100dvh-6.75rem)] w-full max-w-[100rem] flex-1 items-stretch gap-6 px-4 py-6 sm:px-6 lg:py-7">

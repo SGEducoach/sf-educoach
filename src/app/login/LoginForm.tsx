@@ -402,8 +402,16 @@ export default function LoginForm() {
             </>
           )}
 
+          {/* Grup öğrencisi: e-postasını doğruladıysa geçici şifre ister,
+              doğrulamadıysa şifresini koçu yeniler (Faz 5). */}
           {grupModu && role === "ogrenci" ? (
-            <p className="text-[11px] -mt-2 self-end" style={{ color: TEXT_MUTED }}>Şifreni unuttuysan koçundan yeni şifre iste.</p>
+            <div className="-mt-2 flex flex-col items-end gap-0.5">
+              <button type="button" onClick={() => { setSifirlamaModu(true); setHata(null); setSifirlamaSonuc(null); }}
+                className="text-xs font-semibold" style={{ color: MINT }}>
+                Şifremi unuttum
+              </button>
+              <p className="text-[11px]" style={{ color: TEXT_MUTED }}>E-posta eklemediysen koçundan yeni şifre iste.</p>
+            </div>
           ) : !(role === "veli" && veliAsama === "sifreBelirle") && (
             <button type="button" onClick={() => { setSifirlamaModu(true); setHata(null); setSifirlamaSonuc(null); }}
               className="text-xs font-semibold self-end -mt-2" style={{ color: MINT }}>
