@@ -118,7 +118,7 @@ function BildirimSoftAsk({ onTamamlandi }: { onTamamlandi: () => void }) {
         Öğrencinizin durumunu sürekli takip etmek ister misiniz?
       </p>
       <p style={{ color: TEXT_MUTED }} className="text-xs leading-relaxed mb-4">
-        Veri girişi yapmadığında ve rozet kazandığında size anında bildirim gönderelim.
+        Veri girişi yapılmadığında size anında bildirim gönderelim.
       </p>
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold mb-3">{hata}</div>}
       <div className="flex gap-2">

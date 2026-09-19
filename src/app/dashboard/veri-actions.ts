@@ -7,7 +7,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getAnthropicClient } from "@/lib/anthropic";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
 import { KONU_ANLATIMI_SISTEM_PROMPTU, icerikTemizle } from "@/lib/konu-anlatimi";
-import { rozetKontrolVeBildir } from "@/lib/rozet-bildirim";
 import { SURE_UST_SINIR, SORU_SAYISI_UST_SINIR, KATEGORI_GERIYE_DONUK_SINIR, TAKIP_SORUSU, dersSoruSayisi } from "@/lib/types";
 import type { DenemeTuru, DenemeZorlugu, HedefeYakinlik, TakipCevabi, VerimlilikDuzeyi } from "@/lib/types";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
@@ -180,7 +179,6 @@ export async function konuCalismaEkle(formData: FormData) {
   if (error) return { error: error.message, verimlilikSorulsunMu: false };
   if (gorevAtamaId) await gorevTamamlaIsaretle(supabase, gorevAtamaId, user.id);
 
-  await rozetKontrolVeBildir(supabase, user.id);
   const sorulsunMu = await verimlilikSorulsunMu(supabase, user.id);
   revalidatePath("/dashboard");
   return { error: null, verimlilikSorulsunMu: sorulsunMu };
@@ -232,7 +230,6 @@ export async function soruCozumuEkle(formData: FormData) {
   if (error) return { error: error.message, verimlilikSorulsunMu: false };
   if (gorevAtamaId) await gorevTamamlaIsaretle(supabase, gorevAtamaId, user.id);
 
-  await rozetKontrolVeBildir(supabase, user.id);
   const sorulsunMu = await verimlilikSorulsunMu(supabase, user.id);
   revalidatePath("/dashboard");
   return { error: null, verimlilikSorulsunMu: sorulsunMu };
@@ -320,7 +317,6 @@ export async function denemeEkle(
   if (sonucError) return { error: sonucError.message, verimlilikSorulsunMu: false };
   if (gorevAtamaId) await gorevTamamlaIsaretle(supabase, gorevAtamaId, user.id);
 
-  await rozetKontrolVeBildir(supabase, user.id);
   const sorulsunMu = await verimlilikSorulsunMu(supabase, user.id);
   revalidatePath("/dashboard");
   return { error: null, verimlilikSorulsunMu: sorulsunMu };

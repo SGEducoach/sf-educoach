@@ -17,7 +17,7 @@ function bugunHaftaSonuMu(): boolean {
 export const maxDuration = 60;
 
 // Vercel Cron bu route'u çağırır (vercel.json'daki schedule'a göre).
-// Rozet sistemi v2 ile birlikte hatırlatma da KATEGORİ BAZLI oldu: tek bir
+// Hatırlatmalar KATEGORİ BAZLI: tek bir
 // "3 gündür veri girmiyor" kuralı yerine, her kategorinin kendi eşiği var —
 // konu/soru 3 gün, deneme 7 gün (KATEGORI_GERIYE_DONUK_SINIR ile birebir
 // aynı, çünkü backdating penceresi kapandığında telafi de imkânsızlaşıyor).

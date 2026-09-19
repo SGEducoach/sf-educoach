@@ -76,7 +76,7 @@ const ROLLER = [
       "Müfredattaki tüm konular için hakimiyet haritası: nerede güçlü, nerede eksik",
       "Deneme netlerinin yönü ve belirlediği hedef nete ne kadar uzak olduğu",
       "Boş saatlerine göre otomatik hazırlanan haftalık ve aylık program",
-      "Düzenli çalışmayı görünür kılan rozetler",
+      "Veri girmeyi aksattığında kendisine gelen hatırlatmalar",
     ],
   },
   {

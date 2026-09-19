@@ -389,7 +389,7 @@ export function OgretmenPanel({
 // (bkz. migration 0045, students_update_sinif_ogretmeni policy).
 // Yurt öğrencisi işareti — sadece sınıf öğretmeni (kendiSinifiMi) kendi
 // öğrencisini işaretleyebilir. Hafta içi telefonuna erişemeyen öğrenciler
-// için rozet eşikleri ve "sisteme girmedi" hatırlatmaları hafta sonuna
+// için "sisteme girmedi" hatırlatmaları hafta sonuna
 // göre esnetiliyor (bkz. migration 0053).
 function YurtOgrencisiButonu({ ogrenciId, yurtOgrencisi }: { ogrenciId: string; yurtOgrencisi: boolean }) {
   const router = useRouter();

@@ -7,9 +7,7 @@ import { Header } from "@/components/dashboard/Header";
 import { OgretmenPanel } from "@/components/dashboard/OgretmenPanel";
 import { DershaneMudurPaneli } from "@/components/dashboard/DershaneMudurPaneli";
 import { OgrenciVeriGirisi } from "@/components/dashboard/OgrenciVeriGirisi";
-import { Rozetlerim } from "@/components/dashboard/Rozetlerim";
 import { KonuHaritasiRaporu } from "@/components/dashboard/KonuHaritasiRaporu";
-import type { OyunEtiketiSayaclari, RozetDurum } from "@/components/dashboard/Rozetlerim";
 import { AnalizPaneli } from "@/components/dashboard/AnalizPaneli";
 import { HosgeldinPopuplari } from "@/components/dashboard/HosgeldinPopuplari";
 import { OgretmenEpostaUyarisi } from "@/components/dashboard/OgretmenEpostaUyarisi";
@@ -18,7 +16,6 @@ import { GrupOgrenciAktivasyonu } from "@/components/dashboard/GrupOgrenciAktiva
 import { analizVerisiGetir } from "@/lib/analiz";
 import type { RaporDonemi } from "@/lib/analiz";
 import { kohortKarsilastirmasiGetir } from "@/lib/analiz-kohort";
-import { dogrulukRozetSeviyesiHesapla } from "@/lib/analiz-motoru";
 import { ogrencininZayifKonulariGetir, konuHaritasiGetir } from "@/lib/konu-raporu";
 import { konuHakimiyetiGetir, konuHakimiyetiOzetiGetir, tamGorunumMu, gerekYokHaritasiGetir } from "@/lib/konu-hakimiyeti";
 import { KonuHakimiyetiEkrani } from "@/components/dashboard/KonuHakimiyetiEkrani";
@@ -34,8 +31,6 @@ import { TgDenemeleri } from "@/components/dashboard/TgDenemeleri";
 import { tgDenemeIlanlariGetir } from "@/lib/tg-deneme-ilanlari";
 import { dashboardMenusu } from "@/lib/dashboard-navigation";
 import type { DashboardBolumu } from "@/lib/dashboard-navigation";
-import { RozetGoruntulemePaneli } from "@/components/dashboard/RozetGoruntulemePaneli";
-import { kurumRozetGorunumuGetir, veliRozetGorunumuGetir } from "@/lib/rozet-gorunumu";
 import { dershaneDenemeBitisGetir, suresiDolduMu, kullaniciKurumuGetir, denemeSuresiUygulanir, grupDondurulmus, GRUP_DONDURULDU_MESAJI, GRUP_SALT_OKUNUR_MESAJI } from "@/lib/deneme-suresi";
 import { ogretmenProgramiGetir, okulNobetiGetir, yurtNobetGorevleriGetir } from "@/lib/ders-programi";
 import type { OkulNobeti } from "@/lib/ders-programi";
@@ -238,26 +233,6 @@ async function GrupKocIcerik() {
   return <GrupKocPaneli grup={yetki.grup} ogrenciler={ogrenciler} bugun={bugununTarihiTR()} veliTalepleri={talepler} veliler={veliler} />;
 }
 
-// Eğlence etiketleri mevcut rozet RPC'sinden tamamen bağımsızdır. Yalnızca
-// Rozetlerim sayfası açıldığında tüm zamanlardaki gerçek girişler sayılır:
-// konu = kayıt adedi, soru = doğru+yanlış+boş toplamı, deneme = kayıt adedi.
-async function oyunEtiketiSayaclariGetir(
-  supabase: Awaited<ReturnType<typeof createClient>>, userId: string, aktifBolum: DashboardBolumu,
-): Promise<OyunEtiketiSayaclari> {
-  if (aktifBolum !== "rozetler") return { konu: 0, soru: 0, deneme: 0 };
-  const [konuSonucu, soruSonucu, denemeSonucu] = await Promise.all([
-    supabase.from("konu_calismalar").select("id", { count: "exact", head: true }).eq("student_id", userId),
-    supabase.from("soru_cozumleri").select("dogru, yanlis, bos").eq("student_id", userId),
-    supabase.from("denemeler").select("id", { count: "exact", head: true }).eq("student_id", userId),
-  ]);
-  return {
-    konu: konuSonucu.count ?? 0,
-    soru: ((soruSonucu.data as { dogru: number; yanlis: number; bos: number }[] | null) ?? [])
-      .reduce((toplam, kayit) => toplam + kayit.dogru + kayit.yanlis + kayit.bos, 0),
-    deneme: denemeSonucu.count ?? 0,
-  };
-}
-
 async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: { userId: string; ad: string; donem: RaporDonemi; haftaBaslangic: string; aktifBolum: DashboardBolumu }) {
   const supabase = await createClient();
 
@@ -288,9 +263,7 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
     { data: student },
     analiz,
     { data: konuOnerileriHam },
-    { data: rozetDurumHam },
     { data: tamamlananKonularHam },
-    oyunEtiketiSayaclari,
     zayifKonular,
     gerekYokSeti,
     { data: gorevAtamalariHam },
@@ -302,15 +275,11 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
     // ürettirdiği ek konular — böylece hem baştan kapsamlı hem zamanla
     // organik olarak büyüyor.
     supabase.from("konu_anlatimlari").select("ders, konu, seviye").order("konu"),
-    // Rozetler CANLI hesaplanıyor (bkz. migration 0029) — kalıcı bir
-    // "kazanıldı" tablosu yok, her yüklemede güncel durum tazeleniyor.
-    supabase.rpc("ogrenci_rozet_durumu", { p_student_id: userId }),
     // Konu tamamlama sayacı (§1, yenilikler_1.txt): payda = müfredattaki
     // ders başına konu sayısı (MUFREDAT_KONULARI), pay = öğrencinin
     // "hakimim" (hedefe_yakinlik='yakin') işaretlediği FARKLI konu sayısı
     // — aynı konuyu birden fazla kez çalışmış olsa bile bir kez sayılır.
     supabase.from("konu_calismalar").select("ders, konu").eq("student_id", userId).eq("hedefe_yakinlik", "yakin"),
-    oyunEtiketiSayaclariGetir(supabase, userId, aktifBolum),
     // Konu bilme/bilmeme göstergesi (Faz K3) — sadece "ozet" ve
     // "yapay-zeka" sekmelerinde gösteriliyor, gereksiz sorguyu diğer
     // sekmelerde atlıyoruz.
@@ -358,8 +327,6 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
     ...uretilenKonular.filter((k) => !konuOneriAnahtarlari.has(`${k.ders}|${k.konu}`)),
   ];
 
-  const rozetDurum = (rozetDurumHam as RozetDurum | null) ?? { konu: "yok", soru: "yok", deneme: "yok", genel: "yok" };
-
   const tamamlananSet = new Set<string>();
   for (const r of (tamamlananKonularHam as { ders: string; konu: string }[] | null) ?? []) {
     tamamlananSet.add(`${r.ders}|${r.konu}`);
@@ -395,22 +362,12 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
   // Faz H2 — Konu Hakimiyeti: kendi sekmesinde VE Analiz/Rapor'da (özet
   // kartı + donut grafiği) gerekiyor, diğer sekmelerde gereksiz sorguyu
   // atlıyoruz (aynı dokuzOnMu'ya bağlı olduğu için de student sorgusundan
-  // sonra, mufredatAltKonulari ile aynı gerekçeyle). Analiz Motoru Faz D —
-  // "rozetler" sekmesi de eklendi: Doğruluk Rozeti (bkz. aşağı) bu veriden
-  // türetiliyor.
+  // sonra, mufredatAltKonulari ile aynı gerekçeyle).
   const dershaneMi = s.schools?.tur === "dershane";
   const konuHakimiyetiTamGorunum = tamGorunumMu(s.classes?.seviye ?? null, dershaneMi);
-  const konuHakimiyetiSatirlari = (aktifBolum === "konu-hakimiyeti" || aktifBolum === "analiz" || aktifBolum === "rozetler")
+  const konuHakimiyetiSatirlari = (aktifBolum === "konu-hakimiyeti" || aktifBolum === "analiz")
     ? await konuHakimiyetiGetir(supabase, userId, s.classes?.seviye ?? null, s.ayt_alan, dokuzOnMu, dershaneMi)
     : [];
-  // Analiz Motoru Faz D — Katman 2'nin (bileşik mastery skoru) rozet
-  // sistemine EK/bağımsız bir gösterge olarak eklenmesi (bkz. analiz-motoru.ts,
-  // dogrulukRozetSeviyesiHesapla). "rozetler" dışındaki sekmelerde
-  // konuHakimiyetiSatirlari boş olduğundan bu her zaman "yok" döner —
-  // zararsız, kullanılmıyor.
-  const dogrulukSeviyesi = dogrulukRozetSeviyesiHesapla(
-    konuHakimiyetiSatirlari.map((satir) => satir.masterySkoru).filter((skor): skor is number => skor !== null),
-  );
 
   type GorevAtamaRow = {
     id: string; durum: GorevSatiri["durum"];
@@ -500,7 +457,6 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
 
       {aktifBolum === "ozet" && <section className="print:hidden"><KonuHaritasiRaporu mod="kendi" konular={zayifKonular} /></section>}
 
-      {aktifBolum === "rozetler" && <Rozetlerim durum={rozetDurum} oyunSayaclari={oyunEtiketiSayaclari} dogrulukSeviyesi={dogrulukSeviyesi} sinifSeviyesi={s.classes?.seviye ?? null} />}
 
       {aktifBolum === "yapay-zeka" && <section className="min-h-full"><KonuHaritasiRaporu mod="kendi" konular={zayifKonular} /></section>}
 
@@ -608,10 +564,6 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
     return <RehberlikPaneli ogrenciler={ogrenciListesi} />;
   }
 
-  if (aktifBolum === "rozetler") {
-    const gorunum = await kurumRozetGorunumuGetir(supabase, teacher.school_id, secilenOgrenciId, secilenSinifId);
-    return <RozetGoruntulemePaneli gorunum={gorunum} action="/dashboard/rozetler" kapsam={`${gorunum.kurumAdi ?? "Kurum"} · Yalnız bu kurumdaki öğrenciler`} />;
-  }
 
   // Ana Sayfa / kurum performansı (2026-08-25 kullanıcı isteği: "dershane
   // müdürünün ana sayfası okul müdürlerinde de olsun") — dershaneAnaSayfaVerisiGetir
@@ -949,10 +901,6 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
 async function VeliIcerik({ userId, ad, secilenOgrenciId, donem, aktifBolum }: { userId: string; ad: string; secilenOgrenciId?: string; donem: RaporDonemi; aktifBolum: DashboardBolumu }) {
   const supabase = await createClient();
 
-  if (aktifBolum === "rozetler") {
-    const gorunum = await veliRozetGorunumuGetir(supabase, userId);
-    return <RozetGoruntulemePaneli gorunum={gorunum} action="/dashboard/rozetler" kapsam="Hesabınıza bağlı öğrencinin rozetleri" seciciGoster={false} />;
-  }
 
   const { data: links } = await supabase
     .from("parent_students")

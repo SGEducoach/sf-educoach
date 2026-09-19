@@ -1,12 +1,11 @@
 import Link from "next/link";
-import { BarChart2, CircleUserRound, LayoutDashboard, Medal } from "lucide-react";
+import { BarChart2, CircleUserRound, LayoutDashboard } from "lucide-react";
 import { BG1, BORDER, MINT, MINT_BG, TEXT, TEXT_MUTED } from "@/lib/theme";
 
-export function YonetimNavigasyonu({ tur, aktif }: { tur: "yonetici" | "moderator"; aktif: "panel" | "rozetler" | "konu-haritasi" | "profil" }) {
+export function YonetimNavigasyonu({ tur, aktif }: { tur: "yonetici" | "moderator"; aktif: "panel" | "konu-haritasi" | "profil" }) {
   const kok = tur === "yonetici" ? "/yonetici" : "/moderator";
   const ogeler = [
     { id: "panel" as const, href: kok, etiket: tur === "yonetici" ? "Yönetim paneli" : "Moderatör paneli", Icon: LayoutDashboard },
-    { id: "rozetler" as const, href: `${kok}/rozetler`, etiket: "Rozetler", Icon: Medal },
     { id: "konu-haritasi" as const, href: `${kok}/konu-haritasi`, etiket: "Konu Haritası", Icon: BarChart2 },
     { id: "profil" as const, href: `${kok}/profil`, etiket: "Profilim", Icon: CircleUserRound },
   ];

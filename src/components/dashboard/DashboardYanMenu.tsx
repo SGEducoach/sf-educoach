@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {
   BarChart3, BookOpen, BookOpenCheck, Bot, Bug, CalendarDays, CalendarPlus2, CircleUserRound, ClipboardCheck, ClipboardList,
-  Copyright, Crown, FileCheck2, FileSpreadsheet, GraduationCap, HeartHandshake, History, Home, ListChecks, Megaphone, Medal, PenLine, School, ScrollText,
+  Copyright, Crown, FileCheck2, FileSpreadsheet, GraduationCap, HeartHandshake, History, Home, ListChecks, Megaphone, PenLine, School, ScrollText,
   Settings2, ShieldCheck, UserPlus, Users, UsersRound, Rss } from "lucide-react";
 import type { KurumTuru, UserRole } from "@/lib/types";
 import type { DashboardBolumu, DashboardIkonu } from "@/lib/dashboard-navigation";
@@ -16,7 +16,6 @@ const IKONLAR: Record<DashboardIkonu, typeof Home> = {
   hakimiyet: ListChecks,
   analiz: BarChart3,
   ai: Bot,
-  rozet: Medal,
   takvim: CalendarDays,
   duyuru: Megaphone,
   talep: UserPlus,

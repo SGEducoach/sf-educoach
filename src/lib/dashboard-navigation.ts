@@ -11,7 +11,6 @@ export type DashboardBolumu =
   | "konu-hakimiyeti"
   | "analiz"
   | "yapay-zeka"
-  | "rozetler"
   | "tg-denemeleri"
   | "duyurular"
   | "talepler"
@@ -47,7 +46,7 @@ export type DashboardBolumu =
   | "islem-gecmisi";
 
 export type DashboardIkonu =
-  | "ana-sayfa" | "gorev" | "plan" | "veri" | "hakimiyet" | "analiz" | "ai" | "rozet" | "takvim" | "duyuru" | "talep" | "onay" | "ders"
+  | "ana-sayfa" | "gorev" | "plan" | "veri" | "hakimiyet" | "analiz" | "ai" | "takvim" | "duyuru" | "talep" | "onay" | "ders"
   | "ogretmen" | "ogrenci" | "deneme"
   | "kullanici" | "eslestir" | "okul" | "moderator" | "icerik" | "blog" | "kural" | "profil" | "hata"
   | "ayarlar" | "admin" | "gecmis" | "rehberlik" | "grup";
@@ -61,7 +60,6 @@ export interface DashboardMenuOgesi {
 
 const OGRENCI_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "ozet", href: "/dashboard", etiket: "Ana sayfa", ikon: "ana-sayfa" },
-  { bolum: "rozetler", href: "/dashboard/rozetler", etiket: "Rozetlerim", ikon: "rozet" },
   { bolum: "gorevler", href: "/dashboard/gorevler", etiket: "Ödevlerim", ikon: "gorev" },
   { bolum: "planlar", href: "/dashboard/planlar", etiket: "Program yap", ikon: "plan" },
   { bolum: "veri-girisi", href: "/dashboard/veri-girisi", etiket: "Veri girişi", ikon: "veri" },
@@ -77,14 +75,12 @@ const OGRENCI_MENUSU: DashboardMenuOgesi[] = [
 
 const VELI_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "ozet", href: "/dashboard", etiket: "Çocuklarım", ikon: "ana-sayfa" },
-  { bolum: "rozetler", href: "/dashboard/rozetler", etiket: "Rozetler", ikon: "rozet" },
   { bolum: "analiz", href: "/dashboard/analiz", etiket: "Analiz / Rapor", ikon: "analiz" },
   { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "TG Denemeler", ikon: "takvim" },
 ];
 
 const OGRETMEN_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "ozet", href: "/dashboard", etiket: "Sınıflarım", ikon: "ana-sayfa" },
-  { bolum: "rozetler", href: "/dashboard/rozetler", etiket: "Rozetler", ikon: "rozet" },
   { bolum: "gorevler", href: "/dashboard/gorevler", etiket: "Ödev ver", ikon: "gorev" },
   { bolum: "onaylar", href: "/dashboard/onaylar", etiket: "Bekleyen onaylar", ikon: "onay" },
   { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Konu Haritası", ikon: "ai" },
@@ -114,7 +110,7 @@ const MUDUR_MENUSU: DashboardMenuOgesi[] = [
   // görünüyordu. Ayrıca müdürün "Öğrenciler (salt-okunur liste/profil/
   // performans)" isteğini de bu bölüm zaten karşılıyor (OgretmenPanel'in
   // "ozet" görünümü — sınıf seç, öğrenciye tıkla, profil+performansı gör;
-  // ban/sil/rozet gibi müdahale butonu yok) — bu yüzden ayrı bir ekran
+  // ban/sil gibi müdahale butonu yok) — bu yüzden ayrı bir ekran
   // açmak yerine etiket buna göre güncellendi.
   { bolum: "ozet", href: "/dashboard?bolum=ozet", etiket: "Öğrenciler", ikon: "ogrenci" },
   // 2026-08-25 kullanıcı isteği: "dershane ve okul müdürü öğretmenlerin
@@ -147,10 +143,10 @@ const DERSHANE_MUDUR_MENUSU: DashboardMenuOgesi[] = [
 
 // Admin (yönetici) paneli de artık diğer roller gibi tek bir sol menü +
 // aktif bölüm mantığıyla çalışıyor (bkz. src/app/yonetici/page.tsx) —
-// önceden tek bir sayfada üst üte dizilmiş bölümlerdi. "talepler" ve
-// "rozetler" diğer rollerle aynı bölüm adını (ve ikonunu) kasıtlı olarak
-// paylaşıyor, aynı kavram (veli talebi / rozet görüntüleme) sadece kapsamı
-// platform genelinde.
+// önceden tek bir sayfada üst üste dizilmiş bölümlerdi. "talepler" diğer
+// rollerle aynı bölüm adını kasıtlı olarak paylaşıyor (kapsamı platform geneli).
+// Rozet sistemi 19.09.2026 kullanıcı isteğiyle kaldırıldı (yerine Başarım
+// sistemi gelecek, yalnızca öğrenciye).
 const ADMIN_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "mesajlar", href: "/yonetici/mesajlar", etiket: "Mesajlar", ikon: "duyuru" },
   { bolum: "ozet", href: "/yonetici", etiket: "Genel bakış", ikon: "ana-sayfa" },
@@ -162,7 +158,6 @@ const ADMIN_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "grup-kocluk", href: "/yonetici/grup-kocluk", etiket: "Grup Koçluk", ikon: "grup" },
   { bolum: "kurallar", href: "/yonetici/kurallar", etiket: "Kurallar", ikon: "kural" },
   { bolum: "hata-bildirimleri", href: "/yonetici/hata-bildirimleri", etiket: "Hata Bildirimleri", ikon: "hata" },
-  { bolum: "rozetler", href: "/yonetici/rozetler", etiket: "Rozetler", ikon: "rozet" },
   // 2026-08-26 kullanıcı isteği: "Konu anlatımları" -> "Konu özetleri"
   // olarak yeniden adlandırıldı ve Konu Haritası'nın hemen üstüne taşındı
   // (önceden Moderatörler'in altındaydı, ikisi arasında 3 öge vardı).
@@ -230,16 +225,13 @@ export function dashboardMenusu(role: UserRole, kurumTuru?: KurumTuru, brans?: s
 }
 
 export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
-  "gorevler", "planlar", "veri-girisi", "konu-hakimiyeti", "analiz", "yapay-zeka", "rozetler", "tg-denemeleri",
+  "gorevler", "planlar", "veri-girisi", "konu-hakimiyeti", "analiz", "yapay-zeka", "tg-denemeleri",
   "duyurular", "talepler", "onaylar", "dersler", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler", "rehberlik", "etkinlikler", "profil", "takvim", "yarismalar", "ogrenci-takibi",
 ]);
 // Yazılı analizinin ayrı sayfası yok (kullanıcı kararı 11.09.2026: yalnızca
 // öğretmene özel) — öğretmen Ajandam > Yazılı Analizi sekmesinden girer.
 
-// /yonetici/[bolum] catch-all için — "rozetler" burada YOK, çünkü admin'in
-// kendi çok-okullu rozet sayfası (/yonetici/rozetler) zaten ayrı, kendi
-// mantığı olan bir route (bkz. o dosyadaki okul seçici) — literal route
-// dinamik [bolum]'dan her zaman önceliklidir, çakışma olmaz.
+// /yonetici/[bolum] catch-all için.
 export const YONETICI_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
   "mesajlar",
   "kullanicilar", "talepler", "pdf-eslesme", "okullar", "grup-kocluk", "moderatorler", "icerik", "blog", "kurallar", "profil", "hata-bildirimleri",

@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   BarChart3, BookOpen, BookOpenCheck, Bot, Bug, CalendarDays, CalendarPlus2, CircleUserRound, ClipboardCheck, ClipboardList, Crown, FileCheck2, FileSpreadsheet, GraduationCap, HeartHandshake, History, Home,
-  LayoutDashboard, ListChecks, LogOut, Medal, Megaphone, Menu, PenLine, School, ScrollText, Settings2, ShieldCheck, UserPlus, Users, UsersRound, X, Rss } from "lucide-react";
+  LayoutDashboard, ListChecks, LogOut, Megaphone, Menu, PenLine, School, ScrollText, Settings2, ShieldCheck, UserPlus, Users, UsersRound, X, Rss } from "lucide-react";
 import { BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, SEAFOAM, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 import { signOut } from "@/app/dashboard/actions";
 import { BildirimAyarlari } from "@/components/dashboard/BildirimAyarlari";
@@ -31,7 +31,6 @@ const IKONLAR: Record<DashboardIkonu, typeof Home> = {
   hakimiyet: ListChecks,
   analiz: BarChart3,
   ai: Bot,
-  rozet: Medal,
   takvim: CalendarDays,
   duyuru: Megaphone,
   talep: UserPlus,

@@ -197,21 +197,6 @@ export async function moderatorEpostaKaydet(targetId: string, yeniEmail: string,
   return { error: null };
 }
 
-// Rozet sıfırlama (bkz. migration 0071) — kalıcı bir "puan sıfırlama" değil,
-// rozet hesaplamasının pencere başlangıcını bugüne çekiyor; geçmiş çalışma
-// kayıtları silinmiyor.
-export async function moderatorRozetSifirla(studentId: string, targetSchoolId?: string) {
-  const { user, admin, schoolId } = await requireModerator(targetSchoolId);
-  if (!(await hedefOkuldaMi(admin, schoolId, studentId))) return { error: "Bu kullanıcı için yetkiniz yok." };
-  const { data: profil } = await admin.from("profiles").select("role").eq("id", studentId).maybeSingle();
-  if (!profil || profil.role !== "ogrenci") return { error: "Bu işlem yalnızca öğrenciler için yapılabilir." };
-  const { error } = await admin.from("students").update({ rozet_sifirlama_tarihi: new Date().toISOString().slice(0, 10) }).eq("id", studentId);
-  if (error) return { error: error.message };
-  await admin.from("admin_audit_log").insert({ actor_id: user.id, eylem: "moderator_rozet_sifirla", detay: { hedef_id: studentId, school_id: schoolId } });
-  revalidatePath("/moderator");
-  return { error: null };
-}
-
 // ============ Sınıf/branş müdahalesi (KullaniciArama'daki admin akışının
 // okul-sınırlı eşdeğeri) ============
 export async function moderatorOkulSiniflari(targetSchoolId?: string): Promise<{ error: string | null; siniflar: { id: string; seviye: string; sube: string }[] }> {

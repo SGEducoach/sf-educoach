@@ -403,21 +403,7 @@ export const AYT_MUFREDAT_DERSLERI: Record<AytAlan, readonly string[]> = {
   SOZ: ["Edebiyat", "Tarih", "Coğrafya", "Felsefe", "Din Kültürü"],
 };
 
-// ============ Rozet sistemi v2 (kategori bazlı, canlı durum) ============
-// Her kategori kendi ödül eşiklerine sahip; genel "SEFU KOÇ" rozeti bu
-// üçünün kaç tanesinin altın olduğuna göre türetiliyor (bkz. migration
-// 0029, rozet_kontrol_et). Rozetler KALICI DEĞİL — Duolingo mantığıyla,
-// öğrenci pas geçtiğinde seviye düşebilir/sıfırlanabilir.
-export type RozetKategori = "konu" | "soru" | "deneme" | "genel";
-export type RozetSeviye = "yok" | "bronz" | "gumus" | "altin";
-
-export const ROZET_SEVIYE_ETIKET: Record<RozetSeviye, string> = {
-  yok: "Henüz yok",
-  bronz: "Bronz",
-  gumus: "Gümüş",
-  altin: "Altın",
-};
-
+// ============ Geriye dönük veri girişi sınırı ============
 // Her kategoride geriye dönük veri girişi bu kadar günle sınırlı — hem tarih
 // seçicide (client) hem server action'da (tarihDogrula) hem DB check
 // constraint'inde uygulanıyor. Sınırın kendisi aynı zamanda "kaç gün
@@ -428,10 +414,6 @@ export const KATEGORI_GERIYE_DONUK_SINIR: Record<"konu" | "soru" | "deneme", num
   soru: 3,
   deneme: 7,
 };
-
-// Soru çözümü rozeti, TYT'nin bu 5 "çekirdek" dersinde AYRI AYRI son 3 günün
-// toplamına bakıyor — hepsi eşiği geçmeden tier atlanmıyor.
-export const SORU_ROZET_DERSLERI = ["Türkçe", "Matematik", "Fizik", "Kimya", "Biyoloji"] as const;
 
 // Yazılı Analizi Modülü Tipleri
 export type Kaynak = 'actual' | 'estimated';

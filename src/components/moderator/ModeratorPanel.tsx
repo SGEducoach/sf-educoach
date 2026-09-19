@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { ArrowRightLeft, Award, BedDouble, ChevronDown, KeyRound, Layers, MailWarning, Pencil, Plus, Save, Search, Settings, ShieldCheck, Trash2, UserCheck, UserPlus, UserX, X } from "lucide-react";
+import { ArrowRightLeft, BedDouble, ChevronDown, KeyRound, Layers, MailWarning, Pencil, Plus, Save, Search, Settings, ShieldCheck, Trash2, UserCheck, UserPlus, UserX, X } from "lucide-react";
 import {
   moderatorAktiflikDegistir, moderatorHesapSil, moderatorKurumBilgisiGetir, moderatorKurumGuncelle,
   moderatorOgrenciEkle, moderatorOgrenciSinifTasi, moderatorOgretmenBransDegistir, moderatorOgretmenEkle,
-  moderatorEpostaKaydet, moderatorOkulSiniflari, moderatorRozetSifirla, moderatorSifreBelirle, moderatorSifreSifirla, moderatorSinifEkle,
+  moderatorEpostaKaydet, moderatorOkulSiniflari, moderatorSifreBelirle, moderatorSifreSifirla, moderatorSinifEkle,
   moderatorSinifSil, moderatorYurtDurumuDegistir,
   type ModeratorKullanici,
 } from "@/app/moderator/actions";
@@ -405,11 +405,7 @@ function KullaniciKarti({ kullanici: k, schoolId, onMesaj }: { kullanici: Modera
   const [sifreAcik, setSifreAcik] = useState(false);
   const [yeniSifre, setYeniSifre] = useState("");
   // Kullanıcı isteği (26.08.2026): Pasifleştir/Sil artık doğrudan görünmüyor
-  // — "Diğer ayarlar" tıklanınca açılıyor. Rozetleri sıfırla ise (aynı gün,
-  // tekrar bildirim: "moderatöre de verilecek") görünürlüğü artırmak için
-  // AŞAĞIDA, ana buton sırasına taşındı — yetki zaten vardı
-  // (moderatorRozetSifirla requireModerator ile korunuyor), sorun sadece bu
-  // toggle'ın arkasında gizli kalıp fark edilmemesiydi.
+  // — "Diğer ayarlar" tıklanınca açılıyor.
   const [digerAcik, setDigerAcik] = useState(false);
   const [epostaKayitli, setEpostaKayitli] = useState(teslimEdilebilirEpostaMi(k.email));
   const [eposta, setEposta] = useState(teslimEdilebilirEpostaMi(k.email) ? k.email ?? "" : "");
@@ -459,13 +455,6 @@ function KullaniciKarti({ kullanici: k, schoolId, onMesaj }: { kullanici: Modera
             <ArrowRightLeft className="mr-1 inline" size={11}/>{k.kategori === "ogrenci" ? "Sınıf taşı" : "Branş"}
           </button>
         )}
-        {k.kategori === "ogrenci" && (
-          <button disabled={pending} title="Rozet ilerlemesini bugünden başlatır — geçmiş çalışma kayıtları silinmez"
-            onClick={() => { if (!window.confirm(`${k.ad} için rozet ilerlemesi bugünden başlatılsın mı?`)) return; startTransition(async () => { const r = await moderatorRozetSifirla(k.id, schoolId); onMesaj(r.error ? `Hata: ${r.error}` : "Rozetler sıfırlandı."); }); }}
-            className="sfec-btn rounded-lg px-2.5 py-1.5 text-[10px] font-bold" style={{ color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
-            <Award size={11} className="mr-1 inline"/> Rozetleri sıfırla
-          </button>
-        )}
         <button disabled={pending} onClick={() => setDigerAcik((v) => !v)}
           className="sfec-btn rounded-lg px-2.5 py-1.5 text-[10px] font-bold flex items-center gap-1" style={{ background: digerAcik ? MINT : "transparent", color: digerAcik ? MINT_ON : TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
           Diğer ayarlar <ChevronDown size={11} style={{ transform: digerAcik ? "rotate(180deg)" : undefined, transition: "transform 0.15s" }}/>
@@ -500,7 +489,7 @@ function KullaniciKarti({ kullanici: k, schoolId, onMesaj }: { kullanici: Modera
 
       {k.kategori === "ogrenci" && (
         <div className="mt-2 flex flex-col gap-2 sm:flex-row">
-          <button disabled={pending} title="Hafta içi telefonuna erişemeyen öğrenciler için rozet eşikleri ve hatırlatmalar hafta sonuna göre esnetilir"
+          <button disabled={pending} title="Hafta içi telefonuna erişemeyen öğrenciler için hatırlatmalar hafta sonuna göre esnetilir"
             onClick={() => startTransition(async () => { const r = await moderatorYurtDurumuDegistir(k.id, !k.yurtOgrencisi, schoolId); onMesaj(r.error ? `Hata: ${r.error}` : "İşlem tamamlandı."); })}
             className="sfec-btn flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-2 text-[11px] font-bold"
             style={{ background: k.yurtOgrencisi ? MINT : "transparent", color: k.yurtOgrencisi ? MINT_ON : TEXT_MUTED, border: `2px solid ${k.yurtOgrencisi ? MINT : BORDER_STRONG}` }}>
