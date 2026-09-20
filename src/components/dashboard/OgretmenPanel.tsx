@@ -272,8 +272,8 @@ export function OgretmenPanel({
       {aktifBolum === "gorevler" && role === "ogretmen" && (
         <div className="sfec-fade rounded-2xl p-3 flex items-center justify-between gap-3 flex-wrap" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
           <div>
-            <div className="text-sm font-bold" style={{ color: TEXT }}>Ödev verilecek sınıf</div>
-            <div className="text-[11px]" style={{ color: TEXT_MUTED }}>Yalnızca ders verdiğiniz sınıflara ödev gönderebilirsiniz.</div>
+            <div className="text-sm font-bold" style={{ color: TEXT }}>Tek öğrenci seçimi için sınıf</div>
+            <div className="text-[11px]" style={{ color: TEXT_MUTED }}>Aşağıdaki formdan seçili derse girdiğiniz tüm sınıflara da doğrudan gönderebilirsiniz.</div>
           </div>
           <select value={gorunecekSinifId ?? ""} onChange={(e) => router.push(`/dashboard/gorevler?sinif=${e.target.value}`)}
             className="text-xs font-bold px-3 py-2 rounded-xl outline-none"
@@ -283,8 +283,8 @@ export function OgretmenPanel({
         </div>
       )}
 
-      {aktifBolum === "gorevler" && role === "ogretmen" && gorevVerilebilirMi && ogrenciler.length > 0 && (
-        <GorevVerBolumu ogrenciler={ogrenciler} konuOnerileri={konuOnerileri} />
+      {aktifBolum === "gorevler" && role === "ogretmen" && (gorevVerilebilirMi || ogretmenDersleri.length > 0) && (ogrenciler.length > 0 || ogretmenDersleri.length > 0) && (
+        <GorevVerBolumu ogrenciler={ogrenciler} konuOnerileri={konuOnerileri} topluSiniflar={ogretmenDersleri} />
       )}
 
       {(aktifBolum === "takvim" || aktifBolum === "dersler") && <AjandamBolumu role={role} dersler={ogretmenDersleri} siniflar={siniflar} dersProgramiSatirlari={dersProgramiSatirlari ?? []} okulNobetleri={okulNobetleri ?? []} yurtNobetGorevleri={yurtNobetGorevleri ?? []} nobetDevirOgretmenleri={nobetDevirOgretmenleri ?? []} dershaneMi={!!dershaneMi} />}
@@ -952,14 +952,16 @@ export function SinifEkleFormu({ schoolId }: { schoolId: string }) {
 // (checkbox ile, "Tümünü seç" toplu görev karşılığı) seçilip aynı görev
 // hepsine birden atanıyor. Öğrenci tarafında bu görev, ilgili mevcut veri
 // giriş formundan (Konu/Soru/Deneme) tamamlanıyor (bkz. Gorevlerim.tsx).
-export function GorevVerBolumu({ ogrenciler, konuOnerileri, gorevVerEylemi = gorevVer }: {
+export function GorevVerBolumu({ ogrenciler, konuOnerileri, topluSiniflar = [], gorevVerEylemi = gorevVer }: {
   ogrenciler: OgrenciSatiri[]; konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
+  topluSiniflar?: OgretmenDersiSatiri[];
   // Dershane rehberi kendi yetki kontrolüyle ödev verir (bkz. rehber-ogrenci-actions.ts rehberGorevVer).
-  gorevVerEylemi?: (input: Parameters<typeof gorevVer>[0]) => Promise<{ error: string | null }>;
+  gorevVerEylemi?: (input: Parameters<typeof gorevVer>[0]) => Promise<{ error: string | null; ogrenciSayisi?: number }>;
 }) {
   const [secili, setSecili] = useState<Set<string>>(new Set());
   const [tur, setTur] = useState<GorevTuru>("soru");
-  const [ders, setDers] = useState<string>(BRANS_LISTESI[0]);
+  const [ders, setDers] = useState<string>(topluSiniflar[0]?.ders ?? BRANS_LISTESI[0]);
+  const [tumSiniflaraGonder, setTumSiniflaraGonder] = useState(false);
   const [konu, setKonu] = useState("");
   const dersKonulari = konuOnerileri.filter((k) => k.ders === ders);
   const [hedefSoru, setHedefSoru] = useState("");
@@ -974,6 +976,13 @@ export function GorevVerBolumu({ ogrenciler, konuOnerileri, gorevVerEylemi = gor
   const [pending, startTransition] = useTransition();
 
   const tumuSeciliMi = ogrenciler.length > 0 && secili.size === ogrenciler.length;
+  const dersAnahtari = (deger: string) => deger.trim().toLocaleLowerCase("tr-TR").replace(/\s+/g, " ");
+  const uygunSinifMap = new Map<string, OgretmenDersiSatiri>();
+  for (const sinif of topluSiniflar) {
+    if (dersAnahtari(sinif.ders) === dersAnahtari(ders)) uygunSinifMap.set(sinif.classId, sinif);
+  }
+  const uygunTopluSiniflar = Array.from(uygunSinifMap.values());
+  const topluGonderimMumkun = uygunTopluSiniflar.length > 1 && ders !== "Genel";
 
   // Deneme görevinde "Ders" alanı anlamsız — TYT/AYT birden çok dersi birden
   // kapsıyor, tek bir ders seçmek yanıltıcı. Sadece Branş Denemesi (9-10.
@@ -986,13 +995,21 @@ export function GorevVerBolumu({ ogrenciler, konuOnerileri, gorevVerEylemi = gor
   function turDegistir(yeni: GorevTuru) {
     setTur(yeni);
     setKonu("");
+    setTumSiniflaraGonder(false);
     if (yeni === "deneme") setDers("Genel");
     else if (ders === "Genel") setDers(BRANS_LISTESI[0]);
   }
 
   function denemeTuruDegistir(yeni: string) {
     setKonu(yeni);
+    setTumSiniflaraGonder(false);
     setDers(yeni === "BRANS" ? BRANS_LISTESI[0] : "Genel");
+  }
+
+  function dersDegistir(yeni: string) {
+    setDers(yeni);
+    setKonu("");
+    setTumSiniflaraGonder(false);
   }
 
   function ogrenciToggle(id: string) {
@@ -1011,11 +1028,12 @@ export function GorevVerBolumu({ ogrenciler, konuOnerileri, gorevVerEylemi = gor
     e.preventDefault();
     setHata(null);
     setBasari(null);
-    if (secili.size === 0) return setHata("En az bir öğrenci seçin.");
+    if (!tumSiniflaraGonder && secili.size === 0) return setHata("En az bir öğrenci seçin.");
     if (!ders.trim()) return setHata("Ders seçin.");
     startTransition(async () => {
       const res = await gorevVerEylemi({
-        studentIds: Array.from(secili),
+        studentIds: tumSiniflaraGonder ? [] : Array.from(secili),
+        classIds: tumSiniflaraGonder ? uygunTopluSiniflar.map((sinif) => sinif.classId) : undefined,
         tur, ders, konu: konu || undefined,
         hedefSoruSayisi: hedefSoru ? Number(hedefSoru) : undefined,
         hedefDakika: hedefDakika ? Number(hedefDakika) : undefined,
@@ -1025,7 +1043,8 @@ export function GorevVerBolumu({ ogrenciler, konuOnerileri, gorevVerEylemi = gor
       });
       if (res.error) setHata(res.error);
       else {
-        setBasari(`Görev ${secili.size} öğrenciye verildi.`);
+        const ogrenciSayisi = res.ogrenciSayisi ?? secili.size;
+        setBasari(`Görev ${ogrenciSayisi} öğrenciye verildi.`);
         setKonu(""); setHedefSoru(""); setHedefDakika(""); setSonTarih(""); setBaslangicSaat(""); setBitisSaat(""); setAciklama("");
       }
     });
@@ -1041,7 +1060,17 @@ export function GorevVerBolumu({ ogrenciler, konuOnerileri, gorevVerEylemi = gor
       </div>
 
       <form onSubmit={gonder} className="flex flex-col gap-3">
-        <div className="flex flex-col gap-1.5">
+        {topluGonderimMumkun && (
+          <label className="flex cursor-pointer items-start gap-3 rounded-2xl p-3" style={{ background: tumSiniflaraGonder ? MINT_BG : BG1_ALT, border: `2px solid ${tumSiniflaraGonder ? MINT : BORDER}` }}>
+            <input type="checkbox" checked={tumSiniflaraGonder} onChange={(e) => setTumSiniflaraGonder(e.target.checked)} className="mt-0.5 h-4 w-4 accent-current" />
+            <span className="min-w-0">
+              <strong className="block text-sm" style={{ color: TEXT }}>Bu derse girdiğim tüm sınıflara gönder</strong>
+              <span className="mt-0.5 block text-[11px]" style={{ color: TEXT_MUTED }}>{uygunTopluSiniflar.map((sinif) => sinif.sinifAdi).join(", ")} · Öğrenci listesi açılmadan toplu atanır.</span>
+            </span>
+          </label>
+        )}
+
+        {!tumSiniflaraGonder && <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
             <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Öğrenciler</span>
             <button type="button" onClick={tumunuSecToggle}
@@ -1061,7 +1090,7 @@ export function GorevVerBolumu({ ogrenciler, konuOnerileri, gorevVerEylemi = gor
               );
             })}
           </div>
-        </div>
+        </div>}
 
         {/* Bulgu 06 — önceden her alan kendi başına ayrı bir çerçeveydi (8-9
             kutu üst üste, "çorba" görünümü). Mantıksal gruplar artık ortak
@@ -1093,7 +1122,7 @@ export function GorevVerBolumu({ ogrenciler, konuOnerileri, gorevVerEylemi = gor
             ) : (
               <label className="flex flex-col gap-1">
                 <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Ders</span>
-                <select value={ders} onChange={(e) => { setDers(e.target.value); setKonu(""); }}
+                <select value={ders} onChange={(e) => dersDegistir(e.target.value)}
                   className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
                   {BRANS_LISTESI.map((d) => <option key={d} value={d}>{d}</option>)}
                 </select>
@@ -1104,7 +1133,7 @@ export function GorevVerBolumu({ ogrenciler, konuOnerileri, gorevVerEylemi = gor
           {tur === "deneme" ? (
             <label className="flex flex-col gap-1">
               <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Ders{dersPasif ? " (branş denemesinde seçilir)" : ""}</span>
-              <select value={ders} disabled={dersPasif} onChange={(e) => setDers(e.target.value)}
+              <select value={ders} disabled={dersPasif} onChange={(e) => dersDegistir(e.target.value)}
                 className="text-sm px-2.5 py-1.5 rounded-xl outline-none disabled:cursor-not-allowed disabled:opacity-50"
                 style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
                 {dersPasif
@@ -1178,7 +1207,7 @@ export function GorevVerBolumu({ ogrenciler, konuOnerileri, gorevVerEylemi = gor
         {basari && <div style={{ color: MINT }} className="text-xs font-semibold">{basari}</div>}
         <button type="submit" disabled={pending}
           className="sfec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
-          {pending ? "Gönderiliyor..." : `Ödev ver${secili.size > 1 ? ` (${secili.size} öğrenci)` : ""}`}
+          {pending ? "Gönderiliyor..." : tumSiniflaraGonder ? `Tüm sınıflara ödev ver (${uygunTopluSiniflar.length} sınıf)` : `Ödev ver${secili.size > 1 ? ` (${secili.size} öğrenci)` : ""}`}
         </button>
       </form>
     </div>

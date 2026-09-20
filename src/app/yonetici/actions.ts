@@ -520,9 +520,18 @@ export async function ogrenciYonetimKaydiGuncelle(input: { id: string; tur: Ogre
 export async function ogrenciYonetimKaydiSil(id: string, tur: OgrenciKayitTuru): Promise<{ error: string | null }> {
   const { supabase, user, admin } = await requireAdmin();
   const tablo = tur === "konu" ? "konu_calismalar" : tur === "soru" ? "soru_cozumleri" : "denemeler";
+  const { data: kayit, error: kayitHatasi } = await admin.from(tablo).select("id, student_id, gorev_atama_id").eq("id", id).maybeSingle();
+  if (kayitHatasi) return { error: kayitHatasi.message };
+  if (!kayit) return { error: "Silinecek öğrenci kaydı bulunamadı." };
   const { error } = await admin.from(tablo).delete().eq("id", id);
   if (error) return { error: error.message };
+  // Silinen kayıt bir ödevin tamamlanma kaydıysa ödevi yeniden beklemeye al;
+  // aksi halde veri silinmişken öğretmende tamamlandı görünmeye devam ederdi.
+  if (kayit.gorev_atama_id) {
+    await admin.from("gorev_atamalari").update({ durum: "bekliyor" }).eq("id", kayit.gorev_atama_id);
+  }
   await auditLogYaz(supabase, user.id, "ogrenci_kaydi_sil", { kayit_id: id, tur });
+  revalidatePath(`/yonetici/kullanici/${kayit.student_id}`);
   return { error: null };
 }
 

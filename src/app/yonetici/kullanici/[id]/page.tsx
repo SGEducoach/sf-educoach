@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpen, CheckCircle2, Clock3, School, UserRound, Users } from "lucide-react";
+import { BookOpen, CheckCircle2, School, UserRound, Users } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -13,6 +13,7 @@ import { DashboardYanMenu } from "@/components/dashboard/DashboardYanMenu";
 import { DersProgramiYonetimi } from "@/components/dashboard/DersProgramiYonetimi";
 import { GeriDonButonu } from "@/components/yonetici/GeriDonButonu";
 import { ProfiliYonetToggle } from "@/components/yonetici/ProfiliYonetToggle";
+import { OgrenciVeriKayitlari } from "@/components/yonetici/OgrenciVeriKayitlari";
 import type { KullaniciSonuc } from "@/app/yonetici/actions";
 import { ogretmenProgramiGetir } from "@/lib/ders-programi";
 import { BG1, BG1_ALT, BORDER, MINT, TEXT, TEXT_MUTED } from "@/lib/theme";
@@ -112,9 +113,9 @@ type AdminClient = ReturnType<typeof createAdminClient>;
 async function OgrenciSayfasi({ admin, userId, ad, donem }: { admin: AdminClient; userId: string; ad: string; donem: RaporDonemi }) {
   const [{ data: ogrenci }, { data: konular }, { data: sorular }, { data: denemeler }] = await Promise.all([
     admin.from("students").select("okul_no, ayt_alan, hedef_bolum, schools(ad, tur), classes(seviye, sube)").eq("id", userId).maybeSingle(),
-    admin.from("konu_calismalar").select("id, tarih, ders, konu, sure_dakika").eq("student_id", userId).order("tarih", { ascending: false }).limit(5),
-    admin.from("soru_cozumleri").select("id, tarih, ders, dogru, yanlis, sure_dakika").eq("student_id", userId).order("tarih", { ascending: false }).limit(5),
-    admin.from("denemeler").select("id, tarih, tur").eq("student_id", userId).order("tarih", { ascending: false }).limit(5),
+    admin.from("konu_calismalar").select("id, tarih, ders, konu, sure_dakika").eq("student_id", userId).order("tarih", { ascending: false }),
+    admin.from("soru_cozumleri").select("id, tarih, ders, dogru, yanlis, sure_dakika").eq("student_id", userId).order("tarih", { ascending: false }),
+    admin.from("denemeler").select("id, tarih, tur").eq("student_id", userId).order("tarih", { ascending: false }),
   ]);
   if (!ogrenci) return <BosKart metin="Öğrenci profili bulunamadı." />;
   const [analiz, konuHakimiyetiOzeti, kohort] = await Promise.all([
@@ -134,11 +135,11 @@ async function OgrenciSayfasi({ admin, userId, ad, donem }: { admin: AdminClient
     <AnalizPaneli veri={analiz} ogrenciAdi={ad}
       konuHakimiyetiSatirlari={konuHakimiyetiOzeti.satirlar} konuHakimiyetiTamGorunum={konuHakimiyetiOzeti.tamGorunum}
       konuHakimiyetiAytAlan={konuHakimiyetiOzeti.aytAlan} ogretmenGorunumu kohortKarsilastirma={kohort} />
-    <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-      <KayitListesi baslik="Son konu çalışmaları" satirlar={(konular ?? []).map((r) => `${r.tarih} · ${r.ders} · ${r.konu} · ${r.sure_dakika} dk`)} />
-      <KayitListesi baslik="Son soru çözümleri" satirlar={(sorular ?? []).map((r) => `${r.tarih} · ${r.ders} · ${r.dogru}D/${r.yanlis}Y · ${r.sure_dakika} dk`)} />
-      <KayitListesi baslik="Son denemeler" satirlar={(denemeler ?? []).map((r) => `${r.tarih} · ${r.tur}`)} />
-    </section>
+    <OgrenciVeriKayitlari gruplar={[
+      { baslik: "Konu çalışmaları", kayitlar: (konular ?? []).map((r) => ({ id: r.id, tur: "konu" as const, metin: `${r.tarih} · ${r.ders} · ${r.konu} · ${r.sure_dakika} dk` })) },
+      { baslik: "Soru çözümleri", kayitlar: (sorular ?? []).map((r) => ({ id: r.id, tur: "soru" as const, metin: `${r.tarih} · ${r.ders} · ${r.dogru}D/${r.yanlis}Y · ${r.sure_dakika} dk` })) },
+      { baslik: "Denemeler", kayitlar: (denemeler ?? []).map((r) => ({ id: r.id, tur: "deneme" as const, metin: `${r.tarih} · ${r.tur}` })) },
+    ]} />
   </>;
 }
 
@@ -175,5 +176,4 @@ async function VeliSayfasi({ admin, userId }: { admin: AdminClient; userId: stri
 }
 
 function Bilgi({ icon: Icon, etiket, deger }: { icon: typeof School; etiket: string; deger: string }) { return <div className="rounded-2xl p-4" style={{ background: BG1, border: `2px solid ${BORDER}` }}><Icon size={17} color={MINT} /><div className="mt-2 text-[10px] font-bold uppercase" style={{ color: TEXT_MUTED }}>{etiket}</div><div className="mt-1 text-sm font-bold" style={{ color: TEXT }}>{deger}</div></div>; }
-function KayitListesi({ baslik, satirlar }: { baslik: string; satirlar: string[] }) { return <div className="rounded-2xl p-4" style={{ background: BG1, border: `2px solid ${BORDER}` }}><h3 className="mb-3 text-sm font-bold" style={{ color: TEXT }}>{baslik}</h3><div className="sfec-liste">{satirlar.length === 0 && <span className="text-xs" style={{ color: TEXT_MUTED }}>Kayıt yok.</span>}{satirlar.map((s, i) => <div key={`${s}-${i}`} className="sfec-liste-satiri flex gap-2 px-2 py-2.5 text-xs" style={{ color: TEXT_MUTED }}><Clock3 size={13} color={MINT} className="mt-0.5 shrink-0" />{s}</div>)}</div></div>; }
 function BosKart({ metin }: { metin: string }) { return <div className="rounded-2xl p-5 text-sm" style={{ background: BG1, border: `2px solid ${BORDER}`, color: TEXT_MUTED }}>{metin}</div>; }

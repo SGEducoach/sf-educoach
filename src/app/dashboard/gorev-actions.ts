@@ -21,6 +21,7 @@ async function requireUser() {
 // olduğu bir sınıftaki öğrencilere görev atayabilir.
 export async function gorevVer(input: {
   studentIds: string[];
+  classIds?: string[];
   tur: GorevTuru;
   ders: string;
   konu?: string;
@@ -35,10 +36,38 @@ export async function gorevVer(input: {
   const { supabase, user } = await requireUser();
   const ders = input.ders.trim();
 
-  if (input.studentIds.length === 0) return { error: "En az bir öğrenci seçin." };
   if (!ders) return { error: "Ders seçin." };
   if (!input.tarih) return { error: "Tarih seçin." };
   const sonTarih = input.sonTarih && input.sonTarih >= input.tarih ? input.sonTarih : input.tarih;
+  let studentIds = [...new Set(input.studentIds)];
+  const classIds = [...new Set(input.classIds ?? [])];
+
+  // Aynı derse girilen tüm sınıflara toplu ödev: öğrenci kimlikleri istemcide
+  // açılıp taşınmaz. Sunucu, istenen her sınıfta öğretmenin SEÇİLİ DERSE ait
+  // atamasını yeniden doğrular ve o sınıfların güncel öğrencilerini bulur.
+  if (classIds.length > 0) {
+    const dersAnahtari = (deger: string) => deger.trim().toLocaleLowerCase("tr-TR").replace(/\s+/g, " ");
+    const { data: dersAtamalari, error: dersAtamaHatasi } = await supabase
+      .from("ogretmen_dersleri")
+      .select("class_id, ders")
+      .eq("teacher_id", user.id)
+      .in("class_id", classIds);
+    if (dersAtamaHatasi) return { error: dersAtamaHatasi.message };
+    const yetkiliSiniflar = new Set((dersAtamalari ?? [])
+      .filter((atama) => dersAnahtari(atama.ders) === dersAnahtari(ders))
+      .map((atama) => atama.class_id));
+    if (classIds.some((classId) => !yetkiliSiniflar.has(classId))) {
+      return { error: "Seçilen ders için bazı sınıflarda yetkiniz bulunmuyor." };
+    }
+    const { data: sinifOgrencileri, error: ogrenciHatasi } = await supabase
+      .from("students")
+      .select("id")
+      .in("class_id", classIds);
+    if (ogrenciHatasi) return { error: ogrenciHatasi.message };
+    studentIds = [...new Set((sinifOgrencileri ?? []).map((ogrenci) => ogrenci.id))];
+  }
+
+  if (studentIds.length === 0) return { error: classIds.length > 0 ? "Seçilen sınıflarda öğrenci bulunamadı." : "En az bir öğrenci seçin." };
 
   const { data: gorev, error } = await supabase.from("gorevler").insert({
     olusturan_ogretmen_id: user.id,
@@ -55,7 +84,7 @@ export async function gorevVer(input: {
   }).select("id").single();
   if (error || !gorev) return { error: error?.message ?? "Görev oluşturulamadı." };
 
-  const atamalar = input.studentIds.map((studentId) => ({ gorev_id: gorev.id, student_id: studentId }));
+  const atamalar = studentIds.map((studentId) => ({ gorev_id: gorev.id, student_id: studentId }));
   const { error: atamaError } = await supabase.from("gorev_atamalari").insert(atamalar);
   if (atamaError) {
     // Atama başarısızsa (ör. yetkisiz bir öğrenci seçildiyse) yetim görev
@@ -68,7 +97,7 @@ export async function gorevVer(input: {
   }
 
   revalidatePath("/dashboard");
-  return { error: null, ogrenciSayisi: input.studentIds.length };
+  return { error: null, ogrenciSayisi: studentIds.length };
 }
 
 // Öğrenci kendi planını ekler — aynı Görevlerim takvimine, öğretmen
