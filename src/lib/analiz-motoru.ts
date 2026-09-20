@@ -181,26 +181,30 @@ export function trendHesapla(noktalar: RegresyonNoktasi[]): TrendSonucu {
 // ============ Katman 4: hız / verimlilik analizi ============
 //
 // soru_cozumleri'nden ders bazlı "soru başı ortalama süre" ve doğruluk
-// oranını dört köşeli bir matrise yerleştirir. Hız için SABİT bir eşik
-// yerine öğrencinin KENDİ genel ortalaması referans alınır — bu, ders
-// zorluğuna göre doğal olarak değişen soru sürelerini (örn. Matematik
-// sorusu Türkçe'den daha uzun sürer) tek bir mutlak eşikle karşılaştırma
-// hatasından kaçınır.
+// oranını dört köşeli bir matrise yerleştirir. Matematik sorularının çözüm
+// yapısı diğer derslerden farklı olduğu için kullanıcı kararıyla soru başına
+// 1 dakika 30 saniye ayrı hız eşiği kullanılır. Diğer derslerde öğrencinin
+// KENDİ genel ortalaması referans alınmaya devam eder.
 
 export type HizDogrulukKategorisi = "hizli-dogru" | "hizli-hatali" | "yavas-dogru" | "yavas-hatali";
 
 // YKS net formülünde (dogru - yanlis/4) %60 doğruluk kabaca "iyi" sınırı
 // sayılır (4 yanlış 1 doğruyu götürür, %60'ın altı net'i hızla eritir).
 const DOGRULUK_ESIGI = 0.6;
+export const MATEMATIK_HIZ_ESIGI_DAKIKA = 1.5;
 
 export interface HizDogrulukGirdisi {
+  ders: string;
   ortSureDakika: number; // bu ders için soru başına ortalama süre
   dogrulukOrani: number; // bu ders için 0-1 doğruluk oranı
   genelOrtSureDakika: number; // öğrencinin TÜM derslerdeki soru başına ortalaması (referans)
 }
 
 export function hizDogrulukKategorisiBelirle(girdi: HizDogrulukGirdisi): HizDogrulukKategorisi {
-  const hizli = girdi.ortSureDakika <= girdi.genelOrtSureDakika;
+  const hizEsigi = girdi.ders === "Matematik"
+    ? MATEMATIK_HIZ_ESIGI_DAKIKA
+    : girdi.genelOrtSureDakika;
+  const hizli = girdi.ortSureDakika <= hizEsigi;
   const dogru = girdi.dogrulukOrani >= DOGRULUK_ESIGI;
   if (hizli && dogru) return "hizli-dogru";
   if (hizli && !dogru) return "hizli-hatali"; // dikkatsizlik sinyali

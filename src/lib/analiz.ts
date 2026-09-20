@@ -253,7 +253,7 @@ export async function analizVerisiGetir(
       ders,
       ortSureDakika: Math.round(ortSureDakika * 100) / 100,
       dogrulukOrani: Math.round(dogrulukOrani * 100) / 100,
-      kategori: hizDogrulukKategorisiBelirle({ ortSureDakika, dogrulukOrani, genelOrtSureDakika }),
+      kategori: hizDogrulukKategorisiBelirle({ ders, ortSureDakika, dogrulukOrani, genelOrtSureDakika }),
     });
   }
 

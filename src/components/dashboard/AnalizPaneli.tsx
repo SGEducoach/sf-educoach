@@ -545,9 +545,9 @@ const HIZ_DOGRULUK_BG: Record<HizDogrulukKategorisi, string> = {
   "hizli-dogru": MINT_BG, "hizli-hatali": BUTTER_BG, "yavas-dogru": SKY_BG, "yavas-hatali": BLUSH_BG,
 };
 
-// Analiz Motoru Faz A2, Katman 4 — ders bazlı hız-doğruluk matrisi. Hız,
-// öğrencinin KENDİ genel ortalamasına göre göreli (bkz. analiz-motoru.ts,
-// hizDogrulukKategorisiBelirle) — mutlak bir "iyi süre" eşiği yok.
+// Analiz Motoru Faz A2, Katman 4 — ders bazlı hız-doğruluk matrisi.
+// Matematikte kullanıcı kararıyla soru başına 1 dk 30 sn; diğer derslerde
+// öğrencinin kendi genel ortalaması hız eşiğidir.
 function HizDogrulukKarti({ satirlar }: { satirlar: AnalizVerisi["dersHizDogruluk"] }) {
   return (
     <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
@@ -558,7 +558,7 @@ function HizDogrulukKarti({ satirlar }: { satirlar: AnalizVerisi["dersHizDogrulu
         <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Hız-Doğruluk Analizi</span>
       </div>
       <p style={{ color: TEXT_MUTED }} className="text-xs mb-4">
-        Soru çözümlerindeki süre ve doğruluğun ders bazlı karşılaştırması — hız, kendi genel ortalamana göre.
+        Matematikte hız eşiği soru başına 1 dk 30 sn; diğer derslerde kendi genel ortalaman kullanılır.
       </p>
       {satirlar.length === 0 ? (
         <BosDurum />
