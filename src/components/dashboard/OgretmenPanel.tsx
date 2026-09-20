@@ -299,7 +299,7 @@ export function OgretmenPanel({
         />
       )}
 
-      {aktifBolum === "planlar" && secilenOgrenciId && <OgrenciAylikProgrami ogrenciAdi={secilenOgrenciAdi} program={secilenOgrenciProgrami} />}
+      {aktifBolum === "planlar" && secilenOgrenciId && <OgrenciAylikProgrami ogrenciAdi={secilenOgrenciAdi} program={secilenOgrenciProgrami} sinifId={gorunecekSinifId} />}
 
       {aktifBolum === "ozet" && <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
@@ -715,7 +715,8 @@ function AjandamBolumu({ role, dersler, siniflar, dersProgramiSatirlari, okulNob
   </section>;
 }
 
-function OgrenciAylikProgrami({ ogrenciAdi, program }: { ogrenciAdi?: string | null; program?: OgrenciProgramSatiri[] | null }) {
+function OgrenciAylikProgrami({ ogrenciAdi, program, sinifId }: { ogrenciAdi?: string | null; program?: OgrenciProgramSatiri[] | null; sinifId?: string | null }) {
+  const router = useRouter();
   const [ay, setAy] = useState(bugununTarihiTR().slice(0, 7));
   const [seciliGun, setSeciliGun] = useState<string | null>(null);
   const [ortadakiGun, setOrtadakiGun] = useState(bugununTarihiTR());
@@ -778,8 +779,12 @@ function OgrenciAylikProgrami({ ogrenciAdi, program }: { ogrenciAdi?: string | n
     </>;
   };
 
-  if (program === null) return <div className="rounded-3xl p-6 text-center" style={{ background: BG1, border: `2px solid ${BORDER}` }}><p className="text-sm font-semibold" style={{ color: BLUSH }}>Yalnızca sınıf öğretmeni kendi sınıfındaki öğrencilerin programını görüntüleyebilir.</p></div>;
+  const ogrenciListesineDon = () => router.push(`/dashboard?bolum=ozet${sinifId ? `&sinif=${encodeURIComponent(sinifId)}` : ""}`);
+  const listeyeDonButonu = <button type="button" onClick={ogrenciListesineDon} className="inline-flex items-center gap-1 rounded-full px-3 py-2 text-xs font-bold" style={{ border: `1px solid ${BORDER_STRONG}`, color: TEXT }}><ChevronLeft size={15}/>Öğrenci listesine dön</button>;
+
+  if (program === null) return <div className="rounded-3xl p-6" style={{ background: BG1, border: `2px solid ${BORDER}` }}><div className="mb-5">{listeyeDonButonu}</div><p className="text-center text-sm font-semibold" style={{ color: BLUSH }}>Yalnızca sınıf öğretmeni kendi sınıfındaki öğrencilerin programını görüntüleyebilir.</p></div>;
   return <section className="rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+    <div className="mb-3">{listeyeDonButonu}</div>
     <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-lg font-extrabold" style={{ color: TEXT }}>{ogrenciAdi ?? "Öğrenci"} · {seciliGun ? "Günlük program" : "Aylık program"}</h1><p className="text-xs" style={{ color: TEXT_MUTED }}>{seciliGun ? new Date(`${seciliGun}T12:00:00`).toLocaleDateString("tr-TR", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) : "Öğrencinin “Program yap” alanındaki aylık görünümü."}</p></div>{seciliGun ? <button type="button" onClick={() => setSeciliGun(null)} className="inline-flex items-center gap-1 rounded-full px-3 py-2 text-xs font-bold" style={{ border: `1px solid ${BORDER_STRONG}`, color: TEXT }}><ChevronLeft size={15}/>Aylık takvime dön</button> : <div className="flex items-center gap-2"><button aria-label="Önceki ay" onClick={() => degistir(-1)} className="grid h-9 w-9 place-items-center rounded-full" style={{ border: `1px solid ${BORDER_STRONG}` }}><ChevronLeft size={16}/></button><button onClick={buguneGit} className="min-w-36 text-sm font-extrabold" style={{ color: TEXT }}>{new Date(`${ilk}T12:00:00`).toLocaleDateString("tr-TR", { month: "long", year: "numeric" })}</button><button aria-label="Sonraki ay" onClick={() => degistir(1)} className="grid h-9 w-9 place-items-center rounded-full" style={{ border: `1px solid ${BORDER_STRONG}` }}><ChevronRight size={16}/></button></div>}</div>
     {seciliGun ? <div className="rounded-2xl p-3" style={{ background: BG0, border: `1px solid ${BORDER}` }}>{gunIcerigi(seciliGun, true)}</div> : <>
       <div className="hidden grid-cols-7 gap-1 sm:grid">{["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"].map(g => <div key={g} className="py-2 text-center text-xs font-bold" style={{ color: TEXT_MUTED }}>{g}</div>)}{gunler.map(g => <button type="button" key={g} onClick={() => setSeciliGun(g)} className="h-32 min-w-0 overflow-hidden rounded-xl p-2 text-left align-top" style={{ background: g === bugununTarihiTR() ? MINT_BG : BG0, border: `1px solid ${BORDER}`, opacity: g.startsWith(ay) ? 1 : .35 }} aria-label={`${g} gününün programını aç`}><div className="mb-1 text-xs font-bold" style={{ color: TEXT }}>{Number(g.slice(-2))}</div>{gunIcerigi(g)}</button>)}</div>
