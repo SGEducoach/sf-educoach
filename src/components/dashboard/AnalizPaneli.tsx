@@ -6,10 +6,10 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip,
   ResponsiveContainer, BarChart, Bar, Legend, PieChart, Pie, Cell,
 } from "recharts";
-import { Sparkles, Clock, Target, TrendingUp, TrendingDown, Minus, Printer, ListChecks, Gauge, Lightbulb, Flag, ShieldAlert, CalendarPlus } from "lucide-react";
+import { Clock, Target, TrendingUp, TrendingDown, Minus, Printer, Gauge, Lightbulb, Flag, ShieldAlert, CalendarPlus } from "lucide-react";
 import type { AnalizVerisi, RaporDonemi } from "@/lib/analiz";
 import { RAPOR_DONEMI_ETIKET } from "@/lib/analiz";
-import { HEDEFE_YAKINLIK_ETIKET, VERIMLILIK_ETIKET } from "@/lib/types";
+import { HEDEFE_YAKINLIK_ETIKET } from "@/lib/types";
 import type { AytAlan, HedefeYakinlik } from "@/lib/types";
 import { satirTytdeGosterilsinMi, satirAytdeGosterilsinMi } from "@/lib/konu-hakimiyeti";
 import type { KonuHakimiyetiSatiri } from "@/lib/konu-hakimiyeti";
@@ -68,13 +68,10 @@ export function AnalizPaneli({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const denemeChartData = veri.denemeTrend.map((d) => ({ tarih: tarihFormat(d.tarih), [d.tur]: d.net }));
-  const konuChartData = veri.konuCalismaGunluk.map((c) => ({ gun: tarihFormat(c.tarih), dakika: c.dakika }));
-  const soruChartData = veri.soruCozumuGunluk.map((c) => ({ gun: tarihFormat(c.tarih), soru: c.soru }));
-  const verimlilikChartData = veri.haftalikVerimlilik.map((v) => ({ tarih: tarihFormat(v.tarih), puan: v.puan, duzey: VERIMLILIK_ETIKET[v.duzey] }));
+  const toplamKonuDakika = veri.konuCalismaGunluk.reduce((toplam, kayit) => toplam + kayit.dakika, 0);
+  const toplamSoruSayisi = veri.soruCozumuGunluk.reduce((toplam, kayit) => toplam + kayit.soru, 0);
 
   const hedefToplam = veri.hedefeYakinlikDagilimi.yakin + veri.hedefeYakinlikDagilimi.belirsiz + veri.hedefeYakinlikDagilimi.uzak;
-  const konuHakimiyetHakimSayisi = konuHakimiyetiSatirlari.filter((s) => s.hakimiyetSeviyesi === "yakin").length;
-
   // Analiz Motoru Faz A3 — Katman 8 (öncelik motoru) + Katman 9 (kural
   // bazlı içgörü metni). Katman 2'nin çıktısını (konuHakimiyetiSatirlari,
   // zaten prop olarak geliyor) ve Katman 3/4'ün çıktısını (veri.*) girdi
@@ -143,15 +140,16 @@ export function AnalizPaneli({
       </div>
 
       <div className="flex items-center justify-between flex-wrap gap-3 print:hidden">
-        <div className="flex gap-1 p-1 rounded-full" style={{ background: "rgba(255,255,255,0.06)", border: `2px solid ${BORDER}` }}>
+        <nav aria-label="Analiz dönemi" className="grid w-full grid-cols-4 gap-1 rounded-2xl p-1 sm:w-auto sm:min-w-[28rem]" style={{ background: "rgba(255,255,255,0.06)", border: `2px solid ${BORDER}` }}>
           {(Object.entries(RAPOR_DONEMI_ETIKET) as [RaporDonemi, string][]).map(([k, v]) => (
             <button key={k} type="button" onClick={() => donemDegistir(k)}
-              className="sfec-btn text-[11px] font-bold px-3 py-1.5 rounded-full"
+              aria-pressed={veri.donem === k}
+              className="sfec-btn whitespace-nowrap rounded-xl px-2 py-2 text-[11px] font-bold sm:px-3"
               style={{ background: veri.donem === k ? MINT : "transparent", color: veri.donem === k ? MINT_ON : TEXT_MUTED }}>
               {v}
             </button>
           ))}
-        </div>
+        </nav>
         <div className="flex items-center gap-2">
           {ogretmenGorunumu && (() => {
             const ogrenciId = searchParams.get("ogrenci");
@@ -174,21 +172,18 @@ export function AnalizPaneli({
         </div>
       </div>
 
+      {veri.donem !== "tum" && <DonemOzeti veri={veri} />}
+
+      {veri.donem === "tum" && <>
       {ogretmenGorunumu && <OgretmenGorunumuKarti risk={riskSonucu} kohort={kohortKarsilastirma} />}
 
       <IcgorulerKarti icgoruler={icgoruler} oncelikSiralamasi={hicVeriYok ? [] : oncelikSiralamasi.slice(0, 3)}
         hedefNetTyt={veri.hedefNetTyt} hedefNetAyt={veri.hedefNetAyt} duzenlenebilir={hedefDuzenlenebilir} />
 
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-        <IstatKart icon={TrendingUp} etiket="Son deneme neti" deger={veri.sonDenemeNet ?? "—"} renk={MINT} bg={MINT_BG} />
-        <IstatKart icon={Clock} etiket="Bu hafta · konu" deger={`${veri.buHaftaKonuDakika} dk`} renk={BUTTER} bg={BUTTER_BG} />
-        <IstatKart icon={Target} etiket="Bu hafta · soru" deger={`${veri.buHaftaSoru} soru`} renk={SKY} bg={SKY_BG} />
-        <IstatKart icon={Target} etiket="Deneme sayısı" deger={veri.denemeTrend.length} renk={SKY} bg={SKY_BG} />
-        <IstatKart icon={ListChecks} etiket="Konu Hakimiyeti"
-          deger={konuHakimiyetiSatirlari.length > 0 ? `${konuHakimiyetHakimSayisi}/${konuHakimiyetiSatirlari.length}` : "—"}
-          altYazi={konuHakimiyetiSatirlari.length > 0 ? `%${Math.round((konuHakimiyetHakimSayisi / konuHakimiyetiSatirlari.length) * 100)} konuya hakim` : undefined}
-          renk={MINT} bg={MINT_BG} />
-        <IstatKart icon={Sparkles} etiket="Toplam giriş" deger={hedefToplam} renk={LILAC} bg="rgba(199,182,255,0.15)" />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <IstatKart icon={Clock} etiket="Toplam konu çalışması" deger={`${toplamKonuDakika} dk`} renk={BUTTER} bg={BUTTER_BG} />
+        <IstatKart icon={Target} etiket="Toplam çözülen soru" deger={`${toplamSoruSayisi} soru`} renk={SKY} bg={SKY_BG} />
+        <IstatKart icon={TrendingUp} etiket="Toplam deneme" deger={`${veri.denemeTrend.length} deneme`} renk={MINT} bg={MINT_BG} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -210,40 +205,6 @@ export function AnalizPaneli({
                 <Line type="monotone" dataKey="TYT" stroke={SKY} strokeWidth={2.25} dot={{ r: 3.5, fill: SKY, strokeWidth: 2, stroke: BG1 }} connectNulls />
                 <Line type="monotone" dataKey="AYT" stroke={MINT} strokeWidth={2.25} dot={{ r: 3.5, fill: MINT, strokeWidth: 2, stroke: BG1 }} connectNulls />
               </LineChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-
-        <div className="sfec-grafik-karti sfec-grafik-karti--sag sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-          <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold mb-4 block">Günlük konu çalışması (dakika)</span>
-          {konuChartData.length === 0 ? (
-            <BosDurum />
-          ) : (
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={konuChartData} margin={{ left: -20, right: 10 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke={BORDER} vertical={false} />
-                <XAxis dataKey="gun" tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={{ stroke: BORDER }} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={false} tickLine={false} />
-                <RTooltip shared={false} cursor={false} reverseDirection={{ x: true }} wrapperStyle={{ zIndex: 30 }} formatter={(deger) => [`${deger} dk`, "Konu çalışması"]} contentStyle={{ fontSize: 12, borderRadius: 12, border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT }} labelStyle={{ color: TEXT_MUTED }} itemStyle={{ color: TEXT }} />
-                <Bar dataKey="dakika" fill={MINT} activeBar={false} radius={[5, 5, 0, 0]} maxBarSize={34} />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-
-        <div className="sfec-grafik-karti sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-          <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold mb-4 block">Günlük soru çözümü (soru)</span>
-          {soruChartData.length === 0 ? (
-            <BosDurum />
-          ) : (
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={soruChartData} margin={{ left: -20, right: 10 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke={BORDER} vertical={false} />
-                <XAxis dataKey="gun" tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={{ stroke: BORDER }} tickLine={false} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={false} tickLine={false} />
-                <RTooltip shared={false} cursor={false} formatter={(deger) => [`${deger} soru`, "Soru çözümü"]} contentStyle={{ fontSize: 12, borderRadius: 12, border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT }} labelStyle={{ color: TEXT_MUTED }} itemStyle={{ color: TEXT }} />
-                <Bar dataKey="soru" fill={SKY} activeBar={false} radius={[5, 5, 0, 0]} maxBarSize={34} />
-              </BarChart>
             </ResponsiveContainer>
           )}
         </div>
@@ -320,22 +281,32 @@ export function AnalizPaneli({
         <HizDogrulukKarti satirlar={veri.dersHizDogruluk} />
       </div>
 
-      {verimlilikChartData.length > 0 && (
-        <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-          <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold mb-4 block">Haftalık verimlilik trendi</span>
-          <ResponsiveContainer width="100%" height={180}>
-            <LineChart data={verimlilikChartData} margin={{ left: -20, right: 10 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={BORDER} vertical={false} />
-              <XAxis dataKey="tarih" tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={{ stroke: BORDER }} tickLine={false} />
-              <YAxis domain={[1, 5.5]} ticks={[1, 2, 3, 4, 5]} tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={false} tickLine={false} />
-              <RTooltip cursor={false} contentStyle={{ fontSize: 12, borderRadius: 12, border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT }} labelStyle={{ color: TEXT_MUTED }} itemStyle={{ color: TEXT }}
-                formatter={(_, __, props) => [props.payload.duzey, "Verimlilik"]} />
-              <Line type="monotone" dataKey="puan" stroke={LILAC} strokeWidth={2.25} dot={{ r: 3.5, fill: LILAC, strokeWidth: 2, stroke: BG1 }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      )}
+      </>}
     </div>
+  );
+}
+
+function DonemOzeti({ veri }: { veri: AnalizVerisi }) {
+  const konuDakika = veri.konuCalismaGunluk.reduce((toplam, kayit) => toplam + kayit.dakika, 0);
+  const soruSayisi = veri.soruCozumuGunluk.reduce((toplam, kayit) => toplam + kayit.soru, 0);
+  const denemeSayisi = veri.denemeTrend.length;
+  const denemeOrtalamasi = denemeSayisi > 0
+    ? Math.round((veri.denemeTrend.reduce((toplam, kayit) => toplam + kayit.net, 0) / denemeSayisi) * 100) / 100
+    : null;
+  const donemEtiketi = RAPOR_DONEMI_ETIKET[veri.donem];
+
+  return (
+    <section className="flex flex-col gap-4" aria-label={`${donemEtiketi} istatistikleri`}>
+      <div>
+        <h3 className="text-lg font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>{donemEtiketi} özeti</h3>
+        <p className="mt-1 text-xs" style={{ color: TEXT_MUTED }}>Bu dönemde girilen soru, konu çalışma ve deneme verileri.</p>
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <IstatKart icon={Target} etiket="Çözülen soru" deger={`${soruSayisi} soru`} altYazi={`${veri.soruCozumuGunluk.length} gün veri girildi`} renk={SKY} bg={SKY_BG} />
+        <IstatKart icon={Clock} etiket="Konu çalışması" deger={`${konuDakika} dk`} altYazi={`${veri.konuCalismaGunluk.length} gün veri girildi`} renk={BUTTER} bg={BUTTER_BG} />
+        <IstatKart icon={TrendingUp} etiket="Deneme" deger={`${denemeSayisi} deneme`} altYazi={denemeOrtalamasi === null ? "Henüz deneme verisi yok" : `Ortalama net: ${denemeOrtalamasi}`} renk={MINT} bg={MINT_BG} />
+      </div>
+    </section>
   );
 }
 
@@ -523,11 +494,10 @@ function TrendRozeti({ trend }: { trend: TrendSonucu }) {
   const renk = trend.yon === "yukselen" ? MINT : trend.yon === "dusen" ? BLUSH : TEXT_MUTED;
   const bg = trend.yon === "yukselen" ? MINT_BG : trend.yon === "dusen" ? BLUSH_BG : BG1_ALT;
   const etiket = trend.yon === "yukselen" ? "Yükseliyor" : trend.yon === "dusen" ? "Düşüyor" : "Durgun";
-  const degisim = trend.haftalikDegisim;
   return (
     <span className="text-[11px] font-bold px-2.5 py-1 rounded-full inline-flex items-center gap-1 shrink-0" style={{ background: bg, color: renk }}>
       <Icon size={12} />
-      {etiket}{degisim !== null && Math.abs(degisim) >= 0.05 && ` (${degisim > 0 ? "+" : ""}${degisim} net/hafta)`}
+      {etiket}
     </span>
   );
 }

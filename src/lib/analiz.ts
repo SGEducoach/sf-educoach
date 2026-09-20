@@ -11,12 +11,13 @@ function tarihGunFarki(tarih: string, referansTarih: string): number {
   return (new Date(tarih).getTime() - new Date(referansTarih).getTime()) / (1000 * 3600 * 24);
 }
 
-export type RaporDonemi = "haftalik" | "aylik" | "tum";
+export type RaporDonemi = "bugun" | "haftalik" | "aylik" | "tum";
 
 export const RAPOR_DONEMI_ETIKET: Record<RaporDonemi, string> = {
-  haftalik: "Haftalık",
-  aylik: "Aylık",
-  tum: "Tüm Zamanlar",
+  tum: "Genel",
+  bugun: "Bugün",
+  haftalik: "Bu hafta",
+  aylik: "Bu ay",
 };
 
 export interface AnalizVerisi {
@@ -64,8 +65,12 @@ const VERIMLILIK_PUAN: Record<VerimlilikDuzeyi, number> = {
 
 function donemBaslangicHesapla(donem: RaporDonemi): string | null {
   if (donem === "tum") return null;
-  const gunSayisi = donem === "haftalik" ? 7 : 30;
-  return tarihEkle(bugununTarihiTR(), -gunSayisi);
+  const bugun = bugununTarihiTR();
+  if (donem === "bugun") return bugun;
+  if (donem === "aylik") return `${bugun.slice(0, 7)}-01`;
+  const tarih = new Date(`${bugun}T12:00:00Z`);
+  const haftaninGunu = tarih.getUTCDay();
+  return tarihEkle(bugun, haftaninGunu === 0 ? -6 : 1 - haftaninGunu);
 }
 
 export async function analizVerisiGetir(
@@ -277,15 +282,12 @@ export async function analizVerisiGetir(
     : null;
   const sonAktiviteGunFarki = sonAktiviteTarihi === null ? null : (Date.now() - new Date(sonAktiviteTarihi).getTime()) / (1000 * 3600 * 24);
 
-  const bugun = new Date();
-  const buHaftaBaslangic = new Date(bugun);
-  buHaftaBaslangic.setDate(bugun.getDate() - 6);
-  buHaftaBaslangic.setHours(0, 0, 0, 0);
+  const buHaftaBaslangic = donemBaslangicHesapla("haftalik")!;
   const buHaftaKonuDakika = konuCalismaGunluk
-    .filter((c) => new Date(c.tarih) >= buHaftaBaslangic)
+    .filter((c) => c.tarih >= buHaftaBaslangic)
     .reduce((t, c) => t + c.dakika, 0);
   const buHaftaSoru = soruCozumuGunluk
-    .filter((c) => new Date(c.tarih) >= buHaftaBaslangic)
+    .filter((c) => c.tarih >= buHaftaBaslangic)
     .reduce((t, c) => t + c.soru, 0);
 
   return {

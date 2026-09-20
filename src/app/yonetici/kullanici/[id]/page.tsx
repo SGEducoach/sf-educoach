@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { analizVerisiGetir } from "@/lib/analiz";
+import type { RaporDonemi } from "@/lib/analiz";
 import { kohortKarsilastirmasiGetir } from "@/lib/analiz-kohort";
 import { konuHakimiyetiOzetiGetir } from "@/lib/konu-hakimiyeti";
 import { AnalizPaneli } from "@/components/dashboard/AnalizPaneli";
@@ -59,8 +60,10 @@ async function kullaniciSonucInsa(
   return taban;
 }
 
-export default async function KullaniciGoruntulemeSayfasi({ params }: { params: Promise<{ id: string }> }) {
+export default async function KullaniciGoruntulemeSayfasi({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ donem?: string }> }) {
   const { id } = await params;
+  const sayfaParametreleri = await searchParams;
+  const donem = (["bugun", "haftalik", "aylik", "tum"].includes(sayfaParametreleri.donem ?? "") ? sayfaParametreleri.donem : "tum") as RaporDonemi;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/yonetici");
@@ -95,7 +98,7 @@ export default async function KullaniciGoruntulemeSayfasi({ params }: { params: 
               <ProfiliYonetToggle kullanici={kullaniciSonuc} />
             </div>
           </section>
-          {role === "ogrenci" && <OgrenciSayfasi admin={admin} userId={id} ad={profil.ad} />}
+          {role === "ogrenci" && <OgrenciSayfasi admin={admin} userId={id} ad={profil.ad} donem={donem} />}
           {(role === "ogretmen" || role === "mudur") && <OgretmenSayfasi admin={admin} userId={id} />}
           {role === "veli" && <VeliSayfasi admin={admin} userId={id} />}
         </main>
@@ -106,7 +109,7 @@ export default async function KullaniciGoruntulemeSayfasi({ params }: { params: 
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 
-async function OgrenciSayfasi({ admin, userId, ad }: { admin: AdminClient; userId: string; ad: string }) {
+async function OgrenciSayfasi({ admin, userId, ad, donem }: { admin: AdminClient; userId: string; ad: string; donem: RaporDonemi }) {
   const [{ data: ogrenci }, { data: konular }, { data: sorular }, { data: denemeler }] = await Promise.all([
     admin.from("students").select("okul_no, ayt_alan, hedef_bolum, schools(ad, tur), classes(seviye, sube)").eq("id", userId).maybeSingle(),
     admin.from("konu_calismalar").select("id, tarih, ders, konu, sure_dakika").eq("student_id", userId).order("tarih", { ascending: false }).limit(5),
@@ -115,7 +118,7 @@ async function OgrenciSayfasi({ admin, userId, ad }: { admin: AdminClient; userI
   ]);
   if (!ogrenci) return <BosKart metin="Öğrenci profili bulunamadı." />;
   const [analiz, konuHakimiyetiOzeti, kohort] = await Promise.all([
-    analizVerisiGetir(admin as Parameters<typeof analizVerisiGetir>[0], userId, "tum"),
+    analizVerisiGetir(admin as Parameters<typeof analizVerisiGetir>[0], userId, donem),
     konuHakimiyetiOzetiGetir(admin as Parameters<typeof konuHakimiyetiOzetiGetir>[0], userId),
     kohortKarsilastirmasiGetir(admin as Parameters<typeof kohortKarsilastirmasiGetir>[0], userId),
   ]);
