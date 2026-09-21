@@ -103,9 +103,7 @@ export async function otoProgramUygula(input: {
       oto_program_id: programId,
       tur: blok.tur,
       ders: blok.ders,
-      // Oto program yalnızca ders ve çalışma türünü planlar; konu öğrenci
-      // çalışmayı tamamlarken veri girişinde seçilir.
-      konu: null,
+      konu: blok.konu?.trim() || null,
       tarih: blok.tarih,
       son_tarih: blok.tarih,
       baslangic_saat: blok.baslangic,
