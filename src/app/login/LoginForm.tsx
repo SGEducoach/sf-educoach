@@ -129,26 +129,10 @@ export default function LoginForm() {
 
     setYukleniyor(true);
 
-    let girisEmail = email;
     const girisSifre = password;
-
-    if (role === "ogrenci") {
-      const { data: cozulenEmail } = await supabase.rpc("resolve_ogrenci_email", { p_school_id: schoolId, p_okul_no: okulNo.trim() });
-      if (!cozulenEmail) {
-        setYukleniyor(false);
-        return setHata("Bu numarayla kayıtlı bir öğrenci bulunamadı.");
-      }
-      girisEmail = cozulenEmail;
-    } else if (role === "mudur") {
-      const { data: cozulenEmail } = await supabase.rpc("resolve_mudur_email", { p_okul_kodu: okulNo.trim() });
-      if (!cozulenEmail) {
-        setYukleniyor(false);
-        return setHata(`${KURUM_ETIKET[kurumTuru].kod} hatalı.`);
-      }
-      girisEmail = cozulenEmail;
-    }
-
-    void girisEmail;
+    // Okul numarası/kodu -> e-posta çözümlemesi yalnız sunucuda yapılır.
+    // Resolver'ı tarayıcıdan çağırmak, kullanılmasa bile e-postayı F12 ağ
+    // yanıtında açığa çıkarıyordu.
     const response = await fetch("/api/giris", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
