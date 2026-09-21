@@ -979,6 +979,11 @@ export function GorevVerBolumu({ ogrenciler, konuOnerileri, topluSiniflar = [], 
   const [basari, setBasari] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
+  const atananDersler = [...new Set(topluSiniflar.map((sinif) => sinif.ders))];
+  const turkDiliAtamasiVar = atananDersler.some((atanan) => atanan === "Türkçe" || atanan === "Edebiyat" || atanan === "Türk Dili ve Edebiyatı");
+  const dersSecenekleri = [...new Set([...atananDersler, ...BRANS_LISTESI])]
+    .filter((secenek) => !(secenek === "Türk Dili ve Edebiyatı" && turkDiliAtamasiVar && !atananDersler.includes(secenek)));
+  const dersGorunenAdi = (secenek: string) => secenek === "Türkçe" || secenek === "Edebiyat" ? "Türk Dili ve Edebiyatı" : secenek;
   const tumuSeciliMi = ogrenciler.length > 0 && secili.size === ogrenciler.length;
   const dersAnahtari = (deger: string) => deger.trim().toLocaleLowerCase("tr-TR").replace(/\s+/g, " ");
   const uygunSinifMap = new Map<string, OgretmenDersiSatiri>();
@@ -991,7 +996,8 @@ export function GorevVerBolumu({ ogrenciler, konuOnerileri, topluSiniflar = [], 
   const hedefSeviyeler = new Set((topluGonderimAktif ? uygunTopluSiniflar.map((sinif) => sinif.sinifAdi.match(/^\d+/)?.[0]) : [sinifSeviyesi]).filter((seviye): seviye is string => !!seviye));
   // Öğretmen branşı lisede tek adla tutuluyor; konu havuzu ise TYT Türkçe,
   // sınıf bazlı Türkçe (Maarif) ve AYT Edebiyat olarak ayrılıyor.
-  const dersAdlari = ders === "Türk Dili ve Edebiyatı" ? new Set(["Türkçe", "Türkçe (Maarif)", "Edebiyat"]) : new Set([ders]);
+  const turkDiliDersiMi = ders === "Türk Dili ve Edebiyatı" || ders === "Türkçe" || ders === "Edebiyat";
+  const dersAdlari = turkDiliDersiMi ? new Set(["Türkçe", "Türkçe (Maarif)", "Edebiyat"]) : new Set([ders]);
   const dersKonulari = konuOnerileri.filter((k) => {
     if (!dersAdlari.has(k.ders)) return false;
     if (hedefSeviyeler.size === 0 || !k.seviye || k.seviye === "TYT" || k.seviye === "AYT") return true;
@@ -1010,12 +1016,12 @@ export function GorevVerBolumu({ ogrenciler, konuOnerileri, topluSiniflar = [], 
     setTur(yeni);
     setKonu("");
     if (yeni === "deneme") setDers("Genel");
-    else if (ders === "Genel") setDers(BRANS_LISTESI[0]);
+    else if (ders === "Genel") setDers(dersSecenekleri[0] ?? BRANS_LISTESI[0]);
   }
 
   function denemeTuruDegistir(yeni: string) {
     setKonu(yeni);
-    setDers(yeni === "BRANS" ? BRANS_LISTESI[0] : "Genel");
+    setDers(yeni === "BRANS" ? (dersSecenekleri[0] ?? BRANS_LISTESI[0]) : "Genel");
   }
 
   function dersDegistir(yeni: string) {
@@ -1135,7 +1141,7 @@ export function GorevVerBolumu({ ogrenciler, konuOnerileri, topluSiniflar = [], 
                 <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Ders</span>
                 <select value={ders} onChange={(e) => dersDegistir(e.target.value)}
                   className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
-                  {BRANS_LISTESI.map((d) => <option key={d} value={d}>{d}</option>)}
+                  {dersSecenekleri.map((d) => <option key={d} value={d}>{dersGorunenAdi(d)}</option>)}
                 </select>
               </label>
             )}
@@ -1149,7 +1155,7 @@ export function GorevVerBolumu({ ogrenciler, konuOnerileri, topluSiniflar = [], 
                 style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
                 {dersPasif
                   ? <option value="Genel">Genel (deneme geneli)</option>
-                  : BRANS_LISTESI.map((d) => <option key={d} value={d}>{d}</option>)}
+                  : dersSecenekleri.map((d) => <option key={d} value={d}>{dersGorunenAdi(d)}</option>)}
               </select>
             </label>
           ) : (
