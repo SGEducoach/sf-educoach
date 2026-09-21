@@ -984,7 +984,8 @@ export function GorevVerBolumu({ ogrenciler, konuOnerileri, topluSiniflar = [], 
   }
   const uygunTopluSiniflar = Array.from(uygunSinifMap.values());
   const topluGonderimMumkun = uygunTopluSiniflar.length > 1 && ders !== "Genel";
-  const hedefSeviyeler = new Set((tumSiniflaraGonder ? uygunTopluSiniflar.map((sinif) => sinif.sinifAdi.match(/^\d+/)?.[0]) : [sinifSeviyesi]).filter((seviye): seviye is string => !!seviye));
+  const topluGonderimAktif = tumSiniflaraGonder && topluGonderimMumkun;
+  const hedefSeviyeler = new Set((topluGonderimAktif ? uygunTopluSiniflar.map((sinif) => sinif.sinifAdi.match(/^\d+/)?.[0]) : [sinifSeviyesi]).filter((seviye): seviye is string => !!seviye));
   // Öğretmen branşı lisede tek adla tutuluyor; konu havuzu ise TYT Türkçe,
   // sınıf bazlı Türkçe (Maarif) ve AYT Edebiyat olarak ayrılıyor.
   const dersAdlari = ders === "Türk Dili ve Edebiyatı" ? new Set(["Türkçe", "Türkçe (Maarif)", "Edebiyat"]) : new Set([ders]);
@@ -1005,21 +1006,18 @@ export function GorevVerBolumu({ ogrenciler, konuOnerileri, topluSiniflar = [], 
   function turDegistir(yeni: GorevTuru) {
     setTur(yeni);
     setKonu("");
-    setTumSiniflaraGonder(false);
     if (yeni === "deneme") setDers("Genel");
     else if (ders === "Genel") setDers(BRANS_LISTESI[0]);
   }
 
   function denemeTuruDegistir(yeni: string) {
     setKonu(yeni);
-    setTumSiniflaraGonder(false);
     setDers(yeni === "BRANS" ? BRANS_LISTESI[0] : "Genel");
   }
 
   function dersDegistir(yeni: string) {
     setDers(yeni);
     setKonu("");
-    setTumSiniflaraGonder(false);
   }
 
   function ogrenciToggle(id: string) {
@@ -1038,12 +1036,12 @@ export function GorevVerBolumu({ ogrenciler, konuOnerileri, topluSiniflar = [], 
     e.preventDefault();
     setHata(null);
     setBasari(null);
-    if (!tumSiniflaraGonder && secili.size === 0) return setHata("En az bir öğrenci seçin.");
+    if (!topluGonderimAktif && secili.size === 0) return setHata("En az bir öğrenci seçin.");
     if (!ders.trim()) return setHata("Ders seçin.");
     startTransition(async () => {
       const res = await gorevVerEylemi({
-        studentIds: tumSiniflaraGonder ? [] : Array.from(secili),
-        classIds: tumSiniflaraGonder ? uygunTopluSiniflar.map((sinif) => sinif.classId) : undefined,
+        studentIds: topluGonderimAktif ? [] : Array.from(secili),
+        classIds: topluGonderimAktif ? uygunTopluSiniflar.map((sinif) => sinif.classId) : undefined,
         tur, ders, konu: konu || undefined,
         hedefSoruSayisi: hedefSoru ? Number(hedefSoru) : undefined,
         hedefDakika: hedefDakika ? Number(hedefDakika) : undefined,
@@ -1080,7 +1078,7 @@ export function GorevVerBolumu({ ogrenciler, konuOnerileri, topluSiniflar = [], 
           </label>
         )}
 
-        {!tumSiniflaraGonder && <div className="flex flex-col gap-1.5">
+        {!topluGonderimAktif && <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
             <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Öğrenciler</span>
             <button type="button" onClick={tumunuSecToggle}
@@ -1217,7 +1215,7 @@ export function GorevVerBolumu({ ogrenciler, konuOnerileri, topluSiniflar = [], 
         {basari && <div style={{ color: MINT }} className="text-xs font-semibold">{basari}</div>}
         <button type="submit" disabled={pending}
           className="sfec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
-          {pending ? "Gönderiliyor..." : tumSiniflaraGonder ? `Tüm sınıflara ödev ver (${uygunTopluSiniflar.length} sınıf)` : `Ödev ver${secili.size > 1 ? ` (${secili.size} öğrenci)` : ""}`}
+          {pending ? "Gönderiliyor..." : topluGonderimAktif ? `Tüm sınıflara ödev ver (${uygunTopluSiniflar.length} sınıf)` : `Ödev ver${secili.size > 1 ? ` (${secili.size} öğrenci)` : ""}`}
         </button>
       </form>
     </div>
