@@ -284,7 +284,8 @@ export function OgretmenPanel({
       )}
 
       {aktifBolum === "gorevler" && role === "ogretmen" && (gorevVerilebilirMi || ogretmenDersleri.length > 0) && (ogrenciler.length > 0 || ogretmenDersleri.length > 0) && (
-        <GorevVerBolumu ogrenciler={ogrenciler} konuOnerileri={konuOnerileri} topluSiniflar={ogretmenDersleri} />
+        <GorevVerBolumu ogrenciler={ogrenciler} konuOnerileri={konuOnerileri} topluSiniflar={ogretmenDersleri}
+          sinifSeviyesi={siniflar.find((sinif) => sinif.id === gorunecekSinifId)?.seviye} />
       )}
 
       {(aktifBolum === "takvim" || aktifBolum === "dersler") && <AjandamBolumu role={role} dersler={ogretmenDersleri} siniflar={siniflar} dersProgramiSatirlari={dersProgramiSatirlari ?? []} okulNobetleri={okulNobetleri ?? []} yurtNobetGorevleri={yurtNobetGorevleri ?? []} nobetDevirOgretmenleri={nobetDevirOgretmenleri ?? []} dershaneMi={!!dershaneMi} />}
@@ -952,9 +953,10 @@ export function SinifEkleFormu({ schoolId }: { schoolId: string }) {
 // (checkbox ile, "Tümünü seç" toplu görev karşılığı) seçilip aynı görev
 // hepsine birden atanıyor. Öğrenci tarafında bu görev, ilgili mevcut veri
 // giriş formundan (Konu/Soru/Deneme) tamamlanıyor (bkz. Gorevlerim.tsx).
-export function GorevVerBolumu({ ogrenciler, konuOnerileri, topluSiniflar = [], gorevVerEylemi = gorevVer }: {
+export function GorevVerBolumu({ ogrenciler, konuOnerileri, topluSiniflar = [], sinifSeviyesi, gorevVerEylemi = gorevVer }: {
   ogrenciler: OgrenciSatiri[]; konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
   topluSiniflar?: OgretmenDersiSatiri[];
+  sinifSeviyesi?: string;
   // Dershane rehberi kendi yetki kontrolüyle ödev verir (bkz. rehber-ogrenci-actions.ts rehberGorevVer).
   gorevVerEylemi?: (input: Parameters<typeof gorevVer>[0]) => Promise<{ error: string | null; ogrenciSayisi?: number }>;
 }) {
@@ -963,7 +965,6 @@ export function GorevVerBolumu({ ogrenciler, konuOnerileri, topluSiniflar = [], 
   const [ders, setDers] = useState<string>(topluSiniflar[0]?.ders ?? BRANS_LISTESI[0]);
   const [tumSiniflaraGonder, setTumSiniflaraGonder] = useState(false);
   const [konu, setKonu] = useState("");
-  const dersKonulari = konuOnerileri.filter((k) => k.ders === ders);
   const [hedefSoru, setHedefSoru] = useState("");
   const [hedefDakika, setHedefDakika] = useState("");
   const [tarih, setTarih] = useState(bugununTarihiTR);
@@ -983,6 +984,15 @@ export function GorevVerBolumu({ ogrenciler, konuOnerileri, topluSiniflar = [], 
   }
   const uygunTopluSiniflar = Array.from(uygunSinifMap.values());
   const topluGonderimMumkun = uygunTopluSiniflar.length > 1 && ders !== "Genel";
+  const hedefSeviyeler = new Set((tumSiniflaraGonder ? uygunTopluSiniflar.map((sinif) => sinif.sinifAdi.match(/^\d+/)?.[0]) : [sinifSeviyesi]).filter((seviye): seviye is string => !!seviye));
+  // Öğretmen branşı lisede tek adla tutuluyor; konu havuzu ise TYT Türkçe,
+  // sınıf bazlı Türkçe (Maarif) ve AYT Edebiyat olarak ayrılıyor.
+  const dersAdlari = ders === "Türk Dili ve Edebiyatı" ? new Set(["Türkçe", "Türkçe (Maarif)", "Edebiyat"]) : new Set([ders]);
+  const dersKonulari = konuOnerileri.filter((k) => {
+    if (!dersAdlari.has(k.ders)) return false;
+    if (hedefSeviyeler.size === 0 || !k.seviye || k.seviye === "TYT" || k.seviye === "AYT") return true;
+    return [...hedefSeviyeler].some((seviye) => k.seviye === `${seviye}. Sınıf`);
+  });
 
   // Deneme görevinde "Ders" alanı anlamsız — TYT/AYT birden çok dersi birden
   // kapsıyor, tek bir ders seçmek yanıltıcı. Sadece Branş Denemesi (9-10.
@@ -1147,7 +1157,7 @@ export function GorevVerBolumu({ ogrenciler, konuOnerileri, topluSiniflar = [], 
               <select value={konu} onChange={(e) => setKonu(e.target.value)}
                 className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
                 <option value="">Seçiniz (opsiyonel)</option>
-                {dersKonulari.map((k) => <option key={k.konu} value={k.konu}>{k.konu}</option>)}
+                {dersKonulari.map((k) => <option key={`${k.ders}-${k.seviye ?? ""}-${k.konu}`} value={k.konu}>{k.konu}</option>)}
               </select>
             </label>
           )}
