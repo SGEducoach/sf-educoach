@@ -963,7 +963,10 @@ export function GorevVerBolumu({ ogrenciler, konuOnerileri, topluSiniflar = [], 
   const [secili, setSecili] = useState<Set<string>>(new Set());
   const [tur, setTur] = useState<GorevTuru>("soru");
   const [ders, setDers] = useState<string>(topluSiniflar[0]?.ders ?? BRANS_LISTESI[0]);
-  const [tumSiniflaraGonder, setTumSiniflaraGonder] = useState(false);
+  // Öğretmen aynı derse birden fazla sınıfta giriyorsa form toplu modda
+  // açılır; yüzlerce öğrenciyi listelemek yerine yalnız sınıflar özetlenir.
+  // İsterse kutunun işaretini kaldırıp mevcut sınıftan öğrenci seçebilir.
+  const [tumSiniflaraGonder, setTumSiniflaraGonder] = useState(true);
   const [konu, setKonu] = useState("");
   const [hedefSoru, setHedefSoru] = useState("");
   const [hedefDakika, setHedefDakika] = useState("");
