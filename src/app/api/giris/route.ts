@@ -6,6 +6,7 @@ import { dershaneDenemeBitisGetir, suresiDolduMu, kullaniciKurumuGetir, denemeSu
 import { pushGonderProfile } from "@/lib/push-send";
 import { bildirimGonder } from "@/lib/bildirim-gonder";
 import { geciciSifreyiEtkinlestir } from "@/lib/gecici-sifre";
+import { grupKoduNormalize } from "@/lib/grup-kocluk";
 import type { UserRole } from "@/lib/types";
 
 const PENCERE_MS = 15 * 60 * 1000;
@@ -75,9 +76,9 @@ export async function POST(request: NextRequest) {
 
   const admin = createAdminClient();
   if (body.grupKodu !== undefined) {
-    const kod = String(body.grupKodu).trim().toUpperCase();
+    const kod = grupKoduNormalize(String(body.grupKodu));
     const { data: grup } = kod
-      ? await admin.from("schools").select("id").eq("okul_kodu", kod).not("grup_kapasitesi", "is", null).maybeSingle()
+      ? await admin.from("schools").select("id").ilike("okul_kodu", kod).not("grup_kapasitesi", "is", null).maybeSingle()
       : { data: null };
     // Bulunamayan kod da normal bir hatalı giriş gibi sayılır (ayrı anahtar).
     body.schoolId = (grup?.id as string | undefined) ?? `grup-yok:${kod}`;

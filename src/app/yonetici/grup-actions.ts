@@ -120,11 +120,14 @@ export async function grupOlustur(input: GrupGirdisi): Promise<{ error: string |
   const email = input.kocEmail.trim().toLowerCase();
   const telefon = input.kocTelefon.trim();
 
-  // 1) Grup kaydı — kod çakışırsa (benzersiz okul_kodu) yeni kodla tekrar dene.
+  // 1) Grup kaydı — kod çakışırsa sıradaki adı dene (yıldızsefu2 vb.).
   let grup: { id: string; okul_kodu: string } | null = null;
-  for (let deneme = 0; deneme < 5 && !grup; deneme++) {
+  for (let deneme = 1; deneme <= 100 && !grup; deneme++) {
+    const grupKodu = grupKoduUret(grupAdi, deneme);
+    const { data: mevcut } = await admin.from("schools").select("id").ilike("okul_kodu", grupKodu).maybeSingle();
+    if (mevcut) continue;
     const { data, error } = await admin.from("schools").insert({
-      ad: grupAdi, okul_kodu: grupKoduUret(), tur: "dershane",
+      ad: grupAdi, okul_kodu: grupKodu, tur: "dershane",
       grup_kapasitesi: input.kapasite, grup_bitis_tarihi: input.bitisTarihi,
       koc_taahhut_at: new Date().toISOString(),
     }).select("id, okul_kodu").single();

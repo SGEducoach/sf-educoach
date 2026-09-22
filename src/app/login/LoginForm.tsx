@@ -300,7 +300,7 @@ export default function LoginForm() {
                 </label>
                 <label className="flex flex-col gap-1">
                   <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Grup kodu</span>
-                  <input required value={grupKodu} onChange={(e) => setGrupKodu(e.target.value.toUpperCase().replace(/\s/g, ""))} autoCapitalize="characters"
+                  <input required value={grupKodu} onChange={(e) => setGrupKodu(e.target.value.toLocaleLowerCase("tr-TR").replace(/\s/g, ""))} autoCapitalize="none" spellCheck={false}
                     className="font-mono text-sm tracking-wider px-3 py-2 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
                 </label>
                 <label className="flex flex-col gap-1">
@@ -426,8 +426,8 @@ export default function LoginForm() {
               {grupModu && (role === "ogrenci" || role === "veli") && (
                 <label className="flex flex-col gap-1">
                   <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Grup kodu</span>
-                  <input required value={grupKodu} onChange={(e) => setGrupKodu(e.target.value.toUpperCase().replace(/\s/g, ""))}
-                    placeholder="Koçunuzun verdiği kod" autoCapitalize="characters"
+                  <input required value={grupKodu} onChange={(e) => setGrupKodu(e.target.value.toLocaleLowerCase("tr-TR").replace(/\s/g, ""))}
+                    placeholder="Koçunuzun verdiği kod" autoCapitalize="none" spellCheck={false}
                     className="font-mono text-sm tracking-wider px-3 py-2 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
                 </label>
               )}

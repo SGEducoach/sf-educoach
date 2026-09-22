@@ -1,17 +1,18 @@
 import { describe, expect, test } from "vitest";
-import { adAnahtari, grupGirdisiHatasi, grupKapasitesiMi, grupKoduUret, grupOgrencisiGirdisiHatasi, kalanGun } from "./grup-kocluk";
+import { adAnahtari, grupGirdisiHatasi, grupKapasitesiMi, grupKoduNormalize, grupKoduUret, grupOgrencisiGirdisiHatasi, kalanGun } from "./grup-kocluk";
 
 describe("grupKoduUret", () => {
-  test("G + 5 karakter, karışan harfler yok", () => {
-    for (let i = 0; i < 200; i++) {
-      const kod = grupKoduUret();
-      expect(kod).toMatch(/^G[A-Z2-9]{5}$/);
-      expect(kod.slice(1)).not.toMatch(/[IOQWX01]/);
-    }
+  test("grup adının ilk kelimesini kullanır", () => {
+    expect(grupKoduUret("Yıldız Eğitim")).toBe("yıldızsefu");
+    expect(grupKoduUret("  Başarı   Akademi ")).toBe("başarısefu");
   });
-  test("aynı rastgele kaynak aynı kodu verir", () => {
-    expect(grupKoduUret(() => 0)).toBe("GAAAAA");
-    expect(grupKoduUret(() => 0.9999)).toBe("G99999");
+  test("çakışan kodlara sıra numarası ekler", () => {
+    expect(grupKoduUret("Yıldız Eğitim", 2)).toBe("yıldızsefu2");
+    expect(grupKoduUret("*** Grup")).toBe("grupsefu");
+  });
+  test("yazım farklarını aynı giriş koduna dönüştürür", () => {
+    expect(grupKoduNormalize(" YILDIZ SEFU ")).toBe("yıldızsefu");
+    expect(grupKoduNormalize("yıldızsefu")).toBe("yıldızsefu");
   });
 });
 

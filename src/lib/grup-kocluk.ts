@@ -9,14 +9,20 @@ export function grupKapasitesiMi(n: number): n is GrupKapasitesi {
   return (GRUP_KAPASITELERI as readonly number[]).includes(n);
 }
 
-// Grup kodu öğrencinin giriş bilgisinin parçası; elle yazılacağı için
-// birbirine karışan harfler (I/1, O/0, Q, W, X) kullanılmıyor.
-const KOD_HARFLERI = "ABCDEFGHJKLMNPRSTUVYZ23456789";
+// Kod girişini tek biçime getirir. Böylece kullanıcı kodu Türkçe karakterle,
+// büyük harfle ya da boşluklu yazsa da aynı grup bulunur.
+export function grupKoduNormalize(kod: string): string {
+  return kod
+    .toLocaleLowerCase("tr-TR")
+    .replace(/[^\p{L}\p{N}]/gu, "");
+}
 
-export function grupKoduUret(rastgele: () => number = Math.random): string {
-  let kod = "G";
-  for (let i = 0; i < 5; i++) kod += KOD_HARFLERI[Math.floor(rastgele() * KOD_HARFLERI.length)];
-  return kod;
+// Yeni grup kodu = grup adının ilk kelimesi + "sefu". Aynı ilk kelimeyle
+// açılan sonraki gruplarda sıra numarası eklenir: yıldızsefu, yıldızsefu2...
+export function grupKoduUret(grupAdi: string, sira = 1): string {
+  const ilkKelime = grupAdi.trim().split(/\s+/)[0] ?? "";
+  const kok = grupKoduNormalize(ilkKelime) || "grup";
+  return `${kok}sefu${sira > 1 ? sira : ""}`;
 }
 
 // Bitiş tarihine kalan gün (bitiş günü dahil kullanılabilir; ertesi gün
