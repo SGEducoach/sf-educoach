@@ -18,7 +18,9 @@ export const metadata: Metadata = {
     description: "YKS hazırlık, net artırma, sınav takvimi ve verimli çalışma üzerine yazılar.",
     url: "https://www.sefukoc.com/blog",
     type: "website",
+    images: [{ url: "/og-kapak.png", width: 1200, height: 630, alt: "SeFu Koç" }],
   },
+  twitter: { card: "summary_large_image", images: ["/og-kapak.png"] },
 };
 
 // Yeni yazı yayınlanınca liste en geç 1 saat içinde tazelensin (tam statik

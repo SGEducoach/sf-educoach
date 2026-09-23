@@ -19,7 +19,9 @@ export const metadata: Metadata = {
     siteName: "SeFu Koç",
     locale: "tr_TR",
     type: "website",
+    images: [{ url: "/og-kapak.png", width: 1200, height: 630, alt: "SeFu Koç" }],
   },
+  twitter: { card: "summary_large_image", images: ["/og-kapak.png"] },
 };
 
 // Kullanıcı isteği (27.08.2026): "/" artık admin panelinden (Site Ayarları
@@ -40,8 +42,23 @@ export default async function Home() {
     anaSayfaDuyurulariniGetir(supabase),
   ]);
 
+  // Kurumsal kimlik işaretlemesi (23.09.2026): Google'ın arama sonucunda
+  // ve bilgi panelinde GÜNCEL logoyu kullanabilmesi için — eski logonun
+  // önbellekte kalması şikayeti üzerine eklendi.
+  const kurumJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "SeFu Koç",
+    url: "https://www.sefukoc.com",
+    logo: "https://www.sefukoc.com/icon-512.png",
+    image: "https://www.sefukoc.com/og-kapak.png",
+    slogan: "Sen Geliş, Farkın Duyulur",
+  };
+
   return (
     <>
+      <script type="application/ld+json" suppressHydrationWarning
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(kurumJsonLd) }} />
       <AnaSayfa
         baslik={ayarlar.baslik}
         govde={ayarlar.govde}

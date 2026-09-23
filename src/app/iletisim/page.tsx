@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   description: "SeFu Koç ile iletişime geçin: kurum başvuruları, öneri ve destek talepleri.",
   alternates: { canonical: `${TABAN}/iletisim` },
   robots: { index: true, follow: true },
-  openGraph: { title: "İletişim | SeFu Koç", description: "SeFu Koç ile iletişime geçin.", url: `${TABAN}/iletisim`, type: "website" },
+  openGraph: { title: "İletişim | SeFu Koç", description: "SeFu Koç ile iletişime geçin.", url: `${TABAN}/iletisim`, type: "website", images: [{ url: "/og-kapak.png", width: 1200, height: 630, alt: "SeFu Koç" }] },
 };
 
 export default function IletisimSayfasi() {

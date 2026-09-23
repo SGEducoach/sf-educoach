@@ -38,7 +38,9 @@ export const metadata: Metadata = {
     siteName: "SeFu Koç",
     locale: "tr_TR",
     type: "website",
+    images: [{ url: "/og-kapak.png", width: 1200, height: 630, alt: "SeFu Koç" }],
   },
+  twitter: { card: "summary_large_image", images: ["/og-kapak.png"] },
 };
 
 export const revalidate = 3600;

@@ -40,9 +40,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       type: "article",
       publishedTime: yazi.yayinTarihi ?? undefined,
       modifiedTime: yazi.updatedAt,
-      images: gorsel ? [gorsel] : undefined,
+      images: gorsel ? [gorsel] : [{ url: "/og-kapak.png", width: 1200, height: 630, alt: "SeFu Koç" }],
     },
-    twitter: { card: gorsel ? "summary_large_image" : "summary", title: yazi.baslik, description: yazi.ozet, images: gorsel ? [gorsel] : undefined },
+    twitter: { card: "summary_large_image", title: yazi.baslik, description: yazi.ozet, images: gorsel ? [gorsel] : ["/og-kapak.png"] },
   };
 }
 

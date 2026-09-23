@@ -21,12 +21,44 @@ const montserratBaslik = Montserrat({
   weight: ["600", "700", "800", "900"],
 });
 
+const SITE = "https://www.sefukoc.com";
+
 export async function generateMetadata(): Promise<Metadata> {
   return {
+    metadataBase: new URL(SITE),
     title: "SeFu Koç",
     description: "YKS hazırlık, öğrenci koçluğu ve okul temelli öğrenci takip platformu.",
     keywords: await seoAnahtarKelimeleriGetir(),
     manifest: "/manifest.json",
+    // Google arama sonucundaki site ikonu (23.09.2026 kullanıcı bildirimi:
+    // "listelemede hâlâ eski logo var"). Önceden SADECE 16x16 favicon.ico
+    // bildiriliyordu; Google en az 48x48 ve kare bir ikon ister, küçük ikonu
+    // eleyip eski önbelleğinde kalabiliyor. Artık büyük boyutlar da
+    // bildiriliyor (dosyalar zaten güncel logoyla üretilmişti).
+    icons: {
+      icon: [
+        { url: "/favicon.ico", sizes: "any" },
+        { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+        { url: "/icon-512.png", type: "image/png", sizes: "512x512" },
+      ],
+      shortcut: "/favicon.ico",
+      apple: "/apple-touch-icon.png",
+    },
+    openGraph: {
+      title: "SeFu Koç",
+      description: "YKS hazırlık, öğrenci koçluğu ve okul temelli öğrenci takip platformu.",
+      url: SITE,
+      siteName: "SeFu Koç",
+      locale: "tr_TR",
+      type: "website",
+      images: [{ url: "/og-kapak.png", width: 1200, height: 630, alt: "SeFu Koç" }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "SeFu Koç",
+      description: "YKS hazırlık, öğrenci koçluğu ve okul temelli öğrenci takip platformu.",
+      images: ["/og-kapak.png"],
+    },
     appleWebApp: {
       capable: true,
       statusBarStyle: "black-translucent",
