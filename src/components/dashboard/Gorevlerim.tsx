@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, BookOpen, PenLine, ClipboardList, X, Clock, Plus, CalendarDays, Rows3, BrainCircuit } from "lucide-react";
-import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, PEACH, PEACH_BG, BLUSH, BLUSH_BG, TEXT, TEXT_MUTED } from "@/lib/theme";
+import { BG0, BG1, BG1_ALT, BLUSH, BLUSH_BG, BORDER, BORDER_STRONG, BUTTER, BUTTER_BG, MINT, MINT_BG, MINT_ON, PEACH, PEACH_BG, TEXT, TEXT_MUTED } from "@/lib/theme";
 import { GOREV_TURU_ETIKET, GOREV_DURUMU_ETIKET } from "@/lib/types";
 import type { GorevTuru, GorevDurumu, AytAlan } from "@/lib/types";
 import { KonuCalismaForm, SoruCozumuForm, DenemeForm } from "@/components/dashboard/OgrenciVeriGirisi";
@@ -122,6 +122,14 @@ export function Gorevlerim({ gorevler, gorunum, haftaBaslangic, aytAlan, sinifSe
   const gunlukGorevSayisi = new Map<string, number>();
   for (const g of gorunenKayitlar) gunlukGorevSayisi.set(g.tarih, (gunlukGorevSayisi.get(g.tarih) ?? 0) + 1);
 
+  // Kullanıcı isteği (23.09.2026): günü geçmiş ama tamamlanmamış işler gün
+  // şeridinde işaretlensin — öğrenci "günü geçti, artık yapamam" sanıyordu.
+  const gecmisBekleyen = new Map<string, number>();
+  for (const g of gorunenKayitlar) {
+    if (g.durum === "bekliyor" && g.tarih < bugun) gecmisBekleyen.set(g.tarih, (gecmisBekleyen.get(g.tarih) ?? 0) + 1);
+  }
+  const gecmisBekleyenToplam = [...gecmisBekleyen.values()].reduce((t, n) => t + n, 0);
+
   function haftaGuncelle(haftaISO: string) {
     const params = new URLSearchParams(searchParams.toString());
     params.set("hafta", haftaISO);
@@ -172,13 +180,21 @@ export function Gorevlerim({ gorevler, gorunum, haftaBaslangic, aytAlan, sinifSe
         </div>
       </div>
 
+      {gecmisBekleyenToplam > 0 && (
+        <p className="mb-3 rounded-xl px-3 py-2 text-[11px] font-semibold" style={{ background: BUTTER_BG, color: BUTTER }}>
+          Bu haftada günü geçmiş {gecmisBekleyenToplam} tamamlanmamış iş var. Günü geçse de tamamlayabilirsin: ilgili güne tıkla, işi aç ve &quot;Tamamla&quot; de. Tarih o gün olarak kaydedilir.
+        </p>
+      )}
+
       {!haftalikGorunum && (
         <div className="grid grid-cols-7 gap-1.5 mb-4">
           {gunler.map((g) => {
             const secili = g === seciliGun;
             const sayisi = gunlukGorevSayisi.get(g) ?? 0;
+            const bekleyen = gecmisBekleyen.get(g) ?? 0;
             return (
               <button key={g} type="button" onClick={() => setSeciliGun(g)}
+                title={bekleyen > 0 ? `${bekleyen} tamamlanmamış iş — günü geçse de tamamlayabilirsin` : undefined}
                 className="sfec-btn flex flex-col items-center gap-0.5 rounded-2xl px-2 py-2"
                 style={{
                   background: secili ? MINT : g === bugun ? MINT_BG : BG1_ALT,
@@ -187,7 +203,7 @@ export function Gorevlerim({ gorevler, gorunum, haftaBaslangic, aytAlan, sinifSe
                 }}>
                 <span className="text-[10px] font-semibold uppercase">{gunAdi(g)}</span>
                 <span className="text-sm font-bold">{gunSayisi(g)}</span>
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: sayisi > 0 ? (secili ? MINT_ON : PEACH) : "transparent" }} />
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: bekleyen > 0 ? BUTTER : sayisi > 0 ? (secili ? MINT_ON : PEACH) : "transparent" }} />
               </button>
             );
           })}
@@ -626,14 +642,14 @@ function GorevTamamlamaModal({ gorev, aytAlan, sinifSeviyesi, dersListesi, konuO
           <div style={{ color: MINT }} className="text-sm font-semibold py-6 text-center">✓ {basari}</div>
         ) : gorev.tur === "konu" ? (
           <KonuCalismaForm dersListesi={dersListesi} konuOnerileri={konuOnerileri} konuSayaclari={konuSayaclari}
-            prefillDers={gorev.ders} prefillKonu={gorev.konu ?? undefined} gorevAtamaId={gorev.atamaId}
+            prefillDers={gorev.ders} prefillKonu={gorev.konu ?? undefined} gorevAtamaId={gorev.atamaId} gorevTarihi={gorev.tarih}
             onBasari={(m) => basariGoster(m)} />
         ) : gorev.tur === "soru" ? (
           <SoruCozumuForm dersListesi={dersListesi} konuOnerileri={konuOnerileri}
-            prefillDers={gorev.ders} prefillKonu={gorev.konu ?? undefined} gorevAtamaId={gorev.atamaId}
+            prefillDers={gorev.ders} prefillKonu={gorev.konu ?? undefined} gorevAtamaId={gorev.atamaId} gorevTarihi={gorev.tarih}
             onBasari={(m) => basariGoster(m)} />
         ) : (
-          <DenemeForm aytAlan={aytAlan} sinifSeviyesi={sinifSeviyesi} gorevAtamaId={gorev.atamaId}
+          <DenemeForm aytAlan={aytAlan} sinifSeviyesi={sinifSeviyesi} gorevAtamaId={gorev.atamaId} gorevTarihi={gorev.tarih}
             onBasari={(m) => basariGoster(m)} />
         )}
       </div>

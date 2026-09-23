@@ -7,7 +7,7 @@ import type {
 } from "@/lib/types";
 import {
   TYT_DERSLERI, AYT_DERSLERI, BRANS_DENEMESI_DERSLERI, TAKIP_SORUSU, VERIMLILIK_ETIKET, netHesapla, dersSoruSayisi,
-  SURE_UST_SINIR, SORU_SAYISI_UST_SINIR, KATEGORI_GERIYE_DONUK_SINIR, dokuzOnSinifMi, maarifHiyerarsiSinifMi,
+  SURE_UST_SINIR, SORU_SAYISI_UST_SINIR, GOREV_GERIYE_DONUK_GUN, KATEGORI_GERIYE_DONUK_SINIR, dokuzOnSinifMi, maarifHiyerarsiSinifMi,
 } from "@/lib/types";
 import {
   BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, SKY, SKY_BG, TEXT, TEXT_MUTED, BLUSH,
@@ -37,33 +37,48 @@ function enEskiTarih(geriyeMaksGun: number): string {
 // göre (konu/soru 3 gün, deneme 7 gün) geriye dönük giriş sınırlı — sınırsız
 // backdating rozet/seri sayımını manipüle etmeye açık kapıydı (bkz.
 // KATEGORI_GERIYE_DONUK_SINIR, migration 0029).
+// Kullanıcı isteği (23.09.2026): tarih alanı artık bir düğmenin arkasında
+// gizli DEĞİL — öğrenci "gün geçti, giremiyorum" sanıyordu. Varsayılan bugün
+// (ya da bir görevin karşılığıysa görevin günü, bkz. gorevTarihi).
 function GecmisTarihSecici({ tarih, setTarih, geriyeMaksGun }: { tarih: string; setTarih: (v: string) => void; geriyeMaksGun: number }) {
-  const [acik, setAcik] = useState(tarih !== bugununTarihi());
-
-  if (!acik) {
-    return (
-      <button type="button" onClick={() => setAcik(true)}
-        className="sfec-btn self-start flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1.5 rounded-full"
-        style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
-        <CalendarClock size={12} /> Geçmiş tarih için gir
-      </button>
-    );
-  }
-
+  const bugun = bugununTarihi();
   return (
     <label className="flex flex-col gap-1">
-      <Etiket>Tarih</Etiket>
+      <span className="flex items-center gap-1.5">
+        <CalendarClock size={12} color={TEXT_MUTED} />
+        <Etiket>Çalışmayı yaptığın gün</Etiket>
+      </span>
       <div className="flex gap-2 relative">
-        <Girdi type="date" max={bugununTarihi()} min={enEskiTarih(geriyeMaksGun)} value={tarih} onChange={(e) => setTarih(e.target.value)} required />
-        <button type="button" onClick={() => { setAcik(false); setTarih(bugununTarihi()); }}
-          className="sfec-btn shrink-0 text-[11px] font-bold px-3 py-1.5 rounded-xl"
-          style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
-          Bugüne dön
-        </button>
+        <Girdi type="date" max={bugun} min={enEskiTarih(geriyeMaksGun)} value={tarih} onChange={(e) => setTarih(e.target.value)} required />
+        {tarih !== bugun && (
+          <button type="button" onClick={() => setTarih(bugun)}
+            className="sfec-btn shrink-0 text-[11px] font-bold px-3 py-1.5 rounded-xl"
+            style={{ background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
+            Bugüne dön
+          </button>
+        )}
       </div>
-      <span style={{ color: TEXT_MUTED }} className="text-[10px]">En fazla {geriyeMaksGun} gün geriye gidebilirsin.</span>
+      <span style={{ color: TEXT_MUTED }} className="text-[10px]">
+        {tarih === bugun ? `Dün ya da önceki günler için tarihi değiştirebilirsin (en fazla ${geriyeMaksGun} gün geriye).` : `En fazla ${geriyeMaksGun} gün geriye gidebilirsin.`}
+      </span>
     </label>
   );
+}
+
+// Görev karşılığı girişte tarih görevin gününden başlar; sınırın dışında
+// kalmış (çok eski) bir görev için bugüne düşer.
+function baslangicTarihi(gorevTarihi?: string): string {
+  const bugun = bugununTarihi();
+  if (!gorevTarihi || gorevTarihi > bugun) return bugun;
+  return gorevTarihi < enEskiTarih(GOREV_GERIYE_DONUK_GUN) ? bugun : gorevTarihi;
+}
+
+// Görev karşılığı girişlerde geriye dönük sınır uzar (bkz. veri-actions.ts
+// geriyeSinir, migration 0121).
+function geriyeMaksGunHesapla(kategori: "konu" | "soru" | "deneme", gorevAtamaId?: string, rehberOgrenciId?: string): number {
+  if (rehberOgrenciId) return REHBER_GERIYE_DONUK_GUN;
+  const temel = KATEGORI_GERIYE_DONUK_SINIR[kategori];
+  return gorevAtamaId ? Math.max(temel, GOREV_GERIYE_DONUK_GUN) : temel;
 }
 
 type Sekme = "konu" | "soru" | "deneme";
@@ -206,7 +221,7 @@ function KonuOneriDropdown({ oneriler, aktif, onSec }: {
 // Akış: önce ders+konu seçilir (eksik olduğun konuyu SEN bulursun), "Konuyu
 // oku" ile o an AI anlatımı gösterilir; süre ve konuya hakimiyet — yani
 // konuyu ne kadar anladığın — bunu OKUDUKTAN/çalıştıktan SONRA girilir.
-export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, sinifSeviyesi, mufredatAltKonulari, gerekYokListesi, onBasari, prefillDers, prefillKonu, gorevAtamaId, rehberOgrenciId }: {
+export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, sinifSeviyesi, mufredatAltKonulari, gerekYokListesi, onBasari, prefillDers, prefillKonu, gorevAtamaId, gorevTarihi, rehberOgrenciId }: {
   dersListesi: string[]; konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
   konuSayaclari?: Record<string, { tamamlanan: number; toplam: number }>;
   sinifSeviyesi?: string | null;
@@ -217,6 +232,9 @@ export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, sin
   gerekYokListesi?: string[];
   onBasari: (m: string, s: boolean) => void;
   prefillDers?: string; prefillKonu?: string; gorevAtamaId?: string;
+  // Görevin kendi günü — tamamlama formunda tarih bununla açılır (kullanıcı
+  // isteği 23.09.2026: "dün yaptım, bugün işleyince tarih bugün yazılıyordu").
+  gorevTarihi?: string;
   // Dershane rehberinin öğrenci adına girişi (bkz. rehber-ogrenci-actions.ts).
   rehberOgrenciId?: string;
 }) {
@@ -238,7 +256,7 @@ export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, sin
   // setinin ilk seçeneğine sıfırlanıyor.
   const [takipCevabi, setTakipCevabi] = useState<TakipCevabi>(TAKIP_SORUSU.belirsiz.secenekler[0][0]);
   const [yayinevi, setYayinevi] = useState("");
-  const [tarih, setTarih] = useState(bugununTarihi());
+  const [tarih, setTarih] = useState(() => baslangicTarihi(gorevTarihi));
   const [hata, setHata] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -358,7 +376,7 @@ export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, sin
 
   return (
     <form action={submit} className="flex flex-col gap-3">
-      <GecmisTarihSecici tarih={tarih} setTarih={setTarih} geriyeMaksGun={rehberOgrenciId ? REHBER_GERIYE_DONUK_GUN : KATEGORI_GERIYE_DONUK_SINIR.konu} />
+      <GecmisTarihSecici tarih={tarih} setTarih={setTarih} geriyeMaksGun={geriyeMaksGunHesapla("konu", gorevAtamaId, rehberOgrenciId)} />
       <label className="flex flex-col gap-1">
         <div className="flex items-center gap-1.5 flex-wrap">
           <Etiket>Ders</Etiket>
@@ -484,10 +502,13 @@ export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, sin
   );
 }
 
-export function SoruCozumuForm({ dersListesi, konuOnerileri, onBasari, prefillDers, prefillKonu, gorevAtamaId, rehberOgrenciId }: {
+export function SoruCozumuForm({ dersListesi, konuOnerileri, onBasari, prefillDers, prefillKonu, gorevAtamaId, gorevTarihi, rehberOgrenciId }: {
   dersListesi: string[]; konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
   onBasari: (m: string, s: boolean) => void;
   prefillDers?: string; prefillKonu?: string; gorevAtamaId?: string;
+  // Görevin kendi günü — tamamlama formunda tarih bununla açılır (kullanıcı
+  // isteği 23.09.2026: "dün yaptım, bugün işleyince tarih bugün yazılıyordu").
+  gorevTarihi?: string;
   // Dershane rehberinin öğrenci adına girişi (bkz. rehber-ogrenci-actions.ts).
   rehberOgrenciId?: string;
 }) {
@@ -499,7 +520,7 @@ export function SoruCozumuForm({ dersListesi, konuOnerileri, onBasari, prefillDe
   const [aramaMetni, setAramaMetni] = useState(prefillKonu ?? "");
   const [oneriAcik, setOneriAcik] = useState(false);
   const [yayinevi, setYayinevi] = useState("");
-  const [tarih, setTarih] = useState(bugununTarihi());
+  const [tarih, setTarih] = useState(() => baslangicTarihi(gorevTarihi));
   const [hata, setHata] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -536,7 +557,7 @@ export function SoruCozumuForm({ dersListesi, konuOnerileri, onBasari, prefillDe
 
   return (
     <form action={submit} className="flex flex-col gap-3">
-      <GecmisTarihSecici tarih={tarih} setTarih={setTarih} geriyeMaksGun={rehberOgrenciId ? REHBER_GERIYE_DONUK_GUN : KATEGORI_GERIYE_DONUK_SINIR.soru} />
+      <GecmisTarihSecici tarih={tarih} setTarih={setTarih} geriyeMaksGun={geriyeMaksGunHesapla("soru", gorevAtamaId, rehberOgrenciId)} />
       <label className="flex flex-col gap-1"><Etiket>Ders</Etiket>
         <Secim value={ders} onChange={(e) => { setDers(e.target.value); setKonu(""); setAramaMetni(""); }} required>
           <option value="" disabled>Seçiniz</option>
@@ -590,8 +611,10 @@ export function SoruCozumuForm({ dersListesi, konuOnerileri, onBasari, prefillDe
 // Matematik/Fen Bilimleri) SADECE birini seçip o branşın tek sonucunu
 // girer (bkz. 9_10_sinif_ekleme_senaryosu.pdf 7.1 "Ürün kararı") — 11-12
 // TYT/AYT akışı (birden çok ders aynı anda) değişmeden kalıyor.
-export function DenemeForm({ aytAlan, sinifSeviyesi, onBasari, gorevAtamaId, rehberOgrenciId }: {
+export function DenemeForm({ aytAlan, sinifSeviyesi, onBasari, gorevAtamaId, gorevTarihi, rehberOgrenciId }: {
   aytAlan: AytAlan; sinifSeviyesi?: string | null; onBasari: (m: string, s: boolean) => void; gorevAtamaId?: string;
+  // Görevin kendi günü (bkz. KonuCalismaForm).
+  gorevTarihi?: string;
   // Dershane rehberinin öğrenci adına girişi (bkz. rehber-ogrenci-actions.ts).
   rehberOgrenciId?: string;
 }) {
@@ -614,7 +637,7 @@ export function DenemeForm({ aytAlan, sinifSeviyesi, onBasari, gorevAtamaId, reh
   const [yayinevi, setYayinevi] = useState("");
   const [hedefeYakinlik, setHedefeYakinlik] = useState<HedefeYakinlik>("belirsiz");
   const [zorluk, setZorluk] = useState<DenemeZorlugu>("orta");
-  const [tarih, setTarih] = useState(bugununTarihi());
+  const [tarih, setTarih] = useState(() => baslangicTarihi(gorevTarihi));
   const [hata, setHata] = useState<string | null>(null);
   const [benzerUyari, setBenzerUyari] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -676,7 +699,7 @@ export function DenemeForm({ aytAlan, sinifSeviyesi, onBasari, gorevAtamaId, reh
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
-      <GecmisTarihSecici tarih={tarih} setTarih={setTarih} geriyeMaksGun={rehberOgrenciId ? REHBER_GERIYE_DONUK_GUN : KATEGORI_GERIYE_DONUK_SINIR.deneme} />
+      <GecmisTarihSecici tarih={tarih} setTarih={setTarih} geriyeMaksGun={geriyeMaksGunHesapla("deneme", gorevAtamaId, rehberOgrenciId)} />
       {/* Kullanıcı isteği: TYT/AYT ve Branş'ın giriş şekli birebir aynı —
           tek Yayınevi alanı + (varsa) tür seçici, ikisi de aynı 2 sütunlu
           satırda. Sadece TEK tür mümkünse (9-10. sınıf → sadece Branş)

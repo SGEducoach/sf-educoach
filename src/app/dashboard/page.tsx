@@ -26,6 +26,9 @@ import { BG1, BG1_ALT, BORDER, BORDER_STRONG, TEXT, TEXT_MUTED, MINT, MINT_BG, B
 import { Gorevlerim } from "@/components/dashboard/Gorevlerim";
 import type { GorevSatiri } from "@/components/dashboard/Gorevlerim";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
+import { gecikmisIslerGetir, veriGecmisiGetir, type GecikmisIs, type GunGecmisi } from "@/lib/veri-gecmisi";
+import { VeriGecmisi } from "@/components/dashboard/VeriGecmisi";
+import { GecikmisIslerKarti } from "@/components/dashboard/GecikmisIslerKarti";
 import { DashboardYanMenu } from "@/components/dashboard/DashboardYanMenu";
 import { TgDenemeleri } from "@/components/dashboard/TgDenemeleri";
 import { tgDenemeIlanlariGetir } from "@/lib/tg-deneme-ilanlari";
@@ -70,7 +73,7 @@ function haftaninPazartesisi(tarihISO?: string): string {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sinif?: string; ogrenci?: string; ogretmen?: string; donem?: string; okul?: string; hafta?: string; ders?: string; bolum?: string }>;
+  searchParams: Promise<{ sinif?: string; ogrenci?: string; ogretmen?: string; donem?: string; okul?: string; hafta?: string; ders?: string; bolum?: string; gecmis?: string }>;
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -206,7 +209,7 @@ export default async function DashboardPage({
             <section className="sfec-section"><DershaneDenemePdfFormu yalnizcaExcel /></section>
           ) : (
             <>
-              {role === "ogrenci" && <OgrenciIcerik userId={user.id} ad={profile.ad} donem={donem} haftaBaslangic={haftaninPazartesisi(params.hafta)} aktifBolum={aktifBolum} />}
+              {role === "ogrenci" && <OgrenciIcerik userId={user.id} ad={profile.ad} donem={donem} haftaBaslangic={haftaninPazartesisi(params.hafta)} aktifBolum={aktifBolum} gecmisHafta={Number(params.gecmis ?? 0)} />}
               {(role === "ogretmen" || role === "mudur") && (
                 <OgretmenIcerik userId={user.id} role={role} kurumTuru={kurumTuru} brans={brans} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} secilenOgretmenId={params.ogretmen} donem={donem} aktifBolum={aktifBolum} />
               )}
@@ -233,7 +236,11 @@ async function GrupKocIcerik() {
   return <GrupKocPaneli grup={yetki.grup} ogrenciler={ogrenciler} bugun={bugununTarihiTR()} veliTalepleri={talepler} veliler={veliler} />;
 }
 
-async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: { userId: string; ad: string; donem: RaporDonemi; haftaBaslangic: string; aktifBolum: DashboardBolumu }) {
+async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, gecmisHafta }: {
+  userId: string; ad: string; donem: RaporDonemi; haftaBaslangic: string; aktifBolum: DashboardBolumu;
+  // Veri geçmişi kaç 7 günlük dilim geriye bakıyor (?gecmis=1 → bir önceki 7 gün).
+  gecmisHafta: number;
+}) {
   const supabase = await createClient();
 
   if (aktifBolum === "etkinlikler") {
@@ -305,6 +312,28 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
       .lte("gorevler.tarih", haftaBitis),
   ]);
   const gerekYokListesi = Array.from(gerekYokSeti);
+
+  // Öğrenci geri bildirimi (22.09.2026) — "dün ne yapmışım göremiyorum":
+  // Veri Girişi'nde son 7 günün kayıt listesi, Ana sayfada dün özeti ve
+  // geçmiş günlerde tamamlanmamış işler (kullanıcı isteği 23.09.2026).
+  const bugunTR = bugununTarihiTR();
+  const gecmisDilim = Number.isFinite(gecmisHafta) ? Math.min(Math.max(Math.trunc(gecmisHafta), 0), 52) : 0;
+  const gecmisBitis = tarihEkle(bugunTR, -7 * gecmisDilim);
+  const gecmisBaslangic = tarihEkle(gecmisBitis, -6);
+  const dunTarihi = tarihEkle(bugunTR, -1);
+  let veriGecmisiGunleri: GunGecmisi[] = [];
+  let dunGecmisi: GunGecmisi | null = null;
+  let gecikmisIsler: GecikmisIs[] = [];
+  if (aktifBolum === "veri-girisi") {
+    veriGecmisiGunleri = await veriGecmisiGetir(supabase, userId, gecmisBaslangic, gecmisBitis);
+  } else if (aktifBolum === "ozet") {
+    const [dunGunleri, gecikmisler] = await Promise.all([
+      veriGecmisiGetir(supabase, userId, dunTarihi, dunTarihi),
+      gecikmisIslerGetir(supabase, userId, bugunTR),
+    ]);
+    dunGecmisi = dunGunleri[0] ?? null;
+    gecikmisIsler = gecikmisler;
+  }
 
   type Row = {
     okul_no: string; ayt_alan: AytAlan; hedef_bolum: string;
@@ -455,12 +484,17 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum }: 
         />
       </section>}
 
+      {aktifBolum === "ozet" && <GecikmisIslerKarti dun={dunGecmisi} gecikmisler={gecikmisIsler} />}
+
       {aktifBolum === "ozet" && <section className="print:hidden"><KonuHaritasiRaporu mod="kendi" konular={zayifKonular} /></section>}
 
 
       {aktifBolum === "yapay-zeka" && <section className="min-h-full"><KonuHaritasiRaporu mod="kendi" konular={zayifKonular} /></section>}
 
-      {aktifBolum === "veri-girisi" && <div className="print:hidden">
+      {aktifBolum === "veri-girisi" && <div className="print:hidden flex flex-col gap-6">
+        <VeriGecmisi gunler={veriGecmisiGunleri} bugun={bugunTR} dun={dunTarihi} haftaOncesi={gecmisDilim}
+          oncekiHref={`/dashboard/veri-girisi?gecmis=${gecmisDilim + 1}`}
+          sonrakiHref={gecmisDilim > 0 ? `/dashboard/veri-girisi${gecmisDilim > 1 ? `?gecmis=${gecmisDilim - 1}` : ""}` : null} />
         <OgrenciVeriGirisi aytAlan={s.ayt_alan} konuOnerileri={konuOnerileri} sinifSeviyesi={s.classes?.seviye ?? null} konuSayaclari={konuSayaclari} mufredatAltKonulari={mufredatAltKonulari} gerekYokListesi={gerekYokListesi} />
       </div>}
 

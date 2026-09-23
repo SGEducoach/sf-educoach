@@ -7,7 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getAnthropicClient } from "@/lib/anthropic";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
 import { KONU_ANLATIMI_SISTEM_PROMPTU, icerikTemizle } from "@/lib/konu-anlatimi";
-import { SURE_UST_SINIR, SORU_SAYISI_UST_SINIR, KATEGORI_GERIYE_DONUK_SINIR, TAKIP_SORUSU, dersSoruSayisi } from "@/lib/types";
+import { SURE_UST_SINIR, SORU_SAYISI_UST_SINIR, GOREV_GERIYE_DONUK_GUN, KATEGORI_GERIYE_DONUK_SINIR, TAKIP_SORUSU, dersSoruSayisi } from "@/lib/types";
 import type { DenemeTuru, DenemeZorlugu, HedefeYakinlik, TakipCevabi, VerimlilikDuzeyi } from "@/lib/types";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
 import { manipulasyonGirisimiKaydet } from "@/lib/manipulasyon-takip";
@@ -129,6 +129,25 @@ async function verimlilikSorulsunMu(
   return count > 0 && count % 3 === 0;
 }
 
+// Görev ataması gerçekten bu öğrencinin mi — başkasının atama kimliğiyle
+// geriye dönük sınır genişletilemesin diye (bkz. migration 0121, aynı
+// kontrol veritabanında da var). Kendi ataması değilse görev bağı hiç
+// kurulmaz, normal serbest giriş sınırı uygulanır.
+async function gorevAtamasiDogrula(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  studentId: string,
+  atamaId: string | null,
+): Promise<string | null> {
+  if (!atamaId) return null;
+  const { data } = await supabase.from("gorev_atamalari").select("id").eq("id", atamaId).eq("student_id", studentId).maybeSingle();
+  return data ? atamaId : null;
+}
+
+// Görev karşılığı girişlerde geriye dönük sınır (bkz. GOREV_GERIYE_DONUK_GUN).
+function geriyeSinir(kategori: "konu" | "soru" | "deneme", gorevAtamaId: string | null): number {
+  return gorevAtamaId ? Math.max(KATEGORI_GERIYE_DONUK_SINIR[kategori], GOREV_GERIYE_DONUK_GUN) : KATEGORI_GERIYE_DONUK_SINIR[kategori];
+}
+
 // Bir veri girişi bir görevin karşılığıysa (gorevAtamaId formData'da geldiyse),
 // o görev ataması "tamamlandı" işaretlenir. Hata olsa bile asıl veri girişini
 // engellemez — sadece konsola düşer (görev sistemi, veri girişinin üstüne
@@ -153,8 +172,8 @@ export async function konuCalismaEkle(formData: FormData) {
   const hedefeYakinlik = String(formData.get("hedefeYakinlik")) as HedefeYakinlik;
   const takipCevabi = String(formData.get("takipCevabi") ?? "") as TakipCevabi;
   const yayinevi = String(formData.get("yayinevi") ?? "").trim();
-  const gorevAtamaId = String(formData.get("gorevAtamaId") ?? "").trim() || null;
-  const { tarih, error: tarihHatasi } = tarihDogrula(formData.get("tarih"), KATEGORI_GERIYE_DONUK_SINIR.konu);
+  const gorevAtamaId = await gorevAtamasiDogrula(supabase, user.id, String(formData.get("gorevAtamaId") ?? "").trim() || null);
+  const { tarih, error: tarihHatasi } = tarihDogrula(formData.get("tarih"), geriyeSinir("konu", gorevAtamaId));
 
   if (!ders || !konu || !sureDakika || sureDakika <= 0 || !hedefeYakinlik || !yayinevi) {
     return { error: "Lütfen tüm alanları doldurun.", verimlilikSorulsunMu: false };
@@ -194,7 +213,7 @@ export async function soruCozumuEkle(formData: FormData) {
   const sureDakika = Number(formData.get("sureDakika"));
   const yayinevi = String(formData.get("yayinevi") ?? "").trim();
   const gorevAtamaId = String(formData.get("gorevAtamaId") ?? "").trim() || null;
-  const { tarih, error: tarihHatasi } = tarihDogrula(formData.get("tarih"), KATEGORI_GERIYE_DONUK_SINIR.soru);
+  const { tarih, error: tarihHatasi } = tarihDogrula(formData.get("tarih"), geriyeSinir("soru", gorevAtamaId));
 
   if (
     !ders || Number.isNaN(dogru) || Number.isNaN(yanlis) || Number.isNaN(bos) ||
@@ -246,7 +265,8 @@ export async function denemeEkle(
   gorevAtamaId?: string,
 ): Promise<{ error: string | null; verimlilikSorulsunMu: boolean; benzerUyari?: boolean }> {
   const { supabase, user } = await requireStudent();
-  const { tarih, error: tarihHatasi } = tarihDogrula(tarihGirdisi ?? null, KATEGORI_GERIYE_DONUK_SINIR.deneme);
+  const dogrulanmisAtamaId = await gorevAtamasiDogrula(supabase, user.id, gorevAtamaId ?? null);
+  const { tarih, error: tarihHatasi } = tarihDogrula(tarihGirdisi ?? null, geriyeSinir("deneme", dogrulanmisAtamaId));
 
   if (!yayinevi.trim() || !hedefeYakinlik || !zorluk || dersSonuclari.length === 0) {
     return { error: "Lütfen tüm alanları doldurun.", verimlilikSorulsunMu: false };
@@ -305,7 +325,7 @@ export async function denemeEkle(
 
   const { data: deneme, error } = await supabase
     .from("denemeler")
-    .insert({ student_id: user.id, tur, hedefe_yakinlik: hedefeYakinlik, zorluk, yayinevi, kaynak: "ogrenci", tarih, gorev_atama_id: gorevAtamaId ?? null })
+    .insert({ student_id: user.id, tur, hedefe_yakinlik: hedefeYakinlik, zorluk, yayinevi, kaynak: "ogrenci", tarih, gorev_atama_id: dogrulanmisAtamaId })
     .select("id")
     .single();
 
@@ -315,7 +335,7 @@ export async function denemeEkle(
     dersSonuclari.map((d) => ({ deneme_id: deneme.id, ders: d.ders, dogru: d.dogru, yanlis: d.yanlis }))
   );
   if (sonucError) return { error: sonucError.message, verimlilikSorulsunMu: false };
-  if (gorevAtamaId) await gorevTamamlaIsaretle(supabase, gorevAtamaId, user.id);
+  if (dogrulanmisAtamaId) await gorevTamamlaIsaretle(supabase, dogrulanmisAtamaId, user.id);
 
   const sorulsunMu = await verimlilikSorulsunMu(supabase, user.id);
   revalidatePath("/dashboard");
