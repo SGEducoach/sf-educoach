@@ -7,7 +7,7 @@ import {
   Plus, RefreshCw, Sparkles, Trash2, X,
 } from "lucide-react";
 import { otoProgramHazirla, otoProgramUygula } from "@/app/dashboard/oto-program-actions";
-import { CEYREK_SAATLER, DERS_AGIRLIGI_ETIKET, EN_FAZLA_PERIYOT, GUN_ADLARI, ayarHatasi, blokDakikasi, bloklariDogrula, dakikayiSaateCevir, gunEkle, gunlukYukUyarisi, haftaninPazartesisi, otoProgramOlustur } from "@/lib/oto-program";
+import { CEYREK_SAATLER, DERS_AGIRLIGI_ETIKET, EN_FAZLA_PERIYOT, GUN_ADLARI, ayarHatasi, blokDakikasi, bloklariDogrula, dakikayiSaateCevir, gunEkle, gunlukYukUyarisi, haftaninPazartesisi, otoProgramOlustur, sonrakiPeriyot } from "@/lib/oto-program";
 import { saatAraligiSuresi, saatiDakikayaCevir } from "@/lib/saat-araligi";
 import type {
   DersAgirligi, OtoProgramAyari, OtoProgramVerisi, Periyot, ProgramBlogu, ProgramKapsami,
@@ -30,9 +30,9 @@ function varsayilanAyar(okulOgrencisi: boolean): OtoProgramAyari {
   return {
     gunler: [0, 1, 2, 3, 4],
     haftaIciPeriyotlari: okulOgrencisi
-      ? [{ baslangic: "17:00", bitis: "19:00" }, { baslangic: "20:00", bitis: "22:00" }]
-      : [{ baslangic: "10:00", bitis: "12:00" }, { baslangic: "17:00", bitis: "19:00" }],
-    haftaSonuPeriyotlari: [{ baslangic: "10:00", bitis: "12:00" }],
+      ? [{ baslangic: "17:00", bitis: "18:00" }, { baslangic: "19:00", bitis: "20:00" }]
+      : [{ baslangic: "10:00", bitis: "11:00" }, { baslangic: "17:00", bitis: "18:00" }],
+    haftaSonuPeriyotlari: [{ baslangic: "10:00", bitis: "11:00" }],
     dersler: [],
     konulariSefuSecsin: true,
   };
@@ -49,6 +49,9 @@ function Periyotlar({ baslik, periyotlar, onChange, okulUyarisi }: {
   okulUyarisi?: boolean;
 }) {
   const saatler = okulUyarisi ? CEYREK_SAATLER.filter((s) => s >= "16:00" || s < "07:00") : CEYREK_SAATLER;
+  // Yeni periyot bir öncekinin bitişinden başlar ve 1 saat sürer; gün
+  // dolduysa eklenemez (bkz. sonrakiPeriyot).
+  const yeniPeriyot = sonrakiPeriyot(periyotlar, !!okulUyarisi);
   function degistir(index: number, alan: keyof Periyot, deger: string) {
     onChange(periyotlar.map((p, i) => i === index ? { ...p, [alan]: deger } : p));
   }
@@ -60,8 +63,9 @@ function Periyotlar({ baslik, periyotlar, onChange, okulUyarisi }: {
           {okulUyarisi && <div className="mt-0.5 text-[10px]" style={{ color: TEXT_MUTED }}>07.00–16.00 okul saati kapalıdır.</div>}
         </div>
         {periyotlar.length < EN_FAZLA_PERIYOT && (
-          <button type="button" onClick={() => onChange([...periyotlar, { baslangic: okulUyarisi ? "17:00" : "10:00", bitis: okulUyarisi ? "19:00" : "12:00" }])}
-            className="sfec-btn inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold" style={{ color: MINT, border: `1px solid ${MINT}` }}>
+          <button type="button" disabled={!yeniPeriyot} onClick={() => yeniPeriyot && onChange([...periyotlar, yeniPeriyot])}
+            title={yeniPeriyot ? `${yeniPeriyot.baslangic}–${yeniPeriyot.bitis} eklenir` : "Gün doldu; önce bir aralığı kısaltın"}
+            className="sfec-btn inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold disabled:opacity-40" style={{ color: MINT, border: `1px solid ${MINT}` }}>
             <Plus size={11} /> Periyot
           </button>
         )}

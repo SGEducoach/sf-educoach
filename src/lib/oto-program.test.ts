@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
-  bloklariDogrula, haftaninPazartesisi, otoProgramOlustur, paylastir, periyotHatasi,
+  bloklariDogrula, haftaninPazartesisi, otoProgramOlustur, paylastir, periyotHatasi, sonrakiPeriyot,
   type OtoProgramAyari, type OtoProgramVerisi,
 } from "./oto-program";
 
@@ -62,6 +62,22 @@ describe("periyotHatasi", () => {
     const sekiz = ["06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"].map(aralik);
     expect(periyotHatasi(sekiz, false, "X")).toBeNull();
     expect(periyotHatasi([...sekiz, aralik("22:00")], false, "X")).toMatch(/en fazla 8/);
+  });
+});
+
+describe("sonrakiPeriyot", () => {
+  test("boşta 1 saatlik aralık, sonrakiler bir öncekinin bitişinden", () => {
+    expect(sonrakiPeriyot([], false)).toEqual({ baslangic: "09:00", bitis: "10:00" });
+    expect(sonrakiPeriyot([{ baslangic: "09:00", bitis: "10:00" }], false)).toEqual({ baslangic: "10:00", bitis: "11:00" });
+    expect(sonrakiPeriyot([{ baslangic: "09:00", bitis: "10:00" }, { baslangic: "13:30", bitis: "14:15" }], false))
+      .toEqual({ baslangic: "14:15", bitis: "15:15" });
+  });
+  test("okul saatine denk gelirse 16.00'ya kayar", () => {
+    expect(sonrakiPeriyot([], true)).toEqual({ baslangic: "16:00", bitis: "17:00" });
+    expect(sonrakiPeriyot([{ baslangic: "06:00", bitis: "07:00" }], true)).toEqual({ baslangic: "16:00", bitis: "17:00" });
+  });
+  test("gün dolduysa null", () => {
+    expect(sonrakiPeriyot([{ baslangic: "22:30", bitis: "23:30" }], false)).toBeNull();
   });
 });
 

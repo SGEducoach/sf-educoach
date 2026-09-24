@@ -98,6 +98,36 @@ function okulSaatiyleCakisir(baslangic: number, bitis: number): boolean {
   return baslangic < OKUL_SAATI.bitis && bitis > OKUL_SAATI.baslangic;
 }
 
+// Kullanıcı isteği (24.09.2026): "açılan her periyot otomatik birer saatlik
+// sırayla açılsın" — yeni periyot, mevcut en geç bitişten başlayıp 1 saat
+// sürer; okul saatine (07.00–16.00) denk gelirse 16.00'ya kayar. Gün içinde
+// yer kalmadıysa null döner (düğme kapanır).
+export const VARSAYILAN_PERIYOT_DAKIKA = 60;
+const GUN_SONU = 24 * 60;
+
+export function sonrakiPeriyot(periyotlar: Periyot[], okulSaatiKapali: boolean): Periyot | null {
+  const bitisler = periyotlar
+    .map((p) => {
+      const baslangic = saatiDakikayaCevir(p?.baslangic);
+      const sure = saatAraligiSuresi(p?.baslangic, p?.bitis);
+      return baslangic === null || sure === null ? null : baslangic + sure;
+    })
+    .filter((d): d is number => d !== null);
+
+  let baslangic = bitisler.length > 0
+    ? Math.max(...bitisler)
+    : (okulSaatiKapali ? OKUL_SAATI.bitis : 9 * 60);
+
+  // Gece yarısını aşan bir aralıktan sonra (bitiş 24.00'ı geçmiş) gün doludur.
+  if (baslangic >= GUN_SONU) return null;
+  if (okulSaatiKapali && okulSaatiyleCakisir(baslangic, baslangic + VARSAYILAN_PERIYOT_DAKIKA)) {
+    baslangic = OKUL_SAATI.bitis;
+  }
+  if (baslangic + VARSAYILAN_PERIYOT_DAKIKA > GUN_SONU) return null;
+
+  return { baslangic: dakikayiSaateCevir(baslangic), bitis: dakikayiSaateCevir(baslangic + VARSAYILAN_PERIYOT_DAKIKA) };
+}
+
 export function periyotHatasi(periyotlar: Periyot[], okulSaatiKapali: boolean, etiket: string): string | null {
   if (periyotlar.length > EN_FAZLA_PERIYOT) return `${etiket} için en fazla ${EN_FAZLA_PERIYOT} zaman aralığı girilebilir.`;
   const araliklar: [number, number][] = [];
