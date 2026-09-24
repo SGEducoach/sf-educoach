@@ -4,7 +4,8 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, BookOpen, PenLine, ClipboardList, X, Clock, Plus, CalendarDays, Rows3, Eraser } from "lucide-react";
+import Link from "next/link";
+import { ChevronLeft, ChevronRight, BookOpen, PenLine, ClipboardList, X, Clock, Plus, CalendarDays, Rows3, Eraser, Printer } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BLUSH, BLUSH_BG, BORDER, BORDER_STRONG, BUTTER, BUTTER_BG, MINT, MINT_BG, MINT_ON, PEACH, PEACH_BG, TEXT, TEXT_MUTED } from "@/lib/theme";
 import { GOREV_TURU_ETIKET, GOREV_DURUMU_ETIKET } from "@/lib/types";
 import { haftayiTemizle } from "@/app/dashboard/oto-program-actions";
@@ -194,6 +195,13 @@ export function Gorevlerim({ gorevler, gorunum, haftaBaslangic, aytAlan, sinifSe
           )}
         </div>
         <div className="flex items-center gap-1.5">
+          {planSayfasi && (
+            <Link href={`/dashboard/program-cikti?hafta=${haftaBaslangic}`} title="Bu haftanın çıktısını al (yatay A4)"
+              className="sfec-btn inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold"
+              style={{ background: BG1_ALT, color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
+              <Printer size={12} /> Çıktı al
+            </Link>
+          )}
           {planSayfasi && (
             <button type="button" onClick={haftayiTemizleTikla} disabled={temizleniyor}
               title="Bu haftadaki bekleyen program kalemlerini temizle"
