@@ -112,7 +112,7 @@ export interface GecikmisIs {
 }
 
 export async function gecikmisIslerGetir(
-  supabase: SupabaseClient, studentId: string, bugun: string, gunSayisi = 7,
+  supabase: SupabaseClient, studentId: string, bugun: string, gunSayisi = 5,
 ): Promise<GecikmisIs[]> {
   const enEski = tarihEkle(bugun, -gunSayisi);
   const { data } = await supabase.from("gorev_atamalari")

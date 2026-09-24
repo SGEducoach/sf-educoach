@@ -7,11 +7,7 @@ import {
   Plus, RefreshCw, Sparkles, Trash2, X,
 } from "lucide-react";
 import { otoProgramHazirla, otoProgramUygula } from "@/app/dashboard/oto-program-actions";
-import {
-  CEYREK_SAATLER, DERS_AGIRLIGI_ETIKET, GUN_ADLARI,
-  ayarHatasi, blokDakikasi, bloklariDogrula, dakikayiSaateCevir, gunEkle, gunlukYukUyarisi,
-  haftaninPazartesisi, otoProgramOlustur,
-} from "@/lib/oto-program";
+import { CEYREK_SAATLER, DERS_AGIRLIGI_ETIKET, EN_FAZLA_PERIYOT, GUN_ADLARI, ayarHatasi, blokDakikasi, bloklariDogrula, dakikayiSaateCevir, gunEkle, gunlukYukUyarisi, haftaninPazartesisi, otoProgramOlustur } from "@/lib/oto-program";
 import { saatAraligiSuresi, saatiDakikayaCevir } from "@/lib/saat-araligi";
 import type {
   DersAgirligi, OtoProgramAyari, OtoProgramVerisi, Periyot, ProgramBlogu, ProgramKapsami,
@@ -38,6 +34,7 @@ function varsayilanAyar(okulOgrencisi: boolean): OtoProgramAyari {
       : [{ baslangic: "10:00", bitis: "12:00" }, { baslangic: "17:00", bitis: "19:00" }],
     haftaSonuPeriyotlari: [{ baslangic: "10:00", bitis: "12:00" }],
     dersler: [],
+    konulariSefuSecsin: true,
   };
 }
 
@@ -62,7 +59,7 @@ function Periyotlar({ baslik, periyotlar, onChange, okulUyarisi }: {
           <div className="text-xs font-extrabold" style={{ color: TEXT }}>{baslik}</div>
           {okulUyarisi && <div className="mt-0.5 text-[10px]" style={{ color: TEXT_MUTED }}>07.00–16.00 okul saati kapalıdır.</div>}
         </div>
-        {periyotlar.length < 3 && (
+        {periyotlar.length < EN_FAZLA_PERIYOT && (
           <button type="button" onClick={() => onChange([...periyotlar, { baslangic: okulUyarisi ? "17:00" : "10:00", bitis: okulUyarisi ? "19:00" : "12:00" }])}
             className="sfec-btn inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold" style={{ color: MINT, border: `1px solid ${MINT}` }}>
             <Plus size={11} /> Periyot
@@ -288,7 +285,7 @@ export function SefuOtoProgramModal({ ilkHafta, onKapat }: { ilkHafta: string; o
                 <Periyotlar baslik="Hafta içi periyotları" periyotlar={ayar.haftaIciPeriyotlari} okulUyarisi={veri.okulOgrencisi} onChange={(p) => setAyar({ ...ayar, haftaIciPeriyotlari: p })} />
                 <Periyotlar baslik="Hafta sonu periyotları" periyotlar={ayar.haftaSonuPeriyotlari} onChange={(p) => setAyar({ ...ayar, haftaSonuPeriyotlari: p })} />
               </div>
-              <p className="text-[11px]" style={{ color: TEXT_MUTED }}>Her periyot 40 dakikalık çalışma ve 10 dakikalık molalarla bölünür. En fazla üç periyot kullanabilirsiniz.</p>
+              <p className="text-[11px]" style={{ color: TEXT_MUTED }}>Her periyot 40 dakikalık çalışma ve 10 dakikalık molalarla bölünür. En fazla {EN_FAZLA_PERIYOT} periyot kullanabilirsiniz.</p>
             </div>
           ) : adim === 2 && veri ? (
             <div className="grid gap-4 lg:grid-cols-[1fr_1.15fr]">
@@ -306,6 +303,19 @@ export function SefuOtoProgramModal({ ilkHafta, onKapat }: { ilkHafta: string; o
                   {ayar.dersler.map((d, i) => <Alan key={d.ders} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2"><span className="flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-extrabold" style={{ background: MINT_BG, color: MINT }}>{i + 1}</span><div className="min-w-0"><div className="truncate text-xs font-extrabold" style={{ color: TEXT }}>{d.ders}</div><div className="mt-1 flex gap-1">{AGIRLIKLAR.map((a) => <button type="button" key={a} onClick={() => setAyar({ ...ayar, dersler: ayar.dersler.map((x) => x.ders === d.ders ? { ...x, agirlik: a } : x) })} className="sfec-btn rounded-full px-2 py-1 text-[9px] font-bold" style={{ background: d.agirlik === a ? PEACH_BG : BG0, color: d.agirlik === a ? PEACH : TEXT_MUTED, border: `1px solid ${d.agirlik === a ? PEACH : BORDER}` }}>{DERS_AGIRLIGI_ETIKET[a]}</button>)}</div></div><div className="flex flex-col"><button type="button" aria-label="Yukarı taşı" disabled={i === 0} onClick={() => dersiTasi(i, -1)} className="sfec-btn p-1 disabled:opacity-20" style={{ color: TEXT_MUTED }}><ArrowUp size={13} /></button><button type="button" aria-label="Aşağı taşı" disabled={i === ayar.dersler.length - 1} onClick={() => dersiTasi(i, 1)} className="sfec-btn p-1 disabled:opacity-20" style={{ color: TEXT_MUTED }}><ArrowDown size={13} /></button></div></Alan>)}
                   {ayar.dersler.length === 0 && <Alan className="py-8 text-center text-xs"><span style={{ color: TEXT_MUTED }}>Sol taraftan en az bir ders seçin.</span></Alan>}
                 </div>
+                {/* Kullanıcı isteği (24.09.2026): konu seçimi zorunlu değil —
+                    öğrenci programı konusuz kurup çalışmayı tamamlarken
+                    hangi konuyu çalıştığını kendisi yazabilir. */}
+                <label className="mt-3 flex cursor-pointer items-start gap-2 rounded-2xl p-3" style={{ background: BG1_ALT, border: `1px solid ${BORDER}` }}>
+                  <input type="checkbox" className="mt-0.5" checked={ayar.konulariSefuSecsin === false}
+                    onChange={(e) => setAyar({ ...ayar, konulariSefuSecsin: !e.target.checked })} />
+                  <span>
+                    <span className="block text-[11px] font-extrabold" style={{ color: TEXT }}>Konuları ben seçeceğim</span>
+                    <span className="block text-[10px]" style={{ color: TEXT_MUTED }}>
+                      Program kalemleri konusuz oluşur; çalışmayı tamamlarken hangi konuya çalıştığını o an yazarsın. İşaretlemezsen SeFu eksiklerine göre konu önerir (önizlemede tek tek de değiştirebilirsin).
+                    </span>
+                  </span>
+                </label>
               </div>
             </div>
           ) : adim === 3 && veri ? (

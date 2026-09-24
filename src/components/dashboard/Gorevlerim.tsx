@@ -349,7 +349,7 @@ function GorevDetayBalonu({ gorev, gunler, onKapat, onTamamla }: {
   const detaylar = [
     ["Ödev türü", GOREV_TURU_ETIKET[gorev.tur]],
     ["Ders", gorev.ders],
-    ["Konu", gorev.konu || "Belirtilmedi"],
+    ["Konu", gorev.konu || "Seçilmedi — tamamlarken sen seçeceksin"],
     ["Tarih", uzunTarih(gorev.tarih)],
     ["Son tarih", uzunTarih(gorev.sonTarih)],
     ["Saat", saat],
@@ -638,6 +638,11 @@ function GorevTamamlamaModal({ gorev, aytAlan, sinifSeviyesi, dersListesi, konuO
             <X size={13} color={TEXT_MUTED} />
           </button>
         </div>
+        {!basari && !gorev.konu && gorev.tur !== "deneme" && (
+          <p className="mb-3 rounded-xl px-3 py-2 text-[11px] font-semibold" style={{ background: MINT_BG, color: MINT }}>
+            Bu kalemde konu seçilmedi. Çalıştığın konuyu aşağıya yaz; kayıt o konuya işlenir.
+          </p>
+        )}
         {basari ? (
           <div style={{ color: MINT }} className="text-sm font-semibold py-6 text-center">✓ {basari}</div>
         ) : gorev.tur === "konu" ? (

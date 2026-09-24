@@ -57,7 +57,7 @@ export function GecikmisIslerKarti({ dun, gecikmisler }: { dun: GunGecmisi | nul
             <CalendarClock size={14} /> Geçmiş günlerden {gecikmisler.length} tamamlanmamış iş
           </h3>
           <p className="mt-1 text-xs" style={{ color: TEXT_MUTED }}>
-            Günü geçse de tamamlayabilirsin: işe tıkla, o günün programı açılsın, &quot;Tamamla&quot; de. Tarih otomatik o gün olarak kaydedilir (en fazla 7 gün geriye).
+            Günü geçse de tamamlayabilirsin: işe tıkla, o günün programı açılsın, &quot;Tamamla&quot; de. Tarih otomatik o gün olarak kaydedilir (en fazla 5 gün geriye).
           </p>
           <ul className="mt-2 flex flex-col gap-1.5">
             {gecikmisler.slice(0, 5).map((g) => (

@@ -413,7 +413,7 @@ export const AYT_MUFREDAT_DERSLERI: Record<AytAlan, readonly string[]> = {
 // giriş daha uzun süre geriye işlenebilir — görev zaten belirli bir güne
 // bağlı, uydurma bir gün değil (kullanıcı isteği 23.09.2026; DB tarafı
 // migration 0121).
-export const GOREV_GERIYE_DONUK_GUN = 7;
+export const GOREV_GERIYE_DONUK_GUN = 5;
 
 export const KATEGORI_GERIYE_DONUK_SINIR: Record<"konu" | "soru" | "deneme", number> = {
   konu: 3,

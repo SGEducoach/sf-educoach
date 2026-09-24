@@ -55,11 +55,13 @@ describe("periyotHatasi", () => {
     expect(periyotHatasi([{ baslangic: "16:00", bitis: "18:00" }], true, "Hafta içi")).toBeNull();
     expect(periyotHatasi([{ baslangic: "09:00", bitis: "11:00" }], false, "Hafta içi")).toBeNull();
   });
-  test("15 dakikalık adım, çakışma ve en fazla 3 aralık", () => {
+  test("15 dakikalık adım, çakışma ve en fazla 8 aralık", () => {
     expect(periyotHatasi([{ baslangic: "17:10", bitis: "19:00" }], false, "X")).toMatch(/15 dakikalık/);
     expect(periyotHatasi([{ baslangic: "17:00", bitis: "19:00" }, { baslangic: "18:00", bitis: "20:00" }], false, "X")).toMatch(/çakışıyor/);
-    const dort = ["08:00", "10:00", "12:00", "14:00"].map((b) => ({ baslangic: b, bitis: b.replace(/^(\d\d)/, (s) => String(Number(s) + 1).padStart(2, "0")) }));
-    expect(periyotHatasi(dort, false, "X")).toMatch(/en fazla 3/);
+    const aralik = (baslangic: string) => ({ baslangic, bitis: baslangic.replace(/^(\d\d)/, (s) => String(Number(s) + 1).padStart(2, "0")) });
+    const sekiz = ["06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"].map(aralik);
+    expect(periyotHatasi(sekiz, false, "X")).toBeNull();
+    expect(periyotHatasi([...sekiz, aralik("22:00")], false, "X")).toMatch(/en fazla 8/);
   });
 });
 

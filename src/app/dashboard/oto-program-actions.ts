@@ -72,6 +72,7 @@ export async function otoProgramUygula(input: {
     haftaIciPeriyotlari: input.ayar.haftaIciPeriyotlari.map((p) => ({ baslangic: p.baslangic, bitis: p.bitis })),
     haftaSonuPeriyotlari: input.ayar.haftaSonuPeriyotlari.map((p) => ({ baslangic: p.baslangic, bitis: p.bitis })),
     dersler: input.ayar.dersler.map((d) => ({ ders: d.ders, agirlik: d.agirlik })),
+    konulariSefuSecsin: input.ayar.konulariSefuSecsin !== false,
   };
 
   const admin = createAdminClient();

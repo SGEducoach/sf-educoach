@@ -20,7 +20,9 @@ const AGIRLIK_PAYI: Record<DersAgirligi, number> = { agirlikli: 3, orta: 2, hafi
 
 export const BLOK_DAKIKA = 40;
 export const MOLA_DAKIKA = 10;
-export const EN_FAZLA_PERIYOT = 3;
+// Kullanıcı isteği (24.09.2026): gün içinde parçalı çalışanlar için 3 aralık
+// yetmiyordu, sınır 8'e çıkarıldı.
+export const EN_FAZLA_PERIYOT = 8;
 export const EN_UZUN_BLOK_DAKIKA = 120;
 export const OKUL_SAATI = { baslangic: 7 * 60, bitis: 16 * 60 };
 // 22.00 sonrası yeni konu yerine soru çözümü (dikkat düşük).
@@ -37,6 +39,11 @@ export interface OtoProgramAyari {
   haftaIciPeriyotlari: Periyot[];
   haftaSonuPeriyotlari: Periyot[];
   dersler: OtoProgramDersi[]; // sıra = önem sırası
+  // Kullanıcı isteği (24.09.2026): öğrenci konuları SeFu'ya seçtirmek
+  // zorunda değil. false ise program kalemleri konusuz üretilir; öğrenci
+  // çalışmayı tamamlarken (onay anında) konuyu kendisi seçer. Eski
+  // kayıtlarda alan yok — tanımsızsa eski davranış (SeFu seçer) geçerli.
+  konulariSefuSecsin?: boolean;
 }
 export interface DoluAralik { tarih: string; baslangic: string; bitis: string }
 // Öğretmenin saat vermediği, programa henüz eklenmemiş ödev.
@@ -196,6 +203,9 @@ function slotlariUret(veri: OtoProgramVerisi, ayar: OtoProgramAyari): Slot[] {
 }
 
 export function otoProgramOlustur(veri: OtoProgramVerisi, ayar: OtoProgramAyari): ProgramBlogu[] {
+  // Konuyu öğrenci sonra seçecekse üretimde hiç konu yazılmaz (öğretmen
+  // ödevleri hariç — onların konusu öğretmenden gelir).
+  const konusuz = ayar.konulariSefuSecsin === false;
   const slotlar = slotlariUret(veri, ayar);
   const bloklar: ProgramBlogu[] = [];
   let sayac = 0;
@@ -203,7 +213,7 @@ export function otoProgramOlustur(veri: OtoProgramVerisi, ayar: OtoProgramAyari)
     const blok: ProgramBlogu = {
       anahtar: `blok-${++sayac}`, tarih: slot.tarih,
       baslangic: dakikayiSaateCevir(slot.baslangic), bitis: dakikayiSaateCevir(slot.bitis),
-      tur, ders, konu, atamaId,
+      tur, ders, konu: konusuz && !atamaId ? null : konu, atamaId,
     };
     slot.blok = blok;
     bloklar.push(blok);
