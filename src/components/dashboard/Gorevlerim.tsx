@@ -4,9 +4,10 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, BookOpen, PenLine, ClipboardList, X, Clock, Plus, CalendarDays, Rows3 } from "lucide-react";
+import { ChevronLeft, ChevronRight, BookOpen, PenLine, ClipboardList, X, Clock, Plus, CalendarDays, Rows3, Eraser } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BLUSH, BLUSH_BG, BORDER, BORDER_STRONG, BUTTER, BUTTER_BG, MINT, MINT_BG, MINT_ON, PEACH, PEACH_BG, TEXT, TEXT_MUTED } from "@/lib/theme";
 import { GOREV_TURU_ETIKET, GOREV_DURUMU_ETIKET } from "@/lib/types";
+import { haftayiTemizle } from "@/app/dashboard/oto-program-actions";
 import type { GorevTuru, GorevDurumu, AytAlan } from "@/lib/types";
 import { KonuCalismaForm, SoruCozumuForm, DenemeForm } from "@/components/dashboard/OgrenciVeriGirisi";
 import { MaskotKonusmaBalonu } from "@/components/dashboard/MaskotKonusmaBalonu";
@@ -120,6 +121,33 @@ export function Gorevlerim({ gorevler, gorunum, haftaBaslangic, aytAlan, sinifSe
   // etkilemez.
   const gorunenKayitlar = gorevler.filter((g) => (planSayfasi ? g.programaEklendiMi : g.kaynak === "gorev"));
 
+  // Kullanıcı isteği (24.09.2026): haftalık program açıkken "bu haftayı
+  // temizle". Yalnızca bekleyen kalemler: öğrencinin kendi kalemleri silinir,
+  // öğretmen ödevleri programdan çıkarılır ama Ödevlerim'de kalır.
+  const [temizleniyor, temizlemeBaslat] = useTransition();
+  const [temizlemeNotu, setTemizlemeNotu] = useState<string | null>(null);
+
+  function haftayiTemizleTikla() {
+    const onay = window.confirm(
+      "Bu haftadaki bekleyen program kalemlerin silinsin mi?\n\n"
+      + "• Kendi eklediğin ve SeFu'nun oluşturduğu kalemler silinir.\n"
+      + "• Öğretmen ödevlerin SİLİNMEZ, sadece programdan çıkar; Ödevlerim'de beklemeye devam eder.\n"
+      + "• Tamamladığın kalemlere ve girdiğin verilere dokunulmaz.",
+    );
+    if (!onay) return;
+    setTemizlemeNotu(null);
+    temizlemeBaslat(async () => {
+      const r = await haftayiTemizle(haftaBaslangic);
+      if (r.error) { setTemizlemeNotu(r.error); return; }
+      setTemizlemeNotu(
+        r.silinen === 0 && r.cikarilan === 0
+          ? "Bu haftada temizlenecek bekleyen kalem yoktu."
+          : `${r.silinen} kalem silindi${r.cikarilan > 0 ? `, ${r.cikarilan} öğretmen ödevi programdan çıkarıldı` : ""}.`,
+      );
+      router.refresh();
+    });
+  }
+
   const gunlukGorevSayisi = new Map<string, number>();
   for (const g of gorunenKayitlar) gunlukGorevSayisi.set(g.tarih, (gunlukGorevSayisi.get(g.tarih) ?? 0) + 1);
 
@@ -166,6 +194,14 @@ export function Gorevlerim({ gorevler, gorunum, haftaBaslangic, aytAlan, sinifSe
           )}
         </div>
         <div className="flex items-center gap-1.5">
+          {planSayfasi && (
+            <button type="button" onClick={haftayiTemizleTikla} disabled={temizleniyor}
+              title="Bu haftadaki bekleyen program kalemlerini temizle"
+              className="sfec-btn inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold disabled:opacity-50"
+              style={{ background: BG1_ALT, color: BLUSH, border: `2px solid ${BORDER_STRONG}` }}>
+              <Eraser size={12} /> {temizleniyor ? "Temizleniyor..." : "Haftayı temizle"}
+            </button>
+          )}
           <button type="button" onClick={() => haftaDegistir(-1)} title="Önceki hafta"
             className="sfec-btn w-7 h-7 rounded-full flex items-center justify-center" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
             <ChevronLeft size={14} color={TEXT_MUTED} />
@@ -180,6 +216,12 @@ export function Gorevlerim({ gorevler, gorunum, haftaBaslangic, aytAlan, sinifSe
           </button>
         </div>
       </div>
+
+      {temizlemeNotu && (
+        <p className="mb-3 rounded-xl px-3 py-2 text-[11px] font-semibold" style={{ background: BG1_ALT, color: TEXT_MUTED, border: `1px solid ${BORDER}` }}>
+          {temizlemeNotu}
+        </p>
+      )}
 
       {gecmisBekleyenToplam > 0 && (
         <p className="mb-3 rounded-xl px-3 py-2 text-[11px] font-semibold" style={{ background: BUTTER_BG, color: BUTTER }}>

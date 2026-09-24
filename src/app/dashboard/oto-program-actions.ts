@@ -37,6 +37,54 @@ function donemHatasi(baslangicTarihi: string, kapsam: ProgramKapsami): string | 
   return null;
 }
 
+// Kullanıcı isteği (24.09.2026): haftalık program açıkken "bu haftayı
+// temizle". Yalnızca BEKLEYEN kalemler etkilenir:
+//   * öğrencinin kendi program kalemleri (oto program dahil) silinir,
+//   * öğretmen ödevleri SİLİNMEZ, sadece programdan çıkarılır (saat/gün
+//     bilgisi temizlenir; ödev "Ödevlerim"de bekler).
+// Tamamlanmış kalemlere dokunulmaz — girilmiş veriyle bağları korunur.
+export async function haftayiTemizle(haftaBaslangici: string): Promise<{ error: string | null; silinen: number; cikarilan: number }> {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(haftaBaslangici ?? "") || haftaninGunu(haftaBaslangici) !== 0) {
+    return { error: "Hafta başlangıcı geçersiz.", silinen: 0, cikarilan: 0 };
+  }
+  const oturum = await ogrenciOturumu();
+  if (oturum.error !== null) return { error: oturum.error, silinen: 0, cikarilan: 0 };
+  const { userId } = oturum;
+
+  const admin = createAdminClient();
+  const haftaSonu = gunEkle(haftaBaslangici, 6);
+  const { data: kalemler, error } = await admin
+    .from("gorev_atamalari")
+    .select("id, gorev_id, gorevler!inner(olusturan_ogrenci_id)")
+    .eq("student_id", userId)
+    .eq("programa_eklendi_mi", true)
+    .eq("durum", "bekliyor")
+    .gte("ogrenci_tarih", haftaBaslangici)
+    .lte("ogrenci_tarih", haftaSonu);
+  if (error) return { error: error.message, silinen: 0, cikarilan: 0 };
+
+  type Satir = { id: string; gorev_id: string; gorevler: { olusturan_ogrenci_id: string | null } | { olusturan_ogrenci_id: string | null }[] | null };
+  const tek = <T,>(v: T | T[] | null): T | null => (Array.isArray(v) ? v[0] ?? null : v);
+  const satirlar = (kalemler ?? []) as unknown as Satir[];
+  const kendiGorevIdleri = [...new Set(satirlar.filter((k) => tek(k.gorevler)?.olusturan_ogrenci_id === userId).map((k) => k.gorev_id))];
+  const ogretmenAtamaIdleri = satirlar.filter((k) => tek(k.gorevler)?.olusturan_ogrenci_id !== userId).map((k) => k.id);
+
+  if (kendiGorevIdleri.length > 0) {
+    const { error: silmeHatasi } = await admin.from("gorevler").delete().in("id", kendiGorevIdleri);
+    if (silmeHatasi) return { error: silmeHatasi.message, silinen: 0, cikarilan: 0 };
+  }
+  if (ogretmenAtamaIdleri.length > 0) {
+    const { error: cikarmaHatasi } = await admin.from("gorev_atamalari")
+      .update({ programa_eklendi_mi: false, ogrenci_tarih: null, ogrenci_baslangic_saat: null, ogrenci_bitis_saat: null })
+      .in("id", ogretmenAtamaIdleri)
+      .eq("student_id", userId);
+    if (cikarmaHatasi) return { error: cikarmaHatasi.message, silinen: kendiGorevIdleri.length, cikarilan: 0 };
+  }
+
+  revalidatePath("/dashboard");
+  return { error: null, silinen: kendiGorevIdleri.length, cikarilan: ogretmenAtamaIdleri.length };
+}
+
 export async function otoProgramHazirla(baslangicTarihi: string, kapsam: ProgramKapsami): Promise<{ error: string | null; veri: OtoProgramVerisi | null }> {
   const hata = donemHatasi(baslangicTarihi, kapsam);
   if (hata) return { error: hata, veri: null };
