@@ -7,12 +7,18 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 // yazdırma ölçeği tarayıcı ayarına bırakılmaz, ölçek satır içi stil olarak
 // yazıldığı için ekranda da çıktıda da aynıdır.
 //
-// Ölçüm: CSS'te 1mm = 96/25.4 px olduğundan mm cinsinden hedef yükseklik
-// doğrudan px'e çevrilebilir.
+// Kullanıcı geri bildirimi (25.09.2026): "sağda boşluk kalmış" — küçültme
+// genişliği de daralttığı için sayfanın sağı boş kalıyordu. Artık içerik
+// ölçeğin tersiyle genişletiliyor (genişlik / ölçek), böylece küçültme
+// SADECE dikeyde hissediliyor ve tablo sayfanın tam enini kaplıyor.
+// Genişleyen içerik daha kısa sardığı için ölçek birkaç kez yinelenerek
+// bulunuyor (en büyük sığan ölçek).
 const MM = 96 / 25.4;
-// En fazla bu kadar küçültülür; daha da taşıyorsa (aşırı dolu hafta) alt
-// kenardan kırpmak yerine okunaklılık korunur ve uyarı gösterilir.
 const EN_KUCUK_OLCEK = 0.55;
+// İkili arama adımı: ölçek küçüldükçe içerik genişler ve kısalır, yani
+// "sığıyor mu" sorusu ölçeğe göre tek yönlü — sığan EN BÜYÜK ölçeği ikili
+// aramayla buluyoruz (yineleyerek denemek salınıma giriyordu).
+const ARAMA_ADIMI = 12;
 
 export function TekSayfaOlcek({ genislikMm, yukseklikMm, children }: {
   genislikMm: number;
@@ -26,16 +32,35 @@ export function TekSayfaOlcek({ genislikMm, yukseklikMm, children }: {
   const hesapla = useCallback(() => {
     const el = icerikRef.current;
     if (!el) return;
-    // Önce ölçeksiz gerçek yüksekliği ölç.
-    el.style.transform = "none";
-    const gercek = el.scrollHeight;
     const hedef = yukseklikMm * MM;
-    const oran = gercek > 0 ? hedef / gercek : 1;
-    const yeni = Math.min(1, Math.max(EN_KUCUK_OLCEK, oran));
-    el.style.transform = `scale(${yeni})`;
-    setOlcek(yeni);
-    setTasiyor(oran < EN_KUCUK_OLCEK);
-  }, [yukseklikMm]);
+
+    // Verilen ölçekte içerik sayfaya sığıyor mu? (Genişlik ölçeğin tersiyle
+    // büyütülür ki küçültme sonrası tam eni kaplasın.)
+    const sigiyorMu = (k: number) => {
+      el.style.transform = "none";
+      el.style.width = `${genislikMm / k}mm`;
+      return el.scrollHeight * k <= hedef;
+    };
+
+    let k = EN_KUCUK_OLCEK;
+    if (sigiyorMu(1)) {
+      k = 1;
+    } else {
+      let alt = EN_KUCUK_OLCEK;
+      let ust = 1;
+      for (let i = 0; i < ARAMA_ADIMI; i++) {
+        const orta = (alt + ust) / 2;
+        if (sigiyorMu(orta)) alt = orta; else ust = orta;
+      }
+      k = alt;
+    }
+
+    const sigdi = sigiyorMu(k);
+    el.style.width = `${genislikMm / k}mm`;
+    el.style.transform = `scale(${k})`;
+    setOlcek(k);
+    setTasiyor(!sigdi);
+  }, [genislikMm, yukseklikMm]);
 
   useLayoutEffect(() => { hesapla(); }, [hesapla]);
 
@@ -54,7 +79,7 @@ export function TekSayfaOlcek({ genislikMm, yukseklikMm, children }: {
         </p>
       )}
       <div style={{ width: `${genislikMm}mm`, height: `${yukseklikMm}mm`, overflow: "hidden" }}>
-        <div ref={icerikRef} style={{ width: `${genislikMm}mm`, transformOrigin: "top left", transform: `scale(${olcek})` }}>
+        <div ref={icerikRef} style={{ width: `${genislikMm / olcek}mm`, transformOrigin: "top left", transform: `scale(${olcek})` }}>
           {children}
         </div>
       </div>
