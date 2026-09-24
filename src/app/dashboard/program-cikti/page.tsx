@@ -4,6 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ProgramYazdirDugmesi } from "@/components/dashboard/ProgramYazdirDugmesi";
+import { TekSayfaOlcek } from "@/components/dashboard/TekSayfaOlcek";
 import { gunEkle, haftaninPazartesisi } from "@/lib/oto-program";
 import { bugununTarihiTR } from "@/lib/tarih";
 import { GOREV_TURU_ETIKET } from "@/lib/types";
@@ -16,6 +17,9 @@ import { GOREV_TURU_ETIKET } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Haftalık program çıktısı | SeFu Koç", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
+
+const SAYFA_GENISLIK_MM = 297 - 2 * 9;
+const SAYFA_YUKSEKLIK_MM = 210 - 2 * 9;
 
 const GUN_ADI = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
 
@@ -74,16 +78,19 @@ export default async function ProgramCiktiSayfasi({ searchParams }: { searchPara
     const c = tek((ogrenci as unknown as { classes: { seviye: string; sube: string } | null } | null)?.classes ?? null);
     return c ? `${c.seviye}-${c.sube}` : "";
   })();
-  const enFazlaSatir = Math.max(6, ...gunler.map((g) => kalemler.filter((k) => k.tarih === g).length));
+  const enFazlaSatir = Math.min(9, Math.max(6, ...gunler.map((g) => kalemler.filter((k) => k.tarih === g).length)));
 
   return (
     <div className="cikti">
       <style>{`
         @page { size: A4 landscape; margin: 9mm; }
         .cikti {
-          background: #fff; color: #111; min-height: 100vh; padding: 10mm;
+          background: #fff; color: #111; padding: 9mm;
           font-family: var(--font-nunito), "Segoe UI", Arial, sans-serif; font-size: 10pt;
         }
+        /* Çıktı tek sayfa: içerik sayfa kutusuna sığacak şekilde ölçeklenir
+           (bkz. TekSayfaOlcek), taşma olursa kutu kırpar. */
+        .tasma-uyarisi { margin: 0 0 3mm; font-size: 9pt; color: #8a5a00; }
         .cikti__ust { display: flex; align-items: center; gap: 8mm; border-bottom: 1.4pt solid #111; padding-bottom: 3mm; }
         .cikti__logo { flex: none; }
         .cikti__baslik { flex: 1; text-align: center; }
@@ -112,7 +119,11 @@ export default async function ProgramCiktiSayfasi({ searchParams }: { searchPara
         }
         .arac-cubugu { display: flex; gap: 10px; align-items: center; margin-bottom: 5mm; }
         .arac-cubugu a { color: #111; font-size: 10pt; text-decoration: underline; }
-        @media print { .arac-cubugu { display: none !important; } .cikti { padding: 0; } }
+        @media print {
+          .arac-cubugu, .tasma-uyarisi { display: none !important; }
+          .cikti { padding: 0; }
+          html, body { background: #fff !important; }
+        }
       `}</style>
 
       <div className="arac-cubugu">
@@ -120,6 +131,7 @@ export default async function ProgramCiktiSayfasi({ searchParams }: { searchPara
         <Link href={`/dashboard/planlar?hafta=${haftaBaslangic}`}>← Programa dön</Link>
       </div>
 
+      <TekSayfaOlcek genislikMm={SAYFA_GENISLIK_MM} yukseklikMm={SAYFA_YUKSEKLIK_MM}>
       <div className="cikti__ust">
         <Image src="/icon-192.png" alt="SeFu Koç" width={192} height={192} className="cikti__logo" style={{ height: "16mm", width: "16mm", objectFit: "contain" }} />
         <div className="cikti__baslik">
@@ -178,6 +190,7 @@ export default async function ProgramCiktiSayfasi({ searchParams }: { searchPara
         <span>Yaptığın çalışmayı siteye girmeyi unutma: www.sefukoc.com</span>
         <span>Sen Geliş, Farkın Duyulur</span>
       </div>
+      </TekSayfaOlcek>
     </div>
   );
 }
