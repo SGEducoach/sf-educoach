@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Home, LineChart, Mail, Menu, Rss, X } from "lucide-react";
+import { IkonStili } from "@/components/IkonStili";
 
 // Kullanıcı isteği (04.09.2026): navigasyon ORTADA değil, eskisi gibi sağda
 // (GİRİŞ YAP'ın solunda) duruyor; masaüstünde Ana Sayfa/Blog/İletişim yan
@@ -41,6 +42,7 @@ export function SiteUstNavigasyon() {
 
   return (
     <header className="sticky top-0 z-40 border-b" style={{ borderColor: CIZGI, background: BEYAZ }}>
+      <IkonStili>
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-5 py-3.5 sm:px-8 sm:py-4">
         <Link href="/" aria-label="Ana sayfa" className="shrink-0">
           <Image src="/logo.png" alt="SeFu Koç" width={512} height={512} className="h-10 w-auto object-contain sm:h-12" priority />
@@ -86,6 +88,7 @@ export function SiteUstNavigasyon() {
           })}
         </nav>
       )}
+      </IkonStili>
     </header>
   );
 }
@@ -93,6 +96,7 @@ export function SiteUstNavigasyon() {
 export function SiteAltligi() {
   return (
     <footer className="mt-auto flex flex-col items-center gap-2 px-5 py-6 text-center text-xs" style={{ color: GRI }}>
+      <IkonStili>
       <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
         <Link href="/" className="font-semibold">Ana Sayfa</Link>
         <Link href="/ogrenci-takip-ve-kocluk" className="font-semibold">Öğrenci Takibi ve Koçluk</Link>
@@ -100,6 +104,7 @@ export function SiteAltligi() {
         <Link href="/iletisim" className="inline-flex items-center gap-1 font-semibold"><Mail size={12} /> İletişim</Link>
         <Link href="/login" className="font-semibold">Giriş Yap</Link>
       </nav>
+      </IkonStili>
       <span>© {new Date().getFullYear()} www.sefukoc.com. Tüm hakları saklıdır.</span>
     </footer>
   );

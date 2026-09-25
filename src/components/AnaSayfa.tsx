@@ -4,6 +4,7 @@ import { SiteUstNavigasyon, SiteAltligi } from "@/components/SiteUstNavigasyon";
 import { AnaSayfaSlider } from "@/components/AnaSayfaSlider";
 import { AnaSayfaTgAkisi } from "@/components/AnaSayfaTgAkisi";
 import { AnaSayfaDuyurular } from "@/components/AnaSayfaDuyurular";
+import { IkonStili } from "@/components/IkonStili";
 import type { AnaSayfaSliderGorseli } from "@/lib/ana-sayfa";
 import type { TgDenemeIlani } from "@/lib/tg-deneme-ilanlari";
 import type { AnaSayfaDuyurusu } from "@/lib/ana-sayfa-duyurulari";
@@ -17,7 +18,7 @@ const roller=[
 ];
 export function AnaSayfa({baslik,govde,sliderGecisSaniye,sliderGorselleri,tgIlanlar,duyurular}:{baslik:string;govde:string;sliderGecisSaniye:number;sliderGorselleri:AnaSayfaSliderGorseli[];tgIlanlar:TgDenemeIlani[];duyurular:AnaSayfaDuyurusu[]}){
  const paragraflar=govde.split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean);
- return <div className="flex min-h-dvh flex-col" style={{background:BEYAZ}}>
+ return <IkonStili><div className="flex min-h-dvh flex-col" style={{background:BEYAZ}}>
   <SiteUstNavigasyon/>
   <AnaSayfaSlider gorseller={sliderGorselleri} gecisSaniye={sliderGecisSaniye}/>
   <main>
@@ -34,5 +35,5 @@ export function AnaSayfa({baslik,govde,sliderGecisSaniye,sliderGorselleri,tgIlan
    <section className="border-t border-[#E4E9EE] bg-[#F7FAFB]"><div className="mx-auto max-w-5xl px-5 py-14 sm:px-8 sm:py-20"><h2 className="text-balance text-2xl font-extrabold leading-tight sm:text-3xl" style={{color:LACIVERT,fontFamily:"var(--font-baloo)"}}>{baslik}</h2><div className="mt-5 space-y-4">{paragraflar.map((p,i)=><p key={i} className="text-base leading-7 sm:text-lg" style={{color:GRI}}>{p}</p>)}</div></div></section>
   </main>
   <SiteAltligi/>
- </div>;
+ </div></IkonStili>;
 }
