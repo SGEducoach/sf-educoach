@@ -74,6 +74,19 @@ function kapsiyorMu(kisa: string[], uzun: string[]): boolean {
   return birebir;
 }
 
+// Kullanıcı isteği (25.09.2026): adı birebir tutmayan PDF satırı, okul
+// numarası kurumdaki TEK bir öğrencininkiyle aynıysa VE adlar benzerse o
+// öğrenciye otomatik yazılabilir. Numara 0/boşsa ya da ad benzemiyorsa null
+// — satır yönetici onayına kalır.
+export function numaraVeAdIleBul<T extends { ad: string; okulNo: string | null }>(
+  pdf: { ad: string; ogrenciNo?: number },
+  ogrenciler: T[],
+): T | null {
+  if (!pdf.ogrenciNo) return null;
+  const numarasiTutanlar = ogrenciler.filter((o) => o.okulNo !== null && /^\d+$/.test(o.okulNo) && Number(o.okulNo) === pdf.ogrenciNo);
+  return numarasiTutanlar.length === 1 && adlarBenzerMi(pdf.ad, numarasiTutanlar[0].ad) ? numarasiTutanlar[0] : null;
+}
+
 export function adlarBenzerMi(pdfAdi: string, kayitliAd: string): boolean {
   const p = kelimeler(pdfAdi);
   const k = kelimeler(kayitliAd);

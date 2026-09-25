@@ -10,7 +10,7 @@ import { requireDenemeYuklemeYetkisi } from "@/lib/dershane-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAnthropicClient } from "@/lib/anthropic";
 import { adNormalize } from "@/lib/validators";
-import { adlarBenzerMi } from "@/lib/ad-benzerligi";
+import { adlarBenzerMi, numaraVeAdIleBul } from "@/lib/ad-benzerligi";
 import { dersSoruSayisi } from "@/lib/types";
 import type { DenemeTuru } from "@/lib/types";
 import { ogretmenDenemeSonucuKaydet, type DenemeDersSonucu, type DenemeKazanimSonucu } from "@/lib/deneme-sonucu-kaydet";
@@ -25,6 +25,9 @@ import { gecerliDersler } from "@/lib/deneme-dersleri";
 interface PdfOgrenciSonucu {
   ad_soyad: string;
   ders_sonuclari: { ders: string; dogru: number; yanlis: number }[];
+  // PDF'teki "Ö.No" — yalnızca deterministik (sınıf/okul listesi) yollarda
+  // dolu; 0 ya da yoksa numara ile eşleştirme yapılmaz.
+  ogrenci_no?: number;
 }
 
 interface PdfAyristirmaCozumu {
@@ -159,26 +162,27 @@ const BOS_SONUC = {
 // sonuç girilebilsin diye). Faz P3'teki sınıf-daraltma sinyali (pdfSinifMap)
 // SADECE PDF yolunda dolu geliyor — Excel'in kendi deterministik sınıf
 // bilgisi yok, aynı isimli öğrenci çakışırsa doğrudan inceleme kuyruğuna düşer.
-interface HedefOgrenci { id: string; ad: string; adNorm: string; sinif: string | null }
+interface HedefOgrenci { id: string; ad: string; adNorm: string; sinif: string | null; okulNo: string | null }
 interface HedefOnKayit { id: string; ad: string; adNorm: string }
 
 async function hedefOgrencileriGetir(admin: ReturnType<typeof createAdminClient>, schoolId: string): Promise<
   { error: string | null; ogrenciler: HedefOgrenci[]; onKayitlar: HedefOnKayit[] }
 > {
   const [{ data: ogrencilerHam, error: ogrenciHatasi }, { data: onKayitlarHam, error: onKayitHatasi }] = await Promise.all([
-    admin.from("students").select("id, profiles!students_id_fkey(ad), classes(seviye, sube)").eq("school_id", schoolId),
+    admin.from("students").select("id, okul_no, profiles!students_id_fkey(ad), classes(seviye, sube)").eq("school_id", schoolId),
     admin.from("pending_dershane_ogrenciler").select("id, ad").eq("school_id", schoolId).is("kullanildi_at", null),
   ]);
   if (ogrenciHatasi || onKayitHatasi) {
     console.error("Deneme sonucu hedef öğrenci listesi alınamadı:", ogrenciHatasi ?? onKayitHatasi);
     return { error: "Kurum öğrenci listesi alınamadı. Lütfen tekrar deneyin.", ogrenciler: [], onKayitlar: [] };
   }
-  type OgrenciRow = { id: string; profiles: { ad: string } | null; classes: { seviye: string; sube: string } | null };
+  type OgrenciRow = { id: string; okul_no: string | null; profiles: { ad: string } | null; classes: { seviye: string; sube: string } | null };
   const ogrenciler = ((ogrencilerHam ?? []) as unknown as OgrenciRow[])
     .filter((o) => o.profiles)
     .map((o) => ({
       id: o.id, ad: o.profiles!.ad.trim(), adNorm: adNormalize(o.profiles!.ad),
       sinif: o.classes ? `${o.classes.seviye}-${o.classes.sube}` : null,
+      okulNo: o.okul_no?.trim() || null,
     }));
   const onKayitlar = (onKayitlarHam ?? [])
     .map((o) => ({ id: o.id as string, ad: String(o.ad).trim(), adNorm: adNormalize(String(o.ad)) }))
@@ -261,6 +265,16 @@ async function sonuclariEslestirVeKaydet(params: {
       }
     }
 
+    // Kullanıcı isteği (25.09.2026): adı kayıttan biraz farklı yazılmış
+    // (ör. ikinci adı eksik) öğrenciler yönetici onayına düşüyordu. PDF'teki
+    // okul numarası kurumdaki TEK bir öğrencinin numarasıyla aynıysa VE adlar
+    // benzerse (adlarBenzerMi) o öğrenciye otomatik yazılır. Numara tutup ad
+    // benzemiyorsa ya da numara yoksa (PDF'te 0) eskisi gibi kuyruğa düşer.
+    if (eslesenler.length === 0 && eslesenOnKayitlar.length === 0) {
+      const numaraIleBulunan = numaraVeAdIleBul({ ad: satir.ad_soyad, ogrenciNo: satir.ogrenci_no }, ogrenciler);
+      if (numaraIleBulunan) eslesenler = [numaraIleBulunan];
+    }
+
     if (eslesenler.length === 1 && eslesenOnKayitlar.length === 0) {
       const granulerDersSonuclari = granulerKarneMap.get(adNorm);
       const sonuc = await ogretmenDenemeSonucuKaydet(admin, {
@@ -273,6 +287,12 @@ async function sonuclariEslestirVeKaydet(params: {
       });
       if (!sonuc.error) {
         otomatikEslesen++;
+        // Aynı satır önceki bir yüklemede kuyruğa düşmüşse artık bekletme.
+        const { error: kuyrukHatasi } = await admin.from("pdf_deneme_eslesme_bekleyenler")
+          .update({ durum: "atandi", atanan_student_id: eslesenler[0].id })
+          .eq("school_id", schoolId).eq("ad_soyad_ham", satir.ad_soyad)
+          .eq("yayinevi", yayinevi).eq("tarih", tarih).eq("tur", tur).eq("durum", "bekliyor");
+        if (kuyrukHatasi) console.warn("Eski kuyruk satırı kapatılamadı:", kuyrukHatasi.message);
       } else {
         console.error("Deneme sonucu aktif öğrenciye kaydedilemedi:", sonuc.error);
         if (await eslesmeKuyrugunaYaz(satir)) incelemeBekleyen++;
@@ -358,7 +378,7 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
       for (const o of sinifListesi.ogrenciler) {
         if (!hedefleIlgiliMi(o.isimHam)) continue;
         const dersSonuclari = tytDerslerineIndirge(o.dersSonuclari, KARNE_DERS_TYT_ESLESTIRME);
-        if (dersSonuclari) okunanlar.push({ ad_soyad: o.isimHam, ders_sonuclari: dersSonuclari });
+        if (dersSonuclari) okunanlar.push({ ad_soyad: o.isimHam, ders_sonuclari: dersSonuclari, ogrenci_no: o.ogrenciNo || undefined });
         else okunamayanAdlar.push(o.isimHam);
       }
       ayristirilan = okunanlar;
@@ -394,7 +414,7 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
     for (const o of deterministikSonuc.ogrenciler) {
       if (!hedefleIlgiliMi(o.isimHam)) continue;
       const dersSonuclari = tytDerslerineIndirge(o.dersSonuclari, KARNE_DERS_TYT_ESLESTIRME);
-      if (dersSonuclari) okunanlar.push({ ad_soyad: o.isimHam, ders_sonuclari: dersSonuclari });
+      if (dersSonuclari) okunanlar.push({ ad_soyad: o.isimHam, ders_sonuclari: dersSonuclari, ogrenci_no: o.ogrenciNo || undefined });
       else okunamayanAdlar.push(o.isimHam);
     }
     // Hangi dersin boş bırakıldığı belirsiz satırlar — elle girilmesi gerekiyor.

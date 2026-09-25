@@ -1,5 +1,32 @@
 import { describe, expect, test } from "vitest";
-import { adlarBenzerMi } from "./ad-benzerligi";
+import { adlarBenzerMi, numaraVeAdIleBul } from "./ad-benzerligi";
+
+describe("numaraVeAdIleBul", () => {
+  const ogrenciler = [
+    { id: "a", ad: "Nur Efşan Sude Albay", okulNo: "236" },
+    { id: "b", ad: "Mehmet Şahin", okulNo: "341" },
+    { id: "c", ad: "Ayşe Kaya", okulNo: "kullanici_adi" },
+    { id: "d", ad: "Zeynep Er", okulNo: null },
+  ];
+
+  test("numara aynı ve ikinci adı eksik → otomatik bulunur", () => {
+    expect(numaraVeAdIleBul({ ad: "NUR EFŞAN ALBAY", ogrenciNo: 236 }, ogrenciler)?.id).toBe("a");
+  });
+  test("numara aynı ama ad bambaşka → bulunmaz (kuyruğa kalır)", () => {
+    expect(numaraVeAdIleBul({ ad: "DENİZ ŞAHİN", ogrenciNo: 341 }, ogrenciler)).toBeNull();
+  });
+  test("ad benzer ama numara farklı → bulunmaz", () => {
+    expect(numaraVeAdIleBul({ ad: "NUR EFŞAN ALBAY", ogrenciNo: 999 }, ogrenciler)).toBeNull();
+  });
+  test("PDF'te numara 0 ya da yok → bulunmaz", () => {
+    expect(numaraVeAdIleBul({ ad: "NUR EFŞAN ALBAY", ogrenciNo: 0 }, ogrenciler)).toBeNull();
+    expect(numaraVeAdIleBul({ ad: "NUR EFŞAN ALBAY" }, ogrenciler)).toBeNull();
+  });
+  test("aynı numaralı iki öğrenci varsa → bulunmaz", () => {
+    const cift = [...ogrenciler, { id: "e", ad: "Nur Albay", okulNo: "0236" }];
+    expect(numaraVeAdIleBul({ ad: "NUR EFŞAN ALBAY", ogrenciNo: 236 }, cift)).toBeNull();
+  });
+});
 
 // Örnekler gerçek "fen lisesi dublör" PDF'indeki yazım biçimlerinden; kayıtlı
 // adlar uydurma.
