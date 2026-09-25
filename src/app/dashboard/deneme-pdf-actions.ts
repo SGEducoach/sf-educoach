@@ -420,8 +420,9 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
       if (dersSonuclari) okunanlar.push({ ad_soyad: o.isimHam, ders_sonuclari: dersSonuclari, ogrenci_no: o.ogrenciNo || undefined });
       else okunamayanAdlar.push(o.isimHam);
     }
-    // Hangi dersin boş bırakıldığı belirsiz satırlar — elle girilmesi gerekiyor.
-    okunamayanAdlar.push(...deterministikSonuc.okunamayanAdlar.filter(hedefleIlgiliMi));
+    // Hangi dersin boş bırakıldığı belirsiz satırlar — PDF'te karne varsa
+    // aşağıda (P2) karneden tamamlanır, yoksa elle girilmesi gerekir.
+    okunamayanAdlar.push(...deterministikSonuc.okunamayanSatirlar.map((o) => o.isimHam).filter(hedefleIlgiliMi));
     ayristirilan = okunanlar;
     okulListesindenOkundu = true;
     console.info(
@@ -605,21 +606,41 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
   // sessizce düşülüyor. Herhangi bir hata bu bloğu asla çökertmesin diye
   // ayrı try/catch'te — en kötü ihtimalle mevcut (Claude) yol kullanılır.
   const granulerKarneMap = new Map<string, { ders: string; dogru: number; yanlis: number }[]>();
+  // Kullanıcı isteği (25.09.2026): okul listesinde ders blokları belirsiz
+  // olduğu için okunamayan satırlar (iki dersi boş bırakan öğrenciler),
+  // karneli PDF'lerde karnenin ders tablosundan tamamlanır. Karne toplamı
+  // satırın sonundaki toplam netle çapraz doğrulanır; tutmazsa okunamadı kalır.
+  const karneHedefleri = deterministikSonuc?.basarili ? [
+    ...deterministikSonuc.ogrenciler.map((o) => ({ isimHam: o.isimHam, ogrenciNo: o.ogrenciNo, toplamNet: o.toplam.net, tamamlanacak: false })),
+    ...(okulListesindenOkundu
+      ? deterministikSonuc.okunamayanSatirlar
+        .filter((o) => o.toplam && hedefleIlgiliMi(o.isimHam))
+        .map((o) => ({ isimHam: o.isimHam, ogrenciNo: o.ogrenciNo, toplamNet: o.toplam!.net, tamamlanacak: true }))
+      : []),
+  ] : [];
+  let karnedenTamamlanan = 0;
   if ((tur === "TYT" || tur === "BRANS") && deterministikSonuc?.basarili) {
     try {
       const pdfBufferKarne = Buffer.from(await dosya.arrayBuffer());
-      const hedefler = deterministikSonuc.ogrenciler.map((o) => ({ isimHam: o.isimHam, ogrenciNo: o.ogrenciNo }));
-      const karneIndeksi = await tumKarneleriIndeksle(pdfBufferKarne, hedefler);
-      for (const dSatir of deterministikSonuc.ogrenciler) {
-        const girdi = karneIndeksi.get(`${dSatir.isimHam}|${dSatir.ogrenciNo}`);
+      const karneIndeksi = await tumKarneleriIndeksle(pdfBufferKarne, karneHedefleri.map((h) => ({ isimHam: h.isimHam, ogrenciNo: h.ogrenciNo })));
+      for (const hedef of karneHedefleri) {
+        const girdi = karneIndeksi.get(`${hedef.isimHam}|${hedef.ogrenciNo}`);
         if (!girdi) continue;
         const granuler = karneyiTytDerslerineEslestir(girdi.dersSonuclari);
         if (!granuler) continue;
         const granulerToplamNet = Math.round(granuler.reduce((t, d) => t + netHesapla(d.dogru, d.yanlis), 0) * 100) / 100;
-        if (Math.abs(granulerToplamNet - dSatir.toplam.net) >= 0.5) continue; // çapraz doğrulama tutmadı — kullanma
-        granulerKarneMap.set(adNormalize(dSatir.isimHam), granuler);
+        if (Math.abs(granulerToplamNet - hedef.toplamNet) >= 0.5) continue; // çapraz doğrulama tutmadı — kullanma
+        granulerKarneMap.set(adNormalize(hedef.isimHam), granuler);
+        if (hedef.tamamlanacak) {
+          ayristirilan.push({ ad_soyad: hedef.isimHam, ders_sonuclari: granuler, ogrenci_no: hedef.ogrenciNo || undefined });
+          okunamayanAdlar = okunamayanAdlar.filter((ad) => ad !== hedef.isimHam);
+          karnedenTamamlanan++;
+        }
       }
-      console.info("[deneme-pdf P2] karneden granüler ders sonucu kullanılabilecek öğrenci sayısı:", granulerKarneMap.size, "/", deterministikSonuc.ogrenciler.length);
+      console.info(
+        "[deneme-pdf P2] karneden granüler ders sonucu kullanılabilecek öğrenci sayısı:", granulerKarneMap.size, "/", karneHedefleri.length,
+        "| okunamayan satırdan karneyle tamamlanan:", karnedenTamamlanan,
+      );
     } catch (karneHatasi) {
       console.warn("[deneme-pdf P2] beklenmeyen hata (Claude çıktısına sessizce düşülüyor):", hataOzeti(karneHatasi));
     }
@@ -640,11 +661,11 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
   if ((tur === "TYT" || tur === "BRANS") && deterministikSonuc?.basarili && granulerKarneMap.size > 0) {
     try {
       const pdfBufferKazanim = Buffer.from(await dosya.arrayBuffer());
-      const kazanimHedefleri = deterministikSonuc.ogrenciler
+      const kazanimHedefleri = karneHedefleri
         .filter((o) => granulerKarneMap.has(adNormalize(o.isimHam)))
         .map((o) => ({ isimHam: o.isimHam, ogrenciNo: o.ogrenciNo }));
       const kazanimIndeksi = await tumKarneKazanimlariniIndeksle(pdfBufferKazanim, kazanimHedefleri);
-      for (const dSatir of deterministikSonuc.ogrenciler) {
+      for (const dSatir of kazanimHedefleri) {
         const girdi = kazanimIndeksi.get(`${dSatir.isimHam}|${dSatir.ogrenciNo}`);
         if (!girdi) continue;
         kazanimMap.set(

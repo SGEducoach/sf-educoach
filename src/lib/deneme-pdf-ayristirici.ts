@@ -98,10 +98,19 @@ export interface OkulListesiAyristirmaSonucu {
   sinavAdi: string | null;
   dersEtiketleri: string[];
   ogrenciler: AyristirilmisOgrenciSatiri[];
-  // Öğrenci satırı olduğu belli olan ama sonuçları güvenle okunamayan
-  // satırların adları (ör. hangi dersin boş bırakıldığı belirsiz) — çağıran
-  // taraf bunları sessizce yutmak yerine "okunamadı" olarak bildirir.
-  okunamayanAdlar: string[];
+  // Öğrenci satırı olduğu belli olan ama ders sonuçları güvenle okunamayan
+  // satırlar (ör. hangi dersin boş bırakıldığı belirsiz) — çağıran taraf
+  // bunları sessizce yutmak yerine "okunamadı" olarak bildirir ya da karne
+  // sayfasından tamamlar. toplam, satırın sonundaki sabit konumdan okunur
+  // (karneyle çapraz doğrulama için); okunamazsa null.
+  okunamayanSatirlar: OkunamayanOgrenciSatiri[];
+}
+
+export interface OkunamayanOgrenciSatiri {
+  isimHam: string;
+  ogrenciNo: number;
+  sinif: string;
+  toplam: { dogru: number; yanlis: number; net: number } | null;
 }
 
 interface KonumluMetin {
@@ -215,13 +224,21 @@ function sinifBitisigiAyir(tokenlar: string[]): string[] {
   });
 }
 
-// "Sıra Ö.No İsim Sınıf ..." biçiminde bir öğrenci satırıysa adı döner —
-// ayrıştırılamayan satırları bildirebilmek için.
-function ogrenciSatiriAdi(hamTokenlar: string[]): string | null {
+// "Sıra Ö.No İsim Sınıf ..." biçiminde bir öğrenci satırıysa kimliğini ve
+// (ders blokları eksik olsa bile satır SONUNDA sabit konumda duran) toplam
+// D/Y/N'yi döner — ayrıştırılamayan satırları bildirip karneden tamamlamak için.
+function okunamayanSatirBilgisi(hamTokenlar: string[], grammer: Grammer): OkunamayanOgrenciSatiri | null {
   const tokenlar = sinifBitisigiAyir(hamTokenlar);
   if (tokenlar.length < 4 || !/^\d+$/.test(tokenlar[0]) || !/^\d+$/.test(tokenlar[1])) return null;
   const sinifIdx = tokenlar.findIndex((t, i) => i > 2 && SINIF_DESENI.test(t));
-  return sinifIdx === -1 ? null : tokenlar.slice(2, sinifIdx).join(" ");
+  if (sinifIdx === -1) return null;
+  const sayilar = tokenlar.slice(sinifIdx + 1).map(sayiParcala);
+  const puanUzunlugu = grammer.puanBloklari.reduce((t, s) => t + 1 + s, 0);
+  const toplamIdx = sayilar.length - puanUzunlugu - 3;
+  const toplam = toplamIdx >= 0 && sayilar.every((n) => n !== null)
+    ? { dogru: sayilar[toplamIdx]!, yanlis: sayilar[toplamIdx + 1]!, net: sayilar[toplamIdx + 2]! }
+    : null;
+  return { isimHam: tokenlar.slice(2, sinifIdx).join(" "), ogrenciNo: Number(tokenlar[1]), sinif: tokenlar[sinifIdx], toplam };
 }
 
 function satiriAyristir(hamTokenlar: string[], grammer: Grammer, dersEtiketleri: string[]): AyristirilmisOgrenciSatiri | null {
@@ -349,7 +366,7 @@ export async function sinifListeleriniAyristir(pdfBuffer: Buffer, maxSayfa = 80)
 }
 
 export async function okulListesiniAyristir(pdfBuffer: Buffer, maxSayfa = 10): Promise<OkulListesiAyristirmaSonucu> {
-  const BOS: OkulListesiAyristirmaSonucu = { basarili: false, sinavAdi: null, dersEtiketleri: [], ogrenciler: [], okunamayanAdlar: [] };
+  const BOS: OkulListesiAyristirmaSonucu = { basarili: false, sinavAdi: null, dersEtiketleri: [], ogrenciler: [], okunamayanSatirlar: [] };
   try {
     // KOPYALA, view değil — getDocument() ArrayBuffer'ı detach edebiliyor,
     // aynı Buffer'ı birden fazla çağrıda (OKUL listesi + karne) güvenle
@@ -361,7 +378,7 @@ export async function okulListesiniAyristir(pdfBuffer: Buffer, maxSayfa = 10): P
     let dersEtiketleri: string[] = [];
     let sinavAdi: string | null = null;
     const ogrenciler: AyristirilmisOgrenciSatiri[] = [];
-    const okunamayanAdlar: string[] = [];
+    const okunamayanSatirlar: OkunamayanOgrenciSatiri[] = [];
     let okulBasligiHicBulunduMu = false;
     let okulBasligiBulundu = false;
 
@@ -416,8 +433,8 @@ export async function okulListesiniAyristir(pdfBuffer: Buffer, maxSayfa = 10): P
         const satirSonuc = satiriAyristir(tokenlar, grammer, dersEtiketleri);
         if (satirSonuc) ogrenciler.push(satirSonuc);
         else {
-          const ad = ogrenciSatiriAdi(tokenlar);
-          if (ad) okunamayanAdlar.push(ad);
+          const bilgi = okunamayanSatirBilgisi(tokenlar, grammer);
+          if (bilgi) okunamayanSatirlar.push(bilgi);
         }
       }
     }
@@ -438,10 +455,16 @@ export async function okulListesiniAyristir(pdfBuffer: Buffer, maxSayfa = 10): P
       return true;
     });
 
-    const okunanAdlar = new Set(tekilOgrenciler.map((o) => o.isimHam));
+    const okunanAnahtarlar = new Set(tekilOgrenciler.map((o) => `${o.isimHam}|${o.ogrenciNo}`));
+    const gorulenOkunamayan = new Set<string>();
     return {
       basarili: true, sinavAdi, dersEtiketleri, ogrenciler: tekilOgrenciler,
-      okunamayanAdlar: [...new Set(okunamayanAdlar)].filter((ad) => !okunanAdlar.has(ad)),
+      okunamayanSatirlar: okunamayanSatirlar.filter((o) => {
+        const anahtar = `${o.isimHam}|${o.ogrenciNo}`;
+        if (okunanAnahtarlar.has(anahtar) || gorulenOkunamayan.has(anahtar)) return false;
+        gorulenOkunamayan.add(anahtar);
+        return true;
+      }),
     };
   } catch (e) {
     return { ...BOS, hata: `PDF ayrıştırma hatası: ${e instanceof Error ? e.message : String(e)}` };
