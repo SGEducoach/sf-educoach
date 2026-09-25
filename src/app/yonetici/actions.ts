@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { rastgeleSifre, adNormalize, hedefBolumNormalize, telefonGecerliMi, sifreGecerliMi, ogrenciGirisKimligiHatasi, teslimEdilebilirEpostaMi } from "@/lib/validators";
+import { okulDenemeKaydiniHazirla } from "@/lib/deneme-sonucu-kaydet";
 import { getAnthropicClient } from "@/lib/anthropic";
 import { KONU_ANLATIMI_SISTEM_PROMPTU, icerikTemizle } from "@/lib/konu-anlatimi";
 import { duyuruGonder, pushGonderProfile } from "@/lib/push-send";
@@ -1217,36 +1218,17 @@ export async function denemeSonucuTopluGir(input: {
       continue;
     }
 
-    const { data: mevcutDeneme, error: aramaHatasi } = await admin
-      .from("denemeler")
-      .select("id")
-      .eq("student_id", s.studentId)
-      .eq("tarih", input.tarih)
-      .eq("tur", input.tur)
-      .eq("kaynak", "ogretmen")
-      .maybeSingle();
-    if (aramaHatasi) {
-      sonuclar.push({ studentId: s.studentId, hata: aramaHatasi.message });
+    // Öğrenci aynı denemeyi kendisi girdiyse ikinci kayıt açılmaz, onun
+    // kaydı okul kaydına dönüştürülür (bkz. okulDenemeKaydiniHazirla).
+    const hazirlik = await okulDenemeKaydiniHazirla(admin, {
+      studentId: s.studentId, tarih: input.tarih, tur: input.tur,
+      yeniKayitAlanlari: { sure_dakika: input.tur === "TYT" ? 165 : 180, hedefe_yakinlik: "belirsiz", zorluk: input.zorluk },
+    });
+    if (hazirlik.error || !hazirlik.denemeId) {
+      sonuclar.push({ studentId: s.studentId, hata: hazirlik.error ?? "Deneme oluşturulamadı." });
       continue;
     }
-
-    let denemeId = mevcutDeneme?.id as string | undefined;
-    if (!denemeId) {
-      const { data: yeniDeneme, error: olusturmaHatasi } = await admin
-        .from("denemeler")
-        .insert({
-          student_id: s.studentId, tarih: input.tarih, tur: input.tur,
-          sure_dakika: input.tur === "TYT" ? 165 : 180,
-          hedefe_yakinlik: "belirsiz", zorluk: input.zorluk, kaynak: "ogretmen",
-        })
-        .select("id")
-        .single();
-      if (olusturmaHatasi || !yeniDeneme) {
-        sonuclar.push({ studentId: s.studentId, hata: olusturmaHatasi?.message ?? "Deneme oluşturulamadı." });
-        continue;
-      }
-      denemeId = yeniDeneme.id as string;
-    }
+    const denemeId = hazirlik.denemeId;
 
     const { error: sonucHatasi } = await admin
       .from("deneme_ders_sonuclari")
