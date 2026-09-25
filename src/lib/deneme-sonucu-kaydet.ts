@@ -31,10 +31,13 @@ function dersAdiNormalize(ad: string): string {
 // Büyük/küçük harf, boşluk ve noktalama yok sayılır; biri diğerini içeriyorsa
 // ("DUBLÖR" ⊂ "LİMİT(DUBLÖR)") da aynı sayılır. 18.09 denemesi "orbital" ve
 // "ORBİTAL" diye iki ayrı kayıt olmuştu — bunu önlemek için.
+function yayineviSadelestir(s: string): string {
+  return s.toLocaleUpperCase("tr-TR").replace(/[^\p{L}\d]/gu, "");
+}
+
 export function yayineviAyniMi(a: string, b: string): boolean {
-  const sade = (s: string) => s.toLocaleUpperCase("tr-TR").replace(/[^\p{L}\d]/gu, "");
-  const x = sade(a);
-  const y = sade(b);
+  const x = yayineviSadelestir(a);
+  const y = yayineviSadelestir(b);
   if (x === y) return true;
   if (x.length < 4 || y.length < 4) return false;
   return x.includes(y) || y.includes(x);
@@ -68,8 +71,19 @@ export async function okulDenemeKaydiniHazirla(
   // Kullanıcı isteği (25.09.2026, "ikinci ayrı bir net verisi oluşmasın"):
   // yayınevi birebir aynı yazılmasa da ("LİMİT(DUBLÖR)" / "Limit Dublör")
   // aynı deneme sayılır — bkz. yayineviAyniMi.
-  const okulKaydi = ((okulKayitlari ?? []) as { id: string; yayinevi: string | null }[])
-    .find((k) => input.yayinevi === undefined || yayineviAyniMi(k.yayinevi ?? "", input.yayinevi));
+  // Aynı gün iki farklı deneme olabilir (24.09: LİMİT(DUBLÖR) ve
+  // LİMİT(ORBİTAL)). Önce sadeleştirilmiş adı birebir aynı olan; yoksa
+  // benzeyen TEK kayıt. Birden çok kayıt benziyorsa ("Limit" ikisinde de
+  // geçer) hiçbirine yazılmaz, yeni kayıt açılır — yanlış denemeyi ezmekten iyi.
+  const kayitlar = (okulKayitlari ?? []) as { id: string; yayinevi: string | null }[];
+  const hedefYayinevi = input.yayinevi;
+  const okulKaydi = hedefYayinevi === undefined
+    ? kayitlar[0]
+    : kayitlar.find((k) => yayineviSadelestir(k.yayinevi ?? "") === yayineviSadelestir(hedefYayinevi))
+      ?? (() => {
+        const benzeyenler = kayitlar.filter((k) => yayineviAyniMi(k.yayinevi ?? "", hedefYayinevi));
+        return benzeyenler.length === 1 ? benzeyenler[0] : undefined;
+      })();
   if (okulKaydi) return { error: null, denemeId: okulKaydi.id, devralindi: false };
 
   const { data: ogrenciKaydi, error: ogrenciAramaHatasi } = await admin

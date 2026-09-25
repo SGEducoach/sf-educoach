@@ -108,6 +108,20 @@ describe("ogretmenDenemeSonucuKaydet — öğrenci kaydıyla çakışma", () => 
     expect(tablolar.deneme_ders_sonuclari.find((d) => d.ders === "Türkçe")).toMatchObject({ dogru: 36, yanlis: 3 });
   });
 
+  test("aynı gün iki deneme varken belirsiz ad ('Limit') hiçbirini ezmez", async () => {
+    const tablolar: Record<string, Satir[]> = {
+      denemeler: [
+        { id: "d-dublor", student_id: "ogr-1", tarih: "2026-09-20", tur: "TYT", kaynak: "ogretmen", yayinevi: "LİMİT(DUBLÖR)" },
+        { id: "d-orbital", student_id: "ogr-1", tarih: "2026-09-20", tur: "TYT", kaynak: "ogretmen", yayinevi: "LİMİT(ORBİTAL)" },
+      ],
+      deneme_ders_sonuclari: [],
+    };
+    const belirsiz = await ogretmenDenemeSonucuKaydet(sahteIstemci(tablolar), { ...GIRDI, yayinevi: "Limit" });
+    expect(["d-dublor", "d-orbital"]).not.toContain(belirsiz.denemeId);
+    const net = await ogretmenDenemeSonucuKaydet(sahteIstemci(tablolar), { ...GIRDI, yayinevi: "Dublör" });
+    expect(net.denemeId).toBe("d-dublor");
+  });
+
   test("hiç kayıt yoksa yeni okul kaydı açılır", async () => {
     const tablolar: Record<string, Satir[]> = { denemeler: [], deneme_ders_sonuclari: [] };
     const sonuc = await ogretmenDenemeSonucuKaydet(sahteIstemci(tablolar), GIRDI);
