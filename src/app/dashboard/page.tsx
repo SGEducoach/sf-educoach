@@ -9,6 +9,13 @@ import { DershaneMudurPaneli } from "@/components/dashboard/DershaneMudurPaneli"
 import { OgrenciVeriGirisi } from "@/components/dashboard/OgrenciVeriGirisi";
 import { KonuHaritasiRaporu } from "@/components/dashboard/KonuHaritasiRaporu";
 import { AnalizPaneli } from "@/components/dashboard/AnalizPaneli";
+import { DenemeKonuAnalizi } from "@/components/dashboard/DenemeKonuAnalizi";
+import { denemeKonuAnaliziGetir } from "@/lib/deneme-konu-verisi";
+
+// Deneme konu analizinde gösterilecek en fazla son deneme sayısı (tarih +
+// tür + yayınevi). Sınıf/okul geneli için daha az — sorgu hacmi büyüyor.
+const OGRENCI_DENEME_SAYISI = 12;
+const GRUP_DENEME_SAYISI = 6;
 import { HosgeldinPopuplari } from "@/components/dashboard/HosgeldinPopuplari";
 import { OgretmenEpostaUyarisi } from "@/components/dashboard/OgretmenEpostaUyarisi";
 import { ZorunluSifreDegisikligiKapisi } from "@/components/dashboard/ZorunluSifreDegisikligiKapisi";
@@ -394,9 +401,13 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
   // sonra, mufredatAltKonulari ile aynı gerekçeyle).
   const dershaneMi = s.schools?.tur === "dershane";
   const konuHakimiyetiTamGorunum = tamGorunumMu(s.classes?.seviye ?? null, dershaneMi);
-  const konuHakimiyetiSatirlari = (aktifBolum === "konu-hakimiyeti" || aktifBolum === "analiz")
-    ? await konuHakimiyetiGetir(supabase, userId, s.classes?.seviye ?? null, s.ayt_alan, dokuzOnMu, dershaneMi)
-    : [];
+  const [konuHakimiyetiSatirlari, denemeKonu] = await Promise.all([
+    (aktifBolum === "konu-hakimiyeti" || aktifBolum === "analiz")
+      ? konuHakimiyetiGetir(supabase, userId, s.classes?.seviye ?? null, s.ayt_alan, dokuzOnMu, dershaneMi)
+      : Promise.resolve([]),
+    // Deneme konu analizi (25.09.2026) — karneli PDF'lerden gelen konu dökümü.
+    aktifBolum === "analiz" ? denemeKonuAnaliziGetir(supabase, [userId], OGRENCI_DENEME_SAYISI) : Promise.resolve(null),
+  ]);
 
   type GorevAtamaRow = {
     id: string; durum: GorevSatiri["durum"];
@@ -505,6 +516,7 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
       {aktifBolum === "analiz" && <div>
         <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-lg font-bold mb-3 print:hidden">Analiz / Rapor</h2>
         <AnalizPaneli veri={analiz} ogrenciAdi={ad} konuHakimiyetiSatirlari={konuHakimiyetiSatirlari} konuHakimiyetiTamGorunum={konuHakimiyetiTamGorunum} konuHakimiyetiAytAlan={s.ayt_alan} hedefDuzenlenebilir />
+        {denemeKonu && <div className="mt-4"><DenemeKonuAnalizi ozet={denemeKonu.ozet} kapsam="ogrenci" hata={denemeKonu.error} /></div>}
       </div>}
     </div>
   );
@@ -617,8 +629,16 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   // (homeroom) yok, bu yüzden müdürle aynı okul-geneli görünümü alıyor.
   if (aktifBolum === "yapay-zeka" && !(role === "mudur" && kurumTuru === "dershane")) {
     if (role === "mudur" || brans === REHBER_BRANSI) {
-      const { satirlar, error } = await konuHaritasiGetir(supabase, { schoolId: teacher.school_id });
-      return <KonuHaritasiRaporu mod="rapor" satirlar={satirlar} kapsamEtiketi="Okulunuz" hata={error} />;
+      const [{ satirlar, error }, denemeKonu] = await Promise.all([
+        konuHaritasiGetir(supabase, { schoolId: teacher.school_id }),
+        grupDenemeKonuAnaliziGetir(okulOkumaClient, { schoolId: teacher.school_id }),
+      ]);
+      return (
+        <div className="flex flex-col gap-4">
+          <KonuHaritasiRaporu mod="rapor" satirlar={satirlar} kapsamEtiketi="Okulunuz" hata={error} />
+          <DenemeKonuAnalizi ozet={denemeKonu.ozet} kapsam="grup" kapsamEtiketi="Okulunuz" hata={denemeKonu.error} />
+        </div>
+      );
     }
     if (!teacher.class_id) {
       return (
@@ -627,8 +647,16 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
         </div>
       );
     }
-    const { satirlar, error } = await konuHaritasiGetir(supabase, { classId: teacher.class_id });
-    return <KonuHaritasiRaporu mod="rapor" satirlar={satirlar} kapsamEtiketi="Sınıfınız" hata={error} />;
+    const [{ satirlar, error }, denemeKonu] = await Promise.all([
+      konuHaritasiGetir(supabase, { classId: teacher.class_id }),
+      grupDenemeKonuAnaliziGetir(supabase, { classId: teacher.class_id }),
+    ]);
+    return (
+      <div className="flex flex-col gap-4">
+        <KonuHaritasiRaporu mod="rapor" satirlar={satirlar} kapsamEtiketi="Sınıfınız" hata={error} />
+        <DenemeKonuAnalizi ozet={denemeKonu.ozet} kapsam="grup" kapsamEtiketi="Sınıfınız" hata={denemeKonu.error} />
+      </div>
+    );
   }
 
   // "Öğrenci profili görüntüle" (analiz sayfası, ?ogrenci=) hem okul hem
@@ -648,10 +676,11 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       // Yazılı analizi dürüstlük engeli: öğrenci öğretmenin okulunda doğrulanıp
       // profili gösterildiği için görüntüleme sayılır (bkz. ogretmen-takip.ts).
       if (role === "ogretmen") ogrenciProfilGoruntulemesiKaydet(userId, secilenOgrenciId);
-      const [analiz, konuHakimiyetiOzeti, kohort] = await Promise.all([
+      const [analiz, konuHakimiyetiOzeti, kohort, denemeKonu] = await Promise.all([
         analizVerisiGetir(okulOkumaClient, secilenOgrenciId, donem),
         konuHakimiyetiOzetiGetir(okulOkumaClient, secilenOgrenciId),
         kohortKarsilastirmasiGetir(okulOkumaClient, secilenOgrenciId),
+        denemeKonuAnaliziGetir(okulOkumaClient, [secilenOgrenciId], OGRENCI_DENEME_SAYISI),
       ]);
       const ogrenciAdi = o.profiles?.ad ?? "İsimsiz";
       // Dershane müdürünün "ozet" bölümü yok (bkz. DERSHANE_MUDUR_MENUSU) —
@@ -672,6 +701,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
           <AnalizPaneli veri={analiz} ogrenciAdi={ogrenciAdi}
             konuHakimiyetiSatirlari={konuHakimiyetiOzeti.satirlar} konuHakimiyetiTamGorunum={konuHakimiyetiOzeti.tamGorunum}
             konuHakimiyetiAytAlan={konuHakimiyetiOzeti.aytAlan} ogretmenGorunumu kohortKarsilastirma={kohort} />
+          <DenemeKonuAnalizi ozet={denemeKonu.ozet} kapsam="ogrenci" hata={denemeKonu.error} />
         </div>
       );
     }
@@ -981,6 +1011,18 @@ async function VeliIcerik({ userId, ad, secilenOgrenciId, donem, aktifBolum }: {
   );
 }
 
+// Sınıf ya da okul genelinde deneme konu analizi — önce kapsamdaki
+// öğrenciler, sonra son GRUP_DENEME_SAYISI denemenin konu dökümü.
+async function grupDenemeKonuAnaliziGetir(
+  client: Awaited<ReturnType<typeof createClient>>,
+  kapsam: { schoolId: string } | { classId: string },
+) {
+  const sorgu = client.from("students").select("id");
+  const { data, error } = "schoolId" in kapsam ? await sorgu.eq("school_id", kapsam.schoolId) : await sorgu.eq("class_id", kapsam.classId);
+  if (error) return { error: error.message, ozet: { denemeler: [], tumu: [], denemeBazli: {} } };
+  return denemeKonuAnaliziGetir(client, ((data ?? []) as { id: string }[]).map((o) => o.id), GRUP_DENEME_SAYISI);
+}
+
 // Veli için Analiz/Rapor sekmesi — analiz verisi + Konu Hakimiyeti özetini
 // PARALEL çekip AnalizPaneli'ne geçirir (VeliIcerik'in JSX'i içinde iki
 // ayrı await ifadesi yerine, okunabilirlik için ayrı bir async bileşene
@@ -989,15 +1031,17 @@ async function VeliIcerik({ userId, ad, secilenOgrenciId, donem, aktifBolum }: {
 async function VeliAnalizBolumu({ supabase, studentId, donem, ogrenciAdi }: {
   supabase: Awaited<ReturnType<typeof createClient>>; studentId: string; donem: RaporDonemi; ogrenciAdi?: string;
 }) {
-  const [analiz, konuHakimiyetiOzeti] = await Promise.all([
+  const [analiz, konuHakimiyetiOzeti, denemeKonu] = await Promise.all([
     analizVerisiGetir(supabase, studentId, donem),
     konuHakimiyetiOzetiGetir(supabase, studentId),
+    denemeKonuAnaliziGetir(supabase, [studentId], OGRENCI_DENEME_SAYISI),
   ]);
   return (
     <section className="flex flex-col gap-4">
       <AnalizPaneli veri={analiz} ogrenciAdi={ogrenciAdi}
         konuHakimiyetiSatirlari={konuHakimiyetiOzeti.satirlar} konuHakimiyetiTamGorunum={konuHakimiyetiOzeti.tamGorunum}
         konuHakimiyetiAytAlan={konuHakimiyetiOzeti.aytAlan} />
+      <DenemeKonuAnalizi ozet={denemeKonu.ozet} kapsam="ogrenci" hata={denemeKonu.error} />
     </section>
   );
 }
