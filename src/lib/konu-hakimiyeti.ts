@@ -8,6 +8,7 @@ import { TYT_DERSLERI, AYT_DERSLERI, AYT_MUFREDAT_DERSLERI, dokuzOnSinifMi } fro
 import type { AytAlan, HedefeYakinlik, OgrenmeSekli, TekrarDurumu } from "@/lib/types";
 import { oturumOrtalamasiHesapla, dogrulukOraniHesapla, bilesikMasterySkoruHesapla } from "@/lib/analiz-motoru";
 import type { MasteryKaynagi } from "@/lib/analiz-motoru";
+import { kazanimDersiniKanoniklestir } from "@/lib/kazanim-konu-oneri";
 
 type SupabaseC = Awaited<ReturnType<typeof createClient>>;
 
@@ -107,6 +108,32 @@ export function satirAytdeGosterilsinMi(satir: KonuHakimiyetiSatiri, aytAlan: Ay
 // Öğrenci ekranda hem bunu hem düz TYT Türkçe'yi ayrı ayrı görür.
 const MAARIF_TURKCE_DERSI = "Türkçe (Maarif)";
 
+// Deneme konu sonuçlarını (deneme_kazanim_sonuclari) yönetici onaylı
+// eşleşmeyle (kazanim_konu_eslesmeleri) müfredat konusuna çevirir —
+// kullanıcı isteği 25.09.2026. Eşleşmesi olmayan kazanımlar atlanır.
+async function denemeKonuOlcumleriGetir(
+  supabase: SupabaseC, studentId: string,
+): Promise<{ ders: string; konu: string; dogru: number; yanlis: number }[]> {
+  const { data: eslesmelerHam } = await supabase.from("kazanim_konu_eslesmeleri").select("ders, kazanim_metni, konu");
+  const eslesmeler = new Map(((eslesmelerHam as { ders: string; kazanim_metni: string; konu: string }[]) ?? [])
+    .map((e) => [`${e.ders}|${e.kazanim_metni}`, e.konu]));
+  if (eslesmeler.size === 0) return [];
+
+  const sonuc: { ders: string; konu: string; dogru: number; yanlis: number }[] = [];
+  for (let bas = 0; ; bas += 1000) {
+    const { data, error } = await supabase.from("deneme_kazanim_sonuclari")
+      .select("ders, kazanim_metni, dogru, yanlis, denemeler!inner(student_id)")
+      .eq("denemeler.student_id", studentId).order("id").range(bas, bas + 999);
+    if (error) return sonuc;
+    for (const r of (data as { ders: string; kazanim_metni: string; dogru: number; yanlis: number }[]) ?? []) {
+      const ders = kazanimDersiniKanoniklestir(r.ders);
+      const konu = ders ? eslesmeler.get(`${ders}|${r.kazanim_metni}`) : undefined;
+      if (ders && konu) sonuc.push({ ders, konu, dogru: r.dogru, yanlis: r.yanlis });
+    }
+    if ((data ?? []).length < 1000) return sonuc;
+  }
+}
+
 export async function konuHakimiyetiGetir(
   supabase: SupabaseC,
   studentId: string,
@@ -182,9 +209,10 @@ export async function konuHakimiyetiGetir(
   // ve "ölçüm" (soru_cozumleri'ndeki gerçek dogru/yanlis oranı). İkisi de
   // TARİH SINIRI OLMADAN, öğrencinin o konudaki tüm geçmişini kapsar —
   // bkz. analiz-motoru.ts'teki formül gerekçesi.
-  const [{ data: oturumHam }, { data: olcumHam }] = await Promise.all([
+  const [{ data: oturumHam }, { data: olcumHam }, denemeOlcumleri] = await Promise.all([
     supabase.from("konu_calismalar").select("ders, konu, hedefe_yakinlik").eq("student_id", studentId),
     supabase.from("soru_cozumleri").select("ders, konu, dogru, yanlis").eq("student_id", studentId),
+    denemeKonuOlcumleriGetir(supabase, studentId),
   ]);
   const oturumSeviyeleriMap = new Map<string, HedefeYakinlik[]>();
   for (const r of (oturumHam as { ders: string; konu: string; hedefe_yakinlik: HedefeYakinlik }[]) ?? []) {
@@ -201,6 +229,25 @@ export async function konuHakimiyetiGetir(
     mevcut.dogru += r.dogru;
     mevcut.yanlis += r.yanlis;
     olcumToplamMap.set(anahtar, mevcut);
+  }
+  // Deneme karnelerinden gelen konu sonuçları (yönetici onaylı kazanım →
+  // konu eşleşmesi olanlar) da "ölçüm"e eklenir. Eşleşme bir üst konuya
+  // yapıldıysa o konunun tüm alt başlıklarına uygulanır.
+  const yapraklarByHedef = new Map<string, string[]>();
+  for (const l of yaprakListesi) {
+    for (const hedef of new Set([`${l.ders}|${l.konu}`, `${l.ders}|${l.ustKonu}`])) {
+      const liste = yapraklarByHedef.get(hedef) ?? [];
+      liste.push(`${l.ders}|${l.konu}`);
+      yapraklarByHedef.set(hedef, liste);
+    }
+  }
+  for (const o of denemeOlcumleri) {
+    for (const anahtar of yapraklarByHedef.get(`${o.ders}|${o.konu}`) ?? []) {
+      const mevcut = olcumToplamMap.get(anahtar) ?? { dogru: 0, yanlis: 0 };
+      mevcut.dogru += o.dogru;
+      mevcut.yanlis += o.yanlis;
+      olcumToplamMap.set(anahtar, mevcut);
+    }
   }
 
   const simdi = Date.now();

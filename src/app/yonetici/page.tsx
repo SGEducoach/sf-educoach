@@ -6,6 +6,7 @@ import { AdminPanel } from "@/components/dashboard/AdminPanel";
 import { KullaniciArama } from "@/components/yonetici/KullaniciArama";
 import { VeliTalepleri } from "@/components/yonetici/VeliTalepleri";
 import { PdfEslesmeYonetimi } from "@/components/yonetici/PdfEslesmeYonetimi";
+import { KazanimEslesmeYonetimi } from "@/components/yonetici/KazanimEslesmeYonetimi";
 import { ModeratorlerListesi } from "@/components/yonetici/ModeratorlerListesi";
 import { PlatformIstatistikleri } from "@/components/yonetici/PlatformIstatistikleri";
 import { KonuAnlatimYonetimi } from "@/components/yonetici/KonuAnlatimYonetimi";
@@ -120,7 +121,7 @@ export default async function YoneticiPage({
           {aktifBolum === "kullanicilar" && <section className="sfec-section"><KullaniciArama /></section>}
           {aktifBolum === "mesajlar" && <section className="sfec-section"><YoneticiMesajlar /></section>}
           {aktifBolum === "talepler" && <VeliTalepleri />}
-          {aktifBolum === "pdf-eslesme" && <section className="sfec-section"><PdfEslesmeYonetimi /></section>}
+          {aktifBolum === "pdf-eslesme" && <section className="sfec-section flex flex-col gap-4"><PdfEslesmeYonetimi /><KazanimEslesmeYonetimi /></section>}
           {aktifBolum === "okullar" && (
             <section className="sfec-section"><AdminPanel
               okullar={okulListesi}
