@@ -356,8 +356,45 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
         "| kurumda eşleşen:", okunanlar.length, "| okunamayan satır:", sinifListesi.okunamayanSatir,
       );
     } else {
-      console.info("[deneme-pdf sınıf listesi] tanınmadı, Claude yoluna geçiliyor:", sinifListesi.hata);
+      console.info("[deneme-pdf sınıf listesi] tanınmadı, okul listesi deneniyor:", sinifListesi.hata);
     }
+  }
+
+  // OKUL ... NET LİSTESİ (deterministik, Faz P0). Aşağıda P1 ölçümü, P2
+  // karne ve P3 sınıf daraltması için de kullanılıyor — tek kez okunuyor.
+  let deterministikSonuc: Awaited<ReturnType<typeof okulListesiniAyristir>> | null = null;
+  try {
+    deterministikSonuc = await okulListesiniAyristir(Buffer.from(await dosya.arrayBuffer()));
+  } catch (okulHatasi) {
+    console.warn("[deneme-pdf okul listesi] beklenmeyen hata:", hataOzeti(okulHatasi));
+  }
+
+  // Kullanıcı isteği (25.09.2026): 110 öğrencilik okul listesi Claude'a
+  // gidince yanıt sınırını aşıp "tek seferde işlenemeyecek kadar büyük"
+  // hatası veriyordu. Okul listesi tanınır ve ders adları TYT derslerine
+  // eşlenebiliyorsa sonuçlar doğrudan buradan alınır, Claude'a gidilmez.
+  // Ders adları bilinmiyorsa ("Ders 1" gibi jenerik) eski Claude yolu sürer.
+  let okulListesindenOkundu = false;
+  if (
+    ayristirilan === null && (tur === "TYT" || tur === "BRANS") && deterministikSonuc?.basarili &&
+    deterministikSonuc.dersEtiketleri.every((d) => d in KARNE_DERS_TYT_ESLESTIRME || /\(Seçmeli\)$/.test(d))
+  ) {
+    const hedefAdlar = new Set(hedefOgrenciAdlari.map(adNormalize));
+    const okunanlar: PdfOgrenciSonucu[] = [];
+    for (const o of deterministikSonuc.ogrenciler) {
+      if (!hedefAdlar.has(adNormalize(o.isimHam))) continue;
+      const dersSonuclari = tytDerslerineIndirge(o.dersSonuclari, KARNE_DERS_TYT_ESLESTIRME);
+      if (dersSonuclari) okunanlar.push({ ad_soyad: o.isimHam, ders_sonuclari: dersSonuclari });
+      else okunamayanAdlar.push(o.isimHam);
+    }
+    // Hangi dersin boş bırakıldığı belirsiz satırlar — elle girilmesi gerekiyor.
+    okunamayanAdlar.push(...deterministikSonuc.okunamayanAdlar.filter((ad) => hedefAdlar.has(adNormalize(ad))));
+    ayristirilan = okunanlar;
+    okulListesindenOkundu = true;
+    console.info(
+      "[deneme-pdf okul listesi] PDF'teki öğrenci:", deterministikSonuc.ogrenciler.length,
+      "| kurumda eşleşen:", okunanlar.length,
+    );
   }
 
   if (ayristirilan === null) {
@@ -475,13 +512,12 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
   // Bu blok SADECE ÖLÇÜM amaçlı — Claude'un çıktısıyla sessizce
   // karşılaştırıp konsola yazıyor, KAYDETME YOLUNU HİÇ DEĞİŞTİRMİYOR.
   // Herhangi bir hata bu akışı asla etkilemesin diye ayrı try/catch'te.
-  // deterministikSonuc dış kapsamda tutuluyor — Faz P3'te (aşağıdaki
-  // eşleştirme döngüsü) sınıf bilgisiyle daraltma için de kullanılıyor.
-  let deterministikSonuc: Awaited<ReturnType<typeof okulListesiniAyristir>> | null = null;
+  // deterministikSonuc yukarıda okunuyor; sonuçlar zaten ondan alındıysa
+  // karşılaştırılacak Claude çıktısı yok, ölçüm atlanıyor.
   try {
-    const pdfBuffer = Buffer.from(await dosya.arrayBuffer());
-    deterministikSonuc = await okulListesiniAyristir(pdfBuffer);
-    if (!deterministikSonuc.basarili) {
+    if (okulListesindenOkundu || !deterministikSonuc) {
+      // ölçülecek bir şey yok
+    } else if (!deterministikSonuc.basarili) {
       console.info("[deneme-pdf P1 ölçüm] deterministik ayrıştırma başarısız (bilinmeyen format olabilir):", deterministikSonuc.hata);
     } else {
       let netUyusan = 0;

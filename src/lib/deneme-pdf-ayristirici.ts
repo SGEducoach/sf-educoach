@@ -98,6 +98,10 @@ export interface OkulListesiAyristirmaSonucu {
   sinavAdi: string | null;
   dersEtiketleri: string[];
   ogrenciler: AyristirilmisOgrenciSatiri[];
+  // Öğrenci satırı olduğu belli olan ama sonuçları güvenle okunamayan
+  // satırların adları (ör. hangi dersin boş bırakıldığı belirsiz) — çağıran
+  // taraf bunları sessizce yutmak yerine "okunamadı" olarak bildirir.
+  okunamayanAdlar: string[];
 }
 
 interface KonumluMetin {
@@ -113,6 +117,13 @@ interface KonumluMetin {
 const DERS_BASLIGI_ESLESTIRME: { desen: RegExp; dersler: string[] }[] = [
   { desen: /TYT\s*T[üu]rk[çc]e\s+TYT\s*Sosyal\s+TYT\s*Matematik\s+TYT\s*Fen/i, dersler: ["TYT Türkçe", "TYT Sosyal", "TYT Matematik", "TYT Fen"] },
   { desen: /Edebiyat-Sosyal-1\s+Sosyal-2\s+Matematik\s+Fen\s*Bilimleri/i, dersler: ["Edebiyat-Sosyal-1", "Sosyal-2", "Matematik", "Fen Bilimleri"] },
+  // 11 dersli TYT okul listesi (25.09.2026, "fen lisesi dublör" PDF'i) —
+  // etiketler KARNE_DERS_TYT_ESLESTIRME anahtarlarıyla birebir aynı, böylece
+  // tytDerslerineIndirge ile doğrudan TYT derslerine indirgenebiliyor.
+  {
+    desen: /T[üu]rk[çc]e\s+Tarih-1\s+Co[ğg]rafya-1\s+Felsefe\s+Din\s+K[üu]l\.\s*ve\s+Ahl\.\s*Bil\.\s*Felsefe\s*\(Se[çc]meli\)\s*Matematik-1\s+Geometri\s+Fizik\s+Kimya\s+Biyoloji/i,
+    dersler: ["Türkçe", "Tarih-1", "Coğrafya-1", "Felsefe", "Din Kül. ve Ahl. Bil.", "Felsefe (Seçmeli)", "Matematik-1", "Geometri", "Fizik", "Kimya", "Biyoloji"],
+  },
 ];
 
 const SINIF_DESENI = /^(?:\d{1,2}|Mezun)-[A-ZÇĞİÖŞÜX]{1,4}$/;
@@ -193,7 +204,28 @@ function dersEtiketleriCikar(dersBasligiMetni: string, dersSayisi: number): stri
 
 // Bir öğrenci veri satırını (tüm item'ları TEK bir string'e indirgeyip
 // boşluğa göre tokenize ederek — bkz. dosya başı notu) gramere göre ayrıştırır.
-function satiriAyristir(tokenlar: string[], grammer: Grammer, dersEtiketleri: string[]): AyristirilmisOgrenciSatiri | null {
+// Sınıfı bilinmeyen öğrencilerde ("12-XX") sınıf ile ilk sayı bazen tek
+// metin item'ı olarak ve ARALARINDA BOŞLUK OLMADAN geliyor ("12-XX29") —
+// gerçek veride görüldü (25.09.2026). Sınıf kodu rakamla bitmediği için
+// bölmek güvenli.
+function sinifBitisigiAyir(tokenlar: string[]): string[] {
+  return tokenlar.flatMap((t) => {
+    const m = /^((?:\d{1,2}|Mezun)-[A-ZÇĞİÖŞÜX]{1,4})(-?\d+(?:,\d+)?)$/.exec(t);
+    return m ? [m[1], m[2]] : [t];
+  });
+}
+
+// "Sıra Ö.No İsim Sınıf ..." biçiminde bir öğrenci satırıysa adı döner —
+// ayrıştırılamayan satırları bildirebilmek için.
+function ogrenciSatiriAdi(hamTokenlar: string[]): string | null {
+  const tokenlar = sinifBitisigiAyir(hamTokenlar);
+  if (tokenlar.length < 4 || !/^\d+$/.test(tokenlar[0]) || !/^\d+$/.test(tokenlar[1])) return null;
+  const sinifIdx = tokenlar.findIndex((t, i) => i > 2 && SINIF_DESENI.test(t));
+  return sinifIdx === -1 ? null : tokenlar.slice(2, sinifIdx).join(" ");
+}
+
+function satiriAyristir(hamTokenlar: string[], grammer: Grammer, dersEtiketleri: string[]): AyristirilmisOgrenciSatiri | null {
+  const tokenlar = sinifBitisigiAyir(hamTokenlar);
   if (tokenlar.length < 2) return null;
   const sira = sayiParcala(tokenlar[0]);
   const ogrenciNo = sayiParcala(tokenlar[1]);
@@ -216,8 +248,8 @@ function satiriAyristir(tokenlar: string[], grammer: Grammer, dersEtiketleri: st
   // o dersin D/Y/N üçlüsünü satırdan TAMAMEN ATIYOR (sıfır basmak yerine) —
   // gerçek veride doğrulandı (bkz. branş_9.pdf, "ERDEM OKUR" satırı, TYT
   // Sosyal eksik). Bu yüzden 1-2 ders bloğu eksik olan satırlar da deneniyor;
-  // hangi bloğun eksik olduğu toplam D/Y ile ÇAPRAZ DOĞRULANARAK bulunuyor —
-  // yanlış bir kombinasyon toplamı tutturamaz, güvenli şekilde elenir.
+  // hangi bloğun eksik olduğu toplamdan ÇIKARILAMIYOR — bkz. aşağıdaki
+  // "(Seçmeli)" kuralı.
   if (fark < 0 || fark % 3 !== 0) return null;
   const eksikBlokSayisi = fark / 3;
   // AYT'de bir öğrenci sadece kendi alanının testini çözüp diğerlerini hiç
@@ -227,7 +259,22 @@ function satiriAyristir(tokenlar: string[], grammer: Grammer, dersEtiketleri: st
   if (eksikBlokSayisi >= grammer.dersSayisi) return null;
 
   const tumDersIndeksleri = Array.from({ length: grammer.dersSayisi }, (_, i) => i);
-  const denenecekEksikKumeleri = eksikBlokSayisi === 0 ? [[] as number[]] : kombinasyonlar(tumDersIndeksleri, eksikBlokSayisi);
+  let denenecekEksikKumeleri = eksikBlokSayisi === 0 ? [[] as number[]] : kombinasyonlar(tumDersIndeksleri, eksikBlokSayisi);
+
+  // DİKKAT (25.09.2026): eksik blok hangi dersten düşerse düşsün mevcut
+  // blokların D/Y toplamı DEĞİŞMİYOR — aşağıdaki toplam kontrolü eksik
+  // dersi AYIRT EDEMİYOR, yalnızca satırın bütünlüğünü doğruluyor. Eskiden
+  // ilk kombinasyon (hep 1. ders) seçiliyor ve tüm dersler bir sütun
+  // kayıyordu. Artık yalnızca tek anlamlı çözüm kabul ediliyor: eksik
+  // bloklar "(Seçmeli)" sütunlarına denk gelen TEK bir kombinasyon varsa o
+  // (öğrencilerin çoğu seçmeli testi boş bırakıyor); yoksa satır reddediliyor
+  // — kayık veri yazmaktansa okunamadı saymak güvenli.
+  if (eksikBlokSayisi > 0) {
+    const secmeliMi = (i: number) => /\(Se[çc]meli\)$/.test(dersEtiketleri[i] ?? "");
+    const secmeliKumeleri = denenecekEksikKumeleri.filter((k) => k.every(secmeliMi));
+    if (secmeliKumeleri.length !== 1) return null;
+    denenecekEksikKumeleri = secmeliKumeleri;
+  }
 
   const sayilar = kalanTokenlar.map(sayiParcala);
   if (sayilar.some((n) => n === null)) return null;
@@ -302,7 +349,7 @@ export async function sinifListeleriniAyristir(pdfBuffer: Buffer, maxSayfa = 80)
 }
 
 export async function okulListesiniAyristir(pdfBuffer: Buffer, maxSayfa = 10): Promise<OkulListesiAyristirmaSonucu> {
-  const BOS: OkulListesiAyristirmaSonucu = { basarili: false, sinavAdi: null, dersEtiketleri: [], ogrenciler: [] };
+  const BOS: OkulListesiAyristirmaSonucu = { basarili: false, sinavAdi: null, dersEtiketleri: [], ogrenciler: [], okunamayanAdlar: [] };
   try {
     // KOPYALA, view değil — getDocument() ArrayBuffer'ı detach edebiliyor,
     // aynı Buffer'ı birden fazla çağrıda (OKUL listesi + karne) güvenle
@@ -314,6 +361,7 @@ export async function okulListesiniAyristir(pdfBuffer: Buffer, maxSayfa = 10): P
     let dersEtiketleri: string[] = [];
     let sinavAdi: string | null = null;
     const ogrenciler: AyristirilmisOgrenciSatiri[] = [];
+    const okunamayanAdlar: string[] = [];
     let okulBasligiHicBulunduMu = false;
     let okulBasligiBulundu = false;
 
@@ -351,8 +399,13 @@ export async function okulListesiniAyristir(pdfBuffer: Buffer, maxSayfa = 10): P
           // Ders adları satırı, D/Y/N etiket satırının İKİ üstünde (araya
           // "Sıra Ö.No İsim Sınıf" satırı giriyor) — bkz. örnek çıktı:
           // [4] "TYT Türkçe ..." / [5] "Sıra Ö.No İsim Sınıf" / [6] "D Y N D Y N ...".
+          // Bazı şablonlarda (11 dersli TYT) ders adları doğrudan bir üst
+          // satırda — önce o denenir, tanınmazsa eski iki üst satır.
           if (grammer && sIdx > 1) {
-            dersEtiketleri = dersEtiketleriCikar(satirMetni(satirlar[sIdx - 2]), grammer.dersSayisi);
+            const birUst = dersEtiketleriCikar(satirMetni(satirlar[sIdx - 1]), grammer.dersSayisi);
+            dersEtiketleri = birUst.some((d) => !/^Ders \d+$/.test(d))
+              ? birUst
+              : dersEtiketleriCikar(satirMetni(satirlar[sIdx - 2]), grammer.dersSayisi);
           }
           continue;
         }
@@ -362,6 +415,10 @@ export async function okulListesiniAyristir(pdfBuffer: Buffer, maxSayfa = 10): P
         const tokenlar = metin.split(" ");
         const satirSonuc = satiriAyristir(tokenlar, grammer, dersEtiketleri);
         if (satirSonuc) ogrenciler.push(satirSonuc);
+        else {
+          const ad = ogrenciSatiriAdi(tokenlar);
+          if (ad) okunamayanAdlar.push(ad);
+        }
       }
     }
 
@@ -381,7 +438,11 @@ export async function okulListesiniAyristir(pdfBuffer: Buffer, maxSayfa = 10): P
       return true;
     });
 
-    return { basarili: true, sinavAdi, dersEtiketleri, ogrenciler: tekilOgrenciler };
+    const okunanAdlar = new Set(tekilOgrenciler.map((o) => o.isimHam));
+    return {
+      basarili: true, sinavAdi, dersEtiketleri, ogrenciler: tekilOgrenciler,
+      okunamayanAdlar: [...new Set(okunamayanAdlar)].filter((ad) => !okunanAdlar.has(ad)),
+    };
   } catch (e) {
     return { ...BOS, hata: `PDF ayrıştırma hatası: ${e instanceof Error ? e.message : String(e)}` };
   }
