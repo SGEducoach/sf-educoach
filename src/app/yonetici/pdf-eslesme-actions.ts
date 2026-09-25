@@ -56,15 +56,20 @@ export async function pdfEslesmeBekleyenleriGetir(): Promise<{ error: string | n
   return { error: null, bekleyenler };
 }
 
-// Bekleyen satırın kurumundaki öğrencileri (isim ara-seç için) getirir.
-export async function pdfEslesmeOgrencileriGetir(schoolId: string): Promise<{ error: string | null; ogrenciler: { id: string; ad: string }[] }> {
+export interface PdfEslesmeOgrencisi { id: string; ad: string; sinif: string | null }
+
+// Bekleyen satırın kurumundaki öğrencileri (isim ara-seç için) getirir. Sınıf
+// da dönüyor — kullanıcı isteği (25.09.2026): tüm okul tek listede
+// geliyordu, sınıfa göre süzülebilsin.
+export async function pdfEslesmeOgrencileriGetir(schoolId: string): Promise<{ error: string | null; ogrenciler: PdfEslesmeOgrencisi[] }> {
   const { admin } = await requireAdmin();
-  const { data, error } = await admin.from("students").select("id, profiles!students_id_fkey(ad)").eq("school_id", schoolId);
+  const { data, error } = await admin.from("students")
+    .select("id, profiles!students_id_fkey(ad), classes(seviye, sube)").eq("school_id", schoolId);
   if (error) return { error: error.message, ogrenciler: [] };
-  type Row = { id: string; profiles: { ad: string } | null };
+  type Row = { id: string; profiles: { ad: string } | null; classes: { seviye: string; sube: string } | null };
   const ogrenciler = ((data ?? []) as unknown as Row[])
     .filter((o) => o.profiles)
-    .map((o) => ({ id: o.id, ad: o.profiles!.ad }))
+    .map((o) => ({ id: o.id, ad: o.profiles!.ad, sinif: o.classes ? `${o.classes.seviye}-${o.classes.sube}` : null }))
     .sort((a, b) => a.ad.localeCompare(b.ad, "tr"));
   return { error: null, ogrenciler };
 }

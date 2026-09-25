@@ -5,9 +5,17 @@ import { useRouter } from "next/navigation";
 import { Check, X } from "lucide-react";
 import {
   pdfEslesmeAta, pdfEslesmeOgrencileriGetir, pdfEslesmeReddet,
-  type PdfEslesmeBekleyeni,
+  type PdfEslesmeBekleyeni, type PdfEslesmeOgrencisi,
 } from "@/app/yonetici/pdf-eslesme-actions";
+import { adlarBenzerMi } from "@/lib/ad-benzerligi";
 import { BG0, BG1_ALT, BORDER, BORDER_STRONG, BLUSH, MINT, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
+
+const TUM_SINIFLAR = "";
+const SINIFSIZ = "__sinifsiz__";
+
+function ogrenciEtiketi(o: PdfEslesmeOgrencisi) {
+  return o.sinif ? `${o.ad} · ${o.sinif}` : o.ad;
+}
 
 export function PdfEslesmeListesi({ bekleyenler }: { bekleyenler: PdfEslesmeBekleyeni[] }) {
   return (
@@ -20,9 +28,10 @@ export function PdfEslesmeListesi({ bekleyenler }: { bekleyenler: PdfEslesmeBekl
 function PdfEslesmeSatiri({ bekleyen }: { bekleyen: PdfEslesmeBekleyeni }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [ogrenciler, setOgrenciler] = useState<{ id: string; ad: string }[] | null>(null);
+  const [ogrenciler, setOgrenciler] = useState<PdfEslesmeOgrencisi[] | null>(null);
   const [secilenId, setSecilenId] = useState("");
   const [arama, setArama] = useState("");
+  const [sinif, setSinif] = useState(TUM_SINIFLAR);
   const [mesaj, setMesaj] = useState<string | null>(null);
 
   async function ogrencileriYukle() {
@@ -31,7 +40,17 @@ function PdfEslesmeSatiri({ bekleyen }: { bekleyen: PdfEslesmeBekleyeni }) {
     setOgrenciler(sonuc.ogrenciler);
   }
 
-  const filtrelenmis = (ogrenciler ?? []).filter((o) => o.ad.toLocaleLowerCase("tr-TR").includes(arama.toLocaleLowerCase("tr-TR")));
+  // Kullanıcı isteği (25.09.2026): tüm okul tek listede geliyordu — sınıfa
+  // göre süzülebiliyor, PDF'teki ada benzeyenler de en üstte öneriliyor.
+  const siniflar = [...new Set((ogrenciler ?? []).map((o) => o.sinif).filter((s): s is string => !!s))]
+    .sort((a, b) => a.localeCompare(b, "tr", { numeric: true }));
+  const sinifsizVar = (ogrenciler ?? []).some((o) => !o.sinif);
+  const aramaKucuk = arama.toLocaleLowerCase("tr-TR");
+  const filtrelenmis = (ogrenciler ?? []).filter((o) =>
+    (sinif === TUM_SINIFLAR || (sinif === SINIFSIZ ? !o.sinif : o.sinif === sinif)) &&
+    o.ad.toLocaleLowerCase("tr-TR").includes(aramaKucuk));
+  const onerilenler = filtrelenmis.filter((o) => adlarBenzerMi(bekleyen.adSoyadHam, o.ad));
+  const digerleri = filtrelenmis.filter((o) => !onerilenler.includes(o));
 
   return (
     <div className="rounded-2xl p-4" style={{ background: BG1_ALT, border: `2px solid ${BORDER}` }}>
@@ -58,6 +77,14 @@ function PdfEslesmeSatiri({ bekleyen }: { bekleyen: PdfEslesmeBekleyeni }) {
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
+        <select value={sinif} onChange={(e) => { setSinif(e.target.value); setSecilenId(""); }} onFocus={ogrencileriYukle}
+          aria-label="Sınıfa göre süz"
+          className="text-xs px-3 py-2 rounded-xl outline-none"
+          style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+          <option value={TUM_SINIFLAR}>Tüm sınıflar</option>
+          {siniflar.map((s) => <option key={s} value={s}>{s}</option>)}
+          {sinifsizVar && <option value={SINIFSIZ}>Sınıfsız</option>}
+        </select>
         <input
           value={arama} onFocus={ogrencileriYukle}
           onChange={(e) => { setArama(e.target.value); ogrencileriYukle(); }}
@@ -68,8 +95,17 @@ function PdfEslesmeSatiri({ bekleyen }: { bekleyen: PdfEslesmeBekleyeni }) {
         <select value={secilenId} onChange={(e) => setSecilenId(e.target.value)} onFocus={ogrencileriYukle}
           className="text-xs px-3 py-2 rounded-xl outline-none min-w-[160px]"
           style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
-          <option value="">{ogrenciler ? "Öğrenci seçin" : "Yükleniyor..."}</option>
-          {filtrelenmis.map((o) => <option key={o.id} value={o.id}>{o.ad}</option>)}
+          <option value="">{ogrenciler ? `Öğrenci seçin (${filtrelenmis.length})` : "Yükleniyor..."}</option>
+          {onerilenler.length > 0 && (
+            <optgroup label="Önerilen (ada benzeyen)">
+              {onerilenler.map((o) => <option key={o.id} value={o.id}>{ogrenciEtiketi(o)}</option>)}
+            </optgroup>
+          )}
+          {onerilenler.length > 0
+            ? <optgroup label="Diğer öğrenciler">
+                {digerleri.map((o) => <option key={o.id} value={o.id}>{ogrenciEtiketi(o)}</option>)}
+              </optgroup>
+            : digerleri.map((o) => <option key={o.id} value={o.id}>{ogrenciEtiketi(o)}</option>)}
         </select>
         <button type="button" disabled={pending || !secilenId} onClick={() => startTransition(async () => {
           const r = await pdfEslesmeAta(bekleyen.id, secilenId);
