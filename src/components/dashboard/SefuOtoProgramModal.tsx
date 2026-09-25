@@ -15,7 +15,7 @@ import type {
 import { bugununTarihiTR } from "@/lib/tarih";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, PEACH, PEACH_BG, BLUSH, BLUSH_BG, TEXT, TEXT_MUTED } from "@/lib/theme";
 
-const BASAMAKLAR = ["Dönem", "Gün ve saat", "Dersler", "Önizleme"];
+const BASAMAKLAR = ["Dönem", "Dersler ve saatler", "Önizleme"];
 const AGIRLIKLAR: DersAgirligi[] = ["agirlikli", "orta", "hafif"];
 // Öğrencinin seçtiği periyot sınırları 15 dakikalıktır. SeFu'nun ürettiği
 // 40 dakikalık çalışma + 10 dakikalık mola düzeni ise :40 ve :50 değerleri
@@ -28,11 +28,11 @@ function tarihYaz(tarih: string) {
 
 function varsayilanAyar(okulOgrencisi: boolean): OtoProgramAyari {
   return {
-    gunler: [0, 1, 2, 3, 4],
+    gunler: [0, 1, 2, 3, 4, 5, 6],
     haftaIciPeriyotlari: okulOgrencisi
       ? [{ baslangic: "17:00", bitis: "18:00" }, { baslangic: "19:00", bitis: "20:00" }]
       : [{ baslangic: "10:00", bitis: "11:00" }, { baslangic: "17:00", bitis: "18:00" }],
-    haftaSonuPeriyotlari: [{ baslangic: "10:00", bitis: "11:00" }],
+    haftaSonuPeriyotlari: [{ baslangic: "10:00", bitis: "11:00" }, { baslangic: "16:00", bitis: "17:00" }],
     dersler: [],
     konulariSefuSecsin: true,
   };
@@ -108,6 +108,7 @@ export function SefuOtoProgramModal({ ilkHafta, onKapat }: { ilkHafta: string; o
   const [hata, setHata] = useState<string | null>(null);
   const [basari, setBasari] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const gosterilenAdim = adim === 0 ? 0 : adim === 3 ? 2 : 1;
 
   const donemTarihleri = useMemo(() => Array.from({ length: kapsam === "aylik" ? 28 : 7 }, (_, i) => gunEkle(baslangicTarihi, i)), [baslangicTarihi, kapsam]);
   const toplamDakika = bloklar.reduce((t, b) => t + blokDakikasi(b), 0);
@@ -131,7 +132,7 @@ export function SefuOtoProgramModal({ ilkHafta, onKapat }: { ilkHafta: string; o
 
   function ileri() {
     setHata(null);
-    if (adim === 0) return veriHazirla(1);
+    if (adim === 0) return veriHazirla(2);
     if (!veri) return setHata("Program verisi alınamadı.");
     const ayarSorunu = ayarHatasi(ayar, veri.okulOgrencisi, veri.dersListesi);
     if (adim === 1) {
@@ -242,10 +243,10 @@ export function SefuOtoProgramModal({ ilkHafta, onKapat }: { ilkHafta: string; o
         </header>
 
         <div className="border-b px-4 py-3 sm:px-5" style={{ borderColor: BORDER }}>
-          <ol className="grid grid-cols-4 gap-1.5" aria-label="Program oluşturma adımları">
+          <ol className="grid grid-cols-3 gap-1.5" aria-label="Program oluşturma adımları">
             {BASAMAKLAR.map((b, i) => (
-              <li key={b} className="flex min-w-0 items-center gap-1.5 rounded-xl px-2 py-2" style={{ background: i === adim ? MINT_BG : BG1_ALT, color: i <= adim ? MINT : TEXT_MUTED }}>
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-extrabold" style={{ background: i < adim ? MINT : BG0, color: i < adim ? MINT_ON : "inherit" }}>{i < adim ? <Check size={11} /> : i + 1}</span>
+              <li key={b} className="flex min-w-0 items-center gap-1.5 rounded-xl px-2 py-2" style={{ background: i === gosterilenAdim ? MINT_BG : BG1_ALT, color: i <= gosterilenAdim ? MINT : TEXT_MUTED }}>
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-extrabold" style={{ background: i < gosterilenAdim ? MINT : BG0, color: i < gosterilenAdim ? MINT_ON : "inherit" }}>{i < gosterilenAdim ? <Check size={11} /> : i + 1}</span>
                 <span className="hidden truncate text-[10px] font-bold sm:block">{b}</span>
               </li>
             ))}
@@ -278,7 +279,6 @@ export function SefuOtoProgramModal({ ilkHafta, onKapat }: { ilkHafta: string; o
             </div>
           ) : adim === 1 && veri ? (
             <div className="grid gap-4">
-              {veri.sonProgram && <Alan className="flex flex-wrap items-center justify-between gap-3"><div><div className="text-xs font-extrabold" style={{ color: TEXT }}>Önceki programınız</div><div className="text-[10px]" style={{ color: TEXT_MUTED }}>{veri.sonProgram.kapsam === "aylik" ? "Aylık" : "Haftalık"} program · {tarihYaz(veri.sonProgram.baslangicTarihi)} – {tarihYaz(veri.sonProgram.bitisTarihi)}</div></div><div className="flex flex-wrap gap-2"><button type="button" onClick={() => setAyar(veri.sonProgram!.ayar)} disabled={pending} className="sfec-btn rounded-full px-3 py-1.5 text-[11px] font-bold disabled:opacity-50" style={{ background: BG0, color: TEXT_MUTED, border: `1px solid ${BORDER_STRONG}` }}>Ayarları kullan</button><button type="button" onClick={sonrakiDonemeTasi} disabled={pending} className="sfec-btn rounded-full px-3 py-1.5 text-[11px] font-bold disabled:opacity-50" style={{ background: MINT_BG, color: MINT, border: `1px solid ${MINT}` }}>{veri.sonProgram.kapsam === "aylik" ? "Sonraki aya taşı" : "Sonraki haftaya taşı"}</button></div></Alan>}
               <fieldset>
                 <legend className="mb-2 text-xs font-bold" style={{ color: TEXT }}>Çalışacağınız günler</legend>
                 <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
@@ -293,6 +293,10 @@ export function SefuOtoProgramModal({ ilkHafta, onKapat }: { ilkHafta: string; o
             </div>
           ) : adim === 2 && veri ? (
             <div className="grid gap-4 lg:grid-cols-[1fr_1.15fr]">
+              <div className="lg:col-span-2">
+                {veri.sonProgram && <Alan className="mb-3 flex flex-wrap items-center justify-between gap-3"><div><div className="text-xs font-extrabold" style={{ color: TEXT }}>Önceki programınız</div><div className="text-[10px]" style={{ color: TEXT_MUTED }}>{veri.sonProgram.kapsam === "aylik" ? "Aylık" : "Haftalık"} program · {tarihYaz(veri.sonProgram.baslangicTarihi)} – {tarihYaz(veri.sonProgram.bitisTarihi)}</div></div><div className="flex flex-wrap gap-2"><button type="button" onClick={() => setAyar(veri.sonProgram!.ayar)} disabled={pending} className="sfec-btn rounded-full px-3 py-1.5 text-[11px] font-bold disabled:opacity-50" style={{ background: BG0, color: TEXT_MUTED, border: `1px solid ${BORDER_STRONG}` }}>Ayarları kullan</button><button type="button" onClick={sonrakiDonemeTasi} disabled={pending} className="sfec-btn rounded-full px-3 py-1.5 text-[11px] font-bold disabled:opacity-50" style={{ background: MINT_BG, color: MINT, border: `1px solid ${MINT}` }}>{veri.sonProgram.kapsam === "aylik" ? "Sonraki aya taşı" : "Sonraki haftaya taşı"}</button></div></Alan>}
+                <Alan className="flex flex-wrap items-center justify-between gap-3"><p className="text-xs" style={{ color: TEXT_MUTED }}>Hafta içi kısa çalışma saatleri, hafta sonu sabah ve öğleden sonra birer aralık önerilir. Taslağı oluşturmadan veya kaydetmeden önce saatleri değiştirebilirsiniz.</p><button type="button" onClick={() => setAdim(1)} className="sfec-btn shrink-0 rounded-full px-3 py-1.5 text-[11px] font-bold" style={{ background: MINT_BG, color: MINT, border: `1px solid ${MINT}` }}>Gün ve saatleri düzenle</button></Alan>
+              </div>
               <div>
                 <h3 className="mb-1 text-sm font-extrabold" style={{ color: TEXT }}>Ders havuzu</h3>
                 <p className="mb-3 text-[11px]" style={{ color: TEXT_MUTED }}>Dersleri önem sıranıza göre seçin.</p>
@@ -355,7 +359,7 @@ export function SefuOtoProgramModal({ ilkHafta, onKapat }: { ilkHafta: string; o
         </main>
 
         {!basari && <footer className="flex items-center justify-between gap-3 border-t p-4 sm:px-5" style={{ borderColor: BORDER }}>
-          <button type="button" onClick={() => adim === 0 ? onKapat() : (setHata(null), setAdim((a) => a - 1))} disabled={pending} className="sfec-btn inline-flex items-center gap-1 rounded-xl px-3 py-2 text-xs font-bold disabled:opacity-50" style={{ background: BG1_ALT, color: TEXT_MUTED, border: `1px solid ${BORDER_STRONG}` }}><ChevronLeft size={13} /> {adim === 0 ? "Vazgeç" : "Geri"}</button>
+          <button type="button" onClick={() => adim === 0 ? onKapat() : (setHata(null), setAdim(adim === 1 ? 2 : adim === 2 ? 0 : 2))} disabled={pending} className="sfec-btn inline-flex items-center gap-1 rounded-xl px-3 py-2 text-xs font-bold disabled:opacity-50" style={{ background: BG1_ALT, color: TEXT_MUTED, border: `1px solid ${BORDER_STRONG}` }}><ChevronLeft size={13} /> {adim === 0 ? "Vazgeç" : "Geri"}</button>
           {adim < 3 ? <button type="button" onClick={ileri} disabled={pending} className="sfec-btn inline-flex items-center gap-1 rounded-xl px-4 py-2 text-xs font-bold disabled:opacity-50" style={{ background: MINT, color: MINT_ON }}>{pending ? "Hazırlanıyor..." : "Devam"} <ChevronRight size={13} /></button> : <button type="button" onClick={uygula} disabled={pending || bloklar.length === 0} className="sfec-btn inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-extrabold disabled:opacity-50" style={{ background: MINT, color: MINT_ON }}><CalendarDays size={14} /> {pending ? "Uygulanıyor..." : `${kapsam === "aylik" ? "Aylık" : "Haftalık"} programı onayla`}</button>}
         </footer>}
       </div>
