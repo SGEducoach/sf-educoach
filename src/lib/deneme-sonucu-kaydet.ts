@@ -27,6 +27,19 @@ function dersAdiNormalize(ad: string): string {
   return ad.trim().replace(/-\d$/, "").replace(/^Felsefe Grubu$/i, "Felsefe");
 }
 
+// Aynı gün + tür için iki yayınevi adı aynı denemeyi mi gösteriyor?
+// Büyük/küçük harf, boşluk ve noktalama yok sayılır; biri diğerini içeriyorsa
+// ("DUBLÖR" ⊂ "LİMİT(DUBLÖR)") da aynı sayılır. 18.09 denemesi "orbital" ve
+// "ORBİTAL" diye iki ayrı kayıt olmuştu — bunu önlemek için.
+export function yayineviAyniMi(a: string, b: string): boolean {
+  const sade = (s: string) => s.toLocaleUpperCase("tr-TR").replace(/[^\p{L}\d]/gu, "");
+  const x = sade(a);
+  const y = sade(b);
+  if (x === y) return true;
+  if (x.length < 4 || y.length < 4) return false;
+  return x.includes(y) || y.includes(x);
+}
+
 // Okulun (kaynak='ogretmen') deneme kaydını bulur; yoksa açar. Kullanıcı
 // kararı (25.09.2026, "üst üste binmesin"): öğrenci aynı denemeyi (aynı
 // tarih + tür) daha önce KENDİSİ girmişse ikinci bir kayıt açılmaz — o kayıt
@@ -43,20 +56,21 @@ export async function okulDenemeKaydiniHazirla(
     yeniKayitAlanlari: Record<string, unknown>;
   },
 ): Promise<{ error: string | null; denemeId: string | null; devralindi: boolean }> {
-  let okulKaydiSorgusu = admin
+  const { data: okulKayitlari, error: aramaHatasi } = await admin
     .from("denemeler")
-    .select("id")
+    .select("id, yayinevi")
     .eq("student_id", input.studentId)
     .eq("tarih", input.tarih)
     .eq("tur", input.tur)
-    .eq("kaynak", "ogretmen");
-  if (input.yayinevi !== undefined) okulKaydiSorgusu = okulKaydiSorgusu.eq("yayinevi", input.yayinevi);
-  const { data: okulKaydi, error: aramaHatasi } = await okulKaydiSorgusu
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .eq("kaynak", "ogretmen")
+    .order("created_at", { ascending: false });
   if (aramaHatasi) return { error: aramaHatasi.message, denemeId: null, devralindi: false };
-  if (okulKaydi) return { error: null, denemeId: okulKaydi.id as string, devralindi: false };
+  // Kullanıcı isteği (25.09.2026, "ikinci ayrı bir net verisi oluşmasın"):
+  // yayınevi birebir aynı yazılmasa da ("LİMİT(DUBLÖR)" / "Limit Dublör")
+  // aynı deneme sayılır — bkz. yayineviAyniMi.
+  const okulKaydi = ((okulKayitlari ?? []) as { id: string; yayinevi: string | null }[])
+    .find((k) => input.yayinevi === undefined || yayineviAyniMi(k.yayinevi ?? "", input.yayinevi));
+  if (okulKaydi) return { error: null, denemeId: okulKaydi.id, devralindi: false };
 
   const { data: ogrenciKaydi, error: ogrenciAramaHatasi } = await admin
     .from("denemeler")

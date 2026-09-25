@@ -1,6 +1,16 @@
 import { describe, expect, test } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { ogretmenDenemeSonucuKaydet } from "./deneme-sonucu-kaydet";
+import { ogretmenDenemeSonucuKaydet, yayineviAyniMi } from "./deneme-sonucu-kaydet";
+
+describe("yayineviAyniMi", () => {
+  test.each([
+    ["LİMİT(DUBLÖR)", "LİMİT(DUBLÖR)"], ["LİMİT(DUBLÖR)", "Limit Dublör"], ["LİMİT(DUBLÖR)", "Dublör"],
+    ["orbital", "ORBİTAL"], ["LİMİT(ORBİTAL)", "orbital"],
+  ])("%s = %s", (a, b) => expect(yayineviAyniMi(a, b)).toBe(true));
+  test.each([
+    ["LİMİT(DUBLÖR)", "LİMİT(ORBİTAL)"], ["LİMİT(DUBLÖR)", "Orbital"], ["3D", "3D Yayınları Karekök"],
+  ])("%s ≠ %s", (a, b) => expect(yayineviAyniMi(a, b)).toBe(false));
+});
 
 // Yalnızca bu modülün kullandığı sorgu zincirlerini taklit eden bellek içi
 // sahte istemci — gerçek veritabanına hiç gidilmiyor.
@@ -84,6 +94,18 @@ describe("ogretmenDenemeSonucuKaydet — öğrenci kaydıyla çakışma", () => 
     expect(sonuc.denemeId).toBe("d-okul");
     expect(tablolar.denemeler).toHaveLength(2);
     expect(tablolar.denemeler[1]).toMatchObject({ id: "d-baska", kaynak: "ogrenci" });
+  });
+
+  test("yayınevi farklı yazılsa da aynı okul kaydı güncellenir, ikinci kayıt açılmaz", async () => {
+    const tablolar: Record<string, Satir[]> = {
+      denemeler: [{ id: "d-okul", student_id: "ogr-1", tarih: "2026-09-20", tur: "TYT", kaynak: "ogretmen", yayinevi: "LİMİT(DUBLÖR)" }],
+      deneme_ders_sonuclari: [{ deneme_id: "d-okul", ders: "Türkçe", dogru: 30, yanlis: 5 }],
+    };
+    const sonuc = await ogretmenDenemeSonucuKaydet(sahteIstemci(tablolar), { ...GIRDI, yayinevi: "Limit Dublör" });
+
+    expect(sonuc.denemeId).toBe("d-okul");
+    expect(tablolar.denemeler).toHaveLength(1);
+    expect(tablolar.deneme_ders_sonuclari.find((d) => d.ders === "Türkçe")).toMatchObject({ dogru: 36, yanlis: 3 });
   });
 
   test("hiç kayıt yoksa yeni okul kaydı açılır", async () => {
