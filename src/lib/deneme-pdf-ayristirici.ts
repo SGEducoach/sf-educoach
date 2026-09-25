@@ -23,6 +23,7 @@
 import type { getDocument as GetDocumentFn } from "pdfjs-dist/legacy/build/pdf.mjs";
 import type { TextItem } from "pdfjs-dist/types/src/display/api";
 import { sinifListesiSayfalariniCoz } from "./deneme-sinif-listesi";
+import { karneBirinciSayfaCoz, type KarneBirinciSayfa } from "./karne-birinci-sayfa";
 import type { GenisMetin, SinifListesiSonucu } from "./deneme-sinif-listesi";
 
 // pdfjs-dist'in Node/legacy build'i, HANGİ fonksiyonu çağırdığımızdan
@@ -747,6 +748,7 @@ export interface KarneIndeksGirisi {
   ogrenciNo: number;
   sayfaNo: number;
   dersSonuclari: KarneDersSonucu[];
+  birinciSayfa: KarneBirinciSayfa;
 }
 
 // karneOzetiniAyristir'in aksine HER öğrenci için baştan sona ayrı bir
@@ -790,6 +792,8 @@ export async function tumKarneleriIndeksle(
 
       sonuc.set(`${eslesenHedef.isimHam}|${eslesenHedef.ogrenciNo}`, {
         isimHam: eslesenHedef.isimHam, ogrenciNo: eslesenHedef.ogrenciNo, dersSonuclari, sayfaNo: p,
+        // Aynı sayfadaki puan/sıralama/ortalama/cevaplar (bkz. karne-birinci-sayfa.ts).
+        birinciSayfa: karneBirinciSayfaCoz(satirlar.map((s) => ({ y: s.y, parcalar: s.itemlar }))),
       });
       hedefMap.delete(eslesenHedef.isimHam);
     }

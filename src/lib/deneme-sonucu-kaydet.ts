@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { adNormalize } from "@/lib/validators";
 import type { DenemeTuru } from "@/lib/types";
+import type { KarneBirinciSayfa } from "@/lib/karne-birinci-sayfa";
 
 export interface DenemeDersSonucu {
   ders: string;
@@ -96,6 +97,7 @@ export async function ogretmenDenemeSonucuKaydet(
     yayinevi: string;
     dersSonuclari: DenemeDersSonucu[];
     kazanimSonuclari?: DenemeKazanimSonucu[];
+    karneOzeti?: KarneBirinciSayfa;
   },
 ): Promise<{ error: string | null; denemeId: string | null }> {
   const hazirlik = await okulDenemeKaydiniHazirla(admin, {
@@ -155,6 +157,20 @@ export async function ogretmenDenemeSonucuKaydet(
       );
       if (kazanimHatasi) console.warn("Deneme kazanım verisi kaydedilemedi (asıl kayıt etkilenmiyor):", kazanimHatasi.message);
     }
+  }
+
+  // Karnenin 1. sayfası (puan/sıralama, ders ortalamaları, cevaplar —
+  // migration 0123). Kazanım gibi EK veri: yazılamazsa (ör. migration henüz
+  // uygulanmadıysa) asıl kayıt etkilenmesin diye yalnızca loglanıyor.
+  if (input.karneOzeti && (input.karneOzeti.puanlar.length > 0 || input.karneOzeti.testler.length > 0)) {
+    const { error: karneHatasi } = await admin.from("deneme_karne_ozetleri").upsert({
+      deneme_id: denemeId,
+      puanlar: input.karneOzeti.puanlar,
+      ders_ortalamalari: input.karneOzeti.dersler,
+      cevaplar: input.karneOzeti.testler,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "deneme_id" });
+    if (karneHatasi) console.warn("Deneme karne özeti kaydedilemedi (asıl kayıt etkilenmiyor):", karneHatasi.message);
   }
 
   return { error: null, denemeId };

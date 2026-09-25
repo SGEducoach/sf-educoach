@@ -11,6 +11,8 @@ import { KonuHaritasiRaporu } from "@/components/dashboard/KonuHaritasiRaporu";
 import { AnalizPaneli } from "@/components/dashboard/AnalizPaneli";
 import { DenemeKonuAnalizi } from "@/components/dashboard/DenemeKonuAnalizi";
 import { denemeKonuAnaliziGetir } from "@/lib/deneme-konu-verisi";
+import { DenemeKarnesi } from "@/components/dashboard/DenemeKarnesi";
+import { denemeKarneleriGetir } from "@/lib/deneme-karnesi-verisi";
 
 // Deneme konu analizinde gösterilecek en fazla son deneme sayısı (tarih +
 // tür + yayınevi). Sınıf/okul geneli için daha az — sorgu hacmi büyüyor.
@@ -401,12 +403,13 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
   // sonra, mufredatAltKonulari ile aynı gerekçeyle).
   const dershaneMi = s.schools?.tur === "dershane";
   const konuHakimiyetiTamGorunum = tamGorunumMu(s.classes?.seviye ?? null, dershaneMi);
-  const [konuHakimiyetiSatirlari, denemeKonu] = await Promise.all([
+  const [konuHakimiyetiSatirlari, denemeKonu, denemeKarneleri] = await Promise.all([
     (aktifBolum === "konu-hakimiyeti" || aktifBolum === "analiz")
       ? konuHakimiyetiGetir(supabase, userId, s.classes?.seviye ?? null, s.ayt_alan, dokuzOnMu, dershaneMi)
       : Promise.resolve([]),
     // Deneme konu analizi (25.09.2026) — karneli PDF'lerden gelen konu dökümü.
     aktifBolum === "analiz" ? denemeKonuAnaliziGetir(supabase, [userId], OGRENCI_DENEME_SAYISI) : Promise.resolve(null),
+    aktifBolum === "analiz" ? denemeKarneleriGetir(supabase, userId) : Promise.resolve([]),
   ]);
 
   type GorevAtamaRow = {
@@ -516,6 +519,7 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
       {aktifBolum === "analiz" && <div>
         <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-lg font-bold mb-3 print:hidden">Analiz / Rapor</h2>
         <AnalizPaneli veri={analiz} ogrenciAdi={ad} konuHakimiyetiSatirlari={konuHakimiyetiSatirlari} konuHakimiyetiTamGorunum={konuHakimiyetiTamGorunum} konuHakimiyetiAytAlan={s.ayt_alan} hedefDuzenlenebilir />
+        {denemeKarneleri.length > 0 && <div className="mt-4"><DenemeKarnesi karneler={denemeKarneleri} /></div>}
         {denemeKonu && <div className="mt-4"><DenemeKonuAnalizi ozet={denemeKonu.ozet} kapsam="ogrenci" hata={denemeKonu.error} /></div>}
       </div>}
     </div>
@@ -676,11 +680,12 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       // Yazılı analizi dürüstlük engeli: öğrenci öğretmenin okulunda doğrulanıp
       // profili gösterildiği için görüntüleme sayılır (bkz. ogretmen-takip.ts).
       if (role === "ogretmen") ogrenciProfilGoruntulemesiKaydet(userId, secilenOgrenciId);
-      const [analiz, konuHakimiyetiOzeti, kohort, denemeKonu] = await Promise.all([
+      const [analiz, konuHakimiyetiOzeti, kohort, denemeKonu, denemeKarneleri] = await Promise.all([
         analizVerisiGetir(okulOkumaClient, secilenOgrenciId, donem),
         konuHakimiyetiOzetiGetir(okulOkumaClient, secilenOgrenciId),
         kohortKarsilastirmasiGetir(okulOkumaClient, secilenOgrenciId),
         denemeKonuAnaliziGetir(okulOkumaClient, [secilenOgrenciId], OGRENCI_DENEME_SAYISI),
+        denemeKarneleriGetir(okulOkumaClient, secilenOgrenciId),
       ]);
       const ogrenciAdi = o.profiles?.ad ?? "İsimsiz";
       // Dershane müdürünün "ozet" bölümü yok (bkz. DERSHANE_MUDUR_MENUSU) —
@@ -701,6 +706,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
           <AnalizPaneli veri={analiz} ogrenciAdi={ogrenciAdi}
             konuHakimiyetiSatirlari={konuHakimiyetiOzeti.satirlar} konuHakimiyetiTamGorunum={konuHakimiyetiOzeti.tamGorunum}
             konuHakimiyetiAytAlan={konuHakimiyetiOzeti.aytAlan} ogretmenGorunumu kohortKarsilastirma={kohort} />
+          <DenemeKarnesi karneler={denemeKarneleri} />
           <DenemeKonuAnalizi ozet={denemeKonu.ozet} kapsam="ogrenci" hata={denemeKonu.error} />
         </div>
       );
@@ -1031,16 +1037,18 @@ async function grupDenemeKonuAnaliziGetir(
 async function VeliAnalizBolumu({ supabase, studentId, donem, ogrenciAdi }: {
   supabase: Awaited<ReturnType<typeof createClient>>; studentId: string; donem: RaporDonemi; ogrenciAdi?: string;
 }) {
-  const [analiz, konuHakimiyetiOzeti, denemeKonu] = await Promise.all([
+  const [analiz, konuHakimiyetiOzeti, denemeKonu, denemeKarneleri] = await Promise.all([
     analizVerisiGetir(supabase, studentId, donem),
     konuHakimiyetiOzetiGetir(supabase, studentId),
     denemeKonuAnaliziGetir(supabase, [studentId], OGRENCI_DENEME_SAYISI),
+    denemeKarneleriGetir(supabase, studentId),
   ]);
   return (
     <section className="flex flex-col gap-4">
       <AnalizPaneli veri={analiz} ogrenciAdi={ogrenciAdi}
         konuHakimiyetiSatirlari={konuHakimiyetiOzeti.satirlar} konuHakimiyetiTamGorunum={konuHakimiyetiOzeti.tamGorunum}
         konuHakimiyetiAytAlan={konuHakimiyetiOzeti.aytAlan} />
+      <DenemeKarnesi karneler={denemeKarneleri} />
       <DenemeKonuAnalizi ozet={denemeKonu.ozet} kapsam="ogrenci" hata={denemeKonu.error} />
     </section>
   );

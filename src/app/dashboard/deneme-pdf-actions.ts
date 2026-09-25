@@ -19,6 +19,7 @@ import {
   karneyiTytDerslerineEslestir, tumKarneKazanimlariniIndeksle,
 } from "@/lib/deneme-pdf-ayristirici";
 import { tytDerslerineIndirge, type SinifListesiSonucu } from "@/lib/deneme-sinif-listesi";
+import type { KarneBirinciSayfa } from "@/lib/karne-birinci-sayfa";
 import { netHesapla } from "@/lib/types";
 import { gecerliDersler } from "@/lib/deneme-dersleri";
 
@@ -203,11 +204,13 @@ async function sonuclariEslestirVeKaydet(params: {
   sinifMap?: Map<string, string>;
   granulerKarneMap?: Map<string, DenemeDersSonucu[]>;
   kazanimMap?: Map<string, DenemeKazanimSonucu[]>;
+  karneOzetMap?: Map<string, KarneBirinciSayfa>;
 }): Promise<{ otomatikEslesen: number; kayitBekleyen: number; incelemeBekleyen: number }> {
   const { admin, userId, schoolId, yayinevi, tarih, tur, ayristirilan, ogrenciler, onKayitlar } = params;
   const sinifMap = params.sinifMap ?? new Map<string, string>();
   const granulerKarneMap = params.granulerKarneMap ?? new Map<string, DenemeDersSonucu[]>();
   const kazanimMap = params.kazanimMap ?? new Map<string, DenemeKazanimSonucu[]>();
+  const karneOzetMap = params.karneOzetMap ?? new Map<string, KarneBirinciSayfa>();
 
   let otomatikEslesen = 0;
   let kayitBekleyen = 0;
@@ -287,6 +290,7 @@ async function sonuclariEslestirVeKaydet(params: {
         yayinevi,
         dersSonuclari: granulerDersSonuclari ?? satir.ders_sonuclari,
         kazanimSonuclari: kazanimMap.get(adNorm),
+        karneOzeti: karneOzetMap.get(adNorm),
       });
       if (!sonuc.error) {
         otomatikEslesen++;
@@ -606,6 +610,7 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
   // sessizce düşülüyor. Herhangi bir hata bu bloğu asla çökertmesin diye
   // ayrı try/catch'te — en kötü ihtimalle mevcut (Claude) yol kullanılır.
   const granulerKarneMap = new Map<string, { ders: string; dogru: number; yanlis: number }[]>();
+  const karneOzetMap = new Map<string, KarneBirinciSayfa>();
   // Kullanıcı isteği (25.09.2026): okul listesinde ders blokları belirsiz
   // olduğu için okunamayan satırlar (iki dersi boş bırakan öğrenciler),
   // karneli PDF'lerde karnenin ders tablosundan tamamlanır. Karne toplamı
@@ -631,6 +636,8 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
         const granulerToplamNet = Math.round(granuler.reduce((t, d) => t + netHesapla(d.dogru, d.yanlis), 0) * 100) / 100;
         if (Math.abs(granulerToplamNet - hedef.toplamNet) >= 0.5) continue; // çapraz doğrulama tutmadı — kullanma
         granulerKarneMap.set(adNormalize(hedef.isimHam), granuler);
+        // Aynı (çapraz doğrulanmış) karne sayfasının puan/sıralama/cevapları.
+        karneOzetMap.set(adNormalize(hedef.isimHam), girdi.birinciSayfa);
         if (hedef.tamamlanacak) {
           ayristirilan.push({ ad_soyad: hedef.isimHam, ders_sonuclari: granuler, ogrenci_no: hedef.ogrenciNo || undefined });
           okunamayanAdlar = okunamayanAdlar.filter((ad) => ad !== hedef.isimHam);
@@ -682,7 +689,7 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
   const { otomatikEslesen, kayitBekleyen, incelemeBekleyen } = await sonuclariEslestirVeKaydet({
     admin: adminClient, userId: user.id, schoolId, yayinevi, tarih, tur,
     ayristirilan, ogrenciler, onKayitlar,
-    sinifMap: pdfSinifMap, granulerKarneMap, kazanimMap,
+    sinifMap: pdfSinifMap, granulerKarneMap, kazanimMap, karneOzetMap,
   });
 
   revalidatePath("/dashboard");
