@@ -10,7 +10,7 @@ import { requireDenemeYuklemeYetkisi } from "@/lib/dershane-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAnthropicClient } from "@/lib/anthropic";
 import { adNormalize } from "@/lib/validators";
-import { adlarBenzerMi, numaraVeAdIleBul } from "@/lib/ad-benzerligi";
+import { adlarBenzerMi, gucluAdIleBul, numaraVeAdIleBul } from "@/lib/ad-benzerligi";
 import { dersSoruSayisi } from "@/lib/types";
 import type { DenemeTuru } from "@/lib/types";
 import { ogretmenDenemeSonucuKaydet, type DenemeDersSonucu, type DenemeKazanimSonucu } from "@/lib/deneme-sonucu-kaydet";
@@ -271,8 +271,11 @@ async function sonuclariEslestirVeKaydet(params: {
     // benzerse (adlarBenzerMi) o öğrenciye otomatik yazılır. Numara tutup ad
     // benzemiyorsa ya da numara yoksa (PDF'te 0) eskisi gibi kuyruğa düşer.
     if (eslesenler.length === 0 && eslesenOnKayitlar.length === 0) {
-      const numaraIleBulunan = numaraVeAdIleBul({ ad: satir.ad_soyad, ogrenciNo: satir.ogrenci_no }, ogrenciler);
-      if (numaraIleBulunan) eslesenler = [numaraIleBulunan];
+      const pdfKaydi = { ad: satir.ad_soyad, ogrenciNo: satir.ogrenci_no };
+      const bulunan = numaraVeAdIleBul(pdfKaydi, ogrenciler)
+        // Numara yoksa: adın tüm kelimeleri tek bir öğrencide birebir geçiyorsa.
+        ?? gucluAdIleBul(pdfKaydi, ogrenciler, onKayitlar.map((o) => o.ad));
+      if (bulunan) eslesenler = [bulunan];
     }
 
     if (eslesenler.length === 1 && eslesenOnKayitlar.length === 0) {

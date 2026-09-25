@@ -1,5 +1,37 @@
 import { describe, expect, test } from "vitest";
-import { adlarBenzerMi, numaraVeAdIleBul } from "./ad-benzerligi";
+import { adlarBenzerMi, gucluAdIleBul, numaraVeAdIleBul } from "./ad-benzerligi";
+
+describe("gucluAdIleBul (numarasız)", () => {
+  const ogrenciler = [
+    { id: "a", ad: "Meryem Nur Mıhçı Kaya", okulNo: "101" },
+    { id: "b", ad: "Ahmet Efe Özcan", okulNo: "102" },
+    { id: "c", ad: "Ahmet Yılmaz", okulNo: "103" },
+    { id: "d", ad: "Ahmet Yılmaz Demir", okulNo: "104" },
+  ];
+
+  test("tüm kelimeler tek öğrencide birebir geçiyor → bulunur", () => {
+    expect(gucluAdIleBul({ ad: "MERYEM NUR MIHÇI", ogrenciNo: 0 }, ogrenciler, [])?.id).toBe("a");
+  });
+  test("iki öğrencide de geçiyor → bulunmaz", () => {
+    expect(gucluAdIleBul({ ad: "AHMET YILMAZ" }, ogrenciler, [])).toBeNull();
+  });
+  test("tek kelime → bulunmaz", () => {
+    expect(gucluAdIleBul({ ad: "MERYEM" }, ogrenciler, [])).toBeNull();
+  });
+  test("kısaltma ya da harf hatası → bulunmaz (birebir şart)", () => {
+    expect(gucluAdIleBul({ ad: "AHMET EFE ÖZCN" }, ogrenciler, [])).toBeNull();
+    expect(gucluAdIleBul({ ad: "AHMET E ÖZCAN" }, ogrenciler, [])).toBeNull();
+  });
+  test("aynı adla bir ön kayıt da varsa → bulunmaz", () => {
+    expect(gucluAdIleBul({ ad: "AHMET EFE ÖZCAN" }, ogrenciler, ["Ahmet Efe Özcan Kara"])).toBeNull();
+  });
+  test("PDF'teki numara kurumda başka birine aitse → bulunmaz", () => {
+    expect(gucluAdIleBul({ ad: "AHMET EFE ÖZCAN", ogrenciNo: 103 }, ogrenciler, [])).toBeNull();
+  });
+  test("aynı kelime iki kez sayılmaz", () => {
+    expect(gucluAdIleBul({ ad: "NUR NUR" }, [{ id: "x", ad: "Nur Albay", okulNo: null }], [])).toBeNull();
+  });
+});
 
 describe("numaraVeAdIleBul", () => {
   const ogrenciler = [

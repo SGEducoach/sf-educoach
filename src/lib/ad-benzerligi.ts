@@ -87,6 +87,37 @@ export function numaraVeAdIleBul<T extends { ad: string; okulNo: string | null }
   return numarasiTutanlar.length === 1 && adlarBenzerMi(pdf.ad, numarasiTutanlar[0].ad) ? numarasiTutanlar[0] : null;
 }
 
+// Kullanıcı isteği (25.09.2026): numarası olmayan (PDF'te 0) ama adı çok
+// güçlü benzeyen satırlar da otomatik eşleşsin. Numarayla doğrulanmadığı için
+// kural bilinçli olarak sıkı: PDF adı en az 2 kelime, kelimelerin HEPSİ
+// kayıtlı adda BİREBİR geçiyor (kısaltma/harf hatası yok — "NUR EFŞAN
+// ALBAY" → "Nur Efşan Sude Albay"), kurumda bu koşulu sağlayan TEK öğrenci
+// var ve aynı adla bir ön kayıt yok. PDF'teki numara kurumda başka birine
+// aitse (çelişki) eşleştirilmez.
+export function gucluAdIleBul<T extends { ad: string; okulNo: string | null }>(
+  pdf: { ad: string; ogrenciNo?: number },
+  ogrenciler: T[],
+  onKayitAdlari: string[],
+): T | null {
+  const p = kelimeler(pdf.ad);
+  if (p.length < 2) return null;
+  if (pdf.ogrenciNo && ogrenciler.some((o) => o.okulNo !== null && /^\d+$/.test(o.okulNo) && Number(o.okulNo) === pdf.ogrenciNo)) {
+    return null;
+  }
+  const hepsiGeciyor = (kayitliAd: string) => {
+    const kalan = kelimeler(kayitliAd);
+    return p.every((k) => {
+      const idx = kalan.indexOf(k);
+      if (idx === -1) return false;
+      kalan.splice(idx, 1);
+      return true;
+    });
+  };
+  const adaylar = ogrenciler.filter((o) => hepsiGeciyor(o.ad));
+  if (adaylar.length !== 1 || onKayitAdlari.some(hepsiGeciyor)) return null;
+  return adaylar[0];
+}
+
 export function adlarBenzerMi(pdfAdi: string, kayitliAd: string): boolean {
   const p = kelimeler(pdfAdi);
   const k = kelimeler(kayitliAd);
