@@ -10,6 +10,7 @@ import { requireDenemeYuklemeYetkisi } from "@/lib/dershane-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAnthropicClient } from "@/lib/anthropic";
 import { adNormalize } from "@/lib/validators";
+import { adlarBenzerMi } from "@/lib/ad-benzerligi";
 import { dersSoruSayisi } from "@/lib/types";
 import type { DenemeTuru } from "@/lib/types";
 import { ogretmenDenemeSonucuKaydet, type DenemeDersSonucu, type DenemeKazanimSonucu } from "@/lib/deneme-sonucu-kaydet";
@@ -331,21 +332,31 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
   let ayristirilan: PdfOgrenciSonucu[] | null = null;
   let okunamayanAdlar: string[] = [];
 
+  // Deterministik yollarda (sınıf/okul listesi) PDF'te okulun TAMAMI var;
+  // yalnızca kurumdaki öğrencilerle ilgili satırlar alınır. Kullanıcı isteği
+  // (25.09.2026): adı kayıttan farklı yazılmış öğrenciler ("ALPEREN Y",
+  // soyadsız "GAMZENUR") sessizce atlanıyordu. Artık kayıtlı bir öğrenciye
+  // BENZEYEN satırlar da alınıyor — birebir eşleşmedikleri için
+  // sonuclariEslestirVeKaydet onları otomatik kaydetmez, yönetici onay
+  // kuyruğuna düşürür. Hiç benzemeyenler (okulda kaydı olmayanlar) yine atlanır.
+  const hedefAdlar = new Set(hedefOgrenciAdlari.map(adNormalize));
+  const hedefleIlgiliMi = (pdfAdi: string) =>
+    hedefAdlar.has(adNormalize(pdfAdi)) || hedefOgrenciAdlari.some((ad) => adlarBenzerMi(pdfAdi, ad));
+
   // Sınıf bazlı net listeleri (kullanıcı isteği 18.09.2026): bazı yayınevleri
   // (ör. Orbital) okul listesini hiç vermiyor, yalnızca sınıf sayfaları var.
   // Bunlar Claude'a gidince 100+ öğrenci × 11 ders yanıt sınırını aşıp "tek
   // seferde işlenemeyecek kadar büyük" hatası veriyordu. Biçim tanınırsa
   // sonuçlar sütun konumuna göre doğrudan okunur ve Claude'a hiç gidilmez;
   // her satır toplam sütunuyla doğrulanır. Tanınmazsa eski yol aynen sürer.
-  // Claude yolundaki gibi yalnızca kurum listesindeki öğrenciler alınır.
+  // Yalnızca kurumdaki öğrencilerle ilgili satırlar alınır (bkz. hedefleIlgiliMi).
   let sinifListesi: SinifListesiSonucu | null = null;
   if (tur === "TYT" || tur === "BRANS") {
     sinifListesi = await sinifListeleriniAyristir(Buffer.from(await dosya.arrayBuffer()));
     if (sinifListesi.basarili) {
-      const hedefAdlar = new Set(hedefOgrenciAdlari.map(adNormalize));
       const okunanlar: PdfOgrenciSonucu[] = [];
       for (const o of sinifListesi.ogrenciler) {
-        if (!hedefAdlar.has(adNormalize(o.isimHam))) continue;
+        if (!hedefleIlgiliMi(o.isimHam)) continue;
         const dersSonuclari = tytDerslerineIndirge(o.dersSonuclari, KARNE_DERS_TYT_ESLESTIRME);
         if (dersSonuclari) okunanlar.push({ ad_soyad: o.isimHam, ders_sonuclari: dersSonuclari });
         else okunamayanAdlar.push(o.isimHam);
@@ -379,16 +390,15 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
     ayristirilan === null && (tur === "TYT" || tur === "BRANS") && deterministikSonuc?.basarili &&
     deterministikSonuc.dersEtiketleri.every((d) => d in KARNE_DERS_TYT_ESLESTIRME || /\(Seçmeli\)$/.test(d))
   ) {
-    const hedefAdlar = new Set(hedefOgrenciAdlari.map(adNormalize));
     const okunanlar: PdfOgrenciSonucu[] = [];
     for (const o of deterministikSonuc.ogrenciler) {
-      if (!hedefAdlar.has(adNormalize(o.isimHam))) continue;
+      if (!hedefleIlgiliMi(o.isimHam)) continue;
       const dersSonuclari = tytDerslerineIndirge(o.dersSonuclari, KARNE_DERS_TYT_ESLESTIRME);
       if (dersSonuclari) okunanlar.push({ ad_soyad: o.isimHam, ders_sonuclari: dersSonuclari });
       else okunamayanAdlar.push(o.isimHam);
     }
     // Hangi dersin boş bırakıldığı belirsiz satırlar — elle girilmesi gerekiyor.
-    okunamayanAdlar.push(...deterministikSonuc.okunamayanAdlar.filter((ad) => hedefAdlar.has(adNormalize(ad))));
+    okunamayanAdlar.push(...deterministikSonuc.okunamayanAdlar.filter(hedefleIlgiliMi));
     ayristirilan = okunanlar;
     okulListesindenOkundu = true;
     console.info(

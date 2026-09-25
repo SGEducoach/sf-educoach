@@ -1,0 +1,82 @@
+// Deneme PDF'lerindeki öğrenci adı, kurumdaki kayıtlı adla birebir aynı
+// olmayabiliyor (kullanıcı isteği, 25.09.2026 — "fen lisesi dublör" PDF'inde
+// 110 öğrenciden yalnızca 9'u birebir eşleşti): soyadı hiç yazılmamış
+// ("GAMZENUR"), kısaltılmış ("ALPEREN Y", "BEREN CR"), ikinci ad eksik ya da
+// tek harf hatalı olabiliyor. Bu modül yalnızca "bu satır kayıtlı bir
+// öğrenciye BENZİYOR mu" sorusunu cevaplar — benzeyen satırlar OTOMATİK
+// KAYDEDİLMEZ, yönetici onay kuyruğuna düşer. Okulda hiç kaydı olmayan
+// öğrenciler kuyruğu doldurmasın diye kural bilinçli olarak tutucu.
+
+// Türkçe harfleri sadeleştirip küçük harfli kelime listesine çevirir —
+// PDF'lerde "MIHÇI"/"Mıhçı"/"Mihçi" gibi farklı yazımlar aynı sayılsın.
+function kelimeler(ad: string): string[] {
+  return ad
+    .normalize("NFC")
+    .toLocaleLowerCase("tr-TR")
+    .replace(/([iı])̇/g, "$1")
+    .replace(/[çğıöşü]/g, (h) => ({ ç: "c", ğ: "g", ı: "i", ö: "o", ş: "s", ü: "u" })[h] ?? h)
+    .replace(/[^a-z\s]/g, " ")
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+function tekHarfFarkliMi(a: string, b: string): boolean {
+  if (Math.abs(a.length - b.length) > 1) return false;
+  let i = 0;
+  let j = 0;
+  let fark = 0;
+  while (i < a.length && j < b.length) {
+    if (a[i] === b[j]) { i++; j++; continue; }
+    if (++fark > 1) return false;
+    if (a.length > b.length) i++;
+    else if (b.length > a.length) j++;
+    else { i++; j++; }
+  }
+  return fark + (a.length - i) + (b.length - j) <= 1;
+}
+
+// "cr" → "cirit", "agkc" → "agkoc", "y" → "yilmaz": ilk harf aynı ve kısa
+// yazımın harfleri uzun kelimede aynı sırayla geçiyor.
+function kisaltmasiMi(kisa: string, uzun: string): boolean {
+  if (kisa.length >= uzun.length || kisa[0] !== uzun[0]) return false;
+  let j = 0;
+  for (const harf of uzun) if (harf === kisa[j]) j++;
+  return j === kisa.length;
+}
+
+function kelimeUyumu(a: string, b: string): "ayni" | "benzer" | null {
+  if (a === b) return "ayni";
+  if (a.length >= 4 && b.length >= 4 && tekHarfFarkliMi(a, b)) return "benzer";
+  if (kisaltmasiMi(a, b) || kisaltmasiMi(b, a)) return "benzer";
+  return null;
+}
+
+// Kısa adın HER kelimesi uzun adın farklı bir kelimesine uymalı ve en az
+// biri (3+ harfli) birebir aynı olmalı. Tek kelimelik PDF adı ("GAMZENUR")
+// ancak kayıtlı adın İLK kelimesiyle aynıysa benzer sayılır.
+function kapsiyorMu(kisa: string[], uzun: string[]): boolean {
+  if (kisa.length === 0 || kisa.length > uzun.length) return false;
+  if (kisa.length === 1) return kisa[0].length >= 3 && kisa[0] === uzun[0];
+  const kullanilan = new Set<number>();
+  let birebir = false;
+  for (const k of kisa) {
+    let bulunan = -1;
+    let bulunanTur: "ayni" | "benzer" | null = null;
+    uzun.forEach((u, idx) => {
+      if (kullanilan.has(idx) || bulunanTur === "ayni") return;
+      const tur = kelimeUyumu(k, u);
+      if (tur) { bulunan = idx; bulunanTur = tur; }
+    });
+    if (bulunan === -1) return false;
+    kullanilan.add(bulunan);
+    if (bulunanTur === "ayni" && k.length >= 3) birebir = true;
+  }
+  return birebir;
+}
+
+export function adlarBenzerMi(pdfAdi: string, kayitliAd: string): boolean {
+  const p = kelimeler(pdfAdi);
+  const k = kelimeler(kayitliAd);
+  if (p.join(" ") === k.join(" ")) return true;
+  return p.length <= k.length ? kapsiyorMu(p, k) : kapsiyorMu(k, p);
+}
