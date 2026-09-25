@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { MUFREDAT_KONULARI } from "./mufredat-konulari";
-import { kazanimDersiniKanoniklestir, konuOnerisi, type KonuAdayi } from "./kazanim-konu-oneri";
+import { kazanimDersiniKanoniklestir, konuOnerileri, konuOnerisi, type KonuAdayi } from "./kazanim-konu-oneri";
 
 function adaylar(ders: string): KonuAdayi[] {
   return MUFREDAT_KONULARI.filter((k) => k.ders === ders).map((k) => ({ konu: k.konu, etiket: k.konu }));
@@ -31,5 +31,26 @@ describe("konuOnerisi (gerçek müfredat adaylarıyla)", () => {
   });
   test("ilgisiz metin öneri üretmez", () => {
     expect(konuOnerisi("Tamamen alakasız bir cümle", adaylar("Fizik"))).toBeNull();
+  });
+});
+
+// Kullanıcı geri bildirimi (25.09.2026): eşleşmeden kalan başlıklara da aday
+// gösterilsin. Ek tolerans (önek eşleşmesi) ve zayıf aday listesi.
+describe("konuOnerileri (zayıf adaylar)", () => {
+  test("ek farkı olan başlık aday olarak gelir", () => {
+    const adaylar: KonuAdayi[] = [
+      { konu: "Üslü sayılar ve işlemler", etiket: "Üslü sayılar ve işlemler" },
+      { konu: "Hücre organelleri ve görevleri", etiket: "Hücre organelleri ve görevleri" },
+    ];
+    const liste = konuOnerileri("Üslü ifadeler", adaylar);
+    expect(liste[0]?.konu).toBe("Üslü sayılar ve işlemler");
+    expect(liste.some((o) => o.konu.startsWith("Hücre"))).toBe(false);
+  });
+  test("tekil güçlü öneri davranışı değişmedi", () => {
+    expect(konuOnerisi("RASYONEL SAYILAR", adaylar("Matematik"))).toBeNull();
+    expect(konuOnerisi("OPTİK", adaylar("Fizik"))?.konu).toMatch(/Optik/);
+  });
+  test("en fazla istenen sayıda aday döner", () => {
+    expect(konuOnerileri("Sayı Problemleri", adaylar("Matematik"), 2).length).toBeLessThanOrEqual(2);
   });
 });

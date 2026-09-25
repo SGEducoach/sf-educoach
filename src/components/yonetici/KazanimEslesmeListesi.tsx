@@ -112,7 +112,21 @@ export function KazanimEslesmeListesi({ veri }: { veri: KazanimEslesmeVerisi }) 
                 ? <>Eşleşmiş: <span style={{ color: MINT }} className="font-semibold">{s.mevcutKonu}</span></>
                 : s.oneri
                   ? <>Öneri: <span style={{ color: SKY }} className="font-semibold">{s.oneri.konu}</span> (benzerlik %{Math.round(s.oneri.puan * 100)}{s.oneri.puan < GUCLU_ONERI_ESIGI ? " — zayıf, kontrol edin" : ""})</>
-                  : "Öneri yok — elle seçin."}
+                  : s.zayifOneriler.length > 0
+                    // Kullanıcı isteği (25.09.2026): eşik altındaki adaylar da
+                    // gösterilsin — tıklayınca yalnızca seçiciye yazılır, kaydetmez.
+                    ? <span className="flex flex-wrap items-center gap-1.5">
+                        Benzeyen konular:
+                        {s.zayifOneriler.map((o) => (
+                          <button key={o.konu} type="button" onClick={() => setSecimler((m) => ({ ...m, [anahtar]: o.konu }))}
+                            className="sfec-btn rounded-full px-2 py-0.5 text-[10px] font-bold"
+                            style={{ color: SKY, border: `1px solid ${BORDER_STRONG}` }}>
+                            {o.konu} <span style={{ color: TEXT_MUTED }}>%{Math.round(o.puan * 100)}</span>
+                          </button>
+                        ))}
+                        <span>— doğruysa seçip kaydedin.</span>
+                      </span>
+                    : "Öneri yok — elle seçin."}
             </div>
           </div>
         );

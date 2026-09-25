@@ -11,7 +11,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
-import { kazanimDersiniKanoniklestir, konuOnerisi, type KonuAdayi } from "@/lib/kazanim-konu-oneri";
+import { kazanimDersiniKanoniklestir, konuOnerileri, konuOnerisi, type KonuAdayi } from "@/lib/kazanim-konu-oneri";
 
 async function requireAdmin() {
   const supabase = await createClient();
@@ -28,6 +28,10 @@ export interface KazanimEslesmeSatiri {
   // Bu metnin geçtiği sonuç satırı sayısı (kaç öğrenci × deneme).
   satirSayisi: number;
   oneri: { konu: string; puan: number } | null;
+  // Güçlü öneri çıkmayanlar için sıralı zayıf adaylar (kullanıcı isteği
+  // 25.09.2026: eşleşmeyenlere de aday gösterilsin). Seçili GELMEZ; tıklanınca
+  // yalnızca seçiciye yazılır.
+  zayifOneriler: { konu: string; puan: number }[];
   mevcutKonu: string | null;
 }
 
@@ -81,6 +85,7 @@ export async function kazanimEslesmeVerisiGetir(): Promise<KazanimEslesmeVerisi>
     ...s,
     mevcutKonu: eslesmeMap.get(anahtar) ?? null,
     oneri: konuOnerisi(s.kazanimMetni, adaylar[s.ders] ?? []),
+    zayifOneriler: konuOnerileri(s.kazanimMetni, adaylar[s.ders] ?? []),
   }))
     // Önce eşleştirilmemişler, sonra ders ve sık geçen önce.
     .sort((a, b) => Number(a.mevcutKonu !== null) - Number(b.mevcutKonu !== null)
