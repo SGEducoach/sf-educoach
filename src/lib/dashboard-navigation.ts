@@ -152,7 +152,8 @@ const DERSHANE_MUDUR_MENUSU: DashboardMenuOgesi[] = [
 // Kullanıcı isteği (27.09.2026): admin menüsü kalabalıklaştı — alt menülü
 // gruplara ayrıldı. Grup başlığına basınca grubun ilk sayfası açılır ve
 // grubun bölümleri altında listelenir (aktif sayfanın grubu açık durur).
-// Mesajlar, Genel bakış'ın altına alındı (kullanıcı kararı).
+// Genel bakış ve Mesajlar grup DEĞİL, ayrı öğeler; Mesajlar Genel bakış'ın
+// hemen altında (kullanıcı kararı 27.09.2026).
 export interface DashboardMenuGrubu {
   baslik: string;
   ikon: DashboardIkonu;
@@ -165,12 +166,8 @@ export function menuGrubuMu(kalem: DashboardMenuKalemi): kalem is DashboardMenuG
 }
 
 const ADMIN_MENU_YAPISI: DashboardMenuKalemi[] = [
-  {
-    baslik: "Genel bakış", ikon: "ana-sayfa", ogeler: [
-      { bolum: "ozet", href: "/yonetici", etiket: "Genel bakış", ikon: "ana-sayfa" },
-      { bolum: "mesajlar", href: "/yonetici/mesajlar", etiket: "Mesajlar", ikon: "duyuru" },
-    ],
-  },
+  { bolum: "ozet", href: "/yonetici", etiket: "Genel bakış", ikon: "ana-sayfa" },
+  { bolum: "mesajlar", href: "/yonetici/mesajlar", etiket: "Mesajlar", ikon: "duyuru" },
   {
     baslik: "Kurumlar ve Kullanıcılar", ikon: "okul", ogeler: [
       { bolum: "okullar", href: "/yonetici/okullar", etiket: "Okullar", ikon: "okul" },
