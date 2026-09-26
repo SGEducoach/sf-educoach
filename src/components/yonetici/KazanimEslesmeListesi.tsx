@@ -17,6 +17,37 @@ function satirAnahtari(s: { ders: string; kazanimMetni: string }) {
   return `${s.ders}|${s.kazanimMetni}`;
 }
 
+// [1,2,3,4,8] → "1–4, 8"
+function soruAraligi(sorular: number[]): string {
+  const parcalar: string[] = [];
+  for (let i = 0; i < sorular.length; i++) {
+    let j = i;
+    while (j + 1 < sorular.length && sorular[j + 1] === sorular[j] + 1) j++;
+    parcalar.push(j > i ? `${sorular[i]}–${sorular[j]}` : String(sorular[i]));
+    i = j;
+  }
+  return parcalar.join(", ");
+}
+
+function SoruBilgisi({ sorular }: { sorular: KazanimEslesmeSatiri["sorular"] }) {
+  if (sorular.length === 0) return null;
+  const denemeler = [...new Set(sorular.map((s) => s.deneme))];
+  return (
+    <div className="mt-1 text-[11px] flex flex-col gap-0.5" style={{ color: TEXT_MUTED }}>
+      {denemeler.map((d) => (
+        <div key={d}>
+          Sorular ({d}):{" "}
+          {sorular.filter((s) => s.deneme === d).map((s, i) => (
+            <span key={`${s.kitapcik}-${i}`} style={{ color: s.kesin ? TEXT : TEXT_MUTED }} className={s.kesin ? "font-semibold" : ""}>
+              {i > 0 ? " · " : ""}{s.kitapcik ? `${s.kitapcik} kitapçığı ` : ""}{s.test.replace(/^(TYT|AYT)\s+/, "")} {s.kesin ? `soru ${soruAraligi(s.sorular)}` : `${s.soruSayisi} sorunun olası numaraları: ${soruAraligi(s.sorular)}`}
+            </span>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function KazanimEslesmeListesi({ veri }: { veri: KazanimEslesmeVerisi }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -128,6 +159,7 @@ export function KazanimEslesmeListesi({ veri }: { veri: KazanimEslesmeVerisi }) 
                       </span>
                     : "Öneri yok — elle seçin."}
             </div>
+            <SoruBilgisi sorular={s.sorular} />
           </div>
         );
       })}

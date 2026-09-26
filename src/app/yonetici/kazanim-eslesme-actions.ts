@@ -12,6 +12,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
 import { kazanimDersiniKanoniklestir, konuOnerileri, konuOnerisi, type KonuAdayi } from "@/lib/kazanim-konu-oneri";
+import { kazanimSorulariniCikar, type OgrenciKarneVerisi } from "@/lib/kazanim-soru-cikarimi";
+import type { KarneDersOrtalamasi, KarneTestCevaplari } from "@/lib/karne-birinci-sayfa";
 
 async function requireAdmin() {
   const supabase = await createClient();
@@ -20,6 +22,15 @@ async function requireAdmin() {
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
   if (profile?.role !== "admin") redirect("/");
   return { supabase, user, admin: createAdminClient() };
+}
+
+export interface KazanimSoruBilgisi {
+  deneme: string;
+  kitapcik: string | null;
+  test: string;
+  soruSayisi: number;
+  sorular: number[];
+  kesin: boolean;
 }
 
 export interface KazanimEslesmeSatiri {
@@ -33,6 +44,9 @@ export interface KazanimEslesmeSatiri {
   // yalnızca seçiciye yazılır.
   zayifOneriler: { konu: string; puan: number }[];
   mevcutKonu: string | null;
+  // Karnedeki soru soru cevaplardan çıkarılan soru numaraları (kullanıcı
+  // isteği 25.09.2026) — bkz. kazanim-soru-cikarimi.ts.
+  sorular: KazanimSoruBilgisi[];
 }
 
 export interface KazanimEslesmeVerisi {
@@ -55,23 +69,78 @@ async function mufredatAdaylari(admin: ReturnType<typeof createAdminClient>): Pr
   return adaylar;
 }
 
+type KazanimRow = { deneme_id: string; ders: string; kazanim_metni: string; soru: number; dogru: number; yanlis: number };
+
+async function sayfaSayfaCek<T>(sorgu: (bas: number, son: number) => PromiseLike<{ data: unknown; error: { message: string } | null }>): Promise<{ error: string | null; satirlar: T[] }> {
+  const satirlar: T[] = [];
+  for (let bas = 0; ; bas += 1000) {
+    const { data, error } = await sorgu(bas, bas + 999);
+    if (error) return { error: error.message, satirlar };
+    satirlar.push(...((data as T[]) ?? []));
+    if (((data as T[]) ?? []).length < 1000) return { error: null, satirlar };
+  }
+}
+
+// Karnesi (deneme_karne_ozetleri) olan denemelerde her konunun hangi soru(lar)
+// olduğunu çıkarır. Anahtar: "<müfredat dersi>|<kazanım metni>".
+async function soruBilgileriniCikar(
+  admin: ReturnType<typeof createAdminClient>, kazanimlar: KazanimRow[],
+): Promise<Map<string, KazanimSoruBilgisi[]>> {
+  const sonuc = new Map<string, KazanimSoruBilgisi[]>();
+  const { error, satirlar: karneler } = await sayfaSayfaCek<{ deneme_id: string; ders_ortalamalari: KarneDersOrtalamasi[]; cevaplar: KarneTestCevaplari[] }>(
+    (bas, son) => admin.from("deneme_karne_ozetleri").select("deneme_id, ders_ortalamalari, cevaplar").order("deneme_id").range(bas, son));
+  if (error || karneler.length === 0) return sonuc; // migration yoksa ya da karne yoksa soru bilgisi yok
+  const karneMap = new Map(karneler.map((k) => [k.deneme_id, k]));
+
+  const denemeIdleri = [...karneMap.keys()];
+  const denemeBilgisi = new Map<string, { student_id: string; tarih: string; tur: string; yayinevi: string | null }>();
+  for (let i = 0; i < denemeIdleri.length; i += 150) {
+    const { data } = await admin.from("denemeler").select("id, student_id, tarih, tur, yayinevi").in("id", denemeIdleri.slice(i, i + 150));
+    for (const d of (data as { id: string; student_id: string; tarih: string; tur: string; yayinevi: string | null }[]) ?? []) denemeBilgisi.set(d.id, d);
+  }
+
+  // Aynı deneme (tarih + tür + yayınevi) altındaki öğrencileri grupla.
+  const gruplar = new Map<string, { etiket: string; ogrenciler: Map<string, OgrenciKarneVerisi> }>();
+  for (const k of kazanimlar) {
+    const karne = karneMap.get(k.deneme_id);
+    const d = denemeBilgisi.get(k.deneme_id);
+    if (!karne || !d) continue;
+    const grupAnahtari = `${d.tarih}|${d.tur}|${(d.yayinevi ?? "").toLocaleUpperCase("tr-TR")}`;
+    const [y, a, g] = d.tarih.split("-");
+    const grup = gruplar.get(grupAnahtari) ?? { etiket: `${g}.${a}.${y} · ${d.tur} · ${d.yayinevi ?? ""}`, ogrenciler: new Map() };
+    const ogr = grup.ogrenciler.get(k.deneme_id)
+      ?? { ogrenciId: d.student_id, dersler: karne.ders_ortalamalari ?? [], testler: karne.cevaplar ?? [], kazanimlar: [] };
+    ogr.kazanimlar.push({ ders: k.ders, kazanimMetni: k.kazanim_metni, soru: k.soru, dogru: k.dogru, yanlis: k.yanlis });
+    grup.ogrenciler.set(k.deneme_id, ogr);
+    gruplar.set(grupAnahtari, grup);
+  }
+
+  for (const grup of gruplar.values()) {
+    for (const s of kazanimSorulariniCikar([...grup.ogrenciler.values()])) {
+      const ders = kazanimDersiniKanoniklestir(s.ders);
+      if (!ders) continue;
+      const anahtar = `${ders}|${s.kazanimMetni}`;
+      sonuc.set(anahtar, [...(sonuc.get(anahtar) ?? []), { deneme: grup.etiket, kitapcik: s.kitapcik, test: s.test, soruSayisi: s.soruSayisi, sorular: s.sorular, kesin: s.kesin }]);
+    }
+  }
+  return sonuc;
+}
+
 export async function kazanimEslesmeVerisiGetir(): Promise<KazanimEslesmeVerisi> {
   const { admin } = await requireAdmin();
   const sayac = new Map<string, { ders: string; kazanimMetni: string; satirSayisi: number }>();
-  for (let bas = 0; ; bas += 1000) {
-    const { data, error } = await admin.from("deneme_kazanim_sonuclari")
-      .select("ders, kazanim_metni").order("id").range(bas, bas + 999);
-    if (error) return { error: error.message, satirlar: [], adaylar: {} };
-    for (const r of (data as { ders: string; kazanim_metni: string }[]) ?? []) {
-      const ders = kazanimDersiniKanoniklestir(r.ders);
-      if (!ders) continue;
-      const anahtar = `${ders}|${r.kazanim_metni}`;
-      const mevcut = sayac.get(anahtar) ?? { ders, kazanimMetni: r.kazanim_metni, satirSayisi: 0 };
-      mevcut.satirSayisi++;
-      sayac.set(anahtar, mevcut);
-    }
-    if ((data ?? []).length < 1000) break;
+  const { error: kazanimHatasi, satirlar: kazanimlar } = await sayfaSayfaCek<KazanimRow>((bas, son) => admin.from("deneme_kazanim_sonuclari")
+    .select("deneme_id, ders, kazanim_metni, soru, dogru, yanlis").order("id").range(bas, son));
+  if (kazanimHatasi) return { error: kazanimHatasi, satirlar: [], adaylar: {} };
+  for (const r of kazanimlar) {
+    const ders = kazanimDersiniKanoniklestir(r.ders);
+    if (!ders) continue;
+    const anahtar = `${ders}|${r.kazanim_metni}`;
+    const mevcut = sayac.get(anahtar) ?? { ders, kazanimMetni: r.kazanim_metni, satirSayisi: 0 };
+    mevcut.satirSayisi++;
+    sayac.set(anahtar, mevcut);
   }
+  const soruBilgileri = await soruBilgileriniCikar(admin, kazanimlar);
 
   const [{ data: eslesmeler, error: eslesmeHatasi }, adaylar] = await Promise.all([
     admin.from("kazanim_konu_eslesmeleri").select("ders, kazanim_metni, konu"),
@@ -86,6 +155,7 @@ export async function kazanimEslesmeVerisiGetir(): Promise<KazanimEslesmeVerisi>
     mevcutKonu: eslesmeMap.get(anahtar) ?? null,
     oneri: konuOnerisi(s.kazanimMetni, adaylar[s.ders] ?? []),
     zayifOneriler: konuOnerileri(s.kazanimMetni, adaylar[s.ders] ?? []),
+    sorular: soruBilgileri.get(anahtar) ?? [],
   }))
     // Önce eşleştirilmemişler, sonra ders ve sık geçen önce.
     .sort((a, b) => Number(a.mevcutKonu !== null) - Number(b.mevcutKonu !== null)
