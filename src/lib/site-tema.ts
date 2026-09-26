@@ -50,6 +50,8 @@ export interface SiteTemasi {
   logoHueRotate: number;
   // Tanımlıysa logo filtresi tamamen bu değerle ezilir (açık temalar).
   logoFiltre?: string;
+  // Açık zeminli tema (gündüz modunda kullanılan) — gece modunun teması olamaz.
+  acik?: boolean;
 }
 
 export const SITE_TEMA_PALETI: SiteTemasi[] = [
@@ -171,6 +173,7 @@ export const SITE_TEMA_PALETI: SiteTemasi[] = [
     // Açık zeminde logo koyu lacivert olmalı — beyaz-boyayan varsayılan
     // filtre yerine koyuya boyayan tam filtre kullanılır.
     logoFiltre: "brightness(0) saturate(100%) invert(12%) sepia(35%) saturate(1500%) hue-rotate(195deg) brightness(95%) contrast(95%)",
+    acik: true,
   },
 ];
 
@@ -191,11 +194,10 @@ export function temaBul(deger: string | null | undefined): SiteTemasi {
 // (mevcut davranış korunur). Logo filtresi de marka uyumu için temaya göre
 // yazılır (globals.css'teki .sfec-brand-logo filtresinin hue-rotate
 // basamağı değiştirilir, gerisi aynı tutulur).
-export function temaCssUret(tema: SiteTemasi): string | null {
-  if (tema.id === VARSAYILAN_TEMA.id) return null;
+function temaBlogu(tema: SiteTemasi, secici: string): string {
   const d = tema.degisken;
   return (
-    `:root{` +
+    `${secici}{` +
     `--background:${d.background};--foreground:${d.foreground};` +
     `--sfec-bg0:${d.bg0};--sfec-bg1:${d.bg1};--sfec-bg1-alt:${d.bg1Alt};` +
     `--sfec-border:${d.border};--sfec-border-strong:${d.borderStrong};` +
@@ -203,7 +205,30 @@ export function temaCssUret(tema: SiteTemasi): string | null {
     `--sfec-mint:${d.mint};--sfec-mint-on:${d.mintOn};--sfec-mint-bg:${d.mintBg};` +
     `--sfec-seafoam:${d.seafoam};--sfec-shell-bg:${d.shellBg};--sfec-nav-bg:${d.navBg};` +
     `--sfec-marka-mavi:${d.markaMavi};--sfec-marka-kirmizi:${d.markaKirmizi};--sfec-marka-kirmizi-vurgu:${d.markaKirmiziVurgu};}` +
-    `.sfec-brand-logo{filter:${tema.logoFiltre ?? `brightness(0) saturate(100%) invert(89%) sepia(18%) saturate(749%) hue-rotate(${tema.logoHueRotate}deg) brightness(104%) contrast(95%)`};}`
+    `${secici === ":root" ? "" : `${secici} `}.sfec-brand-logo{filter:${tema.logoFiltre ?? `brightness(0) saturate(100%) invert(89%) sepia(18%) saturate(749%) hue-rotate(${tema.logoHueRotate}deg) brightness(104%) contrast(95%)`};}`
+  );
+}
+
+export function temaCssUret(tema: SiteTemasi): string | null {
+  if (tema.id === VARSAYILAN_TEMA.id) return null;
+  return temaBlogu(tema, ":root");
+}
+
+// Gündüz modunun teması: paletteki en açık tema (Pamukkale).
+export const GUNDUZ_TEMASI = SITE_TEMA_PALETI.find((t) => t.acik) ?? VARSAYILAN_TEMA;
+
+// Gece/gündüz (kullanıcı isteği 27.09.2026, bkz. gunduz-gece.ts). Gece =
+// admin'in seçtiği site teması (açık bir tema seçildiyse Gece Siyahı);
+// <html data-tema="gunduz"> iken en açık tema geçerli. globals.css'te
+// değişkenle tanımlı olmayan koyu gölge/hero zemini de gündüzde yumuşatılır.
+export function gunduzGeceCssUret(siteTemasi: SiteTemasi): string {
+  const gece = siteTemasi.acik ? VARSAYILAN_TEMA : siteTemasi;
+  const gunduzSecici = ':root[data-tema="gunduz"]';
+  return (
+    (temaCssUret(gece) ?? "") +
+    temaBlogu(GUNDUZ_TEMASI, gunduzSecici) +
+    `${gunduzSecici}{color-scheme:light;--sfec-panel-shadow:0 10px 24px rgba(15,40,70,0.12);` +
+    `--sfec-hero-bg:linear-gradient(135deg,#ffffff 0%,#eaf4fc 62%,#dcebf7 100%);}`
   );
 }
 

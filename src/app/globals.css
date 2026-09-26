@@ -1,10 +1,9 @@
 @import "tailwindcss" source("../");
 
-/* SeFu Koç renk teması — SADECE GECE. Bulgu 11 kararı (23 Ağustos 2026):
-   açık tema kaldırıldı, site artık tek bir sabit koyu füme zemin üzerinde
-   çalışıyor. Önceden buradaki değerler açık temaydı ve gece değerleri
-   :root[data-theme="koyu"] altında ayrıca tanımlıydı — artık tek tema
-   olduğu için ayrım kalktı, eski gece değerleri doğrudan buraya taşındı. */
+/* SeFu Koç renk teması — buradaki değerler GECE (Gece Siyahı). Gündüz modu
+   (kullanıcı isteği 27.09.2026) <html data-tema="gunduz"> iken layout'taki
+   <style> bloğuyla en açık temaya (Pamukkale) geçer — bkz. site-tema.ts
+   gunduzGeceCssUret ve gunduz-gece.ts. */
 :root {
   color-scheme: dark;
   --background: #08090b;

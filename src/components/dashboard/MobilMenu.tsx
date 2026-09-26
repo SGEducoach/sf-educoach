@@ -10,6 +10,7 @@ import { signOut } from "@/app/dashboard/actions";
 import { BildirimAyarlari } from "@/components/dashboard/BildirimAyarlari";
 import { MesajlarimIkonu } from "@/components/dashboard/MesajlarimIkonu";
 import { HataBildirButonu } from "@/components/dashboard/HataBildirButonu";
+import { TemaButonu } from "@/components/TemaSecici";
 import { YoneticiIletisimButonu } from "@/components/dashboard/YoneticiIletisimButonu";
 import type { KurumTuru, UserRole } from "@/lib/types";
 import type { DashboardBolumu, DashboardIkonu } from "@/lib/dashboard-navigation";
@@ -165,6 +166,8 @@ export function MobilMenu({ ad, role, kurumTuru, brans, grupMu = false, okunmami
 
             <HataBildirButonu boyut="satir" />
             {role !== "admin" && (role === "mudur" || moderatorMu) && <YoneticiIletisimButonu satir />}
+
+            <div style={{ color: TEXT }}><TemaButonu satir /></div>
 
             <div className="flex items-center justify-between rounded-xl px-2.5 py-1.5">
               <span style={{ color: TEXT }} className="text-[13px] font-semibold">Bildirimler</span>

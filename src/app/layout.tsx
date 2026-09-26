@@ -3,7 +3,9 @@ import { Montserrat } from "next/font/google";
 import "./globals.css";
 import { GlobalIslemGostergesi } from "@/components/GlobalIslemGostergesi";
 import { seoAnahtarKelimeleriGetir, siteTemaGetir } from "@/lib/app-ayarlari";
-import { temaCssUret } from "@/lib/site-tema";
+import { gunduzGeceCssUret } from "@/lib/site-tema";
+import { TEMA_BETIGI } from "@/lib/gunduz-gece";
+import { TemaDenetimi } from "@/components/TemaSecici";
 
 // Not: değişken isimleri (--font-nunito, --font-baloo) kod tabanında onlarca
 // yerde referans veriliyor; tekrar adlandırmak yerine ikisini de Montserrat'a
@@ -67,13 +69,11 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-// Bulgu 11 kararı (23 Ağustos 2026): açık tema kaldırıldı, site tek bir
-// sabit koyu temayla çalışıyor. Önceden burada ayrıca sistem tercihine
-// (prefers-color-scheme) göre açık/koyu seçen, ilk boyamadan önce çalışan
-// bir betik vardı (üstelik saat bazlı eski mantıkla — TemaDenetimi.tsx'in
-// asıl uyguladığı sistem-tercihi mantığıyla ÇELİŞİYORDU, ilk açılışta kısa
-// bir "yanlış tema" parlamasına sebep oluyordu). Artık tema doğrudan
-// globals.css'teki :root'ta sabit olduğu için bu betiğe hiç gerek kalmadı.
+// Gece/gündüz modu geri geldi (kullanıcı isteği 27.09.2026; 24.08'de
+// Bulgu 11 ile kaldırılmıştı). O zamanki "yanlış tema parlaması" iki ayrı
+// mantığın çelişmesinden doğuyordu — artık tek kaynak var (gunduz-gece.ts):
+// <head>'deki TEMA_BETIGI boyamadan önce <html data-tema> yazar, istemci
+// bileşeni aynı modBelirle() kuralını kullanır.
 export const viewport = {
   themeColor: "#08090b",
 };
@@ -84,15 +84,22 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   // renk olmaz). Tema artık zeminle sınırlı değil: kutu içi (bg1/bg1-alt),
   // kenarlıklar, metin/font renkleri ve marka (logo) renkleri de tema
   // tanımından gelir. Bkz. src/lib/site-tema.ts.
-  const temaCss = temaCssUret(await siteTemaGetir());
+  const temaCss = gunduzGeceCssUret(await siteTemaGetir());
 
   return (
+    // data-tema, hidrasyondan önce TEMA_BETIGI tarafından yazılıyor —
+    // sunucu HTML'inde yok; uyarı bastırılıyor.
     <html
       lang="tr"
       className={`${montserratGovde.variable} ${montserratBaslik.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: TEMA_BETIGI }} />
+        <style dangerouslySetInnerHTML={{ __html: temaCss }} />
+      </head>
       <body className="min-h-full flex flex-col font-sans">
-        {temaCss && <style dangerouslySetInnerHTML={{ __html: temaCss }} />}
+        <TemaDenetimi />
         <a href="#ana-icerik" className="sfec-skip-link">İçeriğe geç</a>
         {children}
         <GlobalIslemGostergesi />
