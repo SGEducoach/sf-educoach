@@ -1,12 +1,12 @@
 import Link from "next/link";
 import {
-  BarChart3, BookOpen, BookOpenCheck, Bot, Bug, CalendarDays, CalendarPlus2, CircleUserRound, ClipboardCheck, ClipboardList,
+  BarChart3, BookOpen, BookOpenCheck, Bot, Bug, CalendarDays, CalendarPlus2, ChevronDown, CircleUserRound, ClipboardCheck, ClipboardList,
   Copyright, Crown, FileCheck2, FileSpreadsheet, GraduationCap, HeartHandshake, History, Home, ListChecks, Megaphone, PenLine, School, ScrollText,
   Settings2, ShieldCheck, UserPlus, Users, UsersRound, Rss } from "lucide-react";
 import type { KurumTuru, UserRole } from "@/lib/types";
 import type { DashboardBolumu, DashboardIkonu } from "@/lib/dashboard-navigation";
-import { dashboardMenusu } from "@/lib/dashboard-navigation";
-import { BG1, BORDER, MINT, MINT_BG, TEXT, TEXT_MUTED } from "@/lib/theme";
+import { dashboardMenuYapisi, menuGrubuMu } from "@/lib/dashboard-navigation";
+import { BG1, BG1_ALT, BORDER, MINT, MINT_BG, TEXT, TEXT_MUTED } from "@/lib/theme";
 
 const IKONLAR: Record<DashboardIkonu, typeof Home> = {
   "ana-sayfa": Home,
@@ -41,7 +41,7 @@ const IKONLAR: Record<DashboardIkonu, typeof Home> = {
 };
 
 export function DashboardYanMenu({ role, kurumTuru, brans, grupMu = false, aktifBolum }: { role: UserRole; kurumTuru?: KurumTuru; brans?: string; grupMu?: boolean; aktifBolum: DashboardBolumu }) {
-  const menu = dashboardMenusu(role, kurumTuru, brans, grupMu);
+  const menu = dashboardMenuYapisi(role, kurumTuru, brans, grupMu);
   if (menu.length === 0) return null;
   const rolBasligi: Partial<Record<UserRole, string>> = {
     ogrenci: "Öğrenci çalışma alanı",
@@ -62,7 +62,41 @@ export function DashboardYanMenu({ role, kurumTuru, brans, grupMu = false, aktif
             {grupMu && role === "ogretmen" ? "Grup koçluk alanı" : rolBasligi[role] ?? "Çalışma alanı"}
           </div>
         </div>
-        {menu.map((oge) => {
+        {menu.map((kalem) => {
+          if (menuGrubuMu(kalem)) {
+            // Alt menülü grup (şimdilik yalnızca admin, 27.09.2026): başlık
+            // grubun ilk sayfasına götürür; aktif sayfanın grubu açık durur.
+            const Ikon = IKONLAR[kalem.ikon];
+            const acik = kalem.ogeler.some((o) => o.bolum === aktifBolum);
+            return (
+              <div key={kalem.baslik} className="flex flex-col gap-1">
+                <Link href={kalem.ogeler[0].href} aria-expanded={acik}
+                  className="sfec-btn flex min-h-12 items-center gap-3 rounded-2xl px-3.5 py-3 text-sm font-bold"
+                  style={{ color: TEXT, background: acik ? BG1_ALT : "transparent", border: "1px solid transparent" }}>
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl">
+                    <Ikon size={17} color={acik ? TEXT : TEXT_MUTED} aria-hidden="true" />
+                  </span>
+                  <span className="flex-1">{kalem.baslik}</span>
+                  <ChevronDown size={15} color={TEXT_MUTED} aria-hidden="true" style={{ transform: acik ? "rotate(180deg)" : undefined, transition: "transform 0.15s" }} />
+                </Link>
+                {acik && (
+                  <div className="ml-5 flex flex-col gap-0.5 pl-3" style={{ borderLeft: `1px solid ${BORDER}` }}>
+                    {kalem.ogeler.map((oge) => {
+                      const aktif = oge.bolum === aktifBolum;
+                      return (
+                        <Link key={oge.href} href={oge.href} aria-current={aktif ? "page" : undefined}
+                          className="sfec-btn flex items-center rounded-xl px-3 py-2 text-[13px] font-semibold"
+                          style={{ background: aktif ? MINT_BG : "transparent", color: aktif ? TEXT : TEXT_MUTED, border: `1px solid ${aktif ? MINT : "transparent"}` }}>
+                          {oge.etiket}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          }
+          const oge = kalem;
           const Ikon = IKONLAR[oge.ikon];
           const aktif = oge.bolum === aktifBolum;
           const tgBolumu = oge.bolum === "tg-denemeleri";

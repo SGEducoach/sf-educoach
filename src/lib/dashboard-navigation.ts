@@ -149,38 +149,66 @@ const DERSHANE_MUDUR_MENUSU: DashboardMenuOgesi[] = [
 // rollerle aynı bölüm adını kasıtlı olarak paylaşıyor (kapsamı platform geneli).
 // Rozet sistemi 19.09.2026 kullanıcı isteğiyle kaldırıldı (yerine Başarım
 // sistemi gelecek, yalnızca öğrenciye).
-const ADMIN_MENUSU: DashboardMenuOgesi[] = [
-  { bolum: "mesajlar", href: "/yonetici/mesajlar", etiket: "Mesajlar", ikon: "duyuru" },
-  { bolum: "ozet", href: "/yonetici", etiket: "Genel bakış", ikon: "ana-sayfa" },
-  { bolum: "google-analytics", href: "/yonetici/google-analytics", etiket: "Google Analytics", ikon: "analiz" },
-  { bolum: "kullanicilar", href: "/yonetici/kullanicilar", etiket: "Kullanıcılar", ikon: "kullanici" },
-  { bolum: "talepler", href: "/yonetici/talepler", etiket: "Veli talepleri", ikon: "talep" },
-  { bolum: "pdf-eslesme", href: "/yonetici/pdf-eslesme", etiket: "PDF Eşleştirme", ikon: "eslestir" },
-  { bolum: "okullar", href: "/yonetici/okullar", etiket: "Okullar", ikon: "okul" },
-  { bolum: "grup-kocluk", href: "/yonetici/grup-kocluk", etiket: "Grup Koçluk", ikon: "grup" },
-  { bolum: "kurallar", href: "/yonetici/kurallar", etiket: "Kurallar", ikon: "kural" },
-  { bolum: "hata-bildirimleri", href: "/yonetici/hata-bildirimleri", etiket: "Hata Bildirimleri", ikon: "hata" },
-  // 2026-08-26 kullanıcı isteği: "Konu anlatımları" -> "Konu özetleri"
-  // olarak yeniden adlandırıldı ve Konu Haritası'nın hemen üstüne taşındı
-  // (önceden Moderatörler'in altındaydı, ikisi arasında 3 öge vardı).
-  { bolum: "icerik", href: "/yonetici/icerik", etiket: "Konu özetleri", ikon: "icerik" },
-  { bolum: "yapay-zeka", href: "/yonetici/yapay-zeka", etiket: "Konu Haritası", ikon: "ai" },
-  // Faz 3 (2026-08-26) — İşlem Geçmişi ("Son işlemler"in taşındığı yer),
-  // Site ayarları (bakım modu) ve Adminler (admin hesapları SADECE burada
-  // görünür) — hepsi menünün sonunda, Profilim'den önce.
-  { bolum: "duyuru-gecmisi", href: "/yonetici/duyuru-gecmisi", etiket: "Duyuru Geçmişi", ikon: "duyuru" },
-  { bolum: "ogrenci-aktivitesi", href: "/yonetici/ogrenci-aktivitesi", etiket: "Öğrenci Aktivitesi", ikon: "analiz" },
-  { bolum: "islem-gecmisi", href: "/yonetici/islem-gecmisi", etiket: "İşlem Geçmişi", ikon: "gecmis" },
-  { bolum: "site-ayarlari", href: "/yonetici/site-ayarlari", etiket: "Site ayarları", ikon: "ayarlar" },
-  { bolum: "adminler", href: "/yonetici/adminler", etiket: "Adminler", ikon: "admin" },
-  // Kullanıcı isteği (03.09.2026): Moderatörler, Adminler'in hemen altına
-  // taşındı — ikisi de yetki yönetimi, menüde yan yana dursun.
-  { bolum: "moderatorler", href: "/yonetici/moderatorler", etiket: "Moderatörler", ikon: "moderator" },
+// Kullanıcı isteği (27.09.2026): admin menüsü kalabalıklaştı — alt menülü
+// gruplara ayrıldı. Grup başlığına basınca grubun ilk sayfası açılır ve
+// grubun bölümleri altında listelenir (aktif sayfanın grubu açık durur).
+// Mesajlar, Genel bakış'ın altına alındı (kullanıcı kararı).
+export interface DashboardMenuGrubu {
+  baslik: string;
+  ikon: DashboardIkonu;
+  ogeler: DashboardMenuOgesi[];
+}
+export type DashboardMenuKalemi = DashboardMenuOgesi | DashboardMenuGrubu;
+
+export function menuGrubuMu(kalem: DashboardMenuKalemi): kalem is DashboardMenuGrubu {
+  return "ogeler" in kalem;
+}
+
+const ADMIN_MENU_YAPISI: DashboardMenuKalemi[] = [
+  {
+    baslik: "Genel bakış", ikon: "ana-sayfa", ogeler: [
+      { bolum: "ozet", href: "/yonetici", etiket: "Genel bakış", ikon: "ana-sayfa" },
+      { bolum: "mesajlar", href: "/yonetici/mesajlar", etiket: "Mesajlar", ikon: "duyuru" },
+    ],
+  },
+  {
+    baslik: "Kurumlar ve Kullanıcılar", ikon: "okul", ogeler: [
+      { bolum: "okullar", href: "/yonetici/okullar", etiket: "Okullar", ikon: "okul" },
+      { bolum: "grup-kocluk", href: "/yonetici/grup-kocluk", etiket: "Grup Koçluk", ikon: "grup" },
+      { bolum: "kullanicilar", href: "/yonetici/kullanicilar", etiket: "Kullanıcılar", ikon: "kullanici" },
+      { bolum: "talepler", href: "/yonetici/talepler", etiket: "Veli talepleri", ikon: "talep" },
+    ],
+  },
+  {
+    baslik: "Deneme ve İçerik", ikon: "deneme", ogeler: [
+      { bolum: "pdf-eslesme", href: "/yonetici/pdf-eslesme", etiket: "PDF Eşleştirme", ikon: "eslestir" },
+      { bolum: "icerik", href: "/yonetici/icerik", etiket: "Konu özetleri", ikon: "icerik" },
+      { bolum: "yapay-zeka", href: "/yonetici/yapay-zeka", etiket: "Konu Haritası", ikon: "ai" },
+      { bolum: "blog", href: "/yonetici/blog", etiket: "Blog", ikon: "blog" },
+    ],
+  },
+  {
+    baslik: "İzleme ve Raporlar", ikon: "analiz", ogeler: [
+      { bolum: "ogrenci-aktivitesi", href: "/yonetici/ogrenci-aktivitesi", etiket: "Öğrenci Aktivitesi", ikon: "analiz" },
+      { bolum: "google-analytics", href: "/yonetici/google-analytics", etiket: "Google Analytics", ikon: "analiz" },
+      { bolum: "islem-gecmisi", href: "/yonetici/islem-gecmisi", etiket: "İşlem Geçmişi", ikon: "gecmis" },
+      { bolum: "duyuru-gecmisi", href: "/yonetici/duyuru-gecmisi", etiket: "Duyuru Geçmişi", ikon: "duyuru" },
+      { bolum: "hata-bildirimleri", href: "/yonetici/hata-bildirimleri", etiket: "Hata Bildirimleri", ikon: "hata" },
+    ],
+  },
+  {
+    baslik: "Yetki ve Ayarlar", ikon: "ayarlar", ogeler: [
+      { bolum: "adminler", href: "/yonetici/adminler", etiket: "Adminler", ikon: "admin" },
+      { bolum: "moderatorler", href: "/yonetici/moderatorler", etiket: "Moderatörler", ikon: "moderator" },
+      { bolum: "kurallar", href: "/yonetici/kurallar", etiket: "Kurallar", ikon: "kural" },
+      { bolum: "site-ayarlari", href: "/yonetici/site-ayarlari", etiket: "Site ayarları", ikon: "ayarlar" },
+    ],
+  },
   { bolum: "profil", href: "/yonetici/profil", etiket: "Profilim", ikon: "profil" },
-  // Kullanıcı isteği (03.09.2026): "blog en aşağı alınsın" — SeFu Blog
-  // (her yazı Google için ayrı bir sayfa, bkz. src/app/blog).
-  { bolum: "blog", href: "/yonetici/blog", etiket: "Blog", ikon: "blog" },
 ];
+
+// Düz liste (bölüm doğrulaması vb. için) gruplardan türetilir.
+const ADMIN_MENUSU: DashboardMenuOgesi[] = ADMIN_MENU_YAPISI.flatMap((k) => (menuGrubuMu(k) ? k.ogeler : [k]));
 
 // 2026-08-26 kullanıcı isteği — Rehber Öğretmen branşındaki bir öğretmene
 // ek bir menü ögesi (bkz. REHBER_BRANSI, src/lib/rehberlik.ts). brans
@@ -225,6 +253,11 @@ export function dashboardMenusu(role: UserRole, kurumTuru?: KurumTuru, brans?: s
   if (role === "mudur") return kurumTuru === "dershane" ? DERSHANE_MUDUR_MENUSU : [...MUDUR_MENUSU, TAKVIM_MENU_OGESI];
   if (role === "admin") return ADMIN_MENUSU;
   return [];
+}
+
+// Menü çizimi için: admin gruplu, diğer roller düz (değişmedi).
+export function dashboardMenuYapisi(role: UserRole, kurumTuru?: KurumTuru, brans?: string, grupMu = false): DashboardMenuKalemi[] {
+  return role === "admin" ? ADMIN_MENU_YAPISI : dashboardMenusu(role, kurumTuru, brans, grupMu);
 }
 
 export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([

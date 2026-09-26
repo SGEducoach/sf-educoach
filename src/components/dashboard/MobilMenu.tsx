@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  BarChart3, BookOpen, BookOpenCheck, Bot, Bug, CalendarDays, CalendarPlus2, CircleUserRound, ClipboardCheck, ClipboardList, Crown, FileCheck2, FileSpreadsheet, GraduationCap, HeartHandshake, History, Home,
+  BarChart3, BookOpen, BookOpenCheck, Bot, Bug, CalendarDays, CalendarPlus2, ChevronDown, CircleUserRound, ClipboardCheck, ClipboardList, Crown, FileCheck2, FileSpreadsheet, GraduationCap, HeartHandshake, History, Home,
   LayoutDashboard, ListChecks, LogOut, Megaphone, Menu, PenLine, School, ScrollText, Settings2, ShieldCheck, UserPlus, Users, UsersRound, X, Rss } from "lucide-react";
 import { BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, SEAFOAM, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 import { signOut } from "@/app/dashboard/actions";
@@ -13,7 +13,7 @@ import { HataBildirButonu } from "@/components/dashboard/HataBildirButonu";
 import { YoneticiIletisimButonu } from "@/components/dashboard/YoneticiIletisimButonu";
 import type { KurumTuru, UserRole } from "@/lib/types";
 import type { DashboardBolumu, DashboardIkonu } from "@/lib/dashboard-navigation";
-import { dashboardMenusu } from "@/lib/dashboard-navigation";
+import { dashboardMenuYapisi, menuGrubuMu } from "@/lib/dashboard-navigation";
 
 const rolEtiket: Record<UserRole, string> = {
   ogrenci: "Öğrenci",
@@ -77,7 +77,11 @@ export function MobilMenu({ ad, role, kurumTuru, brans, grupMu = false, okunmami
   geriDonusHref?: string; geriDonusEtiketi?: string;
 }) {
   const [acik, setAcik] = useState(false);
-  const menu = navigasyonGoster ? dashboardMenusu(role, kurumTuru, brans, grupMu) : [];
+  const menu = navigasyonGoster ? dashboardMenuYapisi(role, kurumTuru, brans, grupMu) : [];
+  // Aktif sayfanın grubu açık başlar.
+  const [acikGrup, setAcikGrup] = useState<string | null>(
+    () => menu.filter(menuGrubuMu).find((k) => k.ogeler.some((o) => o.bolum === aktifBolum))?.baslik ?? null,
+  );
 
   return (
     <div className="relative lg:hidden">
@@ -101,7 +105,38 @@ export function MobilMenu({ ad, role, kurumTuru, brans, grupMu = false, okunmami
 
             {menu.length > 0 && (
               <nav aria-label="Mobil dashboard bölümleri" className="flex flex-col gap-0.5 pb-2 mb-1" style={{ borderBottom: `2px solid ${BORDER}` }}>
-                {menu.map((oge) => {
+                {menu.map((kalem) => {
+                  if (menuGrubuMu(kalem)) {
+                    // Mobilde grup başlığı yalnızca açar/kapatır (menü sayfa
+                    // değişince kapandığı için alt bölümler görünmez kalırdı).
+                    const Ikon = IKONLAR[kalem.ikon];
+                    const grupAcik = acikGrup === kalem.baslik;
+                    return (
+                      <div key={kalem.baslik}>
+                        <button type="button" onClick={() => setAcikGrup(grupAcik ? null : kalem.baslik)} aria-expanded={grupAcik}
+                          className="sfec-btn w-full flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-[13px] font-semibold text-left" style={{ color: TEXT }}>
+                          <Ikon size={16} color={grupAcik ? TEXT : TEXT_MUTED} aria-hidden="true" />
+                          <span className="flex-1">{kalem.baslik}</span>
+                          <ChevronDown size={14} color={TEXT_MUTED} aria-hidden="true" style={{ transform: grupAcik ? "rotate(180deg)" : undefined, transition: "transform 0.15s" }} />
+                        </button>
+                        {grupAcik && (
+                          <div className="ml-4 flex flex-col gap-0.5 pl-2.5" style={{ borderLeft: `1px solid ${BORDER}` }}>
+                            {kalem.ogeler.map((oge) => {
+                              const aktif = oge.bolum === aktifBolum;
+                              return (
+                                <Link key={oge.href} href={oge.href} aria-current={aktif ? "page" : undefined} onClick={() => setAcik(false)}
+                                  className="sfec-btn rounded-xl px-2.5 py-2 text-[13px] font-semibold"
+                                  style={{ color: aktif ? TEXT : TEXT_MUTED, background: aktif ? MINT_BG : "transparent", border: `1px solid ${aktif ? MINT : "transparent"}` }}>
+                                  {oge.etiket}
+                                </Link>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+                  const oge = kalem;
                   const Ikon = IKONLAR[oge.ikon];
                   const aktif = oge.bolum === aktifBolum;
                   const tgBolumu = oge.bolum === "tg-denemeleri";
