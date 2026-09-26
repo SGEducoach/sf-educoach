@@ -10,7 +10,7 @@ import type { DashboardBolumu } from "@/lib/dashboard-navigation";
 // searchParams.bolum üzerinden yapıyor.
 export default async function YoneticiBolumPage({ params, searchParams }: {
   params: Promise<{ bolum: string }>;
-  searchParams: Promise<{ okul?: string }>;
+  searchParams: Promise<{ okul?: string; kurum?: string; donem?: string }>;
 }) {
   const [{ bolum }, mevcutArama] = await Promise.all([params, searchParams]);
   if (!YONETICI_ROUTE_BOLUMLERI.has(bolum as DashboardBolumu)) notFound();

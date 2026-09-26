@@ -43,7 +43,9 @@ export type DashboardBolumu =
   // Faz 3 (2026-08-26) — okul admin rolü genişletmesi.
   | "site-ayarlari"
   | "adminler"
-  | "islem-gecmisi";
+  | "islem-gecmisi"
+  // Kullanıcı isteği (26.09.2026) — öğrenci hareketleri, İşlem Geçmişi'nden ayrı.
+  | "ogrenci-aktivitesi";
 
 export type DashboardIkonu =
   | "ana-sayfa" | "gorev" | "plan" | "veri" | "hakimiyet" | "analiz" | "ai" | "takvim" | "duyuru" | "talep" | "onay" | "ders"
@@ -167,6 +169,7 @@ const ADMIN_MENUSU: DashboardMenuOgesi[] = [
   // Site ayarları (bakım modu) ve Adminler (admin hesapları SADECE burada
   // görünür) — hepsi menünün sonunda, Profilim'den önce.
   { bolum: "duyuru-gecmisi", href: "/yonetici/duyuru-gecmisi", etiket: "Duyuru Geçmişi", ikon: "duyuru" },
+  { bolum: "ogrenci-aktivitesi", href: "/yonetici/ogrenci-aktivitesi", etiket: "Öğrenci Aktivitesi", ikon: "analiz" },
   { bolum: "islem-gecmisi", href: "/yonetici/islem-gecmisi", etiket: "İşlem Geçmişi", ikon: "gecmis" },
   { bolum: "site-ayarlari", href: "/yonetici/site-ayarlari", etiket: "Site ayarları", ikon: "ayarlar" },
   { bolum: "adminler", href: "/yonetici/adminler", etiket: "Adminler", ikon: "admin" },
@@ -235,5 +238,5 @@ export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
 export const YONETICI_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
   "mesajlar",
   "kullanicilar", "talepler", "pdf-eslesme", "okullar", "grup-kocluk", "moderatorler", "icerik", "blog", "kurallar", "profil", "hata-bildirimleri",
-  "duyuru-gecmisi", "islem-gecmisi", "site-ayarlari", "adminler",
+  "duyuru-gecmisi", "islem-gecmisi", "ogrenci-aktivitesi", "site-ayarlari", "adminler",
 ]);

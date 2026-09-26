@@ -20,6 +20,8 @@ import { DershaneDenemeSuresiAyari } from "@/components/yonetici/DershaneDenemeS
 import { SiteAyarlariYonetimi } from "@/components/yonetici/SiteAyarlariYonetimi";
 import { AdminlerYonetimi } from "@/components/yonetici/AdminlerYonetimi";
 import { IslemGecmisi } from "@/components/yonetici/IslemGecmisi";
+import { OgrenciAktivitesi } from "@/components/yonetici/OgrenciAktivitesi";
+import { AKTIVITE_DONEMLERI, VARSAYILAN_AKTIVITE_DONEMI } from "@/lib/ogrenci-aktivitesi-verisi";
 import { DuyuruGecmisi } from "@/components/dashboard/DuyuruGecmisi";
 import { dershaneDenemeSuresiGetir, siteAyarlariGetir, anaSayfaAyarlariGetir } from "@/app/yonetici/actions";
 import { AnaSayfaAyarlariYonetimi } from "@/components/yonetici/AnaSayfaAyarlariYonetimi";
@@ -49,7 +51,7 @@ import { sinifSiraKarsilastir } from "@/lib/types";
 export default async function YoneticiPage({
   searchParams,
 }: {
-  searchParams: Promise<{ okul?: string; bolum?: string }>;
+  searchParams: Promise<{ okul?: string; bolum?: string; kurum?: string; donem?: string }>;
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -119,6 +121,13 @@ export default async function YoneticiPage({
             </>
           )}
           {aktifBolum === "kullanicilar" && <section className="sfec-section"><KullaniciArama /></section>}
+          {aktifBolum === "ogrenci-aktivitesi" && (
+            <section className="sfec-section">
+              <OgrenciAktivitesi
+                kurumId={params.kurum || null}
+                gun={AKTIVITE_DONEMLERI.find((d) => String(d) === params.donem) ?? VARSAYILAN_AKTIVITE_DONEMI} />
+            </section>
+          )}
           {aktifBolum === "mesajlar" && <section className="sfec-section"><YoneticiMesajlar /></section>}
           {aktifBolum === "talepler" && <VeliTalepleri />}
           {aktifBolum === "pdf-eslesme" && <section className="sfec-section flex flex-col gap-4"><PdfEslesmeYonetimi /><KazanimEslesmeYonetimi /></section>}

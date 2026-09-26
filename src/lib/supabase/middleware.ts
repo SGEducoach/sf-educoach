@@ -1,5 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { bugununTarihiTR } from "@/lib/tarih";
+
+const AKTIF_GUN_CEREZI = "sfec_aktif_gun";
 
 // Bakım modu kontrolü ("/dashboard", "/moderator", "/login", "/signup"
 // istekleri) HER seferinde platform_ayarlari'na gitmesin diye 45sn'lik
@@ -66,6 +69,17 @@ export async function updateSession(request: NextRequest) {
       .update({ son_gorulme: new Date().toISOString() })
       .eq("id", user.id)
       .or(`son_gorulme.is.null,son_gorulme.lt.${birDakikaOnce}`);
+
+    // Aktif gün sayacı (kullanıcı isteği 26.09.2026, migration 0124) — admin
+    // "Öğrenci Aktivitesi"ndeki "en çok giriş yapan" kartı. Günde bir kez
+    // yazılsın diye son kaydedilen gün çerezde tutulur; her istekte ek sorgu
+    // gitmez. Migration uygulanmamışsa RPC hata verir, çerez yine yazılır ki
+    // gün içinde tekrar denenmesin.
+    const bugun = bugununTarihiTR();
+    if (request.cookies.get(AKTIF_GUN_CEREZI)?.value !== bugun) {
+      await supabase.rpc("aktif_gun_kaydet");
+      supabaseResponse.cookies.set(AKTIF_GUN_CEREZI, bugun, { maxAge: 60 * 60 * 36, httpOnly: true, sameSite: "lax", path: "/" });
+    }
   }
 
   // Site bakım modu (2026-08-26 kullanıcı isteği, bkz. migration 0072/bugünkü
