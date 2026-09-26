@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { Activity, CalendarCheck, Database, UserPlus } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
-  AKTIVITE_DONEMLERI, ogrenciAktivitesiGetir, type AktiviteDonemi,
+  AKTIVITE_DONEMLERI, aktiviteDonemiEtiketi, ogrenciAktivitesiGetir, type AktiviteDonemi,
 } from "@/lib/ogrenci-aktivitesi-verisi";
 import { zamanGoster, type OgrenciOzeti } from "@/lib/ogrenci-aktivitesi";
 import { AktiviteFiltresi, HareketListesi } from "@/components/yonetici/OgrenciAktivitesiIstemci";
@@ -56,9 +56,10 @@ function Siralama<T>({ satirlar, bos, deger, ek }: {
   );
 }
 
-export async function OgrenciAktivitesi({ kurumId, gun }: { kurumId: string | null; gun: AktiviteDonemi }) {
-  const veri = await ogrenciAktivitesiGetir(createAdminClient(), { kurumId, gun });
+export async function OgrenciAktivitesi({ kurumId, donem }: { kurumId: string | null; donem: AktiviteDonemi }) {
+  const veri = await ogrenciAktivitesiGetir(createAdminClient(), { kurumId, donem });
   const kurumAdi = kurumId ? veri.kurumlar.find((k) => k.id === kurumId)?.ad ?? "Kurum" : "Tüm kurumlar";
+  const donemEtiketi = aktiviteDonemiEtiketi(donem);
 
   return (
     <div className="flex flex-col gap-5">
@@ -68,37 +69,31 @@ export async function OgrenciAktivitesi({ kurumId, gun }: { kurumId: string | nu
             <Activity size={16} color={TEXT_MUTED} aria-hidden="true" />
             <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold">Öğrenci Aktivitesi</h2>
           </div>
-          <p style={{ color: TEXT_MUTED }} className="text-xs mt-0.5">{kurumAdi} · son {gun} gün. Yönetici işlemleri için İşlem Geçmişi&apos;ne bakın.</p>
+          <p style={{ color: TEXT_MUTED }} className="text-xs mt-0.5">{kurumAdi} · {donemEtiketi.toLocaleLowerCase("tr-TR")}. Yönetici işlemleri için İşlem Geçmişi&apos;ne bakın.</p>
         </div>
-        <AktiviteFiltresi kurumlar={veri.kurumlar} kurumId={kurumId} gun={gun} donemler={AKTIVITE_DONEMLERI} />
+        <AktiviteFiltresi kurumlar={veri.kurumlar} kurumId={kurumId} donem={donem} donemler={AKTIVITE_DONEMLERI} />
       </div>
 
       {veri.error && <p style={{ color: BLUSH }} className="text-sm font-semibold">Veri alınamadı: {veri.error}</p>}
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <Kart baslik="En çok veri giren" aciklama={`Son ${gun} günde girilen konu, soru ve deneme kayıtları`} ikon={<Database size={15} color={TEXT_MUTED} aria-hidden="true" />}>
+        <Kart baslik="En çok veri giren" aciklama={`${donemEtiketi} · girilen konu, soru ve deneme kayıtları`} ikon={<Database size={15} color={TEXT_MUTED} aria-hidden="true" />}>
           <Siralama bos="Bu dönemde veri girişi yok."
             satirlar={veri.veriSiralamasi.map((s) => ({ ogrenci: s.ogrenci, veri: s }))}
             deger={(s) => <span style={{ color: TEXT }} className="text-sm font-bold tabular-nums">{s.toplam}</span>}
             ek={(s) => `${s.konu} konu · ${s.soru} soru · ${s.deneme} deneme`} />
         </Kart>
 
-        <Kart baslik="En çok giriş yapan" aciklama={`Son ${gun} günde siteyi kullandığı farklı gün sayısı`} ikon={<CalendarCheck size={15} color={TEXT_MUTED} aria-hidden="true" />}>
-          {veri.aktifGunSiralamasi && veri.aktifGunSiralamasi.length > 0 ? (
-            <Siralama bos="" satirlar={veri.aktifGunSiralamasi.map((s) => ({ ogrenci: s.ogrenci, veri: s }))}
-              deger={(s) => <span style={{ color: TEXT }} className="text-sm font-bold tabular-nums">{s.gunSayisi} gün</span>}
-              ek={(s) => `son: ${s.sonGun.split("-").reverse().slice(0, 2).join(".")}`} />
-          ) : (
-            <>
-              <p style={{ color: TEXT_MUTED, background: BG1_ALT }} className="text-[11px] rounded-xl px-3 py-2">
-                {veri.aktifGunSiralamasi === null
-                  ? "Gün sayımı henüz başlamadı (migration 0124 bekleniyor). Şimdilik son görülen öğrenciler:"
-                  : "Gün sayımı yeni başladı, veri birikiyor. Şimdilik son görülen öğrenciler:"}
-              </p>
-              <Siralama bos="Henüz kimse görülmedi." satirlar={veri.sonGorulenler.map((s) => ({ ogrenci: s.ogrenci, veri: s.sonGorulme }))}
-                deger={(z) => <span style={{ color: TEXT_MUTED }} className="text-[11px] tabular-nums">{zamanGoster(z)}</span>} />
-            </>
-          )}
+        <Kart baslik="En çok giriş yapan" aciklama={`${donemEtiketi} · siteyi kullandığı farklı gün sayısı`} ikon={<CalendarCheck size={15} color={TEXT_MUTED} aria-hidden="true" />}>
+          <Siralama bos="Bu dönemde aktif öğrenci yok." satirlar={veri.aktifGunSiralamasi.map((s) => ({ ogrenci: s.ogrenci, veri: s }))}
+            deger={(s) => <span style={{ color: TEXT }} className="text-sm font-bold tabular-nums">{s.gunSayisi} gün</span>}
+            ek={(s) => `son: ${s.sonGun.split("-").reverse().slice(0, 2).join(".")}`} />
+          <p style={{ color: TEXT_MUTED, background: BG1_ALT }} className="text-[10px] rounded-xl px-3 py-2">
+            {veri.girisTakibiVar
+              ? "Siteye girdiği günler ile veri girdiği günler birlikte sayılır."
+              : "Şimdilik yalnızca veri girdiği günler sayılıyor; giriş takibi migration 0124 uygulanınca eklenecek."}
+            {veri.sonGorulenler[0] && <> Son görülen: <b>{veri.sonGorulenler[0].ogrenci.ad}</b> ({zamanGoster(veri.sonGorulenler[0].sonGorulme)}).</>}
+          </p>
         </Kart>
 
         <Kart baslik="En son kayıt olan" aciklama="Sisteme en son katılan öğrenciler" ikon={<UserPlus size={15} color={TEXT_MUTED} aria-hidden="true" />}>

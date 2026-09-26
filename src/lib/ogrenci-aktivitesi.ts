@@ -33,6 +33,20 @@ export interface HamDeneme { id: string; student_id: string; tur: string; yayine
 // kurum + deneme için bu süre içindeki okul kayıtları tek harekete toplanır.
 const TOPLU_YUKLEME_PENCERESI_MS = 30 * 60 * 1000;
 
+// Eğitim yılının başı (kullanıcı isteği 27.09.2026: "1 Eylül'den başlat"):
+// eylül ve sonrasında o yılın 1 Eylül'ü, öncesinde bir önceki yılın.
+export function egitimYiliBaslangici(bugunTR: string): string {
+  const [yil, ay] = bugunTR.split("-").map(Number);
+  return `${ay >= 9 ? yil : yil - 1}-09-01`;
+}
+
+// Bir zaman damgasının Türkiye saatine göre günü (YYYY-MM-DD).
+export function gunTR(iso: string): string {
+  const p = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date(iso));
+  const bul = (t: string) => p.find((x) => x.type === t)?.value ?? "";
+  return `${bul("year")}-${bul("month")}-${bul("day")}`;
+}
+
 // "26.09 12:04" — Türkiye saatiyle (sunucu UTC'de çalışsa da).
 export function zamanGoster(iso: string): string {
   return new Date(iso).toLocaleString("tr-TR", { timeZone: "Europe/Istanbul", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
@@ -145,9 +159,12 @@ export function aktifGunSiralamasi(
   gunler: { user_id: string; gun: string }[], ogrenciler: Map<string, OgrenciOzeti>, adet = 5,
 ): AktifGunSatiri[] {
   const sayac = new Map<string, AktifGunSatiri>();
+  // Aynı gün hem giriş takibinden hem veri girişinden gelebilir — bir kez sayılır.
+  const gorulen = new Set<string>();
   for (const g of gunler) {
     const ogrenci = ogrenciler.get(g.user_id);
-    if (!ogrenci) continue;
+    if (!ogrenci || gorulen.has(`${g.user_id}|${g.gun}`)) continue;
+    gorulen.add(`${g.user_id}|${g.gun}`);
     const satir = sayac.get(g.user_id) ?? { ogrenci, gunSayisi: 0, sonGun: g.gun };
     satir.gunSayisi++;
     if (g.gun > satir.sonGun) satir.sonGun = g.gun;

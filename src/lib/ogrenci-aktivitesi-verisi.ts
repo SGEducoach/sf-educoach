@@ -2,16 +2,31 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
 import { netHesapla } from "@/lib/types";
 import {
-  aktifGunSiralamasi, hareketleriOlustur, veriGirisSiralamasi,
+  aktifGunSiralamasi, egitimYiliBaslangici, gunTR, hareketleriOlustur, veriGirisSiralamasi,
   type AktifGunSatiri, type HamDeneme, type HamKonu, type HamSoru, type Hareket, type OgrenciOzeti, type VeriSiralamaSatiri, type VeriTuru,
 } from "@/lib/ogrenci-aktivitesi";
 
 // Admin "Öğrenci Aktivitesi" verisi (kullanıcı isteği 26.09.2026). Service-role
 // client ile çağrılır (yalnızca admin sayfasından). Kurum seçiliyse tüm
 // sorgular students!inner(school_id) ile o kuruma daraltılır.
-export const AKTIVITE_DONEMLERI = [7, 30, 90] as const;
-export type AktiviteDonemi = (typeof AKTIVITE_DONEMLERI)[number];
-export const VARSAYILAN_AKTIVITE_DONEMI: AktiviteDonemi = 30;
+// Kullanıcı isteği (27.09.2026): varsayılan dönem eğitim yılı başı (1 Eylül).
+export const AKTIVITE_DONEMLERI = [
+  { deger: "egitim-yili", etiket: "1 Eylül'den beri" },
+  { deger: "7", etiket: "Son 7 gün" },
+  { deger: "30", etiket: "Son 30 gün" },
+  { deger: "90", etiket: "Son 90 gün" },
+] as const;
+export type AktiviteDonemi = (typeof AKTIVITE_DONEMLERI)[number]["deger"];
+export const VARSAYILAN_AKTIVITE_DONEMI: AktiviteDonemi = "egitim-yili";
+
+export function aktiviteDonemiEtiketi(donem: AktiviteDonemi): string {
+  return AKTIVITE_DONEMLERI.find((d) => d.deger === donem)?.etiket ?? donem;
+}
+
+function donemBaslangicGunu(donem: AktiviteDonemi): string {
+  const bugun = bugununTarihiTR();
+  return donem === "egitim-yili" ? egitimYiliBaslangici(bugun) : tarihEkle(bugun, -(Number(donem) - 1));
+}
 
 const HAREKET_SAYISI = 200;
 // Toplu okul yüklemeleri tek harekete indiği için denemelerden daha çok satır çekilir.
@@ -21,8 +36,10 @@ export interface OgrenciAktivitesiVerisi {
   error: string | null;
   kurumlar: { id: string; ad: string }[];
   veriSiralamasi: VeriSiralamaSatiri[];
-  // null: migration 0124 henüz uygulanmamış.
-  aktifGunSiralamasi: AktifGunSatiri[] | null;
+  // Giriş takibi (0124) + veri girilen günlerin birleşimi.
+  aktifGunSiralamasi: AktifGunSatiri[];
+  // false: migration 0124 henüz uygulanmamış, yalnızca veri girilen günler sayılıyor.
+  girisTakibiVar: boolean;
   sonGorulenler: { ogrenci: OgrenciOzeti; sonGorulme: string }[];
   sonKayitlar: OgrenciOzeti[];
   hareketler: Hareket[];
@@ -47,12 +64,13 @@ type OgrenciRow = {
 };
 
 export async function ogrenciAktivitesiGetir(
-  admin: SupabaseClient, secenek: { kurumId: string | null; gun: AktiviteDonemi },
+  admin: SupabaseClient, secenek: { kurumId: string | null; donem: AktiviteDonemi },
 ): Promise<OgrenciAktivitesiVerisi> {
-  const bos: OgrenciAktivitesiVerisi = { error: null, kurumlar: [], veriSiralamasi: [], aktifGunSiralamasi: null, sonGorulenler: [], sonKayitlar: [], hareketler: [] };
-  const { kurumId, gun } = secenek;
-  const baslangicZamani = new Date(Date.now() - gun * 86_400_000).toISOString();
-  const baslangicGunu = tarihEkle(bugununTarihiTR(), -(gun - 1));
+  const bos: OgrenciAktivitesiVerisi = { error: null, kurumlar: [], veriSiralamasi: [], aktifGunSiralamasi: [], girisTakibiVar: false, sonGorulenler: [], sonKayitlar: [], hareketler: [] };
+  const { kurumId, donem } = secenek;
+  const baslangicGunu = donemBaslangicGunu(donem);
+  // Dönem Türkiye saatiyle gün başından başlar.
+  const baslangicZamani = new Date(`${baslangicGunu}T00:00:00+03:00`).toISOString();
 
   const [{ data: kurumlarHam }, ogrenciSonucu] = await Promise.all([
     admin.from("schools").select("id, ad").order("ad"),
@@ -85,9 +103,9 @@ export async function ogrenciAktivitesiGetir(
   };
 
   const [konuSayim, soruSayim, denemeSayim, aktifGunler, konular, sorular, denemeler] = await Promise.all([
-    sayfaSayfa<{ student_id: string }>((bas, son) => kayitSorgusu("konu_calismalar", "student_id").gte("created_at", baslangicZamani).order("id").range(bas, son)),
-    sayfaSayfa<{ student_id: string }>((bas, son) => kayitSorgusu("soru_cozumleri", "student_id").gte("created_at", baslangicZamani).order("id").range(bas, son)),
-    sayfaSayfa<{ student_id: string }>((bas, son) => kayitSorgusu("denemeler", "student_id").eq("kaynak", "ogrenci").gte("created_at", baslangicZamani).order("id").range(bas, son)),
+    sayfaSayfa<{ student_id: string; created_at: string }>((bas, son) => kayitSorgusu("konu_calismalar", "student_id, created_at").gte("created_at", baslangicZamani).order("id").range(bas, son)),
+    sayfaSayfa<{ student_id: string; created_at: string }>((bas, son) => kayitSorgusu("soru_cozumleri", "student_id, created_at").gte("created_at", baslangicZamani).order("id").range(bas, son)),
+    sayfaSayfa<{ student_id: string; created_at: string }>((bas, son) => kayitSorgusu("denemeler", "student_id, created_at").eq("kaynak", "ogrenci").gte("created_at", baslangicZamani).order("id").range(bas, son)),
     sayfaSayfa<{ user_id: string; gun: string }>((bas, son) => admin.from("kullanici_aktif_gunler").select("user_id, gun").gte("gun", baslangicGunu).order("user_id").order("gun").range(bas, son)),
     kayitSorgusu("konu_calismalar", "id, student_id, ders, konu, sure_dakika, created_at").order("created_at", { ascending: false }).limit(HAREKET_SAYISI),
     kayitSorgusu("soru_cozumleri", "id, student_id, ders, dogru, yanlis, bos, created_at").order("created_at", { ascending: false }).limit(HAREKET_SAYISI),
@@ -115,7 +133,14 @@ export async function ogrenciAktivitesiGetir(
     error: null,
     kurumlar: (kurumlarHam as { id: string; ad: string }[]) ?? [],
     veriSiralamasi: veriGirisSiralamasi(veriKayitlari, ogrenciler),
-    aktifGunSiralamasi: aktifGunler.error ? null : aktifGunSiralamasi(aktifGunler.satirlar, ogrenciler),
+    // Kullanıcı isteği (27.09.2026): giriş takibinin geçmişi yok — veri
+    // girilen her gün de siteye girilmiş bir gün sayılır, böylece kart 1
+    // Eylül'e kadar geriye gider.
+    aktifGunSiralamasi: aktifGunSiralamasi([
+      ...(aktifGunler.error ? [] : aktifGunler.satirlar),
+      ...[...konuSayim.satirlar, ...soruSayim.satirlar, ...denemeSayim.satirlar].map((r) => ({ user_id: r.student_id, gun: gunTR(r.created_at) })),
+    ], ogrenciler),
+    girisTakibiVar: !aktifGunler.error,
     sonGorulenler: [...sonGorulmeler.entries()]
       .sort((a, b) => b[1].localeCompare(a[1])).slice(0, 5)
       .map(([id, sonGorulme]) => ({ ogrenci: ogrenciler.get(id)!, sonGorulme })),

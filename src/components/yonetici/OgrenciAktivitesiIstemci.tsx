@@ -8,27 +8,27 @@ import { useRouter } from "next/navigation";
 import { BG1_ALT, BORDER_STRONG, BUTTER, LILAC, MINT, PEACH, SKY, TEXT, TEXT_MUTED } from "@/lib/theme";
 import { zamanGoster, type Hareket, type HareketTuru } from "@/lib/ogrenci-aktivitesi";
 
-export function AktiviteFiltresi({ kurumlar, kurumId, gun, donemler }: {
-  kurumlar: { id: string; ad: string }[]; kurumId: string | null; gun: number; donemler: readonly number[];
+export function AktiviteFiltresi({ kurumlar, kurumId, donem, donemler }: {
+  kurumlar: { id: string; ad: string }[]; kurumId: string | null; donem: string; donemler: readonly { deger: string; etiket: string }[];
 }) {
   const router = useRouter();
-  const git = (yeniKurum: string | null, yeniGun: number) => {
+  const git = (yeniKurum: string | null, yeniDonem: string) => {
     const p = new URLSearchParams();
     if (yeniKurum) p.set("kurum", yeniKurum);
-    p.set("donem", String(yeniGun));
+    p.set("donem", yeniDonem);
     router.push(`/yonetici/ogrenci-aktivitesi?${p.toString()}`);
   };
   const stil = { border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT };
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <select value={kurumId ?? ""} onChange={(e) => git(e.target.value || null, gun)} aria-label="Kurum seç"
+      <select value={kurumId ?? ""} onChange={(e) => git(e.target.value || null, donem)} aria-label="Kurum seç"
         className="text-xs px-3 py-2 rounded-xl outline-none" style={stil}>
         <option value="">Tüm kurumlar</option>
         {kurumlar.map((k) => <option key={k.id} value={k.id}>{k.ad}</option>)}
       </select>
-      <select value={gun} onChange={(e) => git(kurumId, Number(e.target.value))} aria-label="Dönem seç"
+      <select value={donem} onChange={(e) => git(kurumId, e.target.value)} aria-label="Dönem seç"
         className="text-xs px-3 py-2 rounded-xl outline-none" style={stil}>
-        {donemler.map((d) => <option key={d} value={d}>Son {d} gün</option>)}
+        {donemler.map((d) => <option key={d.deger} value={d.deger}>{d.etiket}</option>)}
       </select>
     </div>
   );

@@ -1,5 +1,26 @@
 import { describe, expect, test } from "vitest";
-import { aktifGunSiralamasi, hareketleriOlustur, veriGirisSiralamasi, type OgrenciOzeti } from "./ogrenci-aktivitesi";
+import { aktifGunSiralamasi, egitimYiliBaslangici, gunTR, hareketleriOlustur, veriGirisSiralamasi, type OgrenciOzeti } from "./ogrenci-aktivitesi";
+
+describe("tarih yardımcıları", () => {
+  test("eğitim yılı başlangıcı", () => {
+    expect(egitimYiliBaslangici("2026-09-27")).toBe("2026-09-01");
+    expect(egitimYiliBaslangici("2026-09-01")).toBe("2026-09-01");
+    expect(egitimYiliBaslangici("2027-03-15")).toBe("2026-09-01");
+    expect(egitimYiliBaslangici("2027-08-31")).toBe("2026-09-01");
+  });
+  test("Türkiye saatine göre gün (UTC 22:30 → ertesi gün)", () => {
+    expect(gunTR("2026-09-26T22:30:00Z")).toBe("2026-09-27");
+    expect(gunTR("2026-09-26T20:00:00Z")).toBe("2026-09-26");
+  });
+});
+
+describe("aktif gün tekrarları", () => {
+  test("aynı gün iki kaynaktan gelse de bir kez sayılır", () => {
+    const o = new Map([["a", { id: "a", ad: "A", sinif: null, kurum: null, kurumId: null, kayitZamani: "" }]]);
+    const s = aktifGunSiralamasi([{ user_id: "a", gun: "2026-09-20" }, { user_id: "a", gun: "2026-09-20" }, { user_id: "a", gun: "2026-09-21" }], o);
+    expect(s[0].gunSayisi).toBe(2);
+  });
+});
 
 function ogr(id: string, ad: string, kurumId = "k1"): OgrenciOzeti {
   return { id, ad, sinif: "12-A", kurum: kurumId === "k1" ? "Fen Lisesi" : "Diğer", kurumId, kayitZamani: "2026-09-01T08:00:00Z" };

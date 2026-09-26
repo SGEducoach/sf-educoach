@@ -125,7 +125,7 @@ export default async function YoneticiPage({
             <section className="sfec-section">
               <OgrenciAktivitesi
                 kurumId={params.kurum || null}
-                gun={AKTIVITE_DONEMLERI.find((d) => String(d) === params.donem) ?? VARSAYILAN_AKTIVITE_DONEMI} />
+                donem={AKTIVITE_DONEMLERI.find((d) => d.deger === params.donem)?.deger ?? VARSAYILAN_AKTIVITE_DONEMI} />
             </section>
           )}
           {aktifBolum === "mesajlar" && <section className="sfec-section"><YoneticiMesajlar /></section>}
