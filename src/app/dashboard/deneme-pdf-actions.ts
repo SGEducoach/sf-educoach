@@ -494,7 +494,7 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
 
   // Belirli bir biçim seçildiyse ve okunamadıysa Claude'a gitmeden söyle.
   if (ayristirilan === null && bicim !== "otomatik" && bicim !== "claude") {
-    const ad = { sinif: "Sınıf bazlı net listesi", okul: "Okul net listesi", sirali: "Kurum sıralı listesi" }[bicim];
+    const ad = { sinif: "Orbital — sınıf net listeleri", okul: "Limit — okul net listesi", sirali: "Özdebir — kurum sıralı listesi" }[bicim];
     return {
       error: `PDF "${ad}" biçiminde okunamadı. Başka bir biçim ya da "Otomatik tanı" seçip tekrar deneyin.`,
       ...BOS_SONUC,

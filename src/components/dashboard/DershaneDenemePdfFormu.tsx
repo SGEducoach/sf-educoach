@@ -136,9 +136,10 @@ export function DershaneDenemePdfFormu({ schoolId, yalnizcaExcel = false }: { sc
             <select value={bicim} onChange={(e) => setBicim(e.target.value as typeof bicim)}
               className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
               <option value="otomatik">Otomatik tanı (önerilen)</option>
-              <option value="okul">Okul net listesi (Ö.No ve sınıf sütunlu)</option>
-              <option value="sinif">Sınıf bazlı net listeleri</option>
-              <option value="sirali">Kurum sıralı listesi (Sıra, Ad Soyad, D-Y-N)</option>
+              {/* Kullanıcı isteği (27.09.2026): biçimler yayınevi adıyla anılsın. */}
+              <option value="okul">Limit — okul net listesi</option>
+              <option value="sinif">Orbital — sınıf net listeleri</option>
+              <option value="sirali">Özdebir — kurum sıralı listesi</option>
               <option value="claude">Diğer biçim (yapay zekâ ile okunur)</option>
             </select>
           </label>
