@@ -1,9 +1,9 @@
 "use client";
 
 import { startTransition, useEffect, useState, useTransition } from "react";
-import { Check, Copy, Pause, Play, Plus, UsersRound } from "lucide-react";
+import { Check, Copy, KeyRound, Pause, Play, Plus, UsersRound } from "lucide-react";
 import {
-  grupDondur, grupGuncelle, grupOgrenciOnayKarari, grupOgrenciOnaylariGetir, grupOlustur, gruplariGetir,
+  grupDondur, grupGuncelle, grupKocunaYeniSifre, grupOgrenciOnayKarari, grupOgrenciOnaylariGetir, grupOlustur, gruplariGetir,
   type GrupOgrenciOnayi, type GrupSatiri,
 } from "@/app/yonetici/grup-actions";
 import { GRUP_KAPASITELERI } from "@/lib/grup-kocluk";
@@ -25,10 +25,37 @@ function birYilSonrasi() {
   return d.toLocaleDateString("en-CA", { timeZone: "Europe/Istanbul" });
 }
 
+// Koça iletilecek bilgi (geçici şifre dahil). Kullanıcı bildirimi (27.09.2026):
+// grup açılınca mesaj hemen kayboldu. Artık üst bileşende tutuluyor ve
+// "Tamam"a basılana dek bu sekmenin sessionStorage'ında kalıyor — sayfa
+// yenilense de kaybolmuyor.
+type KocBilgisi = { sifre: string; kod: string; email: string; grupAdi: string; mevcutOgretmen: boolean; yeniSifre?: boolean };
+const BILGI_ANAHTARI = "sfec-grup-koc-bilgisi";
+
+function bilgiOku(): KocBilgisi | null {
+  try {
+    const ham = sessionStorage.getItem(BILGI_ANAHTARI);
+    return ham ? (JSON.parse(ham) as KocBilgisi) : null;
+  } catch { return null; }
+}
+
+function bilgiYaz(b: KocBilgisi | null) {
+  try {
+    if (b) sessionStorage.setItem(BILGI_ANAHTARI, JSON.stringify(b));
+    else sessionStorage.removeItem(BILGI_ANAHTARI);
+  } catch { /* depolama kapalıysa bilgi yalnızca ekranda kalır */ }
+}
+
 export function GrupKoclukYonetimi() {
   const [gruplar, setGruplar] = useState<GrupSatiri[] | null>(null);
   const [hata, setHata] = useState<string | null>(null);
   const [formAcik, setFormAcik] = useState(false);
+  const [bilgi, setBilgiHam] = useState<KocBilgisi | null>(null);
+
+  function setBilgi(b: KocBilgisi | null) {
+    bilgiYaz(b);
+    setBilgiHam(b);
+  }
 
   function yukle() {
     gruplariGetir().then((r) => {
@@ -36,7 +63,12 @@ export function GrupKoclukYonetimi() {
       setGruplar(r.gruplar);
     });
   }
-  useEffect(() => { startTransition(yukle); }, []);
+  useEffect(() => {
+    startTransition(() => {
+      setBilgiHam(bilgiOku());
+      yukle();
+    });
+  }, []);
 
   return (
     <div className="rounded-3xl p-5" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
@@ -57,7 +89,8 @@ export function GrupKoclukYonetimi() {
       </p>
 
       <OkulEslesmeOnaylari />
-      {formAcik && <GrupAcFormu onDone={() => { setFormAcik(false); yukle(); }} />}
+      {bilgi && <GrupAcildi {...bilgi} onDone={() => setBilgi(null)} />}
+      {formAcik && <GrupAcFormu onAcildi={(b) => { setBilgi(b); setFormAcik(false); yukle(); }} />}
       {hata && <p className="my-2 text-xs font-semibold" style={{ color: BLUSH }}>{hata}</p>}
 
       {gruplar === null ? (
@@ -66,17 +99,16 @@ export function GrupKoclukYonetimi() {
         <p className="py-3 text-center text-sm" style={{ color: TEXT_MUTED }}>Henüz grup açılmadı.</p>
       ) : (
         <div className="mt-3 flex flex-col gap-2">
-          {gruplar.map((g) => <GrupKarti key={g.id} grup={g} onDegisti={yukle} />)}
+          {gruplar.map((g) => <GrupKarti key={g.id} grup={g} onDegisti={yukle} onKocBilgisi={setBilgi} />)}
         </div>
       )}
     </div>
   );
 }
 
-function GrupAcFormu({ onDone }: { onDone: () => void }) {
+function GrupAcFormu({ onAcildi }: { onAcildi: (b: KocBilgisi) => void }) {
   const [pending, startIslem] = useTransition();
   const [hata, setHata] = useState<string | null>(null);
-  const [sonuc, setSonuc] = useState<{ sifre: string; kod: string; email: string; grupAdi: string; mevcutOgretmen: boolean } | null>(null);
   const [f, setF] = useState({
     grupAdi: "", kocAd: "", kocEmail: "", kocTelefon: "", kapasite: 10, bitisTarihi: birYilSonrasi(), taahhut: false,
   });
@@ -87,11 +119,9 @@ function GrupAcFormu({ onDone }: { onDone: () => void }) {
     startIslem(async () => {
       const r = await grupOlustur(f);
       if (r.error || !r.sifre || !r.kod) return setHata(r.error ?? "Grup açılamadı.");
-      setSonuc({ sifre: r.sifre, kod: r.kod, email: r.girisEposta ?? f.kocEmail.trim().toLowerCase(), grupAdi: f.grupAdi.trim(), mevcutOgretmen: !!r.mevcutOgretmen });
+      onAcildi({ sifre: r.sifre, kod: r.kod, email: r.girisEposta ?? f.kocEmail.trim().toLowerCase(), grupAdi: f.grupAdi.trim(), mevcutOgretmen: !!r.mevcutOgretmen });
     });
   }
-
-  if (sonuc) return <GrupAcildi {...sonuc} onDone={onDone} />;
 
   const alan = (etiket: string, cocuk: React.ReactNode) => (
     <label className="flex flex-col gap-1">
@@ -137,13 +167,16 @@ function GrupAcFormu({ onDone }: { onDone: () => void }) {
 }
 
 // Geçici şifre YALNIZCA bir kez burada görünür; koça yönetici iletir.
-function GrupAcildi({ sifre, kod, email, grupAdi, mevcutOgretmen, onDone }: { sifre: string; kod: string; email: string; grupAdi: string; mevcutOgretmen: boolean; onDone: () => void }) {
+function GrupAcildi({ sifre, kod, email, grupAdi, mevcutOgretmen, yeniSifre, onDone }: KocBilgisi & { onDone: () => void }) {
   const [kopyalandi, setKopyalandi] = useState(false);
-  const metin = `SeFu Koç grup koçluk hesabınız açıldı.\nGrup: ${grupAdi}\nGrup kodu (öğrencileriniz girişte kullanacak): ${kod}\nGiriş: www.sefukoc.com/login → Öğretmen\nE-posta: ${email}\nGeçici şifre: ${sifre}\nİlk girişte kendi şifrenizi belirleyeceksiniz.` +
+  const metin = `${yeniSifre ? "SeFu Koç grup koçluk hesabınız için yeni geçici şifre oluşturuldu." : "SeFu Koç grup koçluk hesabınız açıldı."}\nGrup: ${grupAdi}\nGrup kodu (öğrencileriniz girişte kullanacak): ${kod}\nGiriş: www.sefukoc.com/login → Öğretmen\nE-posta: ${email}\nGeçici şifre: ${sifre}\nİlk girişte kendi şifrenizi belirleyeceksiniz.` +
     (mevcutOgretmen ? `\nBu hesap okulunuzdaki öğretmen hesabınızdan ayrıdır; koçluk için yukarıdaki e-postayla giriş yapın.` : "");
   return (
     <div className="mb-3 flex flex-col gap-2 rounded-2xl p-4" style={{ background: MINT_BG, border: `1px solid ${MINT}` }}>
-      <p className="text-sm font-bold" style={{ color: TEXT }}>Grup açıldı. Aşağıdaki bilgileri koça iletin; geçici şifre bir daha gösterilmeyecek.</p>
+      <p className="text-sm font-bold" style={{ color: TEXT }}>
+        {yeniSifre ? "Yeni geçici şifre oluşturuldu." : "Grup açıldı."} Aşağıdaki bilgileri koça iletin; &quot;Tamam&quot;a basınca şifre bir daha gösterilmez
+        (gerekirse gruptan &quot;Koça yeni şifre&quot; ile yenisi alınır).
+      </p>
       {mevcutOgretmen && (
         <p className="text-xs" style={{ color: TEXT }}>
           Bu e-posta mevcut bir öğretmene ait olduğu için koçluk hesabı <b>{email}</b> giriş adıyla ayrı açıldı. Öğretmenin okul hesabı etkilenmedi.
@@ -163,7 +196,7 @@ function GrupAcildi({ sifre, kod, email, grupAdi, mevcutOgretmen, onDone }: { si
   );
 }
 
-function GrupKarti({ grup: g, onDegisti }: { grup: GrupSatiri; onDegisti: () => void }) {
+function GrupKarti({ grup: g, onDegisti, onKocBilgisi }: { grup: GrupSatiri; onDegisti: () => void; onKocBilgisi: (b: KocBilgisi) => void }) {
   const [pending, startIslem] = useTransition();
   const [hata, setHata] = useState<string | null>(null);
   const [bitis, setBitis] = useState(g.bitisTarihi);
@@ -230,13 +263,30 @@ function GrupKarti({ grup: g, onDegisti }: { grup: GrupSatiri; onDegisti: () => 
             )}
           </div>
         </label>
+        {g.koc && (
+          <button type="button" disabled={pending}
+            onClick={() => {
+              if (!window.confirm(`${g.koc?.ad} için yeni geçici şifre oluşturulsun mu? Koçun mevcut şifresi geçersiz olur.`)) return;
+              setHata(null);
+              startIslem(async () => {
+                const r = await grupKocunaYeniSifre(g.id);
+                if (r.error || !r.sifre || !r.kod || !r.email || !r.grupAdi) return setHata(r.error ?? "Şifre oluşturulamadı.");
+                onKocBilgisi({ sifre: r.sifre, kod: r.kod, email: r.email, grupAdi: r.grupAdi, mevcutOgretmen: r.email.includes("+koc"), yeniSifre: true });
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              });
+            }}
+            className="sfec-btn ml-auto flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold"
+            style={{ background: BG0, color: TEXT, border: `1px solid ${BORDER_STRONG}` }}>
+            <KeyRound size={12} /> Koça yeni şifre
+          </button>
+        )}
         <button type="button" disabled={pending}
           onClick={() => {
             const dondur = !g.donduruldu;
             if (dondur && !window.confirm(`"${g.ad}" dondurulsun mu? Koç ve öğrencileri siteye giremez; veriler korunur.`)) return;
             islem(() => grupDondur(g.id, dondur));
           }}
-          className="sfec-btn ml-auto flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold"
+          className={`sfec-btn ${g.koc ? "" : "ml-auto "}flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold`}
           style={{ background: BG0, color: g.donduruldu ? MINT : BLUSH, border: `1px solid ${BORDER_STRONG}` }}>
           {g.donduruldu ? <><Play size={12} /> Grubu aç</> : <><Pause size={12} /> Dondur</>}
         </button>

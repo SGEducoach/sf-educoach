@@ -187,8 +187,31 @@ export async function grupOlustur(input: GrupGirdisi): Promise<GrupOlusturSonucu
     kapasite: input.kapasite, bitis: input.bitisTarihi, mevcut_ogretmen: mevcutOgretmen,
   });
   await kocaDavetGonder(email, kocAd, grupAdi);
-  revalidatePath("/yonetici");
+  // revalidatePath YOK (27.09.2026): sayfa yenilenince koça iletilecek bilgi
+  // mesajı kayboluyordu. Liste istemcide yeniden yükleniyor (gruplariGetir).
   return { error: null, sifre, kod: grup.okul_kodu, girisEposta: email, mevcutOgretmen };
+}
+
+// Kullanıcı bildirimi (27.09.2026): grup açılınca koça iletilecek bilgi
+// mesajı hemen kayboldu, geçici şifre görülemedi. Yönetici koça yeni geçici
+// şifre üretip bilgileri tekrar alabilsin; koç ilk girişte şifresini değiştirir.
+export async function grupKocunaYeniSifre(grupId: string): Promise<{ error: string | null; sifre: string | null; kod: string | null; email: string | null; grupAdi: string | null }> {
+  const { user, admin } = await requireAdmin();
+  const bos = { sifre: null, kod: null, email: null, grupAdi: null };
+  const { data: grup } = await admin.from("schools").select("id, ad, okul_kodu")
+    .eq("id", grupId).not("grup_kapasitesi", "is", null).maybeSingle();
+  if (!grup) return { error: "Grup bulunamadı.", ...bos };
+  const { data: koc } = await admin.from("school_moderators").select("profile_id, profiles!school_moderators_profile_id_fkey(email, role)")
+    .eq("school_id", grupId).limit(1).maybeSingle();
+  const kocProfil = (Array.isArray(koc?.profiles) ? koc?.profiles[0] : koc?.profiles) as { email: string | null; role: string } | null | undefined;
+  if (!koc || !kocProfil?.email || kocProfil.role !== "ogretmen") return { error: "Grubun koç hesabı bulunamadı.", ...bos };
+
+  const sifre = rastgeleSifre();
+  const { error } = await admin.auth.admin.updateUserById(koc.profile_id, { password: sifre });
+  if (error) return { error: error.message, ...bos };
+  await admin.from("profiles").update({ gecici_sifre: true }).eq("id", koc.profile_id);
+  await islemKaydi(admin, user.id, "grup_koc_yeni_sifre", { school_id: grupId, koc_id: koc.profile_id });
+  return { error: null, sifre, kod: grup.okul_kodu, email: kocProfil.email, grupAdi: grup.ad };
 }
 
 export async function grupGuncelle(input: { id: string; kapasite?: number; bitisTarihi?: string }): Promise<{ error: string | null }> {
