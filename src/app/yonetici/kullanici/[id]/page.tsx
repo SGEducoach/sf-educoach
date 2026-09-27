@@ -144,11 +144,24 @@ async function OgrenciSayfasi({ admin, userId, ad, donem }: { admin: AdminClient
 }
 
 async function OgretmenSayfasi({ admin, userId }: { admin: AdminClient; userId: string }) {
-  const { data } = await admin.from("teachers").select("brans, school_id, class_id, schools(ad, tur), classes(seviye, sube)").eq("id", userId).maybeSingle();
+  const { data } = await admin.from("teachers").select("brans, school_id, class_id, schools(ad, tur, grup_kapasitesi), classes(seviye, sube)").eq("id", userId).maybeSingle();
   if (!data) return <BosKart metin="Öğretmen profili bulunamadı." />;
-  const okul = data.schools as unknown as { ad: string; tur: "okul" | "dershane" } | null;
+  const okul = data.schools as unknown as { ad: string; tur: "okul" | "dershane"; grup_kapasitesi: number | null } | null;
   const sinif = data.classes as unknown as { seviye: string; sube: string } | null;
   const dershaneMi = okul?.tur === "dershane";
+  // Kullanıcı isteği (27.09.2026): grup koçunun branş dışında sınıf
+  // öğretmenliği ve ders programı yok — bu alanlar gösterilmez.
+  const grupKocu = okul?.grup_kapasitesi != null;
+  if (grupKocu) {
+    const { data: grupOgrencileri } = await admin.from("students").select("id, okul_no, profiles!students_id_fkey(ad), classes(seviye, sube)")
+      .eq("school_id", data.school_id).order("okul_no").limit(100);
+    type GrupOgrenciRow = { id: string; okul_no: string; profiles: { ad: string } | null; classes: { seviye: string } | null };
+    const grupListesi = (grupOgrencileri as unknown as GrupOgrenciRow[]) ?? [];
+    return <>
+      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2"><Bilgi icon={School} etiket="Koçluk grubu" deger={okul?.ad ?? "—"} /><Bilgi icon={BookOpen} etiket="Branş" deger={data.brans} /></section>
+      <section className="rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}><h2 className="mb-3 text-base font-bold" style={{ color: TEXT }}>Gruptaki öğrenciler</h2><div className="sfec-ogrenci-listesi">{grupListesi.length === 0 && <p className="text-sm" style={{ color: TEXT_MUTED }}>Öğrenci bulunamadı.</p>}{grupListesi.map((o) => <Link key={o.id} href={`/yonetici/kullanici/${o.id}`} className="sfec-ogrenci-satiri flex items-center justify-between gap-3 px-2 py-3 text-sm" style={{ color: TEXT }}><strong className="min-w-0 truncate">{o.profiles?.ad ?? "İsimsiz"}</strong><span className="max-w-[55%] shrink-0 truncate text-xs" style={{ color: TEXT_MUTED }}>{o.classes ? `${o.classes.seviye}. sınıf` : "—"} · {o.okul_no}</span></Link>)}</div></section>
+    </>;
+  }
   let ogrenciQuery = admin.from("students").select("id, okul_no, profiles!students_id_fkey(ad), classes(seviye, sube)").order("okul_no").limit(100);
   ogrenciQuery = data.class_id ? ogrenciQuery.eq("class_id", data.class_id) : ogrenciQuery.eq("school_id", data.school_id);
   const [{ data: ogrenciler }, { data: okulSiniflari }, dersProgrami] = await Promise.all([
