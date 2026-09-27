@@ -76,7 +76,7 @@ export function GrupKoclukYonetimi() {
 function GrupAcFormu({ onDone }: { onDone: () => void }) {
   const [pending, startIslem] = useTransition();
   const [hata, setHata] = useState<string | null>(null);
-  const [sonuc, setSonuc] = useState<{ sifre: string; kod: string; email: string; grupAdi: string } | null>(null);
+  const [sonuc, setSonuc] = useState<{ sifre: string; kod: string; email: string; grupAdi: string; mevcutOgretmen: boolean } | null>(null);
   const [f, setF] = useState({
     grupAdi: "", kocAd: "", kocEmail: "", kocTelefon: "", kapasite: 10, bitisTarihi: birYilSonrasi(), taahhut: false,
   });
@@ -87,7 +87,7 @@ function GrupAcFormu({ onDone }: { onDone: () => void }) {
     startIslem(async () => {
       const r = await grupOlustur(f);
       if (r.error || !r.sifre || !r.kod) return setHata(r.error ?? "Grup açılamadı.");
-      setSonuc({ sifre: r.sifre, kod: r.kod, email: f.kocEmail.trim().toLowerCase(), grupAdi: f.grupAdi.trim() });
+      setSonuc({ sifre: r.sifre, kod: r.kod, email: r.girisEposta ?? f.kocEmail.trim().toLowerCase(), grupAdi: f.grupAdi.trim(), mevcutOgretmen: !!r.mevcutOgretmen });
     });
   }
 
@@ -105,7 +105,7 @@ function GrupAcFormu({ onDone }: { onDone: () => void }) {
       <div className="grid gap-3 sm:grid-cols-2">
         {alan("Grup adı", <input required value={f.grupAdi} onChange={(e) => setF({ ...f, grupAdi: e.target.value })} placeholder="Ör. Yıldız YKS Grubu" className="rounded-xl px-3 py-2 text-sm outline-none" style={girdi} />)}
         {alan("Koçun adı soyadı", <input required value={f.kocAd} onChange={(e) => setF({ ...f, kocAd: e.target.value })} className="rounded-xl px-3 py-2 text-sm outline-none" style={girdi} />)}
-        {alan("Koçun e-postası (giriş adı)", <input required type="email" value={f.kocEmail} onChange={(e) => setF({ ...f, kocEmail: e.target.value })} className="rounded-xl px-3 py-2 text-sm outline-none" style={girdi} />)}
+        {alan("Koçun e-postası (mevcut öğretmen de olabilir)", <input required type="email" value={f.kocEmail} onChange={(e) => setF({ ...f, kocEmail: e.target.value })} className="rounded-xl px-3 py-2 text-sm outline-none" style={girdi} />)}
         {alan("Koçun telefonu", <input required inputMode="numeric" value={f.kocTelefon} onChange={(e) => setF({ ...f, kocTelefon: e.target.value.replace(/\D/g, "") })} placeholder="5321234567" className="rounded-xl px-3 py-2 text-sm outline-none" style={girdi} />)}
         {alan("Kapasite (aktif öğrenci)", (
           <div className="flex gap-1.5">
@@ -137,12 +137,18 @@ function GrupAcFormu({ onDone }: { onDone: () => void }) {
 }
 
 // Geçici şifre YALNIZCA bir kez burada görünür; koça yönetici iletir.
-function GrupAcildi({ sifre, kod, email, grupAdi, onDone }: { sifre: string; kod: string; email: string; grupAdi: string; onDone: () => void }) {
+function GrupAcildi({ sifre, kod, email, grupAdi, mevcutOgretmen, onDone }: { sifre: string; kod: string; email: string; grupAdi: string; mevcutOgretmen: boolean; onDone: () => void }) {
   const [kopyalandi, setKopyalandi] = useState(false);
-  const metin = `SeFu Koç grup koçluk hesabınız açıldı.\nGrup: ${grupAdi}\nGrup kodu (öğrencileriniz girişte kullanacak): ${kod}\nGiriş: www.sefukoc.com/login → Öğretmen\nE-posta: ${email}\nGeçici şifre: ${sifre}\nİlk girişte kendi şifrenizi belirleyeceksiniz.`;
+  const metin = `SeFu Koç grup koçluk hesabınız açıldı.\nGrup: ${grupAdi}\nGrup kodu (öğrencileriniz girişte kullanacak): ${kod}\nGiriş: www.sefukoc.com/login → Öğretmen\nE-posta: ${email}\nGeçici şifre: ${sifre}\nİlk girişte kendi şifrenizi belirleyeceksiniz.` +
+    (mevcutOgretmen ? `\nBu hesap okulunuzdaki öğretmen hesabınızdan ayrıdır; koçluk için yukarıdaki e-postayla giriş yapın.` : "");
   return (
     <div className="mb-3 flex flex-col gap-2 rounded-2xl p-4" style={{ background: MINT_BG, border: `1px solid ${MINT}` }}>
       <p className="text-sm font-bold" style={{ color: TEXT }}>Grup açıldı. Aşağıdaki bilgileri koça iletin; geçici şifre bir daha gösterilmeyecek.</p>
+      {mevcutOgretmen && (
+        <p className="text-xs" style={{ color: TEXT }}>
+          Bu e-posta mevcut bir öğretmene ait olduğu için koçluk hesabı <b>{email}</b> giriş adıyla ayrı açıldı. Öğretmenin okul hesabı etkilenmedi.
+        </p>
+      )}
       <pre className="whitespace-pre-wrap rounded-xl p-3 text-xs" style={{ background: BG0, color: TEXT, border: `1px solid ${BORDER}` }}>{metin}</pre>
       <div className="flex flex-wrap gap-2">
         <button type="button" onClick={() => { navigator.clipboard?.writeText(metin).then(() => setKopyalandi(true)); }}

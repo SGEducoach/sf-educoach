@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { adAnahtari, grupGirdisiHatasi, grupKapasitesiMi, grupKoduNormalize, grupKoduUret, grupOgrencisiGirdisiHatasi, kalanGun } from "./grup-kocluk";
+import { adAnahtari, grupGirdisiHatasi, grupKapasitesiMi, grupKoduNormalize, grupKoduUret, grupOgrencisiGirdisiHatasi, kalanGun, kocTakmaEpostasi } from "./grup-kocluk";
 
 describe("grupKoduUret", () => {
   test("grup adının ilk kelimesini kullanır", () => {
@@ -64,5 +64,15 @@ describe("adAnahtari", () => {
     expect(adAnahtari("  Ayşe   YILDIZ İÇEL ")).toBe("ayse yildiz icel");
     expect(adAnahtari("ÖMER ŞAHİN")).toBe(adAnahtari("Ömer Şahin"));
     expect(adAnahtari("Işıl Güneş")).toBe("isil gunes");
+  });
+});
+
+describe("kocTakmaEpostasi", () => {
+  test("mevcut öğretmenin e-postasına +koc eklenir, doluysa numaralanır", () => {
+    expect(kocTakmaEpostasi(" Ali.Veli@Gmail.com ")).toBe("ali.veli+koc@gmail.com");
+    expect(kocTakmaEpostasi("ali@okul.k12.tr", 2)).toBe("ali+koc2@okul.k12.tr");
+  });
+  test("zaten takma adlıysa üst üste eklenmez", () => {
+    expect(kocTakmaEpostasi("ali+okul@gmail.com")).toBe("ali+koc@gmail.com");
   });
 });

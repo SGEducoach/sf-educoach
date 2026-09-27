@@ -54,6 +54,18 @@ export function grupGirdisiHatasi(g: GrupGirdisi, bugun: string): string | null 
   return null;
 }
 
+// Kullanıcı kararı (27.09.2026): başka bir kurumda zaten öğretmen hesabı olan
+// kişi grup koçu olabilir — hesap tek kuruma bağlı olduğu için koçluğa AYRI
+// hesap açılır, giriş adı e-postanın "+koc" takma adıdır (ali+koc@gmail.com).
+// Gmail/Outlook/Yandex gibi sağlayıcılar "+..." kısmını yok sayar, davet aynı
+// kutuya düşer. sira > 1 ise takma ad da doluysa: +koc2, +koc3 ...
+export function kocTakmaEpostasi(email: string, sira = 1): string {
+  const temiz = email.trim().toLowerCase();
+  const at = temiz.lastIndexOf("@");
+  const yerel = temiz.slice(0, at).replace(/\+.*$/, "");
+  return `${yerel}+koc${sira > 1 ? sira : ""}${temiz.slice(at)}`;
+}
+
 // ---- Koç paneli (Faz 3) ----
 
 // Grup öğrencileri sınıf düzeyine göre bu şubeli sınıflarda tutulur

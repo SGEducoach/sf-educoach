@@ -16,7 +16,7 @@ import { adNormalize, rastgeleSifre } from "@/lib/validators";
 import { REHBER_BRANSI } from "@/lib/rehberlik";
 import { bugununTarihiTR } from "@/lib/tarih";
 import { SITE_ADRESI, ogretmenBildirimEpostasi } from "@/lib/ogretmen-bildirim-sablon";
-import { grupGirdisiHatasi, grupKapasitesiMi, grupKoduUret, kalanGun, type GrupGirdisi } from "@/lib/grup-kocluk";
+import { grupGirdisiHatasi, grupKapasitesiMi, grupKoduUret, kalanGun, kocTakmaEpostasi, type GrupGirdisi } from "@/lib/grup-kocluk";
 
 async function requireAdmin() {
   const supabase = await createClient();
@@ -101,7 +101,8 @@ async function kocaDavetGonder(email: string, ad: string, grupAdi: string) {
   if (!process.env.RESEND_API_KEY) return;
   const mesaj =
     `"${grupAdi}" grubunuz için SeFu Koç grup koçluk hesabınız açıldı. ` +
-    `Giriş ekranında "Öğretmen" sekmesini seçip bu e-posta adresiyle giriş yapabilirsiniz. ` +
+    `Giriş ekranında "Öğretmen" sekmesini seçip ${email} adresiyle giriş yapabilirsiniz` +
+    (email.includes("+koc") ? " (okulunuzdaki öğretmen hesabınızdan ayrı, koçluğa özel hesap). " : ". ") +
     `Geçici şifreniz yöneticiniz tarafından iletilecek; ilk girişte kendi şifrenizi belirleyeceksiniz.`;
   const { subject, html } = ogretmenBildirimEpostasi(ad, "Grup koçluk hesabınız hazır", mesaj, `${SITE_ADRESI}/login`);
   const { error } = await new Resend(process.env.RESEND_API_KEY).emails.send({
@@ -110,15 +111,37 @@ async function kocaDavetGonder(email: string, ad: string, grupAdi: string) {
   if (error) console.error("koç davet e-postası gönderilemedi:", error.message);
 }
 
-export async function grupOlustur(input: GrupGirdisi): Promise<{ error: string | null; sifre: string | null; kod: string | null }> {
+type GrupOlusturSonucu = { error: string | null; sifre: string | null; kod: string | null; girisEposta?: string; mevcutOgretmen?: boolean };
+
+export async function grupOlustur(input: GrupGirdisi): Promise<GrupOlusturSonucu> {
   const { user, admin } = await requireAdmin();
   const hata = grupGirdisiHatasi(input, bugununTarihiTR());
   if (hata) return { error: hata, sifre: null, kod: null };
 
   const grupAdi = input.grupAdi.trim().replace(/\s+/g, " ");
   const kocAd = adNormalize(input.kocAd);
-  const email = input.kocEmail.trim().toLowerCase();
   const telefon = input.kocTelefon.trim();
+
+  // Kullanıcı isteği (27.09.2026): mevcut öğretmenler de koç olabilsin.
+  // E-posta bir ÖĞRETMENE aitse koçluk için ayrı hesap "+koc" takma adıyla
+  // açılır (bkz. kocTakmaEpostasi). Öğrenci/veli/müdür hesabıysa açılmaz.
+  let email = input.kocEmail.trim().toLowerCase();
+  let mevcutOgretmen = false;
+  const { data: mevcutProfil } = await admin.from("profiles").select("role").eq("email", email).maybeSingle();
+  if (mevcutProfil) {
+    if (mevcutProfil.role !== "ogretmen") {
+      return { error: "Bu e-posta öğretmen olmayan bir hesaba ait; koç için başka bir e-posta girin.", sifre: null, kod: null };
+    }
+    mevcutOgretmen = true;
+    let bulunan: string | null = null;
+    for (let sira = 1; sira <= 20 && !bulunan; sira++) {
+      const aday = kocTakmaEpostasi(email, sira);
+      const { data: dolu } = await admin.from("profiles").select("id").eq("email", aday).maybeSingle();
+      if (!dolu) bulunan = aday;
+    }
+    if (!bulunan) return { error: "Bu öğretmen için koç hesabı adı üretilemedi.", sifre: null, kod: null };
+    email = bulunan;
+  }
 
   // 1) Grup kaydı — kod çakışırsa sıradaki adı dene (yıldızsefu2 vb.).
   let grup: { id: string; okul_kodu: string } | null = null;
@@ -161,11 +184,11 @@ export async function grupOlustur(input: GrupGirdisi): Promise<{ error: string |
 
   await islemKaydi(admin, user.id, "grup_olustur", {
     school_id: grup.id, grup_adi: grupAdi, grup_kodu: grup.okul_kodu, koc_id: olusan.user.id, koc_email: email,
-    kapasite: input.kapasite, bitis: input.bitisTarihi,
+    kapasite: input.kapasite, bitis: input.bitisTarihi, mevcut_ogretmen: mevcutOgretmen,
   });
   await kocaDavetGonder(email, kocAd, grupAdi);
   revalidatePath("/yonetici");
-  return { error: null, sifre, kod: grup.okul_kodu };
+  return { error: null, sifre, kod: grup.okul_kodu, girisEposta: email, mevcutOgretmen };
 }
 
 export async function grupGuncelle(input: { id: string; kapasite?: number; bitisTarihi?: string }): Promise<{ error: string | null }> {
