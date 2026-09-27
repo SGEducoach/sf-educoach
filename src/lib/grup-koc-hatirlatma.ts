@@ -12,6 +12,9 @@ import { kalanGun } from "@/lib/grup-kocluk";
 // bildirim yazmaz (aynı başlıkla son 24 saatte kayıt varsa atlanır).
 
 const UYARI_GUNLERI = [14, 7, 1];
+// Yöneticiye de haber verilen eşikler (kullanıcı isteği 27.09.2026: süre
+// raporu yönetime de gitsin) — her gün değil, yalnızca bu iki eşikte.
+const YONETICI_UYARI_GUNLERI = [7, 1];
 const ILK_GIRIS_HATIRLATMA_GUN = 7;
 
 async function dahaOnceGonderildiMi(admin: SupabaseClient, profileId: string, baslik: string, saat: number): Promise<boolean> {
@@ -45,7 +48,12 @@ export async function grupKocHatirlatmalari(admin: SupabaseClient, bugun: string
     if (!kocHaritasi.has(k.school_id)) kocHaritasi.set(k.school_id, k.id);
   }
 
+  const { data: adminler } = await admin.from("profiles").select("id").eq("role", "admin");
+  const adminIdleri = ((adminler ?? []) as { id: string }[]).map((a) => a.id);
+
   let sureUyarisi = 0;
+  let yoneticiUyarisi = 0;
+  let bitenGrup = 0;
   let girisUyarisi = 0;
   for (const grup of grupListesi) {
     const kocId = kocHaritasi.get(grup.id);
@@ -60,6 +68,26 @@ export async function grupKocHatirlatmalari(admin: SupabaseClient, bugun: string
           `${grup.ad} grubunun süresinin dolmasına ${kalan} gün kaldı. Süre dolunca grup salt okunur olur; devam için SeFu Koç yönetimiyle görüş.`,
           { anlik: true });
         sureUyarisi++;
+      }
+      if (YONETICI_UYARI_GUNLERI.includes(kalan)) {
+        for (const adminId of adminIdleri) {
+          const yoneticiBaslik = "Grup süresi doluyor";
+          if (await dahaOnceGonderildiMi(admin, adminId, yoneticiBaslik, 20)) continue;
+          await kocaBildir(admin, adminId, yoneticiBaslik,
+            `${grup.ad} grubunun süresine ${kalan} gün kaldı. Uzatma için /yonetici → Grup Koçluk.`);
+          yoneticiUyarisi++;
+        }
+      }
+    }
+
+    // Sürenin dolduğu gün: tek ve anlaşılır bilgilendirme.
+    if (kalan === 0) {
+      const baslik = "Grubunun süresi doldu";
+      if (!await dahaOnceGonderildiMi(admin, kocId, baslik, 20)) {
+        await kocaBildir(admin, kocId, baslik,
+          `${grup.ad} artık salt okunur: veriler görünür, yeni kayıt yapılamaz. Devam etmek için SeFu Koç yönetimiyle görüş.`,
+          { anlik: true });
+        bitenGrup++;
       }
     }
 
@@ -87,6 +115,8 @@ export async function grupKocHatirlatmalari(admin: SupabaseClient, bugun: string
   }
 
   if (sureUyarisi > 0) detaylar.push(`${sureUyarisi} koça grup süresi uyarısı gönderildi.`);
+  if (yoneticiUyarisi > 0) detaylar.push(`${yoneticiUyarisi} yönetici bildirimi (grup süresi) gönderildi.`);
+  if (bitenGrup > 0) detaylar.push(`${bitenGrup} grubun süresi doldu, koça bildirildi.`);
   if (girisUyarisi > 0) detaylar.push(`${girisUyarisi} koça giriş yapmayan öğrenci hatırlatması gönderildi.`);
   return detaylar;
 }
