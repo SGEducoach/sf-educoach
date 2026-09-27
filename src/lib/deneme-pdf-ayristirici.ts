@@ -25,6 +25,7 @@ import type { TextItem } from "pdfjs-dist/types/src/display/api";
 import { sinifListesiSayfalariniCoz } from "./deneme-sinif-listesi";
 import { karneBirinciSayfaCoz, type KarneBirinciSayfa } from "./karne-birinci-sayfa";
 import type { GenisMetin, SinifListesiSonucu } from "./deneme-sinif-listesi";
+import { siraliListeCoz, type SiraliListeSonucu } from "./deneme-sirali-liste";
 
 // pdfjs-dist'in Node/legacy build'i, HANGİ fonksiyonu çağırdığımızdan
 // bağımsız olarak, modül YÜKLENİRKEN (import anında) DOMMatrix/Path2D
@@ -363,6 +364,33 @@ export async function sinifListeleriniAyristir(pdfBuffer: Buffer, maxSayfa = 80)
     return sinifListesiSayfalariniCoz(sayfalar);
   } catch (e) {
     return { basarili: false, ogrenciler: [], okunamayanSatir: 0, hata: `PDF okunamadı: ${e instanceof Error ? e.message : String(e)}` };
+  }
+}
+
+// "... SIRALI TYT LİSTESİ" (Kariyerim biçimi, 27.09.2026) — çözümleme saf
+// modülde (deneme-sirali-liste.ts); burada sayfa metni y'ye göre satırlara
+// toplanıp x sırasıyla birleştiriliyor. Liste sayfaları PDF'in başında.
+export async function siraliListeyiAyristir(pdfBuffer: Buffer, maxSayfa = 15): Promise<SiraliListeSonucu> {
+  try {
+    const dogruBoyut = Uint8Array.from(pdfBuffer);
+    const dogument = await (await pdfjsGetDocument())({ data: dogruBoyut, standardFontDataUrl: undefined, disableFontFace: true }).promise;
+    const sayfalar: string[][] = [];
+    for (let sayfaNo = 1; sayfaNo <= Math.min(maxSayfa, dogument.numPages); sayfaNo++) {
+      const icerik = await (await dogument.getPage(sayfaNo)).getTextContent();
+      const satirlar = new Map<number, { x: number; str: string }[]>();
+      for (const it of icerik.items.filter(metinItemMi)) {
+        if (!it.str.trim()) continue;
+        const y = Math.round((it.transform[5] as number) / 2);
+        const satir = satirlar.get(y) ?? [];
+        satir.push({ x: it.transform[4] as number, str: it.str });
+        satirlar.set(y, satir);
+      }
+      sayfalar.push([...satirlar.entries()].sort((a, b) => b[0] - a[0])
+        .map(([, parcalar]) => parcalar.sort((a, b) => a.x - b.x).map((p) => p.str.trim()).join(" ")));
+    }
+    return siraliListeCoz(sayfalar);
+  } catch (e) {
+    return { basarili: false, hata: `PDF okunamadı: ${e instanceof Error ? e.message : String(e)}`, dersEtiketleri: [], ogrenciler: [], okunamayanSatirlar: [] };
   }
 }
 

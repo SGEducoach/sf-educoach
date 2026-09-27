@@ -16,10 +16,11 @@ import type { DenemeTuru } from "@/lib/types";
 import { ogretmenDenemeSonucuKaydet, type DenemeDersSonucu, type DenemeKazanimSonucu } from "@/lib/deneme-sonucu-kaydet";
 import {
   KARNE_DERS_TYT_ESLESTIRME, okulListesiniAyristir, sinifListeleriniAyristir, tumKarneleriIndeksle,
-  karneyiTytDerslerineEslestir, tumKarneKazanimlariniIndeksle,
+  karneyiTytDerslerineEslestir, tumKarneKazanimlariniIndeksle, siraliListeyiAyristir,
 } from "@/lib/deneme-pdf-ayristirici";
 import { tytDerslerineIndirge, type SinifListesiSonucu } from "@/lib/deneme-sinif-listesi";
 import type { KarneBirinciSayfa } from "@/lib/karne-birinci-sayfa";
+import { gruplaraBolerekOku, YanitSigmadiHatasi } from "@/lib/gruplu-okuma";
 import { netHesapla } from "@/lib/types";
 import { gecerliDersler } from "@/lib/deneme-dersleri";
 
@@ -42,6 +43,15 @@ class PdfAyristirmaHatasi extends Error {
     this.name = "PdfAyristirmaHatasi";
   }
 }
+
+// Claude yolunda tek istekte sorulan öğrenci sayısı ve aynı anda gönderilen
+// grup sayısı (27.09.2026). 20 öğrenci × ~11 ders, 8000 token yanıta rahat sığar.
+const CLAUDE_GRUP_BOYUTU = 20;
+const CLAUDE_ES_ZAMANLI_GRUP = 3;
+
+// Yükleme formundaki "PDF biçimi" seçimi (DershaneDenemePdfFormu).
+const PDF_BICIMLERI = ["otomatik", "sinif", "okul", "sirali", "claude"] as const;
+type PdfBicimi = (typeof PDF_BICIMLERI)[number];
 
 function kayitMi(deger: unknown): deger is Record<string, unknown> {
   return typeof deger === "object" && deger !== null && !Array.isArray(deger);
@@ -341,8 +351,16 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
   if (!yayinevi) return { error: "Yayınevi gerekli.", ...BOS_SONUC };
   if (!/^\d{4}-\d{2}-\d{2}$/.test(tarih)) return { error: "Uygulama tarihi gerekli.", ...BOS_SONUC };
   if (!["TYT", "AYT", "BRANS"].includes(tur)) return { error: "Tür seçin.", ...BOS_SONUC };
+  // Kullanıcı isteği (27.09.2026): yükleyen PDF biçimini seçebilir. Seçilen
+  // biçim tanınmazsa sessizce Claude'a gidilmez, neden okunamadığı söylenir.
+  const bicim = String(formData.get("bicim") ?? "otomatik") as PdfBicimi;
+  if (!PDF_BICIMLERI.includes(bicim)) return { error: "PDF biçimi geçersiz.", ...BOS_SONUC };
+  const bicimDenensin = (b: PdfBicimi) => bicim === "otomatik" || bicim === b;
+  if (bicim !== "otomatik" && bicim !== "claude" && tur === "AYT") {
+    return { error: "Bu PDF biçimi yalnızca TYT ve Branş denemelerinde okunabiliyor; AYT için \"Diğer biçim\" seçin.", ...BOS_SONUC };
+  }
 
-  const base64 = Buffer.from(await dosya.arrayBuffer()).toString("base64");
+  const base64 =Buffer.from(await dosya.arrayBuffer()).toString("base64");
   const dersler = gecerliDersler(tur);
 
   // Hem aktif öğrencileri hem de müdürün eklediği fakat hesabını henüz
@@ -378,7 +396,7 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
   // her satır toplam sütunuyla doğrulanır. Tanınmazsa eski yol aynen sürer.
   // Yalnızca kurumdaki öğrencilerle ilgili satırlar alınır (bkz. hedefleIlgiliMi).
   let sinifListesi: SinifListesiSonucu | null = null;
-  if (tur === "TYT" || tur === "BRANS") {
+  if ((tur === "TYT" || tur === "BRANS") && bicimDenensin("sinif")) {
     sinifListesi = await sinifListeleriniAyristir(Buffer.from(await dosya.arrayBuffer()));
     if (sinifListesi.basarili) {
       const okunanlar: PdfOgrenciSonucu[] = [];
@@ -414,7 +432,7 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
   // Ders adları bilinmiyorsa ("Ders 1" gibi jenerik) eski Claude yolu sürer.
   let okulListesindenOkundu = false;
   if (
-    ayristirilan === null && (tur === "TYT" || tur === "BRANS") && deterministikSonuc?.basarili &&
+    ayristirilan === null && (tur === "TYT" || tur === "BRANS") && bicimDenensin("okul") && deterministikSonuc?.basarili &&
     deterministikSonuc.dersEtiketleri.every((d) => d in KARNE_DERS_TYT_ESLESTIRME || /\(Seçmeli\)$/.test(d))
   ) {
     const okunanlar: PdfOgrenciSonucu[] = [];
@@ -433,15 +451,65 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
       "[deneme-pdf okul listesi] PDF'teki öğrenci:", deterministikSonuc.ogrenciler.length,
       "| kurumda eşleşen:", okunanlar.length,
     );
+  } else if (ayristirilan === null) {
+    // Neden Claude'a gidildiği kayıtta görünsün (27.09.2026 — dershane
+    // yüklemesinde sebep kayıttan anlaşılamıyordu).
+    console.info(
+      "[deneme-pdf okul listesi] kullanılmadı:",
+      !deterministikSonuc?.basarili
+        ? (deterministikSonuc?.hata ?? "okunamadı")
+        : tur === "AYT"
+          ? "AYT için okul listesi yolu yok"
+          : `ders başlıkları tanınmadı: ${deterministikSonuc.dersEtiketleri.join(", ")}`,
+    );
+  }
+
+  // "... SIRALI TYT LİSTESİ" (kullanıcı bildirimi 27.09.2026, Kariyerim
+  // dershanesi): öğrenci no / sınıf sütunu yok, satır = sıra + ad + D/Y/N
+  // blokları + toplam + puan + sıralamalar. Toplamla doğrulanarak okunur,
+  // Claude'a gidilmez. Eşleştirme yalnızca ada göre (numara yok).
+  if (ayristirilan === null && (tur === "TYT" || tur === "BRANS") && bicimDenensin("sirali")) {
+    const sirali = await siraliListeyiAyristir(Buffer.from(await dosya.arrayBuffer()));
+    if (sirali.basarili) {
+      const okunanlar: PdfOgrenciSonucu[] = [];
+      for (const o of sirali.ogrenciler) {
+        if (!o.isimHam || !hedefleIlgiliMi(o.isimHam)) continue;
+        okunanlar.push({ ad_soyad: o.isimHam, ders_sonuclari: o.dersSonuclari });
+      }
+      okunamayanAdlar.push(...sirali.okunamayanSatirlar.map((o) => o.isimHam).filter((ad) => ad && hedefleIlgiliMi(ad)));
+      ayristirilan = okunanlar;
+      console.info(
+        "[deneme-pdf sıralı liste] PDF'teki öğrenci:", sirali.ogrenciler.length,
+        "| kurumda eşleşen:", okunanlar.length, "| okunamayan satır:", sirali.okunamayanSatirlar.length,
+      );
+    } else {
+      console.info("[deneme-pdf sıralı liste] tanınmadı:", sirali.hata);
+    }
+  }
+
+  // Belirli bir biçim seçildiyse ve okunamadıysa Claude'a gitmeden söyle.
+  if (ayristirilan === null && bicim !== "otomatik" && bicim !== "claude") {
+    const ad = { sinif: "Sınıf bazlı net listesi", okul: "Okul net listesi", sirali: "Kurum sıralı listesi" }[bicim];
+    return {
+      error: `PDF "${ad}" biçiminde okunamadı. Başka bir biçim ya da "Otomatik tanı" seçip tekrar deneyin.`,
+      ...BOS_SONUC,
+    };
   }
 
   if (ayristirilan === null) {
     try {
       const anthropic = getAnthropicClient();
+      // Kullanıcı bildirimi (27.09.2026, dershane yüklemesi): tanınmayan
+      // biçimdeki kalabalık bir PDF'te tüm öğrenciler TEK yanıtta istenince
+      // yanıt 8000 token sınırını aşıp "tek seferde işlenemeyecek kadar
+      // büyük" hatası veriyordu. Artık hedef öğrenciler küçük gruplar hâlinde
+      // isteniyor; bir grup yine sığmazsa ikiye bölünüp tekrar deneniyor.
+      const grubuOku = async (grupHedefleri: string[]): Promise<PdfAyristirmaCozumu> => {
       let sonBicimHatasi: unknown;
       const birlesenSonuclar = new Map<string, PdfOgrenciSonucu>();
-      let istekHedefleri = hedefOgrenciAdlari;
+      let istekHedefleri = grupHedefleri;
       let hedefliTekrar = false;
+      let grupSonucu: PdfAyristirmaCozumu | null = null;
 
       for (let deneme = 1; deneme <= 2; deneme++) {
         const yanit = await anthropic.messages.create({
@@ -479,8 +547,8 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
         }, { timeout: 120_000 });
 
         if (yanit.stop_reason === "max_tokens" || yanit.stop_reason === "model_context_window_exceeded") {
-          console.error("deneme PDF Claude yanıtı tamamlanamadı; stop_reason:", yanit.stop_reason);
-          throw new PdfAyristirmaHatasi("PDF sonucu tek seferde işlenemeyecek kadar büyük. Lütfen sonuç sayfalarını daha küçük parçalara bölün.");
+          console.warn("deneme PDF Claude yanıtı sığmadı; stop_reason:", yanit.stop_reason, "| grup:", istekHedefleri.length);
+          throw new YanitSigmadiHatasi();
         }
         if (yanit.stop_reason !== "end_turn") {
           console.error("deneme PDF Claude yanıtı beklenmeyen nedenle durdu; stop_reason:", yanit.stop_reason);
@@ -504,17 +572,18 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
 
           if (deneme === 1 && cozum.okunamayanAdlar.length > 0) {
             istekHedefleri = [...new Set(cozum.okunamayanAdlar)];
-            okunamayanAdlar = istekHedefleri;
             hedefliTekrar = true;
             sonBicimHatasi = undefined;
             console.warn("deneme PDF ilk okumada boş ders sonucu döndürdü; hedefli yeniden okuma uygulanıyor. öğrenci_sayısı:", istekHedefleri.length);
             continue;
           }
 
-          okunamayanAdlar = hedefliTekrar
-            ? istekHedefleri.filter((ad) => !birlesenSonuclar.has(adNormalize(ad)))
-            : cozum.okunamayanAdlar;
-          ayristirilan = [...birlesenSonuclar.values()];
+          grupSonucu = {
+            sonuclar: [...birlesenSonuclar.values()],
+            okunamayanAdlar: hedefliTekrar
+              ? istekHedefleri.filter((ad) => !birlesenSonuclar.has(adNormalize(ad)))
+              : cozum.okunamayanAdlar,
+          };
           sonBicimHatasi = undefined;
           break;
         } catch (bicimHatasi) {
@@ -524,16 +593,29 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
           } else if (birlesenSonuclar.size > 0) {
             // İlk okumadaki sağlam öğrencileri ikinci okuma hatası yüzünden
             // kaybetme. Sadece tekrar hedeflerini okunamadı olarak bildir.
-            ayristirilan = [...birlesenSonuclar.values()];
-            okunamayanAdlar = istekHedefleri.filter((ad) => !birlesenSonuclar.has(adNormalize(ad)));
+            grupSonucu = {
+              sonuclar: [...birlesenSonuclar.values()],
+              okunamayanAdlar: istekHedefleri.filter((ad) => !birlesenSonuclar.has(adNormalize(ad))),
+            };
           }
         }
       }
 
-      if (!ayristirilan) {
+      if (!grupSonucu) {
         console.error("deneme PDF yapılandırılmış yanıtı iki denemede de doğrulanamadı:", hataOzeti(sonBicimHatasi));
         throw new PdfAyristirmaHatasi("PDF okundu ancak sonuç biçimi doğrulanamadı. Lütfen tekrar deneyin.");
       }
+      return grupSonucu;
+      };
+
+      const toplu = await gruplaraBolerekOku(hedefOgrenciAdlari, grubuOku, {
+        grupBoyutu: CLAUDE_GRUP_BOYUTU,
+        esZamanli: CLAUDE_ES_ZAMANLI_GRUP,
+        tekKisiSigmadi: () => new PdfAyristirmaHatasi("PDF sonucu işlenemeyecek kadar büyük. Lütfen sonuç sayfalarını daha küçük parçalara bölün."),
+      });
+      console.info("[deneme-pdf Claude] hedef öğrenci:", hedefOgrenciAdlari.length, "| grup:", toplu.grupSayisi);
+      ayristirilan = toplu.sonuclar;
+      okunamayanAdlar = toplu.okunamayanAdlar;
     } catch (e) {
       console.error("deneme PDF ayrıştırma hatası:", e);
       const mesaj = e instanceof PdfAyristirmaHatasi

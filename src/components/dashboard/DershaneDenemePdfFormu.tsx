@@ -18,6 +18,7 @@ export function DershaneDenemePdfFormu({ schoolId, yalnizcaExcel = false }: { sc
   const [yayinevi, setYayinevi] = useState("");
   const [tarih, setTarih] = useState("");
   const [tur, setTur] = useState<"TYT" | "AYT" | "BRANS">("TYT");
+  const [bicim, setBicim] = useState<"otomatik" | "okul" | "sinif" | "sirali" | "claude">("otomatik");
   const [hata, setHata] = useState<string | null>(null);
   const [sonuc, setSonuc] = useState<{
     toplam: number;
@@ -42,6 +43,7 @@ export function DershaneDenemePdfFormu({ schoolId, yalnizcaExcel = false }: { sc
     formData.set("yayinevi", yayinevi.trim());
     formData.set("tarih", tarih);
     formData.set("tur", tur);
+    if (mod === "pdf") formData.set("bicim", bicim);
     if (schoolId) formData.set("schoolId", schoolId);
 
     setYukleniyor(true);
@@ -95,7 +97,9 @@ export function DershaneDenemePdfFormu({ schoolId, yalnizcaExcel = false }: { sc
           </a>
         )}
         <p className="text-xs" style={{ color: TEXT_MUTED }}>
-          {mod === "excel" ? "Excel dosyasını indirilen şablona göre hazırlayın. Excel işlemi yapay zekâ kullanmaz." : "PDF ayrıştırma yapay zekâ kullanır ve API kullanım maliyeti oluşturabilir."}
+          {mod === "excel" ? "Excel dosyasını indirilen şablona göre hazırlayın. Excel işlemi yapay zekâ kullanmaz." : bicim === "claude"
+            ? "Bu seçenek yapay zekâ kullanır ve API kullanım maliyeti oluşturabilir."
+            : "Tanınan biçimler yapay zekâsız okunur; biçim tanınmazsa (yalnızca Otomatik'te) yapay zekâya geçilir."}
         </p>
         <label className="flex flex-col gap-1">
           <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">
@@ -126,8 +130,21 @@ export function DershaneDenemePdfFormu({ schoolId, yalnizcaExcel = false }: { sc
             <option value="BRANS">Branş Denemesi (9-10. sınıf)</option>
           </select>
         </label>
+        {mod === "pdf" && (
+          <label className="flex flex-col gap-1">
+            <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">PDF biçimi</span>
+            <select value={bicim} onChange={(e) => setBicim(e.target.value as typeof bicim)}
+              className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+              <option value="otomatik">Otomatik tanı (önerilen)</option>
+              <option value="okul">Okul net listesi (Ö.No ve sınıf sütunlu)</option>
+              <option value="sinif">Sınıf bazlı net listeleri</option>
+              <option value="sirali">Kurum sıralı listesi (Sıra, Ad Soyad, D-Y-N)</option>
+              <option value="claude">Diğer biçim (yapay zekâ ile okunur)</option>
+            </select>
+          </label>
+        )}
 
-        {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
+        {hata &&<div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
         {sonuc && (
           <div className="rounded-xl px-3 py-2 text-xs font-semibold" style={{ background: MINT_BG, color: MINT }}>
             {sonuc.toplam} öğrenci bulundu — {sonuc.otomatikEslesen} aktif öğrenciye işlendi
