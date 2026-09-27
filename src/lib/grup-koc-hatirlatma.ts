@@ -38,13 +38,19 @@ export async function grupKocHatirlatmalari(admin: SupabaseClient, bugun: string
     .filter((g) => g.aktif !== false);
   if (grupListesi.length === 0) return detaylar;
 
-  const { data: kocSatirlari } = await admin
-    .from("teachers")
-    .select("id, school_id, school_moderators!inner(school_id)")
-    .eq("brans", REHBER_BRANSI)
-    .in("school_id", grupListesi.map((g) => g.id));
+  // teachers ↔ school_moderators arasında doğrudan yabancı anahtar yok
+  // (ikisi de profiles'a bağlı); iki sorgu alınıp kesiştiriliyor.
+  const grupIdleri = grupListesi.map((g) => g.id);
+  const [{ data: kocSatirlari }, { data: moderatorler }] = await Promise.all([
+    admin.from("teachers").select("id, school_id").eq("brans", REHBER_BRANSI).in("school_id", grupIdleri),
+    admin.from("school_moderators").select("profile_id, school_id").in("school_id", grupIdleri),
+  ]);
+  const moderatorAnahtarlari = new Set(
+    ((moderatorler ?? []) as { profile_id: string; school_id: string }[]).map((m) => `${m.school_id}|${m.profile_id}`),
+  );
   const kocHaritasi = new Map<string, string>();
-  for (const k of ((kocSatirlari ?? []) as unknown as { id: string; school_id: string }[])) {
+  for (const k of ((kocSatirlari ?? []) as { id: string; school_id: string }[])) {
+    if (!moderatorAnahtarlari.has(`${k.school_id}|${k.id}`)) continue;
     if (!kocHaritasi.has(k.school_id)) kocHaritasi.set(k.school_id, k.id);
   }
 

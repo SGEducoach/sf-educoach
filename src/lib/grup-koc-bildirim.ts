@@ -14,15 +14,25 @@ import { pushGonderProfile } from "@/lib/push-send";
 export async function grupKocunuBul(admin: SupabaseClient, schoolId: string): Promise<string | null> {
   const { data: okul } = await admin.from("schools").select("id, grup_kapasitesi").eq("id", schoolId).maybeSingle();
   if (!okul || okul.grup_kapasitesi === null) return null;
-  const { data: koc } = await admin
+  // teachers ile school_moderators arasında doğrudan bir yabancı anahtar YOK
+  // (ikisi de profiles'a bağlı), bu yüzden gömülü sorgu kullanılamaz — iki
+  // ayrı sorgu ve kesişim (grup-koc-auth.ts ile aynı desen).
+  const { data: ogretmenler } = await admin
     .from("teachers")
-    .select("id, school_moderators!inner(school_id)")
+    .select("id")
     .eq("school_id", schoolId)
-    .eq("brans", REHBER_BRANSI)
-    .eq("school_moderators.school_id", schoolId)
+    .eq("brans", REHBER_BRANSI);
+  const adaylar = ((ogretmenler ?? []) as { id: string }[]).map((o) => o.id);
+  if (adaylar.length === 0) return null;
+
+  const { data: moderator } = await admin
+    .from("school_moderators")
+    .select("profile_id")
+    .eq("school_id", schoolId)
+    .in("profile_id", adaylar)
     .limit(1)
     .maybeSingle();
-  return (koc?.id as string | undefined) ?? null;
+  return (moderator?.profile_id as string | undefined) ?? null;
 }
 
 // Öğrencinin kurumu bir grupsa o grubun koçunu döndürür.
