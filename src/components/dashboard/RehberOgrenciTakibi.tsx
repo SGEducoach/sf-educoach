@@ -42,10 +42,12 @@ function saatEtiketi(saat: string | null) {
   return saat ? saat.slice(0, 5) : "--:--";
 }
 
-export function RehberOgrenciTakibi({ ogrenciler, secilen, konuOnerileri }: {
+export function RehberOgrenciTakibi({ ogrenciler, secilen, konuOnerileri, grupMu = false }: {
   ogrenciler: RehberOgrenci[];
   secilen: RehberSecilenOgrenci | null;
   konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
+  // Grup koçunda metinler "dershane" yerine "grup" der (denetim 27.09.2026).
+  grupMu?: boolean;
 }) {
   const router = useRouter();
   const [sekme, setSekme] = useState<Sekme>(secilen ? "veri" : "odev");
@@ -109,9 +111,11 @@ export function RehberOgrenciTakibi({ ogrenciler, secilen, konuOnerileri }: {
     <div className="flex flex-col gap-4">
       <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <div className="mb-4">
-          <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-extrabold">Öğrenci Takibi</h1>
+          <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-extrabold">{grupMu ? "Öğrenci Takibi — Grubum" : "Öğrenci Takibi"}</h1>
           <p style={{ color: TEXT_MUTED }} className="text-xs mt-1">
-            Öğrenci adına ödev verin, veri girin ve program yapın. Girdiğiniz veriler öğrencinin analizinde sayılır.
+            {grupMu
+              ? "Grubundaki öğrenci adına ödev ver, veri gir ve program yap. Girdiğin veriler öğrencinin analizinde sayılır."
+              : "Öğrenci adına ödev verin, veri girin ve program yapın. Girdiğiniz veriler öğrencinin analizinde sayılır."}
           </p>
         </div>
         <div className="flex gap-1 p-1 rounded-full" style={{ background: BG0, border: `2px solid ${BORDER}` }}>

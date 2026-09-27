@@ -64,12 +64,14 @@ const IKONLAR: Record<DashboardIkonu, typeof Home> = {
 // bir ara genişlik oluşmaz. Renkler
 // header gibi tema değişkenlerine bağlı — açık modda beyaz metin/koyu panel
 // kullanmak (eskiden olduğu gibi) gündüz de "gece" görünümü veriyordu.
-export function MobilMenu({ ad, role, kurumTuru, brans, grupMu = false, okunmamisMesajSayisi, moderatorMu, rolEtiketi, aktifBolum = "ozet", navigasyonGoster = true, geriDonusHref, geriDonusEtiketi }: {
+export function MobilMenu({ ad, role, kurumTuru, brans, grupMu = false, okunmamisMesajSayisi, moderatorMu, rolEtiketi, aktifBolum = "ozet", navigasyonGoster = true, geriDonusHref, geriDonusEtiketi, rozetler }: {
   ad: string;
   role: UserRole;
   kurumTuru?: KurumTuru;
   brans?: string;
   grupMu?: boolean;
+  // Bölüm başına bekleyen iş sayısı (bkz. DashboardYanMenu).
+  rozetler?: Partial<Record<DashboardBolumu, number>>;
   okunmamisMesajSayisi: number;
   moderatorMu: boolean;
   rolEtiketi?: string;
@@ -146,6 +148,11 @@ export function MobilMenu({ ad, role, kurumTuru, brans, grupMu = false, okunmami
                       className={`sfec-btn flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-[13px] font-semibold ${tgBolumu ? "sfec-menu-tg" : ""}`}
                       style={{ color: TEXT, background: aktif ? MINT_BG : "transparent", border: `1px solid ${aktif ? MINT : "transparent"}` }}>
                       <Ikon size={16} color={aktif ? TEXT : TEXT_MUTED} aria-hidden="true" /> {oge.etiket}
+                      {(rozetler?.[oge.bolum] ?? 0) > 0 && (
+                        <span className="ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-extrabold" style={{ background: MINT, color: BG1 }}>
+                          {rozetler?.[oge.bolum]}
+                        </span>
+                      )}
                     </Link>
                   );
                 })}

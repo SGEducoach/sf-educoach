@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { grupKocHatirlatmalari } from "@/lib/grup-koc-hatirlatma";
 import webpush from "web-push";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { KATEGORI_GERIYE_DONUK_SINIR } from "@/lib/types";
@@ -308,6 +309,13 @@ export async function GET(request: Request) {
     if (suresiGecenIdler.length > 0) {
       await admin.from("gorev_atamalari").update({ durum: "tamamlanmadi" }).in("id", suresiGecenIdler);
       detaylar.push(`${suresiGecenIdler.length} görev ataması süresi geçtiği için tamamlanmadı işaretlendi.`);
+    }
+
+    // Grup Koçluk denetimi (27.09.2026): koça süre ve giriş hatırlatmaları.
+    try {
+      detaylar.push(...await grupKocHatirlatmalari(admin, bugunISO));
+    } catch (grupHatasi) {
+      console.error("grup koç hatırlatmaları gönderilemedi:", grupHatasi);
     }
 
     return NextResponse.json({ ok: true, gonderilen, detaylar });

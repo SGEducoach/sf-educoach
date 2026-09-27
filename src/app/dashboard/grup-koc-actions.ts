@@ -9,13 +9,14 @@ import { revalidatePath } from "next/cache";
 import { adNormalize, rastgeleSifre, sifreGecerliMi, SIFRE_IPUCU } from "@/lib/validators";
 import { grupKocuYazmaYetkisi, grupKocuYetkisi } from "@/lib/grup-koc-auth";
 import { GRUP_SINIF_DUZEYLERI, GRUP_SINIF_SUBESI, adAnahtari, grupOgrencisiGirdisiHatasi } from "@/lib/grup-kocluk";
+import { grupHatasiCevir } from "@/lib/grup-hata-mesaji";
 import { createClient } from "@/lib/supabase/server";
 
 type Admin = NonNullable<Awaited<ReturnType<typeof grupKocuYetkisi>>["admin"]>;
 
+// Tüm koç işlemleri aynı çeviri katmanından geçer (bkz. grup-hata-mesaji.ts).
 function kapasiteMesaji(mesaj: string): string {
-  if (mesaj.includes("GRUP_KAPASITESI_DOLU")) return "Grup kapasitesi dolu. Yer açmak için bir öğrenciyi pasife alın ya da kapasite artırımı için SeFu Koç yönetimiyle görüşün.";
-  return mesaj;
+  return grupHatasiCevir(mesaj);
 }
 
 async function islemKaydi(admin: Admin, actorId: string, eylem: string, detay: Record<string, unknown>) {
@@ -302,4 +303,22 @@ export async function grupVeliAktiflik(veliId: string, aktif: boolean): Promise<
   await islemKaydi(admin, kocId, aktif ? "grup_veli_aktiflestir" : "grup_veli_pasiflestir", { school_id: grup.id, veli_id: veliId });
   revalidatePath("/dashboard");
   return { error: null };
+}
+
+// Menü rozeti (denetim 27.09.2026): koç bekleyen işlerini menüden görsün.
+// Hafif sayım — panel verisini baştan çekmez.
+export async function grupBekleyenIsSayilari(): Promise<{ veliTalebi: number; onayBekleyen: number }> {
+  const yetki = await grupKocuYetkisi();
+  if (yetki.error !== null) return { veliTalebi: 0, onayBekleyen: 0 };
+  const { admin, grup } = yetki;
+
+  const { data: ogrenciler } = await admin.from("students").select("id").eq("school_id", grup.id);
+  const ids = ((ogrenciler ?? []) as { id: string }[]).map((o) => o.id);
+  const [{ count: veliTalebi }, { count: onayBekleyen }] = await Promise.all([
+    ids.length > 0
+      ? admin.from("veli_link_requests").select("id", { count: "exact", head: true }).in("student_id", ids).eq("durum", "bekliyor")
+      : Promise.resolve({ count: 0 }),
+    admin.from("grup_ogrenci_onaylari").select("id", { count: "exact", head: true }).eq("school_id", grup.id).eq("durum", "bekliyor"),
+  ]);
+  return { veliTalebi: veliTalebi ?? 0, onayBekleyen: onayBekleyen ?? 0 };
 }

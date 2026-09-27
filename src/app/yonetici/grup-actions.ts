@@ -17,6 +17,7 @@ import { REHBER_BRANSI } from "@/lib/rehberlik";
 import { bugununTarihiTR } from "@/lib/tarih";
 import { SITE_ADRESI, ogretmenBildirimEpostasi } from "@/lib/ogretmen-bildirim-sablon";
 import { grupGirdisiHatasi, grupKapasitesiMi, grupKoduUret, kalanGun, kocTakmaEpostasi, type GrupGirdisi } from "@/lib/grup-kocluk";
+import { kocaBildir } from "@/lib/grup-koc-bildirim";
 
 async function requireAdmin() {
   const supabase = await createClient();
@@ -278,10 +279,18 @@ export async function grupOgrenciOnayKarari(id: string, onayla: boolean): Promis
   const { user, admin } = await requireAdmin();
   const { data, error } = await admin.from("grup_ogrenci_onaylari")
     .update({ durum: onayla ? "onaylandi" : "reddedildi", karar_veren_id: user.id, karar_at: new Date().toISOString() })
-    .eq("id", id).eq("durum", "bekliyor").select("school_id").maybeSingle();
+    .eq("id", id).eq("durum", "bekliyor").select("school_id, ad, talep_eden_id").maybeSingle();
   if (error) return { error: error.message };
   if (!data) return { error: "Talep daha önce karara bağlanmış." };
   await islemKaydi(admin, user.id, onayla ? "grup_okul_eslesme_onayla" : "grup_okul_eslesme_reddet", { onay_id: id, school_id: data.school_id });
+  // Denetim (27.09.2026): koç kararı ekranı yoklayarak öğreniyordu.
+  if (data.talep_eden_id) {
+    await kocaBildir(admin, data.talep_eden_id as string,
+      onayla ? "Öğrenci ekleme onaylandı" : "Öğrenci ekleme onaylanmadı",
+      onayla
+        ? `"${data.ad}" adlı öğrenciyi artık grubuna ekleyebilirsin.`
+        : `"${data.ad}" bir okul öğrencisiyle eşleştiği için eklenemiyor. Farklı bir kişiyse SeFu Koç yönetimiyle görüş.`);
+  }
   revalidatePath("/yonetici");
   return { error: null };
 }

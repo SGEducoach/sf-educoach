@@ -83,7 +83,7 @@ export function OgretmenPanel({
   ogretmenDersleri, bekleyenOnaylar, verdigimGorevler, konuOnerileri, aktifBolum,
   dersProgramiSatirlari, okulNobetleri, yurtNobetGorevleri, dershaneMi,
   nobetDevirOgretmenleri,
-  okulOgretmenleri, secilenOgretmenId, secilenOgretmenProgrami, secilenOgretmenNobetleri, rehberOgretmenMi = false,
+  okulOgretmenleri, secilenOgretmenId, secilenOgretmenProgrami, secilenOgretmenNobetleri, rehberOgretmenMi = false, grupMu = false,
   secilenOgrenciId, secilenOgrenciProgrami,
   secilenOgrenciAdi,
 }: {
@@ -118,6 +118,9 @@ export function OgretmenPanel({
   secilenOgretmenProgrami?: DersProgramiSatiri[];
   secilenOgretmenNobetleri?: OkulNobeti[];
   rehberOgretmenMi?: boolean;
+  // Grup Koçluk koçu (kurum dışı koç): metinler "okul/sınıf" yerine "grup"
+  // diliyle gösterilir (denetim, 27.09.2026).
+  grupMu?: boolean;
   secilenOgrenciId?: string;
   secilenOgrenciProgrami?: OgrenciProgramSatiri[] | null;
   secilenOgrenciAdi?: string | null;
@@ -169,7 +172,12 @@ export function OgretmenPanel({
   const duyuruMumkunMu = role === "mudur" || rehberOgretmenMi || !!kendiSinifId;
   // Müdür kapsamı seçebiliyor: tüm okul / seviye / belirli şube. Öğretmende
   // kapsam sabit (kendi sınıfı) olduğu için seçici hiç gösterilmiyor.
-  const duyuruKapsamSecenekleri = role === "mudur" || rehberOgretmenMi
+  const duyuruKapsamSecenekleri = grupMu
+    ? [
+        { deger: "okul", etiket: "Tüm grup" },
+        ...siniflar.map((s) => ({ deger: s.id, etiket: `Sadece ${s.seviye}. sınıflar` })),
+      ]
+    : role === "mudur" || rehberOgretmenMi
     ? [
         { deger: "okul", etiket: "Tüm okul" },
         { deger: "9", etiket: "9. Sınıflar" },
@@ -192,7 +200,7 @@ export function OgretmenPanel({
               <span className="sfec-hosgeldin-kapi h-7 w-7" aria-hidden="true" />
             </span>
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: TEXT_MUTED }}>{rehberOgretmenMi ? "Rehber öğretmen paneli" : "Eğitimci paneli"}</div>
+              <div className="text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: TEXT_MUTED }}>{grupMu ? "Koç paneli" : rehberOgretmenMi ? "Rehber öğretmen paneli" : "Eğitimci paneli"}</div>
               <h1 className="mt-0.5 text-xl font-extrabold sm:text-2xl" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Hoş geldin hocam</h1>
             </div>
           </div>
@@ -201,8 +209,10 @@ export function OgretmenPanel({
 
       {aktifBolum === "duyurular" && duyuruMumkunMu && (
         <section id="duyurular" className="sfec-section"><DuyuruFormu
-          baslik={rehberOgretmenMi ? "Rehber Öğretmen duyurusu gönder" : role === "mudur" ? "Okula duyuru gönder" : "Sınıfınıza duyuru gönder"}
-          aciklama={role === "mudur" || rehberOgretmenMi
+          baslik={grupMu ? "Grubuna duyuru gönder" : rehberOgretmenMi ? "Rehber Öğretmen duyurusu gönder" : role === "mudur" ? "Okula duyuru gönder" : "Sınıfınıza duyuru gönder"}
+          aciklama={grupMu
+            ? "Duyuru tüm gruba ya da seçtiğiniz sınıf düzeyine gider; öğrenciye, veliye ya da ikisine birden gönderebilirsiniz."
+            : role === "mudur" || rehberOgretmenMi
             ? "Okul veya sınıf kapsamını ve duyurunun öğrenciye, veliye ya da ikisine birden gideceğini seçebilirsiniz."
             : "Kendi sınıfınız için duyurunun öğrenciye, veliye ya da ikisine birden gideceğini seçebilirsiniz."}
           gonder={ogretmenDuyuruGonder}

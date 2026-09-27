@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Check, Copy, KeyRound, Pause, Play, UserPlus, Users, UsersRound, X } from "lucide-react";
+import { Check, Copy, KeyRound, Pause, Play, Sparkles, UserPlus, Users, UsersRound, X } from "lucide-react";
 import {
   grupOgrenciAktiflik, grupOgrenciSeviyeDegistir, grupOgrenciSifresiYenile, grupOgrencisiEkle,
   grupVeliAktiflik, grupVeliTalebiOnayla, grupVeliTalebiReddet,
@@ -101,6 +101,8 @@ export function GrupKocPaneli({ grup, ogrenciler, bugun, veliTalepleri, veliler 
         ) : null}
       </section>
 
+      <BaslangicKarti ogrenciSayisi={ogrenciler.length} ilkGirisBekleyen={ogrenciler.filter((o) => o.ilkGirisBekliyor).length} grupKodu={grup.kod} />
+
       {!grup.suresiDoldu && <OgrenciEkle dolu={dolu} grupKodu={grup.kod} />}
 
       <section className="sfec-section rounded-3xl p-5" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
@@ -116,6 +118,56 @@ export function GrupKocPaneli({ grup, ogrenciler, bugun, veliTalepleri, veliler 
 
       <VeliBolumu talepler={veliTalepleri} veliler={veliler} grupKodu={grup.kod} salt={grup.suresiDoldu} />
     </div>
+  );
+}
+
+// Denetim (27.09.2026): koç ilk girişte ne yapacağını bilmiyordu. Üç adım
+// tamamlandıkça kart kendiliğinden kayboluyor; ekranı kalabalıklaştırmıyor.
+function BaslangicKarti({ ogrenciSayisi, ilkGirisBekleyen, grupKodu }: {
+  ogrenciSayisi: number; ilkGirisBekleyen: number; grupKodu: string;
+}) {
+  const girenVar = ogrenciSayisi > 0 && ilkGirisBekleyen < ogrenciSayisi;
+  if (girenVar) return null;
+
+  const adimlar: { tamam: boolean; baslik: string; aciklama: string }[] = [
+    {
+      tamam: ogrenciSayisi > 0,
+      baslik: "Öğrencilerini ekle",
+      aciklama: "Aşağıdaki \"Öğrenci ekle\" bölümünden ad soyad ve kullanıcı adı ver; şifreyi sistem üretsin.",
+    },
+    {
+      tamam: ogrenciSayisi > 0,
+      baslik: "Giriş bilgilerini ilet",
+      aciklama: `Her öğrenciye grup kodun (${grupKodu}), kullanıcı adı ve geçici şifre lazım. Kartın "Kopyala" düğmesi üçünü birden kopyalar.`,
+    },
+    {
+      tamam: girenVar,
+      baslik: "İlk girişlerini yapsınlar",
+      aciklama: "Öğrenci ilk girişte kendi şifresini belirler ve alan/hedef bilgisini doldurur. Sonra Öğrenci Takibi'nden ödev ve program verebilirsin.",
+    },
+  ];
+
+  return (
+    <section className="sfec-section rounded-3xl p-5" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+      <h2 className="mb-1 flex items-center gap-2 text-base font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>
+        <Sparkles size={16} color={MINT} /> Başlarken
+      </h2>
+      <p className="mb-3 text-xs" style={{ color: TEXT_MUTED }}>Üç adımı tamamlayınca bu kart kendiliğinden kaybolur.</p>
+      <ol className="flex flex-col gap-2">
+        {adimlar.map((a, i) => (
+          <li key={a.baslik} className="flex items-start gap-3 rounded-2xl px-4 py-3" style={{ background: BG1_ALT, border: `1px solid ${BORDER}` }}>
+            <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-extrabold"
+              style={{ background: a.tamam ? MINT : BG0, color: a.tamam ? MINT_ON : TEXT_MUTED, border: `1px solid ${a.tamam ? MINT : BORDER_STRONG}` }}>
+              {a.tamam ? <Check size={12} /> : i + 1}
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-bold" style={{ color: TEXT }}>{a.baslik}</span>
+              <span className="block text-xs" style={{ color: TEXT_MUTED }}>{a.aciklama}</span>
+            </span>
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }
 

@@ -40,7 +40,12 @@ const IKONLAR: Record<DashboardIkonu, typeof Home> = {
   rehberlik: HeartHandshake,
 };
 
-export function DashboardYanMenu({ role, kurumTuru, brans, grupMu = false, aktifBolum }: { role: UserRole; kurumTuru?: KurumTuru; brans?: string; grupMu?: boolean; aktifBolum: DashboardBolumu }) {
+export function DashboardYanMenu({ role, kurumTuru, brans, grupMu = false, aktifBolum, rozetler }: {
+  role: UserRole; kurumTuru?: KurumTuru; brans?: string; grupMu?: boolean; aktifBolum: DashboardBolumu;
+  // Bölüm başına bekleyen iş sayısı (denetim 27.09.2026): koç, bekleyen veli
+  // talebini ekrana girmeden görsün.
+  rozetler?: Partial<Record<DashboardBolumu, number>>;
+}) {
   const menu = dashboardMenuYapisi(role, kurumTuru, brans, grupMu);
   if (menu.length === 0) return null;
   const rolBasligi: Partial<Record<UserRole, string>> = {
@@ -108,6 +113,11 @@ export function DashboardYanMenu({ role, kurumTuru, brans, grupMu = false, aktif
                 <Ikon size={17} color={aktif ? TEXT : TEXT_MUTED} aria-hidden="true" />
               </span>
               <span>{oge.etiket}</span>
+              {(rozetler?.[oge.bolum] ?? 0) > 0 && (
+                <span className="ml-auto rounded-full px-2 py-0.5 text-[10px] font-extrabold" style={{ background: MINT, color: BG1 }}>
+                  {rozetler?.[oge.bolum]}
+                </span>
+              )}
             </Link>
           );
         })}

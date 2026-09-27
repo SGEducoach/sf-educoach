@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { adNormalize, okulNoGecerliMi } from "@/lib/validators";
 import { grupKodundanKurumId } from "@/lib/grup-kodu";
+import { grupKocunuBul, kocaBildir } from "@/lib/grup-koc-bildirim";
 
 const GENEL_YANIT = "Talebiniz alındı. Onaylandığında kod öğrencinin Mesajlarım kutusuna gönderilecektir.";
 
@@ -77,6 +78,21 @@ export async function POST(request: Request) {
   if (error) {
     console.error("Veli talebi oluşturulamadı:", error.message);
     return NextResponse.json({ error: "Talep şu anda oluşturulamadı. Lütfen daha sonra tekrar deneyin." }, { status: 500 });
+  }
+
+  // Grup Koçluk (denetim 27.09.2026): talebi onaylayacak kişi koç; ekrana
+  // girmesini beklemeden haber verilir. Okul/dershane akışında onay sınıf
+  // öğretmenindedir, orada bildirim davranışı değişmedi.
+  try {
+    const koc = await grupKocunuBul(admin, schoolId);
+    if (koc) {
+      await kocaBildir(admin, koc,
+        "Yeni veli bağlantı talebi",
+        `${veliAd}, grubundaki bir öğrencinin velisi olarak bağlanmak istiyor. Grubum ekranındaki Veliler bölümünden onaylayabilirsin.`,
+        { anlik: true });
+    }
+  } catch (bildirimHatasi) {
+    console.error("grup koçuna veli talebi bildirimi gönderilemedi:", bildirimHatasi);
   }
 
   return genelBasariYaniti();
