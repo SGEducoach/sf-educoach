@@ -548,3 +548,20 @@ input[type="file"]:active::-webkit-file-upload-button {
     padding: 0 !important;
   }
 }
+
+/* Grup Koçluk (denetim 27.09.2026): toplu eklemede oluşan giriş bilgisi
+   kartları kes-dağıt için yazdırılabilir. Yazdırma sırasında panelin geri
+   kalanı gizlenir; kartlar mürekkep dostu (beyaz zemin, ince çizgi). */
+@media print {
+  body:has(.sfec-giris-kartlari) * { visibility: hidden; }
+  .sfec-giris-kartlari, .sfec-giris-kartlari * { visibility: visible; }
+  .sfec-giris-kartlari {
+    position: absolute; top: 0; left: 0; width: 100%;
+    display: grid !important; grid-template-columns: 1fr 1fr; gap: 6mm;
+  }
+  .sfec-giris-kartlari > div {
+    background: #fff !important; color: #111 !important;
+    border: 1px solid #111 !important; break-inside: avoid; padding: 4mm;
+  }
+  .sfec-giris-kartlari span, .sfec-giris-kartlari div { color: #111 !important; }
+}

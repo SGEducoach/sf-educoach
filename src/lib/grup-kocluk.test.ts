@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { adAnahtari, grupGirdisiHatasi, grupKapasitesiMi, grupKoduNormalize, grupKoduUret, grupOgrencisiGirdisiHatasi, kalanGun, kocTakmaEpostasi } from "./grup-kocluk";
+import { adAnahtari, kullaniciAdiOner, topluSatiriAyir, grupGirdisiHatasi, grupKapasitesiMi, grupKoduNormalize, grupKoduUret, grupOgrencisiGirdisiHatasi, kalanGun, kocTakmaEpostasi } from "./grup-kocluk";
 
 describe("grupKoduUret", () => {
   test("grup adının ilk kelimesini kullanır", () => {
@@ -74,5 +74,19 @@ describe("kocTakmaEpostasi", () => {
   });
   test("zaten takma adlıysa üst üste eklenmez", () => {
     expect(kocTakmaEpostasi("ali+okul@gmail.com")).toBe("ali+koc@gmail.com");
+  });
+});
+describe("topluSatiriAyir / kullaniciAdiOner", () => {
+  test("yalnızca ad soyad", () => {
+    expect(topluSatiriAyir("Ayşe Yılmaz")).toEqual({ ad: "Ayşe Yılmaz", kullaniciAdi: "" });
+  });
+  test("virgül, noktalı virgül ve sekme ayırıcı", () => {
+    expect(topluSatiriAyir("Mehmet Demir, mehmetd").kullaniciAdi).toBe("mehmetd");
+    expect(topluSatiriAyir("Mehmet Demir;mehmetd").kullaniciAdi).toBe("mehmetd");
+    expect(topluSatiriAyir("Mehmet Demir\tmehmetd").kullaniciAdi).toBe("mehmetd");
+  });
+  test("kullanıcı adı Türkçe harfsiz ve boşluksuz üretilir", () => {
+    expect(kullaniciAdiOner("Ayşe Çağla Gürsoy")).toBe("aysecaglagursoy");
+    expect(kullaniciAdiOner("İpek Işık")).toMatch(/^[a-z0-9]+$/);
   });
 });

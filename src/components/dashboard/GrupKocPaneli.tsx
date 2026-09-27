@@ -3,14 +3,15 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Check, Copy, KeyRound, Pause, Play, Sparkles, UserPlus, Users, UsersRound, X } from "lucide-react";
+import { Check, Copy, KeyRound, ListPlus, Pause, Play, Printer, Sparkles, UserPlus, Users, UsersRound, X } from "lucide-react";
 import {
   grupOgrenciAktiflik, grupOgrenciSeviyeDegistir, grupOgrenciSifresiYenile, grupOgrencisiEkle,
-  grupVeliAktiflik, grupVeliTalebiOnayla, grupVeliTalebiReddet,
+  grupOgrencileriTopluEkle, grupVeliAktiflik, grupVeliTalebiOnayla, grupVeliTalebiReddet,
+  type TopluEklemeSatiri,
   type GrupOgrencisi, type GrupVeliTalebi, type GrupVelisi,
 } from "@/app/dashboard/grup-koc-actions";
 import type { GrupBilgisi } from "@/lib/grup-koc-auth";
-import { GRUP_SINIF_DUZEYLERI, kalanGun } from "@/lib/grup-kocluk";
+import { GRUP_SINIF_DUZEYLERI, kalanGun, kullaniciAdiOner } from "@/lib/grup-kocluk";
 import { SIFRE_IPUCU } from "@/lib/validators";
 import { BG0, BG1, BG1_ALT, BLUSH, BLUSH_BG, BORDER, BORDER_STRONG, BUTTER, BUTTER_BG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
 
@@ -20,13 +21,6 @@ import { BG0, BG1, BG1_ALT, BLUSH, BLUSH_BG, BORDER, BORDER_STRONG, BUTTER, BUTT
 // rehber modülünde: Öğrenci Takibi.
 
 const girdi = { background: BG0, color: TEXT, border: `1px solid ${BORDER_STRONG}` };
-
-// Ad soyaddan kullanıcı adı önerisi: Türkçe harfler sadeleşir, boşluksuz.
-function kullaniciAdiOner(ad: string): string {
-  const harita: Record<string, string> = { ç: "c", ğ: "g", ı: "i", i: "i", ö: "o", ş: "s", ü: "u" };
-  const sade = ad.toLocaleLowerCase("tr").split("").map((h) => harita[h] ?? h).join("").replace(/[^a-z0-9]+/g, "");
-  return sade.slice(0, 20);
-}
 
 function GirisBilgisi({ baslik, satirlar, onKapat }: { baslik: string; satirlar: [string, string][]; onKapat: () => void }) {
   const [kopyalandi, setKopyalandi] = useState(false);
@@ -104,6 +98,8 @@ export function GrupKocPaneli({ grup, ogrenciler, bugun, veliTalepleri, veliler 
       <BaslangicKarti ogrenciSayisi={ogrenciler.length} ilkGirisBekleyen={ogrenciler.filter((o) => o.ilkGirisBekliyor).length} grupKodu={grup.kod} />
 
       {!grup.suresiDoldu && <OgrenciEkle dolu={dolu} grupKodu={grup.kod} />}
+
+      {!grup.suresiDoldu && !dolu && <TopluEkle grupKodu={grup.kod} kalanKontenjan={grup.kapasite - aktifSayi} />}
 
       <section className="sfec-section rounded-3xl p-5" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
         <h2 className="mb-3 text-base font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Öğrencilerim</h2>
@@ -247,6 +243,127 @@ function OgrenciEkle({ dolu, grupKodu }: { dolu: boolean; grupKodu: string }) {
   );
 }
 
+// Denetim (27.09.2026): 20 kişilik grubu tek tek eklemek yorucuydu.
+// Kullanıcı kararı: Excel yerine "listeyi yapıştır".
+function TopluEkle({ grupKodu, kalanKontenjan }: { grupKodu: string; kalanKontenjan: number }) {
+  const router = useRouter();
+  const [pending, startIslem] = useTransition();
+  const [acik, setAcik] = useState(false);
+  const [metin, setMetin] = useState("");
+  const [seviye, setSeviye] = useState("12");
+  const [hata, setHata] = useState<string | null>(null);
+  const [sonuclar, setSonuclar] = useState<TopluEklemeSatiri[] | null>(null);
+
+  const satirSayisi = metin.split(/\r?\n/).map((x) => x.trim()).filter(Boolean).length;
+
+  function gonder() {
+    setHata(null);
+    startIslem(async () => {
+      const r = await grupOgrencileriTopluEkle(metin, seviye);
+      if (r.error) return setHata(r.error);
+      setSonuclar(r.satirlar);
+      setMetin("");
+      router.refresh();
+    });
+  }
+
+  if (sonuclar) {
+    const basarili = sonuclar.filter((x) => !x.hata);
+    return (
+      <section className="sfec-section rounded-3xl p-5" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+        <h2 className="mb-2 text-base font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>
+          {basarili.length} öğrenci eklendi{sonuclar.length > basarili.length ? `, ${sonuclar.length - basarili.length} satır eklenemedi` : ""}
+        </h2>
+        {sonuclar.some((x) => x.hata) && (
+          <ul className="mb-3 flex flex-col gap-1">
+            {sonuclar.filter((x) => x.hata).map((x) => (
+              <li key={x.kullaniciAdi} className="text-xs" style={{ color: BLUSH }}>{x.ad}: {x.hata}</li>
+            ))}
+          </ul>
+        )}
+        {basarili.length > 0 && <GirisKartlari kayitlar={basarili} grupKodu={grupKodu} />}
+        <button type="button" onClick={() => { setSonuclar(null); setAcik(false); }}
+          className="sfec-btn mt-3 rounded-xl px-4 py-2 text-xs font-bold" style={{ background: BG1_ALT, color: TEXT, border: `1px solid ${BORDER_STRONG}` }}>
+          Kapat
+        </button>
+      </section>
+    );
+  }
+
+  return (
+    <section className="sfec-section rounded-3xl p-5" style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+      <button type="button" onClick={() => setAcik((v) => !v)}
+        className="sfec-btn flex items-center gap-2 text-base font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>
+        <ListPlus size={16} color={MINT} /> Listeyi yapıştırarak toplu ekle
+      </button>
+      {acik && (
+        <div className="mt-3 flex flex-col gap-3">
+          <p className="text-xs" style={{ color: TEXT_MUTED }}>
+            Her satıra bir öğrenci yaz. Yalnızca ad soyad yeterli; kullanıcı adını sistem üretir. İstersen
+            &quot;Ad Soyad, kullaniciadi&quot; şeklinde kendin de verebilirsin. Şifreler otomatik oluşur, listeyi sonra yazdırabilirsin.
+          </p>
+          <textarea value={metin} onChange={(e) => setMetin(e.target.value)} rows={6}
+            placeholder={"Ayşe Yılmaz\nMehmet Demir, mehmetd\nZeynep Kaya"}
+            className="rounded-xl px-3 py-2 text-sm outline-none" style={girdi} />
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="flex items-center gap-2 text-xs" style={{ color: TEXT_MUTED }}>
+              Sınıf düzeyi
+              <select value={seviye} onChange={(e) => setSeviye(e.target.value)} className="rounded-xl px-2.5 py-1.5 text-xs font-bold outline-none" style={girdi}>
+                {GRUP_SINIF_DUZEYLERI.map((x) => <option key={x} value={x}>{x}. sınıf</option>)}
+              </select>
+            </label>
+            <span className="text-xs" style={{ color: satirSayisi > kalanKontenjan ? BLUSH : TEXT_MUTED }}>
+              {satirSayisi} satır · kalan kontenjan {kalanKontenjan}
+            </span>
+            <button type="button" disabled={pending || satirSayisi === 0} onClick={gonder}
+              className="sfec-btn ml-auto rounded-xl px-4 py-2 text-sm font-bold disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+              {pending ? "Ekleniyor..." : "Hepsini ekle"}
+            </button>
+          </div>
+          {hata && <p className="text-xs font-semibold" style={{ color: BLUSH }}>{hata}</p>}
+        </div>
+      )}
+    </section>
+  );
+}
+
+// Kes-dağıt giriş bilgisi kartları; yazdırınca yalnızca kartlar çıkar.
+function GirisKartlari({ kayitlar, grupKodu }: { kayitlar: TopluEklemeSatiri[]; grupKodu: string }) {
+  const metin = kayitlar
+    .map((k) => `${k.ad} — grup kodu: ${grupKodu}, kullanıcı adı: ${k.kullaniciAdi}, geçici şifre: ${k.sifre}`)
+    .join("\n");
+  const [kopyalandi, setKopyalandi] = useState(false);
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap gap-2 print:hidden">
+        <button type="button" onClick={() => { navigator.clipboard?.writeText(metin).then(() => setKopyalandi(true)); }}
+          className="sfec-btn flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold" style={{ background: BG1_ALT, color: TEXT, border: `1px solid ${BORDER_STRONG}` }}>
+          {kopyalandi ? <Check size={13} /> : <Copy size={13} />} {kopyalandi ? "Kopyalandı" : "Hepsini kopyala"}
+        </button>
+        <button type="button" onClick={() => window.print()}
+          className="sfec-btn flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold" style={{ background: MINT, color: MINT_ON }}>
+          <Printer size={13} /> Yazdır
+        </button>
+        <span className="self-center text-[11px]" style={{ color: TEXT_MUTED }}>Şifreler bu ekrandan sonra bir daha gösterilmez.</span>
+      </div>
+      <div className="sfec-giris-kartlari grid gap-2 sm:grid-cols-2">
+        {kayitlar.map((k) => (
+          <div key={k.kullaniciAdi} className="rounded-2xl px-4 py-3" style={{ background: BG0, border: `1px solid ${BORDER_STRONG}` }}>
+            <div className="text-sm font-bold" style={{ color: TEXT }}>{k.ad}</div>
+            <div className="mt-1 text-xs" style={{ color: TEXT_MUTED }}>
+              Grup kodu: <span className="font-mono font-bold" style={{ color: TEXT }}>{grupKodu}</span><br />
+              Kullanıcı adı: <span className="font-mono font-bold" style={{ color: TEXT }}>{k.kullaniciAdi}</span><br />
+              Geçici şifre: <span className="font-mono font-bold" style={{ color: TEXT }}>{k.sifre}</span>
+            </div>
+            <div className="mt-1 text-[10px]" style={{ color: TEXT_MUTED }}>www.sefukoc.com/login → Grup Koçluk → Öğrenci</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function OgrenciSatiri({ ogrenci: o, grupKodu, salt }: { ogrenci: GrupOgrencisi; grupKodu: string; salt: boolean }) {
   const router = useRouter();
   const [pending, startIslem] = useTransition();
@@ -320,6 +437,7 @@ function VeliBolumu({ talepler, veliler, grupKodu, salt }: { talepler: GrupVeliT
   const [pending, startIslem] = useTransition();
   const [hata, setHata] = useState<string | null>(null);
   const [bilgi, setBilgi] = useState<string | null>(null);
+  const [veliKodu, setVeliKodu] = useState<{ veliAd: string; kod: string } | null>(null);
 
   function islem(fn: () => Promise<{ error: string | null }>, basari?: string) {
     setHata(null); setBilgi(null);
@@ -351,7 +469,17 @@ function VeliBolumu({ talepler, veliler, grupKodu, salt }: { talepler: GrupVeliT
               {!salt && (
                 <>
                   <button type="button" disabled={pending}
-                    onClick={() => { if (window.confirm(`${t.veliAd}, ${t.ogrenciAd} öğrencisinin velisi olarak onaylansın mı?`)) islem(() => grupVeliTalebiOnayla(t.id), "Onaylandı. Bağlantı kodu öğrencinin Mesajlarım kutusuna gönderildi (48 saat geçerli)."); }}
+                    onClick={() => {
+                      if (!window.confirm(`${t.veliAd}, ${t.ogrenciAd} öğrencisinin velisi olarak onaylansın mı?`)) return;
+                      setHata(null); setBilgi(null);
+                      startIslem(async () => {
+                        const r = await grupVeliTalebiOnayla(t.id);
+                        if (r.error) return setHata(r.error);
+                        if (r.kod) setVeliKodu({ veliAd: t.veliAd, kod: r.kod });
+                        setBilgi("Onaylandı. Bağlantı kodu öğrencinin Mesajlarım kutusuna da gönderildi (48 saat geçerli).");
+                        router.refresh();
+                      });
+                    }}
                     className="sfec-btn flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-bold" style={{ background: MINT, color: MINT_ON }}>
                     <Check size={12} /> Onayla
                   </button>
@@ -389,6 +517,19 @@ function VeliBolumu({ talepler, veliler, grupKodu, salt }: { talepler: GrupVeliT
               )}
             </div>
           ))}
+        </div>
+      )}
+      {veliKodu && (
+        <div className="mt-3 rounded-2xl p-3" style={{ background: BG0, border: `1px solid ${MINT}` }}>
+          <p className="text-xs font-bold" style={{ color: TEXT }}>{veliKodu.veliAd} için bağlantı kodu</p>
+          <p className="mt-1 font-mono text-lg font-extrabold tracking-wider" style={{ color: TEXT }}>{veliKodu.kod}</p>
+          <p className="mt-1 text-[11px]" style={{ color: BLUSH }}>Bu kod veli hesabını açar. Yalnızca kimliğini doğruladığın veliye ver; 48 saat geçerli.</p>
+          <div className="mt-2 flex gap-2">
+            <button type="button" onClick={() => navigator.clipboard?.writeText(veliKodu.kod)}
+              className="sfec-btn rounded-xl px-3 py-1.5 text-[11px] font-bold" style={{ background: MINT, color: MINT_ON }}>Kodu kopyala</button>
+            <button type="button" onClick={() => setVeliKodu(null)}
+              className="sfec-btn rounded-xl px-3 py-1.5 text-[11px] font-bold" style={{ background: BG1_ALT, color: TEXT, border: `1px solid ${BORDER_STRONG}` }}>Gizle</button>
+          </div>
         </div>
       )}
       {bilgi && <p className="mt-2 text-xs font-semibold" style={{ color: MINT }}>{bilgi}</p>}

@@ -100,3 +100,17 @@ const AD_ANAHTARI_HARFLERI: Record<string, string> = {
 export function adAnahtari(ad: string): string {
   return ad.split("").map((h) => AD_ANAHTARI_HARFLERI[h] ?? h).join("").toLowerCase().replace(/\s+/g, " ").trim();
 }
+
+// Toplu öğrenci ekleme (denetim 27.09.2026): koçun yapıştırdığı listeyi
+// ayrıştırır. "Ad Soyad", "Ad Soyad, kullanici" ve sekmeyle ayrılmış
+// satırlar desteklenir.
+export function topluSatiriAyir(satir: string): { ad: string; kullaniciAdi: string } {
+  const parcalar = satir.split(/[	;,]/).map((p) => p.trim()).filter(Boolean);
+  return { ad: parcalar[0] ?? "", kullaniciAdi: parcalar[1] ?? "" };
+}
+
+// Ad soyaddan kullanıcı adı önerisi (Türkçe harfler sadeleşir, boşluksuz).
+export function kullaniciAdiOner(ad: string): string {
+  const harita: Record<string, string> = { ç: "c", ğ: "g", ı: "i", ö: "o", ş: "s", ü: "u" };
+  return ad.toLocaleLowerCase("tr-TR").split("").map((h) => harita[h] ?? h).join("").replace(/[^a-z0-9]+/g, "").slice(0, 20);
+}

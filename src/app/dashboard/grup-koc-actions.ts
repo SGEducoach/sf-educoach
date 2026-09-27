@@ -8,7 +8,7 @@
 import { revalidatePath } from "next/cache";
 import { adNormalize, rastgeleSifre, sifreGecerliMi, SIFRE_IPUCU } from "@/lib/validators";
 import { grupKocuYazmaYetkisi, grupKocuYetkisi } from "@/lib/grup-koc-auth";
-import { GRUP_SINIF_DUZEYLERI, GRUP_SINIF_SUBESI, adAnahtari, grupOgrencisiGirdisiHatasi } from "@/lib/grup-kocluk";
+import { GRUP_SINIF_DUZEYLERI, GRUP_SINIF_SUBESI, adAnahtari, grupOgrencisiGirdisiHatasi, kullaniciAdiOner, topluSatiriAyir } from "@/lib/grup-kocluk";
 import { grupHatasiCevir } from "@/lib/grup-hata-mesaji";
 import { createClient } from "@/lib/supabase/server";
 
@@ -91,6 +91,12 @@ export async function grupOgrencileriGetir(): Promise<{ error: string | null; og
 export async function grupOgrencisiEkle(input: { ad: string; kullaniciAdi: string; seviye: string; sifre?: string }): Promise<{ error: string | null; sifre: string | null }> {
   const yetki = await grupKocuYazmaYetkisi();
   if (yetki.error !== null) return { error: yetki.error, sifre: null };
+  return ogrenciOlustur(yetki, input);
+}
+
+type Yetki = Extract<Awaited<ReturnType<typeof grupKocuYazmaYetkisi>>, { error: null }>;
+
+async function ogrenciOlustur(yetki: Yetki, input: { ad: string; kullaniciAdi: string; seviye: string; sifre?: string }): Promise<{ error: string | null; sifre: string | null }> {
   const { admin, kocId, grup } = yetki;
 
   const girdiHatasi = grupOgrencisiGirdisiHatasi(input);
@@ -259,19 +265,22 @@ async function grubunVeliTalebiMi(admin: Admin, schoolId: string, talepId: strin
   return !!data;
 }
 
-export async function grupVeliTalebiOnayla(talepId: string): Promise<{ error: string | null }> {
+export async function grupVeliTalebiOnayla(talepId: string): Promise<{ error: string | null; kod: string | null }> {
   const yetki = await grupKocuYazmaYetkisi();
-  if (yetki.error !== null) return { error: yetki.error };
+  if (yetki.error !== null) return { error: yetki.error, kod: null };
   const { admin, kocId, grup } = yetki;
-  if (!await grubunVeliTalebiMi(admin, grup.id, talepId)) return { error: "Talep bulunamadı." };
+  if (!await grubunVeliTalebiMi(admin, grup.id, talepId)) return { error: "Talep bulunamadı.", kod: null };
   // Onay koçun kendi oturumuyla: veritabanı yetkiyi yeniden doğrular ve kodu
   // öğrencinin Mesajlarım kutusuna koçun adıyla gönderir (migration 0117).
+  // Denetim (27.09.2026): kod koça da döner — veli koda öğrenci üzerinden
+  // ulaşmak zorunda kalmasın. Ekranda "yalnızca kimliğini doğruladığın
+  // veliye ver" uyarısıyla gösterilir.
   const supabase = await createClient();
-  const { error } = await supabase.rpc("veli_talep_onayla", { p_request_id: talepId });
-  if (error) return { error: error.message };
+  const { data, error } = await supabase.rpc("veli_talep_onayla", { p_request_id: talepId });
+  if (error) return { error: grupHatasiCevir(error.message), kod: null };
   await islemKaydi(admin, kocId, "grup_veli_onayla", { school_id: grup.id, talep_id: talepId });
   revalidatePath("/dashboard");
-  return { error: null };
+  return { error: null, kod: typeof data === "string" ? data : null };
 }
 
 export async function grupVeliTalebiReddet(talepId: string): Promise<{ error: string | null }> {
@@ -321,4 +330,45 @@ export async function grupBekleyenIsSayilari(): Promise<{ veliTalebi: number; on
     admin.from("grup_ogrenci_onaylari").select("id", { count: "exact", head: true }).eq("school_id", grup.id).eq("durum", "bekliyor"),
   ]);
   return { veliTalebi: veliTalebi ?? 0, onayBekleyen: onayBekleyen ?? 0 };
+}
+
+// ============ Toplu öğrenci ekleme (denetim 27.09.2026) ============
+// Kullanıcı kararı: Excel şablonu yerine "listeyi yapıştır" — koçun elindeki
+// isim listesi çoğunlukla mesajdan geliyor. Her satır tek tek doğrulanır;
+// hatalı satır diğerlerini durdurmaz, sonuçta satır satır raporlanır.
+
+export interface TopluEklemeSatiri {
+  ad: string;
+  kullaniciAdi: string;
+  sifre: string | null;
+  hata: string | null;
+}
+
+
+export async function grupOgrencileriTopluEkle(metin: string, seviye: string): Promise<{ error: string | null; satirlar: TopluEklemeSatiri[] }> {
+  const yetki = await grupKocuYazmaYetkisi();
+  if (yetki.error !== null) return { error: yetki.error, satirlar: [] };
+
+  const satirlar = metin.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+  if (satirlar.length === 0) return { error: "Liste boş.", satirlar: [] };
+  if (satirlar.length > 50) return { error: "Tek seferde en fazla 50 satır ekleyebilirsin.", satirlar: [] };
+
+  const kullanilanlar = new Set<string>();
+  const sonuc: TopluEklemeSatiri[] = [];
+  for (const ham of satirlar) {
+    const { ad, kullaniciAdi } = topluSatiriAyir(ham);
+    let kullanici = (kullaniciAdi || kullaniciAdiOner(ad)).toLowerCase();
+    // Aynı listede çakışma olursa sona sayı eklenir (ali, ali2, ali3…).
+    if (kullanilanlar.has(kullanici)) {
+      let ek = 2;
+      while (kullanilanlar.has(`${kullanici}${ek}`)) ek++;
+      kullanici = `${kullanici}${ek}`;
+    }
+    kullanilanlar.add(kullanici);
+
+    const { error, sifre } = await ogrenciOlustur(yetki, { ad, kullaniciAdi: kullanici, seviye });
+    sonuc.push({ ad: ad || ham, kullaniciAdi: kullanici, sifre, hata: error });
+  }
+  revalidatePath("/dashboard");
+  return { error: null, satirlar: sonuc };
 }
