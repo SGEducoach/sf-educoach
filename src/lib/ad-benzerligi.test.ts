@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { adlarBenzerMi, gucluAdIleBul, numaraVeAdIleBul } from "./ad-benzerligi";
+import { adlarBenzerMi, adlarOlasiBenzer, gucluAdIleBul, numaraVeAdIleBul } from "./ad-benzerligi";
 
 describe("gucluAdIleBul (numarasız)", () => {
   const ogrenciler = [
@@ -92,5 +92,17 @@ describe("adlarBenzerMi", () => {
     ["A", "Ahmet Kaya"],
   ])("%s ≁ %s", (pdf, kayitli) => {
     expect(adlarBenzerMi(pdf, kayitli)).toBe(false);
+  });
+});
+
+describe("adlarOlasiBenzer (yalnızca öneri)", () => {
+  test("kısaltılmış/eksik adlarda bir kelime tutarsa olası sayılır", () => {
+    expect(adlarOlasiBenzer("KADİR IŞIK", "Abdulkadir Işık")).toBe(true);
+    expect(adlarOlasiBenzer("BEYZA AY", "Beyzanur Ay")).toBe(true);
+    expect(adlarOlasiBenzer("Ü EMRE AKEL", "Yakup Emre Akel")).toBe(true);
+  });
+  test("hiçbir kelimesi tutmayan ya da yalnızca kısa kelimesi tutan önerilmez", () => {
+    expect(adlarOlasiBenzer("KARA MUHAMMED", "Ahmet Ak")).toBe(false);
+    expect(adlarOlasiBenzer("BEYZA AY", "Ayşe Ay")).toBe(false);
   });
 });

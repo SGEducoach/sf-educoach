@@ -118,6 +118,19 @@ export function gucluAdIleBul<T extends { ad: string; okulNo: string | null }>(
   return adaylar[0];
 }
 
+// Kullanıcı isteği (27.09.2026): kurum sıralı listesinde kurumdaki kimseye
+// benzemeyen satırlar da yerleştirme kuyruğuna düşüyor, yetkili kendisi
+// buluyor. Onlara yardım için GEVŞEK öneri: 3+ harfli bir kelime birebir ya
+// da tek harf farkla tutuyor, veya biri diğerinin başı ("BEYZA" → "Beyzanur",
+// "KADİR" → "Abdulkadir" soyadıyla). Yalnızca öneri listesinde kullanılır;
+// otomatik eşleştirmede ASLA kullanılmaz.
+export function adlarOlasiBenzer(pdfAdi: string, kayitliAd: string): boolean {
+  const p = kelimeler(pdfAdi).filter((k) => k.length >= 3);
+  const k = kelimeler(kayitliAd).filter((x) => x.length >= 3);
+  return p.some((a) => k.some((b) =>
+    a === b || (a.length >= 4 && b.length >= 4 && (tekHarfFarkliMi(a, b) || a.startsWith(b) || b.startsWith(a) || a.endsWith(b) || b.endsWith(a)))));
+}
+
 export function adlarBenzerMi(pdfAdi: string, kayitliAd: string): boolean {
   const p = kelimeler(pdfAdi);
   const k = kelimeler(kayitliAd);

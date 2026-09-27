@@ -7,7 +7,7 @@ import {
   pdfEslesmeAta, pdfEslesmeOgrencileriGetir, pdfEslesmeReddet,
   type PdfEslesmeBekleyeni, type PdfEslesmeOgrencisi,
 } from "@/app/yonetici/pdf-eslesme-actions";
-import { adlarBenzerMi } from "@/lib/ad-benzerligi";
+import { adlarBenzerMi, adlarOlasiBenzer } from "@/lib/ad-benzerligi";
 import { BG0, BG1_ALT, BORDER, BORDER_STRONG, BLUSH, MINT, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
 
 const TUM_SINIFLAR = "";
@@ -50,7 +50,10 @@ function PdfEslesmeSatiri({ bekleyen }: { bekleyen: PdfEslesmeBekleyeni }) {
     (sinif === TUM_SINIFLAR || (sinif === SINIFSIZ ? !o.sinif : o.sinif === sinif)) &&
     o.ad.toLocaleLowerCase("tr-TR").includes(aramaKucuk));
   const onerilenler = filtrelenmis.filter((o) => adlarBenzerMi(bekleyen.adSoyadHam, o.ad));
-  const digerleri = filtrelenmis.filter((o) => !onerilenler.includes(o));
+  // Adı hiç benzemeyen satırlar için (kurum sıralı listesi, 27.09.2026):
+  // bir kelimesi tutanlar ayrı grupta — yetkili kendisi seçer.
+  const olasilar = filtrelenmis.filter((o) => !onerilenler.includes(o) && adlarOlasiBenzer(bekleyen.adSoyadHam, o.ad));
+  const digerleri = filtrelenmis.filter((o) => !onerilenler.includes(o) && !olasilar.includes(o));
 
   return (
     <div className="rounded-2xl p-4" style={{ background: BG1_ALT, border: `2px solid ${BORDER}` }}>
@@ -101,7 +104,12 @@ function PdfEslesmeSatiri({ bekleyen }: { bekleyen: PdfEslesmeBekleyeni }) {
               {onerilenler.map((o) => <option key={o.id} value={o.id}>{ogrenciEtiketi(o)}</option>)}
             </optgroup>
           )}
-          {onerilenler.length > 0
+          {olasilar.length > 0 && (
+            <optgroup label="Olası (bir kelimesi tutan)">
+              {olasilar.map((o) => <option key={o.id} value={o.id}>{ogrenciEtiketi(o)}</option>)}
+            </optgroup>
+          )}
+          {onerilenler.length > 0 || olasilar.length > 0
             ? <optgroup label="Diğer öğrenciler">
                 {digerleri.map((o) => <option key={o.id} value={o.id}>{ogrenciEtiketi(o)}</option>)}
               </optgroup>

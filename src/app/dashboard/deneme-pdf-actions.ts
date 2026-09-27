@@ -468,19 +468,24 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
   // dershanesi): öğrenci no / sınıf sütunu yok, satır = sıra + ad + D/Y/N
   // blokları + toplam + puan + sıralamalar. Toplamla doğrulanarak okunur,
   // Claude'a gidilmez. Eşleştirme yalnızca ada göre (numara yok).
+  // Kullanıcı isteği (27.09.2026): bu liste kurumun KENDİ listesi — okul
+  // listesinin aksine başka kurumların öğrencileri yok. Kısaltılmış/eksik
+  // yazılmış adlar ("Ü EMRE AKEL", "KADİR IŞIK") kurumdaki kimseye benzemese
+  // de atlanmaz; eşleşmeyenler yerleştirme kuyruğuna düşer, yetkili kendisi
+  // bulur. Adı hiç yazılmamış satır da sıra numarasıyla kuyruğa gider.
   if (ayristirilan === null && (tur === "TYT" || tur === "BRANS") && bicimDenensin("sirali")) {
     const sirali = await siraliListeyiAyristir(Buffer.from(await dosya.arrayBuffer()));
     if (sirali.basarili) {
-      const okunanlar: PdfOgrenciSonucu[] = [];
-      for (const o of sirali.ogrenciler) {
-        if (!o.isimHam || !hedefleIlgiliMi(o.isimHam)) continue;
-        okunanlar.push({ ad_soyad: o.isimHam, ders_sonuclari: o.dersSonuclari });
-      }
-      okunamayanAdlar.push(...sirali.okunamayanSatirlar.map((o) => o.isimHam).filter((ad) => ad && hedefleIlgiliMi(ad)));
+      const okunanlar: PdfOgrenciSonucu[] = sirali.ogrenciler.map((o) => ({
+        ad_soyad: o.isimHam || `İSİMSİZ (LİSTE SIRASI ${o.sira})`,
+        ders_sonuclari: o.dersSonuclari,
+      }));
+      okunamayanAdlar.push(...sirali.okunamayanSatirlar.map((o) => o.isimHam || `İSİMSİZ (LİSTE SIRASI ${o.sira})`));
       ayristirilan = okunanlar;
       console.info(
         "[deneme-pdf sıralı liste] PDF'teki öğrenci:", sirali.ogrenciler.length,
-        "| kurumda eşleşen:", okunanlar.length, "| okunamayan satır:", sirali.okunamayanSatirlar.length,
+        "| kurumdakine benzeyen:", sirali.ogrenciler.filter((o) => o.isimHam && hedefleIlgiliMi(o.isimHam)).length,
+        "| okunamayan satır:", sirali.okunamayanSatirlar.length,
       );
     } else {
       console.info("[deneme-pdf sıralı liste] tanınmadı:", sirali.hata);
