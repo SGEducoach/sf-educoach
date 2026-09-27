@@ -17,15 +17,30 @@ function ogrenciEtiketi(o: PdfEslesmeOgrencisi) {
   return o.sinif ? `${o.ad} · ${o.sinif}` : o.ad;
 }
 
+// Aynı denemenin satırlarını birbirine bağlayan anahtar — bir satırda
+// yerleştirilen öğrenci diğer satırların listesinden de hemen düşsün.
+function denemeAnahtari(b: PdfEslesmeBekleyeni) {
+  return `${b.schoolId}|${b.tarih}|${b.tur}|${b.yayinevi}`;
+}
+
 export function PdfEslesmeListesi({ bekleyenler }: { bekleyenler: PdfEslesmeBekleyeni[] }) {
+  const [buOturumdaYerlesen, setBuOturumdaYerlesen] = useState<Set<string>>(new Set());
   return (
     <div className="flex flex-col gap-3">
-      {bekleyenler.map((b) => <PdfEslesmeSatiri key={b.id} bekleyen={b} />)}
+      {bekleyenler.map((b) => (
+        <PdfEslesmeSatiri key={b.id} bekleyen={b}
+          buOturumdaYerlesen={buOturumdaYerlesen}
+          yerlesti={(studentId) => setBuOturumdaYerlesen((s) => new Set(s).add(`${denemeAnahtari(b)}|${studentId}`))} />
+      ))}
     </div>
   );
 }
 
-function PdfEslesmeSatiri({ bekleyen }: { bekleyen: PdfEslesmeBekleyeni }) {
+function PdfEslesmeSatiri({ bekleyen, buOturumdaYerlesen, yerlesti }: {
+  bekleyen: PdfEslesmeBekleyeni;
+  buOturumdaYerlesen: Set<string>;
+  yerlesti: (studentId: string) => void;
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [ogrenciler, setOgrenciler] = useState<PdfEslesmeOgrencisi[] | null>(null);
@@ -33,10 +48,11 @@ function PdfEslesmeSatiri({ bekleyen }: { bekleyen: PdfEslesmeBekleyeni }) {
   const [arama, setArama] = useState("");
   const [sinif, setSinif] = useState(TUM_SINIFLAR);
   const [mesaj, setMesaj] = useState<string | null>(null);
+  const [yerlesenleriGoster, setYerlesenleriGoster] = useState(false);
 
   async function ogrencileriYukle() {
     if (ogrenciler) return;
-    const sonuc = await pdfEslesmeOgrencileriGetir(bekleyen.schoolId);
+    const sonuc = await pdfEslesmeOgrencileriGetir(bekleyen.schoolId, { tarih: bekleyen.tarih, tur: bekleyen.tur, yayinevi: bekleyen.yayinevi });
     setOgrenciler(sonuc.ogrenciler);
   }
 
@@ -46,7 +62,13 @@ function PdfEslesmeSatiri({ bekleyen }: { bekleyen: PdfEslesmeBekleyeni }) {
     .sort((a, b) => a.localeCompare(b, "tr", { numeric: true }));
   const sinifsizVar = (ogrenciler ?? []).some((o) => !o.sinif);
   const aramaKucuk = arama.toLocaleLowerCase("tr-TR");
+  // Kullanıcı isteği (27.09.2026): bu denemede sonucu zaten yerleşmiş
+  // öğrenciler listede yok — arama daralır. Düzeltme için kutuyla açılabilir.
+  const yerlesmisMi = (o: PdfEslesmeOgrencisi) =>
+    o.yerlestirildi || buOturumdaYerlesen.has(`${denemeAnahtari(bekleyen)}|${o.id}`);
+  const yerlesmisSayisi = (ogrenciler ?? []).filter(yerlesmisMi).length;
   const filtrelenmis = (ogrenciler ?? []).filter((o) =>
+    (yerlesenleriGoster || !yerlesmisMi(o)) &&
     (sinif === TUM_SINIFLAR || (sinif === SINIFSIZ ? !o.sinif : o.sinif === sinif)) &&
     o.ad.toLocaleLowerCase("tr-TR").includes(aramaKucuk));
   const onerilenler = filtrelenmis.filter((o) => adlarBenzerMi(bekleyen.adSoyadHam, o.ad));
@@ -118,11 +140,17 @@ function PdfEslesmeSatiri({ bekleyen }: { bekleyen: PdfEslesmeBekleyeni }) {
         <button type="button" disabled={pending || !secilenId} onClick={() => startTransition(async () => {
           const r = await pdfEslesmeAta(bekleyen.id, secilenId);
           setMesaj(r.error ? `Hata: ${r.error}` : "Eşleştirildi.");
-          if (!r.error) router.refresh();
+          if (!r.error) { yerlesti(secilenId); router.refresh(); }
         })} className="sfec-btn flex items-center gap-1 rounded-lg px-3 py-2 text-[11px] font-bold disabled:opacity-50" style={{ background: MINT, color: MINT_ON }}>
           <Check size={12} /> Ata
         </button>
       </div>
+      {yerlesmisSayisi > 0 && (
+        <label className="mt-2 flex items-center gap-1.5 text-[11px]" style={{ color: TEXT_MUTED }}>
+          <input type="checkbox" checked={yerlesenleriGoster} onChange={(e) => { setYerlesenleriGoster(e.target.checked); setSecilenId(""); }} />
+          Bu denemede sonucu yerleşmiş {yerlesmisSayisi} öğrenci listede gizli — göster
+        </label>
+      )}
       {mesaj && <div style={{ color: mesaj.startsWith("Hata") ? BLUSH : MINT }} className="mt-2 text-[11px] font-semibold">{mesaj}</div>}
     </div>
   );

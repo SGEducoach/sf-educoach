@@ -11,7 +11,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { ogretmenDenemeSonucuKaydet } from "@/lib/deneme-sonucu-kaydet";
+import { ogretmenDenemeSonucuKaydet, yayineviAyniMi } from "@/lib/deneme-sonucu-kaydet";
 import type { DenemeTuru } from "@/lib/types";
 
 async function requireAdmin() {
@@ -56,20 +56,41 @@ export async function pdfEslesmeBekleyenleriGetir(): Promise<{ error: string | n
   return { error: null, bekleyenler };
 }
 
-export interface PdfEslesmeOgrencisi { id: string; ad: string; sinif: string | null }
+export interface PdfEslesmeOgrencisi { id: string; ad: string; sinif: string | null; yerlestirildi: boolean }
 
 // Bekleyen satırın kurumundaki öğrencileri (isim ara-seç için) getirir. Sınıf
 // da dönüyor — kullanıcı isteği (25.09.2026): tüm okul tek listede
-// geliyordu, sınıfa göre süzülebilsin.
-export async function pdfEslesmeOgrencileriGetir(schoolId: string): Promise<{ error: string | null; ogrenciler: PdfEslesmeOgrencisi[] }> {
+// geliyordu, sınıfa göre süzülebilsin. Kullanıcı isteği (27.09.2026): aynı
+// denemede (tarih + tür + yayınevi) sonucu zaten okul kaydı olarak yerleşmiş
+// öğrenciler işaretlenir, seçim listesinde gizlenir — arama daralsın.
+export async function pdfEslesmeOgrencileriGetir(
+  schoolId: string,
+  deneme?: { tarih: string; tur: string; yayinevi: string },
+): Promise<{ error: string | null; ogrenciler: PdfEslesmeOgrencisi[] }> {
   const { admin } = await requireAdmin();
   const { data, error } = await admin.from("students")
     .select("id, profiles!students_id_fkey(ad), classes(seviye, sube)").eq("school_id", schoolId);
   if (error) return { error: error.message, ogrenciler: [] };
   type Row = { id: string; profiles: { ad: string } | null; classes: { seviye: string; sube: string } | null };
-  const ogrenciler = ((data ?? []) as unknown as Row[])
-    .filter((o) => o.profiles)
-    .map((o) => ({ id: o.id, ad: o.profiles!.ad, sinif: o.classes ? `${o.classes.seviye}-${o.classes.sube}` : null }))
+  const satirlar = ((data ?? []) as unknown as Row[]).filter((o) => o.profiles);
+
+  const yerlesenler = new Set<string>();
+  if (deneme && satirlar.length > 0) {
+    const { data: denemeler, error: denemeHatasi } = await admin.from("denemeler")
+      .select("student_id, yayinevi")
+      .in("student_id", satirlar.map((o) => o.id))
+      .eq("tarih", deneme.tarih).eq("tur", deneme.tur).eq("kaynak", "ogretmen");
+    if (denemeHatasi) console.warn("Yerleşmiş öğrenciler alınamadı (liste süzülmeden gösteriliyor):", denemeHatasi.message);
+    for (const d of denemeler ?? []) {
+      if (yayineviAyniMi(String(d.yayinevi ?? ""), deneme.yayinevi)) yerlesenler.add(d.student_id as string);
+    }
+  }
+
+  const ogrenciler = satirlar
+    .map((o) => ({
+      id: o.id, ad: o.profiles!.ad, sinif: o.classes ? `${o.classes.seviye}-${o.classes.sube}` : null,
+      yerlestirildi: yerlesenler.has(o.id),
+    }))
     .sort((a, b) => a.ad.localeCompare(b.ad, "tr"));
   return { error: null, ogrenciler };
 }
