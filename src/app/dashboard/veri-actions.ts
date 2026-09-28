@@ -11,6 +11,7 @@ import { SURE_UST_SINIR, SORU_SAYISI_UST_SINIR, GOREV_GERIYE_DONUK_GUN, KATEGORI
 import type { DenemeTuru, DenemeZorlugu, HedefeYakinlik, TakipCevabi, VerimlilikDuzeyi } from "@/lib/types";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
 import { manipulasyonGirisimiKaydet } from "@/lib/manipulasyon-takip";
+import { veriHatasiCevir } from "@/lib/veri-hata-mesaji";
 
 // Faz F — bir veri girişi server-side bir SAYISAL SINIRI aştığı için
 // reddedildiğinde (boş alan gibi masum hatalarda DEĞİL) çağrılır; sayaç
@@ -195,7 +196,7 @@ export async function konuCalismaEkle(formData: FormData) {
     student_id: user.id, ders, konu, sure_dakika: sureDakika, hedefe_yakinlik: hedefeYakinlik,
     takip_cevabi: takipCevabi, yayinevi, tarih, gorev_atama_id: gorevAtamaId,
   });
-  if (error) return { error: error.message, verimlilikSorulsunMu: false };
+  if (error) return { error: veriHatasiCevir(error.message), verimlilikSorulsunMu: false };
   if (gorevAtamaId) await gorevTamamlaIsaretle(supabase, gorevAtamaId, user.id);
 
   const sorulsunMu = await verimlilikSorulsunMu(supabase, user.id);
@@ -246,7 +247,7 @@ export async function soruCozumuEkle(formData: FormData) {
     student_id: user.id, ders, dogru, yanlis, bos, konu: konu || null, sure_dakika: sureDakika, yayinevi,
     kaynak: gorevAtamaId ? "ogretmen" : "ogrenci", tarih, gorev_atama_id: gorevAtamaId,
   });
-  if (error) return { error: error.message, verimlilikSorulsunMu: false };
+  if (error) return { error: veriHatasiCevir(error.message), verimlilikSorulsunMu: false };
   if (gorevAtamaId) await gorevTamamlaIsaretle(supabase, gorevAtamaId, user.id);
 
   const sorulsunMu = await verimlilikSorulsunMu(supabase, user.id);
@@ -329,12 +330,12 @@ export async function denemeEkle(
     .select("id")
     .single();
 
-  if (error || !deneme) return { error: error?.message ?? "Deneme kaydedilemedi.", verimlilikSorulsunMu: false };
+  if (error || !deneme) return { error: error ? veriHatasiCevir(error.message) : "Deneme kaydedilemedi.", verimlilikSorulsunMu: false };
 
   const { error: sonucError } = await supabase.from("deneme_ders_sonuclari").insert(
     dersSonuclari.map((d) => ({ deneme_id: deneme.id, ders: d.ders, dogru: d.dogru, yanlis: d.yanlis }))
   );
-  if (sonucError) return { error: sonucError.message, verimlilikSorulsunMu: false };
+  if (sonucError) return { error: veriHatasiCevir(sonucError.message), verimlilikSorulsunMu: false };
   if (dogrulanmisAtamaId) await gorevTamamlaIsaretle(supabase, dogrulanmisAtamaId, user.id);
 
   const sorulsunMu = await verimlilikSorulsunMu(supabase, user.id);
@@ -345,7 +346,7 @@ export async function denemeEkle(
 export async function haftalikVerimlilikEkle(duzey: VerimlilikDuzeyi) {
   const { supabase, user } = await requireStudent();
   const { error } = await supabase.from("haftalik_verimlilikler").insert({ student_id: user.id, duzey });
-  if (error) return { error: error.message };
+  if (error) return { error: veriHatasiCevir(error.message) };
   revalidatePath("/dashboard");
   return { error: null };
 }

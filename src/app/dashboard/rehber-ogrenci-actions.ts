@@ -8,6 +8,7 @@ import { REHBER_GERIYE_DONUK_GUN } from "@/lib/rehberlik";
 import { SURE_UST_SINIR, SORU_SAYISI_UST_SINIR, TAKIP_SORUSU, dersSoruSayisi } from "@/lib/types";
 import type { DenemeTuru, DenemeZorlugu, GorevTuru, HedefeYakinlik, TakipCevabi } from "@/lib/types";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
+import { veriHatasiCevir } from "@/lib/veri-hata-mesaji";
 
 // Dershane rehberlik servisi (kullanıcı isteği 13.09.2026) — rehber öğretmen
 // öğrenci adına ödev verir, program yapar, veri girer. Kullanıcı kararları:
@@ -201,7 +202,7 @@ export async function rehberKonuCalismaEkle(ogrenciId: string, formData: FormDat
     student_id: ogrenciId, ders, konu, sure_dakika: sureDakika, hedefe_yakinlik: hedefeYakinlik,
     takip_cevabi: takipCevabi, yayinevi, tarih, giren_rehber_id: yetki.rehberId,
   });
-  if (error) return veriSonucu(error.message);
+  if (error) return veriSonucu(veriHatasiCevir(error.message));
   revalidatePath("/dashboard");
   return veriSonucu(null);
 }
@@ -239,7 +240,7 @@ export async function rehberSoruCozumuEkle(ogrenciId: string, formData: FormData
     kaynak: "ogrenci", tarih, giren_rehber_id: yetki.rehberId,
     onaylandi_mi: true, onaylayan_id: yetki.rehberId, onaylanma_at: new Date().toISOString(),
   });
-  if (error) return veriSonucu(error.message);
+  if (error) return veriSonucu(veriHatasiCevir(error.message));
   revalidatePath("/dashboard");
   return veriSonucu(null);
 }
@@ -289,14 +290,14 @@ export async function rehberDenemeEkle(
     .insert({ student_id: ogrenciId, tur, hedefe_yakinlik: hedefeYakinlik, zorluk, yayinevi: yayinevi.trim(), kaynak: "ogrenci", tarih, giren_rehber_id: rehberId })
     .select("id")
     .single();
-  if (error || !deneme) return veriSonucu(error?.message ?? "Deneme kaydedilemedi.");
+  if (error || !deneme) return veriSonucu(error ? veriHatasiCevir(error.message) : "Deneme kaydedilemedi.");
 
   const { error: sonucHatasi } = await admin.from("deneme_ders_sonuclari").insert(
     dersSonuclari.map((d) => ({ deneme_id: deneme.id, ders: d.ders, dogru: d.dogru, yanlis: d.yanlis })),
   );
   if (sonucHatasi) {
     await admin.from("denemeler").delete().eq("id", deneme.id);
-    return veriSonucu(sonucHatasi.message);
+    return veriSonucu(veriHatasiCevir(sonucHatasi.message));
   }
 
   revalidatePath("/dashboard");
