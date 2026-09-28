@@ -1,9 +1,14 @@
 import type { createClient } from "@/lib/supabase/server";
 import { netHesapla } from "@/lib/types";
-import type { HedefeYakinlik, VerimlilikDuzeyi } from "@/lib/types";
+import type { DenemeTuru, HedefeYakinlik, VerimlilikDuzeyi } from "@/lib/types";
+import { TYT_DERSLERI, dersSoruSayisi } from "@/lib/types";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
-import { trendHesapla, hizDogrulukKategorisiBelirle, hedefProjeksiyonuHesapla } from "@/lib/analiz-motoru";
-import type { TrendSonucu, HizDogrulukKategorisi, RegresyonNoktasi, HedefProjeksiyonuSonucu } from "@/lib/analiz-motoru";
+import { trendHesapla, hizDogrulukKategorisiBelirle, hedefProjeksiyonuHesapla, makasTeshisiBelirle } from "@/lib/analiz-motoru";
+import type { TrendSonucu, HizDogrulukKategorisi, RegresyonNoktasi, HedefProjeksiyonuSonucu, MakasTeshisi } from "@/lib/analiz-motoru";
+import {
+  CALISMA_KATSAYISI, DOGRULUK_ESIGI_CALISMA, dersTempoButcesi, olcumGecerliMi, sinavProjeksiyonu,
+} from "@/lib/sinav-tempo";
+import type { SinavProjeksiyonu } from "@/lib/sinav-tempo";
 
 // Analiz Motoru Faz A2 — iki "tarih" string'i (YYYY-MM-DD) arasındaki gün
 // farkı; regresyon noktalarının x eksenini (gunOffset) üretmek için.
@@ -40,7 +45,16 @@ export interface AnalizVerisi {
   // Bkz. src/lib/analiz-motoru.ts.
   denemeTrendYonu: TrendSonucu;
   dersTrendYonu: Record<string, TrendSonucu>;
-  dersHizDogruluk: { ders: string; ortSureDakika: number; dogrulukOrani: number; kategori: HizDogrulukKategorisi }[];
+  dersHizDogruluk: { ders: string; ortSureDakika: number; dogrulukOrani: number; kategori: HizDogrulukKategorisi; referansDakika: number; sinavButcesi: number | null }[];
+  // Analiz Motoru Katman 9 (28.09.2026) — yetişme/makas. Denemede işaretlenmeyen
+  // soru oranı resmî soru sayısından türetilir; serbest çalışma doğruluğuyla
+  // karşılaştırılınca "bilmiyor" ile "yetiştiremiyor" ayrışır.
+  dersYetisme: {
+    ders: string; bosOrani: number; sinavDogrulukOrani: number;
+    calismaDogrulukOrani: number | null; teshis: MakasTeshisi; denemeSayisi: number;
+  }[];
+  // 165 dakikalık sınav bütçesinin öğrencinin kendi temposuyla projeksiyonu.
+  sinavProjeksiyonu: SinavProjeksiyonu | null;
   // Analiz Motoru Faz A4 — Katman 5: hedefe uzaklık/projeksiyon. TYT/AYT
   // ayrı trend (denemeTrendYonu'nun TYT+AYT'yi KARIŞTIRAN hâlinden farklı
   // olarak, sadece o türün kendi denemeleri) + öğrencinin (varsa) kendi
@@ -80,9 +94,9 @@ export async function analizVerisiGetir(
 ): Promise<AnalizVerisi> {
   const baslangic = donemBaslangicHesapla(donem);
 
-  let denemeQuery = supabase.from("denemeler").select("id, tarih, tur, hedefe_yakinlik, deneme_ders_sonuclari(dogru, yanlis)").eq("student_id", studentId).order("tarih");
+  let denemeQuery = supabase.from("denemeler").select("id, tarih, tur, hedefe_yakinlik, deneme_ders_sonuclari(ders, dogru, yanlis)").eq("student_id", studentId).order("tarih");
   let konuQuery = supabase.from("konu_calismalar").select("tarih, sure_dakika, hedefe_yakinlik").eq("student_id", studentId);
-  let soruQuery = supabase.from("soru_cozumleri").select("tarih, sure_dakika, ders, dogru, yanlis").eq("student_id", studentId);
+  let soruQuery = supabase.from("soru_cozumleri").select("tarih, sure_dakika, ders, dogru, yanlis, bos").eq("student_id", studentId);
   let verimlilikQuery = supabase.from("haftalik_verimlilikler").select("created_at, duzey").eq("student_id", studentId).order("created_at");
   // Faz A4 — hedef net, tarih aralığı filtresi UYGULANMAZ (profil alanı,
   // aktivite kaydı değil).
@@ -97,6 +111,9 @@ export async function analizVerisiGetir(
   const sonDenemeTarihiQuery = supabase.from("denemeler").select("tarih").eq("student_id", studentId).order("tarih", { ascending: false }).limit(1);
   const sonKonuTarihiQuery = supabase.from("konu_calismalar").select("tarih").eq("student_id", studentId).order("tarih", { ascending: false }).limit(1);
   const sonSoruTarihiQuery = supabase.from("soru_cozumleri").select("tarih").eq("student_id", studentId).order("tarih", { ascending: false }).limit(1);
+  // Ders bazlı hız referansı (popülasyon medyanı, migration 0126). Küçük bir
+  // tablo, dönem filtresinden bağımsız.
+  const hizReferansQuery = supabase.from("ders_hiz_referanslari").select("ders, medyan_dk_soru");
 
   if (baslangic) {
     denemeQuery = denemeQuery.gte("tarih", baslangic);
@@ -114,14 +131,15 @@ export async function analizVerisiGetir(
     { data: sonDenemeTarihiSatir },
     { data: sonKonuTarihiSatir },
     { data: sonSoruTarihiSatir },
+    { data: hizReferanslari },
   ] = await Promise.all([
     denemeQuery, konuQuery, soruQuery, verimlilikQuery, hedefQuery,
-    sonDenemeTarihiQuery, sonKonuTarihiQuery, sonSoruTarihiQuery,
+    sonDenemeTarihiQuery, sonKonuTarihiQuery, sonSoruTarihiQuery, hizReferansQuery,
   ]);
 
-  type DenemeRow = { id: string; tarih: string; tur: "TYT" | "AYT"; hedefe_yakinlik: HedefeYakinlik; deneme_ders_sonuclari: { dogru: number; yanlis: number }[] };
+  type DenemeRow = { id: string; tarih: string; tur: DenemeTuru; hedefe_yakinlik: HedefeYakinlik; deneme_ders_sonuclari: { ders: string; dogru: number; yanlis: number }[] };
   type KonuRow = { tarih: string; sure_dakika: number; hedefe_yakinlik: HedefeYakinlik };
-  type SoruRow = { tarih: string; sure_dakika: number; ders: string; dogru: number; yanlis: number };
+  type SoruRow = { tarih: string; sure_dakika: number; ders: string; dogru: number; yanlis: number; bos: number };
 
   const denemeListesi = (denemeler as unknown as DenemeRow[]) ?? [];
   const konuListesi = (konular as unknown as KonuRow[]) ?? [];
@@ -133,7 +151,9 @@ export async function analizVerisiGetir(
 
   const denemeTrend = denemeListesi.map((d) => ({
     tarih: d.tarih,
-    tur: d.tur,
+    // BRANS denemeleri eskiden olduğu gibi ham geçiyor: TYT/AYT projeksiyon
+    // filtrelerinin hiçbirine girmiyor (bkz. denemeTrendYonuTur).
+    tur: d.tur as "TYT" | "AYT",
     net: Math.round(d.deneme_ders_sonuclari.reduce((t, s) => t + netHesapla(s.dogru, s.yanlis), 0) * 100) / 100,
   }));
 
@@ -230,37 +250,101 @@ export async function analizVerisiGetir(
     });
   }
 
-  // Faz A2, Katman 4 — ders bazlı hız-doğruluk matrisi. Referans "genel
-  // ortalama süre/soru", öğrencinin TÜM derslerdeki toplamından çıkarılır.
-  const dersSureMap = new Map<string, { toplamSure: number; toplamDogru: number; toplamYanlis: number }>();
+  // Faz A2, Katman 4 — ders bazlı hız-doğruluk matrisi.
+  //
+  // 28.09.2026: tempo artık "cevaplanan soru" değil TOPLAM soru (boş dahil)
+  // üzerinden ölçülüyor — boş bırakılan soru da okunup düşünüldüğü için
+  // süreden pay alır (soru_cozumleri süre kısıtıyla aynı ilke, migration
+  // 0125). Ölçüm bandı dışındaki kayıtlar (öz beyanda 25 saniyeye bir soru
+  // gibi) analize girmez.
+  const dersSureMap = new Map<string, { toplamSure: number; toplamSoru: number; toplamDogru: number; toplamYanlis: number }>();
   for (const s of soruListesi) {
-    const mevcut = dersSureMap.get(s.ders) ?? { toplamSure: 0, toplamDogru: 0, toplamYanlis: 0 };
+    const soru = s.dogru + s.yanlis + (s.bos ?? 0);
+    if (soru <= 0 || !olcumGecerliMi(s.sure_dakika / soru)) continue;
+    const mevcut = dersSureMap.get(s.ders) ?? { toplamSure: 0, toplamSoru: 0, toplamDogru: 0, toplamYanlis: 0 };
     mevcut.toplamSure += s.sure_dakika;
+    mevcut.toplamSoru += soru;
     mevcut.toplamDogru += s.dogru;
     mevcut.toplamYanlis += s.yanlis;
     dersSureMap.set(s.ders, mevcut);
   }
-  let genelToplamSure = 0;
-  let genelToplamCevaplanan = 0;
-  for (const v of dersSureMap.values()) {
-    genelToplamSure += v.toplamSure;
-    genelToplamCevaplanan += v.toplamDogru + v.toplamYanlis;
-  }
-  const genelOrtSureDakika = genelToplamCevaplanan > 0 ? genelToplamSure / genelToplamCevaplanan : 0;
+
+  // Ders bazlı dış referans: popülasyon medyanı (migration 0126), yoksa
+  // sınav bütçesinin çalışma katsayılı hâli (bkz. sinav-tempo.ts).
+  const referansHaritasi = new Map(
+    ((hizReferanslari ?? []) as { ders: string; medyan_dk_soru: number | string }[])
+      .map((r) => [r.ders, Number(r.medyan_dk_soru)] as const),
+  );
+  const dersReferansi = (ders: string): { referans: number; butce: number | null } => {
+    const butce = dersTempoButcesi("TYT", ders) ?? null;
+    const medyan = referansHaritasi.get(ders);
+    if (medyan !== undefined && medyan > 0) return { referans: medyan, butce };
+    return { referans: (butce ?? 1.4) * CALISMA_KATSAYISI, butce };
+  };
 
   const dersHizDogruluk: AnalizVerisi["dersHizDogruluk"] = [];
+  const calismaDogrulugu = new Map<string, number>();
   for (const [ders, v] of dersSureMap.entries()) {
     const cevaplanan = v.toplamDogru + v.toplamYanlis;
-    if (cevaplanan === 0) continue; // hep "boş" geçilmişse kategori anlamsız
-    const ortSureDakika = v.toplamSure / cevaplanan;
+    if (cevaplanan === 0 || v.toplamSoru === 0) continue; // hep "boş" geçilmişse kategori anlamsız
+    const ortSureDakika = v.toplamSure / v.toplamSoru;
     const dogrulukOrani = v.toplamDogru / cevaplanan;
+    calismaDogrulugu.set(ders, dogrulukOrani);
+    const { referans, butce } = dersReferansi(ders);
     dersHizDogruluk.push({
       ders,
       ortSureDakika: Math.round(ortSureDakika * 100) / 100,
       dogrulukOrani: Math.round(dogrulukOrani * 100) / 100,
-      kategori: hizDogrulukKategorisiBelirle({ ders, ortSureDakika, dogrulukOrani, genelOrtSureDakika }),
+      kategori: hizDogrulukKategorisiBelirle({
+        ders, ortSureDakika, dogrulukOrani,
+        referansDakika: referans,
+        dogrulukEsigi: DOGRULUK_ESIGI_CALISMA,
+      }),
+      referansDakika: Math.round(referans * 100) / 100,
+      sinavButcesi: butce,
     });
   }
+
+  // Katman 9 — yetişme/makas. Denemede işaretlenmeyen soru, resmî soru
+  // sayısından türetilir (yeni veri toplanmasına gerek yok).
+  const yetismeMap = new Map<string, { soru: number; dogru: number; yanlis: number; deneme: number }>();
+  for (const d of denemeListesi) {
+    for (const sonuc of d.deneme_ders_sonuclari) {
+      const resmiSoru = dersSoruSayisi(d.tur, sonuc.ders);
+      if (!resmiSoru) continue;
+      const mevcut = yetismeMap.get(sonuc.ders) ?? { soru: 0, dogru: 0, yanlis: 0, deneme: 0 };
+      mevcut.soru += resmiSoru;
+      mevcut.dogru += sonuc.dogru;
+      mevcut.yanlis += sonuc.yanlis;
+      mevcut.deneme += 1;
+      yetismeMap.set(sonuc.ders, mevcut);
+    }
+  }
+  const dersYetisme: AnalizVerisi["dersYetisme"] = [];
+  for (const [ders, v] of yetismeMap.entries()) {
+    const cevaplanan = v.dogru + v.yanlis;
+    if (cevaplanan === 0) continue;
+    const bosOrani = Math.max(0, (v.soru - cevaplanan) / v.soru);
+    const sinavDogrulukOrani = v.dogru / cevaplanan;
+    const calisma = calismaDogrulugu.get(ders) ?? null;
+    dersYetisme.push({
+      ders,
+      bosOrani: Math.round(bosOrani * 100) / 100,
+      sinavDogrulukOrani: Math.round(sinavDogrulukOrani * 100) / 100,
+      calismaDogrulukOrani: calisma === null ? null : Math.round(calisma * 100) / 100,
+      teshis: makasTeshisiBelirle({ bosOrani, sinavDogrulukOrani, calismaDogrulukOrani: calisma }),
+      denemeSayisi: v.deneme,
+    });
+  }
+  dersYetisme.sort((a, b) => b.bosOrani - a.bosOrani);
+
+  // 165 dakikalık bütçenin projeksiyonu. AYT alan bilgisi bu katmana
+  // gelmediği için şimdilik yalnızca 120 soruluk sınav (TYT/Branş).
+  const projeksiyon = sinavProjeksiyonu(
+    "TYT",
+    TYT_DERSLERI,
+    dersHizDogruluk.map((d) => ({ ders: d.ders, ortSureDakika: d.ortSureDakika, soru: 0 })),
+  );
 
   // Faz A5, Katman 7 girdisi — haftalık verimlilik puanının trendi.
   // verimlilikListesi zaten created_at'e göre artan sıralı (verimlilikQuery
@@ -306,6 +390,8 @@ export async function analizVerisiGetir(
     denemeTrendYonu,
     dersTrendYonu,
     dersHizDogruluk,
+    dersYetisme,
+    sinavProjeksiyonu: projeksiyon,
     denemeTrendYonuTur,
     hedefNetTyt,
     hedefNetAyt,

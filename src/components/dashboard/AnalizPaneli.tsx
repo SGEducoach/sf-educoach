@@ -6,7 +6,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip,
   ResponsiveContainer, BarChart, Bar, Legend, PieChart, Pie, Cell,
 } from "recharts";
-import { Clock, Target, TrendingUp, TrendingDown, Minus, Printer, Gauge, Lightbulb, Flag, ShieldAlert, CalendarPlus } from "lucide-react";
+import { Clock, Target, TrendingUp, TrendingDown, Minus, Printer, Gauge, Lightbulb, Flag, ShieldAlert, CalendarPlus, Timer } from "lucide-react";
 import type { AnalizVerisi, RaporDonemi } from "@/lib/analiz";
 import { RAPOR_DONEMI_ETIKET } from "@/lib/analiz";
 import { HEDEFE_YAKINLIK_ETIKET } from "@/lib/types";
@@ -14,7 +14,7 @@ import type { AytAlan, HedefeYakinlik } from "@/lib/types";
 import { satirTytdeGosterilsinMi, satirAytdeGosterilsinMi } from "@/lib/konu-hakimiyeti";
 import type { KonuHakimiyetiSatiri } from "@/lib/konu-hakimiyeti";
 import { oncelikSiralamasiOlustur, icgoruMetinleriOlustur, riskSkoruHesapla } from "@/lib/analiz-motoru";
-import type { TrendSonucu, HizDogrulukKategorisi, OncelikSatiri, RiskDuzeyi, RiskSonucu } from "@/lib/analiz-motoru";
+import type { TrendSonucu, HizDogrulukKategorisi, MakasTeshisi, OncelikSatiri, RiskDuzeyi, RiskSonucu } from "@/lib/analiz-motoru";
 import type { KohortKarsilastirmaSatiri } from "@/lib/analiz-kohort";
 import { hedefNetGuncelle } from "@/app/dashboard/veri-actions";
 import {
@@ -279,6 +279,8 @@ export function AnalizPaneli({
         <KonuHakimiyetKarti satirlar={konuHakimiyetiSatirlari} tamGorunum={konuHakimiyetiTamGorunum} aytAlan={konuHakimiyetiAytAlan} />
 
         <HizDogrulukKarti satirlar={veri.dersHizDogruluk} />
+
+        <SinavSaatiKarti projeksiyon={veri.sinavProjeksiyonu} yetisme={veri.dersYetisme} />
       </div>
 
       </>}
@@ -516,8 +518,8 @@ const HIZ_DOGRULUK_BG: Record<HizDogrulukKategorisi, string> = {
 };
 
 // Analiz Motoru Faz A2, Katman 4 — ders bazlı hız-doğruluk matrisi.
-// Matematikte kullanıcı kararıyla soru başına 1 dk 30 sn; diğer derslerde
-// öğrencinin kendi genel ortalaması hız eşiğidir.
+// 28.09.2026: eşik artık ders bazlı dış referans (popülasyon medyanı ya da
+// sınav bütçesi) — öğrencinin kendi ortalaması değil (bkz. analiz-motoru.ts).
 function HizDogrulukKarti({ satirlar }: { satirlar: AnalizVerisi["dersHizDogruluk"] }) {
   return (
     <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
@@ -528,7 +530,7 @@ function HizDogrulukKarti({ satirlar }: { satirlar: AnalizVerisi["dersHizDogrulu
         <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Hız-Doğruluk Analizi</span>
       </div>
       <p style={{ color: TEXT_MUTED }} className="text-xs mb-4">
-        Matematikte hız eşiği soru başına 1 dk 30 sn; diğer derslerde kendi genel ortalaman kullanılır.
+        Her dersin kendi eşiği var: yeterli veri olan derslerde tüm öğrencilerin ortanca temposu, diğerlerinde sınav bütçesi.
       </p>
       {satirlar.length === 0 ? (
         <BosDurum />
@@ -539,7 +541,8 @@ function HizDogrulukKarti({ satirlar }: { satirlar: AnalizVerisi["dersHizDogrulu
               <div className="min-w-0">
                 <div style={{ color: TEXT }} className="text-sm font-semibold">{s.ders}</div>
                 <div style={{ color: TEXT_MUTED }} className="text-[11px] mt-0.5">
-                  Soru başı ~{s.ortSureDakika} dk · Doğruluk %{Math.round(s.dogrulukOrani * 100)}
+                  Soru başı ~{s.ortSureDakika} dk (eşik {s.referansDakika} dk) · Doğruluk %{Math.round(s.dogrulukOrani * 100)}
+                  {s.sinavButcesi !== null && <> · Sınavda {s.sinavButcesi} dk ayırabilirsin</>}
                 </div>
               </div>
               <span className="text-[10px] font-bold px-2 py-1 rounded-full shrink-0" style={{ background: HIZ_DOGRULUK_BG[s.kategori], color: HIZ_DOGRULUK_RENK[s.kategori] }}>
@@ -547,6 +550,94 @@ function HizDogrulukKarti({ satirlar }: { satirlar: AnalizVerisi["dersHizDogrulu
               </span>
             </div>
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============ Sınav Saati (Katman 9, 28.09.2026) ============
+//
+// Kullanıcı isteği: "normal bir öğrencinin 165 dakikayı kullanarak tüm
+// soruları yetiştirdiği sistem". İki şey gösteriyor:
+//   * öğrencinin kendi temposu gerçek bir sınava yansıtıldığında kaç dakika
+//     açık/fazla veriyor, kaç soru yetişiyor,
+//   * denemede işaretlenmeyen soru oranı — "bilmiyor" ile "yetiştiremiyor"
+//     ayrımı (bkz. makasTeshisiBelirle).
+const MAKAS_ETIKET: Record<MakasTeshisi, string> = {
+  "yetisemiyor": "Biliyorsun ama yetiştiremiyorsun",
+  "bilgi": "Önce konu — hız çalışması erken",
+  "sinavda-dusus": "Çalışmada daha iyisin — sınav koşulu",
+  "saglam": "Tempo ve doğruluk yerinde",
+};
+const MAKAS_RENK: Record<MakasTeshisi, string> = {
+  "yetisemiyor": BUTTER, "bilgi": BLUSH, "sinavda-dusus": SKY, "saglam": MINT,
+};
+const MAKAS_BG: Record<MakasTeshisi, string> = {
+  "yetisemiyor": BUTTER_BG, "bilgi": BLUSH_BG, "sinavda-dusus": SKY_BG, "saglam": MINT_BG,
+};
+
+function SinavSaatiKarti({ projeksiyon, yetisme }: {
+  projeksiyon: AnalizVerisi["sinavProjeksiyonu"];
+  yetisme: AnalizVerisi["dersYetisme"];
+}) {
+  return (
+    <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+      <div className="flex items-center gap-2 mb-1">
+        <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style={{ background: BUTTER_BG }}>
+          <Timer size={14} color={BUTTER} />
+        </div>
+        <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Sınav Saati</span>
+      </div>
+      <p style={{ color: TEXT_MUTED }} className="text-xs mb-4">
+        TYT 120 soru / 165 dakika. Üstteki hesap kendi çalışma temponla yapılır; sınav soruları daha zordur — asıl gerçeği alttaki boş oranların gösterir.
+      </p>
+
+      {projeksiyon === null && yetisme.length === 0 ? (
+        <BosDurum />
+      ) : (
+        <div className="flex flex-col gap-4">
+          {projeksiyon && (
+            <div className="rounded-2xl p-3.5" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
+              <div style={{ color: TEXT }} className="text-sm font-semibold">
+                Bu tempoyla {projeksiyon.sureDakika} dakikada{" "}
+                <span style={{ color: projeksiyon.yetisenSoru >= projeksiyon.toplamSoru ? MINT : BUTTER }}>
+                  {projeksiyon.yetisenSoru} / {projeksiyon.toplamSoru} soru
+                </span>{" "}
+                yetişir.
+              </div>
+              <div style={{ color: TEXT_MUTED }} className="text-[11px] mt-1">
+                {projeksiyon.farkDakika >= 0
+                  ? `Tüm soruları ${projeksiyon.gerekenDakika} dakikada bitirir, ${projeksiyon.farkDakika} dakika artırırsın.`
+                  : `Tümünü bitirmek ${projeksiyon.gerekenDakika} dakika sürerdi — ${Math.abs(projeksiyon.farkDakika)} dakika açık veriyorsun.`}
+                {projeksiyon.olculenDers < projeksiyon.toplamDers && (
+                  <> Veri girdiğin {projeksiyon.olculenDers} ders kendi temponla, kalanı hedef tempoyla hesaplandı.</>
+                )}
+              </div>
+            </div>
+          )}
+
+          {yetisme.length > 0 && (
+            <div>
+              <div style={{ color: TEXT_MUTED }} className="text-[11px] mb-1 font-semibold">Denemelerde işaretlemediğin sorular</div>
+              <div className="sfec-liste">
+                {yetisme.map((y) => (
+                  <div key={y.ders} className="sfec-liste-satiri flex items-center justify-between gap-2 px-2 py-3">
+                    <div className="min-w-0">
+                      <div style={{ color: TEXT }} className="text-sm font-semibold">{y.ders}</div>
+                      <div style={{ color: TEXT_MUTED }} className="text-[11px] mt-0.5">
+                        Boş %{Math.round(y.bosOrani * 100)} · Cevapladığında %{Math.round(y.sinavDogrulukOrani * 100)} doğru
+                        {y.calismaDogrulukOrani !== null && <> · Çalışırken %{Math.round(y.calismaDogrulukOrani * 100)}</>}
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-bold px-2 py-1 rounded-full shrink-0 text-right" style={{ background: MAKAS_BG[y.teshis], color: MAKAS_RENK[y.teshis] }}>
+                      {MAKAS_ETIKET[y.teshis]}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

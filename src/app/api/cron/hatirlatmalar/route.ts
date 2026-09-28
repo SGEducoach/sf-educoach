@@ -318,6 +318,17 @@ export async function GET(request: Request) {
       console.error("grup koç hatırlatmaları gönderilemedi:", grupHatasi);
     }
 
+    // Hız analizi (28.09.2026): ders bazlı hız referansları gecelik
+    // tazelenir (migration 0126). Eşik böylece öğrencinin kendi ortalaması
+    // değil, popülasyon medyanı olur; veri biriktikçe kendiliğinden düzelir.
+    try {
+      const { data: referansSayisi, error: referansHatasi } = await admin.rpc("ders_hiz_referanslarini_guncelle");
+      if (referansHatasi) detaylar.push(`Hız referansları güncellenemedi: ${referansHatasi.message}`);
+      else if (typeof referansSayisi === "number" && referansSayisi > 0) detaylar.push(`${referansSayisi} dersin hız referansı güncellendi.`);
+    } catch (referansHatasi) {
+      console.error("hız referansları güncellenemedi:", referansHatasi);
+    }
+
     return NextResponse.json({ ok: true, gonderilen, detaylar });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });

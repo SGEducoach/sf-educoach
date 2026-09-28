@@ -181,35 +181,76 @@ export function trendHesapla(noktalar: RegresyonNoktasi[]): TrendSonucu {
 // ============ Katman 4: hız / verimlilik analizi ============
 //
 // soru_cozumleri'nden ders bazlı "soru başı ortalama süre" ve doğruluk
-// oranını dört köşeli bir matrise yerleştirir. Matematik sorularının çözüm
-// yapısı diğer derslerden farklı olduğu için kullanıcı kararıyla soru başına
-// 1 dakika 30 saniye ayrı hız eşiği kullanılır. Diğer derslerde öğrencinin
-// KENDİ genel ortalaması referans alınmaya devam eder.
+// oranını dört köşeli bir matrise yerleştirir.
+//
+// 28.09.2026 revizyonu (kullanıcı isteği "ders dakika ortalamalarına fikir
+// üret" → onaylanan plan): eşik ARTIK öğrencinin kendi genel ortalaması
+// DEĞİL. O eşik daireseldi — her derste 2,5 dk/soru olan öğrenci hiçbir
+// derste yavaş görünmüyordu, hızlı olan da derslerinin yarısında "yavaş"
+// çıkıyordu. Canlı veride matris dört köşesinden yalnızca ikisini
+// kullanıyordu (85 hızlı-doğru, 41 yavaş-doğru, "hatalı" köşeleri BOŞ).
+// Yerine ders bazlı dış referans geliyor: popülasyon medyanı
+// (ders_hiz_referanslari) ya da o yoksa sınav bütçesi (bkz. sinav-tempo.ts).
+// Matematik'in ayrı 1,5 dk eşiği artık bütçe tablosunun bir satırı —
+// özel durum olmaktan çıktı, sayı aynı kaldı.
 
 export type HizDogrulukKategorisi = "hizli-dogru" | "hizli-hatali" | "yavas-dogru" | "yavas-hatali";
 
-// YKS net formülünde (dogru - yanlis/4) %60 doğruluk kabaca "iyi" sınırı
-// sayılır (4 yanlış 1 doğruyu götürür, %60'ın altı net'i hızla eritir).
-const DOGRULUK_ESIGI = 0.6;
-export const MATEMATIK_HIZ_ESIGI_DAKIKA = 1.5;
+// Sınırdaki öğrenciyi cezalandırmamak için referansın %10 üstü hâlâ "hızlı".
+export const HIZ_TOLERANSI = 1.1;
 
 export interface HizDogrulukGirdisi {
   ders: string;
   ortSureDakika: number; // bu ders için soru başına ortalama süre
   dogrulukOrani: number; // bu ders için 0-1 doğruluk oranı
-  genelOrtSureDakika: number; // öğrencinin TÜM derslerdeki soru başına ortalaması (referans)
+  referansDakika: number; // ders bazlı dış referans (medyan ya da bütçe)
+  dogrulukEsigi: number; // moda göre değişir (çalışma 0,85 — deneme 0,60)
 }
 
 export function hizDogrulukKategorisiBelirle(girdi: HizDogrulukGirdisi): HizDogrulukKategorisi {
-  const hizEsigi = girdi.ders === "Matematik"
-    ? MATEMATIK_HIZ_ESIGI_DAKIKA
-    : girdi.genelOrtSureDakika;
-  const hizli = girdi.ortSureDakika <= hizEsigi;
-  const dogru = girdi.dogrulukOrani >= DOGRULUK_ESIGI;
+  const hizli = girdi.ortSureDakika <= girdi.referansDakika * HIZ_TOLERANSI;
+  const dogru = girdi.dogrulukOrani >= girdi.dogrulukEsigi;
   if (hizli && dogru) return "hizli-dogru";
   if (hizli && !dogru) return "hizli-hatali"; // dikkatsizlik sinyali
   if (!hizli && dogru) return "yavas-dogru"; // hız çalışması gerekir
   return "yavas-hatali"; // temel eksik
+}
+
+// ============ Katman 9: yetişme / makas analizi ============
+//
+// Hız analizinin eksik üçüncü ekseni (kullanıcı onaylı, 28.09.2026).
+// Tempo ve doğruluk tek başına yanıltıyor: 40 sorudan 20'sini çözüp hepsini
+// doğru yapan öğrenci "hızlı-doğru" görünüyor, oysa sınavın yarısını boş
+// bırakmış. Canlı veride TYT Matematik'te soruların %41'i boş, öğrenci
+// cevapladığında %79 doğru — aynı öğrenciler serbest çalışmada %94.
+//
+// Boş sayısı denemeden TÜRETİLİR: resmî soru sayısı - (doğru + yanlış).
+// Yeni veri toplanması gerekmez.
+
+export type MakasTeshisi = "yetisemiyor" | "bilgi" | "sinavda-dusus" | "saglam";
+
+// Boş oranı bu eşiğin üstündeyse "yetişme" sorunu aranır.
+export const BOS_ORANI_ESIGI = 0.25;
+// Boş yüksekken sınavda cevapladığını bu oranda doğru yapıyorsa bilgi var,
+// sorun süre.
+export const SINAV_BILIYOR_ESIGI = 0.65;
+// Bu oranın altı bilgi eksiği sayılır (net formülünde eriyen bölge).
+export const SINAV_BILGI_ESIGI = 0.55;
+// Çalışma ile sınav doğruluğu arasındaki bu kadar fark sınav koşuluna
+// işaret eder (dikkat, stres, tanımadığı soru tipi).
+export const MAKAS_ESIGI = 0.15;
+
+export interface MakasGirdisi {
+  bosOrani: number; // 0-1, denemede işaretlenmeyen soru oranı
+  sinavDogrulukOrani: number; // 0-1, denemede CEVAPLADIĞI sorulardaki doğruluk
+  calismaDogrulukOrani: number | null; // 0-1, serbest çalışmadaki doğruluk
+}
+
+export function makasTeshisiBelirle(girdi: MakasGirdisi): MakasTeshisi {
+  if (girdi.bosOrani >= BOS_ORANI_ESIGI && girdi.sinavDogrulukOrani >= SINAV_BILIYOR_ESIGI) return "yetisemiyor";
+  if (girdi.sinavDogrulukOrani < SINAV_BILGI_ESIGI) return "bilgi";
+  if (girdi.calismaDogrulukOrani !== null && girdi.calismaDogrulukOrani - girdi.sinavDogrulukOrani >= MAKAS_ESIGI) return "sinavda-dusus";
+  return "saglam";
 }
 
 // ============ Katman 8: öncelik motoru ============
