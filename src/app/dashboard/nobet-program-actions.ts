@@ -54,7 +54,19 @@ async function pdfOkuAyikla(formData: FormData): Promise<{ error: string; ogeler
   if (dosya.size > EN_BUYUK_DOSYA) return { error: "Dosya çok büyük (en fazla 10 MB).", ogeler: null };
   if (!dosya.name.toLowerCase().endsWith(".pdf")) return { error: "Yalnızca PDF dosyası yüklenebilir.", ogeler: null };
   try {
-    return { error: null, ogeler: await pdfOgeleriniCikar(new Uint8Array(await dosya.arrayBuffer())) };
+    const ogeler = await pdfOgeleriniCikar(new Uint8Array(await dosya.arrayBuffer()));
+    // Kullanıcı bildirimi (29.09.2026): taranmış (fotoğraf/tarayıcı çıktısı)
+    // bir liste yüklenince "nöbet görevi bulunamadı, doğru dosyayı seçtiğinizden
+    // emin olun" deniyordu — oysa dosya doğruydu, sadece metin katmanı yoktu.
+    // Okuyucular PDF'in metin katmanını kullanıyor; görüntüden okuma yapmıyor.
+    if (ogeler.length === 0) {
+      return {
+        error: "Bu PDF taranmış bir görüntü (metin katmanı yok), bu yüzden okunamıyor. "
+          + "Listeyi hazırlayan kişiden Word/Excel çıktısı ya da yazıcıdan \"PDF olarak kaydet\" ile üretilmiş bir dosya isteyin.",
+        ogeler: null,
+      };
+    }
+    return { error: null, ogeler };
   } catch (e) {
     console.error("PDF okunamadı:", e);
     return { error: "PDF okunamadı. Dosyanın bozuk olmadığından emin olun.", ogeler: null };
