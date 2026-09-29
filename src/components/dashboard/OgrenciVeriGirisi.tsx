@@ -6,9 +6,10 @@ import type {
   AytAlan, DenemeTuru, DenemeZorlugu, HedefeYakinlik, TakipCevabi, VerimlilikDuzeyi,
 } from "@/lib/types";
 import {
-  TYT_DERSLERI, AYT_DERSLERI, BRANS_DENEMESI_DERSLERI, TAKIP_SORUSU, VERIMLILIK_ETIKET, netHesapla, dersSoruSayisi,
+  TYT_DERSLERI, AYT_DERSLERI, BRANS_DENEMESI_DERSLERI, BRANS_DENEMESI_KONUSU, TAKIP_SORUSU, VERIMLILIK_ETIKET, netHesapla, dersSoruSayisi,
   SURE_UST_SINIR, SORU_SAYISI_UST_SINIR, GOREV_GERIYE_DONUK_GUN, KATEGORI_GERIYE_DONUK_SINIR, dokuzOnSinifMi, maarifHiyerarsiSinifMi,
 } from "@/lib/types";
+import { soruKonuOnerileri } from "@/lib/konu-oneri-listesi";
 import {
   BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, SKY, SKY_BG, TEXT, TEXT_MUTED, BLUSH,
 } from "@/lib/theme";
@@ -524,11 +525,13 @@ export function SoruCozumuForm({ dersListesi, konuOnerileri, onBasari, prefillDe
   const [hata, setHata] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const oneriler = useMemo(
-    () => konuOnerileri.filter((o) => o.ders === ders && (!aramaMetni.trim() || o.konu.toLowerCase().includes(aramaMetni.trim().toLowerCase()))),
-    [konuOnerileri, ders, aramaMetni],
-  );
+  // Kullanıcı isteği (29.09.2026): dersin bütün konularını kapsayan branş
+  // denemeleri tek bir konuya bağlanamıyordu. "Branş Denemesi" başlığı konu
+  // listesinin EN BAŞINDA duruyor; arama yazıldığında da kendi adıyla
+  // eşleşiyor.
+  const oneriler = useMemo(() => soruKonuOnerileri(konuOnerileri, ders, aramaMetni), [konuOnerileri, ders, aramaMetni]);
 
+  const bransDenemesi = konu === BRANS_DENEMESI_KONUSU;
   const net = dogru !== "" && yanlis !== "" ? netHesapla(Number(dogru), Number(yanlis)) : null;
   // Süre, toplam soru sayısının (doğru+yanlış+boş) iki katını geçemez (bkz.
   // soruCozumuEkle) — hem art niyeti caydırmak hem de "günlük toplamı tek
@@ -573,6 +576,11 @@ export function SoruCozumuForm({ dersListesi, konuOnerileri, onBasari, prefillDe
           disabled={!ders} />
         <KonuOneriDropdown oneriler={oneriler} aktif={oneriAcik && !!ders} onSec={(k) => { setKonu(k); setAramaMetni(k); setOneriAcik(false); }} />
       </label>
+      {bransDenemesi && (
+        <p style={{ color: TEXT_MUTED }} className="text-[11px] -mt-1">
+          Branş denemelerinde soru sayısı yayınevine göre değişir — doğru, yanlış ve boşu denemende kaç soru varsa ona göre gir.
+        </p>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <label className="flex flex-col gap-1"><Etiket>Doğru</Etiket>

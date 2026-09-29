@@ -380,6 +380,14 @@ export const TYT_DERSLERI = [
 // yukarıda) — sadece soru sayısı dağılımı farklı (yuvarlak/pratik değerler).
 export const BRANS_DENEMESI_DERSLERI = TYT_DERSLERI;
 
+// Soru Çözümü'nde konu seçiminin EN BAŞINDA duran özel başlık (kullanıcı
+// isteği 29.09.2026): bir dersin bütün konularını kapsayan branş denemesi
+// tek bir müfredat konusuna bağlanamaz. Konu Hakimiyeti bu değeri zaten
+// görmezden gelir — hiçbir müfredat yaprağıyla eşleşmez (bkz.
+// konu-hakimiyeti.ts, olcumToplamMap). Soru sayısı yayınevine göre
+// değiştiği için forma tavan konmaz, giriş öğrenciye bırakılır.
+export const BRANS_DENEMESI_KONUSU = "Branş Denemesi";
+
 export const AYT_DERSLERI: Record<AytAlan, readonly string[]> = {
   SAY: ["Matematik", "Fizik", "Kimya", "Biyoloji"],
   EA: ["Matematik", "Edebiyat", "Tarih", "Coğrafya"],
