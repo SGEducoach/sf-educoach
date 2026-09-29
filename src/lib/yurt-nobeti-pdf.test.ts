@@ -69,4 +69,31 @@ describe("yurtNobetiPdfiniCoz", () => {
   test("tarihsiz PDF uyarı verir", () => {
     expect(yurtNobetiPdfiniCoz([oge("Eylül Ayı Belletmen Öğretmen Listesi", 330, 537)]).uyarilar[0]).toMatch(/bulunamadı/);
   });
+
+  // Taranmış listeler OCR'dan geçirilince tablo çizgisi tarihin başına
+  // "(" ya da "|" olarak, ad'ın başına da tek tırnak olarak düşebiliyor
+  // (kullanıcı bildirimi 29.09.2026, Ekim listesi). Eskiden o günün TAMAMI
+  // sessizce atlanıyordu.
+  test("tarihin başındaki OCR çöpü günü düşürmez", () => {
+    const { gorevler, uyarilar } = yurtNobetiPdfiniCoz([
+      oge("(03/10/2026 MURAT ÖZDEMİR", 8, 419), oge("FURKAN DURMAZ", 265, 419),
+    ]);
+    expect(uyarilar).toEqual([]);
+    expect(gorevler).toEqual([
+      { ad: "MURAT ÖZDEMİR", tarih: "2026-10-03" },
+      { ad: "FURKAN DURMAZ", tarih: "2026-10-03" },
+    ]);
+  });
+
+  test("adın başındaki tek tırnak temizlenir", () => {
+    const { gorevler, uyarilar } = yurtNobetiPdfiniCoz([
+      oge("08/10/2026 METE KEREK", 8, 419), oge("'NURGÜL YENMEZ", 265, 419),
+    ]);
+    expect(uyarilar).toEqual([]);
+    expect(gorevler.map((g) => g.ad)).toEqual(["METE KEREK", "NURGÜL YENMEZ"]);
+  });
+
+  test("üç karakterlik çöp tarih sayılmaz", () => {
+    expect(yurtNobetiPdfiniCoz([oge("abc12/10/2026 ONUR AKSOY", 8, 419)]).gorevler).toEqual([]);
+  });
 });

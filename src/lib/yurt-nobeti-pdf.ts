@@ -15,7 +15,11 @@ export interface YurtNobetiPdfSonucu {
   uyarilar: string[];
 }
 
-const TARIH_DESENI = /^(\d{2})\/(\d{2})\/(\d{4})\s*(.*)$/;
+// Tarih hücresinin başındaki 1-2 karakterlik çöp (OCR'dan geçmiş listelerde
+// tablo çizgisi "(" ya da "|" olarak okunabiliyor) yok sayılır; yoksa o günün
+// TAMAMI sessizce atlanıyordu (kullanıcı bildirimi 29.09.2026, Ekim listesi
+// taramadan OCR ile okutulduğunda 123 görevin yalnızca 95'i geliyordu).
+const TARIH_DESENI = /^[^\d]{0,2}(\d{2})\/(\d{2})\/(\d{4})\s*(.*)$/;
 const AD_DESENI = /^[A-ZÇĞİÖŞÜ][A-ZÇĞİÖŞÜa-zçğıöşü.'-]*(?:\s+[A-ZÇĞİÖŞÜ][A-ZÇĞİÖŞÜa-zçğıöşü.'-]*)+$/;
 const ATLANACAK = /^(yat[ıi]l[ıi]|g[üu]nd[üu]zl[üu]|belletmen|öğretmen|tarih)$/i;
 
@@ -38,7 +42,9 @@ export function yurtNobetiPdfiniCoz(ogeler: PdfOgesi[]): YurtNobetiPdfSonucu {
       continue;
     }
 
-    const adlar = [kalan.trim(), ...parcalar.slice(1).map((p) => p.metin.trim())];
+    // OCR bazı adların başına tek tırnak/tırnak bırakıyor ("'NURGÜL YENMEZ").
+    const adTemizle = (metin: string) => metin.trim().replace(/^['"`´'"]+/, "").trim();
+    const adlar = [adTemizle(kalan), ...parcalar.slice(1).map((p) => adTemizle(p.metin))];
     for (const ad of adlar) {
       if (!ad || ATLANACAK.test(ad)) continue;
       if (!AD_DESENI.test(ad) || ad.length < 5 || ad.length > 80) {
