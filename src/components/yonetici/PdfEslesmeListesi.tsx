@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Check, X } from "lucide-react";
 import {
@@ -23,15 +23,87 @@ function denemeAnahtari(b: PdfEslesmeBekleyeni) {
   return `${b.schoolId}|${b.tarih}|${b.tur}|${b.yayinevi}`;
 }
 
+const TUMU = "";
+
+function denemeEtiketi(b: PdfEslesmeBekleyeni) {
+  return `${new Date(b.tarih + "T00:00:00").toLocaleDateString("tr-TR")} · ${b.tur} · ${b.yayinevi}`;
+}
+
+// Kullanıcı isteği (29.09.2026): "dershane eşleştirme yapmadığı için liste
+// kabarık duruyor" — tek bir kurumun tek bir denemesi 77 satırla listeyi
+// kaplıyordu. Kurum ve deneme (tarih + tür + yayınevi) süzgeçleri, yanlarında
+// bekleyen satır sayısıyla.
 export function PdfEslesmeListesi({ bekleyenler }: { bekleyenler: PdfEslesmeBekleyeni[] }) {
   const [buOturumdaYerlesen, setBuOturumdaYerlesen] = useState<Set<string>>(new Set());
+  const [kurum, setKurum] = useState(TUMU);
+  const [deneme, setDeneme] = useState(TUMU);
+
+  const kurumlar = useMemo(() => {
+    const sayac = new Map<string, { id: string; ad: string; adet: number }>();
+    for (const b of bekleyenler) {
+      const mevcut = sayac.get(b.schoolId) ?? { id: b.schoolId, ad: b.okulAdi, adet: 0 };
+      mevcut.adet++;
+      sayac.set(b.schoolId, mevcut);
+    }
+    return [...sayac.values()].sort((a, b) => b.adet - a.adet || a.ad.localeCompare(b.ad, "tr"));
+  }, [bekleyenler]);
+
+  // Deneme listesi seçili kuruma göre daralır: olmayan bir seçim ekranda kalmasın.
+  const denemeler = useMemo(() => {
+    const sayac = new Map<string, { anahtar: string; etiket: string; tarih: string; adet: number }>();
+    for (const b of bekleyenler) {
+      if (kurum !== TUMU && b.schoolId !== kurum) continue;
+      const anahtar = `${b.tarih}|${b.tur}|${b.yayinevi}`;
+      const mevcut = sayac.get(anahtar) ?? { anahtar, etiket: denemeEtiketi(b), tarih: b.tarih, adet: 0 };
+      mevcut.adet++;
+      sayac.set(anahtar, mevcut);
+    }
+    return [...sayac.values()].sort((a, b) => b.tarih.localeCompare(a.tarih));
+  }, [bekleyenler, kurum]);
+
+  const gorunen = bekleyenler.filter((b) =>
+    (kurum === TUMU || b.schoolId === kurum) &&
+    (deneme === TUMU || `${b.tarih}|${b.tur}|${b.yayinevi}` === deneme));
+
+  const secimStili = { background: BG0, color: TEXT, border: `2px solid ${BORDER_STRONG}` };
+
   return (
     <div className="flex flex-col gap-3">
-      {bekleyenler.map((b) => (
-        <PdfEslesmeSatiri key={b.id} bekleyen={b}
-          buOturumdaYerlesen={buOturumdaYerlesen}
-          yerlesti={(studentId) => setBuOturumdaYerlesen((s) => new Set(s).add(`${denemeAnahtari(b)}|${studentId}`))} />
-      ))}
+      <div className="flex flex-wrap items-end gap-2 rounded-2xl p-3" style={{ background: BG1_ALT, border: `1px solid ${BORDER}` }}>
+        <label className="flex min-w-[180px] flex-1 flex-col gap-1">
+          <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Kurum</span>
+          <select value={kurum} onChange={(e) => { setKurum(e.target.value); setDeneme(TUMU); }}
+            className="rounded-xl px-3 py-2 text-xs font-semibold outline-none" style={secimStili}>
+            <option value={TUMU}>Tüm kurumlar ({bekleyenler.length})</option>
+            {kurumlar.map((k) => <option key={k.id} value={k.id}>{k.ad} ({k.adet})</option>)}
+          </select>
+        </label>
+        <label className="flex min-w-[200px] flex-1 flex-col gap-1">
+          <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Deneme</span>
+          <select value={deneme} onChange={(e) => setDeneme(e.target.value)}
+            className="rounded-xl px-3 py-2 text-xs font-semibold outline-none" style={secimStili}>
+            <option value={TUMU}>Tüm denemeler</option>
+            {denemeler.map((d) => <option key={d.anahtar} value={d.anahtar}>{d.etiket} ({d.adet})</option>)}
+          </select>
+        </label>
+        {(kurum !== TUMU || deneme !== TUMU) && (
+          <button type="button" onClick={() => { setKurum(TUMU); setDeneme(TUMU); }}
+            className="sfec-btn rounded-xl px-3 py-2 text-xs font-bold" style={{ color: TEXT_MUTED }}>
+            Süzgeci temizle
+          </button>
+        )}
+        <span className="ml-auto self-center text-[11px] font-semibold" style={{ color: TEXT_MUTED }}>
+          {gorunen.length} / {bekleyenler.length} satır
+        </span>
+      </div>
+
+      {gorunen.length === 0
+        ? <p className="text-sm" style={{ color: TEXT_MUTED }}>Bu süzgece uyan bekleyen satır yok.</p>
+        : gorunen.map((b) => (
+          <PdfEslesmeSatiri key={b.id} bekleyen={b}
+            buOturumdaYerlesen={buOturumdaYerlesen}
+            yerlesti={(studentId) => setBuOturumdaYerlesen((s) => new Set(s).add(`${denemeAnahtari(b)}|${studentId}`))} />
+        ))}
     </div>
   );
 }

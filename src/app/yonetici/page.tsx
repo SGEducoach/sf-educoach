@@ -12,6 +12,7 @@ import { PlatformIstatistikleri } from "@/components/yonetici/PlatformIstatistik
 import { KonuAnlatimYonetimi } from "@/components/yonetici/KonuAnlatimYonetimi";
 import { MufredatHiyerarsiYonetimi } from "@/components/yonetici/MufredatHiyerarsiYonetimi";
 import { NobetProgramYukleme } from "@/components/yonetici/NobetProgramYukleme";
+import { DenemeYuklemeSayfasi } from "@/components/yonetici/DenemeYuklemeSayfasi";
 import { GrupKoclukYonetimi } from "@/components/yonetici/GrupKoclukYonetimi";
 import { BlogYonetimi } from "@/components/yonetici/BlogYonetimi";
 import { KurallarYonetimi } from "@/components/yonetici/KurallarYonetimi";
@@ -131,6 +132,12 @@ export default async function YoneticiPage({
           {aktifBolum === "mesajlar" && <section className="sfec-section"><YoneticiMesajlar /></section>}
           {aktifBolum === "talepler" && <VeliTalepleri />}
           {aktifBolum === "pdf-eslesme" && <section className="sfec-section flex flex-col gap-4"><PdfEslesmeYonetimi /><KazanimEslesmeYonetimi /></section>}
+          {aktifBolum === "deneme-yukle" && (
+            <section className="sfec-section"><DenemeYuklemeSayfasi
+              okullar={okulListesi.map((o) => ({ id: o.id, ad: o.ad, tur: o.tur }))}
+              seciliOkulId={params.okul ?? null}
+            /></section>
+          )}
           {aktifBolum === "okullar" && (
             <section className="sfec-section"><AdminPanel
               okullar={okulListesi}

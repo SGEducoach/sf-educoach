@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Shield, Building2, UserPlus, Copy, Check, Plus, Pencil, EyeOff, Eye, X, ClipboardList, Download } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH, LILAC } from "@/lib/theme";
 import {
@@ -134,20 +135,7 @@ export function AdminPanel({
               </div>
             )}
 
-            <div className="mt-5">
-              <span style={{ color: TEXT_MUTED }} className="text-[11px] font-semibold uppercase tracking-wide mb-2 block">
-                Öğretmenler ({ogretmenListesi.length})
-              </span>
-              {ogretmenListesi.length === 0 ? (
-                <p style={{ color: TEXT_MUTED }} className="text-sm py-3 text-center">Henüz kayıtlı öğretmen yok.</p>
-              ) : (
-                <div className="sfec-liste">
-                  {ogretmenListesi.map((o) => (
-                    <OgretmenSatir key={o.id} ogretmen={o} siniflar={siniflar} />
-                  ))}
-                </div>
-              )}
-            </div>
+            <OgretmenListesiKutusu ogretmenListesi={ogretmenListesi} siniflar={siniflar} />
 
             <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
               <OgretmenEkleFormu schoolId={gorunenOkul.id} okullar={okullar} />
@@ -157,13 +145,16 @@ export function AdminPanel({
             <div className="mt-3 flex flex-col gap-3">
               <OgrenciTopluEkleFormu schoolId={gorunenOkul.id} siniflar={siniflar} />
               <DenemeTopluGirisFormu siniflar={siniflar} />
-              {/* Kullanıcı bildirimi (29.09.2026): deneme PDF'ini yüklemek
-                  isteyen yönetici bu bölümü kapalı olduğu için bulamayıp
-                  aşağıdaki ders programı/nöbet kutusuna gidiyordu — açık
-                  geliyor. */}
-              <details key={gorunenOkul.id} open className="rounded-2xl p-4" style={{ background: BG1_ALT, border: `2px solid ${BORDER}` }}>
+              {/* Kullanıcı isteği (29.09.2026): deneme yüklemenin asıl yeri
+                  artık sol menüdeki "Deneme ve İçerik › Deneme Yükle"
+                  bölümü. Buradaki kopya, okul üzerinde çalışırken elinin
+                  altında dursun diye kaldı — ama kapalı, sayfa uzamasın. */}
+              <details key={gorunenOkul.id} className="rounded-2xl p-4" style={{ background: BG1_ALT, border: `2px solid ${BORDER}` }}>
                 <summary className="cursor-pointer text-sm font-bold" style={{ color: TEXT }}>Deneme sonucu yükle (PDF / Excel)</summary>
-                <p className="my-3 text-xs" style={{ color: TEXT_MUTED }}>Sonuçlar yalnızca seçili kurumun öğrencileriyle eşleştirilir: {gorunenOkul.ad}.</p>
+                <p className="my-3 text-xs" style={{ color: TEXT_MUTED }}>
+                  Sonuçlar yalnızca seçili kurumun öğrencileriyle eşleştirilir: {gorunenOkul.ad}.{" "}
+                  <Link href="/yonetici/deneme-yukle" className="underline" style={{ color: MINT }}>Deneme Yükle bölümünde</Link> tam ekran çalışabilirsiniz.
+                </p>
                 <DershaneDenemePdfFormu schoolId={gorunenOkul.id} />
               </details>
               <IzinliOgrenciListesi schoolId={gorunenOkul.id} />
@@ -263,6 +254,51 @@ function OkulDuzenleFormu({ okul, onDone }: { okul: OkulSatiri; onDone: () => vo
         </button>
       </div>
     </form>
+  );
+}
+
+// Kullanıcı isteği (29.09.2026): "kurum öğretmenler listesi arttıkça uzayıp
+// sayfayı kaplıyor, programı eşleşmeyen öğretmenler listesi gibi bir şekle
+// sokulabilir" — kendi çerçevesinde, kaydırmalı ve aramalı bir kutu.
+const LISTE_ESIGI = 8;
+
+function OgretmenListesiKutusu({ ogretmenListesi, siniflar }: { ogretmenListesi: OgretmenSatiri[]; siniflar: SinifSatiri[] }) {
+  const [arama, setArama] = useState("");
+  const kucuk = arama.trim().toLocaleLowerCase("tr");
+  const gorunen = kucuk
+    ? ogretmenListesi.filter((o) => `${o.ad} ${o.brans} ${o.sinifAdi ?? ""}`.toLocaleLowerCase("tr").includes(kucuk))
+    : ogretmenListesi;
+  const uzunListe = ogretmenListesi.length > LISTE_ESIGI;
+
+  return (
+    <div className="mt-5 rounded-2xl p-4" style={{ background: BG1_ALT, border: `2px solid ${BORDER}` }}>
+      <div className="mb-2 flex flex-wrap items-center gap-2">
+        <span style={{ color: TEXT_MUTED }} className="text-[11px] font-semibold uppercase tracking-wide">
+          Öğretmenler ({ogretmenListesi.length})
+        </span>
+        {uzunListe && (
+          <input value={arama} onChange={(e) => setArama(e.target.value)} placeholder="Ad, branş veya sınıf ara"
+            className="ml-auto min-w-[160px] flex-1 rounded-xl px-3 py-1.5 text-xs outline-none sm:max-w-xs"
+            style={{ background: BG0, color: TEXT, border: `2px solid ${BORDER_STRONG}` }} />
+        )}
+      </div>
+      {ogretmenListesi.length === 0 ? (
+        <p style={{ color: TEXT_MUTED }} className="py-3 text-center text-sm">Henüz kayıtlı öğretmen yok.</p>
+      ) : gorunen.length === 0 ? (
+        <p style={{ color: TEXT_MUTED }} className="py-3 text-center text-sm">Aramaya uyan öğretmen yok.</p>
+      ) : (
+        <>
+          <div className={`sfec-liste ${uzunListe ? "max-h-96 overflow-y-auto pr-1" : ""}`}>
+            {gorunen.map((o) => (
+              <OgretmenSatir key={o.id} ogretmen={o} siniflar={siniflar} />
+            ))}
+          </div>
+          {uzunListe && kucuk && (
+            <p className="mt-2 text-[11px]" style={{ color: TEXT_MUTED }}>{gorunen.length} / {ogretmenListesi.length} öğretmen</p>
+          )}
+        </>
+      )}
+    </div>
   );
 }
 

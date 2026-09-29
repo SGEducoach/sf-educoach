@@ -30,6 +30,9 @@ export type DashboardBolumu =
   | "kullanicilar"
   | "google-analytics"
   | "pdf-eslesme"
+  // Kullanıcı isteği (29.09.2026): deneme yükleme önemli bir iş ama
+  // Okullar sayfasının içinde küçük bir yerde duruyordu — kendi bölümü.
+  | "deneme-yukle"
   | "okullar"
   // Grup Koçluk (18.09.2026) — kurum dışı koç grupları.
   | "grup-kocluk"
@@ -178,6 +181,7 @@ const ADMIN_MENU_YAPISI: DashboardMenuKalemi[] = [
   },
   {
     baslik: "Deneme ve İçerik", ikon: "deneme", ogeler: [
+      { bolum: "deneme-yukle", href: "/yonetici/deneme-yukle", etiket: "Deneme Yükle", ikon: "deneme" },
       { bolum: "pdf-eslesme", href: "/yonetici/pdf-eslesme", etiket: "PDF Eşleştirme", ikon: "eslestir" },
       { bolum: "icerik", href: "/yonetici/icerik", etiket: "Konu özetleri", ikon: "icerik" },
       { bolum: "yapay-zeka", href: "/yonetici/yapay-zeka", etiket: "Konu Haritası", ikon: "ai" },
@@ -267,6 +271,6 @@ export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
 // /yonetici/[bolum] catch-all için.
 export const YONETICI_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
   "mesajlar",
-  "kullanicilar", "talepler", "pdf-eslesme", "okullar", "grup-kocluk", "moderatorler", "icerik", "blog", "kurallar", "profil", "hata-bildirimleri",
+  "kullanicilar", "talepler", "deneme-yukle", "pdf-eslesme", "okullar", "grup-kocluk", "moderatorler", "icerik", "blog", "kurallar", "profil", "hata-bildirimleri",
   "duyuru-gecmisi", "islem-gecmisi", "ogrenci-aktivitesi", "site-ayarlari", "adminler",
 ]);
