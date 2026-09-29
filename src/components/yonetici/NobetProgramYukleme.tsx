@@ -40,6 +40,42 @@ function Uyarilar({ uyarilar }: { uyarilar: string[] }) {
 
 const girdiStili = { background: BG0, color: TEXT, border: `2px solid ${BORDER_STRONG}` };
 
+// Kullanıcı bildirimi (29.09.2026): "ders programı ve yurt nöbeti pdfsi
+// seçiliyor ama yükle butonu yok". Dosya seçilir seçilmez yükleniyordu:
+// yanlış PDF'i seçen (ör. deneme sonucu PDF'i) kullanıcı vazgeçemiyor,
+// doğru dosyayı seçtiğinden de emin olamıyordu. Artık iki adım: seç → Yükle.
+function DosyaSecimi({ ref: girdiRef, dosya, onSec, onYukle, onTemizle, pending, etiket }: {
+  ref: React.RefObject<HTMLInputElement | null>;
+  dosya: File | null;
+  onSec: (d: File | null) => void;
+  onYukle: () => void;
+  onTemizle: () => void;
+  pending: boolean;
+  etiket: string;
+}) {
+  return (
+    <>
+      <input ref={girdiRef} type="file" accept="application/pdf" disabled={pending}
+        onChange={(e) => onSec(e.target.files?.[0] ?? null)}
+        className="w-full rounded-xl px-3 py-2 text-xs" style={girdiStili} />
+      {dosya && (
+        <div className="mt-2 flex flex-wrap items-center gap-2 rounded-xl p-2" style={{ background: BG1_ALT }}>
+          <span className="flex-1 truncate text-[11px] font-semibold" style={{ color: TEXT }} title={dosya.name}>{dosya.name}</span>
+          <button type="button" onClick={onYukle} disabled={pending}
+            className="sfec-btn flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold disabled:opacity-60"
+            style={{ background: MINT, color: MINT_ON }}>
+            <FileUp size={12} /> {pending ? "Yükleniyor..." : etiket}
+          </button>
+          <button type="button" onClick={onTemizle} disabled={pending}
+            className="sfec-btn rounded-lg px-2 py-1.5 text-xs font-semibold" style={{ color: TEXT_MUTED }}>
+            Vazgeç
+          </button>
+        </div>
+      )}
+    </>
+  );
+}
+
 // Eşleşmeyen kayıt için hesap seçici — aynı adda iki hesap olduğunda
 // yöneticinin hangisine yazılacağını seçmesini sağlar.
 function HesapSecici({ ogretmenler, adSoyad, onSec, disabled }: {
@@ -145,6 +181,8 @@ export function NobetProgramYukleme({ okulId, okulAdi }: { okulId: string; okulA
   const [bilgi, setBilgi] = useState<string | null>(null);
   const programGirdisi = useRef<HTMLInputElement>(null);
   const yurtGirdisi = useRef<HTMLInputElement>(null);
+  const [programDosyasi, setProgramDosyasi] = useState<File | null>(null);
+  const [yurtDosyasi, setYurtDosyasi] = useState<File | null>(null);
 
   const [yeniOkulNobeti, setYeniOkulNobeti] = useState({ adSoyad: "", gun: "pazartesi" as DersProgramiGunu, yer: "" });
   const [yeniYurtNobeti, setYeniYurtNobeti] = useState({ adSoyad: "", tarih: "" });
@@ -169,7 +207,14 @@ export function NobetProgramYukleme({ okulId, okulAdi }: { okulId: string; okulA
     return () => { iptal = true; };
   }, [okulId]);
 
-  function programYukle(dosya: File) {
+  function programiTemizle() {
+    setProgramDosyasi(null);
+    if (programGirdisi.current) programGirdisi.current.value = "";
+  }
+
+  function programYukle() {
+    const dosya = programDosyasi;
+    if (!dosya) return;
     setHata(null);
     setProgramOzeti(null);
     const form = new FormData();
@@ -179,11 +224,18 @@ export function NobetProgramYukleme({ okulId, okulAdi }: { okulId: string; okulA
       const r = await dersProgramiPdfYukle(form);
       if (r.error) setHata(r.error);
       else { setProgramOzeti(r.ozet); nobetleriTazele(); }
-      if (programGirdisi.current) programGirdisi.current.value = "";
+      programiTemizle();
     });
   }
 
-  function yurtYukle(dosya: File) {
+  function yurduTemizle() {
+    setYurtDosyasi(null);
+    if (yurtGirdisi.current) yurtGirdisi.current.value = "";
+  }
+
+  function yurtYukle() {
+    const dosya = yurtDosyasi;
+    if (!dosya) return;
     setHata(null);
     setYurtOzeti(null);
     const form = new FormData();
@@ -194,7 +246,7 @@ export function NobetProgramYukleme({ okulId, okulAdi }: { okulId: string; okulA
       const r = await yurtNobetiPdfYukle(form);
       if (r.error) setHata(r.error);
       else { setYurtOzeti(r.ozet); nobetleriTazele(); }
-      if (yurtGirdisi.current) yurtGirdisi.current.value = "";
+      yurduTemizle();
     });
   }
 
@@ -306,11 +358,11 @@ export function NobetProgramYukleme({ okulId, okulAdi }: { okulId: string; okulA
       )}
 
       <Kutu baslik="Ders Programı PDF" ikon={<FileUp size={13} color={MINT} />}>
-        <input ref={programGirdisi} type="file" accept="application/pdf" disabled={pending}
-          onChange={(e) => { const d = e.target.files?.[0]; if (d) programYukle(d); }}
-          className="w-full rounded-xl px-3 py-2 text-xs" style={girdiStili} />
+        <DosyaSecimi ref={programGirdisi} dosya={programDosyasi} pending={pending} etiket="Ders programını yükle"
+          onSec={setProgramDosyasi} onYukle={programYukle} onTemizle={programiTemizle} />
         <p className="mt-2 text-[11px]" style={{ color: TEXT_MUTED }}>
           MEB öğretmen ders programı PDF&apos;i. Programın yanında yazan nöbet günü ve yeri de okunur.
+          Deneme sonucu PDF&apos;i buraya değil, yukarıdaki &quot;Excel/PDF ile toplu deneme yükle&quot; bölümüne yüklenir.
           Hesabı olmayan öğretmenlerin programı bekletilir, üye oldukları anda yansır.
         </p>
         {programOzeti && (
@@ -323,9 +375,8 @@ export function NobetProgramYukleme({ okulId, okulAdi }: { okulId: string; okulA
       </Kutu>
 
       <Kutu baslik="Yurt (Belletmen) Nöbet Listesi PDF" ikon={<CalendarDays size={13} color={MINT} />}>
-        <input ref={yurtGirdisi} type="file" accept="application/pdf" disabled={pending}
-          onChange={(e) => { const d = e.target.files?.[0]; if (d) yurtYukle(d); }}
-          className="w-full rounded-xl px-3 py-2 text-xs" style={girdiStili} />
+        <DosyaSecimi ref={yurtGirdisi} dosya={yurtDosyasi} pending={pending} etiket="Nöbet listesini yükle"
+          onSec={setYurtDosyasi} onYukle={yurtYukle} onTemizle={yurduTemizle} />
         <label className="mt-2 flex items-center gap-2 text-[11px] font-semibold" style={{ color: TEXT_MUTED }}>
           <input type="checkbox" checked={bildir} onChange={(e) => setBildir(e.target.checked)} />
           Listedeki öğretmenlere &quot;Bu ayın nöbet görevleri yüklendi&quot; bildirimi ve e-postası gönder

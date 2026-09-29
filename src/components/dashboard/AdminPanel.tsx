@@ -157,8 +157,12 @@ export function AdminPanel({
             <div className="mt-3 flex flex-col gap-3">
               <OgrenciTopluEkleFormu schoolId={gorunenOkul.id} siniflar={siniflar} />
               <DenemeTopluGirisFormu siniflar={siniflar} />
-              <details key={gorunenOkul.id} className="rounded-2xl p-4" style={{ background: BG1_ALT, border: `2px solid ${BORDER}` }}>
-                <summary className="cursor-pointer text-sm font-bold" style={{ color: TEXT }}>Excel/PDF ile toplu deneme yükle</summary>
+              {/* Kullanıcı bildirimi (29.09.2026): deneme PDF'ini yüklemek
+                  isteyen yönetici bu bölümü kapalı olduğu için bulamayıp
+                  aşağıdaki ders programı/nöbet kutusuna gidiyordu — açık
+                  geliyor. */}
+              <details key={gorunenOkul.id} open className="rounded-2xl p-4" style={{ background: BG1_ALT, border: `2px solid ${BORDER}` }}>
+                <summary className="cursor-pointer text-sm font-bold" style={{ color: TEXT }}>Deneme sonucu yükle (PDF / Excel)</summary>
                 <p className="my-3 text-xs" style={{ color: TEXT_MUTED }}>Sonuçlar yalnızca seçili kurumun öğrencileriyle eşleştirilir: {gorunenOkul.ad}.</p>
                 <DershaneDenemePdfFormu schoolId={gorunenOkul.id} />
               </details>
