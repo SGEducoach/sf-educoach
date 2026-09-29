@@ -206,11 +206,44 @@ function gramerCikar(dynSatirMetni: string): Grammer | null {
   return { dersSayisi, puanBloklari };
 }
 
-function dersEtiketleriCikar(dersBasligiMetni: string, dersSayisi: number): string[] {
+// Başlık satırının başındaki sabit sütunlar — bazı şablonlarda ders adları
+// bu satırın DEVAMINDA geliyor ("Sıra Ö.No İsim Sınıf Türkçe Tarih-1 ...").
+const BASLIK_SABIT_ONEKI = /^S[ıi]ra\s+Ö\.?\s*No\s+[İI]sim\s+S[ıi]n[ıi]f\s+/i;
+
+// Tanınan ders adları: KARNE_DERS_TYT_ESLESTIRME anahtarları + seçmeli
+// varyantı. Sabit bir tam-satır deseni yerine adların kendisi soldan sağa
+// okunuyor; böylece aynı sözlüğü kullanan ama sütun kümesi farklı olan
+// şablonlar da tanınıyor (kullanıcı bildirimi 29.09.2026: Kafa Dengi
+// listesinde "Felsefe (Seçmeli)" sütunu yok, 11 yerine 10 ders var —
+// eski tam-satır deseni tutmayınca etiketler "Ders 1..10" kalıyor ve PDF
+// deterministik yoldan okunamayıp Claude'a düşüyordu).
+// Sabit uzunluk gerektirmez; en uzun ad önce denenir ("Felsefe (Seçmeli)"
+// ile "Felsefe" karışmasın).
+function bilinenDersAdlari(): string[] {
+  return [...Object.keys(KARNE_DERS_TYT_ESLESTIRME), "Felsefe (Seçmeli)"].sort((a, b) => b.length - a.length);
+}
+
+function bilinenDerslerdenCikar(basliklarMetni: string, dersSayisi: number): string[] | null {
+  let kalan = basliklarMetni.replace(/\s+/g, " ").trim().replace(BASLIK_SABIT_ONEKI, "");
+  const adlar = bilinenDersAdlari();
+  const bulunan: string[] = [];
+  while (kalan && bulunan.length < dersSayisi) {
+    const ad = adlar.find((a) => kalan.startsWith(a) && (kalan.length === a.length || kalan[a.length] === " "));
+    if (!ad) break;
+    bulunan.push(ad);
+    kalan = kalan.slice(ad.length).trimStart();
+  }
+  // Ders sayısı gramerle (D/Y/N üçlüsü sayısı) birebir tutmalı — tutmuyorsa
+  // hizalama bozulmuş demektir, güvenli tarafta kalıp jenerik ada düşülür.
+  return bulunan.length === dersSayisi ? bulunan : null;
+}
+
+export function dersEtiketleriCikar(dersBasligiMetni: string, dersSayisi: number): string[] {
   for (const { desen, dersler } of DERS_BASLIGI_ESLESTIRME) {
     if (desen.test(dersBasligiMetni) && dersler.length === dersSayisi) return dersler;
   }
-  return Array.from({ length: dersSayisi }, (_, i) => `Ders ${i + 1}`);
+  return bilinenDerslerdenCikar(dersBasligiMetni, dersSayisi)
+    ?? Array.from({ length: dersSayisi }, (_, i) => `Ders ${i + 1}`);
 }
 
 // Bir öğrenci veri satırını (tüm item'ları TEK bir string'e indirgeyip

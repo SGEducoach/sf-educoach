@@ -94,7 +94,12 @@ const sayi = (s: string) => Number(s.replace(",", "."));
 
 interface SayfaDuzeni {
   sutunlar: { ders: string; merkezler: [number, number, number] }[];
-  genelMerkez: number | null;
+  // D/Y/N başlık satırındaki ders DIŞI sütunlar ("Puan", "Genel", "Sn",
+  // "Okul", "İlçe", "İl") — satırdaki karşılıkları ders değeri değil, bu
+  // yüzden atlanır. Önceden yalnızca "Genel" atlanıyordu; puan sütunu da
+  // veren bir şablonda (Kafa Dengi, kullanıcı bildirimi 29.09.2026) puan
+  // hiçbir ders sütununa oturmadığı için TÜM satırlar okunamıyordu.
+  atlanacakMerkezler: number[];
 }
 
 function sayfaDuzeniniBul(satirlar: GenisMetin[][]): SayfaDuzeni | string {
@@ -117,8 +122,10 @@ function sayfaDuzeniniBul(satirlar: GenisMetin[][]): SayfaDuzeni | string {
   }
   if (sutunlar.length !== adlar.length) return `Sütun sayısı (${sutunlar.length}) ile ders adı sayısı (${adlar.length}) tutmuyor.`;
   sutunlar.forEach((s, i) => { s.ders = adlar![i]; });
-  const genel = dyn.find((o) => /^Genel$/i.test(o.str.trim()));
-  return { sutunlar, genelMerkez: genel ? merkez(genel) : null };
+  const atlanacakMerkezler = dyn
+    .filter((o) => !["D", "Y", "N"].includes(o.str.trim()))
+    .map(merkez);
+  return { sutunlar, atlanacakMerkezler };
 }
 
 const SINIF_SAYI_YAPISIK = /^((?:\d{1,2}|Mezun)-[A-ZÇĞİÖŞÜ]{1,4})(\d+(?:,\d+)?)$/;
@@ -164,7 +171,7 @@ function ogrenciSatiriniCoz(hamSatir: GenisMetin[], duzen: SayfaDuzeni): SinifLi
     const deger = oge.str.trim();
     if (!ONDALIK.test(deger)) return null;
     const m = merkez(oge);
-    if (duzen.genelMerkez !== null && Math.abs(m - duzen.genelMerkez) <= SUTUN_TOLERANSI * 2) continue; // genel sıra
+    if (duzen.atlanacakMerkezler.some((a) => Math.abs(m - a) <= SUTUN_TOLERANSI * 2)) continue; // puan / sıra sütunları
     let bulundu = false;
     for (let s = 0; s < duzen.sutunlar.length && !bulundu; s++) {
       for (let k = 0; k < 3; k++) {

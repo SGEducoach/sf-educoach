@@ -136,3 +136,80 @@ describe("tytDerslerineIndirge", () => {
     expect(tytDerslerineIndirge([{ ders: "Edebiyat", dogru: 1, yanlis: 0, net: 1 }], ESLESTIRME)).toBeNull();
   });
 });
+
+// Kafa Dengi biçimi (kullanıcı bildirimi 29.09.2026): Orbital'den tek farkı
+// satır sonunda TYT PUANININ da bulunması ve "Felsefe (Seçmeli)" sütununun
+// hiç olmaması. Puan hiçbir D/Y/N sütununa oturmadığı için eskiden TÜM
+// satırlar okunamıyordu. Konumlar gerçek PDF'ten (sayfa 8 ve 10) alındı.
+const BASLIK_KD: GenisMetin[] = [
+  ...satir(557.5, [["12-B SINIFI TYT NET LİSTESİ (TYT sıralı)", 300, 200]]),
+  ...satir(496.5, [
+    ["Sıra", 24.4, 13.6], ["Ö.No", 42.2, 14.8], ["İsim", 97.6, 14.5], ["Sınıf", 151.1, 15.2],
+    ["Türkçe", 182.3, 23.8], ["Tarih-1", 235.6, 24.8], ["Coğrafya-1", 282.6, 38.7], ["Felsefe", 343.2, 25],
+    ["Din Kül. ve Ahl. Bil.", 376.3, 66.6], ["Matematik-1", 441.4, 44.2], ["Geometri", 501, 32.7],
+    ["Fizik", 563.4, 15.6], ["Kimya", 614.1, 21.8], ["Biyoloji", 666.2, 25.3], ["Toplam", 719.7, 26.1], ["TYT", 783, 12.8],
+  ]),
+  ...satir(482.6, [
+    ...[172.7, 226.6, 280.4, 334.3, 388.2, 442, 495.9, 549.7, 603.6, 657.5, 711.3]
+      .flatMap((x): [string, number, number][] => [["D", x, 4.6], ["Y", x + 16.1, 3.7], ["N", x + 34.8, 4.5]]),
+    ["Puan", 769.2, 14.9], ["Genel", 797.7, 17.5],
+  ]),
+  ...satir(441.5, [["SINIF: 12-B", 23, 33.1]]),
+];
+
+const MUSTAFA = satir(427.4, [
+  ["1", 29.3, 3.8], ["277", 43.9, 11.4], ["MUSTAFA ALAF", 62.4, 45.6], ["12-B", 153.1, 13.9],
+  ["38", 171.2, 7.6], ["2", 188.7, 3.8], ["37,50", 201.2, 17.2],
+  ["5", 227, 3.8], ["0", 242.6, 3.8], ["5,00", 256.9, 13.4],
+  ["1", 280.8, 3.8], ["2", 296.4, 3.8], ["0,50", 310.8, 13.4],
+  ["4", 334.7, 3.8], ["1", 350.3, 3.8], ["3,75", 364.7, 13.4],
+  ["3", 388.6, 3.8], ["2", 404.2, 3.8], ["2,50", 418.5, 13.4],
+  ["23", 440.5, 7.6], ["7", 458, 3.8], ["21,25", 470.5, 17.2],
+  ["10", 494.4, 7.6], ["0", 511.9, 3.8], ["10,00", 524.3, 17.2],
+  ["5", 550.1, 3.8], ["2", 565.7, 3.8], ["4,50", 580.1, 13.4],
+  ["6", 604, 3.8], ["1", 619.6, 3.8], ["5,75", 634, 13.4],
+  ["6", 657.9, 3.8], ["0", 673.4, 3.8], ["6,00", 687.8, 13.4],
+  ["101", 707.9, 11.4], ["17", 725.4, 7.6], ["96,75", 739.8, 17.2],
+  ["431,097", 764.3, 24.8], ["8", 804.5, 3.8],
+]);
+
+// Coğrafya-1'i hiç cevaplamamış öğrenci: o üçlü satırdan TAMAMEN düşüyor.
+// Toplam kontrolü eksiğin YERİNİ söyleyemez; sütun konumu söyler.
+const GAMZENUR = satir(413.2, [
+  ["17", 27.4, 7.6], ["166", 43.9, 11.4], ["GAMZENUR SOLAK", 62.4, 56.7], ["12-C", 153.1, 14],
+  ["31", 171.2, 7.6], ["9", 188.7, 3.8], ["28,75", 201.2, 17.2],
+  ["2", 227, 3.8], ["2", 242.6, 3.8], ["1,50", 256.9, 13.4],
+  ["4", 334.7, 3.8], ["1", 350.3, 3.8], ["3,75", 364.7, 13.4],
+  ["4", 388.6, 3.8], ["0", 404.2, 3.8], ["4,00", 418.5, 13.4],
+  ["21", 440.5, 7.6], ["8", 458, 3.8], ["19,00", 470.5, 17.2],
+  ["6", 496.3, 3.8], ["2", 511.9, 3.8], ["5,50", 526.2, 13.4],
+  ["4", 550.1, 3.8], ["2", 565.7, 3.8], ["3,50", 580.1, 13.4],
+  ["6", 604, 3.8], ["1", 619.6, 3.8], ["5,75", 634, 13.4],
+  ["5", 657.9, 3.8], ["1", 673.4, 3.8], ["4,75", 687.8, 13.4],
+  ["83", 709.8, 7.6], ["26", 725.4, 7.6], ["76,50", 739.8, 17.2],
+  ["371,476", 764.3, 24.8], ["58", 802.6, 7.6],
+]);
+
+describe("Kafa Dengi biçimi — satır sonunda TYT puanı", () => {
+  test("puan ve genel sıra atlanır, satır okunur", () => {
+    const sonuc = sinifListesiSayfalariniCoz([[...BASLIK_KD, ...MUSTAFA]]);
+    expect(sonuc.basarili).toBe(true);
+    expect(sonuc.okunamayanSatir).toBe(0);
+    const [o] = sonuc.ogrenciler;
+    expect(o.isimHam).toBe("MUSTAFA ALAF");
+    expect(o.ogrenciNo).toBe(277);
+    expect(o.dersSonuclari).toHaveLength(10);
+    expect(o.dersSonuclari.map((d) => d.ders)).not.toContain("Felsefe (Seçmeli)");
+    expect(o.dersSonuclari.find((d) => d.ders === "Geometri")).toEqual({ ders: "Geometri", dogru: 10, yanlis: 0, net: 10 });
+    expect(o.toplam).toEqual({ dogru: 101, yanlis: 17, net: 96.75 });
+  });
+
+  test("hiç cevaplanmayan ders, konumundan bulunup sıfırlanır", () => {
+    const sonuc = sinifListesiSayfalariniCoz([[...BASLIK_KD, ...GAMZENUR]]);
+    expect(sonuc.okunamayanSatir).toBe(0);
+    const [o] = sonuc.ogrenciler;
+    expect(o.dersSonuclari.find((d) => d.ders === "Coğrafya-1")).toEqual({ ders: "Coğrafya-1", dogru: 0, yanlis: 0, net: 0 });
+    expect(o.dersSonuclari.find((d) => d.ders === "Felsefe")).toEqual({ ders: "Felsefe", dogru: 4, yanlis: 1, net: 3.75 });
+    expect(o.toplam.dogru).toBe(83);
+  });
+});
