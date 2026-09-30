@@ -12,10 +12,13 @@ import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+// .env.local'i basitçe oku. CRLF satır sonu ve tırnaklı değerler tolere
+// edilir; anahtar adında rakam da olabilir.
 const envText = readFileSync(new URL("../.env.local", import.meta.url), "utf-8");
-for (const line of envText.split("\n")) {
-  const m = line.match(/^([A-Z_]+)=(.*)$/);
-  if (m && !process.env[m[1]]) process.env[m[1]] = m[2].trim();
+for (const line of envText.split(/\r?\n/)) {
+  const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)$/);
+  if (!m || process.env[m[1]]) continue;
+  process.env[m[1]] = m[2].trim().replace(/^["'](.*)["']$/, "$1");
 }
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
