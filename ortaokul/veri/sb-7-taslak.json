@@ -1,0 +1,133 @@
+{
+  "kaynak": "sos.txt",
+  "mufredat": "MEB 2024 Maarif Modeli",
+  "ders": "Sosyal Bilgiler",
+  "dersKodu": "SB",
+  "sinif": 7,
+  "cikarimTarihi": "2026-09-30",
+  "not": "Makineyle çıkarıldı; içerik doğrulaması yapılmadı.",
+  "temalar": [
+    {
+      "kod": "SB.7.1",
+      "ad": "Birlikte Yaşamak",
+      "islenisSirasi": 1,
+      "dersSaati": 16,
+      "yuzde": 15,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "SB.7.1.1",
+          "metin": "Dâhil olduğu gruplarda ve sosyal hayatta etkili iletişimin önemini sorgulayabilme"
+        },
+        {
+          "kod": "SB.7.1.2",
+          "metin": "Özel gereksinimli bireyler için fırsat eşitliğini sürdürmeye yönelik fikir üretebilme"
+        },
+        {
+          "kod": "SB.7.1.3",
+          "metin": "Türk toplumunun millî meseleler karşısında gösterdiği tutum ve davranışlara ilişkin çıkarım yapabilme"
+        }
+      ]
+    },
+    {
+      "kod": "SB.7.2",
+      "ad": "Evimiz Dünya",
+      "islenisSirasi": 2,
+      "dersSaati": 10,
+      "yuzde": 9,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "SB.7.2.1",
+          "metin": "Küreselleşmenin insan ve toplum hayatında meydana getirdiği değişimi yorumlayabilme"
+        },
+        {
+          "kod": "SB.7.2.2",
+          "metin": "Bölgesel ve küresel sorunların çözümünde ülkemizin rolünü özetleyebilme"
+        }
+      ]
+    },
+    {
+      "kod": "SB.7.3",
+      "ad": "Ortak Mirasımız",
+      "islenisSirasi": 3,
+      "dersSaati": 25,
+      "yuzde": 24,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "SB.7.3.1",
+          "metin": "Osmanlı Devleti’nin cihan devleti hâline gelmesini sağlayan politikaları sorgulayabilme"
+        },
+        {
+          "kod": "SB.7.3.2",
+          "metin": "Değişen dünya dengeleri karşısında Osmanlı Devleti’nin uyguladığı yenilikleri neden ve sonuçlarıyla yorumlayabilme"
+        },
+        {
+          "kod": "SB.7.3.3",
+          "metin": "Osmanlı kültür ve medeniyet unsurlarına ilişkin oluşturduğu ürünü paylaşabilme"
+        }
+      ]
+    },
+    {
+      "kod": "SB.7.4",
+      "ad": "Yaşayan Demokrasimiz",
+      "islenisSirasi": 4,
+      "dersSaati": 22,
+      "yuzde": 20,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "SB.7.4.1",
+          "metin": "Türkiye Cumhuriyeti’nin temel niteliklerini özetleyebilme"
+        },
+        {
+          "kod": "SB.7.4.2",
+          "metin": "Türkiye Cumhuriyeti Devleti’nin yönetim yapısını çözümleyebilme"
+        },
+        {
+          "kod": "SB.7.4.3",
+          "metin": "Ülkemizdeki demokrasinin gelişimini, demokrasinin temel ilkeleri açısından yorumlayabilme"
+        },
+        {
+          "kod": "SB.7.4.4",
+          "metin": "Demokrasinin uygulama sürecinde karşılaşılan sorunları özetleyebilme"
+        }
+      ]
+    },
+    {
+      "kod": "SB.7.5",
+      "ad": "Hayatımızdaki Ekonomi",
+      "islenisSirasi": 5,
+      "dersSaati": 12,
+      "yuzde": 11,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "SB.7.5.1",
+          "metin": "Millî kalkınma hamlelerini neden ve sonuçlarıyla yorumlayabilme"
+        },
+        {
+          "kod": "SB.7.5.2",
+          "metin": "Ekonomik gelişmişlik ile üretim, dağıtım ve tüketim döngüsü arasındaki ilişkiyi çözümleyebilme"
+        }
+      ]
+    },
+    {
+      "kod": "SB.7.6",
+      "ad": "Teknoloji ve Sosyal Bilimler",
+      "islenisSirasi": 6,
+      "dersSaati": 18,
+      "yuzde": 16,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "SB.7.6.1",
+          "metin": "Bilimsel ve teknolojik gelişmelerin gelecekteki toplum hayatına etkilerine ilişkin öngörüde bulunabilme"
+        },
+        {
+          "kod": "SB.7.6.2",
+          "metin": "Örnek metinler üzerinden sosyal bilimlerin çalışma alanlarına dair genelleme yapabilme"
+        },
+        {
+          "kod": "SB.7.6.3",
+          "metin": "Toplumsal hayatta karşılaşabileceği bir probleme yönelik bilimsel sorgulama yapabilme"
+        }
+      ]
+    }
+  ]
+}

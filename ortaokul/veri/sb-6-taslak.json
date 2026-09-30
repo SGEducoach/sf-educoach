@@ -1,0 +1,137 @@
+{
+  "kaynak": "sos.txt",
+  "mufredat": "MEB 2024 Maarif Modeli",
+  "ders": "Sosyal Bilgiler",
+  "dersKodu": "SB",
+  "sinif": 6,
+  "cikarimTarihi": "2026-09-30",
+  "not": "Makineyle çıkarıldı; içerik doğrulaması yapılmadı.",
+  "temalar": [
+    {
+      "kod": "SB.6.1",
+      "ad": "Birlikte Yaşamak",
+      "islenisSirasi": 1,
+      "dersSaati": 16,
+      "yuzde": 15,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "SB.6.1.1",
+          "metin": "Dâhil olduğu grupların ve bu gruplardaki rollerinin zaman içerisinde değişebileceğine ilişkin çıkarım yapabilme"
+        },
+        {
+          "kod": "SB.6.1.2",
+          "metin": "Kültürel bağlarımızın ve millî değerlerimizin toplumsal birliğe etkisini yorumlayabilme"
+        },
+        {
+          "kod": "SB.6.1.3",
+          "metin": "Toplumsal hayatta karşılaşılan sorunlara yönelik çözüm önerilerini müzakere edebilme"
+        }
+      ]
+    },
+    {
+      "kod": "SB.6.2",
+      "ad": "Evimiz Dünya",
+      "islenisSirasi": 2,
+      "dersSaati": 18,
+      "yuzde": 17,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "SB.6.2.1",
+          "metin": "Ülkemizin, kıtaların ve okyanusların konum özelliklerini algılayabilme"
+        },
+        {
+          "kod": "SB.6.2.2",
+          "metin": "Ülkemizin doğal ve beşerî çevre özellikleri arasındaki ilişkiyi çözümleyebilme"
+        },
+        {
+          "kod": "SB.6.2.3",
+          "metin": "Ülkemizin Türk dünyasıyla kültürel iş birliklerini yorumlayabilme"
+        }
+      ]
+    },
+    {
+      "kod": "SB.6.3",
+      "ad": "Ortak Mirasımız",
+      "islenisSirasi": 3,
+      "dersSaati": 22,
+      "yuzde": 20,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "SB.6.3.1",
+          "metin": "Türkistan’da kurulan ilk Türk devletlerinin medeniyetimize katkılarını sorgulayabilme"
+        },
+        {
+          "kod": "SB.6.3.2",
+          "metin": "VII-XIII. yüzyıllar arasında İslam medeniyetinin eğitim, bilim, hukuk, kültür, sanat ve mimari alanlarında insanlığın ortak mirasına katkılarına dair akıl yürütebilme"
+        },
+        {
+          "kod": "SB.6.3.3",
+          "metin": "İslamiyet’in kabulüyle Türklerin sosyal ve kültürel hayatlarında meydana gelen değişime tarihsel bağlam oluşturabilme"
+        },
+        {
+          "kod": "SB.6.3.4",
+          "metin": "XI-XIII. yüzyıllar arasında meydana gelen siyasi faaliyetler ve askerî mücadelelerin Anadolu’nun Türkleşmesi ve İslamlaşmasına etkisini özetleyebilme"
+        }
+      ]
+    },
+    {
+      "kod": "SB.6.4",
+      "ad": "Yaşayan Demokrasimiz",
+      "islenisSirasi": 4,
+      "dersSaati": 18,
+      "yuzde": 17,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "SB.6.4.1",
+          "metin": "Yönetimin karar alma sürecini etkileyen unsurları çözümleyebilme"
+        },
+        {
+          "kod": "SB.6.4.2",
+          "metin": "Toplumsal düzenin sürdürülmesinde temel hak ve sorumlulukların önemini yorumlayabilme"
+        },
+        {
+          "kod": "SB.6.4.3",
+          "metin": "Vatandaşlık haklarının kullanımında dijitalleşme ve teknolojik gelişmelerin etkilerini sorgulayabilme"
+        }
+      ]
+    },
+    {
+      "kod": "SB.6.5",
+      "ad": "Hayatımızdaki Ekonomi",
+      "islenisSirasi": 5,
+      "dersSaati": 18,
+      "yuzde": 15,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "SB.6.5.1",
+          "metin": "Ülkemizin kaynakları ile ekonomik faaliyetler arasındaki ilişkiyi çözümleyebilme"
+        },
+        {
+          "kod": "SB.6.5.2",
+          "metin": "Ekonomik faaliyetler ve meslekler arasındaki ilişki hakkında kanıta dayalı öngörüde bulunabilme"
+        },
+        {
+          "kod": "SB.6.5.3",
+          "metin": "Tasarladığı bir ürün için yatırım ve pazarlama proje önerisi hazırlayabilme"
+        }
+      ]
+    },
+    {
+      "kod": "SB.6.6",
+      "ad": "Teknoloji ve Sosyal Bilimler",
+      "islenisSirasi": 6,
+      "dersSaati": 11,
+      "yuzde": 11,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "SB.6.6.1",
+          "metin": "Ulaşım ve iletişim teknolojilerindeki gelişmelerin kültürel etkileşimdeki rolünü yapılandırabilme"
+        },
+        {
+          "kod": "SB.6.6.2",
+          "metin": "Bir ürün veya fikrin patent ve telif haklarıyla ilgili bilgi toplayabilme"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,161 @@
+{
+  "kaynak": "mat.txt",
+  "mufredat": "MEB 2024 Maarif Modeli",
+  "ders": "Matematik",
+  "dersKodu": "MAT",
+  "sinif": 6,
+  "cikarimTarihi": "2026-09-30",
+  "not": "Makineyle çıkarıldı; içerik doğrulaması yapılmadı.",
+  "temalar": [
+    {
+      "kod": "MAT.6.1",
+      "ad": "Sayılar ve Nicelikler (2)",
+      "islenisSirasi": 3,
+      "dersSaati": 38,
+      "yuzde": 21,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "MAT.6.1.1",
+          "metin": "Karşılaştığı problem durumlarında bir doğal sayının çarpan ve katlarına yönelik muhakeme yapabilme"
+        },
+        {
+          "kod": "MAT.6.1.2",
+          "metin": "Bir doğal sayının 2, 3, 4, 5, 6, 9 ve 10 ile tam bölünebilme"
+        },
+        {
+          "kod": "MAT.6.1.3",
+          "metin": "Bir doğal sayının asal olma durumunu ve asal çarpanlarını çözümleyebilme"
+        },
+        {
+          "kod": "MAT.6.1.4",
+          "metin": "Günlük hayat problemleri ya da matematiksel durumlar üzerinden ortak kat ve ortak böleni yorumlayabilme"
+        },
+        {
+          "kod": "MAT.6.1.5",
+          "metin": "Gerçek yaşam durumlarında ondalık gösterimlerin basamak değerlerini kesirlerden yararlanarak yorumlayabilme"
+        },
+        {
+          "kod": "MAT.6.1.6",
+          "metin": "Kesir ve bölme işlemi arasındaki ilişkiye yönelik tümevarımsal akıl yürütebilme"
+        },
+        {
+          "kod": "MAT.6.1.7",
+          "metin": "Gerçek yaşam durumlarında karşılaşılan kesir, ondalık ve yüzde gösterimleri ile ilgili dört işlem gerektiren problemleri çözebilme"
+        },
+        {
+          "kod": "MAT.6.1.8",
+          "metin": "Karşılaştığı günlük hayat ya da matematiksel durumlarda standart uzunluk ölçme birimlerini değerlendirebilme"
+        }
+      ]
+    },
+    {
+      "kod": "MAT.6.2",
+      "ad": null,
+      "islenisSirasi": null,
+      "dersSaati": null,
+      "yuzde": null,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "MAT.6.2.1",
+          "metin": "Gerçek yaşam durumlarında bilinen niceliklerden bilinmeyen niceliklere ilişkin muhakeme yapabilme"
+        },
+        {
+          "kod": "MAT.6.2.2",
+          "metin": "Sayı ve şekil örüntülerini yorumlayabilme"
+        },
+        {
+          "kod": "MAT.6.2.3",
+          "metin": "Cebirsel ifadeler içeren durumlardaki algoritmaları yorumlayabilme"
+        }
+      ]
+    },
+    {
+      "kod": "MAT.6.3",
+      "ad": "Geometrik Şekiller",
+      "islenisSirasi": 5,
+      "dersSaati": 20,
+      "yuzde": 11,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "MAT.6.3.1",
+          "metin": "Düzlemde iki paralel doğru ve bir kesen ile oluşan açıları sınıflandırabilme"
+        },
+        {
+          "kod": "MAT.6.3.2",
+          "metin": "Matematiksel araç ve teknolojiden yararlanarak iki paralel doğrunun iki kesenle oluşturduğu şekillerin özelliklerine dair çıkarım yapabilme"
+        },
+        {
+          "kod": "MAT.6.3.3",
+          "metin": "Matematiksel araç ve teknolojiden yararlanarak birbirlerini ortalayan doğru parçalarını köşegen kabul eden dörtgenlere yönelik çıkarım yapabilme"
+        },
+        {
+          "kod": "MAT.6.3.4",
+          "metin": "Üçgen, yamuk, paralelkenar, eşkenar dörtgen, dikdörtgen ve karenin açıları ile ilgili problemleri çözebilme"
+        }
+      ]
+    },
+    {
+      "kod": "MAT.6.4",
+      "ad": "Geometrik Nicelikler",
+      "islenisSirasi": 7,
+      "dersSaati": 33,
+      "yuzde": 18,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "MAT.6.4.1",
+          "metin": "Uzunluk ve alan ölçme birimleri arasındaki ilişkilerle ilgili analojik akıl yürütebilme"
+        },
+        {
+          "kod": "MAT.6.4.2",
+          "metin": "Dikdörtgenin alan bağıntısına yönelik deneyimlerini paralelkenar ve üçgenin alan bağıntılarına yansıtabilme"
+        },
+        {
+          "kod": "MAT.6.4.3",
+          "metin": "Geometrik şekillerin alanları ile modellenen gerçek yaşam durumlarına yönelik problem çözebilme"
+        },
+        {
+          "kod": "MAT.6.4.4",
+          "metin": "Çemberin uzunluğu ile çap uzunluğu arasındaki ilişkiye yönelik çıkarım yapabilme"
+        },
+        {
+          "kod": "MAT.6.4.5",
+          "metin": "Çap veya yarıçap uzunluğu verilen bir çemberin uzunluğu ile ilgili problemleri çözebilme"
+        },
+        {
+          "kod": "MAT.6.4.6",
+          "metin": "Çemberde merkez açının ölçüsü ile gördüğü yayın uzunluğu arasındaki ilişkiye dair tümevarımsal akıl yürütebilme"
+        }
+      ]
+    },
+    {
+      "kod": "MAT.6.5",
+      "ad": "İstatistiksel Araştırma Süreci",
+      "islenisSirasi": 4,
+      "dersSaati": 24,
+      "yuzde": 14,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "MAT.6.5.1",
+          "metin": "Kategorik veya nicel (kesikli) veri ile çalışabilme"
+        },
+        {
+          "kod": "MAT.6.5.2",
+          "metin": "Başkaları tarafından oluşturulan kategorik veya nicel (kesikli) veriye dayalı istatistiksel sonuç veya yorumları tartışabilme"
+        }
+      ]
+    },
+    {
+      "kod": "MAT.6.6",
+      "ad": "Veriden Olasılığa",
+      "islenisSirasi": 2,
+      "dersSaati": 9,
+      "yuzde": 5,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "MAT.6.6.1",
+          "metin": "Bir olayın olasılığını gözleme dayalı tahmin edebilme"
+        }
+      ]
+    }
+  ]
+}

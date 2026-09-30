@@ -1,0 +1,214 @@
+{
+  "kaynak": "fen.txt",
+  "mufredat": "MEB 2024 Maarif Modeli",
+  "ders": "Fen Bilimleri",
+  "dersKodu": "FB",
+  "sinif": 7,
+  "cikarimTarihi": "2026-09-30",
+  "not": "Makineyle çıkarıldı; içerik doğrulaması yapılmadı.",
+  "temalar": [
+    {
+      "kod": "FB.7.1",
+      "ad": "Uzay Çağı",
+      "islenisSirasi": 1,
+      "dersSaati": 14,
+      "yuzde": 10,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "FB.7.1.1",
+          "metin": "Uzay araştırmaları için geliştirilen teknolojileri karşılaştırabilme"
+        },
+        {
+          "kod": "FB.7.1.2",
+          "metin": "Uzay gözlem araçları ile ilgili bilimsel model oluşturabilme"
+        },
+        {
+          "kod": "FB.7.1.3",
+          "metin": "Uzay araştırmalarının yol açabileceği problemleri çözebilme"
+        },
+        {
+          "kod": "FB.7.1.4",
+          "metin": "Yıldızların yaşamını açıklayarak yapılandırabilme"
+        },
+        {
+          "kod": "FB.7.1.5",
+          "metin": "Yıldız, galaksi ve evren kavramlarını açıklayarak yapılandırabilme"
+        }
+      ]
+    },
+    {
+      "kod": "FB.7.2",
+      "ad": "Kuvvet ve Enerjiyi Keşfedelim",
+      "islenisSirasi": 2,
+      "dersSaati": 20,
+      "yuzde": 14,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "FB.7.2.1",
+          "metin": "Fiziksel anlamda yapılan işin bağlı olduğu faktörlere ilişkin bilimsel çıkarım yapabilme"
+        },
+        {
+          "kod": "FB.7.2.2",
+          "metin": "Enerji çeşitlerinden kinetik ve potansiyel enerjiyi karşılaştırabilme"
+        },
+        {
+          "kod": "FB.7.2.3",
+          "metin": "Enerji dönüşümünden hareketle enerjinin korunduğuna yönelik tümevarımsal akıl yürütebilme"
+        }
+      ]
+    },
+    {
+      "kod": "FB.7.3",
+      "ad": "Vücudumuzdaki Sistemler",
+      "islenisSirasi": 3,
+      "dersSaati": 32,
+      "yuzde": 22,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "FB.7.3.1",
+          "metin": "Sindirim sistemini oluşturan yapı ve organların görevlerini model üzerinde bilimsel olarak gözlemleyebilme"
+        },
+        {
+          "kod": "FB.7.3.2",
+          "metin": "Sindirim sisteminin sağlığı için yapılması gerekenler konusunda bilgi toplayabilme"
+        },
+        {
+          "kod": "FB.7.3.3",
+          "metin": "Dolaşım sistemini oluşturan yapı ve organların görevlerini model üzerinde bilimsel olarak gözlemleyebilme"
+        },
+        {
+          "kod": "FB.7.3.4",
+          "metin": "Kan bağışının toplumsal dayanışma açısından önemini tartışabilme"
+        },
+        {
+          "kod": "FB.7.3.5",
+          "metin": "Dolaşım sisteminin sağlığı için yapılması gerekenler konusunda bilgi toplayabilme"
+        },
+        {
+          "kod": "FB.7.3.6",
+          "metin": "Solunum sistemini oluşturan yapı ve organların görevlerini model üzerinde bilimsel olarak gözlemleyebilme"
+        },
+        {
+          "kod": "FB.7.3.7",
+          "metin": "Solunum sisteminin sağlığı için yapılması gerekenler konusunda bilgi toplayabilme"
+        },
+        {
+          "kod": "FB.7.3.8",
+          "metin": "Boşaltım sistemini oluşturan yapı ve organları model üzerinde bilimsel olarak gözlemleyebilme"
+        },
+        {
+          "kod": "FB.7.3.9",
+          "metin": "Boşaltım sisteminin sağlığı için yapılması gerekenler konusunda bilgi toplayabilme"
+        }
+      ]
+    },
+    {
+      "kod": "FB.7.4",
+      "ad": "Işığın Kırılması ve Mercekler",
+      "islenisSirasi": 4,
+      "dersSaati": 14,
+      "yuzde": 10,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "FB.7.4.1",
+          "metin": "Ortam değiştiren ışığın izlediği yolu gözlemleyerek kırılma olayına yönelik bilimsel çıkarım yapabilme"
+        },
+        {
+          "kod": "FB.7.4.2",
+          "metin": "Mercek çeşitlerine yönelik bilimsel çıkarım yapabilme"
+        },
+        {
+          "kod": "FB.7.4.3",
+          "metin": "Merceklerin günlük hayatta kullanım alanlarını örneklerle sınıflandırabilme"
+        }
+      ]
+    },
+    {
+      "kod": "FB.7.5",
+      "ad": "Maddenin Doğasına Yolculuk",
+      "islenisSirasi": 5,
+      "dersSaati": 34,
+      "yuzde": 24,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "FB.7.5.1",
+          "metin": "Atomun yapısını ve yapısındaki temel parçacıkları çözümleyebilme"
+        },
+        {
+          "kod": "FB.7.5.2",
+          "metin": "Geçmişten günümüze atom kavramı ile ilgili bilimsel bilgilerin değişebileceğini sorgulayabilme"
+        },
+        {
+          "kod": "FB.7.5.3",
+          "metin": "Farklı moleküllere ait bilimsel model oluşturabilme"
+        },
+        {
+          "kod": "FB.7.5.4",
+          "metin": "Saf maddeleri element ve bileşik olarak sınıflandırabilme"
+        },
+        {
+          "kod": "FB.7.5.5",
+          "metin": "Periyodik tablodaki ilk 18 elementin isimlerini sembolleriyle yapılandırabilme"
+        },
+        {
+          "kod": "FB.7.5.6",
+          "metin": "Periyodik tabloda grup ve periyotları karşılaştırabilme"
+        },
+        {
+          "kod": "FB.7.5.7",
+          "metin": "Bileşiklerin isimlerini formülleriyle yapılandırabilme"
+        },
+        {
+          "kod": "FB.7.5.8",
+          "metin": "Karışımları homojen ve heterojen olarak sını fl andırabilme"
+        },
+        {
+          "kod": "FB.7.5.9",
+          "metin": "Çözünme hızına etki eden faktörler ile ilgili hipotez oluşturabilme"
+        },
+        {
+          "kod": "FB.7.5.10",
+          "metin": "Karışımları ayırmak için deney yapabilme"
+        }
+      ]
+    },
+    {
+      "kod": "FB.7.6",
+      "ad": "Elektriklenme",
+      "islenisSirasi": 6,
+      "dersSaati": 12,
+      "yuzde": 8,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "FB.7.6.1",
+          "metin": "Elektriklenme ile ilgili bilgi toplayabilme"
+        },
+        {
+          "kod": "FB.7.6.2",
+          "metin": "Elektriklenme çeşitlerini belirlemeye yönelik deney yapabilme"
+        },
+        {
+          "kod": "FB.7.6.3",
+          "metin": "Cisimlerin elektrik yüklerini sınıflandırabilme"
+        }
+      ]
+    },
+    {
+      "kod": "FB.7.7",
+      "ad": "Sürdürülebilir Yaşam ve Enerji",
+      "islenisSirasi": 7,
+      "dersSaati": 12,
+      "yuzde": 8,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "FB.7.7.1",
+          "metin": "Besin zincirindeki canlılar arasındaki ilişkileri yapılandırabilme"
+        },
+        {
+          "kod": "FB.7.7.2",
+          "metin": "Kaynakların tasarruflu kullanımının önemini sorgulayabilme"
+        }
+      ]
+    }
+  ]
+}

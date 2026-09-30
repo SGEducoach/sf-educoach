@@ -1,0 +1,132 @@
+{
+  "kaynak": "din.txt",
+  "mufredat": "MEB 2024 Maarif Modeli",
+  "ders": "Din Kültürü ve Ahlak Bilgisi",
+  "dersKodu": "DKAB",
+  "sinif": 8,
+  "cikarimTarihi": "2026-09-30",
+  "not": "Makineyle çıkarıldı; içerik doğrulaması yapılmadı.",
+  "temalar": [
+    {
+      "kod": "DKAB.8.1",
+      "ad": null,
+      "islenisSirasi": null,
+      "dersSaati": null,
+      "yuzde": null,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "DKAB.8.1.1",
+          "metin": "Allah’ın (cc) her şeyi bir ölçü ve düzene göre yarattığını kader ve kaza inancı bağlamında yorumlayabilme"
+        },
+        {
+          "kod": "DKAB.8.1.2",
+          "metin": "Kaderle ilgili kavramları bağlamına uygun kullanabilme"
+        },
+        {
+          "kod": "DKAB.8.1.3",
+          "metin": "Kader inancının insana kazandırdıkları konusunda analitik düşünebilme"
+        },
+        {
+          "kod": "DKAB.8.1.4",
+          "metin": "Tebbet suresini ve bu surenin anlamını okuyarak yorumlayabilme"
+        }
+      ]
+    },
+    {
+      "kod": "DKAB.8.2",
+      "ad": null,
+      "islenisSirasi": null,
+      "dersSaati": null,
+      "yuzde": null,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "DKAB.8.2.1",
+          "metin": "Zekât ibadetini gözlemleyebilme"
+        },
+        {
+          "kod": "DKAB.8.2.2",
+          "metin": "Sadaka kapsamında değerlendirilen davranışları kendi hayatına yansıtabilme"
+        },
+        {
+          "kod": "DKAB.8.2.3",
+          "metin": "Zekât ve sadaka ibadetinin kültürümüze yansımalarını müşahede edebilme"
+        },
+        {
+          "kod": "DKAB.8.2.4",
+          "metin": "Maun suresini ve bu surenin anlamını okuyarak yorumlayabilme"
+        }
+      ]
+    },
+    {
+      "kod": "DKAB.8.3",
+      "ad": null,
+      "islenisSirasi": null,
+      "dersSaati": null,
+      "yuzde": null,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "DKAB.8.3.1",
+          "metin": "Dinin korunmasını amaçladığı temel hakları anlayabilme"
+        },
+        {
+          "kod": "DKAB.8.3.2",
+          "metin": "Dinin sosyal hayattaki işlevini idrak edebilme"
+        },
+        {
+          "kod": "DKAB.8.3.3",
+          "metin": "Asr suresini ve bu surenin anlamını okuyarak yorumlayabilme"
+        }
+      ]
+    },
+    {
+      "kod": "DKAB.8.4",
+      "ad": null,
+      "islenisSirasi": null,
+      "dersSaati": null,
+      "yuzde": null,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "DKAB.8.4.1",
+          "metin": "İnsanın Kur’an-ı Kerim’de anlatılan özellikleri hakkında ayet meallerine başvurabilme"
+        },
+        {
+          "kod": "DKAB.8.4.2",
+          "metin": "Kur’an-ı Kerim’in rehberliğini özetleyebilme"
+        },
+        {
+          "kod": "DKAB.8.4.3",
+          "metin": "Kur’an-ı Kerim’e göre Hz. Muhammed’in (sav) örnekliğini çözümleyebilme"
+        },
+        {
+          "kod": "DKAB.8.4.4",
+          "metin": "Hz. Lokman’ın öğütlerini kendi hayatına yansıtabilme"
+        },
+        {
+          "kod": "DKAB.8.4.5",
+          "metin": "Ayetelkürsi’yi ve bu ayetin anlamını okuyarak yorumlayabilme"
+        }
+      ]
+    },
+    {
+      "kod": "DKAB.8.5",
+      "ad": null,
+      "islenisSirasi": null,
+      "dersSaati": null,
+      "yuzde": null,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "DKAB.8.5.1",
+          "metin": "İslam kültür ve medeniyetinin esasları konusunu sentezleyebilme"
+        },
+        {
+          "kod": "DKAB.8.5.2",
+          "metin": "İslam’ın bilime verdiği önemi ve katkıyı sorgulayabilme"
+        },
+        {
+          "kod": "DKAB.8.5.3",
+          "metin": "Müslüman bilim insanlarının bilim ve kültüre katkılarını irdeleyebilme"
+        }
+      ]
+    }
+  ]
+}

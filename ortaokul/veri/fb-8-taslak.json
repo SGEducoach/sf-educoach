@@ -1,0 +1,246 @@
+{
+  "kaynak": "fen.txt",
+  "mufredat": "MEB 2024 Maarif Modeli",
+  "ders": "Fen Bilimleri",
+  "dersKodu": "FB",
+  "sinif": 8,
+  "cikarimTarihi": "2026-09-30",
+  "not": "Makineyle çıkarıldı; içerik doğrulaması yapılmadı.",
+  "temalar": [
+    {
+      "kod": "FB.8.1",
+      "ad": "Mevsimler ve İklim",
+      "islenisSirasi": 1,
+      "dersSaati": 12,
+      "yuzde": 8,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "FB.8.1.1",
+          "metin": "Dünya’nın Güneş etrafındaki hareketi ve eksen eğikliğinin sonuçları ile ilgili bilimsel çıkarım yapabilme"
+        },
+        {
+          "kod": "FB.8.1.2",
+          "metin": "İklim ve hava olaylarını karşılaştırabilme"
+        }
+      ]
+    },
+    {
+      "kod": "FB.8.2",
+      "ad": "Yaşamı Kolaylaştıran Kuvvet",
+      "islenisSirasi": 2,
+      "dersSaati": 16,
+      "yuzde": 11,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "FB.8.2.1",
+          "metin": "Basit makineleri sınıflandırabilme"
+        },
+        {
+          "kod": "FB.8.2.2",
+          "metin": "Günlük yaşamda iş kolaylığı sağlayacak bilimsel model oluşturabilme"
+        }
+      ]
+    },
+    {
+      "kod": "FB.8.3",
+      "ad": "Yaşamın Gizemi",
+      "islenisSirasi": 3,
+      "dersSaati": 26,
+      "yuzde": 18,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "FB.8.3.1",
+          "metin": "Nükleotid, gen, DNA ve kromozom kavramları arasındaki ilişkiyi yapılandırabilme"
+        },
+        {
+          "kod": "FB.8.3.2",
+          "metin": "DNA’nın yapısını model üzerinde bilimsel olarak gözlemleyebilme"
+        },
+        {
+          "kod": "FB.8.3.3",
+          "metin": "Mitoz ve mayoz kavramları arasındaki ilişkiyi karşılaştırabilme"
+        },
+        {
+          "kod": "FB.8.3.4",
+          "metin": "Kalıtımla ilgili kavramları yapılandırabilme"
+        },
+        {
+          "kod": "FB.8.3.5",
+          "metin": "Tek karakter çaprazlamaları ile ilgili problemler çözerek sonuçlarına ilişkin bilimsel çıkarım yapabilme"
+        },
+        {
+          "kod": "FB.8.3.6",
+          "metin": "Akraba evliliklerinin genetik sonuçlarını tartışabilme"
+        },
+        {
+          "kod": "FB.8.3.7",
+          "metin": "Mutasyonla ilgili bilgi toplayabilme"
+        },
+        {
+          "kod": "FB.8.3.8",
+          "metin": "Canlıların yaşadıkları çevreye uyumlarına ilişkin bilimsel çıkarım yapabilme"
+        }
+      ]
+    },
+    {
+      "kod": "FB.8.4",
+      "ad": "Sesin Dünyası",
+      "islenisSirasi": 4,
+      "dersSaati": 18,
+      "yuzde": 13,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "FB.8.4.1",
+          "metin": "Sesin oluşumuna yönelik bilimsel çıkarım yapabilme"
+        },
+        {
+          "kod": "FB.8.4.2",
+          "metin": "Sesin yayılabildiği ortamlara yönelik deney yapabilme"
+        },
+        {
+          "kod": "FB.8.4.3",
+          "metin": "Sesin frekansına göre ince veya kalın olarak işitilmesine neden olan ses özellikleri ile ilgili deney yapabilme"
+        },
+        {
+          "kod": "FB.8.4.4",
+          "metin": "Ses ile ilgili değişkenlerin işitmeye etkisi hakkında hipotez oluşturabilme"
+        },
+        {
+          "kod": "FB.8.4.5",
+          "metin": "Farklı maddeler ile etkileşimi sonucunda sesin iletilmesi, yansıması ve soğurulmasına ilişkin bilimsel çıkarım yapabilme"
+        },
+        {
+          "kod": "FB.8.4.6",
+          "metin": "Ses kirliliğini önlemeye yönelik önlemleri bilimsel olarak sorgulayabilme"
+        }
+      ]
+    },
+    {
+      "kod": "FB.8.5",
+      "ad": "Periyodik Tablo ve Maddenin Etkileşimi",
+      "islenisSirasi": 5,
+      "dersSaati": 22,
+      "yuzde": 15,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "FB.8.5.1",
+          "metin": "Elementleri periyodik tablo üzerinde metal, ametal, yarı metal ve soy gaz olarak sınıflandırabilme"
+        },
+        {
+          "kod": "FB.8.5.2",
+          "metin": "Fiziksel ve kimyasal değişimler ile ilgili bilimsel gözleme dayalı tahmin edebilme"
+        },
+        {
+          "kod": "FB.8.5.3",
+          "metin": "Kimyasal tepkimelerle ilgili bilimsel çıkarım yapabilme"
+        },
+        {
+          "kod": "FB.8.5.4",
+          "metin": "Kimyasal tepkimelerin günlük yaşamdaki etkilerine yönelik bilgi toplayabilme"
+        },
+        {
+          "kod": "FB.8.5.5",
+          "metin": "Asit ve bazların genel özelliklerini karşılaştırabilme"
+        },
+        {
+          "kod": "FB.8.5.6",
+          "metin": "Maddelerin asit veya baz olduğunu çeşitli ayıraçlar kullanarak bilimsel gözleme dayalı tahmin edebilme"
+        },
+        {
+          "kod": "FB.8.5.7",
+          "metin": "Maddelerin asitlik ve bazlık durumlarına ilişkin “pH“ değerlerini kullanarak tümevarımsal akıl yürütebilme"
+        },
+        {
+          "kod": "FB.8.5.8",
+          "metin": "Asit ve bazların çeşitli maddeler üzerindeki etkilerine yönelik deney yapabilme"
+        }
+      ]
+    },
+    {
+      "kod": "FB.8.6",
+      "ad": "Elektriğin Yolculuğu",
+      "islenisSirasi": 6,
+      "dersSaati": 26,
+      "yuzde": 18,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "FB.8.6.1",
+          "metin": "Ampullerin bağlanma durumunun ampul parlaklığına etkisine yönelik deney yapabilme"
+        },
+        {
+          "kod": "FB.8.6.2",
+          "metin": "Elektrik akımını operasyonel olarak tanımlayabilme"
+        },
+        {
+          "kod": "FB.8.6.3",
+          "metin": "Bir devre elemanının uçları arasındaki potansiyel farkı (gerilimi) operasyonel olarak tanımlayabilme"
+        },
+        {
+          "kod": "FB.8.6.4",
+          "metin": "Bir devre elemanının uçları arasındaki gerilim ile üzerinden geçen akım ilişkisine yönelik tümevarımsal akıl yürütebilme"
+        },
+        {
+          "kod": "FB.8.6.5",
+          "metin": "Özgün bir aydınlatma aracı modeli oluşturabilme"
+        },
+        {
+          "kod": "FB.8.6.6",
+          "metin": "Elektrik enerjisinin dönüştüğü enerjileri sınıflandırabilme"
+        },
+        {
+          "kod": "FB.8.6.7",
+          "metin": "Elektrik enerjisinin ısı, ışık, ses veya hareket enerjisine dönüşümüne yönelik bilimsel model oluşturabilme"
+        },
+        {
+          "kod": "FB.8.6.8",
+          "metin": "Elektrik enerjisi üretim santrallerini sınıflandırabilme"
+        },
+        {
+          "kod": "FB.8.6.9",
+          "metin": "Elektrik enerjisi üretim santrallerinin avantaj ve dezavantajlarını tartışabilme"
+        },
+        {
+          "kod": "FB.8.6.10",
+          "metin": "Elektrik enerjisinin bilinçli ve tasarruflu kullanılmasının önemini tartışabilme"
+        }
+      ]
+    },
+    {
+      "kod": "FB.8.7",
+      "ad": "Sürdürülebilir Yaşam ve Madde Döngüleri",
+      "islenisSirasi": 7,
+      "dersSaati": 18,
+      "yuzde": 13,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "FB.8.7.1",
+          "metin": "Bitkilerde besin üretiminde fotosentezin önemini yapılandırabilme"
+        },
+        {
+          "kod": "FB.8.7.2",
+          "metin": "Fotosentez hızını etkileyen faktörler ile ilgili hipotez oluşturabilme"
+        },
+        {
+          "kod": "FB.8.7.3",
+          "metin": "Canlılarda solunumun önemini yapılandırabilme"
+        },
+        {
+          "kod": "FB.8.7.4",
+          "metin": "Madde döngülerine ilişkin şema üzerinden bilimsel çıkarım yapabilme"
+        },
+        {
+          "kod": "FB.8.7.5",
+          "metin": "Madde döngülerinin yaşam açısından önemini yapılandırabilme"
+        },
+        {
+          "kod": "FB.8.7.6",
+          "metin": "Küresel iklim değişikliklerinin nedenlerini ve olası sonuçlarını tartışabilme"
+        },
+        {
+          "kod": "FB.8.7.7",
+          "metin": "Ülkemizdeki küresel iklim değişikliğinin sebep olduğu bir problemi çözebilme"
+        }
+      ]
+    }
+  ]
+}

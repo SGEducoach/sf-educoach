@@ -1,0 +1,128 @@
+{
+  "kaynak": "din.txt",
+  "mufredat": "MEB 2024 Maarif Modeli",
+  "ders": "Din Kültürü ve Ahlak Bilgisi",
+  "dersKodu": "DKAB",
+  "sinif": 6,
+  "cikarimTarihi": "2026-09-30",
+  "not": "Makineyle çıkarıldı; içerik doğrulaması yapılmadı.",
+  "temalar": [
+    {
+      "kod": "DKAB.6.1",
+      "ad": null,
+      "islenisSirasi": null,
+      "dersSaati": null,
+      "yuzde": null,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "DKAB.6.1.1",
+          "metin": "Peygamberlerin insanlara rehber olarak gönderilmesi hakkında bilgi toplayabilme"
+        },
+        {
+          "kod": "DKAB.6.1.2",
+          "metin": "Vahyin gönderiliş amacını idrak edebilme"
+        },
+        {
+          "kod": "DKAB.6.1.3",
+          "metin": "İlahi kitaplarla ilgili bilgileri çözümleyebilme"
+        },
+        {
+          "kod": "DKAB.6.1.4",
+          "metin": "Felak suresini ve bu surenin anlamını okuyarak yorumlayabilme"
+        }
+      ]
+    },
+    {
+      "kod": "DKAB.6.2",
+      "ad": null,
+      "islenisSirasi": null,
+      "dersSaati": null,
+      "yuzde": null,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "DKAB.6.2.1",
+          "metin": "Ramazan ayının oruç ve Kur’an ayı olduğunu çözümleyebilme"
+        },
+        {
+          "kod": "DKAB.6.2.2",
+          "metin": "Oruç ibadeti hakkında bilgi toplayabilme"
+        },
+        {
+          "kod": "DKAB.6.2.3",
+          "metin": "Orucun insana kazandırdıkları konusunda analitik düşünebilme"
+        },
+        {
+          "kod": "DKAB.6.2.4",
+          "metin": "İftar duasını ve bu duanın anlamını okuyarak yorumlayabilme"
+        }
+      ]
+    },
+    {
+      "kod": "DKAB.6.3",
+      "ad": null,
+      "islenisSirasi": null,
+      "dersSaati": null,
+      "yuzde": null,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "DKAB.6.3.1",
+          "metin": "Doğru sözlü olmayı kendi hayatına yansıtabilme"
+        },
+        {
+          "kod": "DKAB.6.3.2",
+          "metin": "Merhamet kavramını ayırt edebilme"
+        },
+        {
+          "kod": "DKAB.6.3.3",
+          "metin": "Adap ve nezaket kurallarını özetleyebilme"
+        },
+        {
+          "kod": "DKAB.6.3.4",
+          "metin": "Vatanını sevmenin önemi hakkında çıkarım yapabilme"
+        },
+        {
+          "kod": "DKAB.6.3.5",
+          "metin": "Kunut dualarını ve bu duaların anlamlarını okuyarak yorumlayabilme"
+        }
+      ]
+    },
+    {
+      "kod": "DKAB.6.4",
+      "ad": null,
+      "islenisSirasi": null,
+      "dersSaati": null,
+      "yuzde": null,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "DKAB.6.4.1",
+          "metin": "Hz. Muhammed’in (sav) doğduğu çevreyi tarihsel bağlamda değerlendirebilme"
+        },
+        {
+          "kod": "DKAB.6.4.2",
+          "metin": "Hz. Muhammed’in (sav) çocukluk yılları hakkında verilen bilgileri yorumlayabilme"
+        },
+        {
+          "kod": "DKAB.6.4.3",
+          "metin": "Hz. Muhammed’in (sav) gençlik yılları hakkında verilen bilgileri yapılandırabilme"
+        },
+        {
+          "kod": "DKAB.6.4.4",
+          "metin": "Fil suresini ve bu surenin anlamını okuyarak yorumlayabilme"
+        }
+      ]
+    },
+    {
+      "kod": "DKAB.6.5",
+      "ad": null,
+      "islenisSirasi": null,
+      "dersSaati": null,
+      "yuzde": null,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "DKAB.6.5.1",
+          "metin": "Geleneğimizde, edebiyatımızda ve musikimizde dinin izlerini özetleyebilme"
+        }
+      ]
+    }
+  ]
+}

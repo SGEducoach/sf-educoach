@@ -1,0 +1,194 @@
+{
+  "kaynak": "mat.txt",
+  "mufredat": "MEB 2024 Maarif Modeli",
+  "ders": "Matematik",
+  "dersKodu": "MAT",
+  "sinif": 7,
+  "cikarimTarihi": "2026-09-30",
+  "not": "Makineyle çıkarıldı; içerik doğrulaması yapılmadı.",
+  "temalar": [
+    {
+      "kod": "MAT.7.1",
+      "ad": "Sayılar ve Nicelikler (2)",
+      "islenisSirasi": 6,
+      "dersSaati": 15,
+      "yuzde": 8,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "MAT.7.1.1",
+          "metin": "Gerçek yaşam ya da matematiksel durumlarda doğal sayı, tam sayı ve rasyonel sayıları yorumlayabilme"
+        },
+        {
+          "kod": "MAT.7.1.2",
+          "metin": "Gerçek yaşam durumlarında rasyonel sayıların ondalık gösterimlerini yansıtabilme"
+        },
+        {
+          "kod": "MAT.7.1.3",
+          "metin": "Rasyonel sayıların karşılaştırma ve sıralama ilişkilerini yorumlayabilme"
+        },
+        {
+          "kod": "MAT.7.1.4",
+          "metin": "Rasyonel sayılar ve işlemler içeren gerçek yaşam problemlerini çözebilme"
+        },
+        {
+          "kod": "MAT.7.1.5",
+          "metin": "Gerçek yaşam durumları üzerinden oran ilişkileri hakkında muhakeme yapabilme"
+        },
+        {
+          "kod": "MAT.7.1.6",
+          "metin": "Gerçek yaşam durumları üzerinden orantılı durumları yorumlayabilme"
+        },
+        {
+          "kod": "MAT.7.1.7",
+          "metin": "Gerçek yaşam durumları üzerinden doğru orantılı durumlara ilişkin problemleri çözebilme"
+        }
+      ]
+    },
+    {
+      "kod": "MAT.7.2",
+      "ad": null,
+      "islenisSirasi": null,
+      "dersSaati": null,
+      "yuzde": null,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "MAT.7.2.1",
+          "metin": "Gerçek yaşam durumları ya da matematiksel durumlar üzerinden cebirsel ifadelerle toplama, çıkarma ve bir rasyonel sayıyla çarpma işlemlerini yorumlayabilme"
+        },
+        {
+          "kod": "MAT.7.2.2",
+          "metin": "Birinci dereceden bir bilinmeyenli denklem ve birinci dereceden bir bilinmeyenli eşitsizlik içeren gerçek yaşam problemlerini çözebilme"
+        },
+        {
+          "kod": "MAT.7.2.3",
+          "metin": "Sayılar ve özelliklerini içeren ispatlara ilişkin matematiksel muhakeme yapabilme"
+        },
+        {
+          "kod": "MAT.7.2.4",
+          "metin": "Temel aritmetik ve cebirsel ifadelerle işlem içeren durumlardaki süreci algoritma ifade yöntemlerini kullanarak yapılandırabilme"
+        }
+      ]
+    },
+    {
+      "kod": "MAT.7.3",
+      "ad": "Dönüşüm",
+      "islenisSirasi": 4,
+      "dersSaati": 8,
+      "yuzde": 5,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "MAT.7.3.1",
+          "metin": "Şekillerin yansıma dönüşümü altındaki görüntülerinin oluşturulmasına dair çıkarım yapabilme"
+        },
+        {
+          "kod": "MAT.7.3.2",
+          "metin": "Yansıma dönüşümündeki deneyimlerini orta dikme ve açıortay inşasına yansıtabilme"
+        }
+      ]
+    },
+    {
+      "kod": "MAT.7.4",
+      "ad": "Geometrik Nicelikler (2)",
+      "islenisSirasi": 9,
+      "dersSaati": 18,
+      "yuzde": 10,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "MAT.7.4.1",
+          "metin": "Eş küplerle oluşturulan yapılar ile görünümleri arasındaki ilişkiyi çözümleyebilme"
+        },
+        {
+          "kod": "MAT.7.4.2",
+          "metin": "Dikdörtgenler prizmasının yüzey alanını yorumlayabilme"
+        },
+        {
+          "kod": "MAT.7.4.3",
+          "metin": "Dikdörtgenler prizmasının hacmini eş nesneler aracılığıyla yorumlayabilme"
+        },
+        {
+          "kod": "MAT.7.4.4",
+          "metin": "Dikdörtgenler prizmasının hacim bağıntısını değerlendirebilme"
+        },
+        {
+          "kod": "MAT.7.4.5",
+          "metin": "Hacim ölçme birimleri arasındaki ilişkileri değerlendirebilme"
+        },
+        {
+          "kod": "MAT.7.4.6",
+          "metin": "Günlük hayat durumlarında dikdörtgenler prizmaları ile modellenen cisimlerin yüzey alanı ve hacmine yönelik problem çözebilme"
+        },
+        {
+          "kod": "MAT.7.4.7",
+          "metin": "Dikdörtgenin, paralelkenarın alanına ve çemberin uzunluğuna ilişkin deneyimlerini dairenin alan bağıntısına yansıtabilme"
+        },
+        {
+          "kod": "MAT.7.4.8",
+          "metin": "Çemberde merkez açı ve gördüğü yay uzunluğu arasındaki ilişkiden yola çıkarak daire ve daire diliminin alanları arasındaki ilişkiye yönelik analojik akıl yürütebilme"
+        },
+        {
+          "kod": "MAT.7.4.9",
+          "metin": "Eşkenar dörtgen ve yamuğun alan bağıntılarına dair çıkarım yapabilme"
+        },
+        {
+          "kod": "MAT.7.4.10",
+          "metin": "Günlük hayat durumlarında daire, daire dilimi, eşkenar dörtgen ve yamuğun alanına ilişkin problem çözebilme"
+        }
+      ]
+    },
+    {
+      "kod": "MAT.7.5",
+      "ad": "Geometrik Şekiller",
+      "islenisSirasi": 5,
+      "dersSaati": 6,
+      "yuzde": 3,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "MAT.7.5.1",
+          "metin": "Matematiksel araç ve teknolojiden yararlanarak üçgende kenarortayı, açıortayı ve yüksekliği çözümleyebilme"
+        },
+        {
+          "kod": "MAT.7.5.2",
+          "metin": "Orta dikme inşasına yönelik deneyimlerini üçgende kenarortay inşasına yansıtabilme"
+        }
+      ]
+    },
+    {
+      "kod": "MAT.7.6",
+      "ad": "İstatistiksel Araştırma Süreci",
+      "islenisSirasi": 3,
+      "dersSaati": 24,
+      "yuzde": 13,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "MAT.7.6.1",
+          "metin": "Kategorik veya nicel (sürekli) veri ile çalışabilme"
+        },
+        {
+          "kod": "MAT.7.6.2",
+          "metin": "Başkaları tarafından oluşturulan kategorik veya nicel (sürekli) veriye dayalı istatistiksel sonuç veya yorumları tartışabilme"
+        }
+      ]
+    },
+    {
+      "kod": "MAT.7.7",
+      "ad": "Veriden Olasılığa",
+      "islenisSirasi": 7,
+      "dersSaati": 9,
+      "yuzde": 5,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "MAT.7.7.1",
+          "metin": "Bir olayın ve tümleyeninin olasılığına ilişkin tümevarımsal akıl yürütebilme"
+        },
+        {
+          "kod": "MAT.7.7.2",
+          "metin": "Aynı deneye ait olayların eşit olasılıklı olma durumlarını değerlendirebilme"
+        },
+        {
+          "kod": "MAT.7.7.3",
+          "metin": "Olayları ayrık olma ve ayrık olmama durumlarına göre sınıflandırabilme"
+        }
+      ]
+    }
+  ]
+}

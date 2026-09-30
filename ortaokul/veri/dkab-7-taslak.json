@@ -1,0 +1,124 @@
+{
+  "kaynak": "din.txt",
+  "mufredat": "MEB 2024 Maarif Modeli",
+  "ders": "Din Kültürü ve Ahlak Bilgisi",
+  "dersKodu": "DKAB",
+  "sinif": 7,
+  "cikarimTarihi": "2026-09-30",
+  "not": "Makineyle çıkarıldı; içerik doğrulaması yapılmadı.",
+  "temalar": [
+    {
+      "kod": "DKAB.7.1",
+      "ad": null,
+      "islenisSirasi": null,
+      "dersSaati": null,
+      "yuzde": null,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "DKAB.7.1.1",
+          "metin": "Melekleri sınıflandırabilme"
+        },
+        {
+          "kod": "DKAB.7.1.2",
+          "metin": "Ahiret hayatının aşamalarını çözümleyebilme"
+        },
+        {
+          "kod": "DKAB.7.1.3",
+          "metin": "Melek ve ahiret inancının insana kazandırdıkları konusunda analitik düşünebilme"
+        },
+        {
+          "kod": "DKAB.7.1.4",
+          "metin": "Nâs suresini ve bu surenin anlamını okuyarak yorumlayabilme"
+        }
+      ]
+    },
+    {
+      "kod": "DKAB.7.2",
+      "ad": null,
+      "islenisSirasi": null,
+      "dersSaati": null,
+      "yuzde": null,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "DKAB.7.2.1",
+          "metin": "Hac ve umre ibadetlerini çözümleyebilme"
+        },
+        {
+          "kod": "DKAB.7.2.2",
+          "metin": "Kurban ibadetini yapılandırabilme"
+        },
+        {
+          "kod": "DKAB.7.2.3",
+          "metin": "Hac ve kurban ibadetinin kültürümüze yansımalarını müşahede edebilme"
+        },
+        {
+          "kod": "DKAB.7.2.4",
+          "metin": "Kâfirun suresini ve bu surenin anlamını okuyarak yorumlayabilme"
+        }
+      ]
+    },
+    {
+      "kod": "DKAB.7.3",
+      "ad": null,
+      "islenisSirasi": null,
+      "dersSaati": null,
+      "yuzde": null,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "DKAB.7.3.1",
+          "metin": "Din anlayışındaki yorum farklılıklarının sebeplerini anlayabilme"
+        },
+        {
+          "kod": "DKAB.7.3.2",
+          "metin": "İslam düşüncesindeki yorum biçimlerini sınıflandırabilme"
+        },
+        {
+          "kod": "DKAB.7.3.3",
+          "metin": "Kültürümüzdeki tasavvufi yorumları çözümleyebilme"
+        },
+        {
+          "kod": "DKAB.7.3.4",
+          "metin": "Alevilik Bektaşilik ile ilgili temel kavramlar ve cem erkânları hakkında bilgi toplayabilme"
+        }
+      ]
+    },
+    {
+      "kod": "DKAB.7.4",
+      "ad": null,
+      "islenisSirasi": null,
+      "dersSaati": null,
+      "yuzde": null,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "DKAB.7.4.1",
+          "metin": "Hz. Muhammed’in (sav) Mekke’de yaşadıklarını yorumlayabilme"
+        },
+        {
+          "kod": "DKAB.7.4.2",
+          "metin": "Hicret konusunu tarihsel bağlamda değerlendirebilme"
+        },
+        {
+          "kod": "DKAB.7.4.3",
+          "metin": "Hz. Muhammed’in (sav) Medine Dönemi konusunu yapılandırabilme"
+        },
+        {
+          "kod": "DKAB.7.4.4",
+          "metin": "Nasr suresini ve bu surenin anlamını okuyarak yorumlayabilme"
+        }
+      ]
+    },
+    {
+      "kod": "DKAB.7.5",
+      "ad": null,
+      "islenisSirasi": null,
+      "dersSaati": null,
+      "yuzde": null,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "DKAB.7.5.1",
+          "metin": "Yahudilik, Hristiyanlık, Hinduizm ve Budizm dinleri hakkında bilgi toplayabilme"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,166 @@
+{
+  "kaynak": "mat.txt",
+  "mufredat": "MEB 2024 Maarif Modeli",
+  "ders": "Matematik",
+  "dersKodu": "MAT",
+  "sinif": 8,
+  "cikarimTarihi": "2026-09-30",
+  "not": "Makineyle çıkarıldı; içerik doğrulaması yapılmadı.",
+  "temalar": [
+    {
+      "kod": "MAT.8.1",
+      "ad": "Sayılar ve Nicelikler",
+      "islenisSirasi": 1,
+      "dersSaati": 38,
+      "yuzde": 21,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "MAT.8.1.1",
+          "metin": "Farklı bağlamlardaki üslü ifadelere, özelliklerine ve üslü ifadelerle yapılan işlemlere ilişkin çıkarım yapabilme"
+        },
+        {
+          "kod": "MAT.8.1.2",
+          "metin": "Karşılaştığı problem durumlarında kareköklü ifadeler ile ilgili muhakeme yapabilme"
+        },
+        {
+          "kod": "MAT.8.1.3",
+          "metin": "Sayıların rasyonel ya da irrasyonelliğini değerlendirebilme"
+        },
+        {
+          "kod": "MAT.8.1.4",
+          "metin": "Gerçek sayıları ve aralıklarını sayı doğrusunda yorumlayabilme"
+        }
+      ]
+    },
+    {
+      "kod": "MAT.8.2",
+      "ad": "Cebirsel Düşünme ve Değişimler",
+      "islenisSirasi": 4,
+      "dersSaati": 42,
+      "yuzde": 23,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "MAT.8.2.1",
+          "metin": "Gerçek yaşam durumları üzerinden dik koordinat sistemini çözümleyebilme"
+        },
+        {
+          "kod": "MAT.8.2.2",
+          "metin": "Gerçek yaşam durumlarındaki doğrusal ilişkileri doğrusal fonksiyonlarla temsil edebilme"
+        },
+        {
+          "kod": "MAT.8.2.3",
+          "metin": "Dik koordinat sisteminde iki doğrusal fonksiyonun birbirine göre durumuna ilişkin çıkarım yapabilme"
+        },
+        {
+          "kod": "MAT.8.2.4",
+          "metin": "Doğrusal fonksiyonlara ilişkin problemlerin çözümlerini algoritma ifade yöntemlerini kullanarak yapılandırabilme"
+        }
+      ]
+    },
+    {
+      "kod": "MAT.8.3",
+      "ad": "Geometrik Şekiller",
+      "islenisSirasi": 2,
+      "dersSaati": 39,
+      "yuzde": 22,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "MAT.8.3.1",
+          "metin": "Matematiksel araç ve teknoloji yardımıyla üçgenin kenarları ve açıları arasındaki ilişkiyi yorumlayabilme"
+        },
+        {
+          "kod": "MAT.8.3.2",
+          "metin": "Matematiksel araç ve teknoloji yardımıyla üçgenin kenar uzunlukları arasındaki ilişkiye yönelik çıkarım yapabilme"
+        },
+        {
+          "kod": "MAT.8.3.3",
+          "metin": "Bir üçgene eş üçgen oluşturmak için üçgenle ilgili bilinmesi yeterli olan elemanlara dair çıkarım yapabilme"
+        },
+        {
+          "kod": "MAT.8.3.4",
+          "metin": "Bir üçgene benzer üçgen oluşturmak için üçgenle ilgili bilinmesi yeterli olan elemanlara dair çıkarım yapabilme"
+        },
+        {
+          "kod": "MAT.8.3.5",
+          "metin": "Kenar uzunlukları a²+ b²= c² eşitliğini sağlayan üçgenleri oluşturarak dik üçgen olduklarını; dik üçgenlerde dik kenar uzunluklarının kareleri toplamının hipotenüs uzunluğunun karesine eşit olduğunu yorumlayabilme"
+        },
+        {
+          "kod": "MAT.8.3.6",
+          "metin": "Üçgende açı-kenar ilişkisi, üçgen eşitsizliği ve Pisagor bağıntısını içeren problemleri çözebilme"
+        }
+      ]
+    },
+    {
+      "kod": "MAT.8.4",
+      "ad": "Geometrik Nicelikler",
+      "islenisSirasi": 5,
+      "dersSaati": 15,
+      "yuzde": 8,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "MAT.8.4.1",
+          "metin": "Dik prizmalar, dikdörtgen dik piramit, dik dairesel silindir ve dik dairesel koninin yüzey açınımlarını çözümleyebilme"
+        },
+        {
+          "kod": "MAT.8.4.2",
+          "metin": "Dik dairesel silindirin yüzey açınımına ilişkin deneyimlerini dik dairesel silindirin yüzey alanına yansıtabilme"
+        },
+        {
+          "kod": "MAT.8.4.3",
+          "metin": "Dairenin alan bağıntısının oluşturulma sürecinden hareketle dik dairesel silindirin hacim bağıntısına yönelik analojik akıl yürütebilme"
+        }
+      ]
+    },
+    {
+      "kod": "MAT.8.5",
+      "ad": "Dönüşüm",
+      "islenisSirasi": 7,
+      "dersSaati": 9,
+      "yuzde": 5,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "MAT.8.5.1",
+          "metin": "Matematiksel araç ve teknoloji yardımıyla öteleme dönüşümünü çözümleyebilme"
+        },
+        {
+          "kod": "MAT.8.5.2",
+          "metin": "Dik koordinat sisteminde geometrik şekillere ait noktaların apsis ve ordinatlarının öteleme dönüşümündeki değişimlerine ve eksenlere göre yansıma dönüşümündeki değişimlerine ilişkin çıkarım yapabilme"
+        },
+        {
+          "kod": "MAT.8.5.3",
+          "metin": "Öteleme ve yansıma dönüşümlerini içeren problemleri çözebilme"
+        }
+      ]
+    },
+    {
+      "kod": "MAT.8.6",
+      "ad": "İstatistiksel Araştırma Süreci",
+      "islenisSirasi": 6,
+      "dersSaati": 20,
+      "yuzde": 11,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "MAT.8.6.1",
+          "metin": "Kategorik veya nicel (kesikli-sürekli) veri ile çalışabilme"
+        },
+        {
+          "kod": "MAT.8.6.2",
+          "metin": "Başkaları tarafından oluşturulan kategorik veya nicel (kesikli-sürekli) veriye dayalı istatistiksel sonuç veya yorumları tartışabilme"
+        }
+      ]
+    },
+    {
+      "kod": "MAT.8.7",
+      "ad": "Veriden Olasılığa",
+      "islenisSirasi": 3,
+      "dersSaati": 9,
+      "yuzde": 5,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "MAT.8.7.1",
+          "metin": "Gerçek yaşamda karşılaşabileceği bir olayın olasılığına ilişkin farklı olasılık yaklaşımlarından (öznel, deneysel, teorik) uygun olanı belirleyerek karar verebilme"
+        }
+      ]
+    }
+  ]
+}

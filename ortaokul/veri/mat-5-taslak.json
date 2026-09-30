@@ -1,0 +1,157 @@
+{
+  "kaynak": "mat.txt",
+  "mufredat": "MEB 2024 Maarif Modeli",
+  "ders": "Matematik",
+  "dersKodu": "MAT",
+  "sinif": 5,
+  "cikarimTarihi": "2026-09-30",
+  "not": "Makineyle çıkarıldı; içerik doğrulaması yapılmadı.",
+  "temalar": [
+    {
+      "kod": "MAT.5.1",
+      "ad": "Sayılar ve Nicelikler (2)",
+      "islenisSirasi": 4,
+      "dersSaati": 33,
+      "yuzde": 18,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "MAT.5.1.1",
+          "metin": "Altı basamaklı sayıları okuma ve yazmayı daha Öğrenme-öğretme yaşantıları çok basamaklı sayılara genelleyebilme"
+        },
+        {
+          "kod": "MAT.5.1.2",
+          "metin": "Doğal sayılar ve işlemler içeren gerçek yaşam problemlerini çözebilme"
+        },
+        {
+          "kod": "MAT.5.1.3",
+          "metin": "Gerçek yaşam durumlarına karşılık gelen kesirleri farklı biçimlerde temsil edebilme"
+        },
+        {
+          "kod": "MAT.5.1.4",
+          "metin": "Farklı gösterimlerle ifade edilen kesirlerin karşılaştırılmasına yönelik çıkarım yapabilm e"
+        }
+      ]
+    },
+    {
+      "kod": "MAT.5.2",
+      "ad": "İşlemlerle Cebirsel Düşünme",
+      "islenisSirasi": 6,
+      "dersSaati": 20,
+      "yuzde": 11,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "MAT.5.2.1",
+          "metin": "Eşitliğin korunumuna ve işlem özelliklerine yönelik çıkarım yapabilme"
+        },
+        {
+          "kod": "MAT.5.2.2",
+          "metin": "Karşılaştığı günlük hayat ya da matematiksel durumlarda işlem önceliğini yorumlayabilme"
+        },
+        {
+          "kod": "MAT.5.2.3",
+          "metin": "Sayı ve şekil örüntülerinin kuralına ilişkin muhakeme yapabilme"
+        },
+        {
+          "kod": "MAT.5.2.4",
+          "metin": "Temel aritmetik işlem içeren durumlardaki algoritmaları yorumlayabilme"
+        }
+      ]
+    },
+    {
+      "kod": "MAT.5.3",
+      "ad": "Geometrik Şekiller",
+      "islenisSirasi": 1,
+      "dersSaati": 38,
+      "yuzde": 21,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "MAT.5.3.1",
+          "metin": "Temel geometrik çizimler için matematiksel araç ve teknolojiden yararlanabilme"
+        },
+        {
+          "kod": "MAT.5.3.2",
+          "metin": "Temel geometrik çizimlere dayalı deneyimlerini yansıtabilme"
+        },
+        {
+          "kod": "MAT.5.3.3",
+          "metin": "Açıları ölçmek için matematiksel araç ve teknolojiden yararlanabilme"
+        },
+        {
+          "kod": "MAT.5.3.4",
+          "metin": "Düzlemde iki veya üç doğrunun birbirine göre durumuna bağlı olarak oluşabilecek açılara dair çıkarım yapabilme"
+        },
+        {
+          "kod": "MAT.5.3.5",
+          "metin": "Çokgenleri düzlemde ardışık olarak kesişen doğruların oluşturduğu kapalı şekiller olarak yorumlayabilme"
+        },
+        {
+          "kod": "MAT.5.3.6",
+          "metin": "Çokgenlerin özellikleri ile ilgili edindiği deneyimleri yansıtabilme"
+        },
+        {
+          "kod": "MAT.5.3.7",
+          "metin": "Matematiksel araç ve teknoloji yardımıyla düzlemde iki noktada kesişen çember çiftinin merkezleri ve kesişim noktalarından biri ile inşa edilen üçgenlerin kenar özelliklerine yönelik çıkarım yapabilme"
+        }
+      ]
+    },
+    {
+      "kod": "MAT.5.4",
+      "ad": "Geometrik Nicelikler",
+      "islenisSirasi": 3,
+      "dersSaati": 20,
+      "yuzde": 11,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "MAT.5.4.1",
+          "metin": "Kenar uzunlukları doğal sayı olan bir dikdörtgenin çevre uzunluğu verildiğinde kenar uzunluklarını yorumlayabilme"
+        },
+        {
+          "kod": "MAT.5.4.2",
+          "metin": "Birim karelerden yola çıkarak dikdörtgenin alanını değerlendirebilme"
+        },
+        {
+          "kod": "MAT.5.4.3",
+          "metin": "Kenar uzunlukları doğal sayı olan bir dikdörtgenin alanının ölçüsü verildiğinde çevre uzunluğunu, çevre uzunluğu verildiğinde alanını yorumlayabilme"
+        },
+        {
+          "kod": "MAT.5.4.4",
+          "metin": "Dikdörtgenin çevre uzunluğu ve alanı ile ilgili problemleri çözebilme"
+        }
+      ]
+    },
+    {
+      "kod": "MAT.5.5",
+      "ad": "İstatistiksel Araştırma Süreci",
+      "islenisSirasi": 5,
+      "dersSaati": 24,
+      "yuzde": 13,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "MAT.5.5.1",
+          "metin": "Kategorik veri ile çalışabilme"
+        },
+        {
+          "kod": "MAT.5.5.2",
+          "metin": "Başkaları tarafından oluşturulan kategorik veriye dayalı istatistiksel sonuç veya yorumları tartışabilme"
+        }
+      ]
+    },
+    {
+      "kod": "MAT.5.6",
+      "ad": "Veriden Olasılığa",
+      "islenisSirasi": 7,
+      "dersSaati": 9,
+      "yuzde": 5,
+      "ogrenmeCiktilari": [
+        {
+          "kod": "MAT.5.6.1",
+          "metin": "Herhangi bir olayın olasılığının 0 (imkânsız) ile 1 (kesin) arasında (0 ve 1 dâhil) olduğunu (olasılık spektrumu) yorumlayabilme"
+        },
+        {
+          "kod": "MAT.5.6.2",
+          "metin": "Olayları az ya da çok olasılıklı şeklinde yapılandırabilme"
+        }
+      ]
+    }
+  ]
+}
