@@ -18,6 +18,7 @@ import { BlogYonetimi } from "@/components/yonetici/BlogYonetimi";
 import { KurallarYonetimi } from "@/components/yonetici/KurallarYonetimi";
 import { HataBildirimleriYonetimi } from "@/components/yonetici/HataBildirimleriYonetimi";
 import { DershaneDenemeSuresiAyari } from "@/components/yonetici/DershaneDenemeSuresiAyari";
+import type { KurumKademesi } from "@/lib/types";
 import { SiteAyarlariYonetimi } from "@/components/yonetici/SiteAyarlariYonetimi";
 import { AdminlerYonetimi } from "@/components/yonetici/AdminlerYonetimi";
 import { IslemGecmisi } from "@/components/yonetici/IslemGecmisi";
@@ -69,8 +70,8 @@ export default async function YoneticiPage({
   const aktifBolum = (params.bolum ?? "ozet") as DashboardBolumu;
   if (!dashboardMenusu("admin").some((oge) => oge.bolum === aktifBolum)) redirect("/yonetici");
 
-  const { data: okullar } = await supabase.from("schools").select("id, ad, okul_kodu, tur, aktif").is("grup_kapasitesi", null).order("ad");
-  const okulListesi = (okullar ?? []) as { id: string; ad: string; okul_kodu: string; tur: "okul" | "dershane"; aktif: boolean }[];
+  const { data: okullar } = await supabase.from("schools").select("id, ad, okul_kodu, tur, aktif, kademe").is("grup_kapasitesi", null).order("ad");
+  const okulListesi = (okullar ?? []) as { id: string; ad: string; okul_kodu: string; tur: "okul" | "dershane"; aktif: boolean; kademe?: KurumKademesi }[];
   const gorunecekOkulId = params.okul || okulListesi[0]?.id || null;
 
   const [{ data: siniflar }, { data: ogretmenler }] = await Promise.all([

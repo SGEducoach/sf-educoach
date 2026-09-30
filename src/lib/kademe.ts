@@ -1,4 +1,5 @@
 import { BRANS_LISTESI } from "@/lib/types";
+import type { KurumKademesi } from "@/lib/types";
 
 // Kademe (ortaokul / lise) — Ortaokul Paneli Faz 0.
 //
@@ -82,4 +83,45 @@ export const ORTAOKUL_BRANSLARI = [
 
 export function bransListesi(kademe: Kademe | null | undefined): readonly string[] {
   return kademe === "ortaokul" ? ORTAOKUL_BRANSLARI : BRANS_LISTESI;
+}
+
+// Kurumun kademesine göre açılabilecek sınıf seviyeleri (schools.kademe,
+// migration 0128). Yönetici "ortaokul" seçmedikçe 5-8 hiç görünmez —
+// yanlışlıkla ortaokul sınıfı açılmasın.
+export function kurumSeviyeleri(kademe: KurumKademesi | null | undefined): readonly string[] {
+  if (kademe === "ortaokul") return ORTAOKUL_SEVIYELERI;
+  if (kademe === "ikisi") return [...ORTAOKUL_SEVIYELERI, ...LISE_SEVIYELERI];
+  return LISE_SEVIYELERI;
+}
+
+export const KURUM_KADEMESI_ETIKET: Record<KurumKademesi, string> = {
+  lise: "Lise (9-12)",
+  ortaokul: "Ortaokul (5-8)",
+  ikisi: "Ortaokul + Lise (5-12)",
+};
+
+// ---- Kurum türü seçimi (kullanıcı isteği 01.10.2026) ----
+//
+// Yönetici okul eklerken TEK bir seçim yapar: Ortaokul / Lise / Dershane.
+// Arka planda bu seçim iki alana çözülür: `schools.tur` (okul|dershane) ve
+// `schools.kademe` (ortaokul|lise). Böylece ortaokul kurumunda sınıf ekleme
+// formunda 9-12 boş yere görünmez.
+export type KurumSecimi = "ortaokul" | "lise" | "dershane";
+
+export const KURUM_SECIMI_ETIKET: Record<KurumSecimi, string> = {
+  ortaokul: "Ortaokul (5-8)",
+  lise: "Lise (9-12)",
+  dershane: "Dershane",
+};
+
+export function kurumSeciminiCoz(secim: KurumSecimi): { tur: "okul" | "dershane"; kademe: KurumKademesi } {
+  if (secim === "dershane") return { tur: "dershane", kademe: "lise" };
+  if (secim === "ortaokul") return { tur: "okul", kademe: "ortaokul" };
+  return { tur: "okul", kademe: "lise" };
+}
+
+// Kayıtlı kurumdan seçime geri dönüş (düzenleme formu için).
+export function kurumSecimi(tur: string | null | undefined, kademe: KurumKademesi | null | undefined): KurumSecimi {
+  if (tur === "dershane") return "dershane";
+  return kademe === "ortaokul" ? "ortaokul" : "lise";
 }

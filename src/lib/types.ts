@@ -9,7 +9,14 @@ export type VerimlilikDuzeyi = "cok_dusuk" | "dusuk" | "orta" | "iyi" | "cok_iyi
 // kullanılıyor (bkz. 9_10_sinif_ekleme_senaryosu.pdf, "Ürün kararı").
 export type DenemeTuru = "TYT" | "AYT" | "BRANS";
 export type DenemeZorlugu = "kolay" | "orta" | "zor";
-export type SinifSeviyesi = "9" | "10" | "11" | "12";
+// Sınıf seviyeleri TEK kaynakta. Ortaokul paneli öncesinde 9-12 kodun altı
+// ayrı yerinde elle yazılıydı; 5-8 eklenince hepsi ıskalanacaktı.
+export const SINIF_SEVIYELERI = ["5", "6", "7", "8", "9", "10", "11", "12"] as const;
+export type SinifSeviyesi = (typeof SINIF_SEVIYELERI)[number];
+
+// Kurumun barındırdığı kademe (schools.kademe, migration 0128) — sınıf
+// ekleme formundaki seviye seçeneklerini belirler.
+export type KurumKademesi = "lise" | "ortaokul" | "ikisi";
 
 // 9 ve 10. sınıflarda TYT/AYT alan ayrımı yok — Branş Denemesi modeli
 // kullanılıyor (bkz. 9_10_sinif_ekleme_senaryosu.pdf). Sınıf seçilince

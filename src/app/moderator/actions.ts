@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { SINIF_SEVIYELERI } from "@/lib/types";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { adNormalize, hedefBolumNormalize, okulNoGecerliMi, rastgeleSifre, sifreGecerliMi, telefonGecerliMi, teslimEdilebilirEpostaMi } from "@/lib/validators";
@@ -213,7 +214,7 @@ export async function moderatorOkulSiniflari(targetSchoolId?: string): Promise<{
 // aynı doğrulama/hata deseni, sadece requireModerator ile korunuyor.
 export async function moderatorSinifEkle(seviye: SinifSeviyesi, sube: string, targetSchoolId?: string) {
   const { user, admin, schoolId } = await requireModerator(targetSchoolId);
-  if (!["9", "10", "11", "12"].includes(seviye)) return { error: "Geçersiz sınıf seviyesi." };
+  if (!(SINIF_SEVIYELERI as readonly string[]).includes(seviye)) return { error: "Geçersiz sınıf seviyesi." };
   const subeBuyuk = sube.trim().toUpperCase();
   if (!subeBuyuk) return { error: "Şube adı girin." };
   const { error } = await admin.from("classes").insert({ school_id: schoolId, seviye, sube: subeBuyuk });

@@ -19,6 +19,9 @@ import { bugununTarihiTR } from "@/lib/tarih";
 import { IzinliOgrenciListesi } from "@/components/yonetici/IzinliOgrenciListesi";
 import { AYT_ALAN_ETIKET, kurumBransListesi, TYT_DERSLERI, AYT_DERSLERI, BRANS_DENEMESI_DERSLERI, DENEME_ZORLUGU_ETIKET, dersSoruSayisi, dokuzOnSinifMi } from "@/lib/types";
 import type { AytAlan, DenemeTuru, DenemeZorlugu } from "@/lib/types";
+import { KURUM_SECIMI_ETIKET, kurumSecimi, kurumSeciminiCoz } from "@/lib/kademe";
+import type { KurumSecimi } from "@/lib/kademe";
+import type { KurumKademesi } from "@/lib/types";
 import { telefonSanitize, okulNoSanitize, TELEFON_IPUCU } from "@/lib/validators";
 import { ogrenciKaydiEslestir } from "@/lib/ogrenci-eslestirme";
 
@@ -28,6 +31,8 @@ interface OkulSatiri {
   okul_kodu: string;
   tur: "okul" | "dershane";
   aktif: boolean;
+  // Kurumun kademesi (migration 0128) — sınıf seviyesi seçeneklerini belirler.
+  kademe?: KurumKademesi;
 }
 interface SinifSatiri {
   id: string;
@@ -115,7 +120,7 @@ export function AdminPanel({
           <p style={{ color: TEXT_MUTED }} className="text-sm py-4 text-center">Henüz kayıtlı okul yok.</p>
         ) : (
           <>
-            <SinifEkleFormu schoolId={gorunenOkul.id} />
+            <SinifEkleFormu schoolId={gorunenOkul.id} kademe={gorunenOkul.kademe} />
 
             {/* Kullanıcı isteği (27.08.2026): "yeni eklenen kurum ilk iş
                 olarak sınıflarını oluştursun" — sınıf yoksa sessizce
@@ -166,9 +171,12 @@ export function AdminPanel({
   );
 }
 
+// Kullanıcı isteği (01.10.2026): kurum eklerken TEK seçim — Ortaokul /
+// Lise / Dershane. Seçim arka planda tur + kademe alanlarına çözülüyor;
+// böylece ortaokulda sınıf eklerken 9-12 boş yere görünmüyor.
 function OkulEkleFormu({ onDone }: { onDone: (yeniOkulId?: string) => void }) {
   const [ad, setAd] = useState("");
-  const [tur, setTur] = useState<"okul" | "dershane">("okul");
+  const [secim, setSecim] = useState<KurumSecimi>("lise");
   const [okulKodu, setOkulKodu] = useState("");
   const [hata, setHata] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -176,8 +184,9 @@ function OkulEkleFormu({ onDone }: { onDone: (yeniOkulId?: string) => void }) {
   function ekle(e: React.FormEvent) {
     e.preventDefault();
     setHata(null);
+    const { tur, kademe } = kurumSeciminiCoz(secim);
     startTransition(async () => {
-      const res = await okulEkle({ ad, tur, okulKodu });
+      const res = await okulEkle({ ad, tur, okulKodu, kademe });
       if (res.error) return setHata(res.error);
       setAd(""); setOkulKodu("");
       onDone(res.id ?? undefined);
@@ -186,22 +195,37 @@ function OkulEkleFormu({ onDone }: { onDone: (yeniOkulId?: string) => void }) {
 
   return (
     <form onSubmit={ekle} className="rounded-2xl p-4 mb-4 flex flex-col gap-2.5" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
-      <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[13px] font-bold">Yeni okul</span>
+      <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[13px] font-bold">Yeni kurum</span>
+      <div className="flex flex-wrap gap-1.5">
+        {(["ortaokul", "lise", "dershane"] as KurumSecimi[]).map((k) => (
+          <button key={k} type="button" onClick={() => setSecim(k)}
+            className="sfec-btn rounded-full px-3.5 py-1.5 text-xs font-bold"
+            style={{
+              background: secim === k ? MINT : BG0,
+              color: secim === k ? MINT_ON : TEXT,
+              border: `2px solid ${secim === k ? MINT : BORDER_STRONG}`,
+            }}>
+            {KURUM_SECIMI_ETIKET[k]}
+          </button>
+        ))}
+      </div>
+      <p className="text-[11px]" style={{ color: TEXT_MUTED }}>
+        {secim === "ortaokul"
+          ? "Sınıf eklerken yalnız 5-8 seçenekleri çıkar."
+          : secim === "lise"
+            ? "Sınıf eklerken yalnız 9-12 seçenekleri çıkar."
+            : "Dershane: kurum yönetimi ve deneme yükleme açık, sınıflar 9-12."}
+      </p>
       <div className="flex gap-2 flex-wrap">
-        <input value={ad} onChange={(e) => setAd(e.target.value)} placeholder="Okul adı" required
+        <input value={ad} onChange={(e) => setAd(e.target.value)} placeholder="Kurum adı" required
           className="text-sm px-3 py-1.5 rounded-xl outline-none flex-1 min-w-[140px]" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
-        <select value={tur} onChange={(e) => setTur(e.target.value as "okul" | "dershane")}
-          className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
-          <option value="okul">Okul</option>
-          <option value="dershane">Dershane</option>
-        </select>
-        <input value={okulKodu} onChange={(e) => setOkulKodu(e.target.value)} placeholder="Okul kodu" required
+        <input value={okulKodu} onChange={(e) => setOkulKodu(e.target.value)} placeholder="Kurum kodu" required
           className="text-sm px-3 py-1.5 rounded-xl outline-none w-32" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
       </div>
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
       <button type="submit" disabled={pending}
         className="sfec-btn self-start text-xs font-bold px-4 py-2 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
-        {pending ? "Ekleniyor..." : "Okulu ekle"}
+        {pending ? "Ekleniyor..." : "Kurumu ekle"}
       </button>
     </form>
   );
@@ -210,6 +234,7 @@ function OkulEkleFormu({ onDone }: { onDone: (yeniOkulId?: string) => void }) {
 function OkulDuzenleFormu({ okul, onDone }: { okul: OkulSatiri; onDone: () => void }) {
   const [ad, setAd] = useState(okul.ad);
   const [okulKodu, setOkulKodu] = useState(okul.okul_kodu);
+  const [secim, setSecim] = useState<KurumSecimi>(kurumSecimi(okul.tur, okul.kademe));
   const [hata, setHata] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [aktiflikPending, startAktiflikTransition] = useTransition();
@@ -218,7 +243,8 @@ function OkulDuzenleFormu({ okul, onDone }: { okul: OkulSatiri; onDone: () => vo
     e.preventDefault();
     setHata(null);
     startTransition(async () => {
-      const res = await okulDuzenle(okul.id, { ad, okulKodu });
+      const { tur, kademe } = kurumSeciminiCoz(secim);
+      const res = await okulDuzenle(okul.id, { ad, okulKodu, tur, kademe });
       if (res.error) return setHata(res.error);
       onDone();
     });

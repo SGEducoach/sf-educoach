@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { ORTAOKUL_BRANSLARI, bransListesi, kademeBul, lgsSinifiMi, ortaokulMu, seviyeNormalize } from "./kademe";
+import { ORTAOKUL_BRANSLARI, bransListesi, kademeBul, kurumSecimi, kurumSeciminiCoz, kurumSeviyeleri, lgsSinifiMi, ortaokulMu, seviyeNormalize } from "./kademe";
 import { BRANS_LISTESI } from "./types";
 import { REHBER_BRANSI } from "./rehberlik";
 import { dashboardMenusu } from "./dashboard-navigation";
@@ -103,5 +103,42 @@ describe("ortaokul öğrenci menüsü", () => {
   test("öğretmen/veli kademeden etkilenmez", () => {
     const ogretmen = dashboardMenusu("ogretmen", "okul", "Matematik", false, "ortaokul");
     expect(ogretmen.map((o) => o.bolum)).not.toContain("ortaokul-dersler");
+  });
+});
+
+// Kurum ekleme: tek seçim (Ortaokul / Lise / Dershane) iki alana çözülüyor.
+describe("kurum seçimi ve sınıf seviyeleri", () => {
+  test("seçim tur + kademeye çözülür", () => {
+    expect(kurumSeciminiCoz("ortaokul")).toEqual({ tur: "okul", kademe: "ortaokul" });
+    expect(kurumSeciminiCoz("lise")).toEqual({ tur: "okul", kademe: "lise" });
+    expect(kurumSeciminiCoz("dershane")).toEqual({ tur: "dershane", kademe: "lise" });
+  });
+
+  test("kayıtlı kurumdan seçime geri dönüş", () => {
+    expect(kurumSecimi("okul", "ortaokul")).toBe("ortaokul");
+    expect(kurumSecimi("okul", "lise")).toBe("lise");
+    expect(kurumSecimi("dershane", "lise")).toBe("dershane");
+    // Kademe hiç yazılmamış eski kayıt lise sayılır.
+    expect(kurumSecimi("okul", null)).toBe("lise");
+  });
+
+  test("ortaokulda 9-12 hiç görünmez", () => {
+    expect(kurumSeviyeleri("ortaokul")).toEqual(["5", "6", "7", "8"]);
+    for (const s of ["9", "10", "11", "12"]) {
+      expect(kurumSeviyeleri("ortaokul"), s).not.toContain(s);
+    }
+  });
+
+  test("lisede 5-8 görünmez", () => {
+    expect(kurumSeviyeleri("lise")).toEqual(["9", "10", "11", "12"]);
+  });
+
+  test("kademe bilinmiyorsa lise seviyeleri gelir — eski kurumlar bozulmaz", () => {
+    expect(kurumSeviyeleri(null)).toEqual(["9", "10", "11", "12"]);
+    expect(kurumSeviyeleri(undefined)).toEqual(["9", "10", "11", "12"]);
+  });
+
+  test("ikisi seçilirse 5-12 birlikte", () => {
+    expect(kurumSeviyeleri("ikisi")).toEqual(["5", "6", "7", "8", "9", "10", "11", "12"]);
   });
 });

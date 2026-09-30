@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
+import { kurumSeviyeleri } from "@/lib/kademe";
+import type { KurumKademesi } from "@/lib/types";
 import { useRouter, useSearchParams } from "next/navigation";
 import { UserPlus, Check, Users, Eye, Plus, X, BookMarked, BedDouble, ClipboardCheck, ListChecks, ArrowRightLeft, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, CalendarPlus } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, PEACH, PEACH_BG, SKY, SKY_BG, TEXT, TEXT_MUTED, BLUSH, BLUSH_BG } from "@/lib/theme";
@@ -909,8 +911,12 @@ function DerslerimBolumu({ dersler, siniflar, dersProgramiSatirlari, okulNobetle
   );
 }
 
-export function SinifEkleFormu({ schoolId }: { schoolId: string }) {
-  const [seviye, setSeviye] = useState<SinifSeviyesi>("9");
+// Seviye seçenekleri kurumun kademesine göre daralır (kullanıcı isteği
+// 01.10.2026: "ortaokulda boş yere 9-12 gözükmesin"). Kademe verilmezse
+// eskisi gibi lise seviyeleri gelir.
+export function SinifEkleFormu({ schoolId, kademe }: { schoolId: string; kademe?: KurumKademesi }) {
+  const seviyeler = kurumSeviyeleri(kademe);
+  const [seviye, setSeviye] = useState<SinifSeviyesi>(seviyeler[0] as SinifSeviyesi);
   const [sube, setSube] = useState("");
   const [hata, setHata] = useState<string | null>(null);
   const [basari, setBasari] = useState<string | null>(null);
@@ -937,10 +943,7 @@ export function SinifEkleFormu({ schoolId }: { schoolId: string }) {
         <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Seviye</span>
         <select value={seviye} onChange={(e) => setSeviye(e.target.value as SinifSeviyesi)}
           className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
-          <option value="9">9</option>
-          <option value="10">10</option>
-          <option value="11">11</option>
-          <option value="12">12</option>
+          {seviyeler.map((sv: string) => <option key={sv} value={sv}>{sv}</option>)}
         </select>
       </label>
       <label className="flex flex-col gap-1">

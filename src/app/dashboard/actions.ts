@@ -19,7 +19,8 @@ import type { DuyuruAliciTuru } from "@/lib/push-send";
 import { DUYURU_MIN_UZUNLUK, duyuruGonderimIzniKontrol } from "@/lib/duyuru-guvenligi";
 import { requireDershaneMudur } from "@/lib/dershane-auth";
 import { bekleyenPdfSonuclariniOgrenciyeAktar } from "@/lib/deneme-sonucu-kaydet";
-import type { SinifSeviyesi } from "@/lib/types";
+import { SINIF_SEVIYELERI } from "@/lib/types";
+import type { KurumKademesi, SinifSeviyesi } from "@/lib/types";
 import { REHBER_BRANSI, REHBERLIK_DUYURU_BASLIGI } from "@/lib/rehberlik";
 
 const DUYURU_MAKS_UZUNLUK = 500;
@@ -93,7 +94,7 @@ async function auditLogYaz(
 
 export async function sinifEkle(schoolId: string, seviye: SinifSeviyesi, sube: string) {
   const { supabase, user } = await requireUser();
-  if (!["9", "10", "11", "12"].includes(seviye)) return { error: "Geçersiz sınıf seviyesi." };
+  if (!(SINIF_SEVIYELERI as readonly string[]).includes(seviye)) return { error: "Geçersiz sınıf seviyesi." };
   const subeBuyuk = sube.trim().toUpperCase();
   const { error } = await supabase.from("classes").insert({
     school_id: schoolId, seviye, sube: subeBuyuk,
@@ -111,20 +112,21 @@ export async function sinifEkle(schoolId: string, seviye: SinifSeviyesi, sube: s
 // Ekleme/düzenleme RLS'te (schools_insert_admin / schools_update_admin,
 // bkz. migration 0020) is_admin()'e bağlı — buradaki kontrol sadece daha
 // anlaşılır bir hata mesajı göstermek için.
-export async function okulEkle(input: { ad: string; tur: "okul" | "dershane"; okulKodu: string }) {
+export async function okulEkle(input: { ad: string; tur: "okul" | "dershane"; okulKodu: string; kademe?: KurumKademesi }) {
   const { supabase, user } = await requireUser();
   const ad = input.ad.trim();
   const okulKodu = input.okulKodu.trim();
   if (!ad) return { error: "Okul adı gerekli.", id: null };
   if (!okulKodu) return { error: "Okul kodu gerekli.", id: null };
 
-  const { data, error } = await supabase.from("schools").insert({ ad, tur: input.tur, okul_kodu: okulKodu }).select("id").single();
+  const kademe: KurumKademesi = input.kademe ?? "lise";
+  const { data, error } = await supabase.from("schools").insert({ ad, tur: input.tur, okul_kodu: okulKodu, kademe }).select("id").single();
   if (error) {
     if (error.code === "23505") return { error: "Bu okul kodu zaten kullanılıyor.", id: null };
     if (error.message?.includes("row-level security")) return { error: "Bu işlem için yönetici yetkisi gerekiyor.", id: null };
     return { error: error.message, id: null };
   }
-  await auditLogYaz(supabase, user.id, "okul_ekle", { school_id: data.id, ad, okul_kodu: okulKodu });
+  await auditLogYaz(supabase, user.id, "okul_ekle", { school_id: data.id, ad, okul_kodu: okulKodu, kademe });
   revalidatePath("/yonetici");
   // Kullanıcı isteği (27.08.2026): "yeni eklenen kurum ilk iş olarak
   // sınıflarını oluştursun" — id geri döndürülüyor ki AdminPanel yeni
@@ -132,19 +134,24 @@ export async function okulEkle(input: { ad: string; tur: "okul" | "dershane"; ok
   return { error: null, id: data.id };
 }
 
-export async function okulDuzenle(id: string, input: { ad: string; okulKodu: string }) {
+export async function okulDuzenle(id: string, input: { ad: string; okulKodu: string; tur?: "okul" | "dershane"; kademe?: KurumKademesi }) {
   const { supabase, user } = await requireUser();
   const ad = input.ad.trim();
   const okulKodu = input.okulKodu.trim();
   if (!ad) return { error: "Okul adı gerekli." };
   if (!okulKodu) return { error: "Okul kodu gerekli." };
 
-  const { error } = await supabase.from("schools").update({ ad, okul_kodu: okulKodu }).eq("id", id);
+  // Kademe/tür sonradan düzeltilebilir: kurum yanlış seçilmişse yeniden
+  // açmak yerine burada değiştirilir (kullanıcı isteği 01.10.2026).
+  const guncelleme: Record<string, unknown> = { ad, okul_kodu: okulKodu };
+  if (input.tur) guncelleme.tur = input.tur;
+  if (input.kademe) guncelleme.kademe = input.kademe;
+  const { error } = await supabase.from("schools").update(guncelleme).eq("id", id);
   if (error) {
     if (error.code === "23505") return { error: "Bu okul kodu zaten kullanılıyor." };
     return { error: "Bu işlem için yönetici yetkisi gerekiyor." };
   }
-  await auditLogYaz(supabase, user.id, "okul_duzenle", { school_id: id, ad, okul_kodu: okulKodu });
+  await auditLogYaz(supabase, user.id, "okul_duzenle", { school_id: id, ad, okul_kodu: okulKodu, tur: input.tur, kademe: input.kademe });
   revalidatePath("/yonetici");
   return { error: null };
 }
