@@ -45,6 +45,8 @@ import { dashboardMenusu } from "@/lib/dashboard-navigation";
 import { panelKademesi } from "@/lib/ortaokul-ayar";
 import { ortaokulDersleriGetir, ortaokulDersHaritasiGetir } from "@/lib/ortaokul-mufredat-sorgu";
 import { OrtaokulDerslerim } from "@/components/dashboard/OrtaokulDerslerim";
+import { OrtaokulBugun } from "@/components/dashboard/OrtaokulBugun";
+import { ortaokulBugunGetir } from "@/lib/ortaokul-bugun-sorgu";
 import type { DashboardBolumu } from "@/lib/dashboard-navigation";
 import { dershaneDenemeBitisGetir, suresiDolduMu, kullaniciKurumuGetir, denemeSuresiUygulanir, grupDondurulmus, GRUP_DONDURULDU_MESAJI, GRUP_SALT_OKUNUR_MESAJI } from "@/lib/deneme-suresi";
 import { ogretmenProgramiGetir, okulNobetiGetir, yurtNobetGorevleriGetir } from "@/lib/ders-programi";
@@ -233,7 +235,7 @@ export default async function DashboardPage({
             <section className="sfec-section"><DershaneDenemePdfFormu yalnizcaExcel /></section>
           ) : (
             <>
-              {role === "ogrenci" && <OgrenciIcerik userId={user.id} ad={profile.ad} donem={donem} haftaBaslangic={haftaninPazartesisi(params.hafta)} aktifBolum={aktifBolum} gecmisHafta={Number(params.gecmis ?? 0)} seciliDersId={params.ders} />}
+              {role === "ogrenci" && <OgrenciIcerik userId={user.id} ad={profile.ad} donem={donem} haftaBaslangic={haftaninPazartesisi(params.hafta)} aktifBolum={aktifBolum} gecmisHafta={Number(params.gecmis ?? 0)} seciliDersId={params.ders} kademe={ogrenciKademesi} />}
               {(role === "ogretmen" || role === "mudur") && (
                 <OgretmenIcerik userId={user.id} role={role} kurumTuru={kurumTuru} brans={brans} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} secilenOgretmenId={params.ogretmen} donem={donem} aktifBolum={aktifBolum} grupMu={grupKocu} />
               )}
@@ -260,14 +262,36 @@ async function GrupKocIcerik() {
   return <GrupKocPaneli grup={yetki.grup} ogrenciler={ogrenciler} bugun={bugununTarihiTR()} veliTalepleri={talepler} veliler={veliler} />;
 }
 
-async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, gecmisHafta, seciliDersId }: {
+async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, gecmisHafta, seciliDersId, kademe }: {
   userId: string; ad: string; donem: RaporDonemi; haftaBaslangic: string; aktifBolum: DashboardBolumu;
   // Ortaokul "Derslerim" ekranında açılan ders (?ders=).
   seciliDersId?: string;
+  // Ortaokul paneli açıksa "ortaokul"; aksi hâlde null (bkz. panelKademesi).
+  kademe?: "ortaokul" | "lise" | null;
   // Veri geçmişi kaç 7 günlük dilim geriye bakıyor (?gecmis=1 → bir önceki 7 gün).
   gecmisHafta: number;
 }) {
   const supabase = await createClient();
+
+  // Ortaokul "Bugün" — ana sayfa yerine geçer. Yalnız bayrak açıkken ve
+  // öğrenci 5-8. sınıftayken çalışır; lise öğrencisi eski ana sayfayı görür.
+  if (kademe === "ortaokul" && aktifBolum === "ozet") {
+    const { data: ogrenciSatiri } = await supabase
+      .from("students").select("classes(seviye, sube)").eq("id", userId).maybeSingle();
+    const sinifKaydi = (ogrenciSatiri as unknown as { classes: { seviye: string; sube: string } | { seviye: string; sube: string }[] | null } | null)?.classes;
+    const sinif = Array.isArray(sinifKaydi) ? sinifKaydi[0] : sinifKaydi;
+    const veri = await ortaokulBugunGetir(supabase, userId);
+    return (
+      <OrtaokulBugun
+        ad={ad}
+        sinif={sinif ? `${sinif.seviye}-${sinif.sube}` : null}
+        mesaj={veri.mesaj}
+        kartlar={veri.kartlar}
+        bugunTamamlanan={veri.bugunTamamlanan}
+        bugunBekleyen={veri.bugunBekleyen}
+      />
+    );
+  }
 
   // Ortaokul "Derslerim" — veri YALNIZ bu bölüm açıkken çekilir; bayrak
   // kapalıyken bu bölüme menüden erişilemediği için hiç çalışmaz.
