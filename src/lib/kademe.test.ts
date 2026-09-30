@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import { ORTAOKUL_BRANSLARI, bransListesi, kademeBul, lgsSinifiMi, ortaokulMu, seviyeNormalize } from "./kademe";
 import { BRANS_LISTESI } from "./types";
 import { REHBER_BRANSI } from "./rehberlik";
+import { dashboardMenusu } from "./dashboard-navigation";
 
 describe("seviyeNormalize", () => {
   test("farklı yazımlar tek biçime iner", () => {
@@ -66,5 +67,41 @@ describe("bransListesi", () => {
   test("rehber branşı iki listede de aynı sabitten gelir", () => {
     expect(ORTAOKUL_BRANSLARI).toContain(REHBER_BRANSI);
     expect(BRANS_LISTESI).toContain(REHBER_BRANSI);
+  });
+});
+
+// Ortaokul menüsü YALNIZ kademe "ortaokul" geçilince devreye girer; bayrak
+// kapalıyken çağıran taraf null geçer ve lise menüsü aynen kalır.
+describe("ortaokul öğrenci menüsü", () => {
+  test("kademe verilmezse lise menüsü değişmez", () => {
+    const lise = dashboardMenusu("ogrenci", "okul");
+    expect(lise.map((o) => o.bolum)).toContain("veri-girisi");
+    expect(lise.map((o) => o.bolum)).not.toContain("ortaokul-dersler");
+  });
+
+  test("ortaokulda YKS'ye özgü bölümler yok, Derslerim var", () => {
+    const orta = dashboardMenusu("ogrenci", "okul", undefined, false, "ortaokul");
+    const bolumler = orta.map((o) => o.bolum);
+    expect(bolumler).toContain("ortaokul-dersler");
+    for (const yks of ["veri-girisi", "analiz", "tg-denemeleri", "konu-hakimiyeti"]) {
+      expect(bolumler, yks).not.toContain(yks);
+    }
+  });
+
+  test("ortaokul menüsünde dil yaşa uygun", () => {
+    const orta = dashboardMenusu("ogrenci", "okul", undefined, false, "ortaokul");
+    expect(orta.find((o) => o.bolum === "ozet")?.etiket).toBe("Bugün");
+    expect(orta.find((o) => o.bolum === "gorevler")?.etiket).toBe("Görevlerim");
+    expect(orta.find((o) => o.bolum === "planlar")?.etiket).toBe("Planım");
+  });
+
+  test("kademe lise ise lise menüsü gelir", () => {
+    const lise = dashboardMenusu("ogrenci", "okul", undefined, false, "lise");
+    expect(lise.map((o) => o.bolum)).toContain("veri-girisi");
+  });
+
+  test("öğretmen/veli kademeden etkilenmez", () => {
+    const ogretmen = dashboardMenusu("ogretmen", "okul", "Matematik", false, "ortaokul");
+    expect(ogretmen.map((o) => o.bolum)).not.toContain("ortaokul-dersler");
   });
 });

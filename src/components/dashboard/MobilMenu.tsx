@@ -64,12 +64,14 @@ const IKONLAR: Record<DashboardIkonu, typeof Home> = {
 // bir ara genişlik oluşmaz. Renkler
 // header gibi tema değişkenlerine bağlı — açık modda beyaz metin/koyu panel
 // kullanmak (eskiden olduğu gibi) gündüz de "gece" görünümü veriyordu.
-export function MobilMenu({ ad, role, kurumTuru, brans, grupMu = false, okunmamisMesajSayisi, moderatorMu, rolEtiketi, aktifBolum = "ozet", navigasyonGoster = true, geriDonusHref, geriDonusEtiketi, rozetler }: {
+export function MobilMenu({ ad, role, kurumTuru, brans, grupMu = false, kademe, okunmamisMesajSayisi, moderatorMu, rolEtiketi, aktifBolum = "ozet", navigasyonGoster = true, geriDonusHref, geriDonusEtiketi, rozetler }: {
   ad: string;
   role: UserRole;
   kurumTuru?: KurumTuru;
   brans?: string;
   grupMu?: boolean;
+  // Ortaokul paneli (Faz 1): yalniz bayrak acikken dolu gelir.
+  kademe?: "ortaokul" | "lise" | null;
   // Bölüm başına bekleyen iş sayısı (bkz. DashboardYanMenu).
   rozetler?: Partial<Record<DashboardBolumu, number>>;
   okunmamisMesajSayisi: number;
@@ -80,7 +82,7 @@ export function MobilMenu({ ad, role, kurumTuru, brans, grupMu = false, okunmami
   geriDonusHref?: string; geriDonusEtiketi?: string;
 }) {
   const [acik, setAcik] = useState(false);
-  const menu = navigasyonGoster ? dashboardMenuYapisi(role, kurumTuru, brans, grupMu) : [];
+  const menu = navigasyonGoster ? dashboardMenuYapisi(role, kurumTuru, brans, grupMu, kademe) : [];
   // Aktif sayfanın grubu açık başlar.
   const [acikGrup, setAcikGrup] = useState<string | null>(
     () => menu.filter(menuGrubuMu).find((k) => k.ogeler.some((o) => o.bolum === aktifBolum))?.baslik ?? null,

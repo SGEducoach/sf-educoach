@@ -705,6 +705,28 @@ export async function siteAyarlariGetir(): Promise<{ error: string | null; kapal
   return { error: null, kapali: !!data?.site_kapali };
 }
 
+// ============ Ortaokul paneli bayragi (Faz 1, 30.09.2026) ============
+// Varsayilan KAPALI. Acilinca yalnizca 5-8. siniftaki ogrenciler ortaokul
+// menusunu gorur; lise tarafi hicbir kosulda degismez.
+export async function ortaokulAyariGetir(): Promise<{ error: string | null; aktif: boolean }> {
+  const { admin } = await requireAdmin();
+  const { data, error } = await admin.from("platform_ayarlari").select("ortaokul_aktif").eq("id", 1).maybeSingle();
+  if (error) return { error: error.message, aktif: false };
+  return { error: null, aktif: !!data?.ortaokul_aktif };
+}
+
+export async function ortaokulAktifDegistir(aktif: boolean): Promise<{ error: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const { error } = await admin
+    .from("platform_ayarlari")
+    .upsert({ id: 1, ortaokul_aktif: aktif, updated_at: new Date().toISOString() });
+  if (error) return { error: error.message };
+  await auditLogYaz(supabase, user.id, aktif ? "ortaokul_paneli_ac" : "ortaokul_paneli_kapat", {});
+  revalidatePath("/yonetici");
+  revalidatePath("/dashboard");
+  return { error: null };
+}
+
 export async function siteKapaliDegistir(kapali: boolean): Promise<{ error: string | null }> {
   const { supabase, user, admin } = await requireAdmin();
   const { error } = await admin

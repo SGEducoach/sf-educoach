@@ -25,7 +25,9 @@ const rolEtiket: Record<UserRole, string> = {
   admin: "Yönetici",
 };
 
-export async function Header({ ad, role, kurumTuru, brans, grupMu = false, okunmamisMesajSayisi = 0, mobilNavigasyon = true, moderatorMu = false, rolEtiketi, aktifBolum = "ozet", geriDonusHref, geriDonusEtiketi, rozetler }: { ad: string; role: UserRole; kurumTuru?: KurumTuru; brans?: string; grupMu?: boolean; okunmamisMesajSayisi?: number; mobilNavigasyon?: boolean; moderatorMu?: boolean; rolEtiketi?: string; aktifBolum?: DashboardBolumu;
+export async function Header({ ad, role, kurumTuru, brans, grupMu = false, okunmamisMesajSayisi = 0, mobilNavigasyon = true, moderatorMu = false, rolEtiketi, aktifBolum = "ozet", geriDonusHref, geriDonusEtiketi, rozetler, kademe }: { ad: string; role: UserRole; kurumTuru?: KurumTuru; brans?: string; grupMu?: boolean; okunmamisMesajSayisi?: number; mobilNavigasyon?: boolean; moderatorMu?: boolean; rolEtiketi?: string; aktifBolum?: DashboardBolumu;
+  // Ortaokul paneli (Faz 1) — MobilMenu icin tasiniyor.
+  kademe?: "ortaokul" | "lise" | null;
   // Mobil menüde bölüm başına bekleyen iş sayısı (bkz. DashboardYanMenu).
   rozetler?: Partial<Record<DashboardBolumu, number>>;
   // Kullanıcı isteği (26.08.2026): moderatör panelinin KENDİ İÇİNDEKİ "Ana
@@ -106,7 +108,7 @@ export async function Header({ ad, role, kurumTuru, brans, grupMu = false, okunm
               </form>
             </div>
 
-            <MobilMenu ad={ad} role={role} kurumTuru={kurumTuru} brans={brans} grupMu={grupMu} okunmamisMesajSayisi={okunmamisMesajSayisi} moderatorMu={moderatorMu} rolEtiketi={gorunenRolEtiketi} aktifBolum={aktifBolum} navigasyonGoster={mobilNavigasyon} rozetler={rozetler} />
+            <MobilMenu ad={ad} role={role} kademe={kademe} kurumTuru={kurumTuru} brans={brans} grupMu={grupMu} okunmamisMesajSayisi={okunmamisMesajSayisi} moderatorMu={moderatorMu} rolEtiketi={gorunenRolEtiketi} aktifBolum={aktifBolum} navigasyonGoster={mobilNavigasyon} rozetler={rozetler} />
           </div>
         </div>
       </header>

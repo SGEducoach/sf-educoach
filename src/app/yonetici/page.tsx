@@ -24,7 +24,7 @@ import { IslemGecmisi } from "@/components/yonetici/IslemGecmisi";
 import { OgrenciAktivitesi } from "@/components/yonetici/OgrenciAktivitesi";
 import { AKTIVITE_DONEMLERI, VARSAYILAN_AKTIVITE_DONEMI } from "@/lib/ogrenci-aktivitesi-verisi";
 import { DuyuruGecmisi } from "@/components/dashboard/DuyuruGecmisi";
-import { dershaneDenemeSuresiGetir, siteAyarlariGetir, anaSayfaAyarlariGetir } from "@/app/yonetici/actions";
+import { dershaneDenemeSuresiGetir, siteAyarlariGetir, ortaokulAyariGetir, anaSayfaAyarlariGetir } from "@/app/yonetici/actions";
 import { AnaSayfaAyarlariYonetimi } from "@/components/yonetici/AnaSayfaAyarlariYonetimi";
 import { AnaSayfaDuyuruYonetimi } from "@/components/yonetici/AnaSayfaDuyuruYonetimi";
 import { anaSayfaDuyurulariniGetir } from "@/lib/ana-sayfa-duyurulari";
@@ -91,6 +91,7 @@ export default async function YoneticiPage({
 
   const { bitis: dershaneDenemeBitisi } = aktifBolum === "ozet" ? await dershaneDenemeSuresiGetir() : { bitis: null };
   const { kapali: siteKapali } = aktifBolum === "site-ayarlari" ? await siteAyarlariGetir() : { kapali: false };
+  const { aktif: ortaokulAktif } = aktifBolum === "site-ayarlari" ? await ortaokulAyariGetir() : { aktif: false };
   const siteTemaId = aktifBolum === "site-ayarlari" ? (await siteTemaGetir()).id : VARSAYILAN_TEMA.id;
   const seoAnahtarKelimeleri = aktifBolum === "site-ayarlari" ? await seoAnahtarKelimeleriGetir() : [];
   const { ayarlar: anaSayfaAyarlari, gorseller: anaSayfaGorselleri } = aktifBolum === "site-ayarlari"
@@ -173,6 +174,7 @@ export default async function YoneticiPage({
             <section className="sfec-section">
               <SiteAyarlariYonetimi
                 kapaliBaslangic={siteKapali}
+                ortaokulBaslangic={ortaokulAktif}
                 temaIdBaslangic={siteTemaId}
                 seoAnahtarKelimeleriBaslangic={seoAnahtarKelimeleri}
               />

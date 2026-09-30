@@ -33,6 +33,9 @@ export type DashboardBolumu =
   // Kullanıcı isteği (29.09.2026): deneme yükleme önemli bir iş ama
   // Okullar sayfasının içinde küçük bir yerde duruyordu — kendi bölümü.
   | "deneme-yukle"
+  // Ortaokul paneli (Faz 1) — lise öğrencisinin "dersler" bölümü öğretmen
+  // Ajandası için kullanıldığından ayrı bir ad verildi.
+  | "ortaokul-dersler"
   | "okullar"
   // Grup Koçluk (18.09.2026) — kurum dışı koç grupları.
   | "grup-kocluk"
@@ -75,6 +78,18 @@ const OGRENCI_MENUSU: DashboardMenuOgesi[] = [
   // Kullanıcı isteği (03.09.2026): öğrenci kendi profilini görebilsin ama
   // SADECE şifresini değiştirebilsin — okul no, sınıf, ad gibi kimlik
   // bilgileri salt-okunur (bkz. OgrenciProfilim).
+  { bolum: "profil", href: "/dashboard/profil", etiket: "Profilim", ikon: "profil" },
+];
+
+// Ortaokul öğrencisi menüsü (tasarım belgesi §5.1). Lise menüsünün kopyası
+// DEĞİL: "Veri girişi", "Analiz / Rapor", "TG Denemeler" gibi YKS'ye özgü
+// başlıklar yok; dil yaşa uygun ("Ödevlerim" yerine "Görevlerim", "Program
+// yap" yerine "Planım").
+const ORTAOKUL_OGRENCI_MENUSU: DashboardMenuOgesi[] = [
+  { bolum: "ozet", href: "/dashboard", etiket: "Bugün", ikon: "ana-sayfa" },
+  { bolum: "gorevler", href: "/dashboard/gorevler", etiket: "Görevlerim", ikon: "gorev" },
+  { bolum: "ortaokul-dersler", href: "/dashboard/ortaokul-dersler", etiket: "Derslerim", ikon: "hakimiyet" },
+  { bolum: "planlar", href: "/dashboard/planlar", etiket: "Planım", ikon: "plan" },
   { bolum: "profil", href: "/dashboard/profil", etiket: "Profilim", ikon: "profil" },
 ];
 
@@ -246,8 +261,17 @@ const GRUP_KOC_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "TG Denemeler", ikon: "takvim" },
 ];
 
-export function dashboardMenusu(role: UserRole, kurumTuru?: KurumTuru, brans?: string, grupMu = false): DashboardMenuOgesi[] {
+export function dashboardMenusu(
+  role: UserRole,
+  kurumTuru?: KurumTuru,
+  brans?: string,
+  grupMu = false,
+  // Ortaokul menüsü YALNIZCA burada devreye girer: kademe "ortaokul" olarak
+  // geçilmezse (bayrak kapalıysa çağıran taraf geçmez) hiçbir şey değişmez.
+  kademe?: "ortaokul" | "lise" | null,
+): DashboardMenuOgesi[] {
   if (role === "ogretmen" && grupMu) return GRUP_KOC_MENUSU;
+  if (role === "ogrenci" && kademe === "ortaokul") return ORTAOKUL_OGRENCI_MENUSU;
   if (role === "ogrenci") return kurumTuru === "okul" ? [...OGRENCI_MENUSU, { bolum:"etkinlikler", href:"/dashboard/etkinlikler", etiket:"Etkinlikler", ikon:"takvim" }] : OGRENCI_MENUSU;
   if (role === "veli") return VELI_MENUSU;
   if (role === "ogretmen") return brans === REHBER_BRANSI ? (kurumTuru === "dershane" ? DERSHANE_REHBER_MENUSU : REHBER_OGRETMEN_MENUSU) : kurumTuru === "okul" && etkinlikBransiMi(brans) ? [...OGRETMEN_MENUSU, TAKVIM_MENU_OGESI, { bolum:"etkinlikler", href:"/dashboard/etkinlikler", etiket:"Etkinlik Grupları", ikon:"takvim" }] : kurumTuru === "okul" ? [...OGRETMEN_MENUSU, TAKVIM_MENU_OGESI] : OGRETMEN_MENUSU;
@@ -257,13 +281,16 @@ export function dashboardMenusu(role: UserRole, kurumTuru?: KurumTuru, brans?: s
 }
 
 // Menü çizimi için: admin gruplu, diğer roller düz (değişmedi).
-export function dashboardMenuYapisi(role: UserRole, kurumTuru?: KurumTuru, brans?: string, grupMu = false): DashboardMenuKalemi[] {
-  return role === "admin" ? ADMIN_MENU_YAPISI : dashboardMenusu(role, kurumTuru, brans, grupMu);
+export function dashboardMenuYapisi(
+  role: UserRole, kurumTuru?: KurumTuru, brans?: string, grupMu = false,
+  kademe?: "ortaokul" | "lise" | null,
+): DashboardMenuKalemi[] {
+  return role === "admin" ? ADMIN_MENU_YAPISI : dashboardMenusu(role, kurumTuru, brans, grupMu, kademe);
 }
 
 export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
   "gorevler", "planlar", "veri-girisi", "konu-hakimiyeti", "analiz", "yapay-zeka", "tg-denemeleri",
-  "duyurular", "talepler", "onaylar", "dersler", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler", "rehberlik", "etkinlikler", "profil", "takvim", "yarismalar", "ogrenci-takibi",
+  "duyurular", "talepler", "onaylar", "dersler", "ortaokul-dersler", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler", "rehberlik", "etkinlikler", "profil", "takvim", "yarismalar", "ogrenci-takibi",
 ]);
 // Yazılı analizinin ayrı sayfası yok (kullanıcı kararı 11.09.2026: yalnızca
 // öğretmene özel) — öğretmen Ajandam > Yazılı Analizi sekmesinden girer.

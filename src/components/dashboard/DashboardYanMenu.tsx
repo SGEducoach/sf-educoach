@@ -40,13 +40,15 @@ const IKONLAR: Record<DashboardIkonu, typeof Home> = {
   rehberlik: HeartHandshake,
 };
 
-export function DashboardYanMenu({ role, kurumTuru, brans, grupMu = false, aktifBolum, rozetler }: {
+export function DashboardYanMenu({ role, kurumTuru, brans, grupMu = false, kademe, aktifBolum, rozetler }: {
   role: UserRole; kurumTuru?: KurumTuru; brans?: string; grupMu?: boolean; aktifBolum: DashboardBolumu;
+  // Ortaokul paneli (Faz 1): yalnız bayrak acikken ve ortaokul sinifinda dolu gelir.
+  kademe?: "ortaokul" | "lise" | null;
   // Bölüm başına bekleyen iş sayısı (denetim 27.09.2026): koç, bekleyen veli
   // talebini ekrana girmeden görsün.
   rozetler?: Partial<Record<DashboardBolumu, number>>;
 }) {
-  const menu = dashboardMenuYapisi(role, kurumTuru, brans, grupMu);
+  const menu = dashboardMenuYapisi(role, kurumTuru, brans, grupMu, kademe);
   if (menu.length === 0) return null;
   const rolBasligi: Partial<Record<UserRole, string>> = {
     ogrenci: "Öğrenci çalışma alanı",

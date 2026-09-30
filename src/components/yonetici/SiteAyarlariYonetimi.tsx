@@ -2,8 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Palette, Power, Search, Settings2 } from "lucide-react";
-import { seoAnahtarKelimeleriKaydet, siteKapaliDegistir, siteTemasiDegistir } from "@/app/yonetici/actions";
+import { Check, GraduationCap, Palette, Power, Search, Settings2 } from "lucide-react";
+import { ortaokulAktifDegistir, seoAnahtarKelimeleriKaydet, siteKapaliDegistir, siteTemasiDegistir } from "@/app/yonetici/actions";
 import { SITE_TEMA_PALETI } from "@/lib/site-tema";
 import { SEO_ANAHTAR_KELIME_ADET_SINIRI } from "@/lib/seo-ayarlari";
 import { BG0, BG1, BG1_ALT, BLUSH, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
@@ -15,17 +15,38 @@ export function SiteAyarlariYonetimi({
   kapaliBaslangic,
   temaIdBaslangic,
   seoAnahtarKelimeleriBaslangic,
+  ortaokulBaslangic = false,
 }: {
   kapaliBaslangic: boolean;
   temaIdBaslangic: string;
   seoAnahtarKelimeleriBaslangic: string[];
+  // Ortaokul paneli bayrağı (Faz 1) — varsayılan kapalı.
+  ortaokulBaslangic?: boolean;
 }) {
   const router = useRouter();
   const [kapali, setKapali] = useState(kapaliBaslangic);
   const [temaId, setTemaId] = useState(temaIdBaslangic);
   const [seoMetni, setSeoMetni] = useState(seoAnahtarKelimeleriBaslangic.join(", "));
+  const [ortaokul, setOrtaokul] = useState(ortaokulBaslangic);
   const [pending, startTransition] = useTransition();
   const [mesaj, setMesaj] = useState<string | null>(null);
+
+  // Ortaokul panelini aç/kapat. Kapalıyken 5-8. sınıftaki öğrenci de mevcut
+  // (lise) panelini görür; açmak lise tarafını hiçbir şekilde etkilemez.
+  function ortaokulDegistir() {
+    const yeni = !ortaokul;
+    if (yeni && !window.confirm(
+      "Ortaokul paneli açılsın mı? 5-8. sınıftaki öğrenciler bundan sonra ortaokul menüsünü görür. Lise tarafı değişmez.",
+    )) return;
+    setMesaj(null);
+    startTransition(async () => {
+      const r = await ortaokulAktifDegistir(yeni);
+      if (r.error) return setMesaj(`Hata: ${r.error}`);
+      setOrtaokul(yeni);
+      setMesaj(yeni ? "Ortaokul paneli açıldı." : "Ortaokul paneli kapatıldı.");
+      router.refresh();
+    });
+  }
 
   function degistir() {
     const yeni = !kapali;
@@ -115,6 +136,25 @@ export function SiteAyarlariYonetimi({
             className="sfec-btn shrink-0 flex items-center gap-1.5 rounded-full px-4 py-2.5 text-xs font-bold disabled:opacity-60"
             style={{ background: kapali ? MINT : BG0, color: kapali ? MINT_ON : BLUSH, border: `2px solid ${kapali ? MINT : BLUSH}` }}>
             <Power size={13} /> {pending ? "İşleniyor..." : kapali ? "Siteyi aç" : "Siteyi bakıma al"}
+          </button>
+        </div>
+      </div>
+      <div className="mt-3 rounded-2xl p-4" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <div style={{ color: TEXT }} className="text-sm font-bold flex items-center gap-1.5">
+              <GraduationCap size={14} /> Ortaokul paneli {ortaokul ? "açık" : "kapalı"}
+            </div>
+            <p style={{ color: TEXT_MUTED }} className="text-xs mt-0.5 max-w-md">
+              {ortaokul
+                ? "5-8. sınıftaki öğrenciler ortaokul menüsünü (Bugün, Görevlerim, Derslerim, Planım) görüyor. Lise tarafı etkilenmez."
+                : "Kapalı. Ortaokul sınıfındaki bir öğrenci de şu an mevcut paneli görür. Açmak yalnızca 5-8. sınıfları etkiler."}
+            </p>
+          </div>
+          <button type="button" disabled={pending} onClick={ortaokulDegistir}
+            className="sfec-btn shrink-0 flex items-center gap-1.5 rounded-full px-4 py-2.5 text-xs font-bold disabled:opacity-60"
+            style={{ background: ortaokul ? MINT : BG0, color: ortaokul ? MINT_ON : TEXT, border: `2px solid ${ortaokul ? MINT : BORDER_STRONG}` }}>
+            <GraduationCap size={13} /> {pending ? "İşleniyor..." : ortaokul ? "Kapat" : "Aç"}
           </button>
         </div>
       </div>
