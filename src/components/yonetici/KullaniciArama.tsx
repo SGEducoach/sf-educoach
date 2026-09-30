@@ -86,7 +86,10 @@ export function KullaniciArama() {
     // ekran süresiz "Yükleniyor..." durumunda kalıyor. Bu, oturumdaki birçok
     // "boş/yükleniyor" şikayetinin kök nedeni.
     startTransition(() => {
-      yonetimOkullariGetir().then((r) => setOkullar(r.okullar));
+      yonetimOkullariGetir().then((r) => {
+        if (r.error) return setHata(`Kurumlar yüklenemedi: ${r.error}`);
+        setOkullar(r.okullar);
+      }).catch(() => setHata("Kurumlar yüklenemedi. Lütfen tekrar deneyin."));
     });
   }, []);
 
@@ -154,7 +157,7 @@ export function KullaniciArama() {
             <span style={{ color: TEXT_MUTED }} className="text-xs font-semibold">Önce bir kurum seçin</span>
           </div>
           {okullar.length === 0 ? (
-            <p style={{ color: TEXT_MUTED }} className="text-sm py-3 text-center">Yükleniyor...</p>
+            <p style={{ color: hata ? BLUSH : TEXT_MUTED }} className="text-sm py-3 text-center">{hata ?? "Yükleniyor..."}</p>
           ) : (
             <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
               {okullar.map((o) => (

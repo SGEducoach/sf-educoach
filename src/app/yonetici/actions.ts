@@ -145,7 +145,7 @@ export async function kullaniciAra(sorgu: string, rolFiltre: UserRole | "hepsi",
       ? supabase.from("students").select("id, okul_no, school_id, class_id, yurt_ogrencisi, ayt_alan, hedef_bolum, hedef_net_tyt, hedef_net_ayt, schools(ad, tur), classes(seviye, sube)").in("id", ogrenciIdleri)
       : Promise.resolve({ data: [] }),
     ogretmenIdleri.length
-      ? supabase.from("teachers").select("id, brans, school_id, schools(ad)").in("id", ogretmenIdleri)
+      ? supabase.from("teachers").select("id, brans, school_id, schools(ad, tur)").in("id", ogretmenIdleri)
       : Promise.resolve({ data: [] }),
     ogretmenIdleri.length
       ? supabase.from("school_moderators").select("profile_id").in("profile_id", ogretmenIdleri)
@@ -158,7 +158,7 @@ export async function kullaniciAra(sorgu: string, rolFiltre: UserRole | "hepsi",
     ayt_alan: AytAlan; hedef_bolum: string; hedef_net_tyt: number | null; hedef_net_ayt: number | null;
     schools: { ad: string; tur: KurumTuru } | null; classes: { seviye: string; sube: string } | null;
   };
-  type OgretmenRow = { id: string; brans: string; school_id: string; schools: { ad: string } | null };
+  type OgretmenRow = { id: string; brans: string; school_id: string; schools: { ad: string; tur: KurumTuru } | null };
   const ogrenciMap = new Map(((ogrenciDetay.data as unknown as OgrenciRow[]) ?? []).map((o) => [o.id, o]));
   const ogretmenMap = new Map(((ogretmenDetay.data as unknown as OgretmenRow[]) ?? []).map((o) => [o.id, o]));
 
@@ -169,7 +169,7 @@ export async function kullaniciAra(sorgu: string, rolFiltre: UserRole | "hepsi",
       id: s.id, kullaniciKodu: s.kullanici_kodu, ad: s.ad, email: s.email, telefon: s.telefon, role: s.role, aktif: s.aktif,
       okulAdi: o?.schools?.ad ?? t?.schools?.ad ?? null,
       okulId: o?.school_id ?? t?.school_id ?? null,
-      kurumTuru: o?.schools?.tur ?? null,
+      kurumTuru: o?.schools?.tur ?? t?.schools?.tur ?? null,
       sinifAdi: o?.classes ? `${o.classes.seviye}-${o.classes.sube}` : null,
       sinifId: o?.class_id ?? null,
       okulNo: o?.okul_no ?? null,
@@ -401,12 +401,12 @@ export interface YonetimOkulu { id: string; ad: string; kurumTuru: KurumTuru; si
 export async function yonetimOkullariGetir(): Promise<{ error: string | null; okullar: YonetimOkulu[] }> {
   const { admin } = await requireAdmin();
   const [{ data: okullar, error }, { data: siniflar }] = await Promise.all([
-    admin.from("schools").select("id, ad, kurum_turu").eq("aktif", true).order("ad"),
+    admin.from("schools").select("id, ad, tur").eq("aktif", true).order("ad"),
     admin.from("classes").select("id, school_id, seviye, sube"),
   ]);
   if (error) return { error: error.message, okullar: [] };
   const siniflarSirali = (siniflar ?? []).sort(sinifSiraKarsilastir);
-  return { error: null, okullar: (okullar ?? []).map((o) => ({ id: o.id, ad: o.ad, kurumTuru: (o.kurum_turu ?? "okul") as KurumTuru, siniflar: siniflarSirali.filter((s) => s.school_id === o.id).map((s) => ({ id: s.id, ad: `${s.seviye}-${s.sube}` })) })) };
+  return { error: null, okullar: (okullar ?? []).map((o) => ({ id: o.id, ad: o.ad, kurumTuru: o.tur as KurumTuru, siniflar: siniflarSirali.filter((s) => s.school_id === o.id).map((s) => ({ id: s.id, ad: `${s.seviye}-${s.sube}` })) })) };
 }
 
 export async function kullaniciKurumDegistir(input: { userId: string; role: UserRole; schoolId: string; classId?: string }): Promise<{ error: string | null }> {

@@ -53,10 +53,10 @@ async function kullaniciSonucInsa(
     };
   }
   if (role === "ogretmen" || role === "mudur") {
-    const { data } = await admin.from("teachers").select("brans, school_id, schools(ad)").eq("id", profil.id).maybeSingle();
+    const { data } = await admin.from("teachers").select("brans, school_id, schools(ad, tur)").eq("id", profil.id).maybeSingle();
     if (!data) return taban;
-    const okul = data.schools as unknown as { ad: string } | null;
-    return { ...taban, okulAdi: okul?.ad ?? null, okulId: data.school_id, brans: data.brans };
+    const okul = data.schools as unknown as { ad: string; tur: KurumTuru } | null;
+    return { ...taban, okulAdi: okul?.ad ?? null, okulId: data.school_id, kurumTuru: okul?.tur ?? null, brans: data.brans };
   }
   return taban;
 }
