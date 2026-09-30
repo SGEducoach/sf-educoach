@@ -1,3 +1,6 @@
 # MEB öğretim programı PDF/leri: kaynak belge, depoya alınmıyor (toplam ~37 MB).
 # Çıkarılmış taslaklar veri/ altında sürümleniyor.
 *.pdf
+
+# Üretilen kılavuz sürümlensin (betikten yeniden üretilebilir ama teslim edilen belge).
+!SeFu_Ortaokul_Paneli_Kurum_Kilavuzu.pdf
