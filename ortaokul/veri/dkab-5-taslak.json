@@ -9,10 +9,11 @@
   "temalar": [
     {
       "kod": "DKAB.5.1",
-      "ad": null,
-      "islenisSirasi": null,
-      "dersSaati": null,
-      "yuzde": null,
+      "ad": "Allah İnancı",
+      "islenisSirasi": 1,
+      "dersSaati": 14,
+      "yuzde": 19,
+      "beklenenCikti": 4,
       "ogrenmeCiktilari": [
         {
           "kod": "DKAB.5.1.1",
@@ -34,10 +35,11 @@
     },
     {
       "kod": "DKAB.5.2",
-      "ad": null,
-      "islenisSirasi": null,
-      "dersSaati": null,
-      "yuzde": null,
+      "ad": "Namaz",
+      "islenisSirasi": 2,
+      "dersSaati": 18,
+      "yuzde": 25,
+      "beklenenCikti": 4,
       "ogrenmeCiktilari": [
         {
           "kod": "DKAB.5.2.1",
@@ -59,10 +61,11 @@
     },
     {
       "kod": "DKAB.5.3",
-      "ad": null,
-      "islenisSirasi": null,
-      "dersSaati": null,
-      "yuzde": null,
+      "ad": "Kur'an-ı Kerim",
+      "islenisSirasi": 3,
+      "dersSaati": 14,
+      "yuzde": 19,
+      "beklenenCikti": 4,
       "ogrenmeCiktilari": [
         {
           "kod": "DKAB.5.3.1",
@@ -84,10 +87,11 @@
     },
     {
       "kod": "DKAB.5.4",
-      "ad": null,
-      "islenisSirasi": null,
-      "dersSaati": null,
-      "yuzde": null,
+      "ad": "Peygamber Kıssaları",
+      "islenisSirasi": 4,
+      "dersSaati": 12,
+      "yuzde": 17,
+      "beklenenCikti": 3,
       "ogrenmeCiktilari": [
         {
           "kod": "DKAB.5.4.1",
@@ -105,10 +109,11 @@
     },
     {
       "kod": "DKAB.5.5",
-      "ad": null,
-      "islenisSirasi": null,
-      "dersSaati": null,
-      "yuzde": null,
+      "ad": "Mimarimizde Dinî Motifler",
+      "islenisSirasi": 5,
+      "dersSaati": 10,
+      "yuzde": 14,
+      "beklenenCikti": 3,
       "ogrenmeCiktilari": [
         {
           "kod": "DKAB.5.5.1",

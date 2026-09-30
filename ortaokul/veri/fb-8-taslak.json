@@ -13,6 +13,7 @@
       "islenisSirasi": 1,
       "dersSaati": 12,
       "yuzde": 8,
+      "beklenenCikti": 2,
       "ogrenmeCiktilari": [
         {
           "kod": "FB.8.1.1",
@@ -30,6 +31,7 @@
       "islenisSirasi": 2,
       "dersSaati": 16,
       "yuzde": 11,
+      "beklenenCikti": 2,
       "ogrenmeCiktilari": [
         {
           "kod": "FB.8.2.1",
@@ -47,6 +49,7 @@
       "islenisSirasi": 3,
       "dersSaati": 26,
       "yuzde": 18,
+      "beklenenCikti": 8,
       "ogrenmeCiktilari": [
         {
           "kod": "FB.8.3.1",
@@ -88,6 +91,7 @@
       "islenisSirasi": 4,
       "dersSaati": 18,
       "yuzde": 13,
+      "beklenenCikti": 6,
       "ogrenmeCiktilari": [
         {
           "kod": "FB.8.4.1",
@@ -121,6 +125,7 @@
       "islenisSirasi": 5,
       "dersSaati": 22,
       "yuzde": 15,
+      "beklenenCikti": 8,
       "ogrenmeCiktilari": [
         {
           "kod": "FB.8.5.1",
@@ -162,6 +167,7 @@
       "islenisSirasi": 6,
       "dersSaati": 26,
       "yuzde": 18,
+      "beklenenCikti": 10,
       "ogrenmeCiktilari": [
         {
           "kod": "FB.8.6.1",
@@ -211,6 +217,7 @@
       "islenisSirasi": 7,
       "dersSaati": 18,
       "yuzde": 13,
+      "beklenenCikti": 7,
       "ogrenmeCiktilari": [
         {
           "kod": "FB.8.7.1",

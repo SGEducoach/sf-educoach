@@ -21,7 +21,7 @@
         },
         {
           "kod": "T.O.8.3",
-          "metin": "T.O.8.4. T.O.8.5. T.O.8.6. T.O.8.8."
+          "metin": "Okuyacağı metnin içeriğine yönelik tahminde bulunabilme"
         },
         {
           "kod": "T.O.8.4",
@@ -49,7 +49,7 @@
         },
         {
           "kod": "T.O.8.10",
-          "metin": "T.O.8.12. Metinler arası karşılaştırmada, okunan metinler ile diğer metinler; yazarın bakış açısı, amacı, niyeti, tutumu, yaklaşımı vb.) açısından karşılaştırılır."
+          "metin": "Metindeki unsurları sınıflandırabilme"
         },
         {
           "kod": "T.O.8.11",
@@ -61,7 +61,7 @@
         },
         {
           "kod": "T.O.8.13",
-          "metin": "T.O.8.14. T.O.8.15. T.O.8.16. Önceki sınıf seviyelerinde yer verilen metin yapılarından işlenilen metne uygun olanın kullanımına yönelik çalışmalar yapılır. Mısra, dörtlük gibi şiire ait dış yapı özellikleri ve ahenk unsurlarından ses tekrarları üzerinde durulur. Önceki sınıf seviyelerinde işlenilen düşünceyi geliştirme yollarını belirlemeye yönelik çalışmalar yapılır."
+          "metin": "Bilgilendirici metinde metin yapılarından hareketle önemli bilgileri belirlemeye yönelik çözümleme yapabilme"
         },
         {
           "kod": "T.O.8.14",
@@ -77,7 +77,7 @@
         },
         {
           "kod": "T.O.8.18",
-          "metin": "T.O.8.21. üzerinde"
+          "metin": "Metindeki söz sanatlarını belirlemeye yönelik çözümleme yapabilme"
         },
         {
           "kod": "T.O.8.19",
@@ -93,7 +93,7 @@
         },
         {
           "kod": "T.O.8.22",
-          "metin": "T.O.8.24. Metnin yazarını (yazarın bakış açısı, tutumu vb.) değerlendirir. Metnin yazarını (bakış açısı, tutumu vb.) eleştirir."
+          "metin": "Okuduğunu değerlendirebilme"
         },
         {
           "kod": "T.O.8.23",
@@ -105,7 +105,7 @@
         },
         {
           "kod": "T.O.8.25",
-          "metin": "T.O.8.26. Metinde problem olarak görülebilecek bir olay ya da durumu problem olarak yapılandırır ve bu probleme çözüm üretir."
+          "metin": "Metindeki probleme çözüm üretebilme"
         },
         {
           "kod": "T.O.8.26",
@@ -123,7 +123,7 @@
         },
         {
           "kod": "T.D.8.2",
-          "metin": "T.D.8.3. Önceki sınıf seviyelerinde öğrenilen stratejilerin uygun olanlarının seçilip kullanılması sağlanır. -"
+          "metin": "Dinlemede/izlemede strateji, yöntem ve teknik seçimlerini yönetebilme"
         },
         {
           "kod": "T.D.8.3",
@@ -131,7 +131,7 @@
         },
         {
           "kod": "T.D.8.4",
-          "metin": "T.D.8.5. T.D.8.6. T.D.8.8. Metinler arası karşılaştırmada dinledikleri/ izledikleri ile diğer metinler; kaynağın bakış açısı, amacı, niyeti, tutumu, yaklaşımı vb. açısından karşılaştırılır. arası düşünceler"
+          "metin": "Dinlediğinde/izlediğinde geçen anlamını bilmediği söz varlığı unsurlarının anlamını tahmin edebilme"
         },
         {
           "kod": "T.D.8.5",
@@ -155,7 +155,7 @@
         },
         {
           "kod": "T.D.8.10",
-          "metin": "T.D.8.12. T.D.8.13. Önceki sınıf seviyelerinde yer verilen metin yapılarından işlenilen metne uygun olanın kullanımına yönelik çalışmalar yapılır."
+          "metin": "Dinlediğini/izlediğini yorumlayabilme"
         },
         {
           "kod": "T.D.8.11",
@@ -171,7 +171,7 @@
         },
         {
           "kod": "T.D.8.14",
-          "metin": "T.D.8.15. T.D.8.16. T.D.8.18. Önceki sınıf seviyelerinde işlenilen düşünceyi geliştirme yollarını belirlemeye yönelik çalışmalar yapılır. Önceki sınıf seviyelerinde işlenilen söz sanatlarını belirlemeye yönelik çalışmalar yapılır. Tutarlılık, toplumsal kanıt, otorite ve uzlaşma teknikleri. Önceki sınıf seviyesinde işlenilen teknikleri belirlemeye yönelik çalışmalar yapılır."
+          "metin": "Dinlediğinin/izlediğinin bölümlerini belirlemeye yönelik çözümleme yapabilme"
         },
         {
           "kod": "T.D.8.15",
@@ -195,7 +195,7 @@
         },
         {
           "kod": "T.D.8.20",
-          "metin": "T.D.8.22. Dinlediğinin/izlediğinin kaynağını (kaynağın bakış açısı, tutumu vb.) değerlendirir."
+          "metin": "Dinlediğini/izlediğini özetleyebilme"
         },
         {
           "kod": "T.D.8.21",
@@ -207,7 +207,7 @@
         },
         {
           "kod": "T.D.8.23",
-          "metin": "T.D.8.24. olarak problem Dinlediğinin/izlediğinin kaynağını (kaynağın bakış açısı, tutumu vb.) eleştirir. Dinlediğinde/izlediğinde yer alan ve problem olarak görülebilecek bir olay ya da durumu probleme çözüm üretir. bu düşünceler yapılandırır ve"
+          "metin": "Dinlediğini/izlediğini eleştirebilme"
         },
         {
           "kod": "T.D.8.24",
@@ -233,7 +233,7 @@
         },
         {
           "kod": "T.Y.8.3",
-          "metin": "T.Y.8.4. seviyelerinde sınıf Önceki ragraf türleri ve metin yapılarından uygun olanları seçerek birlikte ve işlevsel biçimde kullanır."
+          "metin": "Yazısında içerik ve yapıya yönelik seçimlerini yönetebilme"
         },
         {
           "kod": "T.Y.8.4",
@@ -241,7 +241,7 @@
         },
         {
           "kod": "T.Y.8.5",
-          "metin": "T.Y.8.6. T.Y.8.8."
+          "metin": "Yaratıcı yazı yazabilme"
         },
         {
           "kod": "T.Y.8.6",
@@ -269,7 +269,7 @@
         },
         {
           "kod": "T.Y.8.12",
-          "metin": "T.Y.8.13. T.Y.8.14. T.Y.8.15. Problem olarak görülebilecek olay, bilgi, durum vb.ni problem olarak yapılandırması (olay, bilgi, durum vb.ni netleştirmesi; bunların sorun olarak algılanan yönlerini ve olası sebeplerini detaylıca ortaya koyması) ve probleme çözüm üretmesi beklenir. Önceki sınıf seviyelerinde işlenilen düşünceyi geliştirme yollarını kullanmaya yönelik çalışmalar yapılır."
+          "metin": "Yazılı üretiminde ve yazılı etkileşiminde tartışabilme"
         },
         {
           "kod": "T.Y.8.13",
@@ -289,7 +289,7 @@
         },
         {
           "kod": "T.Y.8.17",
-          "metin": "T.Y.8.18. Türkçeyi doğru, güzel ve etkili kullandığı cümleler kurar: Önceki sınıf seviyelerinde işlenilenleri kullanmaya yönelik çalışmalar yapılır. Önceki sınıf düzeylerinde işlenilen örtük ileti unsurlarını kullanma ve iletileri açık ifade etmeye yönelik çalışmalar yapılır. Aynı anlamı farklı söz varlığı unsurlarıyla (söz sanatları, mecaz, eş, yakın ve zıt an lamlı kelimeler, atasözü, deyim, kalıp söz ler, ikileme, pekiştirme vb.) ifade etme ça lışmaları yapılır. Karşılıkta bulunma, sevgi (hoşlanma), kıtlık (azlık), karşıtlık, tutarlılık, toplumsal kanıt, otorite ve uzlaşma tekniklerini kullanmaya yönelik çalışmalar yapılır. Önceki sınıf seviyelerinde işlenilen bağlantı ifadelerini kullanmaya yönelik çalışmalar yapılır."
+          "metin": "Yazısında açık ve örtük ifadeleri kullanabilme"
         },
         {
           "kod": "T.Y.8.18",
@@ -301,7 +301,7 @@
         },
         {
           "kod": "T.Y.8.20",
-          "metin": ") öğrenme çıktısına yönelik çalışmalarda https://tdk.gov.tr adresindeki “Yazım Kuralları” ve “Noktalama İşaretleri” başlıklarındaki güncel bilgiler dikkate alınır. 8. Öğrenci, yazılı ürünlerini ve seçkilerini (günlük, anı, gezi, şiir, alıntı, özdeyiş, atasözü ve deyim vb.) içeren bir dosya hazırlamaya teşvik edilerek yazar kimliği oluşturma konusunda desteklenir. 9. Yazma öğretiminde 2. Tablo'daki dağılım ve sıralama gözetilerek öğrencilerin öncelikle paragraf düzeyinde üretim"
+          "metin": "Yazım ve noktalama işaretleriyle ilgili kuralları uygulayabilme"
         },
         {
           "kod": "T.Y.8.21",
@@ -319,11 +319,11 @@
         },
         {
           "kod": "T.K.8.2",
-          "metin": "T.K.8.3. Önceki sınıf seviyelerinde öğrenilen tım biçimlerinden uygun olanları seçerek kullanır. karşılaştırma-zıtlık,"
+          "metin": "Konuşmada yöntem ve teknik seçimlerini yönetebilme"
         },
         {
           "kod": "T.K.8.4",
-          "metin": "T.K.8.5. T.K.8.6. yararlanarak Önceki sınıf seviyelerinde işlenilen soru ifadelerinden me, derinleştirme; anlaşılıp anlaşılmadığını belirleme, karşı tarafın ilgisini, tutumunu, görüşünü, deneyimini ortaya çıkarmak vb. amaçlı açık uçlu ve/veya kapalı uçlu soru sorar."
+          "metin": "İletişimi sürdürmek amacıyla soru sorabilme"
         },
         {
           "kod": "T.K.8.5",
@@ -355,7 +355,7 @@
         },
         {
           "kod": "T.K.8.12",
-          "metin": "T.K.8.13. T.K.8.14. T.K.8.15."
+          "metin": "Konuşmasında sınıflandırma yapabilme"
         },
         {
           "kod": "T.K.8.13",
@@ -371,7 +371,7 @@
         },
         {
           "kod": "T.K.8.16",
-          "metin": "T.K.8.18. T.K.8.19. Problem olarak görülebilecek olay, bilgi, durum vb.ni problem olarak yapılandırması (olay, bilgi, durum vb.ni netleştirmesi; bunların sorun olarak algılanan yönlerini ve olası sebeplerini detaylıca ortaya koyması) ve probleme çözüm üretmesi beklenir."
+          "metin": "Sözlü olarak tartışabilme"
         },
         {
           "kod": "T.K.8.17",
@@ -387,7 +387,7 @@
         },
         {
           "kod": "T.K.8.20",
-          "metin": "T.K.8.22. Önceki sınıf seviyelerinde işlenilen düşünceyi geliştirme yollarını kullanmaya yönelik çalışmalar yapılır. Türkçeyi doğru, güzel ve etkili kullandığı cümleler kurar: Önceki sınıf seviyelerinde işlenilenleri kullanmaya yönelik çalışmalar yapılır. Önceki sınıf düzeylerinde işlenilen örtük ileti unsurlarını kullanma ve iletileri açık ifade etmeye yönelik çalışmalar yapılır. Aynı anlamı farklı söz varlığı unsurlarıyla (söz sanatları, mecaz, eş, yakın ve zıt anlamlı kelimeler, atasözü, deyim, kalıp sözler, ikileme, pekiştirme vb.) ifade etme çalışmaları yapılır."
+          "metin": "Düşünceyi geliştirme yollarını kullanarak konuşmasını yapılandırabilme"
         },
         {
           "kod": "T.K.8.21",
@@ -399,7 +399,7 @@
         },
         {
           "kod": "T.K.8.23",
-          "metin": "T.K.8.24. T.K.8.25. T.K.8.26. Karşılıkta bulunma, sevgi (hoşlanma), kıtlık (azlık), karşıtlık, tutarlılık, toplumsal kanıt, otorite ve uzlaşma tekniklerini kullanmaya yönelik çalışmalar yapılır. Önceki sınıf seviyelerinde işlenilen bağlantı ifadelerini kullanmaya yönelik çalışmalar yapılır. *"
+          "metin": "İkna edici konuşma yapabilme"
         },
         {
           "kod": "T.K.8.24",

@@ -13,10 +13,11 @@
       "islenisSirasi": 1,
       "dersSaati": 20,
       "yuzde": 14,
+      "beklenenCikti": 4,
       "ogrenmeCiktilari": [
         {
           "kod": "FB.5.1.1",
-          "metin": "Güneş’in yapısı ve dönme hareketi ile ilgili Öğrenme-öğretme yaşantıları VE bilgi toplayabilme"
+          "metin": "Güneş’in yapısı ve dönme hareketi ile ilgili bilgi toplayabilme"
         },
         {
           "kod": "FB.5.1.2",
@@ -38,6 +39,7 @@
       "islenisSirasi": 2,
       "dersSaati": 22,
       "yuzde": 15,
+      "beklenenCikti": 4,
       "ogrenmeCiktilari": [
         {
           "kod": "FB.5.2.1",
@@ -63,6 +65,7 @@
       "islenisSirasi": 3,
       "dersSaati": 26,
       "yuzde": 18,
+      "beklenenCikti": 4,
       "ogrenmeCiktilari": [
         {
           "kod": "FB.5.3.1",
@@ -88,6 +91,7 @@
       "islenisSirasi": 4,
       "dersSaati": 14,
       "yuzde": 10,
+      "beklenenCikti": 3,
       "ogrenmeCiktilari": [
         {
           "kod": "FB.5.4.1",
@@ -109,6 +113,7 @@
       "islenisSirasi": 5,
       "dersSaati": 26,
       "yuzde": 18,
+      "beklenenCikti": 6,
       "ogrenmeCiktilari": [
         {
           "kod": "FB.5.5.1",
@@ -142,6 +147,7 @@
       "islenisSirasi": 6,
       "dersSaati": 14,
       "yuzde": 10,
+      "beklenenCikti": 3,
       "ogrenmeCiktilari": [
         {
           "kod": "FB.5.6.1",
@@ -163,6 +169,7 @@
       "islenisSirasi": 7,
       "dersSaati": 12,
       "yuzde": 8,
+      "beklenenCikti": 3,
       "ogrenmeCiktilari": [
         {
           "kod": "FB.5.7.1",

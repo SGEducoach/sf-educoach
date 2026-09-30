@@ -9,14 +9,15 @@
   "temalar": [
     {
       "kod": "MAT.5.1",
-      "ad": "Sayılar ve Nicelikler (2)",
-      "islenisSirasi": 4,
-      "dersSaati": 33,
-      "yuzde": 18,
+      "ad": "Sayılar ve Nicelikler",
+      "islenisSirasi": 2,
+      "dersSaati": 61,
+      "yuzde": 34,
+      "beklenenCikti": 4,
       "ogrenmeCiktilari": [
         {
           "kod": "MAT.5.1.1",
-          "metin": "Altı basamaklı sayıları okuma ve yazmayı daha Öğrenme-öğretme yaşantıları çok basamaklı sayılara genelleyebilme"
+          "metin": "Altı basamaklı sayıları okuma ve yazmayı çok basamaklı sayılara genelleyebilme"
         },
         {
           "kod": "MAT.5.1.2",
@@ -28,7 +29,7 @@
         },
         {
           "kod": "MAT.5.1.4",
-          "metin": "Farklı gösterimlerle ifade edilen kesirlerin karşılaştırılmasına yönelik çıkarım yapabilm e"
+          "metin": "Farklı gösterimlerle ifade edilen kesirlerin karşılaştırılmasına yönelik çıkarım yapabilme"
         }
       ]
     },
@@ -38,6 +39,7 @@
       "islenisSirasi": 6,
       "dersSaati": 20,
       "yuzde": 11,
+      "beklenenCikti": 4,
       "ogrenmeCiktilari": [
         {
           "kod": "MAT.5.2.1",
@@ -63,6 +65,7 @@
       "islenisSirasi": 1,
       "dersSaati": 38,
       "yuzde": 21,
+      "beklenenCikti": 7,
       "ogrenmeCiktilari": [
         {
           "kod": "MAT.5.3.1",
@@ -100,6 +103,7 @@
       "islenisSirasi": 3,
       "dersSaati": 20,
       "yuzde": 11,
+      "beklenenCikti": 4,
       "ogrenmeCiktilari": [
         {
           "kod": "MAT.5.4.1",
@@ -125,6 +129,7 @@
       "islenisSirasi": 5,
       "dersSaati": 24,
       "yuzde": 13,
+      "beklenenCikti": 2,
       "ogrenmeCiktilari": [
         {
           "kod": "MAT.5.5.1",
@@ -142,6 +147,7 @@
       "islenisSirasi": 7,
       "dersSaati": 9,
       "yuzde": 5,
+      "beklenenCikti": 2,
       "ogrenmeCiktilari": [
         {
           "kod": "MAT.5.6.1",

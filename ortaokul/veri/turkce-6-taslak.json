@@ -25,7 +25,7 @@
         },
         {
           "kod": "T.O.6.4",
-          "metin": "T.O.6.5. T.O.6.6. T.O.6.8."
+          "metin": "Okuyacağı metnin içeriğine yönelik tahminde bulunabilme"
         },
         {
           "kod": "T.O.6.5",
@@ -49,7 +49,7 @@
         },
         {
           "kod": "T.O.6.10",
-          "metin": "T.O.6.12. T.O.6.13."
+          "metin": "Okuduklarını karşılaştırabilme"
         },
         {
           "kod": "T.O.6.11",
@@ -65,7 +65,7 @@
         },
         {
           "kod": "T.O.6.14",
-          "metin": "T.O.6.15. T.O.6.16. T.O.6.18."
+          "metin": "Bilgilendirici metinde metin yapılarından hareketle önemli bilgileri belirlemeye yönelik çözümleme yapabilme"
         },
         {
           "kod": "T.O.6.15",
@@ -131,7 +131,7 @@
         },
         {
           "kod": "T.D.6.4",
-          "metin": "T.D.6.5. T.D.6.6. T.D.6.8."
+          "metin": "Dinlediğinde/izlediğinde geçen anlamını bilmediği söz varlığı unsurlarının anlamını tahmin edebilme"
         },
         {
           "kod": "T.D.6.5",
@@ -155,7 +155,7 @@
         },
         {
           "kod": "T.D.6.10",
-          "metin": "T.D.6.12. T.D.6.13."
+          "metin": "Dinlediğini/izlediğini yorumlayabilme"
         },
         {
           "kod": "T.D.6.11",
@@ -163,7 +163,7 @@
         },
         {
           "kod": "T.D.6.12",
-          "metin": "T.D.7.12. T.D.8.12. Sıralı-kronolojik metin yapısı Tanıtıcı, karşılaştırma-zıtlık metin yapıları Sebep-sonuç ve problem-çözüm meÖnceki sınıf seviyelerinde yer verilen tin yapıları metin yapılarından işlenilen metne uygun olanın kullanımına yönelik çalışmalar yapılır. T: Ders Kodu Süreç Bileşenleri D: Dil Beceri Kodu Öğrenme Çıktısının Sınıf 8: Sınıf Seviyesi Seviyesine Göre İçeriği 12: Öğrenme Çıktısı"
+          "metin": "Bilgilendirici metinde metin yapılarından hareketle önemli bilgileri belirlemeye yönelik çözümleme yapabilme"
         },
         {
           "kod": "T.D.6.13",
@@ -171,7 +171,7 @@
         },
         {
           "kod": "T.D.6.14",
-          "metin": "T.D.6.15. T.D.6.16."
+          "metin": "Dinlediğinin/izlediğinin bölümlerini belirlemeye yönelik çözümleme yapabilme"
         },
         {
           "kod": "T.D.6.15",
@@ -221,7 +221,7 @@
         },
         {
           "kod": "T.Y.6.2",
-          "metin": "T.Y.6.3. T.Y.6.4."
+          "metin": "Yazmada strateji, yöntem ve teknik seçimlerini yönetebilme"
         },
         {
           "kod": "T.Y.6.3",
@@ -233,7 +233,7 @@
         },
         {
           "kod": "T.Y.6.5",
-          "metin": "T.Y.6.6. T.Y.6.8."
+          "metin": "Yaratıcı yazı yazabilme"
         },
         {
           "kod": "T.Y.6.6",
@@ -261,7 +261,7 @@
         },
         {
           "kod": "T.Y.6.12",
-          "metin": "T.Y.6.13. T.Y.6.14."
+          "metin": "Yazılı üretiminde ve yazılı etkileşiminde tartışabilme"
         },
         {
           "kod": "T.Y.6.13",
@@ -285,7 +285,7 @@
         },
         {
           "kod": "T.Y.6.18",
-          "metin": ", T.Y.7.19., T.Y.8.20.) öğrenme çıktısına yönelik çalışmalarda https://tdk.gov.tr adresindeki “Yazım Kuralları” ve “Noktalama İşaretleri” başlıklarındaki güncel bilgiler dikkate alınır. 8. Öğrenci, yazılı ürünlerini ve seçkilerini (günlük, anı, gezi, şiir, alıntı, özdeyiş, atasözü ve deyim vb.) içeren bir dosya hazırlamaya teşvik edilerek yazar kimliği oluşturma konusunda desteklenir. 9. Yazma öğretiminde 2. Tablo'daki dağılım ve sıralama gözetilerek öğrencilerin öncelikle paragraf düzeyinde üretim"
+          "metin": "Yazım ve noktalama işaretleriyle ilgili kuralları uygulayabilme"
         },
         {
           "kod": "T.Y.6.19",
@@ -343,7 +343,7 @@
         },
         {
           "kod": "T.K.6.12",
-          "metin": "T.K.6.13. T.K.6.14. T.K.6.15."
+          "metin": "Konuşmasında sınıflandırma yapabilme"
         },
         {
           "kod": "T.K.6.13",

@@ -21,7 +21,7 @@
         },
         {
           "kod": "T.O.7.3",
-          "metin": "T.O.7.5. T.O.7.6. T.O.7.8."
+          "metin": "Okuyacağı metnin içeriğine yönelik tahminde bulunabilme"
         },
         {
           "kod": "T.O.7.4",
@@ -49,7 +49,7 @@
         },
         {
           "kod": "T.O.7.10",
-          "metin": "T.O.7.12. Metinler arası karşılaştırmada, okunan metinler ile diğer metinler organizasyon (olay örgüsü, serim, düğüm, çözüm bölümlerinin yapılandırılması; düşünceler arası bağlantılar, giriş, gelişme ve sonuç bölümleri ve bunlar arasındaki akış vb.) açısından karşılaştırılır."
+          "metin": "Metindeki unsurları sınıflandırabilme"
         },
         {
           "kod": "T.O.7.11",
@@ -61,7 +61,7 @@
         },
         {
           "kod": "T.O.7.13",
-          "metin": "T.O.7.15. T.O.7.16. T.O.7.17."
+          "metin": "Bilgilendirici metinde metin yapılarından hareketle önemli bilgileri belirlemeye yönelik çözümleme yapabilme"
         },
         {
           "kod": "T.O.7.14",
@@ -97,7 +97,7 @@
         },
         {
           "kod": "T.O.7.22",
-          "metin": "T.O.7.23. T.O.7.24. Metnin dilini (kelime seçimi, cümle uzunluğu vb.) değerlendirir. Metnin organizasyonunu (olay örgüsü, serim, düğüm, çözüm bölümlerinin yapılandırılması; düşünceler arası bağlantılar, giriş, gelişme, sonuç bölümleri ve bunlar arasındaki akış vb.) değerlendirir. Metnin dilini (kelime seçimi, cümle uzunluğu vb.) ve organizasyonunu (olay örgüsü, serim, düğüm, çözüm bölümlerinin yapılandırılması; düşünceler arası bağlantılar, giriş, gelişme ve sonuç bölümleri ve bunlar arasındaki akış vb.) eleştirir."
+          "metin": "Okuduğunu değerlendirebilme"
         },
         {
           "kod": "T.O.7.23",
@@ -109,7 +109,7 @@
         },
         {
           "kod": "T.O.7.25",
-          "metin": "T.O.7.26. Metinde yer alan ve problem olarak görülebilecek bir olay ya da durumu problem olarak yapılandırır ve bu probleme çözüm üretir."
+          "metin": "Metindeki probleme çözüm üretebilme"
         },
         {
           "kod": "T.O.7.26",
@@ -135,7 +135,7 @@
         },
         {
           "kod": "T.D.7.4",
-          "metin": "T.D.7.5. T.D.7.8. yapılandırılması, Metinler arası karşılaştırmada dinledikleri/ izledikleri ile diğer metinler organizasyon (olay örgüsü; serim, düğüm, çözüm bölümlerinin bağlantılar; giriş, gelişme ve sonuç bölümleri ve bunlar arasındaki akış vb.) karşılaştırılır."
+          "metin": "Dinlediğinde/izlediğinde geçen anlamını bilmediği söz varlığı unsurlarının anlamını tahmin edebilme"
         },
         {
           "kod": "T.D.7.5",
@@ -167,7 +167,7 @@
         },
         {
           "kod": "T.D.7.12",
-          "metin": "T.D.8.12. Sıralı-kronolojik metin yapısı Tanıtıcı, karşılaştırma-zıtlık metin yapıları Sebep-sonuç ve problem-çözüm meÖnceki sınıf seviyelerinde yer verilen tin yapıları metin yapılarından işlenilen metne uygun olanın kullanımına yönelik çalışmalar yapılır. T: Ders Kodu Süreç Bileşenleri D: Dil Beceri Kodu Öğrenme Çıktısının Sınıf 8: Sınıf Seviyesi Seviyesine Göre İçeriği 12: Öğrenme Çıktısı Numarası"
+          "metin": "Bilgilendirici metinde metin yapılarından hareketle önemli bilgileri belirlemeye yönelik çözümleme yapabilme"
         },
         {
           "kod": "T.D.7.13",
@@ -179,7 +179,7 @@
         },
         {
           "kod": "T.D.7.15",
-          "metin": "T.D.7.16. T.D.7.17. T.D.7.18."
+          "metin": "Bilgilendirici metinde düşünceyi geliştirme yollarını belirlemeye yönelik çözümleme yapabilme"
         },
         {
           "kod": "T.D.7.16",
@@ -199,7 +199,7 @@
         },
         {
           "kod": "T.D.7.20",
-          "metin": "T.D.7.22. Dinlediğinin/izlediğinin dilini (kelime seçimi, cümle uzunluğu vb.) değerlendirir. Dinlediğinin/izlediğinin organizasyonunu (olay örgüsü, serim, düğüm, çözüm bölümlerinin yapılandırılması; düşünceler arası bağlantılar, giriş, gelişme, sonuç bölümleri ve bunlar arasındaki akış vb.) değerlendirir. 6 * T.D.6.19. T.D.6.18. T.D.6.20."
+          "metin": "Dinlediğini/izlediğini özetleyebilme"
         },
         {
           "kod": "T.D.7.21",
@@ -211,7 +211,7 @@
         },
         {
           "kod": "T.D.7.23",
-          "metin": "T.D.7.24. olarak yapılandırılması; problem Dinlediğinin/izlediğinin dilini (kelime seçimleri, cümle uzunlukları vb.) ve organizasyonunu (olay örgüsü, serim, düğüm, çözüm bölümlerinin arası bağlantılar, giriş, gelişme ve sonuç bölümleri ve bunlar arasındaki akış vb.) eleştirir. Dinlediğinde/izlediğinde yer alan ve problem olarak görülebilecek bir olay ya da durumu probleme çözüm üretir. içeriğini"
+          "metin": "Dinlediğini/izlediğini eleştirebilme"
         },
         {
           "kod": "T.D.7.24",
@@ -237,7 +237,7 @@
         },
         {
           "kod": "T.Y.7.3",
-          "metin": "T.Y.7.4. Betimleme, tanıtma, öyküleme, açıklama, sebep-sonuç, ikna ve tartışma paragraf türlerinden; bilgilendirici (sıralı-kronolojik, tanıtıcı, karşılaştırma-zıtlık, sebep-sonuç ve problem-çözüm) metin yapılarından uygun olanları seçerek kullanır."
+          "metin": "Yazısında içerik ve yapıya yönelik seçimlerini yönetebilme"
         },
         {
           "kod": "T.Y.7.4",
@@ -245,7 +245,7 @@
         },
         {
           "kod": "T.Y.7.5",
-          "metin": "T.Y.7.6. T.Y.7.8. T.Y.7.9."
+          "metin": "Yaratıcı yazı yazabilme"
         },
         {
           "kod": "T.Y.7.6",
@@ -269,11 +269,11 @@
         },
         {
           "kod": "T.Y.7.11",
-          "metin": "T.Y.7.14. T.Y.7.15."
+          "metin": "Değerlendirmesini yazılı olarak ifade edebilme"
         },
         {
           "kod": "T.Y.7.12",
-          "metin": "T.Y.7.13. Verilen bir problemi kendi bakış açısıyla yeniden yapılandırması (olay, bilgi, durum vb. ni netleştirmesi; bunların sorun olarak algılanan yönlerini ve olası sebeplerini detaylıca ortaya koyması) ve probleme çözüm üretmesi beklenir. Önceki sınıf seviyelerinde işlenilen düşünceyi geliştirme yollarını kullanmaya yönelik çalışmalar yapılır. 6 * T.Y.6.11. T.Y.6.12. T.Y.6.13. T.Y.6.14."
+          "metin": "Yazılı üretiminde ve yazılı etkileşiminde tartışabilme"
         },
         {
           "kod": "T.Y.7.13",
@@ -289,7 +289,7 @@
         },
         {
           "kod": "T.Y.7.16",
-          "metin": "T.Y.7.17. T.Y.7.18. Türkçeyi doğru, güzel ve etkili kullandığı cümleler kurar: Sözcüğün yanlış yerde kullanılmaması. Anlam belirsizliği olmaması. Mantık hatası yapılmaması. Önceki sınıf düzeylerinde işlenilen örtük ileti unsurlarını kullanma ve iletileri açık ifade etmeye yönelik çalışmalar yapılır. Aynı anlamı farklı söz varlığı unsurlarıyla (söz sanatları, mecaz, eş, yakın ve zıt an lamlı kelimeler, atasözü, deyim, kalıp söz ler, ikileme, pekiştirme vb.) ifade etme ça lışmaları yapılır. Ayrıntılandırma-genişletme ifade etme Çıkarım ifade etme Sonuca geldiğini ifade etme Seçenek, seçim ifade etme Sebep-sonuç ifade etme Yeniden ifade etme"
+          "metin": "Yazısını zenginleştirecek biçimde söz varlığını kullanabilme"
         },
         {
           "kod": "T.Y.7.17",
@@ -301,7 +301,7 @@
         },
         {
           "kod": "T.Y.7.19",
-          "metin": ", T.Y.8.20.) öğrenme çıktısına yönelik çalışmalarda https://tdk.gov.tr adresindeki “Yazım Kuralları” ve “Noktalama İşaretleri” başlıklarındaki güncel bilgiler dikkate alınır. 8. Öğrenci, yazılı ürünlerini ve seçkilerini (günlük, anı, gezi, şiir, alıntı, özdeyiş, atasözü ve deyim vb.) içeren bir dosya hazırlamaya teşvik edilerek yazar kimliği oluşturma konusunda desteklenir. 9. Yazma öğretiminde 2. Tablo'daki dağılım ve sıralama gözetilerek öğrencilerin öncelikle paragraf düzeyinde üretim"
+          "metin": "Yazım ve noktalama işaretleriyle ilgili kuralları uygulayabilme"
         },
         {
           "kod": "T.Y.7.20",
@@ -327,7 +327,7 @@
         },
         {
           "kod": "T.K.7.4",
-          "metin": "T.K.7.5. Yansıtıcı soru (konuşmacının dinlediğindeki mesajı şaşkınlık, onaylama, netleştirme, detay isteme vb. amaçlarla kısmen veya tamamen tekrar ettiği) sorar."
+          "metin": "İletişimi sürdürmek amacıyla soru sorabilme"
         },
         {
           "kod": "T.K.7.5",
@@ -359,7 +359,7 @@
         },
         {
           "kod": "T.K.7.12",
-          "metin": "T.K.7.13. T.K.7.15."
+          "metin": "Konuşmasında sınıflandırma yapabilme"
         },
         {
           "kod": "T.K.7.13",
@@ -375,7 +375,7 @@
         },
         {
           "kod": "T.K.7.16",
-          "metin": "T.K.7.17. T.K.7.18. T.K.7.19. Verilen bir problemi kendi bakış açısıyla yeniden yapılandırması (olay, bilgi, durum vb. ni netleştirmesi; bunların sorun olarak algılanan yönlerini ve olası sebeplerini detaylıca ortaya koyması) ve probleme çözüm üretmesi beklenir. 6 * T.K.6.17. T.K.6.16. T.K.6.18."
+          "metin": "Sözlü olarak tartışabilme"
         },
         {
           "kod": "T.K.7.17",
@@ -403,7 +403,7 @@
         },
         {
           "kod": "T.K.7.23",
-          "metin": "T.K.7.24. T.K.7.25. Ayrıntılandırma-genişletme ifade etme Çıkarım ifade etme Sonuca geldiğini ifade etme Seçenek, seçim ifade etme Sebep-sonuç ifade etme Yeniden ifade etme 6 * T.K.6.22. T.K.6.23. T.K.6.24."
+          "metin": "Uygun bağlantı ifadelerini kullanabilme"
         },
         {
           "kod": "T.K.7.24",

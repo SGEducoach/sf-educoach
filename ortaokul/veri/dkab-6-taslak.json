@@ -9,10 +9,11 @@
   "temalar": [
     {
       "kod": "DKAB.6.1",
-      "ad": null,
-      "islenisSirasi": null,
-      "dersSaati": null,
-      "yuzde": null,
+      "ad": "Peygamber ve İlahi Kitap İnancı",
+      "islenisSirasi": 1,
+      "dersSaati": 16,
+      "yuzde": 22,
+      "beklenenCikti": 4,
       "ogrenmeCiktilari": [
         {
           "kod": "DKAB.6.1.1",
@@ -34,10 +35,11 @@
     },
     {
       "kod": "DKAB.6.2",
-      "ad": null,
-      "islenisSirasi": null,
-      "dersSaati": null,
-      "yuzde": null,
+      "ad": "Ramazan ve Oruç",
+      "islenisSirasi": 2,
+      "dersSaati": 14,
+      "yuzde": 19,
+      "beklenenCikti": 4,
       "ogrenmeCiktilari": [
         {
           "kod": "DKAB.6.2.1",
@@ -59,10 +61,11 @@
     },
     {
       "kod": "DKAB.6.3",
-      "ad": null,
-      "islenisSirasi": null,
-      "dersSaati": null,
-      "yuzde": null,
+      "ad": "Ahlaki Davranışlar",
+      "islenisSirasi": 3,
+      "dersSaati": 12,
+      "yuzde": 17,
+      "beklenenCikti": 5,
       "ogrenmeCiktilari": [
         {
           "kod": "DKAB.6.3.1",
@@ -88,10 +91,11 @@
     },
     {
       "kod": "DKAB.6.4",
-      "ad": null,
-      "islenisSirasi": null,
-      "dersSaati": null,
-      "yuzde": null,
+      "ad": "Peygamberliğinden Önce Hz. Muhammed",
+      "islenisSirasi": 4,
+      "dersSaati": 14,
+      "yuzde": 19,
+      "beklenenCikti": 4,
       "ogrenmeCiktilari": [
         {
           "kod": "DKAB.6.4.1",
@@ -113,10 +117,11 @@
     },
     {
       "kod": "DKAB.6.5",
-      "ad": null,
-      "islenisSirasi": null,
-      "dersSaati": null,
-      "yuzde": null,
+      "ad": "Kültürümüzdeki Dinî Motifler",
+      "islenisSirasi": 5,
+      "dersSaati": 12,
+      "yuzde": 17,
+      "beklenenCikti": 1,
       "ogrenmeCiktilari": [
         {
           "kod": "DKAB.6.5.1",

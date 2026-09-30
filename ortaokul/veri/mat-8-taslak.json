@@ -13,6 +13,7 @@
       "islenisSirasi": 1,
       "dersSaati": 38,
       "yuzde": 21,
+      "beklenenCikti": 4,
       "ogrenmeCiktilari": [
         {
           "kod": "MAT.8.1.1",
@@ -38,6 +39,7 @@
       "islenisSirasi": 4,
       "dersSaati": 42,
       "yuzde": 23,
+      "beklenenCikti": 4,
       "ogrenmeCiktilari": [
         {
           "kod": "MAT.8.2.1",
@@ -63,6 +65,7 @@
       "islenisSirasi": 2,
       "dersSaati": 39,
       "yuzde": 22,
+      "beklenenCikti": 6,
       "ogrenmeCiktilari": [
         {
           "kod": "MAT.8.3.1",
@@ -96,6 +99,7 @@
       "islenisSirasi": 5,
       "dersSaati": 15,
       "yuzde": 8,
+      "beklenenCikti": 3,
       "ogrenmeCiktilari": [
         {
           "kod": "MAT.8.4.1",
@@ -117,6 +121,7 @@
       "islenisSirasi": 7,
       "dersSaati": 9,
       "yuzde": 5,
+      "beklenenCikti": 3,
       "ogrenmeCiktilari": [
         {
           "kod": "MAT.8.5.1",
@@ -138,6 +143,7 @@
       "islenisSirasi": 6,
       "dersSaati": 20,
       "yuzde": 11,
+      "beklenenCikti": 2,
       "ogrenmeCiktilari": [
         {
           "kod": "MAT.8.6.1",
@@ -155,6 +161,7 @@
       "islenisSirasi": 3,
       "dersSaati": 9,
       "yuzde": 5,
+      "beklenenCikti": 1,
       "ogrenmeCiktilari": [
         {
           "kod": "MAT.8.7.1",

@@ -9,14 +9,19 @@
   "temalar": [
     {
       "kod": "İTA.8.1",
-      "ad": null,
-      "islenisSirasi": null,
-      "dersSaati": null,
-      "yuzde": null,
+      "ad": "Mustafa Kemal’in Hayatı",
+      "islenisSirasi": 1,
+      "dersSaati": 14,
+      "yuzde": 19,
+      "beklenenCikti": 3,
       "ogrenmeCiktilari": [
         {
           "kod": "İTA.8.1.1",
-          "metin": "Öğrencilerin Osmanlı Devleti’nin XIXbecerilerin süreç bileşenleriXX. yüzyıllardaki sınırlarını haritalar üzerinden ni ifade eder. incelemeleri istenir (SBAB10.1) (OB4). İnceledikleri haritalarda Osmanlı Devleti’nin sınırlarında meydana gelen değişime odaklanmaları (E3.2) ve bu durumun nedenlerine ilişkin çıkarımlarını sözlü olarak ifade etmeleri beklenir. Öğrenme sürecinde ele alınan bilgi kümesini"
+          "metin": "Mustafa Kemal’in doğduğu dönemde Osmanlı Devleti’nin içinde bulunduğu siyasi, sosyal ve ekonomik durumu neden ve sonuçlarıyla yorumlayabilme"
+        },
+        {
+          "kod": "İTA.8.1.2",
+          "metin": "Çocuk, komutan ve devlet adamı olarak Atatürk’ün hayatına ilişkin oluşturduğu özgün ürünleri paylaşabilme"
         },
         {
           "kod": "İTA.8.1.3",
@@ -26,35 +31,41 @@
     },
     {
       "kod": "İTA.8.2",
-      "ad": null,
-      "islenisSirasi": null,
-      "dersSaati": null,
-      "yuzde": null,
+      "ad": "Birinci Dünya Savaşı",
+      "islenisSirasi": 2,
+      "dersSaati": 16,
+      "yuzde": 22,
+      "beklenenCikti": 5,
       "ogrenmeCiktilari": [
         {
           "kod": "İTA.8.2.1",
-          "metin": "Birinci D ü nya Savaşı’nın nedenlerini tarihsel bağlamına uygun olarak açıklayabilme"
+          "metin": "Birinci Dünya Savaşı’nın nedenlerini tarihsel bağlamına uygun olarak açıklayabilme"
         },
         {
           "kod": "İTA.8.2.2",
-          "metin": "Osmanlı Devleti’nin Birinci D ü nya Savaşı’na katılma s ü recine ilişkin alternatif fikirler üretebilme"
+          "metin": "Osmanlı Devleti’nin Birinci Dünya Savaşı’na katılma sürecine ilişkin alternatif fikirler üretebilme"
         },
         {
           "kod": "İTA.8.2.3",
-          "metin": "Osmanlı Devleti’nin Birinci D ü nya Savaşı’nda savaştığı cephelerin savaşın gidişatına etkisini sorgulayabilme"
+          "metin": "Osmanlı Devleti’nin Birinci Dünya Savaşı’nda savaştığı cephelerin savaşın gidişatına etkisini sorgulayabilme"
         },
         {
           "kod": "İTA.8.2.4",
           "metin": "Birinci Dünya Savaşı’nın sonuçlarını tablo, grafik, şekil ve diyagram üzerinden yorumlayabilme"
+        },
+        {
+          "kod": "İTA.8.2.5",
+          "metin": "Birinci Dünya Savaşı’nın Türk toplumuna etkilerine yönelik bakış açısı geliştirebilme"
         }
       ]
     },
     {
       "kod": "İTA.8.3",
-      "ad": null,
-      "islenisSirasi": null,
-      "dersSaati": null,
-      "yuzde": null,
+      "ad": "Millî Mücadele",
+      "islenisSirasi": 3,
+      "dersSaati": 20,
+      "yuzde": 28,
+      "beklenenCikti": 4,
       "ogrenmeCiktilari": [
         {
           "kod": "İTA.8.3.1",
@@ -76,10 +87,11 @@
     },
     {
       "kod": "İTA.8.4",
-      "ad": null,
-      "islenisSirasi": null,
-      "dersSaati": null,
-      "yuzde": null,
+      "ad": "Türkiye Cumhuriyeti’nin Kuruluşu ve İnkılaplar",
+      "islenisSirasi": 4,
+      "dersSaati": 18,
+      "yuzde": 25,
+      "beklenenCikti": 3,
       "ogrenmeCiktilari": [
         {
           "kod": "İTA.8.4.1",

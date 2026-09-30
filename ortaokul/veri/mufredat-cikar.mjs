@@ -50,19 +50,58 @@ function govdeTopla(satirlar, i, ilk, kodDeseni) {
   return govde;
 }
 
+// PDF bazı harfleri boşlukla ayırıyor ("Birinci D ü nya Savaşı"); tek harflik
+// boşlukları kapatır.
+function harfBosluguKapat(metin) {
+  let s = metin;
+  for (let i = 0; i < 3; i++) s = s.replace(/(\p{L}) ([üöçğışâîûÜÖÇĞİŞ]) (\p{L})/gu, "$1$2$3");
+  // Sondaki tek harf de kopabiliyor ("…çıkarım yapabilm e").
+  if (/\p{L} \p{L}$/u.test(s) && /bilm\s\w$/.test(s)) s = s.replace(/\s(\w)$/, "$1");
+  return s;
+}
+
+// Maarif öğrenme çıktısı "-ebilme/-abilme" ile biter; tablo artığı, başka kod
+// ya da aşırı uzunluk taşıyan aday geçersizdir.
+function ciktiGecerliMi(metin) {
+  return /bilme$/.test(metin)
+    && metin.length >= 15 && metin.length <= 300
+    && !/ÖĞRENME ÇIKTILARI|SÜREÇ BİLEŞENLERİ|süreç bileşenleri/.test(metin);
+}
+
 function ciktilariCikar(metin, kod, sinif) {
   const satirlar = metin.split("\n");
   const kacis = kod.replace(/\./g, "\\.");
-  const kodDeseni = new RegExp(`(?:^|\\s)(${kacis}\\.${sinif}\\.(\\d+)\\.(\\d+))\\.\\s*(.*)$`);
-  const bulunan = new Map();
+  // Kodun KENDİSİ kaynakta bozuk olabiliyor: İnkılap Tarihi'nde "İTA . 8.1.2."
+  // (noktalar boşluklu) ve "TA.8.2.5." (baştaki harf düşmüş) görüldü. Önek
+  // için baş harfi eksik varyant da kabul ediliyor, noktaların iki yanında
+  // boşluğa izin veriliyor; bulunan kod kanonik biçime geri yazılıyor.
+  const onek = kacis.length > 2 ? `(?:${kacis}|${kacis.slice(1)})` : kacis;
+  const nokta = "\\s*\\.\\s*";
+  const kodDeseni = new RegExp(`(?:^|\\s)${onek}${nokta}${sinif}${nokta}(\\d+)${nokta}(\\d+)\\s*\\.\\s*(.*)$`);
+
+  // Aynı kod belgede birden çok kez geçiyor: açıklama tablolarında, çapraz
+  // göndermelerde ve gerçek tanım listesinde. "İlk eşleşme" yanlış metni
+  // seçebiliyordu (İnkılap Tarihi'nde iki çıktı böyle bozulmuştu); bunun
+  // yerine TÜM adaylar toplanıp geçerli olanların en kısası seçiliyor.
+  const adaylar = new Map();
   for (let i = 0; i < satirlar.length; i++) {
     const m = kodDeseni.exec(satirlar[i].trim());
     if (!m) continue;
-    const [, tamKod, tema, sira, ilk] = m;
-    if (!ilk.trim() || bulunan.has(tamKod)) continue;
-    bulunan.set(tamKod, { kod: tamKod, tema: Number(tema), sira: Number(sira), metin: govdeTopla(satirlar, i, ilk, kodDeseni) });
+    const [, tema, sira, ilk] = m;
+    if (!ilk.trim()) continue;
+    const tamKod = `${kod}.${sinif}.${tema}.${sira}`;
+    const govde = harfBosluguKapat(govdeTopla(satirlar, i, ilk, kodDeseni));
+    const liste = adaylar.get(tamKod) ?? [];
+    liste.push({ kod: tamKod, tema: Number(tema), sira: Number(sira), metin: govde });
+    adaylar.set(tamKod, liste);
   }
-  return [...bulunan.values()].sort((a, b) => a.tema - b.tema || a.sira - b.sira);
+
+  const bulunan = [];
+  for (const liste of adaylar.values()) {
+    const iyi = liste.filter((a) => ciktiGecerliMi(a.metin)).sort((a, b) => a.metin.length - b.metin.length);
+    bulunan.push(iyi[0] ?? liste.sort((a, b) => b.metin.length - a.metin.length)[0]);
+  }
+  return bulunan.sort((a, b) => a.tema - b.tema || a.sira - b.sira);
 }
 
 // Özet tablosundan tema/ünite adları. İki biçim görüldü:
@@ -74,37 +113,81 @@ function temaAdlari(metin, kod, sinif) {
   const kodlu = new RegExp(`^(\\d+)\\s+${kacis}\\.${sinif}\\.(\\d+)\\.\\s*(.+?)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)$`);
   const numarali = /^(\d+)\.\s+(.+?)\s+(\d+)\s+(\d+)\s+(\d+)$/;
 
+  // Uzun tema adı hücreye sığmayınca ÜÇ parçaya bölünüyor; sayılar araya
+  // giriyor:
+  //   "MAT.6.2.İŞLEMLERLE CEBİRSEL DÜŞÜNME"
+  //   "6 3 33 18"        <- işleniş sırası, çıktı sayısı, ders saati, yüzde
+  //   "VE DEĞİŞİMLER"    <- adın devamı
+  const sarmal = new RegExp(`^${kacis}\\.${sinif}\\.(\\d+)\\.\\s*(.+)$`);
+  const SAYI_SATIRI = /^(\d+)\s+(\d+)\s+(\d+)\s+(\d+)$/;
+  const DEVAM_SATIRI = /^[A-ZÇĞİÖŞÜ ]{3,}$/;
+
   const adlar = new Map();
   // Kodlu biçim: tema numarası satırda açıkça var.
   for (const s of satirlar) {
     const m = kodlu.exec(s.trim());
-    if (m) adlar.set(Number(m[2]), { ad: baslikDuzelt(m[3]), islenisSirasi: Number(m[1]), dersSaati: Number(m[5]), yuzde: Number(m[6]) });
+    if (m) temaEkle(adlar, Number(m[2]), { ad: baslikDuzelt(m[3]), islenisSirasi: Number(m[1]), beklenenCikti: Number(m[4]), dersSaati: Number(m[5]), yuzde: Number(m[6]) });
+  }
+  for (let i = 0; i < satirlar.length - 1; i++) {
+    const m = sarmal.exec(satirlar[i].trim());
+    if (!m) continue;
+    const sayilar = SAYI_SATIRI.exec(satirlar[i + 1].trim());
+    if (!sayilar) continue;
+    const devam = satirlar[i + 2]?.trim() ?? "";
+    const tamAd = DEVAM_SATIRI.test(devam) ? `${m[2]} ${devam}` : m[2];
+    temaEkle(adlar, Number(m[1]), {
+      ad: baslikDuzelt(tamAd), islenisSirasi: Number(sayilar[1]),
+      beklenenCikti: Number(sayilar[2]), dersSaati: Number(sayilar[3]), yuzde: Number(sayilar[4]),
+    });
   }
   if (adlar.size > 0) return adlar;
 
   // Numaralı biçim: yalnız ilgili sınıf başlığından sonraki blok okunur.
   // DİKKAT: aynı başlık içindekiler sayfasında da geçiyor; gerçek tablo,
-  // başlığı izleyen birkaç satırda "ÜNİTE ADI"/"TEMA" sütun adını taşır.
+  // başlığı izleyen birkaç satırda numaralı satır taşır.
   const basligiBul = () => {
-    const desen = new RegExp(`^${sinif}\\.\\s*SINIF$`);
+    // Başlık kimi programda yalnız "8. SINIF", kimisinde ders adıyla birlikte
+    // ("8. SINIF DİN KÜLTÜRÜ … ÖĞRETİM PROGRAMI").
+    const desen = new RegExp(`^${sinif}\\.\\s*SINIF\\b`);
     for (let i = 0; i < satirlar.length; i++) {
       if (!desen.test(satirlar[i].trim())) continue;
-      // Gerçek tablo, başlığı izleyen 15 satırda en az bir "N. Ad sayı sayı
-      // sayı" satırı taşır; içindekiler sayfasındaki aynı başlık taşımaz.
       if (satirlar.slice(i + 1, i + 16).some((s) => numarali.test(s.trim()))) return i;
     }
     return -1;
   };
-  const bas = basligiBul();
+  // Tek sınıflık programda (İnkılap Tarihi) sınıf başlığı hiç yok.
+  let bas = basligiBul();
+  if (bas === -1) {
+    bas = satirlar.findIndex((s, i) =>
+      /^(ÜNİTE|TEMA)\b/.test(s.trim())
+      && satirlar.slice(i + 1, i + 16).some((x) => numarali.test(x.trim())));
+  }
   if (bas === -1) return adlar;
   for (let i = bas + 1; i < satirlar.length; i++) {
     const s = satirlar[i].trim();
-    if (/^TOPLAM/.test(s)) break;
-    if (/^\d+\.\s*SINIF$/.test(s)) break;
+    if (/^TOPLAM/i.test(s)) break;
+    // Sonraki sınıfın tablosuna geçince dur — bulma deseniyle AYNI gevşeklikte
+    // olmalı, yoksa birkaç sınıfın satırları tek temada toplanır.
+    if (/^\d+\.\s*SINIF\b/.test(s)) break;
     const m = numarali.exec(s);
-    if (m) adlar.set(Number(m[1]), { ad: baslikDuzelt(m[2]), islenisSirasi: Number(m[1]), dersSaati: Number(m[4]), yuzde: Number(m[5]) });
+    if (m) temaEkle(adlar, Number(m[1]), { ad: baslikDuzelt(m[2]), islenisSirasi: Number(m[1]), beklenenCikti: Number(m[3]), dersSaati: Number(m[4]), yuzde: Number(m[5]) });
   }
   return adlar;
+}
+
+// Aynı tema özet tabloda BİRDEN FAZLA satırda olabiliyor: matematikte bir tema
+// yıla iki blokta yayılıyor ("SAYILAR VE NİCELİKLER (1)" / "(2)"). Üzerine
+// yazmak yerine sayılar TOPLANIR, ad ilk satırdan alınır, sondaki "(1)" eki
+// atılır.
+function temaEkle(adlar, no, kayit) {
+  const mevcut = adlar.get(no);
+  if (!mevcut) {
+    adlar.set(no, { ...kayit, ad: kayit.ad ? kayit.ad.replace(/\s*\(\d+\)\s*$/, "") : null });
+    return;
+  }
+  mevcut.beklenenCikti = (mevcut.beklenenCikti ?? 0) + (kayit.beklenenCikti ?? 0);
+  mevcut.dersSaati = (mevcut.dersSaati ?? 0) + (kayit.dersSaati ?? 0);
+  mevcut.yuzde = (mevcut.yuzde ?? 0) + (kayit.yuzde ?? 0);
 }
 
 function baslikDuzelt(ham) {
@@ -116,20 +199,59 @@ function baslikDuzelt(ham) {
     .join(" ");
 }
 
+// Türkçe programında aynı kod ONLARCA kez geçiyor: çapraz gönderme
+// listelerinde ("T.D.5.6. T.D.5.8."), açıklama paragraflarında ve tema
+// listelerinde. Gerçek TANIM, tema listelerindeki tek satırlık
+// "T.O.5.4. Okuyacağı metnin içeriğine yönelik tahminde bulunabilme" biçimi.
+// "İlk eşleşme" kuralıyla 71 çıktı çapraz gönderme ya da 2000 karakterlik
+// metin bloğu olarak geliyordu; bu yüzden burada da aday seçimi yapılıyor.
+const BECERI_BASLIGI = /^(Okuma|Yazma|Konuşma|Dinleme\/İzleme|Dinleme|İzleme)$/;
+
+function turkceGecerliMi(metin) {
+  return /bilme$/.test(metin)
+    && metin.length >= 15 && metin.length <= 160
+    && !/T\.[ODYK]\.\d+\.\d+/.test(metin);
+}
+
 function turkceCikar(metin, sinif) {
   const satirlar = metin.split("\n");
   const kodDeseni = new RegExp(`(?:^|\\s)(T\\.(O|D|Y|K)\\.${sinif}\\.(\\d+))\\.\\s*(.*)$`);
-  const bulunan = new Map();
+
+  const adaylar = new Map();
   for (let i = 0; i < satirlar.length; i++) {
     const m = kodDeseni.exec(satirlar[i].trim());
     if (!m) continue;
     const [, tamKod, beceri, sira, ilk] = m;
-    if (!ilk.trim() || bulunan.has(tamKod)) continue;
-    const govde = govdeTopla(satirlar, i, ilk, kodDeseni);
-    if (govde.length < 10) continue;            // çapraz gönderme (yalnız kod)
-    bulunan.set(tamKod, { kod: tamKod, beceri, sira: Number(sira), metin: govde });
+    if (!ilk.trim()) continue;
+
+    // Gövde: bu satır + YALNIZ tireyle bölünmüş devam satırları.
+    const parcalar = [ilk.trim()];
+    for (let j = i + 1; j < satirlar.length && parcalar.length < 4; j++) {
+      const s = satirlar[j].trim();
+      if (!s || kodDeseni.test(s) || BECERI_BASLIGI.test(s)) break;
+      if (/^={3,}|^SAYFA |^\d+$/.test(s)) break;
+      const oncekiTireli = /-$/.test(parcalar.at(-1));
+      parcalar.push(s);
+      if (!oncekiTireli) break;
+    }
+    const govde = parcalar.join(" ").replace(/-\s+/g, "").replace(/\s+/g, " ").trim();
+    const liste = adaylar.get(tamKod) ?? [];
+    liste.push({ kod: tamKod, beceri, sira: Number(sira), metin: govde });
+    adaylar.set(tamKod, liste);
   }
-  return [...bulunan.values()].sort((a, b) => a.beceri.localeCompare(b.beceri) || a.sira - b.sira);
+
+  const bulunan = [];
+  for (const liste of adaylar.values()) {
+    const iyi = liste.filter((a) => turkceGecerliMi(a.metin)).sort((a, b) => a.metin.length - b.metin.length);
+    if (iyi.length > 0) { bulunan.push(iyi[0]); continue; }
+    // Kurtarma: iki çıktı aynı satıra yapışmışsa sonraki kodda kes.
+    const kurtarilan = liste
+      .map((a) => ({ ...a, metin: a.metin.split(/\sT\.[ODYK]\.\d+\.\d+/)[0].trim() }))
+      .filter((a) => turkceGecerliMi(a.metin))
+      .sort((a, b) => a.metin.length - b.metin.length);
+    if (kurtarilan.length > 0) bulunan.push(kurtarilan[0]);
+  }
+  return bulunan.sort((a, b) => a.beceri.localeCompare(b.beceri) || a.sira - b.sira);
 }
 
 // ---------------------------------------------------------------------------
@@ -153,6 +275,8 @@ for (const d of DERSLER) {
       islenisSirasi: adlar.get(no)?.islenisSirasi ?? null,
       dersSaati: adlar.get(no)?.dersSaati ?? null,
       yuzde: adlar.get(no)?.yuzde ?? null,
+      // Programın KENDİ bildirdiği çıktı sayısı — çıkarımın doğrulama ölçütü.
+      beklenenCikti: adlar.get(no)?.beklenenCikti ?? null,
       ogrenmeCiktilari: ciktilar.filter((c) => c.tema === no).map((c) => ({ kod: c.kod, metin: c.metin })),
     }));
     const dosyaAdi = `${d.kod.toLocaleLowerCase("tr").replace(/\./g, "")}-${sinif}-taslak.json`;

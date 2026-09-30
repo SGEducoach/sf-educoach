@@ -9,10 +9,11 @@
   "temalar": [
     {
       "kod": "MAT.7.1",
-      "ad": "Sayılar ve Nicelikler (2)",
-      "islenisSirasi": 6,
-      "dersSaati": 15,
-      "yuzde": 8,
+      "ad": "Sayılar ve Nicelikler",
+      "islenisSirasi": 1,
+      "dersSaati": 50,
+      "yuzde": 27,
+      "beklenenCikti": 7,
       "ogrenmeCiktilari": [
         {
           "kod": "MAT.7.1.1",
@@ -46,10 +47,11 @@
     },
     {
       "kod": "MAT.7.2",
-      "ad": null,
-      "islenisSirasi": null,
-      "dersSaati": null,
-      "yuzde": null,
+      "ad": "İşlemlerle Cebirsel Düşünme ve Değişimler",
+      "islenisSirasi": 8,
+      "dersSaati": 38,
+      "yuzde": 21,
+      "beklenenCikti": 4,
       "ogrenmeCiktilari": [
         {
           "kod": "MAT.7.2.1",
@@ -75,6 +77,7 @@
       "islenisSirasi": 4,
       "dersSaati": 8,
       "yuzde": 5,
+      "beklenenCikti": 2,
       "ogrenmeCiktilari": [
         {
           "kod": "MAT.7.3.1",
@@ -88,10 +91,11 @@
     },
     {
       "kod": "MAT.7.4",
-      "ad": "Geometrik Nicelikler (2)",
-      "islenisSirasi": 9,
-      "dersSaati": 18,
-      "yuzde": 10,
+      "ad": "Geometrik Nicelikler",
+      "islenisSirasi": 2,
+      "dersSaati": 37,
+      "yuzde": 21,
+      "beklenenCikti": 10,
       "ogrenmeCiktilari": [
         {
           "kod": "MAT.7.4.1",
@@ -141,6 +145,7 @@
       "islenisSirasi": 5,
       "dersSaati": 6,
       "yuzde": 3,
+      "beklenenCikti": 2,
       "ogrenmeCiktilari": [
         {
           "kod": "MAT.7.5.1",
@@ -158,6 +163,7 @@
       "islenisSirasi": 3,
       "dersSaati": 24,
       "yuzde": 13,
+      "beklenenCikti": 2,
       "ogrenmeCiktilari": [
         {
           "kod": "MAT.7.6.1",
@@ -175,6 +181,7 @@
       "islenisSirasi": 7,
       "dersSaati": 9,
       "yuzde": 5,
+      "beklenenCikti": 3,
       "ogrenmeCiktilari": [
         {
           "kod": "MAT.7.7.1",
