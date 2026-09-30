@@ -16,7 +16,7 @@ import type { DenemeTuru } from "@/lib/types";
 import { ogretmenDenemeSonucuKaydet, type DenemeDersSonucu, type DenemeKazanimSonucu } from "@/lib/deneme-sonucu-kaydet";
 import {
   KARNE_DERS_TYT_ESLESTIRME, okulListesiniAyristir, sinifListeleriniAyristir, tumKarneleriIndeksle,
-  karneyiTytDerslerineEslestir, tumKarneKazanimlariniIndeksle, siraliListeyiAyristir,
+  birlesikTytDersBasliklariMi, karneyiTytDerslerineEslestir, tumKarneKazanimlariniIndeksle, siraliListeyiAyristir,
 } from "@/lib/deneme-pdf-ayristirici";
 import { tytDerslerineIndirge, type SinifListesiSonucu } from "@/lib/deneme-sinif-listesi";
 import type { KarneBirinciSayfa } from "@/lib/karne-birinci-sayfa";
@@ -50,7 +50,7 @@ const CLAUDE_GRUP_BOYUTU = 20;
 const CLAUDE_ES_ZAMANLI_GRUP = 3;
 
 // Yükleme formundaki "PDF biçimi" seçimi (DershaneDenemePdfFormu).
-const PDF_BICIMLERI = ["otomatik", "sinif", "okul", "sirali", "claude"] as const;
+const PDF_BICIMLERI = ["otomatik", "sinif", "okul", "maarif", "sirali", "claude"] as const;
 type PdfBicimi = (typeof PDF_BICIMLERI)[number];
 
 function kayitMi(deger: unknown): deger is Record<string, unknown> {
@@ -431,14 +431,24 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
   // eşlenebiliyorsa sonuçlar doğrudan buradan alınır, Claude'a gidilmez.
   // Ders adları bilinmiyorsa ("Ders 1" gibi jenerik) eski Claude yolu sürer.
   let okulListesindenOkundu = false;
+  const okulListesiBirlesikTyt = deterministikSonuc?.basarili === true &&
+    birlesikTytDersBasliklariMi(deterministikSonuc.dersEtiketleri);
+  const okulListesiSecimiUygun = bicim === "maarif"
+    ? okulListesiBirlesikTyt
+    : bicimDenensin("okul");
   if (
-    ayristirilan === null && (tur === "TYT" || tur === "BRANS") && bicimDenensin("okul") && deterministikSonuc?.basarili &&
-    deterministikSonuc.dersEtiketleri.every((d) => d in KARNE_DERS_TYT_ESLESTIRME || /\(Seçmeli\)$/.test(d))
+    ayristirilan === null && (tur === "TYT" || tur === "BRANS") && okulListesiSecimiUygun && deterministikSonuc?.basarili &&
+    (okulListesiBirlesikTyt || deterministikSonuc.dersEtiketleri.every((d) => d in KARNE_DERS_TYT_ESLESTIRME || /\(Seçmeli\)$/.test(d)))
   ) {
     const okunanlar: PdfOgrenciSonucu[] = [];
     for (const o of deterministikSonuc.ogrenciler) {
       if (!hedefleIlgiliMi(o.isimHam)) continue;
-      const dersSonuclari = tytDerslerineIndirge(o.dersSonuclari, KARNE_DERS_TYT_ESLESTIRME);
+      // Birleşik dört sütun yalnızca bağımsız toplam/net doğrulaması için
+      // geçici tutulur. Aşağıdaki P2 adımında kişisel karneden dokuz gerçek
+      // derse çevrilmeyen öğrenci kayda gönderilmez.
+      const dersSonuclari = okulListesiBirlesikTyt
+        ? o.dersSonuclari.map(({ ders, dogru, yanlis }) => ({ ders, dogru, yanlis }))
+        : tytDerslerineIndirge(o.dersSonuclari, KARNE_DERS_TYT_ESLESTIRME);
       if (dersSonuclari) okunanlar.push({ ad_soyad: o.isimHam, ders_sonuclari: dersSonuclari, ogrenci_no: o.ogrenciNo || undefined });
       else okunamayanAdlar.push(o.isimHam);
     }
@@ -494,7 +504,12 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
 
   // Belirli bir biçim seçildiyse ve okunamadıysa Claude'a gitmeden söyle.
   if (ayristirilan === null && bicim !== "otomatik" && bicim !== "claude") {
-    const ad = { sinif: "Orbital — sınıf net listeleri", okul: "Limit — okul net listesi", sirali: "Özdebir — kurum sıralı listesi" }[bicim];
+    const ad = {
+      sinif: "Orbital — sınıf net listeleri",
+      okul: "Limit — okul net listesi",
+      maarif: "Maarif — okul net listesi",
+      sirali: "Özdebir — kurum sıralı listesi",
+    }[bicim];
     return {
       error: `PDF "${ad}" biçiminde okunamadı. Başka bir biçim ya da "Otomatik tanı" seçip tekrar deneyin.`,
       ...BOS_SONUC,
@@ -738,6 +753,22 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
     } catch (karneHatasi) {
       console.warn("[deneme-pdf P2] beklenmeyen hata (Claude çıktısına sessizce düşülüyor):", hataOzeti(karneHatasi));
     }
+  }
+
+  // Maarif'in dört birleşik sütunlu okul listesinde Sosyal ve Fen alt
+  // dersleri listeden çıkarılamaz. Kişisel karneyle çapraz doğrulanmış
+  // öğrenciler granüler veriyle kaydedilir; karne sayfası bulunmayanlar
+  // yanlış derse yazılmak yerine okunamayan olarak raporlanır.
+  if (okulListesiBirlesikTyt) {
+    const granulerOlanlar: PdfOgrenciSonucu[] = [];
+    for (const satir of ayristirilan) {
+      if (granulerKarneMap.has(adNormalize(satir.ad_soyad))) {
+        granulerOlanlar.push(satir);
+      } else if (!okunamayanAdlar.includes(satir.ad_soyad)) {
+        okunamayanAdlar.push(satir.ad_soyad);
+      }
+    }
+    ayristirilan = granulerOlanlar;
   }
 
   // Faz P4 (Deneme Net Dağıtımı raporu) — karnenin kazanım (konu bazlı)

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { dersEtiketleriCikar } from "./deneme-pdf-ayristirici";
+import { birlesikTytDersBasliklariMi, dersEtiketleriCikar } from "./deneme-pdf-ayristirici";
 
 // Okul net listesi ("Limit" biçimi) başlık satırından ders adlarının
 // çıkarılması. Kullanıcı bildirimi 29.09.2026: Kafa Dengi listesi Limit'in
@@ -27,8 +27,14 @@ describe("dersEtiketleriCikar", () => {
   });
 
   test("birleşik sütunlu şablon (TYT Türkçe/Sosyal/Matematik/Fen) korunur", () => {
-    expect(dersEtiketleriCikar("TYT Türkçe TYT Sosyal TYT Matematik TYT Fen", 4))
-      .toEqual(["TYT Türkçe", "TYT Sosyal", "TYT Matematik", "TYT Fen"]);
+    const dersler = dersEtiketleriCikar("TYT Türkçe TYT Sosyal TYT Matematik TYT Fen", 4);
+    expect(dersler).toEqual(["TYT Türkçe", "TYT Sosyal", "TYT Matematik", "TYT Fen"]);
+    expect(birlesikTytDersBasliklariMi(dersler)).toBe(true);
+  });
+
+  test("birleşik TYT başlık kontrolü eksik veya sırası bozuk listeyi kabul etmez", () => {
+    expect(birlesikTytDersBasliklariMi(["TYT Türkçe", "TYT Matematik", "TYT Sosyal", "TYT Fen"])).toBe(false);
+    expect(birlesikTytDersBasliklariMi(["TYT Türkçe", "TYT Sosyal", "TYT Matematik"])).toBe(false);
   });
 
   test("ders sayısı gramerle tutmuyorsa jenerik ada düşer", () => {

@@ -108,6 +108,16 @@ export interface OkulListesiAyristirmaSonucu {
   okunamayanSatirlar: OkunamayanOgrenciSatiri[];
 }
 
+// Bazı TYT okul listeleri (Maarif gibi) dokuz alt ders yerine dört birleşik
+// sınav bölümünü verir. Bu başlıklar doğrudan deneme_ders_sonuclari'na
+// yazılmaz; kişisel karne sayfalarından granüler derslere tamamlanır.
+const TYT_BIRLESIK_OKUL_DERSLERI = ["TYT Türkçe", "TYT Sosyal", "TYT Matematik", "TYT Fen"] as const;
+
+export function birlesikTytDersBasliklariMi(dersler: string[]): boolean {
+  return dersler.length === TYT_BIRLESIK_OKUL_DERSLERI.length &&
+    dersler.every((ders, i) => ders === TYT_BIRLESIK_OKUL_DERSLERI[i]);
+}
+
 export interface OkunamayanOgrenciSatiri {
   isimHam: string;
   ogrenciNo: number;

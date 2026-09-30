@@ -18,7 +18,7 @@ export function DershaneDenemePdfFormu({ schoolId, yalnizcaExcel = false }: { sc
   const [yayinevi, setYayinevi] = useState("");
   const [tarih, setTarih] = useState("");
   const [tur, setTur] = useState<"TYT" | "AYT" | "BRANS">("TYT");
-  const [bicim, setBicim] = useState<"otomatik" | "okul" | "sinif" | "sirali" | "claude">("otomatik");
+  const [bicim, setBicim] = useState<"otomatik" | "okul" | "maarif" | "sinif" | "sirali" | "claude">("otomatik");
   const [hata, setHata] = useState<string | null>(null);
   const [sonuc, setSonuc] = useState<{
     toplam: number;
@@ -138,6 +138,7 @@ export function DershaneDenemePdfFormu({ schoolId, yalnizcaExcel = false }: { sc
               <option value="otomatik">Otomatik tanı (önerilen)</option>
               {/* Kullanıcı isteği (27.09.2026): biçimler yayınevi adıyla anılsın. */}
               <option value="okul">Limit — okul net listesi</option>
+              <option value="maarif">Maarif — okul net listesi</option>
               <option value="sinif">Orbital — sınıf net listeleri</option>
               <option value="sirali">Özdebir — kurum sıralı listesi</option>
               <option value="claude">Diğer biçim (yapay zekâ ile okunur)</option>
