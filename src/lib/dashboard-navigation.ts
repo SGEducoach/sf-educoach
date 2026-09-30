@@ -168,8 +168,8 @@ const DERSHANE_MUDUR_MENUSU: DashboardMenuOgesi[] = [
 // Rozet sistemi 19.09.2026 kullanıcı isteğiyle kaldırıldı (yerine Başarım
 // sistemi gelecek, yalnızca öğrenciye).
 // Kullanıcı isteği (27.09.2026): admin menüsü kalabalıklaştı — alt menülü
-// gruplara ayrıldı. Grup başlığına basınca grubun ilk sayfası açılır ve
-// grubun bölümleri altında listelenir (aktif sayfanın grubu açık durur).
+// gruplara ayrıldı. Grup başlığı yalnız alt menüyü açıp kapatır; bir sayfanın
+// yüklenmesi için kullanıcı alt menüdeki sayfayı ayrıca seçer.
 // Genel bakış ve Mesajlar grup DEĞİL, ayrı öğeler; Mesajlar Genel bakış'ın
 // hemen altında (kullanıcı kararı 27.09.2026).
 export interface DashboardMenuGrubu {
