@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { BedDouble, Link2, Save, Shuffle, Trash2, UserRoundCog } from "lucide-react";
 import {
   kullaniciProfilGuncelle,
@@ -19,7 +19,7 @@ import {
   type VeliBaglantisi,
   type YonetimOkulu,
 } from "@/app/yonetici/actions";
-import { AYT_ALAN_ETIKET, BRANS_LISTESI } from "@/lib/types";
+import { AYT_ALAN_ETIKET, kurumBransListesi } from "@/lib/types";
 import type { AytAlan, UserRole } from "@/lib/types";
 import { BG0, BG1, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 import { KULLANICI_ADI_IPUCU } from "@/lib/validators";
@@ -155,7 +155,9 @@ function RolDegistirBolumu({ userId, mevcutRol }: { userId: string; mevcutRol: U
   const [yeniRol, setYeniRol] = useState<UserRole>(HEDEF_ROLLER[0]);
   const [okullar, setOkullar] = useState<YonetimOkulu[]>([]);
   const [schoolId, setSchoolId] = useState("");
-  const [brans, setBrans] = useState<string>(BRANS_LISTESI[0]);
+  const seciliKurumTuru = okullar.find((okul) => okul.id === schoolId)?.kurumTuru;
+  const branslar = useMemo(() => kurumBransListesi(seciliKurumTuru), [seciliKurumTuru]);
+  const [brans, setBrans] = useState<string>(branslar[0]);
   const [mesaj, setMesaj] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -187,7 +189,13 @@ function RolDegistirBolumu({ userId, mevcutRol }: { userId: string; mevcutRol: U
         {(yeniRol === "ogretmen" || yeniRol === "mudur") && (
           <label className="flex min-w-40 flex-col gap-1">
             <span className="text-[10px] font-semibold" style={{ color: TEXT_MUTED }}>Okul</span>
-            <select value={schoolId} onChange={(e) => setSchoolId(e.target.value)} className="rounded-lg px-2.5 py-2 text-xs" style={{ background: BG1, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
+            <select value={schoolId} onChange={(e) => {
+              const yeniSchoolId = e.target.value;
+              setSchoolId(yeniSchoolId);
+              const yeniKurumTuru = okullar.find((okul) => okul.id === yeniSchoolId)?.kurumTuru;
+              const yeniBranslar = kurumBransListesi(yeniKurumTuru);
+              if (!yeniBranslar.includes(brans)) setBrans(yeniBranslar[0]);
+            }} className="rounded-lg px-2.5 py-2 text-xs" style={{ background: BG1, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
               <option value="">Okul seçin</option>
               {okullar.map((o) => <option key={o.id} value={o.id}>{o.ad}</option>)}
             </select>
@@ -197,7 +205,7 @@ function RolDegistirBolumu({ userId, mevcutRol }: { userId: string; mevcutRol: U
           <label className="flex flex-col gap-1">
             <span className="text-[10px] font-semibold" style={{ color: TEXT_MUTED }}>Branş</span>
             <select value={brans} onChange={(e) => setBrans(e.target.value)} className="rounded-lg px-2.5 py-2 text-xs" style={{ background: BG1, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
-              {BRANS_LISTESI.map((b) => <option key={b} value={b}>{b}</option>)}
+              {branslar.map((b) => <option key={b} value={b}>{b}</option>)}
             </select>
           </label>
         )}

@@ -5,8 +5,8 @@ import Link from "next/link";
 import { Search, Users, KeyRound, EyeOff, Eye, Copy, Check, ArrowRightLeft, Trash2, Settings, Building2, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, MailWarning } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH, LILAC, LILAC_TEXT } from "@/lib/theme";
 import { kullaniciAra, sifreSifirla, sifreBelirle, kullaniciEpostaKaydet, hesapAktiflikDegistir, hesapSil, okulSiniflari, ogrenciSinifTasi, ogretmenBransDegistir, yonetimOkullariGetir, type KullaniciSonuc, type YonetimOkulu } from "@/app/yonetici/actions";
-import { BRANS_LISTESI } from "@/lib/types";
-import type { UserRole } from "@/lib/types";
+import { kurumBransListesi } from "@/lib/types";
+import type { KurumTuru, UserRole } from "@/lib/types";
 import { KullaniciDetayYonetimi } from "@/components/yonetici/KullaniciDetayYonetimi";
 import { teslimEdilebilirEpostaMi } from "@/lib/validators";
 
@@ -452,7 +452,7 @@ function KullaniciSatiri({ kullanici }: { kullanici: KullaniciSonuc }) {
         <OgrenciSinifTasiFormu studentId={kullanici.id} okulId={kullanici.okulId} suankiSinifId={kullanici.sinifId} onDone={() => setDuzenleAcik(false)} />
       )}
       {duzenleAcik && (kullanici.role === "ogretmen" || kullanici.role === "mudur") && (
-        <OgretmenBransFormu teacherId={kullanici.id} suankiBrans={kullanici.brans} onDone={() => setDuzenleAcik(false)} />
+        <OgretmenBransFormu teacherId={kullanici.id} suankiBrans={kullanici.brans} kurumTuru={kullanici.kurumTuru} onDone={() => setDuzenleAcik(false)} />
       )}
 
       {(!sadeSatirMi || satirAcik) && elleSifreAcik && (
@@ -530,8 +530,9 @@ function OgrenciSinifTasiFormu({ studentId, okulId, suankiSinifId, onDone }: { s
   );
 }
 
-function OgretmenBransFormu({ teacherId, suankiBrans, onDone }: { teacherId: string; suankiBrans: string | null; onDone: () => void }) {
-  const [brans, setBrans] = useState(suankiBrans ?? BRANS_LISTESI[0]);
+function OgretmenBransFormu({ teacherId, suankiBrans, kurumTuru, onDone }: { teacherId: string; suankiBrans: string | null; kurumTuru: KurumTuru | null; onDone: () => void }) {
+  const branslar = kurumBransListesi(kurumTuru);
+  const [brans, setBrans] = useState(suankiBrans ?? branslar[0]);
   const [hata, setHata] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -549,7 +550,7 @@ function OgretmenBransFormu({ teacherId, suankiBrans, onDone }: { teacherId: str
     <div className="rounded-xl p-2.5 flex items-center gap-2 flex-wrap" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
       <select value={brans} onChange={(e) => setBrans(e.target.value)}
         className="text-xs font-bold px-2.5 py-1.5 rounded-full outline-none" style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
-        {BRANS_LISTESI.map((b) => <option key={b} value={b}>{b}</option>)}
+        {branslar.map((b) => <option key={b} value={b}>{b}</option>)}
       </select>
       <button type="button" onClick={kaydet} disabled={pending || brans === suankiBrans}
         className="sfec-btn text-[11px] font-bold px-3 py-1.5 rounded-full disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>

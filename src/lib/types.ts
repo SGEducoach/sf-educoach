@@ -370,6 +370,19 @@ export const BRANS_LISTESI = [
   "Diğer",
 ] as const;
 
+// Bu iki branş yalnız okul kurumlarında sunulur. Ortak listeyi değiştirmeyerek
+// dershane kayıt ve düzenleme ekranlarının mevcut seçeneklerini koruyoruz.
+export const OKUL_OZEL_BRANSLARI = ["Bilişim", "Bilgisayar"] as const;
+
+export function kurumBransListesi(kurumTuru: KurumTuru | null | undefined): readonly string[] {
+  if (kurumTuru !== "okul") return BRANS_LISTESI;
+  return [
+    ...BRANS_LISTESI.slice(0, -1),
+    ...OKUL_OZEL_BRANSLARI,
+    BRANS_LISTESI[BRANS_LISTESI.length - 1],
+  ];
+}
+
 // Alan türüne göre "konu çalışma" / "soru çözümü" ders listeleri (TYT her zaman
 // mevcut; AYT dersleri öğrencinin ayt_alan'ına göre değişir).
 export const TYT_DERSLERI = [

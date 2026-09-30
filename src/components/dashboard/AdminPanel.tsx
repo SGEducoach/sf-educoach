@@ -17,7 +17,7 @@ import { SinifEkleFormu } from "@/components/dashboard/OgretmenPanel";
 import { DershaneDenemePdfFormu } from "@/components/dashboard/DershaneDenemePdfFormu";
 import { bugununTarihiTR } from "@/lib/tarih";
 import { IzinliOgrenciListesi } from "@/components/yonetici/IzinliOgrenciListesi";
-import { AYT_ALAN_ETIKET, BRANS_LISTESI, TYT_DERSLERI, AYT_DERSLERI, BRANS_DENEMESI_DERSLERI, DENEME_ZORLUGU_ETIKET, dersSoruSayisi, dokuzOnSinifMi } from "@/lib/types";
+import { AYT_ALAN_ETIKET, kurumBransListesi, TYT_DERSLERI, AYT_DERSLERI, BRANS_DENEMESI_DERSLERI, DENEME_ZORLUGU_ETIKET, dersSoruSayisi, dokuzOnSinifMi } from "@/lib/types";
 import type { AytAlan, DenemeTuru, DenemeZorlugu } from "@/lib/types";
 import { telefonSanitize, okulNoSanitize, TELEFON_IPUCU } from "@/lib/validators";
 import { ogrenciKaydiEslestir } from "@/lib/ogrenci-eslestirme";
@@ -367,10 +367,11 @@ function OlusturulanHesap({ email, sifre }: { email: string; sifre: string }) {
 }
 
 function OgretmenEkleFormu({ schoolId, okullar }: { schoolId: string; okullar: OkulSatiri[] }) {
+  const branslar = kurumBransListesi("okul");
   const [ad, setAd] = useState("");
   const [email, setEmail] = useState("");
   const [telefon, setTelefon] = useState("");
-  const [brans, setBrans] = useState<string>(BRANS_LISTESI[0]);
+  const [brans, setBrans] = useState<string>(branslar[0]);
   const [mudur, setMudur] = useState(false);
   const [hedefOkulId, setHedefOkulId] = useState(schoolId);
   const [hata, setHata] = useState<string | null>(null);
@@ -411,7 +412,7 @@ function OgretmenEkleFormu({ schoolId, okullar }: { schoolId: string; okullar: O
         {!mudur && (
           <select value={brans} onChange={(e) => setBrans(e.target.value)}
             className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
-            {BRANS_LISTESI.map((b) => <option key={b} value={b}>{b}</option>)}
+            {branslar.map((b) => <option key={b} value={b}>{b}</option>)}
           </select>
         )}
         <label className="flex items-center gap-1.5 cursor-pointer">

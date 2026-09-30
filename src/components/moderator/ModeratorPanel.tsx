@@ -9,7 +9,7 @@ import {
   moderatorSinifSil, moderatorYurtDurumuDegistir,
   type ModeratorKullanici,
 } from "@/app/moderator/actions";
-import { AYT_ALAN_ETIKET, BRANS_LISTESI } from "@/lib/types";
+import { AYT_ALAN_ETIKET, kurumBransListesi } from "@/lib/types";
 import type { AytAlan, SinifSeviyesi } from "@/lib/types";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 import { teslimEdilebilirEpostaMi } from "@/lib/validators";
@@ -297,10 +297,11 @@ function SinifRozetiModerator({ sinif, schoolId, onSilindi }: { sinif: { id: str
 }
 
 function OgretmenEkleFormu({ schoolId, onDone }: { schoolId?: string; onDone: (msg: string) => void }) {
+  const branslar = kurumBransListesi("okul");
   const [ad, setAd] = useState("");
   const [email, setEmail] = useState("");
   const [telefon, setTelefon] = useState("");
-  const [brans, setBrans] = useState<string>(BRANS_LISTESI[0]);
+  const [brans, setBrans] = useState<string>(branslar[0]);
   const [pending, startTransition] = useTransition();
 
   function ekle() {
@@ -319,7 +320,7 @@ function OgretmenEkleFormu({ schoolId, onDone }: { schoolId?: string; onDone: (m
       <label className="flex flex-col gap-1">
         <span className="text-[10px] font-semibold" style={{ color: TEXT_MUTED }}>Branş</span>
         <select value={brans} onChange={(e) => setBrans(e.target.value)} className="rounded-lg px-2.5 py-2 text-xs outline-none" style={{ background: BG1, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
-          {BRANS_LISTESI.map((b) => <option key={b} value={b}>{b}</option>)}
+          {branslar.map((b) => <option key={b} value={b}>{b}</option>)}
         </select>
       </label>
       <button type="button" onClick={ekle} disabled={pending} className="sfec-btn self-start rounded-full px-3 py-2 text-[11px] font-bold disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
@@ -542,7 +543,8 @@ function ModeratorOgrenciSinifTasiFormu({ studentId, schoolId, onDone }: { stude
 }
 
 function ModeratorOgretmenBransFormu({ teacherId, schoolId, onDone }: { teacherId: string; schoolId?: string; onDone: (msg: string) => void }) {
-  const [brans, setBrans] = useState<string>(BRANS_LISTESI[0]);
+  const branslar = kurumBransListesi("okul");
+  const [brans, setBrans] = useState<string>(branslar[0]);
   const [pending, startTransition] = useTransition();
 
   function kaydet() {
@@ -556,7 +558,7 @@ function ModeratorOgretmenBransFormu({ teacherId, schoolId, onDone }: { teacherI
     <div className="mt-2 flex items-center gap-2 flex-wrap rounded-lg p-2.5" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
       <select value={brans} onChange={(e) => setBrans(e.target.value)}
         className="text-xs font-bold px-2.5 py-1.5 rounded-full outline-none" style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
-        {BRANS_LISTESI.map((b) => <option key={b} value={b}>{b}</option>)}
+        {branslar.map((b) => <option key={b} value={b}>{b}</option>)}
       </select>
       <button type="button" onClick={kaydet} disabled={pending} className="sfec-btn text-[11px] font-bold px-3 py-1.5 rounded-full disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
         {pending ? "Kaydediliyor..." : "Kaydet"}

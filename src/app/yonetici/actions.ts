@@ -396,17 +396,17 @@ export async function ogrenciYurtDurumuGuncelle(studentId: string, yurtOgrencisi
   return { error: null };
 }
 
-export interface YonetimOkulu { id: string; ad: string; siniflar: { id: string; ad: string }[] }
+export interface YonetimOkulu { id: string; ad: string; kurumTuru: KurumTuru; siniflar: { id: string; ad: string }[] }
 
 export async function yonetimOkullariGetir(): Promise<{ error: string | null; okullar: YonetimOkulu[] }> {
   const { admin } = await requireAdmin();
   const [{ data: okullar, error }, { data: siniflar }] = await Promise.all([
-    admin.from("schools").select("id, ad").eq("aktif", true).order("ad"),
+    admin.from("schools").select("id, ad, kurum_turu").eq("aktif", true).order("ad"),
     admin.from("classes").select("id, school_id, seviye, sube"),
   ]);
   if (error) return { error: error.message, okullar: [] };
   const siniflarSirali = (siniflar ?? []).sort(sinifSiraKarsilastir);
-  return { error: null, okullar: (okullar ?? []).map((o) => ({ id: o.id, ad: o.ad, siniflar: siniflarSirali.filter((s) => s.school_id === o.id).map((s) => ({ id: s.id, ad: `${s.seviye}-${s.sube}` })) })) };
+  return { error: null, okullar: (okullar ?? []).map((o) => ({ id: o.id, ad: o.ad, kurumTuru: (o.kurum_turu ?? "okul") as KurumTuru, siniflar: siniflarSirali.filter((s) => s.school_id === o.id).map((s) => ({ id: s.id, ad: `${s.seviye}-${s.sube}` })) })) };
 }
 
 export async function kullaniciKurumDegistir(input: { userId: string; role: UserRole; schoolId: string; classId?: string }): Promise<{ error: string | null }> {

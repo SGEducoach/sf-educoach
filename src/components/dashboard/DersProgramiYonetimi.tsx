@@ -7,7 +7,7 @@ import { DersProgramiGrid } from "@/components/dashboard/DersProgramiGrid";
 import { dersProgramiDegisikliginiBildir, dersProgramiEkle, dersProgramiSil } from "@/app/dashboard/ders-programi-actions";
 import { DERS_SAATI_DILIMLERI, GUN_ETIKET, programGunleri } from "@/lib/ders-programi";
 import type { DersProgramiGunu, DersProgramiSatiri } from "@/lib/ders-programi";
-import { BRANS_LISTESI } from "@/lib/types";
+import { kurumBransListesi } from "@/lib/types";
 import { BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 
 // Admin ve dershane müdürünün elle ders programı düzenlemesi (kullanıcı
@@ -19,13 +19,14 @@ export function DersProgramiYonetimi({ teacherId, dershaneMi, siniflar, satirlar
   siniflar: { id: string; seviye: string; sube: string }[];
   satirlar: DersProgramiSatiri[];
 }) {
+  const branslar = kurumBransListesi(dershaneMi ? "dershane" : "okul");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [hata, setHata] = useState<string | null>(null);
   const [bilgi, setBilgi] = useState<string | null>(null);
   const [acikHucre, setAcikHucre] = useState<{ gun: DersProgramiGunu; sira: number } | null>(null);
   const [classId, setClassId] = useState(siniflar[0]?.id ?? "");
-  const [ders, setDers] = useState<string>(BRANS_LISTESI[0]);
+  const [ders, setDers] = useState<string>(branslar[0]);
   // PDF'ten yüklenen program elle değiştirilmez (kullanıcı kararı
   // 17.09.2026); sunucu da reddediyor, burada arayüz de kilitleniyor.
   const pdftenGeldi = satirlar.some((s) => s.kaynak === "pdf");
@@ -110,7 +111,7 @@ export function DersProgramiYonetimi({ teacherId, dershaneMi, siniflar, satirlar
                 <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Ders</span>
                 <select value={ders} onChange={(e) => setDers(e.target.value)}
                   className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
-                  {BRANS_LISTESI.map((d) => <option key={d} value={d}>{d}</option>)}
+                  {branslar.map((d) => <option key={d} value={d}>{d}</option>)}
                 </select>
               </label>
               {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}

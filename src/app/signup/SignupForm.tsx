@@ -7,7 +7,7 @@ import Image from "next/image";
 import { GraduationCap, BookOpen, Users, ChevronLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { AytAlan, KurumTuru, School, SchoolClass, UserRole } from "@/lib/types";
-import { AYT_ALAN_ETIKET, BRANS_LISTESI, dokuzOnSinifMi, sinifSiraKarsilastir } from "@/lib/types";
+import { AYT_ALAN_ETIKET, dokuzOnSinifMi, kurumBransListesi, sinifSiraKarsilastir } from "@/lib/types";
 import {
   BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH,
 } from "@/lib/theme";
@@ -474,7 +474,8 @@ function OgretmenKayit({ kurumTuru, schools, router, supabase }: {
   const [email, setEmail] = useState("");
   const [telefon, setTelefon] = useState("");
   const [schoolId, setSchoolId] = useState("");
-  const [brans, setBrans] = useState<string>(BRANS_LISTESI[0]);
+  const branslar = kurumBransListesi(kurumTuru);
+  const [brans, setBrans] = useState<string>(branslar[0]);
   const [password, setPassword] = useState("");
   const [password2, setPassword2] = useState("");
   const [hata, setHata] = useState<string | null>(null);
@@ -585,7 +586,7 @@ function OgretmenKayit({ kurumTuru, schools, router, supabase }: {
       </div>
       <label className="flex flex-col gap-1"><Etiket>Branş</Etiket>
         <Secim required value={brans} onChange={(e) => setBrans(e.target.value)}>
-          {BRANS_LISTESI.map((b) => <option key={b} value={b}>{b}</option>)}
+          {branslar.map((b) => <option key={b} value={b}>{b}</option>)}
         </Secim>
       </label>
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
