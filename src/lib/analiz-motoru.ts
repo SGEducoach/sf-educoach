@@ -225,9 +225,11 @@ export function hizDogrulukKategorisiBelirle(girdi: HizDogrulukGirdisi): HizDogr
 // cevapladığında %79 doğru — aynı öğrenciler serbest çalışmada %94.
 //
 // Boş sayısı denemeden TÜRETİLİR: resmî soru sayısı - (doğru + yanlış).
-// Yeni veri toplanması gerekmez.
+// Ancak boş bırakmak tek başına süre yetersizliğini kanıtlamaz; öğrenci
+// bilmediği, emin olmadığı veya stratejik olarak atladığı için de boş
+// bırakmış olabilir.
 
-export type MakasTeshisi = "yetisemiyor" | "bilgi" | "sinavda-dusus" | "saglam";
+export type MakasTeshisi = "yetisemiyor" | "bos-yuksek" | "bilgi" | "sinavda-dusus" | "saglam";
 
 // Boş oranı bu eşiğin üstündeyse "yetişme" sorunu aranır.
 export const BOS_ORANI_ESIGI = 0.25;
@@ -244,11 +246,14 @@ export interface MakasGirdisi {
   bosOrani: number; // 0-1, denemede işaretlenmeyen soru oranı
   sinavDogrulukOrani: number; // 0-1, denemede CEVAPLADIĞI sorulardaki doğruluk
   calismaDogrulukOrani: number | null; // 0-1, serbest çalışmadaki doğruluk
+  zamanKaniti?: boolean; // Süre/yanıt sırası gibi ayrı bir veri zaman sorununu doğruluyor mu?
 }
 
 export function makasTeshisiBelirle(girdi: MakasGirdisi): MakasTeshisi {
-  if (girdi.bosOrani >= BOS_ORANI_ESIGI && girdi.sinavDogrulukOrani >= SINAV_BILIYOR_ESIGI) return "yetisemiyor";
   if (girdi.sinavDogrulukOrani < SINAV_BILGI_ESIGI) return "bilgi";
+  if (girdi.bosOrani >= BOS_ORANI_ESIGI && girdi.sinavDogrulukOrani >= SINAV_BILIYOR_ESIGI) {
+    return girdi.zamanKaniti === true ? "yetisemiyor" : "bos-yuksek";
+  }
   if (girdi.calismaDogrulukOrani !== null && girdi.calismaDogrulukOrani - girdi.sinavDogrulukOrani >= MAKAS_ESIGI) return "sinavda-dusus";
   return "saglam";
 }

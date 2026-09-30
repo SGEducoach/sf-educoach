@@ -562,19 +562,20 @@ function HizDogrulukKarti({ satirlar }: { satirlar: AnalizVerisi["dersHizDogrulu
 // soruları yetiştirdiği sistem". İki şey gösteriyor:
 //   * öğrencinin kendi temposu gerçek bir sınava yansıtıldığında kaç dakika
 //     açık/fazla veriyor, kaç soru yetişiyor,
-//   * denemede işaretlenmeyen soru oranı — "bilmiyor" ile "yetiştiremiyor"
-//     ayrımı (bkz. makasTeshisiBelirle).
+//   * denemede işaretlenmeyen soru oranı. Bu oran tek başına süre sorunu
+//     sayılmaz (bkz. makasTeshisiBelirle).
 const MAKAS_ETIKET: Record<MakasTeshisi, string> = {
   "yetisemiyor": "Biliyorsun ama yetiştiremiyorsun",
+  "bos-yuksek": "Boş oranı yüksek — süre nedeni belirsiz",
   "bilgi": "Önce konu — hız çalışması erken",
   "sinavda-dusus": "Çalışmada daha iyisin — sınav koşulu",
   "saglam": "Tempo ve doğruluk yerinde",
 };
 const MAKAS_RENK: Record<MakasTeshisi, string> = {
-  "yetisemiyor": BUTTER, "bilgi": BLUSH, "sinavda-dusus": SKY, "saglam": MINT,
+  "yetisemiyor": BUTTER, "bos-yuksek": SKY, "bilgi": BLUSH, "sinavda-dusus": SKY, "saglam": MINT,
 };
 const MAKAS_BG: Record<MakasTeshisi, string> = {
-  "yetisemiyor": BUTTER_BG, "bilgi": BLUSH_BG, "sinavda-dusus": SKY_BG, "saglam": MINT_BG,
+  "yetisemiyor": BUTTER_BG, "bos-yuksek": SKY_BG, "bilgi": BLUSH_BG, "sinavda-dusus": SKY_BG, "saglam": MINT_BG,
 };
 
 function SinavSaatiKarti({ projeksiyon, yetisme }: {
@@ -590,7 +591,7 @@ function SinavSaatiKarti({ projeksiyon, yetisme }: {
         <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Sınav Saati</span>
       </div>
       <p style={{ color: TEXT_MUTED }} className="text-xs mb-4">
-        TYT 120 soru / 165 dakika. Üstteki hesap kendi çalışma temponla yapılır; sınav soruları daha zordur — asıl gerçeği alttaki boş oranların gösterir.
+        TYT 120 soru / 165 dakika. Üstteki hesap kendi çalışma temponla yapılır. Boş oranı tek başına süre sorunu anlamına gelmez; süre yorumu yalnızca ayrı bir zaman kanıtı varsa yapılır.
       </p>
 
       {projeksiyon === null && yetisme.length === 0 ? (

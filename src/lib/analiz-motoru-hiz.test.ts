@@ -64,12 +64,21 @@ describe("hız-doğruluk ders eşikleri", () => {
 
 // Katman 9 — yetişme/makas.
 describe("makas teşhisi", () => {
-  it("boş yüksek ama cevapladığını biliyorsa: yetişemiyor", () => {
-    // Canlı veride TYT Matematik: %41 boş, cevapladığında %79 doğru.
+  it("boş yüksek ama zaman kanıtı yoksa yetişemiyor demez", () => {
+    // Örnek: Biyolojide 13 sorunun 8'i boş. Boşlar tek başına süre kanıtı değildir.
+    expect(makasTeshisiBelirle({
+      bosOrani: 8 / 13,
+      sinavDogrulukOrani: 0.79,
+      calismaDogrulukOrani: 0.94,
+    })).toBe("bos-yuksek");
+  });
+
+  it("boş yüksek ve ayrı zaman kanıtı varsa yetişemiyor", () => {
     expect(makasTeshisiBelirle({
       bosOrani: 0.41,
       sinavDogrulukOrani: 0.79,
       calismaDogrulukOrani: 0.94,
+      zamanKaniti: true,
     })).toBe("yetisemiyor");
   });
 
