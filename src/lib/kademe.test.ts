@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { ORTAOKUL_BRANSLARI, bransListesi, kademeBul, kurumSecimi, kurumSeciminiCoz, kurumSeviyeleri, lgsSinifiMi, ortaokulMu, seviyeNormalize } from "./kademe";
+import { KURUM_SECIMI_ACIKLAMA, KURUM_SECIMI_ETIKET, KURUM_SECIMI_SIRASI, ORTAOKUL_BRANSLARI, bransListesi, kademeBul, kurumSecimi, kurumSeciminiCoz, kurumSeviyeleri, lgsSinifiMi, ortaokulMu, seviyeNormalize } from "./kademe";
 import { BRANS_LISTESI } from "./types";
 import { REHBER_BRANSI } from "./rehberlik";
 import { dashboardMenusu } from "./dashboard-navigation";
@@ -111,15 +111,34 @@ describe("kurum seçimi ve sınıf seviyeleri", () => {
   test("seçim tur + kademeye çözülür", () => {
     expect(kurumSeciminiCoz("ortaokul")).toEqual({ tur: "okul", kademe: "ortaokul" });
     expect(kurumSeciminiCoz("lise")).toEqual({ tur: "okul", kademe: "lise" });
+    expect(kurumSeciminiCoz("ikisi")).toEqual({ tur: "okul", kademe: "ikisi" });
     expect(kurumSeciminiCoz("dershane")).toEqual({ tur: "dershane", kademe: "lise" });
   });
 
   test("kayıtlı kurumdan seçime geri dönüş", () => {
     expect(kurumSecimi("okul", "ortaokul")).toBe("ortaokul");
     expect(kurumSecimi("okul", "lise")).toBe("lise");
+    expect(kurumSecimi("okul", "ikisi")).toBe("ikisi");
     expect(kurumSecimi("dershane", "lise")).toBe("dershane");
     // Kademe hiç yazılmamış eski kayıt lise sayılır.
     expect(kurumSecimi("okul", null)).toBe("lise");
+  });
+
+  // Düzenleme formu kayıtlı kurumu seçime çevirip geri yazıyor: bu gidiş-dönüş
+  // bozuksa yönetici hiçbir şeye dokunmadan "Kaydet"e bastığında kurumun
+  // kademesi değişir.
+  test("çöz → geri dön gidiş dönüşü her seçenekte aynı seçimi verir", () => {
+    for (const s of KURUM_SECIMI_SIRASI) {
+      const { tur, kademe } = kurumSeciminiCoz(s);
+      expect(kurumSecimi(tur, kademe), s).toBe(s);
+    }
+  });
+
+  test("her seçeneğin etiketi ve açıklaması var", () => {
+    for (const s of KURUM_SECIMI_SIRASI) {
+      expect(KURUM_SECIMI_ETIKET[s], s).toBeTruthy();
+      expect(KURUM_SECIMI_ACIKLAMA[s], s).toBeTruthy();
+    }
   });
 
   test("ortaokulda 9-12 hiç görünmez", () => {

@@ -102,26 +102,45 @@ export const KURUM_KADEMESI_ETIKET: Record<KurumKademesi, string> = {
 
 // ---- Kurum türü seçimi (kullanıcı isteği 01.10.2026) ----
 //
-// Yönetici okul eklerken TEK bir seçim yapar: Ortaokul / Lise / Dershane.
-// Arka planda bu seçim iki alana çözülür: `schools.tur` (okul|dershane) ve
-// `schools.kademe` (ortaokul|lise). Böylece ortaokul kurumunda sınıf ekleme
-// formunda 9-12 boş yere görünmez.
-export type KurumSecimi = "ortaokul" | "lise" | "dershane";
+// Yönetici kurum eklerken TEK bir seçim yapar. Arka planda bu seçim iki alana
+// çözülür: `schools.tur` (okul|dershane) ve `schools.kademe`
+// (ortaokul|lise|ikisi). Böylece ortaokul kurumunda sınıf ekleme formunda 9-12
+// boş yere görünmez.
+//
+// "ikisi" aynı binada ortaokul + lise bulunan kurum için (özel okullarda çok
+// yaygın); orada sınıf eklerken 5-12 birlikte çıkar.
+export type KurumSecimi = "ortaokul" | "lise" | "ikisi" | "dershane";
+
+// Formlarda düğme sırası. İki form (ekleme + düzenleme) bu tek listeden
+// okuyor; ayrı ayrı yazılsa biri eklenip diğeri unutulabilirdi.
+export const KURUM_SECIMI_SIRASI = ["ortaokul", "lise", "ikisi", "dershane"] as const satisfies readonly KurumSecimi[];
 
 export const KURUM_SECIMI_ETIKET: Record<KurumSecimi, string> = {
   ortaokul: "Ortaokul (5-8)",
   lise: "Lise (9-12)",
+  ikisi: "Ortaokul + Lise",
   dershane: "Dershane",
+};
+
+// Seçimin ne anlama geldiğini yöneticiye tek satırla söyler.
+export const KURUM_SECIMI_ACIKLAMA: Record<KurumSecimi, string> = {
+  ortaokul: "Sınıf eklerken yalnız 5-8 seçenekleri çıkar.",
+  lise: "Sınıf eklerken yalnız 9-12 seçenekleri çıkar.",
+  ikisi: "Aynı kurumda ortaokul ve lise varsa: sınıf eklerken 5-12 birlikte çıkar.",
+  dershane: "Dershane: kurum yönetimi ve deneme yükleme açık, sınıflar 9-12.",
 };
 
 export function kurumSeciminiCoz(secim: KurumSecimi): { tur: "okul" | "dershane"; kademe: KurumKademesi } {
   if (secim === "dershane") return { tur: "dershane", kademe: "lise" };
   if (secim === "ortaokul") return { tur: "okul", kademe: "ortaokul" };
+  if (secim === "ikisi") return { tur: "okul", kademe: "ikisi" };
   return { tur: "okul", kademe: "lise" };
 }
 
 // Kayıtlı kurumdan seçime geri dönüş (düzenleme formu için).
 export function kurumSecimi(tur: string | null | undefined, kademe: KurumKademesi | null | undefined): KurumSecimi {
   if (tur === "dershane") return "dershane";
-  return kademe === "ortaokul" ? "ortaokul" : "lise";
+  if (kademe === "ortaokul") return "ortaokul";
+  if (kademe === "ikisi") return "ikisi";
+  return "lise";
 }

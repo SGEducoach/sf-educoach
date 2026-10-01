@@ -19,7 +19,7 @@ import { bugununTarihiTR } from "@/lib/tarih";
 import { IzinliOgrenciListesi } from "@/components/yonetici/IzinliOgrenciListesi";
 import { AYT_ALAN_ETIKET, kurumBransListesi, TYT_DERSLERI, AYT_DERSLERI, BRANS_DENEMESI_DERSLERI, DENEME_ZORLUGU_ETIKET, dersSoruSayisi, dokuzOnSinifMi } from "@/lib/types";
 import type { AytAlan, DenemeTuru, DenemeZorlugu } from "@/lib/types";
-import { KURUM_SECIMI_ETIKET, kurumSecimi, kurumSeciminiCoz } from "@/lib/kademe";
+import { KURUM_KADEMESI_ETIKET, KURUM_SECIMI_ACIKLAMA, KURUM_SECIMI_ETIKET, KURUM_SECIMI_SIRASI, kurumSecimi, kurumSeciminiCoz } from "@/lib/kademe";
 import type { KurumSecimi } from "@/lib/kademe";
 import type { KurumKademesi } from "@/lib/types";
 import { telefonSanitize, okulNoSanitize, TELEFON_IPUCU } from "@/lib/validators";
@@ -80,12 +80,18 @@ export function AdminPanel({
                   onChange={(e) => router.push(`/yonetici/okullar?okul=${e.target.value}`)}
                   className="text-xs font-bold px-3 py-1.5 rounded-full outline-none"
                   style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
+                  {/* Kademe yalnız lise DIŞINDA yazılıyor: kurumların çoğu lise,
+                      hepsine etiket basmak listeyi gürültüye çevirir. */}
                   {okullar.map((o) => (
-                    <option key={o.id} value={o.id}>{o.ad}{!o.aktif ? " (Pasif)" : ""}</option>
+                    <option key={o.id} value={o.id}>
+                      {o.ad}
+                      {o.kademe && o.kademe !== "lise" ? ` · ${KURUM_KADEMESI_ETIKET[o.kademe]}` : ""}
+                      {!o.aktif ? " (Pasif)" : ""}
+                    </option>
                   ))}
                 </select>
                 {gorunenOkul && (
-                  <button type="button" onClick={() => setOkulDuzenleAcik((v) => !v)} title="Okulu düzenle"
+                  <button type="button" onClick={() => setOkulDuzenleAcik((v) => !v)} title="Kurumu düzenle"
                     className="sfec-btn w-7 h-7 rounded-full flex items-center justify-center shrink-0"
                     style={{ background: "rgba(255,255,255,0.06)", border: `2px solid ${BORDER_STRONG}` }}>
                     <Pencil size={11} color={TEXT_MUTED} />
@@ -97,7 +103,7 @@ export function AdminPanel({
             <button type="button" onClick={() => setOkulEkleAcik((v) => !v)}
               className="sfec-btn flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full"
               style={{ background: okulEkleAcik ? MINT : "rgba(255,255,255,0.06)", color: okulEkleAcik ? MINT_ON : TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
-              <Plus size={12} /> Okul ekle
+              <Plus size={12} /> Kurum ekle
             </button>
           </div>
         </div>
@@ -171,9 +177,30 @@ export function AdminPanel({
   );
 }
 
-// Kullanıcı isteği (01.10.2026): kurum eklerken TEK seçim — Ortaokul /
-// Lise / Dershane. Seçim arka planda tur + kademe alanlarına çözülüyor;
-// böylece ortaokulda sınıf eklerken 9-12 boş yere görünmüyor.
+// Kurum seçimi düğmeleri — ekleme ve düzenleme formu AYNI bileşeni kullanıyor.
+// Daha önce iki yere ayrı yazılmıştı; bir seçenek eklendiğinde birinin
+// unutulması kaçınılmazdı.
+function KurumSecimiDugmeleri({ secim, setSecim }: { secim: KurumSecimi; setSecim: (s: KurumSecimi) => void }) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {KURUM_SECIMI_SIRASI.map((k) => (
+        <button key={k} type="button" onClick={() => setSecim(k)}
+          className="sfec-btn rounded-full px-3.5 py-1.5 text-xs font-bold"
+          style={{
+            background: secim === k ? MINT : BG0,
+            color: secim === k ? MINT_ON : TEXT,
+            border: `2px solid ${secim === k ? MINT : BORDER_STRONG}`,
+          }}>
+          {KURUM_SECIMI_ETIKET[k]}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// Kullanıcı isteği (01.10.2026): kurum eklerken TEK seçim — Ortaokul / Lise /
+// Ortaokul+Lise / Dershane. Seçim arka planda tur + kademe alanlarına
+// çözülüyor; böylece ortaokulda sınıf eklerken 9-12 boş yere görünmüyor.
 function OkulEkleFormu({ onDone }: { onDone: (yeniOkulId?: string) => void }) {
   const [ad, setAd] = useState("");
   const [secim, setSecim] = useState<KurumSecimi>("lise");
@@ -196,26 +223,8 @@ function OkulEkleFormu({ onDone }: { onDone: (yeniOkulId?: string) => void }) {
   return (
     <form onSubmit={ekle} className="rounded-2xl p-4 mb-4 flex flex-col gap-2.5" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
       <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[13px] font-bold">Yeni kurum</span>
-      <div className="flex flex-wrap gap-1.5">
-        {(["ortaokul", "lise", "dershane"] as KurumSecimi[]).map((k) => (
-          <button key={k} type="button" onClick={() => setSecim(k)}
-            className="sfec-btn rounded-full px-3.5 py-1.5 text-xs font-bold"
-            style={{
-              background: secim === k ? MINT : BG0,
-              color: secim === k ? MINT_ON : TEXT,
-              border: `2px solid ${secim === k ? MINT : BORDER_STRONG}`,
-            }}>
-            {KURUM_SECIMI_ETIKET[k]}
-          </button>
-        ))}
-      </div>
-      <p className="text-[11px]" style={{ color: TEXT_MUTED }}>
-        {secim === "ortaokul"
-          ? "Sınıf eklerken yalnız 5-8 seçenekleri çıkar."
-          : secim === "lise"
-            ? "Sınıf eklerken yalnız 9-12 seçenekleri çıkar."
-            : "Dershane: kurum yönetimi ve deneme yükleme açık, sınıflar 9-12."}
-      </p>
+      <KurumSecimiDugmeleri secim={secim} setSecim={setSecim} />
+      <p className="text-[11px]" style={{ color: TEXT_MUTED }}>{KURUM_SECIMI_ACIKLAMA[secim]}</p>
       <div className="flex gap-2 flex-wrap">
         <input value={ad} onChange={(e) => setAd(e.target.value)} placeholder="Kurum adı" required
           className="text-sm px-3 py-1.5 rounded-xl outline-none flex-1 min-w-[140px]" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
@@ -264,19 +273,7 @@ function OkulDuzenleFormu({ okul, onDone }: { okul: OkulSatiri; onDone: () => vo
       {/* Kademe sonradan düzeltilebilir: kurum yanlış türle açıldıysa yeniden
           oluşturmak yerine buradan değiştirilir. Sınıf seviyesi seçenekleri
           anında buna göre daralır. */}
-      <div className="flex flex-wrap gap-1.5">
-        {(["ortaokul", "lise", "dershane"] as KurumSecimi[]).map((k) => (
-          <button key={k} type="button" onClick={() => setSecim(k)}
-            className="sfec-btn rounded-full px-3.5 py-1.5 text-xs font-bold"
-            style={{
-              background: secim === k ? MINT : BG0,
-              color: secim === k ? MINT_ON : TEXT,
-              border: `2px solid ${secim === k ? MINT : BORDER_STRONG}`,
-            }}>
-            {KURUM_SECIMI_ETIKET[k]}
-          </button>
-        ))}
-      </div>
+      <KurumSecimiDugmeleri secim={secim} setSecim={setSecim} />
       {secim !== kurumSecimi(okul.tur, okul.kademe) && (
         <p className="text-[11px] font-semibold" style={{ color: BLUSH }}>
           Kademe değişiyor. Mevcut sınıflar silinmez; bundan sonra açacağın sınıfların seviyeleri yeni kademeye göre listelenir.
