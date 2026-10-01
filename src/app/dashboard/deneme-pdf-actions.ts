@@ -215,27 +215,37 @@ async function sonuclariEslestirVeKaydet(params: {
   granulerKarneMap?: Map<string, DenemeDersSonucu[]>;
   kazanimMap?: Map<string, DenemeKazanimSonucu[]>;
   karneOzetMap?: Map<string, KarneBirinciSayfa>;
+  okunamayanAdlar?: string[];
 }): Promise<{ otomatikEslesen: number; kayitBekleyen: number; incelemeBekleyen: number }> {
   const { admin, userId, schoolId, yayinevi, tarih, tur, ayristirilan, ogrenciler, onKayitlar } = params;
   const sinifMap = params.sinifMap ?? new Map<string, string>();
   const granulerKarneMap = params.granulerKarneMap ?? new Map<string, DenemeDersSonucu[]>();
   const kazanimMap = params.kazanimMap ?? new Map<string, DenemeKazanimSonucu[]>();
   const karneOzetMap = params.karneOzetMap ?? new Map<string, KarneBirinciSayfa>();
+  const okunamayanAdlar = params.okunamayanAdlar ?? [];
 
   let otomatikEslesen = 0;
   let kayitBekleyen = 0;
   let incelemeBekleyen = 0;
+  // Bu yüklemede sonucu YAZILAN öğrenciler — adaş korumasının dayanağı.
+  const buYuklemedeYazilanlar = new Set<string>();
 
   async function eslesmeKuyrugunaYaz(satir: PdfOgrenciSonucu): Promise<boolean> {
-    const { data: mevcut, error: aramaHatasi } = await admin
+    // "Aynı satır mı" kararı ada DEĞİL ad + PDF öğrenci numarasına bakıyor
+    // (migration 0130). Yalnız ada bakılırsa aynı denemede iki ayrı adaşın
+    // satırı tek satıra çöker ve birinin sonucu kaybolur — canlı veride
+    // olan tam olarak buydu.
+    let arama = admin
       .from("pdf_deneme_eslesme_bekleyenler")
-      .select("id")
+      .select("id, durum")
       .eq("school_id", schoolId)
       .eq("ad_soyad_ham", satir.ad_soyad)
       .eq("yayinevi", yayinevi)
       .eq("tarih", tarih)
-      .eq("tur", tur)
-      .eq("durum", "bekliyor")
+      .eq("tur", tur);
+    arama = satir.ogrenci_no ? arama.eq("ogrenci_no", satir.ogrenci_no) : arama.is("ogrenci_no", null);
+
+    const { data: mevcut, error: aramaHatasi } = await arama
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -256,6 +266,7 @@ async function sonuclariEslestirVeKaydet(params: {
       school_id: schoolId,
       ad_soyad_ham: satir.ad_soyad,
       ders_sonuclari: satir.ders_sonuclari,
+      ogrenci_no: satir.ogrenci_no ?? null,
       yayinevi,
       tarih,
       tur,
@@ -266,6 +277,12 @@ async function sonuclariEslestirVeKaydet(params: {
   }
 
   for (const satir of ayristirilan) {
+    // Her PDF satırı denetim ekranında iz bırakır. Otomatik eşleşen satır
+    // biraz aşağıda `atandi`, ön kayıt/belirsiz satır ise `bekliyor` olur.
+    // Böylece yükleme sonrası yalnızca sorunlar değil PDF'teki bütün adlar
+    // yönetici tarafından görülebilir ve tekrar yüklemeler yeni kuyruk
+    // kopyaları üretmez.
+    const kuyrugaYazildi = await eslesmeKuyrugunaYaz(satir);
     const adNorm = adNormalize(satir.ad_soyad);
     let eslesenler = ogrenciler.filter((o) => o.adNorm === adNorm);
     const eslesenOnKayitlar = onKayitlar.filter((o) => o.adNorm === adNorm);
@@ -291,6 +308,21 @@ async function sonuclariEslestirVeKaydet(params: {
       if (bulunan) eslesenler = [bulunan];
     }
 
+    // ADAŞ KORUMASI (01.10.2026, canlı veride bulundu): tek bir Kafa Dengi
+    // yüklemesinde PDF'teki İKİ ayrı "MEHMET ŞAHİN" satırı, kurumdaki TEK
+    // Mehmet Şahin hesabına otomatik yazıldı; netleri farklıydı, biri
+    // sessizce düştü ve hangisinin o hesabın sahibine ait olduğu
+    // anlaşılamadı. Aynı yüklemede bir öğrenciye İKİNCİ kez satır gelirse
+    // artık otomatik yazılmıyor, yöneticiye kuyrukta bırakılıyor.
+    if (eslesenler.length === 1 && eslesenOnKayitlar.length === 0 && buYuklemedeYazilanlar.has(eslesenler[0].id)) {
+      console.warn(
+        "Adaş: aynı yüklemede ikinci satır aynı öğrenciye çıktı, otomatik yazılmadı —",
+        satir.ad_soyad, "öğrenci:", eslesenler[0].id,
+      );
+      if (kuyrugaYazildi) incelemeBekleyen++;
+      continue;
+    }
+
     if (eslesenler.length === 1 && eslesenOnKayitlar.length === 0) {
       const granulerDersSonuclari = granulerKarneMap.get(adNorm);
       const sonuc = await ogretmenDenemeSonucuKaydet(admin, {
@@ -304,21 +336,35 @@ async function sonuclariEslestirVeKaydet(params: {
       });
       if (!sonuc.error) {
         otomatikEslesen++;
+        buYuklemedeYazilanlar.add(eslesenler[0].id);
         // Aynı satır önceki bir yüklemede kuyruğa düşmüşse artık bekletme.
-        const { error: kuyrukHatasi } = await admin.from("pdf_deneme_eslesme_bekleyenler")
+        // ÖĞRENCİ NUMARASI DA SÜZGECE GİRİYOR: aynı adı taşıyan iki satır
+        // bekliyorsa, numara olmadan bu güncelleme İKİSİNİ BİRDEN kapatır ve
+        // ikinci kişinin satırı hiç incelenmemiş gibi "atandi" görünür.
+        let kapat = admin.from("pdf_deneme_eslesme_bekleyenler")
           .update({ durum: "atandi", atanan_student_id: eslesenler[0].id })
           .eq("school_id", schoolId).eq("ad_soyad_ham", satir.ad_soyad)
           .eq("yayinevi", yayinevi).eq("tarih", tarih).eq("tur", tur).eq("durum", "bekliyor");
+        kapat = satir.ogrenci_no ? kapat.eq("ogrenci_no", satir.ogrenci_no) : kapat.is("ogrenci_no", null);
+        const { error: kuyrukHatasi } = await kapat;
         if (kuyrukHatasi) console.warn("Eski kuyruk satırı kapatılamadı:", kuyrukHatasi.message);
       } else {
         console.error("Deneme sonucu aktif öğrenciye kaydedilemedi:", sonuc.error);
-        if (await eslesmeKuyrugunaYaz(satir)) incelemeBekleyen++;
+        if (kuyrugaYazildi) incelemeBekleyen++;
       }
     } else if (eslesenler.length === 0 && eslesenOnKayitlar.length === 1) {
-      if (await eslesmeKuyrugunaYaz(satir)) kayitBekleyen++;
+      if (kuyrugaYazildi) kayitBekleyen++;
     } else {
-      if (await eslesmeKuyrugunaYaz(satir)) incelemeBekleyen++;
+      if (kuyrugaYazildi) incelemeBekleyen++;
     }
+  }
+
+  // Adı görülen fakat ders dağılımı çözülemeyen satırlar da boş sonuçla
+  // kuyruğa yazılır. Yönetici ekranı bunları "İsmi/sonucu anlaşılmadı"
+  // etiketiyle ayırır; böylece sessizce kaybolmazlar.
+  for (const ad of [...new Set(okunamayanAdlar)]) {
+    if (ayristirilan.some((s) => adNormalize(s.ad_soyad) === adNormalize(ad))) continue;
+    if (await eslesmeKuyrugunaYaz({ ad_soyad: ad, ders_sonuclari: [] })) incelemeBekleyen++;
   }
 
   return { otomatikEslesen, kayitBekleyen, incelemeBekleyen };
@@ -377,13 +423,16 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
   let ayristirilan: PdfOgrenciSonucu[] | null = null;
   let okunamayanAdlar: string[] = [];
 
-  // Deterministik yollarda (sınıf/okul listesi) PDF'te okulun TAMAMI var;
-  // yalnızca kurumdaki öğrencilerle ilgili satırlar alınır. Kullanıcı isteği
-  // (25.09.2026): adı kayıttan farklı yazılmış öğrenciler ("ALPEREN Y",
-  // soyadsız "GAMZENUR") sessizce atlanıyordu. Artık kayıtlı bir öğrenciye
-  // BENZEYEN satırlar da alınıyor — birebir eşleşmedikleri için
-  // sonuclariEslestirVeKaydet onları otomatik kaydetmez, yönetici onay
-  // kuyruğuna düşürür. Hiç benzemeyenler (okulda kaydı olmayanlar) yine atlanır.
+  // Kurumdaki bir öğrenciye benziyor mu — artık yalnızca KAYIT TUTMAK için
+  // (aşağıdaki günlük satırı). Süzgeç olarak KULLANILMIYOR.
+  //
+  // Geçmişi: 25.09.2026'da adı kayıttan farklı yazılmış öğrenciler
+  // ("ALPEREN Y", soyadsız "GAMZENUR") sessizce atlanıyordu, benzerlik
+  // ölçütü eklendi. 01.10.2026'da süzgeç tamamen kaldırıldı — kullanıcı
+  // isteği: "yüklenen deneme PDF'lerindeki bütün adlar" yönetici ekranında
+  // görünsün. Hiç benzemeyen satırlar da kuyruğa "İsmi/sonucu anlaşılmadı"
+  // olarak düşüyor; otomatik kaydedilmedikleri için kimsenin verisine
+  // karışmıyorlar ama sessizce de kaybolmuyorlar.
   const hedefAdlar = new Set(hedefOgrenciAdlari.map(adNormalize));
   const hedefleIlgiliMi = (pdfAdi: string) =>
     hedefAdlar.has(adNormalize(pdfAdi)) || hedefOgrenciAdlari.some((ad) => adlarBenzerMi(pdfAdi, ad));
@@ -394,14 +443,13 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
   // seferde işlenemeyecek kadar büyük" hatası veriyordu. Biçim tanınırsa
   // sonuçlar sütun konumuna göre doğrudan okunur ve Claude'a hiç gidilmez;
   // her satır toplam sütunuyla doğrulanır. Tanınmazsa eski yol aynen sürer.
-  // Yalnızca kurumdaki öğrencilerle ilgili satırlar alınır (bkz. hedefleIlgiliMi).
+  // PDF'teki bütün satırlar alınır; eşleştirme kararı sonuclariEslestirVeKaydet'te.
   let sinifListesi: SinifListesiSonucu | null = null;
   if ((tur === "TYT" || tur === "BRANS") && bicimDenensin("sinif")) {
     sinifListesi = await sinifListeleriniAyristir(Buffer.from(await dosya.arrayBuffer()));
     if (sinifListesi.basarili) {
       const okunanlar: PdfOgrenciSonucu[] = [];
       for (const o of sinifListesi.ogrenciler) {
-        if (!hedefleIlgiliMi(o.isimHam)) continue;
         const dersSonuclari = tytDerslerineIndirge(o.dersSonuclari, KARNE_DERS_TYT_ESLESTIRME);
         if (dersSonuclari) okunanlar.push({ ad_soyad: o.isimHam, ders_sonuclari: dersSonuclari, ogrenci_no: o.ogrenciNo || undefined });
         else okunamayanAdlar.push(o.isimHam);
@@ -442,7 +490,6 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
   ) {
     const okunanlar: PdfOgrenciSonucu[] = [];
     for (const o of deterministikSonuc.ogrenciler) {
-      if (!hedefleIlgiliMi(o.isimHam)) continue;
       // Birleşik dört sütun yalnızca bağımsız toplam/net doğrulaması için
       // geçici tutulur. Aşağıdaki P2 adımında kişisel karneden dokuz gerçek
       // derse çevrilmeyen öğrenci kayda gönderilmez.
@@ -454,7 +501,7 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
     }
     // Hangi dersin boş bırakıldığı belirsiz satırlar — PDF'te karne varsa
     // aşağıda (P2) karneden tamamlanır, yoksa elle girilmesi gerekir.
-    okunamayanAdlar.push(...deterministikSonuc.okunamayanSatirlar.map((o) => o.isimHam).filter(hedefleIlgiliMi));
+    okunamayanAdlar.push(...deterministikSonuc.okunamayanSatirlar.map((o) => o.isimHam));
     ayristirilan = okunanlar;
     okulListesindenOkundu = true;
     console.info(
@@ -721,7 +768,7 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
     ...deterministikSonuc.ogrenciler.map((o) => ({ isimHam: o.isimHam, ogrenciNo: o.ogrenciNo, toplamNet: o.toplam.net, tamamlanacak: false })),
     ...(okulListesindenOkundu
       ? deterministikSonuc.okunamayanSatirlar
-        .filter((o) => o.toplam && hedefleIlgiliMi(o.isimHam))
+        .filter((o) => o.toplam)
         .map((o) => ({ isimHam: o.isimHam, ogrenciNo: o.ogrenciNo, toplamNet: o.toplam!.net, tamamlanacak: true }))
       : []),
   ] : [];
@@ -754,6 +801,13 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
       console.warn("[deneme-pdf P2] beklenmeyen hata (Claude çıktısına sessizce düşülüyor):", hataOzeti(karneHatasi));
     }
   }
+
+  // Maarif raporunun kendi başlığı, elle yazılan yayınevi alanından daha
+  // güvenilir. Aynı PDF yanlışlıkla "ulti" gibi başka bir adla yeniden
+  // yüklenirse ikinci deneme açılmasını önlemek için kanonik adı kullan.
+  const kayitYayinevi = deterministikSonuc?.sinavAdi && /MAAR[İI]F/i.test(deterministikSonuc.sinavAdi)
+    ? "Maarif"
+    : yayinevi;
 
   // Maarif'in dört birleşik sütunlu okul listesinde Sosyal ve Fen alt
   // dersleri listeden çıkarılamaz. Kişisel karneyle çapraz doğrulanmış
@@ -805,9 +859,9 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
   }
 
   const { otomatikEslesen, kayitBekleyen, incelemeBekleyen } = await sonuclariEslestirVeKaydet({
-    admin: adminClient, userId: user.id, schoolId, yayinevi, tarih, tur,
+    admin: adminClient, userId: user.id, schoolId, yayinevi: kayitYayinevi, tarih, tur,
     ayristirilan, ogrenciler, onKayitlar,
-    sinifMap: pdfSinifMap, granulerKarneMap, kazanimMap, karneOzetMap,
+    sinifMap: pdfSinifMap, granulerKarneMap, kazanimMap, karneOzetMap, okunamayanAdlar,
   });
 
   revalidatePath("/dashboard");

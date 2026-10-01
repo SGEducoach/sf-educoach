@@ -8,7 +8,7 @@ import {
   type PdfEslesmeBekleyeni, type PdfEslesmeOgrencisi,
 } from "@/app/yonetici/pdf-eslesme-actions";
 import { adlarBenzerMi, adlarOlasiBenzer } from "@/lib/ad-benzerligi";
-import { BG0, BG1_ALT, BORDER, BORDER_STRONG, BLUSH, MINT, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
+import { BG0, BG1_ALT, BORDER, BORDER_STRONG, BLUSH, BUTTER, MINT, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
 
 const TUM_SINIFLAR = "";
 const SINIFSIZ = "__sinifsiz__";
@@ -37,6 +37,7 @@ export function PdfEslesmeListesi({ bekleyenler }: { bekleyenler: PdfEslesmeBekl
   const [buOturumdaYerlesen, setBuOturumdaYerlesen] = useState<Set<string>>(new Set());
   const [kurum, setKurum] = useState(TUMU);
   const [deneme, setDeneme] = useState(TUMU);
+  const [durum, setDurum] = useState(TUMU);
 
   const kurumlar = useMemo(() => {
     const sayac = new Map<string, { id: string; ad: string; adet: number }>();
@@ -63,7 +64,8 @@ export function PdfEslesmeListesi({ bekleyenler }: { bekleyenler: PdfEslesmeBekl
 
   const gorunen = bekleyenler.filter((b) =>
     (kurum === TUMU || b.schoolId === kurum) &&
-    (deneme === TUMU || `${b.tarih}|${b.tur}|${b.yayinevi}` === deneme));
+    (deneme === TUMU || `${b.tarih}|${b.tur}|${b.yayinevi}` === deneme) &&
+    (durum === TUMU || b.durumEtiketi === durum));
 
   const secimStili = { background: BG0, color: TEXT, border: `2px solid ${BORDER_STRONG}` };
 
@@ -86,8 +88,18 @@ export function PdfEslesmeListesi({ bekleyenler }: { bekleyenler: PdfEslesmeBekl
             {denemeler.map((d) => <option key={d.anahtar} value={d.anahtar}>{d.etiket} ({d.adet})</option>)}
           </select>
         </label>
-        {(kurum !== TUMU || deneme !== TUMU) && (
-          <button type="button" onClick={() => { setKurum(TUMU); setDeneme(TUMU); }}
+        <label className="flex min-w-[190px] flex-1 flex-col gap-1">
+          <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Durum</span>
+          <select value={durum} onChange={(e) => setDurum(e.target.value)}
+            className="rounded-xl px-3 py-2 text-xs font-semibold outline-none" style={secimStili}>
+            <option value={TUMU}>Tüm durumlar</option>
+            {[...new Set(bekleyenler.map((b) => b.durumEtiketi))].map((d) => (
+              <option key={d} value={d}>{d} ({bekleyenler.filter((b) => b.durumEtiketi === d).length})</option>
+            ))}
+          </select>
+        </label>
+        {(kurum !== TUMU || deneme !== TUMU || durum !== TUMU) && (
+          <button type="button" onClick={() => { setKurum(TUMU); setDeneme(TUMU); setDurum(TUMU); }}
             className="sfec-btn rounded-xl px-3 py-2 text-xs font-bold" style={{ color: TEXT_MUTED }}>
             Süzgeci temizle
           </button>
@@ -153,15 +165,37 @@ function PdfEslesmeSatiri({ bekleyen, buOturumdaYerlesen, yerlesti }: {
     <div className="rounded-2xl p-4" style={{ background: BG1_ALT, border: `2px solid ${BORDER}` }}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <div style={{ color: TEXT }} className="text-sm font-bold">{bekleyen.adSoyadHam}</div>
+          <div className="flex flex-wrap items-center gap-2">
+            <div style={{ color: TEXT }} className="text-sm font-bold">{bekleyen.adSoyadHam}</div>
+            {/* Adas satirlar ekranda ad ve netlerle ayirt edilemiyor; PDF numarasi
+                tek ayirt edici (migration 0130). */}
+            {bekleyen.ogrenciNo !== null && (
+              <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold">PDF no: {bekleyen.ogrenciNo}</span>
+            )}
+            <span className="rounded-full px-2 py-0.5 text-[10px] font-bold"
+              style={{
+                background: bekleyen.durumEtiketi === "Eşleştirildi" ? MINT : BG0,
+                color: bekleyen.durumEtiketi === "Eşleştirildi" ? MINT_ON
+                  : bekleyen.durumEtiketi === "Reddedildi" ? BLUSH
+                  : bekleyen.durumEtiketi === "Aynı adlı öğrenci var" ? BUTTER : TEXT_MUTED,
+                border: `1px solid ${BORDER_STRONG}`,
+              }}>
+              {bekleyen.durumEtiketi}
+            </span>
+          </div>
           <div style={{ color: TEXT_MUTED }} className="text-xs">
             {bekleyen.okulAdi} · {bekleyen.yayinevi} · {bekleyen.tarih} · {bekleyen.tur}
           </div>
+          {bekleyen.atananOgrenciAdi && (
+            <div style={{ color: MINT }} className="mt-1 text-[11px] font-semibold">Atanan öğrenci: {bekleyen.atananOgrenciAdi}</div>
+          )}
           <div style={{ color: TEXT_MUTED }} className="mt-1 text-[11px]">
-            {bekleyen.dersSonuclari.map((d) => `${d.ders}: ${d.dogru}D/${d.yanlis}Y`).join(" · ")}
+            {bekleyen.dersSonuclari.length > 0
+              ? bekleyen.dersSonuclari.map((d) => `${d.ders}: ${d.dogru}D/${d.yanlis}Y`).join(" · ")
+              : "Ders sonuçları okunamadı; öğrenci elle seçilmeden kayıt oluşturulmaz."}
           </div>
         </div>
-        <button type="button" disabled={pending} onClick={() => {
+        {bekleyen.eslestirilebilir && <button type="button" disabled={pending} onClick={() => {
           if (!window.confirm("Bu satır reddedilsin mi?")) return;
           startTransition(async () => {
             const r = await pdfEslesmeReddet(bekleyen.id);
@@ -170,10 +204,10 @@ function PdfEslesmeSatiri({ bekleyen, buOturumdaYerlesen, yerlesti }: {
           });
         }} className="sfec-btn shrink-0 flex items-center gap-1 rounded-lg px-3 py-1.5 text-[11px] font-bold" style={{ color: BLUSH, border: `2px solid ${BORDER_STRONG}` }}>
           <X size={12} /> Reddet
-        </button>
+        </button>}
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
+      {bekleyen.eslestirilebilir && <div className="mt-3 flex flex-wrap items-center gap-2">
         <select value={sinif} onChange={(e) => { setSinif(e.target.value); setSecilenId(""); }} onFocus={ogrencileriYukle}
           aria-label="Sınıfa göre süz"
           className="text-xs px-3 py-2 rounded-xl outline-none"
@@ -216,8 +250,8 @@ function PdfEslesmeSatiri({ bekleyen, buOturumdaYerlesen, yerlesti }: {
         })} className="sfec-btn flex items-center gap-1 rounded-lg px-3 py-2 text-[11px] font-bold disabled:opacity-50" style={{ background: MINT, color: MINT_ON }}>
           <Check size={12} /> Ata
         </button>
-      </div>
-      {yerlesmisSayisi > 0 && (
+      </div>}
+      {bekleyen.eslestirilebilir && yerlesmisSayisi > 0 && (
         <label className="mt-2 flex items-center gap-1.5 text-[11px]" style={{ color: TEXT_MUTED }}>
           <input type="checkbox" checked={yerlesenleriGoster} onChange={(e) => { setYerlesenleriGoster(e.target.checked); setSecilenId(""); }} />
           Bu denemede sonucu yerleşmiş {yerlesmisSayisi} öğrenci listede gizli — göster
