@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { BarChart3, CalendarCheck2, ChevronLeft, ListChecks, Sparkles, Target } from "lucide-react";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Header } from "@/components/dashboard/Header";
@@ -47,6 +47,12 @@ import { ortaokulDersleriGetir, ortaokulDersHaritasiGetir } from "@/lib/ortaokul
 import { OrtaokulDerslerim } from "@/components/dashboard/OrtaokulDerslerim";
 import { OrtaokulBugun } from "@/components/dashboard/OrtaokulBugun";
 import { ortaokulBugunGetir } from "@/lib/ortaokul-bugun-sorgu";
+import { ortaokulGorevlerimGetir, ortaokulPlanimGetir } from "@/lib/ortaokul-gorevler-sorgu";
+import { OrtaokulGorevlerim } from "@/components/dashboard/OrtaokulGorevlerim";
+import { OrtaokulPlanim } from "@/components/dashboard/OrtaokulPlanim";
+import { ortaokulYardimIstekleriGetir } from "@/lib/ortaokul-yardim-sorgu";
+import { yardimMesaji } from "@/lib/ortaokul-yardim";
+import { OrtaokulYardim } from "@/components/dashboard/OrtaokulYardim";
 import type { DashboardBolumu } from "@/lib/dashboard-navigation";
 import { dershaneDenemeBitisGetir, suresiDolduMu, kullaniciKurumuGetir, denemeSuresiUygulanir, grupDondurulmus, GRUP_DONDURULDU_MESAJI, GRUP_SALT_OKUNUR_MESAJI } from "@/lib/deneme-suresi";
 import { ogretmenProgramiGetir, okulNobetiGetir, yurtNobetGorevleriGetir } from "@/lib/ders-programi";
@@ -304,6 +310,51 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
     const secili = dersler.find((d) => d.id === seciliDersId) ?? null;
     const temalar = secili ? await ortaokulDersHaritasiGetir(supabase, secili.id) : [];
     return <OrtaokulDerslerim dersler={dersler} secili={secili} temalar={temalar} />;
+  }
+
+  // Ortaokul "Görevlerim" — lise listesi YKS makinesiyle geliyor (TYT/AYT
+  // deneme formu, hedef soru sayısı, konu önerileri). Ortaokulda teslim tek
+  // işaret (§8.4), bu yüzden kendi ekranı var.
+  if (kademe === "ortaokul" && aktifBolum === "gorevler") {
+    const { gruplar } = await ortaokulGorevlerimGetir(supabase, userId);
+    return <OrtaokulGorevlerim gruplar={gruplar} />;
+  }
+
+  // Ortaokul "Planım" — Faz 1'de salt okunur haftalık görünüm (§9).
+  if (kademe === "ortaokul" && aktifBolum === "planlar") {
+    const { data: ogrenciSatiri } = await supabase
+      .from("students").select("classes(seviye)").eq("id", userId).maybeSingle();
+    const sinif = (ogrenciSatiri as unknown as { classes: { seviye: string } | null } | null)?.classes;
+    const plan = await ortaokulPlanimGetir(supabase, userId, haftaBaslangic, sinif?.seviye ?? null);
+    return (
+      <OrtaokulPlanim
+        gunler={plan.gunler}
+        mesaj={plan.mesaj}
+        oncekiHref={`/dashboard/planlar?hafta=${tarihEkle(haftaBaslangic, -7)}`}
+        sonrakiHref={`/dashboard/planlar?hafta=${tarihEkle(haftaBaslangic, 7)}`}
+      />
+    );
+  }
+
+  // Ortaokul "Yardım İste" (§22.1, migration 0129). Bölüm menüde yalnız
+  // bayrak açıkken görünüyor; doğrudan adres yazılarak gelinirse de kademe
+  // kontrolü sunucu eyleminde tekrar yapılıyor.
+  if (aktifBolum === "ortaokul-yardim") {
+    if (kademe !== "ortaokul") notFound();
+    const { data: ogrenciSatiri } = await supabase
+      .from("students").select("classes(seviye)").eq("id", userId).maybeSingle();
+    const sinif = (ogrenciSatiri as unknown as { classes: { seviye: string } | null } | null)?.classes;
+    const [dersler, istekler] = await Promise.all([
+      ortaokulDersleriGetir(supabase, sinif?.seviye),
+      ortaokulYardimIstekleriGetir(supabase, userId),
+    ]);
+    return (
+      <OrtaokulYardim
+        dersler={dersler.map((d) => ({ id: d.id, ad: d.ad }))}
+        istekler={istekler}
+        mesaj={yardimMesaji(istekler)}
+      />
+    );
   }
 
   if (aktifBolum === "etkinlikler") {

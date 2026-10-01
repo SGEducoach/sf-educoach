@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 import { KURUM_SECIMI_ACIKLAMA, KURUM_SECIMI_ETIKET, KURUM_SECIMI_SIRASI, ORTAOKUL_BRANSLARI, bransListesi, kademeBul, kurumSecimi, kurumSeciminiCoz, kurumSeviyeleri, lgsSinifiMi, ortaokulMu, seviyeNormalize } from "./kademe";
 import { BRANS_LISTESI } from "./types";
 import { REHBER_BRANSI } from "./rehberlik";
-import { dashboardMenusu } from "./dashboard-navigation";
+import { DASHBOARD_ROUTE_BOLUMLERI, dashboardMenusu } from "./dashboard-navigation";
 
 describe("seviyeNormalize", () => {
   test("farklı yazımlar tek biçime iner", () => {
@@ -93,6 +93,22 @@ describe("ortaokul öğrenci menüsü", () => {
     expect(orta.find((o) => o.bolum === "ozet")?.etiket).toBe("Bugün");
     expect(orta.find((o) => o.bolum === "gorevler")?.etiket).toBe("Görevlerim");
     expect(orta.find((o) => o.bolum === "planlar")?.etiket).toBe("Planım");
+  });
+
+  test("Yardım İste yalnız ortaokul menüsünde", () => {
+    const orta = dashboardMenusu("ogrenci", "okul", undefined, false, "ortaokul");
+    expect(orta.find((o) => o.bolum === "ortaokul-yardim")?.etiket).toBe("Yardım İste");
+    const lise = dashboardMenusu("ogrenci", "okul");
+    expect(lise.map((o) => o.bolum)).not.toContain("ortaokul-yardim");
+  });
+
+  test("ortaokul menüsünün her bölümü yönlendirilebilir", () => {
+    // Menüde olup DASHBOARD_ROUTE_BOLUMLERI'nde olmayan bölüm 404 verir.
+    const orta = dashboardMenusu("ogrenci", "okul", undefined, false, "ortaokul");
+    for (const o of orta) {
+      if (o.bolum === "ozet") continue; // "/dashboard" kökü, alt yol değil
+      expect(DASHBOARD_ROUTE_BOLUMLERI.has(o.bolum), o.bolum).toBe(true);
+    }
   });
 
   test("kademe lise ise lise menüsü gelir", () => {

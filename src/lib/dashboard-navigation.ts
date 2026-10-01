@@ -36,6 +36,8 @@ export type DashboardBolumu =
   // Ortaokul paneli (Faz 1) — lise öğrencisinin "dersler" bölümü öğretmen
   // Ajandası için kullanıldığından ayrı bir ad verildi.
   | "ortaokul-dersler"
+  // Ortaokul Faz 1: ogrencinin bir ders icin yardim istedigi ekran.
+  | "ortaokul-yardim"
   | "okullar"
   // Grup Koçluk (18.09.2026) — kurum dışı koç grupları.
   | "grup-kocluk"
@@ -90,6 +92,7 @@ const ORTAOKUL_OGRENCI_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "gorevler", href: "/dashboard/gorevler", etiket: "Görevlerim", ikon: "gorev" },
   { bolum: "ortaokul-dersler", href: "/dashboard/ortaokul-dersler", etiket: "Derslerim", ikon: "hakimiyet" },
   { bolum: "planlar", href: "/dashboard/planlar", etiket: "Planım", ikon: "plan" },
+  { bolum: "ortaokul-yardim", href: "/dashboard/ortaokul-yardim", etiket: "Yardım İste", ikon: "talep" },
   { bolum: "profil", href: "/dashboard/profil", etiket: "Profilim", ikon: "profil" },
 ];
 
@@ -290,7 +293,7 @@ export function dashboardMenuYapisi(
 
 export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
   "gorevler", "planlar", "veri-girisi", "konu-hakimiyeti", "analiz", "yapay-zeka", "tg-denemeleri",
-  "duyurular", "talepler", "onaylar", "dersler", "ortaokul-dersler", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler", "rehberlik", "etkinlikler", "profil", "takvim", "yarismalar", "ogrenci-takibi",
+  "duyurular", "talepler", "onaylar", "dersler", "ortaokul-dersler", "ortaokul-yardim", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler", "rehberlik", "etkinlikler", "profil", "takvim", "yarismalar", "ogrenci-takibi",
 ]);
 // Yazılı analizinin ayrı sayfası yok (kullanıcı kararı 11.09.2026: yalnızca
 // öğretmene özel) — öğretmen Ajandam > Yazılı Analizi sekmesinden girer.
