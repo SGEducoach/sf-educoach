@@ -71,7 +71,7 @@ export function MobilMenu({ ad, role, kurumTuru, brans, grupMu = false, kademe, 
   brans?: string;
   grupMu?: boolean;
   // Ortaokul paneli (Faz 1): yalniz bayrak acikken dolu gelir.
-  kademe?: "ortaokul" | "lise" | null;
+  kademe?: "ortaokul" | "lise" | "ikisi" | null;
   // Bölüm başına bekleyen iş sayısı (bkz. DashboardYanMenu).
   rozetler?: Partial<Record<DashboardBolumu, number>>;
   okunmamisMesajSayisi: number;

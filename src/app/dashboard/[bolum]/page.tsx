@@ -6,7 +6,7 @@ import type { DashboardBolumu } from "@/lib/dashboard-navigation";
 export default async function DashboardBolumPage({ params, searchParams }: {
   params: Promise<{ bolum: string }>;
   // `konu`: Derslerim'deki bir konudan "Yardım İste"ye geçilirken taşınıyor.
-  searchParams: Promise<{ sinif?: string; ogrenci?: string; ogretmen?: string; donem?: string; okul?: string; hafta?: string; ders?: string; konu?: string }>;
+  searchParams: Promise<{ sinif?: string; ogrenci?: string; ogretmen?: string; donem?: string; okul?: string; hafta?: string; ders?: string; konu?: string; kisim?: string }>;
 }) {
   const [{ bolum }, mevcutArama] = await Promise.all([params, searchParams]);
   if (!DASHBOARD_ROUTE_BOLUMLERI.has(bolum as DashboardBolumu)) notFound();

@@ -38,6 +38,9 @@ export type DashboardBolumu =
   | "ortaokul-dersler"
   // Ortaokul Faz 1: ogrencinin bir ders icin yardim istedigi ekran.
   | "ortaokul-yardim"
+  // Ortaokul Maarif|LGS: ogrenci calisma kaydi ve ogretmen yeterlilik karari.
+  | "ortaokul-calisma"
+  | "ortaokul-yeterlilik"
   | "okullar"
   // Grup Koçluk (18.09.2026) — kurum dışı koç grupları.
   | "grup-kocluk"
@@ -91,10 +94,15 @@ const ORTAOKUL_OGRENCI_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "ozet", href: "/dashboard", etiket: "Bugün", ikon: "ana-sayfa" },
   { bolum: "gorevler", href: "/dashboard/gorevler", etiket: "Görevlerim", ikon: "gorev" },
   { bolum: "ortaokul-dersler", href: "/dashboard/ortaokul-dersler", etiket: "Derslerim", ikon: "hakimiyet" },
+  { bolum: "ortaokul-calisma", href: "/dashboard/ortaokul-calisma", etiket: "Çalışmalarım", ikon: "veri" },
   { bolum: "planlar", href: "/dashboard/planlar", etiket: "Planım", ikon: "plan" },
   { bolum: "ortaokul-yardim", href: "/dashboard/ortaokul-yardim", etiket: "Yardım İste", ikon: "talep" },
   { bolum: "profil", href: "/dashboard/profil", etiket: "Profilim", ikon: "profil" },
 ];
+
+const ORTAOKUL_YETERLILIK_MENU_OGESI: DashboardMenuOgesi = {
+  bolum: "ortaokul-yeterlilik", href: "/dashboard/ortaokul-yeterlilik", etiket: "Konu Yeterliliği", ikon: "hakimiyet",
+};
 
 const VELI_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "ozet", href: "/dashboard", etiket: "Çocuklarım", ikon: "ana-sayfa" },
@@ -271,10 +279,15 @@ export function dashboardMenusu(
   grupMu = false,
   // Ortaokul menüsü YALNIZCA burada devreye girer: kademe "ortaokul" olarak
   // geçilmezse (bayrak kapalıysa çağıran taraf geçmez) hiçbir şey değişmez.
-  kademe?: "ortaokul" | "lise" | null,
+  kademe?: "ortaokul" | "lise" | "ikisi" | null,
 ): DashboardMenuOgesi[] {
   if (role === "ogretmen" && grupMu) return GRUP_KOC_MENUSU;
   if (role === "ogrenci" && kademe === "ortaokul") return ORTAOKUL_OGRENCI_MENUSU;
+  // Ortaokul ogretmeni: Maarif|LGS yeterlilik karari ekrani (kullanici karari
+  // 01.10.2026). Lise menusu aynen korunuyor, yalniz bir kalem EKLENIYOR.
+  if (role === "ogretmen" && (kademe === "ortaokul" || kademe === "ikisi") && brans !== REHBER_BRANSI) {
+    return [...OGRETMEN_MENUSU, ORTAOKUL_YETERLILIK_MENU_OGESI];
+  }
   if (role === "ogrenci") return kurumTuru === "okul" ? [...OGRENCI_MENUSU, { bolum:"etkinlikler", href:"/dashboard/etkinlikler", etiket:"Etkinlikler", ikon:"takvim" }] : OGRENCI_MENUSU;
   if (role === "veli") return VELI_MENUSU;
   if (role === "ogretmen") return brans === REHBER_BRANSI ? (kurumTuru === "dershane" ? DERSHANE_REHBER_MENUSU : REHBER_OGRETMEN_MENUSU) : kurumTuru === "okul" && etkinlikBransiMi(brans) ? [...OGRETMEN_MENUSU, TAKVIM_MENU_OGESI, { bolum:"etkinlikler", href:"/dashboard/etkinlikler", etiket:"Etkinlik Grupları", ikon:"takvim" }] : kurumTuru === "okul" ? [...OGRETMEN_MENUSU, TAKVIM_MENU_OGESI] : OGRETMEN_MENUSU;
@@ -286,14 +299,14 @@ export function dashboardMenusu(
 // Menü çizimi için: admin gruplu, diğer roller düz (değişmedi).
 export function dashboardMenuYapisi(
   role: UserRole, kurumTuru?: KurumTuru, brans?: string, grupMu = false,
-  kademe?: "ortaokul" | "lise" | null,
+  kademe?: "ortaokul" | "lise" | "ikisi" | null,
 ): DashboardMenuKalemi[] {
   return role === "admin" ? ADMIN_MENU_YAPISI : dashboardMenusu(role, kurumTuru, brans, grupMu, kademe);
 }
 
 export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
   "gorevler", "planlar", "veri-girisi", "konu-hakimiyeti", "analiz", "yapay-zeka", "tg-denemeleri",
-  "duyurular", "talepler", "onaylar", "dersler", "ortaokul-dersler", "ortaokul-yardim", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler", "rehberlik", "etkinlikler", "profil", "takvim", "yarismalar", "ogrenci-takibi",
+  "duyurular", "talepler", "onaylar", "dersler", "ortaokul-dersler", "ortaokul-yardim", "ortaokul-calisma", "ortaokul-yeterlilik", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler", "rehberlik", "etkinlikler", "profil", "takvim", "yarismalar", "ogrenci-takibi",
 ]);
 // Yazılı analizinin ayrı sayfası yok (kullanıcı kararı 11.09.2026: yalnızca
 // öğretmene özel) — öğretmen Ajandam > Yazılı Analizi sekmesinden girer.

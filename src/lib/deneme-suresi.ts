@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { KurumTuru, UserRole } from "@/lib/types";
+import type { KurumKademesi, KurumTuru, UserRole } from "@/lib/types";
 
 // Dershane modülü 1 haftalık deneme süresi (2026-08-25 kullanıcı isteği,
 // bkz. migration 0065). Süre dolunca dershane rolleri "deneme süreniz
@@ -34,6 +34,9 @@ export interface KullaniciKurumu {
   aktif: boolean;
   // Grup bitiş tarihi geçtiyse true: grup salt okunur (Faz 8, migration 0119).
   suresiDoldu: boolean;
+  // Kurumun kademesi (migration 0128). Ortaokul öğretmeninin menüsü buna
+  // göre değişiyor (Konu Yeterliliği), eski kayıtlarda null olabilir.
+  kademe: KurumKademesi | null;
 }
 
 export const GRUP_SALT_OKUNUR_MESAJI =
@@ -44,12 +47,13 @@ export const GRUP_DONDURULDU_MESAJI =
 
 async function okulBilgisi(supabase: SupabaseClient, schoolId: string | null | undefined): Promise<KullaniciKurumu | undefined> {
   if (!schoolId) return undefined;
-  const { data: s } = await supabase.from("schools").select("tur, grup_kapasitesi, grup_bitis_tarihi, aktif").eq("id", schoolId).maybeSingle();
+  const { data: s } = await supabase.from("schools").select("tur, kademe, grup_kapasitesi, grup_bitis_tarihi, aktif").eq("id", schoolId).maybeSingle();
   if (!s) return undefined;
   const bugun = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Istanbul" });
   const grupMu = s.grup_kapasitesi !== null;
   return {
     tur: s.tur as KurumTuru, grupMu, aktif: s.aktif !== false,
+    kademe: (s.kademe as KurumKademesi | null) ?? null,
     suresiDoldu: grupMu && !!s.grup_bitis_tarihi && (s.grup_bitis_tarihi as string) < bugun,
   };
 }

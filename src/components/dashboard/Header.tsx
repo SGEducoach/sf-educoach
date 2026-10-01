@@ -27,7 +27,7 @@ const rolEtiket: Record<UserRole, string> = {
 
 export async function Header({ ad, role, kurumTuru, brans, grupMu = false, okunmamisMesajSayisi = 0, mobilNavigasyon = true, moderatorMu = false, rolEtiketi, aktifBolum = "ozet", geriDonusHref, geriDonusEtiketi, rozetler, kademe }: { ad: string; role: UserRole; kurumTuru?: KurumTuru; brans?: string; grupMu?: boolean; okunmamisMesajSayisi?: number; mobilNavigasyon?: boolean; moderatorMu?: boolean; rolEtiketi?: string; aktifBolum?: DashboardBolumu;
   // Ortaokul paneli (Faz 1) — MobilMenu icin tasiniyor.
-  kademe?: "ortaokul" | "lise" | null;
+  kademe?: "ortaokul" | "lise" | "ikisi" | null;
   // Mobil menüde bölüm başına bekleyen iş sayısı (bkz. DashboardYanMenu).
   rozetler?: Partial<Record<DashboardBolumu, number>>;
   // Kullanıcı isteği (26.08.2026): moderatör panelinin KENDİ İÇİNDEKİ "Ana

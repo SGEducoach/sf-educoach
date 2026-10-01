@@ -46,7 +46,7 @@ const IKONLAR: Record<DashboardIkonu, typeof Home> = {
 export function DashboardYanMenu({ role, kurumTuru, brans, grupMu = false, kademe, aktifBolum, rozetler }: {
   role: UserRole; kurumTuru?: KurumTuru; brans?: string; grupMu?: boolean; aktifBolum: DashboardBolumu;
   // Ortaokul paneli (Faz 1): yalnız bayrak acikken ve ortaokul sinifinda dolu gelir.
-  kademe?: "ortaokul" | "lise" | null;
+  kademe?: "ortaokul" | "lise" | "ikisi" | null;
   // Bölüm başına bekleyen iş sayısı (denetim 27.09.2026): koç, bekleyen veli
   // talebini ekrana girmeden görsün.
   rozetler?: Partial<Record<DashboardBolumu, number>>;

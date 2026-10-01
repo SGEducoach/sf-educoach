@@ -42,7 +42,7 @@ import { DashboardYanMenu } from "@/components/dashboard/DashboardYanMenu";
 import { TgDenemeleri } from "@/components/dashboard/TgDenemeleri";
 import { tgDenemeIlanlariGetir } from "@/lib/tg-deneme-ilanlari";
 import { dashboardMenusu } from "@/lib/dashboard-navigation";
-import { panelKademesi } from "@/lib/ortaokul-ayar";
+import { ortaokulAktifMi, panelKademesi } from "@/lib/ortaokul-ayar";
 import { ortaokulDersleriGetir, ortaokulDersHaritasiGetir } from "@/lib/ortaokul-mufredat-sorgu";
 import { OrtaokulDerslerim } from "@/components/dashboard/OrtaokulDerslerim";
 import { OrtaokulBugun } from "@/components/dashboard/OrtaokulBugun";
@@ -51,6 +51,11 @@ import { ortaokulGorevlerimGetir, ortaokulPlanimGetir } from "@/lib/ortaokul-gor
 import { OrtaokulGorevlerim } from "@/components/dashboard/OrtaokulGorevlerim";
 import { OrtaokulPlanim } from "@/components/dashboard/OrtaokulPlanim";
 import { ortaokulYardimIstekleriGetir } from "@/lib/ortaokul-yardim-sorgu";
+import { ortaokulCalismalariGetir, ortaokulDersTemaSecenekleri, ortaokulYeterlilikGetir } from "@/lib/ortaokul-bolum-sorgu";
+import { bolumCoz } from "@/lib/ortaokul-bolum";
+import { OrtaokulCalismalarim } from "@/components/dashboard/OrtaokulCalismalarim";
+import { OrtaokulYeterlilik } from "@/components/dashboard/OrtaokulYeterlilik";
+import { ORTAOKUL_SEVIYELERI } from "@/lib/kademe";
 import { yardimMesaji } from "@/lib/ortaokul-yardim";
 import { OrtaokulYardim } from "@/components/dashboard/OrtaokulYardim";
 import type { DashboardBolumu } from "@/lib/dashboard-navigation";
@@ -93,7 +98,7 @@ function haftaninPazartesisi(tarihISO?: string): string {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sinif?: string; ogrenci?: string; ogretmen?: string; donem?: string; okul?: string; hafta?: string; ders?: string; konu?: string; bolum?: string; gecmis?: string }>;
+  searchParams: Promise<{ sinif?: string; ogrenci?: string; ogretmen?: string; donem?: string; okul?: string; hafta?: string; ders?: string; konu?: string; kisim?: string; bolum?: string; gecmis?: string }>;
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -194,8 +199,15 @@ export default async function DashboardPage({
   // 5-8. sınıftayken "ortaokul" döner. Bayrak kapalıyken null — bu satır
   // dışında hiçbir davranış değişmez, lise tarafı aynen çalışır.
   const ogrenciKademesi = await panelKademesi(supabase, role, ogrenciSinifSeviyesi);
+  // Ogretmenin menusu KURUMUN kademesine gore: ortaokul (ya da "ikisi")
+  // kurumunda "Konu Yeterliligi" kalemi eklenir. Bayrak kapaliyken null —
+  // lise tarafinda hicbir sey degismez.
+  const ogretmenKademesi = role === "ogretmen" && (kurum?.kademe === "ortaokul" || kurum?.kademe === "ikisi") && await ortaokulAktifMi(supabase)
+    ? kurum.kademe
+    : null;
+  const menuKademesi = ogrenciKademesi ?? ogretmenKademesi;
   const ogrenciProgramiGizliRotasi = role === "ogretmen" && aktifBolum === "planlar" && !!params.ogrenci;
-  if (!dashboardMenusu(role, kurumTuru, brans, grupKocu, ogrenciKademesi).some((oge) => oge.bolum === aktifBolum) && !ogrenciProgramiGizliRotasi) redirect("/dashboard");
+  if (!dashboardMenusu(role, kurumTuru, brans, grupKocu, menuKademesi).some((oge) => oge.bolum === aktifBolum) && !ogrenciProgramiGizliRotasi) redirect("/dashboard");
   // Yazılı analizi dürüstlük engeli: öğretmenin panele girdiği günler sayılır
   // (bkz. src/lib/ogretmen-takip.ts, yazili-erisim.ts).
   if (role === "ogretmen") ogretmenAktifGunuKaydet(user.id);
@@ -217,7 +229,7 @@ export default async function DashboardPage({
           örtük bir uygulama detayı. Bu yüzden müdürde her zaman "Müdür"
           gösterilir, "Moderatör" etiketi öğretmen+moderatör kombinasyonuna
           özel kalır. */}
-      <Header ad={profile.ad} role={role} kurumTuru={kurumTuru} brans={brans} grupMu={grupKocu} okunmamisMesajSayisi={okunmamisMesajSayisi} moderatorMu={!!moderatorYetkisi} rolEtiketi={moderatorYetkisi && role !== "mudur" ? "Moderatör" : undefined} aktifBolum={aktifBolum} rozetler={menuRozetleri} kademe={ogrenciKademesi} />
+      <Header ad={profile.ad} role={role} kurumTuru={kurumTuru} brans={brans} grupMu={grupKocu} okunmamisMesajSayisi={okunmamisMesajSayisi} moderatorMu={!!moderatorYetkisi} rolEtiketi={moderatorYetkisi && role !== "mudur" ? "Moderatör" : undefined} aktifBolum={aktifBolum} rozetler={menuRozetleri} kademe={menuKademesi} />
       {grupAktivasyonu
         ? <GrupOgrenciAktivasyonu ad={profile.ad} alanSorulur={grupAlanSorulur} />
         : <ZorunluSifreDegisikligiKapisi gecici={profile.gecici_sifre} />}
@@ -232,7 +244,7 @@ export default async function DashboardPage({
       )}
       <HosgeldinPopuplari role={role} />
       <div className="mx-auto flex min-h-[calc(100dvh-6.75rem)] w-full max-w-[100rem] flex-1 items-stretch gap-6 px-4 py-6 sm:px-6 lg:py-7">
-        <DashboardYanMenu role={role} kurumTuru={kurumTuru} brans={brans} grupMu={grupKocu} kademe={ogrenciKademesi} aktifBolum={aktifBolum} rozetler={menuRozetleri} />
+        <DashboardYanMenu role={role} kurumTuru={kurumTuru} brans={brans} grupMu={grupKocu} kademe={menuKademesi} aktifBolum={aktifBolum} rozetler={menuRozetleri} />
         <main id="ana-icerik" className="sfec-dashboard-main min-h-[calc(100dvh-10.25rem)] min-w-0 w-full flex-1 flex flex-col gap-6">
           {/* Kullanıcı isteği (03.09.2026): Duyuru Geçmişi artık YALNIZCA admin
               panelinde (bkz. duyuru-gecmisi-actions.ts) — müdür menüsünden ve
@@ -249,9 +261,9 @@ export default async function DashboardPage({
             <section className="sfec-section"><DershaneDenemePdfFormu yalnizcaExcel /></section>
           ) : (
             <>
-              {role === "ogrenci" && <OgrenciIcerik userId={user.id} ad={profile.ad} donem={donem} haftaBaslangic={haftaninPazartesisi(params.hafta)} aktifBolum={aktifBolum} gecmisHafta={Number(params.gecmis ?? 0)} seciliDersId={params.ders} seciliKonu={params.konu} kademe={ogrenciKademesi} sinifSeviyesi={ogrenciSinifSeviyesi} />}
+              {role === "ogrenci" && <OgrenciIcerik userId={user.id} ad={profile.ad} donem={donem} haftaBaslangic={haftaninPazartesisi(params.hafta)} aktifBolum={aktifBolum} gecmisHafta={Number(params.gecmis ?? 0)} seciliDersId={params.ders} seciliKonu={params.konu} seciliBolum={params.kisim} kademe={ogrenciKademesi} sinifSeviyesi={ogrenciSinifSeviyesi} />}
               {(role === "ogretmen" || role === "mudur") && (
-                <OgretmenIcerik userId={user.id} role={role} kurumTuru={kurumTuru} brans={brans} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} secilenOgretmenId={params.ogretmen} donem={donem} aktifBolum={aktifBolum} grupMu={grupKocu} />
+                <OgretmenIcerik userId={user.id} role={role} kurumTuru={kurumTuru} brans={brans} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} secilenOgretmenId={params.ogretmen} donem={donem} aktifBolum={aktifBolum} seciliDersId={params.ders} seciliBolum={params.kisim} grupMu={grupKocu} />
               )}
               {role === "veli" && <VeliIcerik userId={user.id} ad={profile.ad} secilenOgrenciId={params.ogrenci} donem={donem} aktifBolum={aktifBolum} />}
             </>
@@ -276,7 +288,7 @@ async function GrupKocIcerik() {
   return <GrupKocPaneli grup={yetki.grup} ogrenciler={ogrenciler} bugun={bugununTarihiTR()} veliTalepleri={talepler} veliler={veliler} />;
 }
 
-async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, gecmisHafta, seciliDersId, seciliKonu, kademe, sinifSeviyesi }: {
+async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, gecmisHafta, seciliDersId, seciliKonu, seciliBolum, kademe, sinifSeviyesi }: {
   userId: string; ad: string; donem: RaporDonemi; haftaBaslangic: string; aktifBolum: DashboardBolumu;
   // Ogrencinin sinif seviyesi — ust tarafta BIR kez cekiliyor, ortaokul
   // ekranlari buradan okuyor (ayri ayri sorgu atmasinlar).
@@ -285,6 +297,9 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
   seciliDersId?: string;
   // "Yardım İste" ekranına Derslerim'den gelen konu adı (?konu=).
   seciliKonu?: string;
+  // Maarif | LGS sekmesi (?kisim=). Sorgu adı "bolum" DEĞİL: o ad rota
+  // segmentinin (bölüm) kendisi, çakışır.
+  seciliBolum?: string;
   // Ortaokul paneli açıksa "ortaokul"; aksi hâlde null (bkz. panelKademesi).
   kademe?: "ortaokul" | "lise" | null;
   // Veri geçmişi kaç 7 günlük dilim geriye bakıyor (?gecmis=1 → bir önceki 7 gün).
@@ -338,6 +353,31 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
         mesaj={plan.mesaj}
         oncekiHref={`/dashboard/planlar?hafta=${tarihEkle(haftaBaslangic, -7)}`}
         sonrakiHref={`/dashboard/planlar?hafta=${tarihEkle(haftaBaslangic, 7)}`}
+      />
+    );
+  }
+
+  // Ortaokul "Çalışmalarım" — Maarif | LGS (migration 0132). Öğrenci kaydı
+  // girer; YETERLİLİĞE KARAR VERMEZ, öğretmeninin kararını salt okur.
+  if (aktifBolum === "ortaokul-calisma") {
+    if (kademe !== "ortaokul") notFound();
+    const bolum = bolumCoz(seciliBolum);
+    const dersler = await ortaokulDersTemaSecenekleri(supabase, sinifSeviyesi);
+    const secili = dersler.find((d) => d.id === seciliDersId) ?? dersler[0] ?? null;
+    const bugunTarih = bugununTarihiTR();
+    const [calisma, yeterlilik] = await Promise.all([
+      // Son 30 gün: ekran "bu dönem ne yaptım" sorusuna yanıt veriyor.
+      ortaokulCalismalariGetir(supabase, userId, bolum, tarihEkle(bugunTarih, -30)),
+      secili ? ortaokulYeterlilikGetir(supabase, userId, secili, bolum) : Promise.resolve([]),
+    ]);
+    return (
+      <OrtaokulCalismalarim
+        bolum={bolum}
+        dersler={dersler}
+        kayitlar={calisma.kayitlar}
+        ozet={calisma.ozet}
+        yeterlilik={yeterlilik}
+        bugun={bugunTarih}
       />
     );
   }
@@ -636,8 +676,10 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
   );
 }
 
-async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, secilenOgrenciId, secilenOgretmenId, donem, aktifBolum, grupMu = false }: {
+async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, secilenOgrenciId, secilenOgretmenId, donem, aktifBolum, seciliDersId, seciliBolum, grupMu = false }: {
   userId: string; role: "ogretmen" | "mudur"; kurumTuru?: KurumTuru; brans?: string; secilenSinifId?: string; secilenOgrenciId?: string; secilenOgretmenId?: string; donem: RaporDonemi; aktifBolum: DashboardBolumu;
+  // Ortaokul Konu Yeterliliği ekranının seçimleri (?ders=, ?kisim=).
+  seciliDersId?: string; seciliBolum?: string;
   // Grup Koçluk koçu: ekran metinleri "grup" diline geçer (denetim 27.09.2026).
   grupMu?: boolean;
 }) {
@@ -653,6 +695,22 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       <div className="sfec-fade rounded-3xl p-6 text-center" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <p style={{ color: TEXT_MUTED }} className="text-sm">Öğretmen profili bulunamadı.</p>
       </div>
+    );
+  }
+
+  // Ortaokul "Konu Yeterliliği" — Maarif | LGS (migration 0132). Kararı
+  // YALNIZ öğretmen verir; öğrencinin ekranında aynı bilgi salt okunur.
+  // Bölüm menüde yalnız ortaokul kurumunda görünüyor; doğrudan adres yazanı
+  // da menü kontrolü (yukarıda) zaten /dashboard'a yönlendiriyor.
+  if (aktifBolum === "ortaokul-yeterlilik") {
+    return (
+      <OrtaokulYeterlilikIcerik
+        supabase={supabase}
+        schoolId={teacher.school_id}
+        seciliOgrenciId={secilenOgrenciId}
+        seciliDersId={seciliDersId}
+        seciliBolum={seciliBolum}
+      />
     );
   }
 
@@ -1193,5 +1251,56 @@ function OzetIstatistikKarti({ Icon, etiket, deger, aciklama }: {
       <div className="text-[11px] font-bold uppercase tracking-[0.11em]" style={{ color: TEXT_MUTED }}>{etiket}</div>
       <div className="mt-1 text-2xl font-extrabold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>{deger}</div>
     </div>
+  );
+}
+
+// Ortaokul "Konu Yeterliliği" içeriği (öğretmen). Veri sorguları burada,
+// karar düğmeleri istemci bileşeninde (OrtaokulYeterlilik).
+async function OrtaokulYeterlilikIcerik({ supabase, schoolId, seciliOgrenciId, seciliDersId, seciliBolum }: {
+  supabase: Awaited<ReturnType<typeof createClient>>;
+  schoolId: string;
+  seciliOgrenciId?: string;
+  seciliDersId?: string;
+  seciliBolum?: string;
+}) {
+  const bolum = bolumCoz(seciliBolum);
+
+  // Kurumun ORTAOKUL sınıflarındaki öğrenciler. Lise sınıfları bu ekrana
+  // hiç girmiyor — yeterlilik modeli ortaokul müfredatına bağlı.
+  const { data: ham } = await supabase
+    .from("students")
+    .select("id, profiles!students_id_fkey(ad), classes!inner(seviye, sube)")
+    .eq("school_id", schoolId)
+    .in("classes.seviye", [...ORTAOKUL_SEVIYELERI]);
+
+  type Satir = { id: string; profiles: { ad: string } | null; classes: { seviye: string; sube: string } | null };
+  const ogrenciler = ((ham ?? []) as unknown as Satir[])
+    .flatMap((o) => (o.profiles ? [{
+      id: o.id,
+      ad: o.profiles.ad,
+      sinif: o.classes ? `${o.classes.seviye}-${o.classes.sube}` : null,
+    }] : []))
+    .sort((a, b) => a.ad.localeCompare(b.ad, "tr"));
+
+  const seciliOgrenci = ogrenciler.find((o) => o.id === seciliOgrenciId) ?? ogrenciler[0] ?? null;
+
+  // Dersler SEÇİLİ ÖĞRENCİNİN sınıf seviyesine göre (5. sınıfta 6 ders).
+  const seviye = seciliOgrenci?.sinif?.split("-")[0] ?? null;
+  const dersler = await ortaokulDersTemaSecenekleri(supabase, seviye);
+  const seciliDers = dersler.find((d) => d.id === seciliDersId) ?? dersler[0] ?? null;
+  const satirlar = seciliOgrenci && seciliDers
+    ? await ortaokulYeterlilikGetir(supabase, seciliOgrenci.id, seciliDers, bolum)
+    : [];
+
+  return (
+    <OrtaokulYeterlilik
+      bolum={bolum}
+      ogrenciler={ogrenciler}
+      seciliOgrenci={seciliOgrenci}
+      dersler={dersler}
+      seciliDers={seciliDers}
+      satirlar={satirlar}
+      bugun={bugununTarihiTR()}
+    />
   );
 }
