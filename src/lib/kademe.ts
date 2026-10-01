@@ -1,5 +1,5 @@
-import { BRANS_LISTESI } from "@/lib/types";
-import type { KurumKademesi } from "@/lib/types";
+import { BRANS_LISTESI, kurumBransListesi } from "@/lib/types";
+import type { KurumKademesi, KurumTuru } from "@/lib/types";
 
 // Kademe (ortaokul / lise) — Ortaokul Paneli Faz 0.
 //
@@ -64,11 +64,16 @@ export const KADEME_ETIKET: Record<Kademe, string> = {
 // Beden Eğitimi, Müzik, Rehber Öğretmen) için metinler İKİ LİSTEDE DE BİREBİR
 // AYNI olmalı — aksi hâlde aynı öğretmen iki ayrı branş gibi görünür.
 export const ORTAOKUL_BRANSLARI = [
+  // Lisede branş "Türk Dili ve Edebiyatı"; ortaokulda ÖĞRETMEN BRANŞI
+  // "Türkçe"dir (kullanıcı kararı 01.10.2026). Lise adı bu listede YOK.
   "Türkçe",
   "Matematik",
   "Fen Bilimleri",
+  // Kullanıcı kararı (01.10.2026): T.C. İnkılap Tarihi ve Atatürkçülük
+  // dersini de Sosyal Bilgiler öğretmeni okutuyor — ayrı branş olarak
+  // sunulmuyor. Ders taksonomisinde İnkılap AYRI kalır (müfredatta kendi
+  // ders kaydı var); birleşen yalnız ÖĞRETMEN BRANŞI.
   "Sosyal Bilgiler",
-  "T.C. İnkılap Tarihi ve Atatürkçülük",
   "İngilizce",
   "Din Kültürü",
   "Görsel Sanatlar",
@@ -83,6 +88,27 @@ export const ORTAOKUL_BRANSLARI = [
 
 export function bransListesi(kademe: Kademe | null | undefined): readonly string[] {
   return kademe === "ortaokul" ? ORTAOKUL_BRANSLARI : BRANS_LISTESI;
+}
+
+// Formların kullandığı liste: kurum türü (okul/dershane) VE kademe birlikte.
+//
+// `kurumBransListesi` (types.ts) yalnız kurum türüne bakıyordu; kademeyi de
+// hesaba katan sarmalayıcı burada çünkü types.ts kademe.ts'i import edemez
+// (döngüsel bağımlılık — kademe.ts BRANS_LISTESI'ni oradan alıyor).
+//
+// Ortaokulda okula özel branşlar (Bilişim/Bilgisayar) eklenmiyor; ortaokul
+// listesinin kendi "Bilişim Teknolojileri" kalemi var.
+export function panelBransListesi(
+  kurumTuru: KurumTuru | null | undefined,
+  kademe: KurumKademesi | null | undefined,
+): readonly string[] {
+  if (kademe === "ortaokul") return ORTAOKUL_BRANSLARI;
+  // "ikisi": hem ortaokul hem lise branşı gerekir, metinler birebir aynı
+  // olduğu için tekilleştirme yeterli (bkz. testler).
+  if (kademe === "ikisi") {
+    return [...new Set([...ORTAOKUL_BRANSLARI, ...kurumBransListesi(kurumTuru)])];
+  }
+  return kurumBransListesi(kurumTuru);
 }
 
 // Kurumun kademesine göre açılabilecek sınıf seviyeleri (schools.kademe,

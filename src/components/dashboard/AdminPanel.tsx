@@ -17,11 +17,11 @@ import { SinifEkleFormu } from "@/components/dashboard/OgretmenPanel";
 import { DershaneDenemePdfFormu } from "@/components/dashboard/DershaneDenemePdfFormu";
 import { bugununTarihiTR } from "@/lib/tarih";
 import { IzinliOgrenciListesi } from "@/components/yonetici/IzinliOgrenciListesi";
-import { AYT_ALAN_ETIKET, kurumBransListesi, TYT_DERSLERI, AYT_DERSLERI, BRANS_DENEMESI_DERSLERI, DENEME_ZORLUGU_ETIKET, dersSoruSayisi, dokuzOnSinifMi } from "@/lib/types";
+import { AYT_ALAN_ETIKET, TYT_DERSLERI, AYT_DERSLERI, BRANS_DENEMESI_DERSLERI, DENEME_ZORLUGU_ETIKET, dersSoruSayisi, dokuzOnSinifMi } from "@/lib/types";
 import type { AytAlan, DenemeTuru, DenemeZorlugu } from "@/lib/types";
-import { KURUM_KADEMESI_ETIKET, KURUM_SECIMI_ACIKLAMA, KURUM_SECIMI_ETIKET, KURUM_SECIMI_SIRASI, kurumSecimi, kurumSeciminiCoz } from "@/lib/kademe";
+import { KURUM_KADEMESI_ETIKET, KURUM_SECIMI_ACIKLAMA, KURUM_SECIMI_ETIKET, KURUM_SECIMI_SIRASI, kurumSecimi, kurumSeciminiCoz, panelBransListesi } from "@/lib/kademe";
 import type { KurumSecimi } from "@/lib/kademe";
-import type { KurumKademesi } from "@/lib/types";
+import type { KurumKademesi, KurumTuru } from "@/lib/types";
 import { telefonSanitize, okulNoSanitize, TELEFON_IPUCU } from "@/lib/validators";
 import { ogrenciKaydiEslestir } from "@/lib/ogrenci-eslestirme";
 
@@ -411,13 +411,20 @@ function OlusturulanHesap({ email, sifre }: { email: string; sifre: string }) {
 }
 
 function OgretmenEkleFormu({ schoolId, okullar }: { schoolId: string; okullar: OkulSatiri[] }) {
-  const branslar = kurumBransListesi("okul");
   const [ad, setAd] = useState("");
   const [email, setEmail] = useState("");
   const [telefon, setTelefon] = useState("");
-  const [brans, setBrans] = useState<string>(branslar[0]);
   const [mudur, setMudur] = useState(false);
   const [hedefOkulId, setHedefOkulId] = useState(schoolId);
+  // Branş listesi SEÇİLİ kurumun kademesine göre: ortaokulda "Türk Dili ve
+  // Edebiyatı" değil "Türkçe", İnkılap ayrı branş olarak yok (kullanıcı
+  // kararı 01.10.2026).
+  const hedefOkul = okullar.find((o) => o.id === hedefOkulId) ?? null;
+  const branslar = panelBransListesi((hedefOkul?.tur as KurumTuru | undefined) ?? "okul", hedefOkul?.kademe);
+  const [secilenBrans, setBrans] = useState<string>(branslar[0]);
+  // Kurum değişince eski kademenin branşı seçili kalmasın. Durumu efektle
+  // düzeltmek yerine TÜRETİYORUZ: seçim listede yoksa ilk kaleme düşer.
+  const brans = branslar.includes(secilenBrans) ? secilenBrans : branslar[0];
   const [hata, setHata] = useState<string | null>(null);
   const [sonuc, setSonuc] = useState<{ email: string; sifre: string } | null>(null);
   const [pending, startTransition] = useTransition();

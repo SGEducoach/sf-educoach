@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { KURUM_SECIMI_ACIKLAMA, KURUM_SECIMI_ETIKET, KURUM_SECIMI_SIRASI, ORTAOKUL_BRANSLARI, bransListesi, kademeBul, kurumSecimi, kurumSeciminiCoz, kurumSeviyeleri, lgsSinifiMi, ortaokulMu, seviyeNormalize } from "./kademe";
+import { KURUM_SECIMI_ACIKLAMA, KURUM_SECIMI_ETIKET, KURUM_SECIMI_SIRASI, ORTAOKUL_BRANSLARI, panelBransListesi, bransListesi, kademeBul, kurumSecimi, kurumSeciminiCoz, kurumSeviyeleri, lgsSinifiMi, ortaokulMu, seviyeNormalize } from "./kademe";
 import { BRANS_LISTESI } from "./types";
 import { REHBER_BRANSI } from "./rehberlik";
 import { DASHBOARD_ROUTE_BOLUMLERI, dashboardMenusu } from "./dashboard-navigation";
@@ -175,5 +175,63 @@ describe("kurum seçimi ve sınıf seviyeleri", () => {
 
   test("ikisi seçilirse 5-12 birlikte", () => {
     expect(kurumSeviyeleri("ikisi")).toEqual(["5", "6", "7", "8", "9", "10", "11", "12"]);
+  });
+});
+
+// Öğretmen branşı: kullanıcı kararı 01.10.2026.
+describe("ortaokul öğretmen branşları", () => {
+  test("lise adı \"Türk Dili ve Edebiyatı\" ortaokulda YOK, yerine Türkçe var", () => {
+    expect(ORTAOKUL_BRANSLARI).not.toContain("Türk Dili ve Edebiyatı");
+    expect(ORTAOKUL_BRANSLARI).toContain("Türkçe");
+    // Lise listesi değişmedi.
+    expect(BRANS_LISTESI).toContain("Türk Dili ve Edebiyatı");
+  });
+
+  test("İnkılap Tarihi ayrı branş değil — Sosyal Bilgiler var", () => {
+    expect(ORTAOKUL_BRANSLARI).not.toContain("T.C. İnkılap Tarihi ve Atatürkçülük");
+    expect(ORTAOKUL_BRANSLARI).toContain("Sosyal Bilgiler");
+  });
+});
+
+describe("panelBransListesi", () => {
+  test("ortaokul kurumunda yalnız ortaokul branşları", () => {
+    const liste = panelBransListesi("okul", "ortaokul");
+    expect(liste).toEqual([...ORTAOKUL_BRANSLARI]);
+    expect(liste).not.toContain("Türk Dili ve Edebiyatı");
+    expect(liste).not.toContain("Fizik");
+  });
+
+  test("lise kurumunda liste değişmedi — okula özel branşlar dahil", () => {
+    const liste = panelBransListesi("okul", "lise");
+    expect(liste).toContain("Türk Dili ve Edebiyatı");
+    expect(liste).toContain("Bilişim");
+    expect(liste).not.toContain("Fen Bilimleri");
+  });
+
+  test("dershanede lise listesi, okula özel branşlar yok", () => {
+    const liste = panelBransListesi("dershane", "lise");
+    expect(liste).toContain("Türk Dili ve Edebiyatı");
+    expect(liste).not.toContain("Bilişim");
+  });
+
+  test("kademe bilinmiyorsa eski davranış (lise)", () => {
+    expect(panelBransListesi("okul", null)).toEqual([...panelBransListesi("okul", "lise")]);
+    expect(panelBransListesi("okul", undefined)).toEqual([...panelBransListesi("okul", "lise")]);
+  });
+
+  test("ikisi: her iki kademenin branşları, tekrar YOK", () => {
+    const liste = panelBransListesi("okul", "ikisi");
+    expect(liste).toContain("Fen Bilimleri");
+    expect(liste).toContain("Türk Dili ve Edebiyatı");
+    expect(liste).toContain("Türkçe");
+    // Matematik iki listede de var; bir kez görünmeli.
+    expect(liste.filter((b) => b === "Matematik")).toHaveLength(1);
+    expect(new Set(liste).size).toBe(liste.length);
+  });
+
+  test("rehber branşı her kademede aynı metinle duruyor", () => {
+    for (const kademe of ["ortaokul", "lise", "ikisi"] as const) {
+      expect(panelBransListesi("okul", kademe), kademe).toContain(REHBER_BRANSI);
+    }
   });
 });

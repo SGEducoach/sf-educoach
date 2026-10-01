@@ -17,7 +17,7 @@ import { OgrenciVeriKayitlari } from "@/components/yonetici/OgrenciVeriKayitlari
 import type { KullaniciSonuc } from "@/app/yonetici/actions";
 import { ogretmenProgramiGetir } from "@/lib/ders-programi";
 import { BG1, BG1_ALT, BORDER, MINT, TEXT, TEXT_MUTED } from "@/lib/theme";
-import type { UserRole, KurumTuru } from "@/lib/types";
+import type { UserRole, KurumTuru, KurumKademesi } from "@/lib/types";
 
 const ROL_ETIKET: Record<UserRole, string> = { ogrenci: "Öğrenci", ogretmen: "Öğretmen", veli: "Veli", mudur: "Müdür", admin: "Yönetici" };
 
@@ -144,9 +144,9 @@ async function OgrenciSayfasi({ admin, userId, ad, donem }: { admin: AdminClient
 }
 
 async function OgretmenSayfasi({ admin, userId }: { admin: AdminClient; userId: string }) {
-  const { data } = await admin.from("teachers").select("brans, school_id, class_id, schools(ad, tur, grup_kapasitesi), classes(seviye, sube)").eq("id", userId).maybeSingle();
+  const { data } = await admin.from("teachers").select("brans, school_id, class_id, schools(ad, tur, kademe, grup_kapasitesi), classes(seviye, sube)").eq("id", userId).maybeSingle();
   if (!data) return <BosKart metin="Öğretmen profili bulunamadı." />;
-  const okul = data.schools as unknown as { ad: string; tur: "okul" | "dershane"; grup_kapasitesi: number | null } | null;
+  const okul = data.schools as unknown as { ad: string; tur: "okul" | "dershane"; kademe: string | null; grup_kapasitesi: number | null } | null;
   const sinif = data.classes as unknown as { seviye: string; sube: string } | null;
   const dershaneMi = okul?.tur === "dershane";
   // Kullanıcı isteği (27.09.2026): grup koçunun branş dışında sınıf
@@ -175,7 +175,7 @@ async function OgretmenSayfasi({ admin, userId }: { admin: AdminClient; userId: 
     <section className="grid grid-cols-1 gap-3 sm:grid-cols-3"><Bilgi icon={School} etiket="Okul" deger={okul?.ad ?? "—"} /><Bilgi icon={BookOpen} etiket="Branş" deger={data.brans} /><Bilgi icon={Users} etiket="Sınıf öğretmenliği" deger={sinif ? `${sinif.seviye}-${sinif.sube}` : "Atanmamış"} /></section>
     <section className="rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <h2 className="mb-3 text-base font-bold" style={{ color: TEXT }}>Ders programı</h2>
-      <DersProgramiYonetimi teacherId={userId} dershaneMi={dershaneMi} siniflar={(okulSiniflari ?? []) as { id: string; seviye: string; sube: string }[]} satirlar={dersProgrami} />
+      <DersProgramiYonetimi teacherId={userId} dershaneMi={dershaneMi} kademe={okul?.kademe as KurumKademesi | null} siniflar={(okulSiniflari ?? []) as { id: string; seviye: string; sube: string }[]} satirlar={dersProgrami} />
     </section>
     <section className="rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}><h2 className="mb-3 text-base font-bold" style={{ color: TEXT }}>{data.class_id ? "Sınıfındaki öğrenciler" : "Okuldaki öğrenciler"}</h2><div className="sfec-ogrenci-listesi">{liste.length === 0 && <p className="text-sm" style={{ color: TEXT_MUTED }}>Öğrenci bulunamadı.</p>}{liste.map((o) => <Link key={o.id} href={`/yonetici/kullanici/${o.id}`} className="sfec-ogrenci-satiri flex items-center justify-between gap-3 px-2 py-3 text-sm" style={{ color: TEXT }}><strong className="min-w-0 truncate">{o.profiles?.ad ?? "İsimsiz"}</strong><span className="max-w-[55%] shrink-0 truncate text-xs" style={{ color: TEXT_MUTED }}>{o.classes ? `${o.classes.seviye}-${o.classes.sube}` : "—"} · #{o.okul_no}</span></Link>)}</div></section>
   </>;

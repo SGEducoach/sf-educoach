@@ -4,11 +4,13 @@ import {
   YARDIM_DURUM_ETIKET,
   YARDIM_MESAJ_EN_FAZLA,
   dersIcinAcikIstekVarMi,
+  dersinBransi,
   geriAlinabilirMi,
   yardimGirdisiDogrula,
   yardimMesaji,
 } from "./ortaokul-yardim";
 import type { YardimDurumu } from "./ortaokul-yardim";
+import { ORTAOKUL_BRANSLARI } from "./kademe";
 
 describe("yardimGirdisiDogrula", () => {
   // En önemli ürün kararı: mesaj ZORUNLU DEĞİL. Bu test bozulursa öğrenci
@@ -118,5 +120,35 @@ describe("durum metinleri", () => {
     for (const yasak of ["başarısız", "hata", "eksik", "yetersiz", "uyarı", "dikkat", "acil"]) {
       expect(hepsi, yasak).not.toContain(yasak);
     }
+  });
+});
+
+// Müfredattaki ders adı ile öğretmen branşı aynı yazılmıyor; eşleme
+// bozulursa istek sessizce hiçbir öğretmene ulaşmaz.
+describe("dersinBransi", () => {
+  test("müfredat ders adı öğretmen branşına çevrilir", () => {
+    expect(dersinBransi("Din Kültürü ve Ahlak Bilgisi")).toBe("Din Kültürü");
+    // İnkılap ayrı branş değil: dersi Sosyal Bilgiler öğretmeni okutuyor.
+    expect(dersinBransi("T.C. İnkılap Tarihi ve Atatürkçülük")).toBe("Sosyal Bilgiler");
+  });
+
+  test("adı branşla aynı olan dersler değişmeden geçer", () => {
+    for (const d of ["Matematik", "Türkçe", "Fen Bilimleri", "Sosyal Bilgiler", "İngilizce"]) {
+      expect(dersinBransi(d), d).toBe(d);
+    }
+  });
+
+  test("çevrilen her branş gerçekten ortaokul branş listesinde var", () => {
+    // Listede olmayan bir branşa çevirmek, isteği kimseye ulaşmaz hâle getirir.
+    for (const ders of [
+      "Din Kültürü ve Ahlak Bilgisi", "T.C. İnkılap Tarihi ve Atatürkçülük",
+      "Matematik", "Türkçe", "Fen Bilimleri", "Sosyal Bilgiler", "İngilizce",
+    ]) {
+      expect(ORTAOKUL_BRANSLARI, ders).toContain(dersinBransi(ders));
+    }
+  });
+
+  test("baştaki/sondaki boşluk önemsiz", () => {
+    expect(dersinBransi("  Matematik  ")).toBe("Matematik");
   });
 });

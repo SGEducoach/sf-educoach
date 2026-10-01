@@ -60,6 +60,9 @@ export interface School {
   id: string;
   ad: string;
   tur: KurumTuru;
+  // Kurumun kademesi (migration 0128). Bransve sinif seviyesi listeleri buna
+  // gore daraliyor; eski kayitlarda null olabilir, o zaman lise varsayilir.
+  kademe?: KurumKademesi | null;
   created_at: string;
 }
 

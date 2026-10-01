@@ -7,19 +7,22 @@ import { DersProgramiGrid } from "@/components/dashboard/DersProgramiGrid";
 import { dersProgramiDegisikliginiBildir, dersProgramiEkle, dersProgramiSil } from "@/app/dashboard/ders-programi-actions";
 import { DERS_SAATI_DILIMLERI, GUN_ETIKET, programGunleri } from "@/lib/ders-programi";
 import type { DersProgramiGunu, DersProgramiSatiri } from "@/lib/ders-programi";
-import { kurumBransListesi } from "@/lib/types";
+import { panelBransListesi } from "@/lib/kademe";
+import type { KurumKademesi } from "@/lib/types";
 import { BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 
 // Admin ve dershane müdürünün elle ders programı düzenlemesi (kullanıcı
 // kararı, 2026-08-25) — DersProgramiGrid'i düzenlenebilir modda sarar,
 // boş hücreye tıklayınca ekleme formu açılır, dolu hücrenin X'i siler.
-export function DersProgramiYonetimi({ teacherId, dershaneMi, siniflar, satirlar }: {
+export function DersProgramiYonetimi({ teacherId, dershaneMi, siniflar, satirlar, kademe }: {
   teacherId: string;
   dershaneMi: boolean;
+  // Ders listesi kurumun kademesine göre (ortaokulda Türkçe/Fen Bilimleri…).
+  kademe?: KurumKademesi | null;
   siniflar: { id: string; seviye: string; sube: string }[];
   satirlar: DersProgramiSatiri[];
 }) {
-  const branslar = kurumBransListesi(dershaneMi ? "dershane" : "okul");
+  const branslar = panelBransListesi(dershaneMi ? "dershane" : "okul", kademe);
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [hata, setHata] = useState<string | null>(null);

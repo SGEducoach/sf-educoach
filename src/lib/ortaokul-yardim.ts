@@ -111,6 +111,10 @@ export function dersIcinAcikIstekVarMi(
 // kimseye gitmesin diye burada açıkça yazıldı (ORTAOKUL_BRANSLARI, kademe.ts).
 const DERS_BRANS_ESLEMESI: Record<string, string> = {
   "din kültürü ve ahlak bilgisi": "Din Kültürü",
+  // İnkılap Tarihi ayrı bir öğretmen branşı DEĞİL; dersi Sosyal Bilgiler
+  // öğretmeni okutuyor (kullanıcı kararı 01.10.2026). Eşleme olmasa 8. sınıf
+  // İnkılap isteği hiçbir öğretmene ulaşmazdı.
+  "t.c. inkılap tarihi ve atatürkçülük": "Sosyal Bilgiler",
 };
 
 export function dersinBransi(dersAdi: string): string {

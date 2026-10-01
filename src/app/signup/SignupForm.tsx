@@ -7,7 +7,8 @@ import Image from "next/image";
 import { GraduationCap, BookOpen, Users, ChevronLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { AytAlan, KurumTuru, School, SchoolClass, UserRole } from "@/lib/types";
-import { AYT_ALAN_ETIKET, dokuzOnSinifMi, kurumBransListesi, sinifSiraKarsilastir } from "@/lib/types";
+import { panelBransListesi } from "@/lib/kademe";
+import { AYT_ALAN_ETIKET, dokuzOnSinifMi, sinifSiraKarsilastir } from "@/lib/types";
 import {
   BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH,
 } from "@/lib/theme";
@@ -474,8 +475,13 @@ function OgretmenKayit({ kurumTuru, schools, router, supabase }: {
   const [email, setEmail] = useState("");
   const [telefon, setTelefon] = useState("");
   const [schoolId, setSchoolId] = useState("");
-  const branslar = kurumBransListesi(kurumTuru);
-  const [brans, setBrans] = useState<string>(branslar[0]);
+  // Brans listesi SECILI kurumun kademesine gore: ortaokulda "Turkce",
+  // Inkilap ayri brans degil (kullanici karari 01.10.2026).
+  const branslar = panelBransListesi(kurumTuru, schools.find((o) => o.id === schoolId)?.kademe);
+  const [secilenBrans, setBrans] = useState<string>(branslar[0]);
+  // Okul degisince eski kademenin bransi secili kalmasin — durum efektle
+  // duzeltilmiyor, TURETILIYOR.
+  const brans = branslar.includes(secilenBrans) ? secilenBrans : branslar[0];
   const [password, setPassword] = useState("");
   const [password2, setPassword2] = useState("");
   const [hata, setHata] = useState<string | null>(null);

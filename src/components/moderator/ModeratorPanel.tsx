@@ -9,14 +9,18 @@ import {
   moderatorSinifSil, moderatorYurtDurumuDegistir,
   type ModeratorKullanici,
 } from "@/app/moderator/actions";
-import { AYT_ALAN_ETIKET, kurumBransListesi } from "@/lib/types";
+import { AYT_ALAN_ETIKET } from "@/lib/types";
+import type { KurumKademesi, KurumTuru } from "@/lib/types";
+import { panelBransListesi } from "@/lib/kademe";
 import type { AytAlan, SinifSeviyesi } from "@/lib/types";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 import { teslimEdilebilirEpostaMi } from "@/lib/validators";
 import { SosyalEtkinlikler } from "@/components/dashboard/SosyalEtkinlikler";
 
-export function ModeratorPanel({ okulAdi, kullanicilar, schoolId }: {
+export function ModeratorPanel({ okulAdi, kullanicilar, schoolId, kurumTuru, kademe }: {
   okulAdi: string; kullanicilar: ModeratorKullanici[];
+  // Branş listesi kurumun kademesine göre (ortaokul/lise/dershane).
+  kurumTuru?: KurumTuru; kademe?: KurumKademesi | null;
   // schoolId: yalnızca admin /yonetici → Moderatörler'den bu okulu
   // GÖRÜNTÜLERKEN geçilir (bkz. moderator/page.tsx) — aksiyon fonksiyonlarına
   // iletilir ki requireModerator() admin'in kendi (var olmayan) moderatör
@@ -127,7 +131,7 @@ export function ModeratorPanel({ okulAdi, kullanicilar, schoolId }: {
         <SinifEkleFormuModerator schoolId={schoolId}
           onEklendi={(yeni) => { setSiniflarTam((prev) => [...(prev ?? []), yeni].sort((a, b) => a.seviye === b.seviye ? a.sube.localeCompare(b.sube) : a.seviye.localeCompare(b.seviye))); }} />
       )}
-      {ekleModu === "ogretmen" && <OgretmenEkleFormu schoolId={schoolId} onDone={(msg) => { setMesaj(msg); setEkleModu("yok"); }} />}
+      {ekleModu === "ogretmen" && <OgretmenEkleFormu schoolId={schoolId} kurumTuru={kurumTuru} kademe={kademe} onDone={(msg) => { setMesaj(msg); setEkleModu("yok"); }} />}
       {ekleModu === "ogrenci" && <OgrenciEkleFormu schoolId={schoolId} onDone={(msg) => { setMesaj(msg); setEkleModu("yok"); }} />}
     </div>
 
@@ -147,7 +151,7 @@ export function ModeratorPanel({ okulAdi, kullanicilar, schoolId }: {
       <p style={{ color: TEXT_MUTED }} className="mt-3 text-xs font-semibold">Listelenen kişi: <strong style={{ color: TEXT }}>{gosterilenler.length}</strong></p>
     </div>
     <div className="sfec-liste">
-      {sayfadakiler.map(k => <KullaniciKarti key={k.id} kullanici={k} schoolId={schoolId} onMesaj={setMesaj} />)}
+      {sayfadakiler.map(k => <KullaniciKarti key={k.id} kullanici={k} schoolId={schoolId} kurumTuru={kurumTuru} kademe={kademe} onMesaj={setMesaj} />)}
       {gosterilenler.length === 0 && <div className="col-span-full rounded-2xl p-6 text-center text-sm" style={{ color: TEXT_MUTED, background: BG1, border: `2px solid ${BORDER}` }}>Bu filtrelere uygun kullanıcı bulunamadı.</div>}
     </div>
     {toplamSayfa > 1 && <nav aria-label="Kullanıcı listesi sayfaları" className="flex flex-wrap items-center justify-center gap-2">
@@ -296,8 +300,8 @@ function SinifRozetiModerator({ sinif, schoolId, onSilindi }: { sinif: { id: str
   );
 }
 
-function OgretmenEkleFormu({ schoolId, onDone }: { schoolId?: string; onDone: (msg: string) => void }) {
-  const branslar = kurumBransListesi("okul");
+function OgretmenEkleFormu({ schoolId, onDone, kurumTuru, kademe }: { schoolId?: string; onDone: (msg: string) => void; kurumTuru?: KurumTuru; kademe?: KurumKademesi | null }) {
+  const branslar = panelBransListesi(kurumTuru ?? "okul", kademe);
   const [ad, setAd] = useState("");
   const [email, setEmail] = useState("");
   const [telefon, setTelefon] = useState("");
@@ -400,7 +404,7 @@ function Alan({ etiket, value, onChange, type = "text" }: { etiket: string; valu
   return <label className="flex flex-col gap-1"><span className="text-[10px] font-semibold" style={{ color: TEXT_MUTED }}>{etiket}</span><input type={type} value={value} onChange={(e) => onChange(e.target.value)} className="rounded-lg px-2.5 py-2 text-xs outline-none" style={{ background: BG1, color: TEXT, border: `2px solid ${BORDER_STRONG}` }} /></label>;
 }
 
-function KullaniciKarti({ kullanici: k, schoolId, onMesaj }: { kullanici: ModeratorKullanici; schoolId?: string; onMesaj: (m: string) => void }) {
+function KullaniciKarti({ kullanici: k, schoolId, onMesaj, kurumTuru, kademe }: { kullanici: ModeratorKullanici; schoolId?: string; onMesaj: (m: string) => void; kurumTuru?: KurumTuru; kademe?: KurumKademesi | null }) {
   const [pending, startTransition] = useTransition();
   const [duzenleAcik, setDuzenleAcik] = useState(false);
   const [sifreAcik, setSifreAcik] = useState(false);
@@ -485,7 +489,7 @@ function KullaniciKarti({ kullanici: k, schoolId, onMesaj }: { kullanici: Modera
         <ModeratorOgrenciSinifTasiFormu studentId={k.id} schoolId={schoolId} onDone={(msg) => { onMesaj(msg); setDuzenleAcik(false); }} />
       )}
       {duzenleAcik && k.kategori === "ogretmen" && (
-        <ModeratorOgretmenBransFormu teacherId={k.id} schoolId={schoolId} onDone={(msg) => { onMesaj(msg); setDuzenleAcik(false); }} />
+        <ModeratorOgretmenBransFormu teacherId={k.id} schoolId={schoolId} kurumTuru={kurumTuru} kademe={kademe} onDone={(msg) => { onMesaj(msg); setDuzenleAcik(false); }} />
       )}
 
       {k.kategori === "ogrenci" && (
@@ -542,8 +546,8 @@ function ModeratorOgrenciSinifTasiFormu({ studentId, schoolId, onDone }: { stude
   );
 }
 
-function ModeratorOgretmenBransFormu({ teacherId, schoolId, onDone }: { teacherId: string; schoolId?: string; onDone: (msg: string) => void }) {
-  const branslar = kurumBransListesi("okul");
+function ModeratorOgretmenBransFormu({ teacherId, schoolId, onDone, kurumTuru, kademe }: { teacherId: string; schoolId?: string; onDone: (msg: string) => void; kurumTuru?: KurumTuru; kademe?: KurumKademesi | null }) {
+  const branslar = panelBransListesi(kurumTuru ?? "okul", kademe);
   const [brans, setBrans] = useState<string>(branslar[0]);
   const [pending, startTransition] = useTransition();
 
