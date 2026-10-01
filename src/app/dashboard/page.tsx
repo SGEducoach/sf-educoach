@@ -239,7 +239,7 @@ export default async function DashboardPage({
               bu dallanmadan kaldırıldı. Yerine öğrencinin kendi "Profilim"
               ekranı geldi (sadece şifre değiştirme). */}
           {aktifBolum === "profil" ? (
-            <OgrenciProfilim userId={user.id} ad={profile.ad} />
+            <OgrenciProfilim userId={user.id} ad={profile.ad} kademe={ogrenciKademesi} />
           ) : aktifBolum === "tg-denemeleri" ? (
             <TgDenemeleri bugun={bugununTarihiTR()} dbIlanlar={await tgDenemeIlanlariGetir(supabase)} />
           ) : grupKocu && aktifBolum === "ozet" ? (

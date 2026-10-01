@@ -11,7 +11,7 @@ import {
 } from "@/app/moderator/actions";
 import { AYT_ALAN_ETIKET } from "@/lib/types";
 import type { KurumKademesi, KurumTuru } from "@/lib/types";
-import { panelBransListesi } from "@/lib/kademe";
+import { alanSorulurMu, hedefEtiketi, kademeBul, panelBransListesi } from "@/lib/kademe";
 import type { AytAlan, SinifSeviyesi } from "@/lib/types";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 import { teslimEdilebilirEpostaMi } from "@/lib/validators";
@@ -344,6 +344,8 @@ function OgrenciEkleFormu({ schoolId, onDone }: { schoolId?: string; onDone: (ms
   const [hedefBolum, setHedefBolum] = useState("");
   const [siniflar, setSiniflar] = useState<{ id: string; seviye: string; sube: string }[] | null>(null);
   const [pending, startTransition] = useTransition();
+  // Secilen SINIFIN seviyesinden: 5-8 ise YKS alani sorulmaz, hedef meslek olur.
+  const seciliKademe = kademeBul((siniflar ?? []).find((x) => x.id === classId)?.seviye);
 
   useEffect(() => {
     startTransition(() => { moderatorOkulSiniflari(schoolId).then((r) => setSiniflar(r.siniflar)); });
@@ -375,13 +377,15 @@ function OgrenciEkleFormu({ schoolId, onDone }: { schoolId?: string; onDone: (ms
       <Alan etiket="E-posta" value={email} onChange={setEmail} type="email" />
       <Alan etiket="Okul numarası" value={okulNo} onChange={setOkulNo} />
       <Alan etiket="Telefon" value={telefon} onChange={setTelefon} />
-      <Alan etiket="Hedef bölüm" value={hedefBolum} onChange={setHedefBolum} />
-      <label className="flex flex-col gap-1">
-        <span className="text-[10px] font-semibold" style={{ color: TEXT_MUTED }}>AYT alanı</span>
-        <select value={aytAlan} onChange={(e) => setAytAlan(e.target.value as AytAlan)} className="rounded-lg px-2.5 py-2 text-xs outline-none" style={{ background: BG1, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
-          {(Object.keys(AYT_ALAN_ETIKET) as AytAlan[]).map((a) => <option key={a} value={a}>{AYT_ALAN_ETIKET[a]}</option>)}
-        </select>
-      </label>
+      <Alan etiket={hedefEtiketi(seciliKademe)} value={hedefBolum} onChange={setHedefBolum} />
+      {alanSorulurMu(seciliKademe) && (
+        <label className="flex flex-col gap-1">
+          <span className="text-[10px] font-semibold" style={{ color: TEXT_MUTED }}>AYT alanı</span>
+          <select value={aytAlan} onChange={(e) => setAytAlan(e.target.value as AytAlan)} className="rounded-lg px-2.5 py-2 text-xs outline-none" style={{ background: BG1, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
+            {(Object.keys(AYT_ALAN_ETIKET) as AytAlan[]).map((a) => <option key={a} value={a}>{AYT_ALAN_ETIKET[a]}</option>)}
+          </select>
+        </label>
+      )}
       <label className="flex flex-col gap-1">
         <span className="text-[10px] font-semibold" style={{ color: TEXT_MUTED }}>Sınıf</span>
         {siniflar === null ? (

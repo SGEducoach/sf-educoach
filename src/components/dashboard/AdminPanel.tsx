@@ -19,7 +19,7 @@ import { bugununTarihiTR } from "@/lib/tarih";
 import { IzinliOgrenciListesi } from "@/components/yonetici/IzinliOgrenciListesi";
 import { AYT_ALAN_ETIKET, TYT_DERSLERI, AYT_DERSLERI, BRANS_DENEMESI_DERSLERI, DENEME_ZORLUGU_ETIKET, dersSoruSayisi, dokuzOnSinifMi } from "@/lib/types";
 import type { AytAlan, DenemeTuru, DenemeZorlugu } from "@/lib/types";
-import { KURUM_KADEMESI_ETIKET, KURUM_SECIMI_ACIKLAMA, KURUM_SECIMI_ETIKET, KURUM_SECIMI_SIRASI, kurumSecimi, kurumSeciminiCoz, panelBransListesi } from "@/lib/kademe";
+import { KURUM_KADEMESI_ETIKET, KURUM_SECIMI_ACIKLAMA, KURUM_SECIMI_ETIKET, KURUM_SECIMI_SIRASI, alanSorulurMu, hedefYerTutucusu, kademeBul, kurumSecimi, kurumSeciminiCoz, panelBransListesi } from "@/lib/kademe";
 import type { KurumSecimi } from "@/lib/kademe";
 import type { KurumKademesi, KurumTuru } from "@/lib/types";
 import { telefonSanitize, okulNoSanitize, TELEFON_IPUCU } from "@/lib/validators";
@@ -504,6 +504,11 @@ function OgrenciEkleFormu({ schoolId, siniflar }: { schoolId: string; siniflar: 
   // (bkz. dashboard/OgrenciVeriGirisi). Sunucuya yine bir değer gitmesi
   // gerektiği için (ayt_alan NOT NULL) varsayılan "SAY" sessizce gönderiliyor.
   const dokuzOnMu = dokuzOnSinifMi(siniflar.find((s) => s.id === classId)?.seviye);
+  // Ortaokul (5-8) sinifi secilince YKS alani HIC sorulmaz; hedef de bolum
+  // degil meslek olur (kullanici karari 01.10.2026). Karar KURUMUN degil
+  // SECILEN SINIFIN seviyesinden turetiliyor — "ikisi" kurumunda ayni formda
+  // hem 5-A hem 11-B acilabiliyor.
+  const seciliKademe = kademeBul(siniflar.find((s) => s.id === classId)?.seviye);
 
   function ekle(e: React.FormEvent) {
     e.preventDefault();
@@ -544,13 +549,13 @@ function OgrenciEkleFormu({ schoolId, siniflar }: { schoolId: string; siniflar: 
           <option value="">Sınıf seçin</option>
           {siniflar.map((s) => <option key={s.id} value={s.id}>{s.seviye}-{s.sube}</option>)}
         </select>
-        {!dokuzOnMu && (
+        {!dokuzOnMu && alanSorulurMu(seciliKademe) && (
           <select value={aytAlan} onChange={(e) => setAytAlan(e.target.value as AytAlan)}
             className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
             {(Object.keys(AYT_ALAN_ETIKET) as AytAlan[]).map((a) => <option key={a} value={a}>{AYT_ALAN_ETIKET[a]}</option>)}
           </select>
         )}
-        <input value={hedefBolum} onChange={(e) => setHedefBolum(e.target.value.toLocaleUpperCase("tr-TR"))} autoCapitalize="characters" placeholder="Hedef bölüm (ops.)"
+        <input value={hedefBolum} onChange={(e) => setHedefBolum(e.target.value.toLocaleUpperCase("tr-TR"))} autoCapitalize="characters" placeholder={hedefYerTutucusu(seciliKademe)}
           className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
         {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
         <button type="submit" disabled={pending}

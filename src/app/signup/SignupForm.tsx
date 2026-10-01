@@ -7,7 +7,7 @@ import Image from "next/image";
 import { GraduationCap, BookOpen, Users, ChevronLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { AytAlan, KurumTuru, School, SchoolClass, UserRole } from "@/lib/types";
-import { panelBransListesi } from "@/lib/kademe";
+import { hedefEtiketi, kademeBul, panelBransListesi } from "@/lib/kademe";
 import { AYT_ALAN_ETIKET, dokuzOnSinifMi, sinifSiraKarsilastir } from "@/lib/types";
 import {
   BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH,
@@ -221,6 +221,10 @@ function OgrenciKayit({ kurumTuru, schools, classes, router, supabase }: {
   // NULL olduğu için varsayılan "SAY" sessizce gönderiliyor, öğrenciye
   // hiçbir yerde gösterilmiyor.
   const dokuzOnMu = dokuzOnSinifMi(sinifOptions.find((c) => c.id === classId)?.seviye);
+  // Ortaokul (5-8): YKS sinav turu/alan bloklari HIC gosterilmez, hedef de
+  // bolum degil meslek (kullanici karari 01.10.2026).
+  const seciliKademe = kademeBul(sinifOptions.find((c) => c.id === classId)?.seviye);
+  const ortaokulSinifi = seciliKademe === "ortaokul";
   const adim1Tamam = ad && okulNo && email && telefon && schoolId && classId && hedefBolum;
 
   function ileri(e: React.FormEvent) {
@@ -344,7 +348,7 @@ function OgrenciKayit({ kurumTuru, schools, classes, router, supabase }: {
           {sinifOptions.map((c) => <option key={c.id} value={c.id}>{c.seviye}-{c.sube}</option>)}
         </Secim>
       </label>
-      {dokuzOnMu ? (
+      {ortaokulSinifi ? null : dokuzOnMu ? (
         <div className="rounded-xl px-3 py-2 text-[12px] font-semibold" style={{ background: MINT_BG, color: MINT }}>
           Sınav türü: Branş Denemesi (9-10. sınıf)
         </div>
@@ -360,7 +364,7 @@ function OgrenciKayit({ kurumTuru, schools, classes, router, supabase }: {
           </label>
         </>
       )}
-      <label className="flex flex-col gap-1"><Etiket>Hedef Bölüm</Etiket><Girdi required value={hedefBolum} autoCapitalize="characters" onChange={(e) => setHedefBolum(e.target.value.toLocaleUpperCase("tr-TR"))} /></label>
+      <label className="flex flex-col gap-1"><Etiket>{hedefEtiketi(seciliKademe)}</Etiket><Girdi required value={hedefBolum} autoCapitalize="characters" onChange={(e) => setHedefBolum(e.target.value.toLocaleUpperCase("tr-TR"))} /></label>
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
       <button type="submit" className="sfec-btn text-sm font-bold py-2.5 rounded-xl" style={{ background: MINT, color: MINT_ON }}>Devam et</button>
     </form>

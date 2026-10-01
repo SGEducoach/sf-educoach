@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { KURUM_SECIMI_ACIKLAMA, KURUM_SECIMI_ETIKET, KURUM_SECIMI_SIRASI, ORTAOKUL_BRANSLARI, panelBransListesi, bransListesi, kademeBul, kurumSecimi, kurumSeciminiCoz, kurumSeviyeleri, lgsSinifiMi, ortaokulMu, seviyeNormalize } from "./kademe";
+import { KURUM_SECIMI_ACIKLAMA, KURUM_SECIMI_ETIKET, KURUM_SECIMI_SIRASI, ORTAOKUL_BRANSLARI, alanSorulurMu, hedefEtiketi, hedefYerTutucusu, panelBransListesi, bransListesi, kademeBul, kurumSecimi, kurumSeciminiCoz, kurumSeviyeleri, lgsSinifiMi, ortaokulMu, seviyeNormalize } from "./kademe";
 import { BRANS_LISTESI } from "./types";
 import { REHBER_BRANSI } from "./rehberlik";
 import { DASHBOARD_ROUTE_BOLUMLERI, dashboardMenusu } from "./dashboard-navigation";
@@ -233,5 +233,31 @@ describe("panelBransListesi", () => {
     for (const kademe of ["ortaokul", "lise", "ikisi"] as const) {
       expect(panelBransListesi("okul", kademe), kademe).toContain(REHBER_BRANSI);
     }
+  });
+});
+
+// Öğrenci alanları (kullanıcı kararı 01.10.2026): ortaokulda YKS "alan"
+// seçimi hiç sorulmaz, hedef bölüm değil meslektir.
+describe("öğrenci alanları kademeye göre", () => {
+  test("alan yalnız ortaokul DIŞINDA sorulur", () => {
+    expect(alanSorulurMu("ortaokul")).toBe(false);
+    expect(alanSorulurMu("lise")).toBe(true);
+    // Kademe bilinmiyorsa eski davranış: sorulur.
+    expect(alanSorulurMu(null)).toBe(true);
+    expect(alanSorulurMu(undefined)).toBe(true);
+  });
+
+  test("hedef etiketi ortaokulda meslek, lisede bölüm", () => {
+    expect(hedefEtiketi("ortaokul")).toBe("Hedef meslek");
+    expect(hedefEtiketi("lise")).toBe("Hedef bölüm");
+    expect(hedefEtiketi(null)).toBe("Hedef bölüm");
+    expect(hedefYerTutucusu("ortaokul")).toBe("Hedef meslek (ops.)");
+  });
+
+  // Formlar kademeyi SINIF seviyesinden türetiyor; "ikisi" kurumunda aynı
+  // formda hem 5-A hem 11-B açılabildiği için kurum kademesi yetmez.
+  test("sınıf seviyesinden türetme: 5-8 alan sormaz, 9-12 sorar", () => {
+    for (const s of ["5", "6", "7", "8"]) expect(alanSorulurMu(kademeBul(s)), s).toBe(false);
+    for (const s of ["9", "10", "11", "12"]) expect(alanSorulurMu(kademeBul(s)), s).toBe(true);
   });
 });

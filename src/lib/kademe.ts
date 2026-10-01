@@ -126,6 +126,28 @@ export const KURUM_KADEMESI_ETIKET: Record<KurumKademesi, string> = {
   ikisi: "Ortaokul + Lise (5-12)",
 };
 
+// ---- Öğrenci alanları (kullanıcı kararı 01.10.2026) ----
+//
+// Ortaokul öğrencisinde YKS'ye özgü "alan" (sayısal/eşit ağırlık/sözel) diye
+// bir şey yok — o seçim 11. sınıfta yapılıyor. Hedef de üniversite bölümü
+// değil, çocuğun söylediği meslek.
+//
+// `students.hedef_bolum` kolonu AYNI kalıyor (serbest metin); değişen yalnız
+// ekrandaki etiket. Ayrı kolon açmak aynı bilgiyi iki yere dağıtırdı.
+
+export function alanSorulurMu(kademe: Kademe | KurumKademesi | null | undefined): boolean {
+  return kademe !== "ortaokul";
+}
+
+export function hedefEtiketi(kademe: Kademe | KurumKademesi | null | undefined): string {
+  return kademe === "ortaokul" ? "Hedef meslek" : "Hedef bölüm";
+}
+
+// Form yer tutucusu: "Hedef meslek (ops.)" gibi.
+export function hedefYerTutucusu(kademe: Kademe | KurumKademesi | null | undefined): string {
+  return `${hedefEtiketi(kademe)} (ops.)`;
+}
+
 // ---- Kurum türü seçimi (kullanıcı isteği 01.10.2026) ----
 //
 // Yönetici kurum eklerken TEK bir seçim yapar. Arka planda bu seçim iki alana
