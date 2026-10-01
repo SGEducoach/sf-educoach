@@ -172,20 +172,28 @@ export default async function DashboardPage({
   // ekranı (şifre + isteğe bağlı e-posta + alan + hedef + onaylar). Sonraki
   // geçici şifrelerde (koç yeniledi) normal şifre değiştirme kapısı çıkar.
   const grupAktivasyonu = role === "ogrenci" && !!kurum?.grupMu && !profile.kvkk_onay_at;
-  const grupOgrencisiSeviyesi = grupAktivasyonu
+  // Öğrencinin sınıf seviyesi. İKİ yerde gerekiyor: ortaokul panelinin
+  // kademesi ve grup aktivasyonundaki alan sorusu.
+  //
+  // HATA (01.10.2026, canlıda yakalandı): bu sorgu yalnız `grupAktivasyonu`
+  // doğruyken çalışıyordu, yani seviye normal okul öğrencisinde DAİMA
+  // undefined kalıyor ve panelKademesi her zaman null dönüyordu — bayrak açık
+  // olsa bile ortaokul paneli hiç açılmıyordu. Artık her öğrenci için
+  // çekiliyor. (Grup aktivasyonu durumunda davranış birebir aynı: orada da
+  // zaten çekiliyordu.)
+  const ogrenciSinifKaydi = role === "ogrenci"
     ? ((await supabase.from("students").select("classes(seviye)").eq("id", user.id).maybeSingle()).data as unknown as { classes: { seviye: string } | { seviye: string }[] | null } | null)?.classes
     : null;
-  const grupAlanSorulur = !dokuzOnSinifMi(Array.isArray(grupOgrencisiSeviyesi) ? grupOgrencisiSeviyesi[0]?.seviye : grupOgrencisiSeviyesi?.seviye);
+  // Gömülü ilişki çalışma anında NESNE döner, tipte dizi görünür (proje notu).
+  const ogrenciSinifSeviyesi = Array.isArray(ogrenciSinifKaydi) ? ogrenciSinifKaydi[0]?.seviye : ogrenciSinifKaydi?.seviye;
+  const grupAlanSorulur = !dokuzOnSinifMi(ogrenciSinifSeviyesi);
   const varsayilanBolum: DashboardBolumu = !grupKocu && ((role === "mudur" && kurumTuru !== "dershane") || (role === "ogretmen" && brans === REHBER_BRANSI))
     ? "kurum-performansi" : "ozet";
   const aktifBolum = (params.bolum ?? varsayilanBolum) as DashboardBolumu;
   // Ortaokul paneli (Faz 1): yalnızca özellik bayrağı AÇIKKEN ve öğrenci
   // 5-8. sınıftayken "ortaokul" döner. Bayrak kapalıyken null — bu satır
   // dışında hiçbir davranış değişmez, lise tarafı aynen çalışır.
-  const ogrenciKademesi = await panelKademesi(
-    supabase, role,
-    Array.isArray(grupOgrencisiSeviyesi) ? grupOgrencisiSeviyesi[0]?.seviye : grupOgrencisiSeviyesi?.seviye,
-  );
+  const ogrenciKademesi = await panelKademesi(supabase, role, ogrenciSinifSeviyesi);
   const ogrenciProgramiGizliRotasi = role === "ogretmen" && aktifBolum === "planlar" && !!params.ogrenci;
   if (!dashboardMenusu(role, kurumTuru, brans, grupKocu, ogrenciKademesi).some((oge) => oge.bolum === aktifBolum) && !ogrenciProgramiGizliRotasi) redirect("/dashboard");
   // Yazılı analizi dürüstlük engeli: öğretmenin panele girdiği günler sayılır
@@ -241,7 +249,7 @@ export default async function DashboardPage({
             <section className="sfec-section"><DershaneDenemePdfFormu yalnizcaExcel /></section>
           ) : (
             <>
-              {role === "ogrenci" && <OgrenciIcerik userId={user.id} ad={profile.ad} donem={donem} haftaBaslangic={haftaninPazartesisi(params.hafta)} aktifBolum={aktifBolum} gecmisHafta={Number(params.gecmis ?? 0)} seciliDersId={params.ders} kademe={ogrenciKademesi} />}
+              {role === "ogrenci" && <OgrenciIcerik userId={user.id} ad={profile.ad} donem={donem} haftaBaslangic={haftaninPazartesisi(params.hafta)} aktifBolum={aktifBolum} gecmisHafta={Number(params.gecmis ?? 0)} seciliDersId={params.ders} kademe={ogrenciKademesi} sinifSeviyesi={ogrenciSinifSeviyesi} />}
               {(role === "ogretmen" || role === "mudur") && (
                 <OgretmenIcerik userId={user.id} role={role} kurumTuru={kurumTuru} brans={brans} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} secilenOgretmenId={params.ogretmen} donem={donem} aktifBolum={aktifBolum} grupMu={grupKocu} />
               )}
@@ -268,8 +276,11 @@ async function GrupKocIcerik() {
   return <GrupKocPaneli grup={yetki.grup} ogrenciler={ogrenciler} bugun={bugununTarihiTR()} veliTalepleri={talepler} veliler={veliler} />;
 }
 
-async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, gecmisHafta, seciliDersId, kademe }: {
+async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, gecmisHafta, seciliDersId, kademe, sinifSeviyesi }: {
   userId: string; ad: string; donem: RaporDonemi; haftaBaslangic: string; aktifBolum: DashboardBolumu;
+  // Ogrencinin sinif seviyesi — ust tarafta BIR kez cekiliyor, ortaokul
+  // ekranlari buradan okuyor (ayri ayri sorgu atmasinlar).
+  sinifSeviyesi?: string;
   // Ortaokul "Derslerim" ekranında açılan ders (?ders=).
   seciliDersId?: string;
   // Ortaokul paneli açıksa "ortaokul"; aksi hâlde null (bkz. panelKademesi).
@@ -302,11 +313,7 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
   // Ortaokul "Derslerim" — veri YALNIZ bu bölüm açıkken çekilir; bayrak
   // kapalıyken bu bölüme menüden erişilemediği için hiç çalışmaz.
   if (aktifBolum === "ortaokul-dersler") {
-    const { data: ogrenciSatiri } = await supabase
-      .from("students").select("classes(seviye)").eq("id", userId).maybeSingle();
-    const sinif = (ogrenciSatiri as unknown as { classes: { seviye: string } | { seviye: string }[] | null } | null)?.classes;
-    const seviye = Array.isArray(sinif) ? sinif[0]?.seviye : sinif?.seviye;
-    const dersler = await ortaokulDersleriGetir(supabase, seviye);
+    const dersler = await ortaokulDersleriGetir(supabase, sinifSeviyesi);
     const secili = dersler.find((d) => d.id === seciliDersId) ?? null;
     const temalar = secili ? await ortaokulDersHaritasiGetir(supabase, secili.id) : [];
     return <OrtaokulDerslerim dersler={dersler} secili={secili} temalar={temalar} />;
@@ -322,10 +329,7 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
 
   // Ortaokul "Planım" — Faz 1'de salt okunur haftalık görünüm (§9).
   if (kademe === "ortaokul" && aktifBolum === "planlar") {
-    const { data: ogrenciSatiri } = await supabase
-      .from("students").select("classes(seviye)").eq("id", userId).maybeSingle();
-    const sinif = (ogrenciSatiri as unknown as { classes: { seviye: string } | null } | null)?.classes;
-    const plan = await ortaokulPlanimGetir(supabase, userId, haftaBaslangic, sinif?.seviye ?? null);
+    const plan = await ortaokulPlanimGetir(supabase, userId, haftaBaslangic, sinifSeviyesi ?? null);
     return (
       <OrtaokulPlanim
         gunler={plan.gunler}
@@ -341,11 +345,8 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
   // kontrolü sunucu eyleminde tekrar yapılıyor.
   if (aktifBolum === "ortaokul-yardim") {
     if (kademe !== "ortaokul") notFound();
-    const { data: ogrenciSatiri } = await supabase
-      .from("students").select("classes(seviye)").eq("id", userId).maybeSingle();
-    const sinif = (ogrenciSatiri as unknown as { classes: { seviye: string } | null } | null)?.classes;
     const [dersler, istekler] = await Promise.all([
-      ortaokulDersleriGetir(supabase, sinif?.seviye),
+      ortaokulDersleriGetir(supabase, sinifSeviyesi),
       ortaokulYardimIstekleriGetir(supabase, userId),
     ]);
     return (
