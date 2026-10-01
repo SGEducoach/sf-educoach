@@ -260,11 +260,32 @@ function OkulDuzenleFormu({ okul, onDone }: { okul: OkulSatiri; onDone: () => vo
 
   return (
     <form onSubmit={kaydet} className="rounded-2xl p-4 mb-4 flex flex-col gap-2.5" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
-      <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[13px] font-bold">Okulu düzenle</span>
+      <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[13px] font-bold">Kurumu düzenle</span>
+      {/* Kademe sonradan düzeltilebilir: kurum yanlış türle açıldıysa yeniden
+          oluşturmak yerine buradan değiştirilir. Sınıf seviyesi seçenekleri
+          anında buna göre daralır. */}
+      <div className="flex flex-wrap gap-1.5">
+        {(["ortaokul", "lise", "dershane"] as KurumSecimi[]).map((k) => (
+          <button key={k} type="button" onClick={() => setSecim(k)}
+            className="sfec-btn rounded-full px-3.5 py-1.5 text-xs font-bold"
+            style={{
+              background: secim === k ? MINT : BG0,
+              color: secim === k ? MINT_ON : TEXT,
+              border: `2px solid ${secim === k ? MINT : BORDER_STRONG}`,
+            }}>
+            {KURUM_SECIMI_ETIKET[k]}
+          </button>
+        ))}
+      </div>
+      {secim !== kurumSecimi(okul.tur, okul.kademe) && (
+        <p className="text-[11px] font-semibold" style={{ color: BLUSH }}>
+          Kademe değişiyor. Mevcut sınıflar silinmez; bundan sonra açacağın sınıfların seviyeleri yeni kademeye göre listelenir.
+        </p>
+      )}
       <div className="flex gap-2 flex-wrap">
-        <input value={ad} onChange={(e) => setAd(e.target.value)} placeholder="Okul adı" required
+        <input value={ad} onChange={(e) => setAd(e.target.value)} placeholder="Kurum adı" required
           className="text-sm px-3 py-1.5 rounded-xl outline-none flex-1 min-w-[140px]" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
-        <input value={okulKodu} onChange={(e) => setOkulKodu(e.target.value)} placeholder="Okul kodu" required
+        <input value={okulKodu} onChange={(e) => setOkulKodu(e.target.value)} placeholder="Kurum kodu" required
           className="text-sm px-3 py-1.5 rounded-xl outline-none w-32" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
       </div>
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
