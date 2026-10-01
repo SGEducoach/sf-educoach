@@ -1,0 +1,94 @@
+{
+  "kaynak": "ortaokul/ingilizce-dersi-2-8.pdf",
+  "mufredat": "MEB 2024 Maarif Modeli",
+  "ders": "İngilizce",
+  "dersKodu": "İNG",
+  "sinif": "6",
+  "cikarimTarihi": "2026-10-01",
+  "not": "MEB İngilizce programında numaralı öğrenme çıktısı yoktur; içerik tema ve alt tema olarak verilir.",
+  "temalar": [
+    {
+      "kod": "İNG.6.1",
+      "ad": "School Life",
+      "tur": "tema",
+      "sira": 1,
+      "altBasliklar": [
+        "Roles, and responsibilities at school",
+        "School routines",
+        "National days and celebrations"
+      ]
+    },
+    {
+      "kod": "İNG.6.2",
+      "ad": "Classroom Life",
+      "tur": "tema",
+      "sira": 2,
+      "altBasliklar": [
+        "Daily and study routines",
+        "Learning activities in the classroom",
+        "Cardinal numbers 100-500",
+        "Ordinal numbers 1-50"
+      ]
+    },
+    {
+      "kod": "İNG.6.3",
+      "ad": "Personal Life",
+      "tur": "tema",
+      "sira": 3,
+      "altBasliklar": [
+        "Body parts, physical appearance and clothes",
+        "Personality and character"
+      ]
+    },
+    {
+      "kod": "İNG.6.4",
+      "ad": "Family Life",
+      "tur": "tema",
+      "sira": 4,
+      "altBasliklar": [
+        "Family members’ jobs, working places, and job routines",
+        "Different types of family homes and houses"
+      ]
+    },
+    {
+      "kod": "İNG.6.5",
+      "ad": "Life in the Neighbourhood & City",
+      "tur": "tema",
+      "sira": 5,
+      "altBasliklar": [
+        "Festivals and events in the neighbourhood and city",
+        "Transportation in the neighbourhood and the city"
+      ]
+    },
+    {
+      "kod": "İNG.6.6",
+      "ad": "Life in the World & Culture",
+      "tur": "tema",
+      "sira": 6,
+      "altBasliklar": [
+        "Countries, nationalities, and languages in the world",
+        "Food types and events from different parts of the world"
+      ]
+    },
+    {
+      "kod": "İNG.6.7",
+      "ad": "Life in Nature & Global Problems",
+      "tur": "tema",
+      "sira": 7,
+      "altBasliklar": [
+        "Activities in nature",
+        "Environmental problems in the world and solutions"
+      ]
+    },
+    {
+      "kod": "İNG.6.8",
+      "ad": "Life in the Universe & Future",
+      "tur": "tema",
+      "sira": 8,
+      "altBasliklar": [
+        "Planets and the Earth as a planet",
+        "Life on Earth in the future"
+      ]
+    }
+  ]
+}

@@ -39,6 +39,14 @@ function temaTuru(dersKodu) {
   return "tema";
 }
 
+// İngilizce programında numaralı öğrenme çıktısı yok; içerik temanın alt
+// başlıkları olarak geliyor (bkz. migration 0131). Boş dizi yerine NULL
+// yazılıyor ki "alt başlığı var ama listesi boş" ile karışmasın.
+function altBasliklar(tema) {
+  const liste = Array.isArray(tema.altBasliklar) ? tema.altBasliklar.filter((x) => String(x).trim()) : [];
+  return liste.length > 0 ? liste : null;
+}
+
 const SURUM_ADI = "MEB 2024 Maarif Modeli";
 
 async function surumuBul() {
@@ -76,6 +84,7 @@ async function temaYukle(dersId, tema, sira, tur) {
     islenis_sirasi: tema.islenisSirasi ?? null,
     ders_saati: tema.dersSaati ?? null,
     yuzde: tema.yuzde ?? null,
+    alt_basliklar: altBasliklar(tema),
     sira,
   };
   if (kuru) return "(kuru)";

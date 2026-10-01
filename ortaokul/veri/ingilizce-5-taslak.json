@@ -1,0 +1,101 @@
+{
+  "kaynak": "ortaokul/ingilizce-dersi-2-8.pdf",
+  "mufredat": "MEB 2024 Maarif Modeli",
+  "ders": "İngilizce",
+  "dersKodu": "İNG",
+  "sinif": "5",
+  "cikarimTarihi": "2026-10-01",
+  "not": "MEB İngilizce programında numaralı öğrenme çıktısı yoktur; içerik tema ve alt tema olarak verilir.",
+  "temalar": [
+    {
+      "kod": "İNG.5.1",
+      "ad": "School Life",
+      "tur": "tema",
+      "sira": 1,
+      "altBasliklar": [
+        "People, places and rules at school",
+        "School clubs",
+        "Countries",
+        "National days and celebrations"
+      ]
+    },
+    {
+      "kod": "İNG.5.2",
+      "ad": "Classroom Life",
+      "tur": "tema",
+      "sira": 2,
+      "altBasliklar": [
+        "Classroom rules and language",
+        "School subjects",
+        "Timetables",
+        "Classroom objects",
+        "Days of the week",
+        "Time"
+      ]
+    },
+    {
+      "kod": "İNG.5.3",
+      "ad": "Personal Life",
+      "tur": "tema",
+      "sira": 3,
+      "altBasliklar": [
+        "Basic body parts and physical features",
+        "Clothes",
+        "Daily routines and activities"
+      ]
+    },
+    {
+      "kod": "İNG.5.4",
+      "ad": "Family Life",
+      "tur": "tema",
+      "sira": 4,
+      "altBasliklar": [
+        "Family members’ routines",
+        "Family members’ hobbies and activities"
+      ]
+    },
+    {
+      "kod": "İNG.5.5",
+      "ad": "Life in the Neighbourhood & City",
+      "tur": "tema",
+      "sira": 5,
+      "altBasliklar": [
+        "Places for recreation and attractions in the neighbourhood and city",
+        "Different types of houses"
+      ]
+    },
+    {
+      "kod": "İNG.5.6",
+      "ad": "Life in the World",
+      "tur": "tema",
+      "sira": 6,
+      "altBasliklar": [
+        "Basic food types",
+        "Ordering in a restaurant",
+        "Food events in the city"
+      ]
+    },
+    {
+      "kod": "İNG.5.7",
+      "ad": "Life in Nature",
+      "tur": "tema",
+      "sira": 7,
+      "altBasliklar": [
+        "Types of animals in nature",
+        "Wild animals in nature",
+        "Their habitats"
+      ]
+    },
+    {
+      "kod": "İNG.5.8",
+      "ad": "Life in the Universe & Future",
+      "tur": "tema",
+      "sira": 8,
+      "altBasliklar": [
+        "Planet Earth",
+        "Holidays",
+        "School holidays, places, activities, and plans for holidays"
+      ]
+    }
+  ]
+}

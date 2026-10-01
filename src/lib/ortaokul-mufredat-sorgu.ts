@@ -66,7 +66,7 @@ export async function ortaokulDersHaritasiGetir(
 ): Promise<OrtaokulTemasi[]> {
   const { data } = await supabase
     .from("ortaokul_mufredat_temalari")
-    .select("id, kod, ad, tur, ders_saati, sira, ortaokul_mufredat_kazanimlari(id, kod, metin, sira)")
+    .select("id, kod, ad, tur, ders_saati, alt_basliklar, sira, ortaokul_mufredat_kazanimlari(id, kod, metin, sira)")
     .eq("ders_id", dersId);
   return temalariDuzenle((data ?? []) as unknown as HamTemaSatiri[]);
 }

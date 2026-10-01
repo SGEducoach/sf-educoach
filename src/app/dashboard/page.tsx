@@ -93,7 +93,7 @@ function haftaninPazartesisi(tarihISO?: string): string {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sinif?: string; ogrenci?: string; ogretmen?: string; donem?: string; okul?: string; hafta?: string; ders?: string; bolum?: string; gecmis?: string }>;
+  searchParams: Promise<{ sinif?: string; ogrenci?: string; ogretmen?: string; donem?: string; okul?: string; hafta?: string; ders?: string; konu?: string; bolum?: string; gecmis?: string }>;
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -249,7 +249,7 @@ export default async function DashboardPage({
             <section className="sfec-section"><DershaneDenemePdfFormu yalnizcaExcel /></section>
           ) : (
             <>
-              {role === "ogrenci" && <OgrenciIcerik userId={user.id} ad={profile.ad} donem={donem} haftaBaslangic={haftaninPazartesisi(params.hafta)} aktifBolum={aktifBolum} gecmisHafta={Number(params.gecmis ?? 0)} seciliDersId={params.ders} kademe={ogrenciKademesi} sinifSeviyesi={ogrenciSinifSeviyesi} />}
+              {role === "ogrenci" && <OgrenciIcerik userId={user.id} ad={profile.ad} donem={donem} haftaBaslangic={haftaninPazartesisi(params.hafta)} aktifBolum={aktifBolum} gecmisHafta={Number(params.gecmis ?? 0)} seciliDersId={params.ders} seciliKonu={params.konu} kademe={ogrenciKademesi} sinifSeviyesi={ogrenciSinifSeviyesi} />}
               {(role === "ogretmen" || role === "mudur") && (
                 <OgretmenIcerik userId={user.id} role={role} kurumTuru={kurumTuru} brans={brans} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} secilenOgretmenId={params.ogretmen} donem={donem} aktifBolum={aktifBolum} grupMu={grupKocu} />
               )}
@@ -276,13 +276,15 @@ async function GrupKocIcerik() {
   return <GrupKocPaneli grup={yetki.grup} ogrenciler={ogrenciler} bugun={bugununTarihiTR()} veliTalepleri={talepler} veliler={veliler} />;
 }
 
-async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, gecmisHafta, seciliDersId, kademe, sinifSeviyesi }: {
+async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, gecmisHafta, seciliDersId, seciliKonu, kademe, sinifSeviyesi }: {
   userId: string; ad: string; donem: RaporDonemi; haftaBaslangic: string; aktifBolum: DashboardBolumu;
   // Ogrencinin sinif seviyesi — ust tarafta BIR kez cekiliyor, ortaokul
   // ekranlari buradan okuyor (ayri ayri sorgu atmasinlar).
   sinifSeviyesi?: string;
   // Ortaokul "Derslerim" ekranında açılan ders (?ders=).
   seciliDersId?: string;
+  // "Yardım İste" ekranına Derslerim'den gelen konu adı (?konu=).
+  seciliKonu?: string;
   // Ortaokul paneli açıksa "ortaokul"; aksi hâlde null (bkz. panelKademesi).
   kademe?: "ortaokul" | "lise" | null;
   // Veri geçmişi kaç 7 günlük dilim geriye bakıyor (?gecmis=1 → bir önceki 7 gün).
@@ -354,6 +356,8 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
         dersler={dersler.map((d) => ({ id: d.id, ad: d.ad }))}
         istekler={istekler}
         mesaj={yardimMesaji(istekler)}
+        hazirDersId={seciliDersId}
+        hazirKonu={seciliKonu}
       />
     );
   }

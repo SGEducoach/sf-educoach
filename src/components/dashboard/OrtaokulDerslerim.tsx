@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { BookOpen, ChevronDown, ChevronRight } from "lucide-react";
-import { temaTuruEtiketi } from "@/lib/ortaokul-mufredat";
+import { BookOpen, ChevronDown, ChevronRight, HandHeart } from "lucide-react";
+import { dersOzetSatiri, temaAyrintiOzeti, temaTuruEtiketi } from "@/lib/ortaokul-mufredat";
 import type { OrtaokulDersi, OrtaokulTemasi } from "@/lib/ortaokul-mufredat";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, TEXT, TEXT_MUTED } from "@/lib/theme";
 
@@ -54,7 +54,7 @@ export function OrtaokulDerslerim({ dersler, secili, temalar }: {
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-bold" style={{ color: TEXT }}>{d.ad}</div>
                   <div className="text-[11px]" style={{ color: TEXT_MUTED }}>
-                    {d.temaSayisi} {temaTuruEtiketi(temalar[0]?.tur ?? "tema", true).toLocaleLowerCase("tr")} · {d.kazanimSayisi} öğrenme hedefi
+                    {dersOzetSatiri(d, acik ? (temalar[0]?.tur ?? "tema") : "tema")}
                   </div>
                 </div>
                 {acik ? <ChevronDown size={16} color={MINT} /> : <ChevronRight size={16} color={TEXT_MUTED} />}
@@ -94,7 +94,7 @@ function DersHaritasi({ ders, temalar }: { ders: OrtaokulDersi; temalar: Ortaoku
                     {t.ad ?? t.kod}
                   </div>
                   <div className="text-[11px]" style={{ color: TEXT_MUTED }}>
-                    {t.kazanimlar.length} öğrenme hedefi
+                    {temaAyrintiOzeti(t) ?? "Ayrıntı listesi yok"}
                     {t.dersSaati !== null && <> · {t.dersSaati} ders saati</>}
                   </div>
                 </div>
@@ -102,7 +102,7 @@ function DersHaritasi({ ders, temalar }: { ders: OrtaokulDersi; temalar: Ortaoku
               </button>
 
               {acik && t.kazanimlar.length > 0 && (
-                <ul className="flex flex-col gap-1.5 px-4 pb-3">
+                <ul className="flex flex-col gap-1.5 px-4 pb-2">
                   {t.kazanimlar.map((k) => (
                     <li key={k.id} className="rounded-xl px-3 py-2 text-xs leading-relaxed"
                       style={{ background: BG0, color: TEXT }}>
@@ -111,10 +111,37 @@ function DersHaritasi({ ders, temalar }: { ders: OrtaokulDersi; temalar: Ortaoku
                   ))}
                 </ul>
               )}
-              {acik && t.kazanimlar.length === 0 && (
-                <p className="px-4 pb-3 text-[11px]" style={{ color: TEXT_MUTED }}>
+
+              {/* İngilizce'de numaralı öğrenme çıktısı yok; temanın konu
+                  başlıkları gösterilir (migration 0131). */}
+              {acik && t.kazanimlar.length === 0 && t.altBasliklar.length > 0 && (
+                <ul className="flex flex-col gap-1.5 px-4 pb-2">
+                  {t.altBasliklar.map((baslik) => (
+                    <li key={baslik} className="rounded-xl px-3 py-2 text-xs leading-relaxed"
+                      style={{ background: BG0, color: TEXT }}>
+                      {baslik}
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {acik && t.kazanimlar.length === 0 && t.altBasliklar.length === 0 && (
+                <p className="px-4 pb-2 text-[11px]" style={{ color: TEXT_MUTED }}>
                   Bu {temaTuruEtiketi(tur).toLocaleLowerCase("tr")} için ayrıntı listesi yok.
                 </p>
+              )}
+
+              {/* Konunun ÇIKIŞI: öğrenci listeyi okuyup "e peki şimdi ne
+                  yapacağım" ile kalmasın. Faz 1'de elimizdeki tek gerçek
+                  eylem yardım isteği; ders ve konu adı önceden dolu gelir. */}
+              {acik && (
+                <div className="px-4 pb-3">
+                  <a href={`/dashboard/ortaokul-yardim?ders=${ders.id}&konu=${encodeURIComponent(t.ad ?? t.kod)}`}
+                    className="sfec-btn inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-[11px] font-bold"
+                    style={{ background: MINT_BG, color: TEXT, border: `1px solid ${BORDER_STRONG}` }}>
+                    <HandHeart size={12} color={MINT} /> Bu konuda yardım iste
+                  </a>
+                </div>
               )}
             </div>
           );

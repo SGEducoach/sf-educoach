@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { dersleriOzetle, temalariDuzenle, temaTuruEtiketi } from "./ortaokul-mufredat";
+import { dersOzetSatiri, dersleriOzetle, temaAyrintiOzeti, temalariDuzenle, temaTuruEtiketi } from "./ortaokul-mufredat";
 
 describe("temaTuruEtiketi", () => {
   test("ders kendi terimiyle anılır", () => {
@@ -96,5 +96,46 @@ describe("dersleriOzetle", () => {
       { id: "b", ders_kodu: "DKAB", ad: "Din Kültürü ve Ahlak Bilgisi", sira: 0 },
     ], [], new Map());
     expect(o.map((d) => d.dersKodu)).toEqual(["DKAB", "FB"]);
+  });
+});
+
+// İngilizce (migration 0131): numaralı öğrenme çıktısı yok, temanın alt
+// başlıkları var. Ekranın "0 öğrenme hedefi" yazmaması bu iki fonksiyona bağlı.
+describe("alt başlıklar — İngilizce", () => {
+  test("alt başlıklar temaya taşınıyor, yoksa boş dizi", () => {
+    const d = temalariDuzenle([
+      {
+        id: "t1", kod: "İNG.5.1", ad: "School Life", tur: "tema", ders_saati: null, sira: 1,
+        alt_basliklar: ["School clubs", "Countries"],
+        ortaokul_mufredat_kazanimlari: null,
+      },
+      {
+        id: "t2", kod: "MAT.5.1", ad: "Sayılar", tur: "tema", ders_saati: null, sira: 2,
+        ortaokul_mufredat_kazanimlari: [{ id: "k1", kod: "MAT.5.1.1", metin: "Bir", sira: 1 }],
+      },
+    ]);
+    expect(d[0].altBasliklar).toEqual(["School clubs", "Countries"]);
+    expect(d[1].altBasliklar).toEqual([]);
+  });
+
+  test("tema özeti: kazanım varsa hedef, yoksa konu başlığı, ikisi de yoksa yok", () => {
+    expect(temaAyrintiOzeti({ kazanimlar: [{ id: "k", kod: "x", metin: "y" }], altBasliklar: [] }))
+      .toBe("1 öğrenme hedefi");
+    expect(temaAyrintiOzeti({ kazanimlar: [], altBasliklar: ["a", "b", "c"] }))
+      .toBe("3 konu başlığı");
+    expect(temaAyrintiOzeti({ kazanimlar: [], altBasliklar: [] })).toBeNull();
+  });
+
+  // Kazanım varsa kazanım kazanır: ikisi birden dolu olsa da ekranda öğrenme
+  // hedefi daha anlamlı.
+  test("ikisi de doluysa öğrenme hedefi yazılır", () => {
+    expect(temaAyrintiOzeti({ kazanimlar: [{ id: "k", kod: "x", metin: "y" }], altBasliklar: ["a"] }))
+      .toBe("1 öğrenme hedefi");
+  });
+
+  test("ders özeti: kazanımı olmayan derste sıfır gösterilmez", () => {
+    expect(dersOzetSatiri({ temaSayisi: 8, kazanimSayisi: 0 }, "tema")).toBe("8 temalar");
+    expect(dersOzetSatiri({ temaSayisi: 7, kazanimSayisi: 27 }, "unite")).toBe("7 üniteler · 27 öğrenme hedefi");
+    expect(dersOzetSatiri({ temaSayisi: 4, kazanimSayisi: 80 }, "beceri")).toBe("4 beceriler · 80 öğrenme hedefi");
   });
 });

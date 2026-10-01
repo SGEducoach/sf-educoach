@@ -22,6 +22,9 @@ export interface OrtaokulTemasi {
   tur: "tema" | "unite" | "beceri";
   dersSaati: number | null;
   kazanimlar: OrtaokulKazanimi[];
+  // Numarali ogrenme ciktisi olmayan programlarda (Ingilizce) temanin konu
+  // basliklari burada (migration 0131). Diger derslerde bos dizi.
+  altBasliklar: string[];
 }
 
 export interface OrtaokulDersi {
@@ -59,6 +62,8 @@ export interface HamTemaSatiri {
   ad: string | null;
   tur: string;
   ders_saati: number | null;
+  // Sorguda seçilmemiş olabilir (eski çağrılar) — bu yüzden isteğe bağlı.
+  alt_basliklar?: string[] | null;
   sira: number;
   ortaokul_mufredat_kazanimlari: { id: string; kod: string; metin: string; sira: number }[] | null;
 }
@@ -75,10 +80,30 @@ export function temalariDuzenle(satirlar: HamTemaSatiri[]): OrtaokulTemasi[] {
       ad: t.ad,
       tur: (["tema", "unite", "beceri"].includes(t.tur) ? t.tur : "tema") as OrtaokulTemasi["tur"],
       dersSaati: t.ders_saati,
+      altBasliklar: t.alt_basliklar ?? [],
       kazanimlar: [...(t.ortaokul_mufredat_kazanimlari ?? [])]
         .sort((a, b) => a.sira - b.sira)
         .map((k) => ({ id: k.id, kod: k.kod, metin: k.metin })),
     }));
+}
+
+// Bir temanın altında ne olduğunu anlatan satır. İngilizce'de kazanım YOK,
+// alt başlık var; "0 öğrenme hedefi" yazmak hem yanlış hem moral bozucu.
+export function temaAyrintiOzeti(tema: Pick<OrtaokulTemasi, "kazanimlar" | "altBasliklar">): string | null {
+  if (tema.kazanimlar.length > 0) return `${tema.kazanimlar.length} öğrenme hedefi`;
+  if (tema.altBasliklar.length > 0) return `${tema.altBasliklar.length} konu başlığı`;
+  return null;
+}
+
+// Ders kartındaki ikinci satır. Kazanımı olmayan ders için yalnız tema sayısı
+// yazılır; sıfır sayı hiç gösterilmez.
+export function dersOzetSatiri(
+  ders: Pick<OrtaokulDersi, "temaSayisi" | "kazanimSayisi">,
+  tur: string,
+): string {
+  const parcalar = [`${ders.temaSayisi} ${temaTuruEtiketi(tur, true).toLocaleLowerCase("tr")}`];
+  if (ders.kazanimSayisi > 0) parcalar.push(`${ders.kazanimSayisi} öğrenme hedefi`);
+  return parcalar.join(" · ");
 }
 
 export function dersleriOzetle(

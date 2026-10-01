@@ -1,0 +1,93 @@
+{
+  "kaynak": "ortaokul/ingilizce-dersi-2-8.pdf",
+  "mufredat": "MEB 2024 Maarif Modeli",
+  "ders": "İngilizce",
+  "dersKodu": "İNG",
+  "sinif": "8",
+  "cikarimTarihi": "2026-10-01",
+  "not": "MEB İngilizce programında numaralı öğrenme çıktısı yoktur; içerik tema ve alt tema olarak verilir.",
+  "temalar": [
+    {
+      "kod": "İNG.8.1",
+      "ad": "School Life & Education",
+      "tur": "tema",
+      "sira": 1,
+      "altBasliklar": [
+        "School events and celebrations (sports, music, drama)",
+        "Developing the environment",
+        "National days and celebrations"
+      ]
+    },
+    {
+      "kod": "İNG.8.2",
+      "ad": "Classroom Life & Learning",
+      "tur": "tema",
+      "sira": 2,
+      "altBasliklar": [
+        "Preferences for different learning activities",
+        "Preferences for different learning technologies"
+      ]
+    },
+    {
+      "kod": "İNG.8.3",
+      "ad": "Personal Life & Well-being",
+      "tur": "tema",
+      "sira": 3,
+      "altBasliklar": [
+        "Mobile phones and their impact on health and social life",
+        "Personal preferences for films and visual arts"
+      ]
+    },
+    {
+      "kod": "İNG.8.4",
+      "ad": "Family Life & Home",
+      "tur": "tema",
+      "sira": 4,
+      "altBasliklar": [
+        "Relationships, problems and solutions in the family",
+        "Different houses and living styles"
+      ]
+    },
+    {
+      "kod": "İNG.8.5",
+      "ad": "Life in the Neighbourhood & City & Social Life",
+      "tur": "tema",
+      "sira": 5,
+      "altBasliklar": [
+        "Sports events in the city and rural areas",
+        "Pros and cons of living in rural areas and in the city"
+      ]
+    },
+    {
+      "kod": "İNG.8.6",
+      "ad": "Life in the World and Culture",
+      "tur": "tema",
+      "sira": 6,
+      "altBasliklar": [
+        "Different cooking styles and preferences in the world",
+        "Different food cultures in the world"
+      ]
+    },
+    {
+      "kod": "İNG.8.7",
+      "ad": "Life in Nature & Global Problems",
+      "tur": "tema",
+      "sira": 7,
+      "altBasliklar": [
+        "Natural disasters and their damage on animals and nature",
+        "Natural disasters and their damage on people’s lives"
+      ]
+    },
+    {
+      "kod": "İNG.8.8",
+      "ad": "Life in the Universe & Future",
+      "tur": "tema",
+      "sira": 8,
+      "altBasliklar": [
+        "Transport in the future",
+        "Self-driving cars",
+        "Flying vehicles in the future"
+      ]
+    }
+  ]
+}

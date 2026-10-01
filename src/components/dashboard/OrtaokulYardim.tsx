@@ -26,13 +26,19 @@ export interface YardimDersi {
   ad: string;
 }
 
-export function OrtaokulYardim({ dersler, istekler, mesaj }: {
+// Derslerim ekranindaki bir konudan gelindiginde ders ve konu onceden dolu
+// gelir (?ders=&konu=) — ogrenci ayni secimi ikinci kez yapmasin.
+export function OrtaokulYardim({ dersler, istekler, mesaj, hazirDersId, hazirKonu }: {
   dersler: YardimDersi[];
   istekler: YardimIstegi[];
   mesaj: string;
+  hazirDersId?: string;
+  hazirKonu?: string;
 }) {
-  const [seciliDers, setSeciliDers] = useState<string>("");
-  const [not, setNot] = useState("");
+  const hazirDers = dersler.find((d) => d.id === hazirDersId) ?? null;
+  const [seciliDers, setSeciliDers] = useState<string>(hazirDers?.id ?? "");
+  // Konu adi mesaja onerilen bir baslangic olarak giriyor; ogrenci silebilir.
+  const [not, setNot] = useState(hazirKonu && hazirDers ? `${hazirKonu} konusunda takıldım.` : "");
   const [hata, setHata] = useState<string | null>(null);
   const [uyari, setUyari] = useState<string | null>(null);
   const [gonderildi, setGonderildi] = useState(false);

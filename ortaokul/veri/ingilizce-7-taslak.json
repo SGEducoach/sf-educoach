@@ -1,0 +1,94 @@
+{
+  "kaynak": "ortaokul/ingilizce-dersi-2-8.pdf",
+  "mufredat": "MEB 2024 Maarif Modeli",
+  "ders": "İngilizce",
+  "dersKodu": "İNG",
+  "sinif": "7",
+  "cikarimTarihi": "2026-10-01",
+  "not": "MEB İngilizce programında numaralı öğrenme çıktısı yoktur; içerik tema ve alt tema olarak verilir.",
+  "temalar": [
+    {
+      "kod": "İNG.7.1",
+      "ad": "School Life & Education",
+      "tur": "tema",
+      "sira": 1,
+      "altBasliklar": [
+        "Extra-curricular activities at school",
+        "Competitions and celebrations at school",
+        "National days and celebrations"
+      ]
+    },
+    {
+      "kod": "İNG.7.2",
+      "ad": "Classroom Life & Learning",
+      "tur": "tema",
+      "sira": 2,
+      "altBasliklar": [
+        "Technological tools for learning",
+        "Learning activities in the classroom",
+        "Cardinal numbers (500- 1000)",
+        "Ordinal numbers (50-100)"
+      ]
+    },
+    {
+      "kod": "İNG.7.3",
+      "ad": "Personal Life & Well-being",
+      "tur": "tema",
+      "sira": 3,
+      "altBasliklar": [
+        "Body parts, illnesses, and keeping good health",
+        "The place of technology in people’s lives"
+      ]
+    },
+    {
+      "kod": "İNG.7.4",
+      "ad": "Family Life & Home",
+      "tur": "tema",
+      "sira": 4,
+      "altBasliklar": [
+        "Family members’ hobbies (sports, books, films, music, cooking)",
+        "Generation gap in the family: problems and solutions"
+      ]
+    },
+    {
+      "kod": "İNG.7.5",
+      "ad": "Life in the Neighbourhood & City and Social Life",
+      "tur": "tema",
+      "sira": 5,
+      "altBasliklar": [
+        "Public services in the neighbourhood and city",
+        "Life in different kinds of cities"
+      ]
+    },
+    {
+      "kod": "İNG.7.6",
+      "ad": "Life in the World & Culture",
+      "tur": "tema",
+      "sira": 6,
+      "altBasliklar": [
+        "Capitals, landmarks, famous places, and activities in capitals",
+        "Sports events in different parts of the world"
+      ]
+    },
+    {
+      "kod": "İNG.7.7",
+      "ad": "Life in Nature",
+      "tur": "tema",
+      "sira": 7,
+      "altBasliklar": [
+        "Animals and natural resources in nature",
+        "Protecting animals and nature"
+      ]
+    },
+    {
+      "kod": "İNG.7.8",
+      "ad": "Life in the Universe & Future",
+      "tur": "tema",
+      "sira": 8,
+      "altBasliklar": [
+        "Space technology",
+        "Life in the future with robots"
+      ]
+    }
+  ]
+}
