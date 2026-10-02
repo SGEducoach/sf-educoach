@@ -88,6 +88,11 @@ function GorevSatiri({ kart, onHata }: { kart: OrtaokulGorevKarti; onHata: (h: s
             style={{ background: renk.arka, color: renk.yazi }}>{kart.zamanEtiketi}</span>
         </div>
         <div className="mt-1.5 text-sm font-bold" style={{ color: bitti ? TEXT_MUTED : TEXT }}>{kart.baslik}</div>
+        {/* Öğretmenin alt başlığı/notu: işin ne olduğu bazen tam olarak
+            burada yazıyor ("sayfa 42-48"), konu adında değil. */}
+        {kart.aciklama && (
+          <div className="mt-0.5 text-[11px]" style={{ color: bitti ? TEXT_MUTED : TEXT }}>{kart.aciklama}</div>
+        )}
         <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11px]" style={{ color: TEXT_MUTED }}>
           {kart.sureEtiketi && <span className="flex items-center gap-1"><Clock size={11} /> {kart.sureEtiketi}</span>}
           {kart.ogretmenAdi && <span className="flex items-center gap-1"><User size={11} /> {kart.ogretmenAdi}</span>}

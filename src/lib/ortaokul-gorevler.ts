@@ -28,6 +28,8 @@ export interface OrtaokulGorevKarti {
   zamanEtiketi: string;
   sureEtiketi: string | null;
   ogretmenAdi: string | null;
+  // Öğretmenin konu altına yazdığı alt başlık/not.
+  aciklama: string | null;
   eylem: string | null;      // tamamlanmış görevde eylem yok
   tahminiDakika: number | null;
 }
@@ -83,6 +85,7 @@ function karta(g: BugunGorevi, bugun: string): { fark: number; kart: OrtaokulGor
       zamanEtiketi: durum === "tamamlandi" ? "Tamamlandı" : zamanEtiketi(fark),
       sureEtiketi: sureEtiketi(g.hedefDakika, g.hedefSoruSayisi),
       ogretmenAdi: g.ogretmenAdi,
+      aciklama: g.aciklama?.trim() ? g.aciklama.trim() : null,
       eylem: durum === "tamamlandi" ? null : EYLEM[durum],
       tahminiDakika: tahminiDakika(g),
     },

@@ -6,7 +6,7 @@ const BUGUN = "2026-10-05";
 
 function gorev(o: Partial<BugunGorevi> & { atamaId: string; tarih: string }): BugunGorevi {
   return {
-    tur: "Soru çözme", ders: "Matematik", konu: null, sonTarih: null,
+    tur: "Soru çözme", ders: "Matematik", konu: null, aciklama: null, sonTarih: null,
     hedefSoruSayisi: null, hedefDakika: null, ogretmenAdi: null, tamamlandi: false,
     ...o,
   };

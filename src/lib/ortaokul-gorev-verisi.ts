@@ -14,7 +14,7 @@ interface AtamaSatiri {
   id: string;
   durum: string | null;
   gorevler: {
-    tur: string; ders: string; konu: string | null;
+    tur: string; ders: string; konu: string | null; aciklama: string | null;
     tarih: string; son_tarih: string | null;
     hedef_soru_sayisi: number | null; hedef_dakika: number | null;
     olusturan_ogretmen_id: string | null;
@@ -29,7 +29,7 @@ export async function ortaokulGorevleriniGetir(
 ): Promise<BugunGorevi[]> {
   const { data } = await supabase
     .from("gorev_atamalari")
-    .select("id, durum, gorevler!inner(tur, ders, konu, tarih, son_tarih, hedef_soru_sayisi, hedef_dakika, olusturan_ogretmen_id)")
+    .select("id, durum, gorevler!inner(tur, ders, konu, aciklama, tarih, son_tarih, hedef_soru_sayisi, hedef_dakika, olusturan_ogretmen_id)")
     .eq("student_id", studentId)
     .gte("gorevler.tarih", baslangic)
     .lte("gorevler.tarih", bitis);
@@ -55,6 +55,7 @@ export async function ortaokulGorevleriniGetir(
       tur: g.tur,
       ders: g.ders,
       konu: g.konu,
+      aciklama: g.aciklama,
       tarih: g.tarih,
       sonTarih: g.son_tarih,
       hedefSoruSayisi: g.hedef_soru_sayisi,

@@ -16,6 +16,7 @@ function gorev(p: Partial<BugunGorevi> & { atamaId: string; tarih: string }): Bu
     tur: "konu",
     ders: "Matematik",
     konu: null,
+    aciklama: null,
     sonTarih: null,
     hedefSoruSayisi: null,
     hedefDakika: null,
@@ -215,5 +216,32 @@ describe("haftaMesaji", () => {
       gorev({ atamaId: "a", tarih: "2026-10-02", hedefDakika: 200 }),
     ], pazartesi, BUGUN, "8"));
     expect(mesaj).toContain("Cuma");
+  });
+});
+
+// Öğretmenin konu altına yazdığı alt başlık/not (kullanıcı isteği
+// 02.10.2026). İşin ne olduğu bazen konu adında değil tam olarak burada
+// yazıyor ("sayfa 42-48"); karta taşınmazsa öğrenci yanlış işi yapar.
+describe("öğretmen notu", () => {
+  test("not karta taşınıyor", () => {
+    const gruplar = gorevGruplari([
+      gorev({ atamaId: "a", tarih: BUGUN, konu: "Kesirler", aciklama: "sayfa 42-48" }),
+    ], BUGUN);
+    expect(gruplar[0].gorevler[0].aciklama).toBe("sayfa 42-48");
+  });
+
+  test("boş ve yalnız boşluktan oluşan not NULL olur", () => {
+    const gruplar = gorevGruplari([
+      gorev({ atamaId: "a", tarih: BUGUN, aciklama: "   " }),
+      gorev({ atamaId: "b", tarih: BUGUN, aciklama: null }),
+    ], BUGUN);
+    for (const k of gruplar[0].gorevler) expect(k.aciklama).toBeNull();
+  });
+
+  test("notun baştaki/sondaki boşluğu atılıyor", () => {
+    const gruplar = gorevGruplari([
+      gorev({ atamaId: "a", tarih: BUGUN, aciklama: "  defterden tekrar  " }),
+    ], BUGUN);
+    expect(gruplar[0].gorevler[0].aciklama).toBe("defterden tekrar");
   });
 });

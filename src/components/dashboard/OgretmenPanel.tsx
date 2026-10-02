@@ -1197,6 +1197,19 @@ export function GorevVerBolumu({ ogrenciler, konuOnerileri, topluSiniflar = [], 
             </label>
           )}
 
+          {/* Kullanıcı isteği (02.10.2026): konunun ALTINDA, konuyu daraltan
+              opsiyonel bir alan. Konu listesi müfredattan geliyor ve sabit;
+              "sayfa 42-48" ya da "yalnız çift sayılar" gibi daraltmalar bu
+              alana yazılıyor. Ayrı kolon AÇILMADI — gorevler.aciklama zaten
+              bu iş için vardı, yalnızca formun en altında, konudan kopuk
+              duruyordu. Öğrenci bunu görev kartında okuyor. */}
+          <label className="flex flex-col gap-1 sm:col-span-2">
+            <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Alt başlık / öğretmen notu (opsiyonel)</span>
+            <input value={aciklama} onChange={(e) => setAciklama(e.target.value)} maxLength={200}
+              placeholder="örn. sayfa 42-48 · yalnız çift sayılar · defterden tekrar"
+              className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }} />
+          </label>
+
           {tur === "soru" && (
             <label className="flex flex-col gap-1">
               <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Hedef soru sayısı (opsiyonel)</span>
@@ -1242,11 +1255,9 @@ export function GorevVerBolumu({ ogrenciler, konuOnerileri, topluSiniflar = [], 
           </div>
         </div>
 
-        <label className="flex flex-col gap-1">
-          <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Açıklama (opsiyonel)</span>
-          <input value={aciklama} onChange={(e) => setAciklama(e.target.value)} placeholder="örn. Sınava hazırlık"
-            className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }} />
-        </label>
+        {/* Eski "Açıklama" alanı buradan KALDIRILDI: aynı alan artık konunun
+            hemen altında duruyor (kullanıcı isteği 02.10.2026). İki yerde
+            durması aynı veriyi iki kez soruyor gibi görünürdü. */}
 
         {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
         {basari && <div style={{ color: MINT }} className="text-xs font-semibold">{basari}</div>}

@@ -16,6 +16,9 @@ export interface BugunGorevi {
   tur: string;
   ders: string;
   konu: string | null;
+  // Öğretmenin konu altına yazdığı alt başlık/not (gorevler.aciklama).
+  // Öğrencinin işi tam olarak anlaması buna bağlı olabiliyor ("sayfa 42-48").
+  aciklama: string | null;
   tarih: string;          // görevin günü (YYYY-MM-DD)
   sonTarih: string | null;
   hedefSoruSayisi: number | null;
@@ -34,6 +37,7 @@ export interface BugunKarti {
   zamanEtiketi: string;
   sureEtiketi: string | null;
   ogretmenAdi: string | null;
+  aciklama: string | null;
   eylem: string;
 }
 
@@ -109,6 +113,7 @@ export function bugunKartlari(gorevler: BugunGorevi[], bugun: string): BugunKart
         zamanEtiketi: zamanEtiketi(fark),
         sureEtiketi: sureEtiketi(g.hedefDakika, g.hedefSoruSayisi),
         ogretmenAdi: g.ogretmenAdi,
+        aciklama: g.aciklama?.trim() ? g.aciklama.trim() : null,
         eylem: EYLEM[tur],
       },
     });

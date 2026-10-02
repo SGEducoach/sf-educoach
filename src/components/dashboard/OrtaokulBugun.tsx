@@ -79,6 +79,13 @@ export function OrtaokulBugun({ ad, sinif, mesaj, kartlar, bugunTamamlanan, bugu
                       style={{ background: renk.arka, color: renk.yazi }}>{k.zamanEtiketi}</span>
                   </div>
                   <div className="mt-1.5 truncate text-sm font-bold" style={{ color: TEXT }}>{k.baslik}</div>
+                  {/* Öğretmenin notu burada da gösteriliyor: öğrenci işe
+                      Bugün'den başlıyor, "sayfa 42-48" gibi bir daraltmayı
+                      görmeden başlaması yanlış işi yapmasına yol açar.
+                      Tek satırla sınırlı — kart üç işle sade kalmalı (§2.2). */}
+                  {k.aciklama && (
+                    <div className="truncate text-[11px]" style={{ color: TEXT_MUTED }}>{k.aciklama}</div>
+                  )}
                   <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11px]" style={{ color: TEXT_MUTED }}>
                     {k.sureEtiketi && <span className="flex items-center gap-1"><Clock size={11} /> {k.sureEtiketi}</span>}
                     {k.ogretmenAdi && <span>{k.ogretmenAdi}</span>}
