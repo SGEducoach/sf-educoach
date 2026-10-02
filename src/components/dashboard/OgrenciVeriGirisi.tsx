@@ -604,6 +604,7 @@ export function SoruCozumuForm({ dersListesi, konuOnerileri, onBasari, prefillDe
   const [yayinevi, setYayinevi] = useState("");
   const [tarih, setTarih] = useState(() => baslangicTarihi(gorevTarihi));
   const [sureDakika, setSureDakika] = useState("");
+  const [sesliVeriAktarildi, setSesliVeriAktarildi] = useState(false);
   const [hata, setHata] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -635,7 +636,7 @@ export function SoruCozumuForm({ dersListesi, konuOnerileri, onBasari, prefillDe
       if (res.error) setHata(res.error);
       else {
         onBasari(`Soru çözümü kaydedildi (net: ${net}).`, res.verimlilikSorulsunMu);
-        setDogru(""); setYanlis(""); setBos(""); setSureDakika(""); setKonu(""); setAramaMetni(""); setYayinevi(""); setTarih(bugununTarihi());
+        setDogru(""); setYanlis(""); setBos(""); setSureDakika(""); setKonu(""); setAramaMetni(""); setYayinevi(""); setTarih(bugununTarihi()); setSesliVeriAktarildi(false);
       }
     });
   }
@@ -645,7 +646,7 @@ export function SoruCozumuForm({ dersListesi, konuOnerileri, onBasari, prefillDe
       <SesliSoruGirisi dersler={dersListesi} onUygula={(veri) => {
         setDers(veri.ders); setDogru(String(veri.dogru)); setYanlis(String(veri.yanlis));
         setBos(String(veri.bos)); setSureDakika(String(veri.sureDakika));
-        setKonu(""); setAramaMetni(""); setHata(null);
+        setKonu(""); setAramaMetni(""); setHata(null); setSesliVeriAktarildi(true);
       }} />
       <GecmisTarihSecici tarih={tarih} setTarih={setTarih} geriyeMaksGun={geriyeMaksGunHesapla("soru", gorevAtamaId, rehberOgrenciId)} />
       <label className="flex flex-col gap-1"><Etiket>Ders</Etiket>
@@ -689,6 +690,9 @@ export function SoruCozumuForm({ dersListesi, konuOnerileri, onBasari, prefillDe
       <label className="flex flex-col gap-1"><Etiket>Yayınevi</Etiket>
         <Girdi placeholder="örn. Palme, MEB, Okul kitabı" value={yayinevi} onChange={(e) => setYayinevi(e.target.value)} required />
       </label>
+      {sesliVeriAktarildi && !yayinevi.trim() && (
+        <p role="status" className="text-xs font-semibold" style={{ color: BLUSH }}>Yayınevini girmen gerekiyor; sesli komuttan doldurulmaz.</p>
+      )}
       {net !== null && (
         <div style={{ color: MINT }} className="text-xs font-bold">Net: {net}</div>
       )}
