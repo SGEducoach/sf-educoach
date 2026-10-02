@@ -51,7 +51,7 @@ import { ortaokulGorevlerimGetir, ortaokulPlanimGetir } from "@/lib/ortaokul-gor
 import { OrtaokulGorevlerim } from "@/components/dashboard/OrtaokulGorevlerim";
 import { OrtaokulPlanim } from "@/components/dashboard/OrtaokulPlanim";
 import { ortaokulYardimIstekleriGetir } from "@/lib/ortaokul-yardim-sorgu";
-import { ortaokulCalismalariGetir, ortaokulDersTemaSecenekleri, ortaokulYeterlilikGetir } from "@/lib/ortaokul-bolum-sorgu";
+import { ortaokulCalismalariGetir, ortaokulDersTemaSecenekleri, ortaokulKonuHavuzu, ortaokulYeterlilikGetir } from "@/lib/ortaokul-bolum-sorgu";
 import { bolumCoz } from "@/lib/ortaokul-bolum";
 import { OrtaokulCalismalarim } from "@/components/dashboard/OrtaokulCalismalarim";
 import { OrtaokulYeterlilik } from "@/components/dashboard/OrtaokulYeterlilik";
@@ -263,7 +263,7 @@ export default async function DashboardPage({
             <>
               {role === "ogrenci" && <OgrenciIcerik userId={user.id} ad={profile.ad} donem={donem} haftaBaslangic={haftaninPazartesisi(params.hafta)} aktifBolum={aktifBolum} gecmisHafta={Number(params.gecmis ?? 0)} seciliDersId={params.ders} seciliKonu={params.konu} seciliBolum={params.kisim} kademe={ogrenciKademesi} sinifSeviyesi={ogrenciSinifSeviyesi} />}
               {(role === "ogretmen" || role === "mudur") && (
-                <OgretmenIcerik userId={user.id} role={role} kurumTuru={kurumTuru} brans={brans} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} secilenOgretmenId={params.ogretmen} donem={donem} aktifBolum={aktifBolum} seciliDersId={params.ders} seciliBolum={params.kisim} grupMu={grupKocu} />
+                <OgretmenIcerik userId={user.id} role={role} kurumTuru={kurumTuru} brans={brans} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} secilenOgretmenId={params.ogretmen} donem={donem} aktifBolum={aktifBolum} seciliDersId={params.ders} seciliBolum={params.kisim} kademe={menuKademesi} grupMu={grupKocu} />
               )}
               {role === "veli" && <VeliIcerik userId={user.id} ad={profile.ad} secilenOgrenciId={params.ogrenci} donem={donem} aktifBolum={aktifBolum} />}
             </>
@@ -676,10 +676,12 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
   );
 }
 
-async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, secilenOgrenciId, secilenOgretmenId, donem, aktifBolum, seciliDersId, seciliBolum, grupMu = false }: {
+async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, secilenOgrenciId, secilenOgretmenId, donem, aktifBolum, seciliDersId, seciliBolum, kademe, grupMu = false }: {
   userId: string; role: "ogretmen" | "mudur"; kurumTuru?: KurumTuru; brans?: string; secilenSinifId?: string; secilenOgrenciId?: string; secilenOgretmenId?: string; donem: RaporDonemi; aktifBolum: DashboardBolumu;
   // Ortaokul Konu Yeterliliği ekranının seçimleri (?ders=, ?kisim=).
   seciliDersId?: string; seciliBolum?: string;
+  // Kurumun kademesi: ortaokulda ödev formunun konu havuzu değişiyor.
+  kademe?: "ortaokul" | "lise" | "ikisi" | null;
   // Grup Koçluk koçu: ekran metinleri "grup" diline geçer (denetim 27.09.2026).
   grupMu?: boolean;
 }) {
@@ -713,6 +715,17 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       />
     );
   }
+
+  // Ortaokul öğretmeninin ödev formunda ders ve konu havuzu ORTAOKUL
+  // müfredatından gelir. Lise havuzu (MUFREDAT_KONULARI) verilince 5-8 için
+  // hiç konu eşleşmiyordu — kullanıcı bildirimi 02.10.2026: "ödev ver lise
+  // branş listesi gibi açılıyor, ve konular açık değil".
+  //
+  // 5-8'in tamamı çekiliyor; formun kendi seviye süzgeci (hedefSeviyeler)
+  // seçilen sınıfa göre daraltıyor, bu yüzden burada sınıf tespitine gerek yok.
+  const ortaokulKonulari = (kademe === "ortaokul" || kademe === "ikisi") && aktifBolum === "gorevler"
+    ? await ortaokulKonuHavuzu(supabase, ORTAOKUL_SEVIYELERI)
+    : null;
 
   const rehberOgretmenMi = role === "ogretmen" && brans === REHBER_BRANSI;
   const okulOkumaClient = rehberOgretmenMi ? createAdminClient() : supabase;
@@ -1119,7 +1132,8 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       ogretmenDersleri={ogretmenDersleri}
       bekleyenOnaylar={bekleyenOnaylar}
       verdigimGorevler={verdigimGorevler}
-      konuOnerileri={MUFREDAT_KONULARI}
+      konuOnerileri={ortaokulKonulari ?? MUFREDAT_KONULARI}
+      kademe={kademe}
       aktifBolum={aktifBolum}
       dersProgramiSatirlari={dersProgramiSatirlari}
       okulNobetleri={okulNobetleri}

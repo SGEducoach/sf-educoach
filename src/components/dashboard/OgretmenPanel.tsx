@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { kurumSeviyeleri } from "@/lib/kademe";
+import { kurumSeviyeleri, seviyeEtiketi } from "@/lib/kademe";
 import type { KurumKademesi } from "@/lib/types";
 import { useRouter, useSearchParams } from "next/navigation";
 import { UserPlus, Check, Users, Eye, Plus, X, BookMarked, BedDouble, ClipboardCheck, ListChecks, ArrowRightLeft, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, CalendarPlus } from "lucide-react";
@@ -82,7 +82,7 @@ function ogrencilerOkulNoSirali(ogrenciler: OgrenciSatiri[]): OgrenciSatiri[] {
 
 export function OgretmenPanel({
   role, bekleyenTalepler, ogrenciler, sinifAdi, siniflar, gorunecekSinifId, kendiSinifId, kendiSinifiMi,
-  ogretmenDersleri, bekleyenOnaylar, verdigimGorevler, konuOnerileri, aktifBolum,
+  ogretmenDersleri, bekleyenOnaylar, verdigimGorevler, konuOnerileri, kademe, aktifBolum,
   dersProgramiSatirlari, okulNobetleri, yurtNobetGorevleri, dershaneMi,
   nobetDevirOgretmenleri,
   okulOgretmenleri, secilenOgretmenId, secilenOgretmenProgrami, secilenOgretmenNobetleri, rehberOgretmenMi = false, grupMu = false,
@@ -103,6 +103,9 @@ export function OgretmenPanel({
   // o bölümde kullanılıyor, diğer bölümlerde boş dizi gelir.
   verdigimGorevler?: VerdigimGorevSatiri[];
   konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
+  // Kurumun kademesi: ortaokulda ödev formunun ders/konu havuzu ortaokul
+  // müfredatından gelir (kullanıcı bildirimi 02.10.2026).
+  kademe?: "ortaokul" | "lise" | "ikisi" | null;
   aktifBolum: DashboardBolumu;
   // Ders Programı + Yurt Nöbeti (2026-08-25) — sadece "dersler" bölümünde
   // kullanılıyor, diğer bölümlerde boş dizi/false gelir.
@@ -297,6 +300,7 @@ export function OgretmenPanel({
 
       {aktifBolum === "gorevler" && role === "ogretmen" && (gorevVerilebilirMi || ogretmenDersleri.length > 0) && (ogrenciler.length > 0 || ogretmenDersleri.length > 0) && (
         <GorevVerBolumu ogrenciler={ogrenciler} konuOnerileri={konuOnerileri} topluSiniflar={ogretmenDersleri}
+          kademe={kademe}
           sinifSeviyesi={siniflar.find((sinif) => sinif.id === gorunecekSinifId)?.seviye} />
       )}
 
@@ -966,8 +970,11 @@ export function SinifEkleFormu({ schoolId, kademe }: { schoolId: string; kademe?
 // (checkbox ile, "Tümünü seç" toplu görev karşılığı) seçilip aynı görev
 // hepsine birden atanıyor. Öğrenci tarafında bu görev, ilgili mevcut veri
 // giriş formundan (Konu/Soru/Deneme) tamamlanıyor (bkz. Gorevlerim.tsx).
-export function GorevVerBolumu({ ogrenciler, konuOnerileri, topluSiniflar = [], sinifSeviyesi, gorevVerEylemi = gorevVer }: {
+export function GorevVerBolumu({ ogrenciler, konuOnerileri, topluSiniflar = [], sinifSeviyesi, kademe, gorevVerEylemi = gorevVer }: {
   ogrenciler: OgrenciSatiri[]; konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
+  // Ortaokulda ders listesi LISE brans listesinden gelmez; konu havuzunun
+  // kendi ders adlari kullanilir (kullanici bildirimi 02.10.2026).
+  kademe?: "ortaokul" | "lise" | "ikisi" | null;
   topluSiniflar?: OgretmenDersiSatiri[];
   sinifSeviyesi?: string;
   // Dershane rehberi kendi yetki kontrolüyle ödev verir (bkz. rehber-ogrenci-actions.ts rehberGorevVer).
@@ -975,7 +982,7 @@ export function GorevVerBolumu({ ogrenciler, konuOnerileri, topluSiniflar = [], 
 }) {
   const [secili, setSecili] = useState<Set<string>>(new Set());
   const [tur, setTur] = useState<GorevTuru>("soru");
-  const [ders, setDers] = useState<string>(topluSiniflar[0]?.ders ?? BRANS_LISTESI[0]);
+  const [ders, setDers] = useState<string>(topluSiniflar[0]?.ders ?? konuOnerileri[0]?.ders ?? BRANS_LISTESI[0]);
   // Öğretmen aynı derse birden fazla sınıfta giriyorsa form toplu modda
   // açılır; yüzlerce öğrenciyi listelemek yerine yalnız sınıflar özetlenir.
   // İsterse kutunun işaretini kaldırıp mevcut sınıftan öğrenci seçebilir.
@@ -992,11 +999,19 @@ export function GorevVerBolumu({ ogrenciler, konuOnerileri, topluSiniflar = [], 
   const [basari, setBasari] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
+  const ortaokulMu = kademe === "ortaokul";
   const atananDersler = [...new Set(topluSiniflar.map((sinif) => sinif.ders))];
   const turkDiliAtamasiVar = atananDersler.some((atanan) => atanan === "Türkçe" || atanan === "Edebiyat" || atanan === "Türk Dili ve Edebiyatı");
-  const dersSecenekleri = [...new Set([...atananDersler, ...BRANS_LISTESI])]
-    .filter((secenek) => !(secenek === "Türk Dili ve Edebiyatı" && turkDiliAtamasiVar && !atananDersler.includes(secenek)));
-  const dersGorunenAdi = (secenek: string) => secenek === "Türkçe" || secenek === "Edebiyat" ? "Türk Dili ve Edebiyatı" : secenek;
+  // Ortaokulda ders havuzu MUFREDATTAN gelir (Türkçe, Fen Bilimleri, Sosyal
+  // Bilgiler…); lise branş listesi hiç karışmaz.
+  const havuzDersleri = [...new Set(konuOnerileri.map((k) => k.ders))];
+  const dersSecenekleri = ortaokulMu
+    ? [...new Set([...atananDersler, ...havuzDersleri])]
+    : [...new Set([...atananDersler, ...BRANS_LISTESI])]
+      .filter((secenek) => !(secenek === "Türk Dili ve Edebiyatı" && turkDiliAtamasiVar && !atananDersler.includes(secenek)));
+  // Ortaokulda branş "Türkçe"; lise adıyla göstermek yanlış olur.
+  const dersGorunenAdi = (secenek: string) =>
+    !ortaokulMu && (secenek === "Türkçe" || secenek === "Edebiyat") ? "Türk Dili ve Edebiyatı" : secenek;
   const tumuSeciliMi = ogrenciler.length > 0 && secili.size === ogrenciler.length;
   const dersAnahtari = (deger: string) => deger.trim().toLocaleLowerCase("tr-TR").replace(/\s+/g, " ");
   const uygunSinifMap = new Map<string, OgretmenDersiSatiri>();
@@ -1009,12 +1024,12 @@ export function GorevVerBolumu({ ogrenciler, konuOnerileri, topluSiniflar = [], 
   const hedefSeviyeler = new Set((topluGonderimAktif ? uygunTopluSiniflar.map((sinif) => sinif.sinifAdi.match(/^\d+/)?.[0]) : [sinifSeviyesi]).filter((seviye): seviye is string => !!seviye));
   // Öğretmen branşı lisede tek adla tutuluyor; konu havuzu ise TYT Türkçe,
   // sınıf bazlı Türkçe (Maarif) ve AYT Edebiyat olarak ayrılıyor.
-  const turkDiliDersiMi = ders === "Türk Dili ve Edebiyatı" || ders === "Türkçe" || ders === "Edebiyat";
+  const turkDiliDersiMi = !ortaokulMu && (ders === "Türk Dili ve Edebiyatı" || ders === "Türkçe" || ders === "Edebiyat");
   const dersAdlari = turkDiliDersiMi ? new Set(["Türkçe", "Türkçe (Maarif)", "Edebiyat"]) : new Set([ders]);
   const dersKonulari = konuOnerileri.filter((k) => {
     if (!dersAdlari.has(k.ders)) return false;
     if (hedefSeviyeler.size === 0 || !k.seviye || k.seviye === "TYT" || k.seviye === "AYT") return true;
-    return [...hedefSeviyeler].some((seviye) => k.seviye === `${seviye}. Sınıf`);
+    return [...hedefSeviyeler].some((seviye) => k.seviye === seviyeEtiketi(seviye));
   });
 
   // Deneme görevinde "Ders" alanı anlamsız — TYT/AYT birden çok dersi birden

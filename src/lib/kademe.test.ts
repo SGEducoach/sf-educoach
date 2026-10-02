@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { KURUM_SECIMI_ACIKLAMA, KURUM_SECIMI_ETIKET, KURUM_SECIMI_SIRASI, ORTAOKUL_BRANSLARI, alanSorulurMu, hedefEtiketi, hedefYerTutucusu, panelBransListesi, bransListesi, kademeBul, kurumSecimi, kurumSeciminiCoz, kurumSeviyeleri, lgsSinifiMi, ortaokulMu, seviyeNormalize } from "./kademe";
+import { KURUM_SECIMI_ACIKLAMA, KURUM_SECIMI_ETIKET, KURUM_SECIMI_SIRASI, ORTAOKUL_BRANSLARI, ORTAOKUL_SEVIYELERI, alanSorulurMu, seviyeEtiketi, hedefEtiketi, hedefYerTutucusu, panelBransListesi, bransListesi, kademeBul, kurumSecimi, kurumSeciminiCoz, kurumSeviyeleri, lgsSinifiMi, ortaokulMu, seviyeNormalize } from "./kademe";
 import { BRANS_LISTESI } from "./types";
 import { REHBER_BRANSI } from "./rehberlik";
 import { DASHBOARD_ROUTE_BOLUMLERI, dashboardMenusu } from "./dashboard-navigation";
@@ -259,5 +259,22 @@ describe("öğrenci alanları kademeye göre", () => {
   test("sınıf seviyesinden türetme: 5-8 alan sormaz, 9-12 sorar", () => {
     for (const s of ["5", "6", "7", "8"]) expect(alanSorulurMu(kademeBul(s)), s).toBe(false);
     for (const s of ["9", "10", "11", "12"]) expect(alanSorulurMu(kademeBul(s)), s).toBe(true);
+  });
+});
+
+// Ödev formunun konu süzgeci ile konu havuzu AYNI seviye etiketini üretmeli.
+// Biçim ayrışırsa süzgeç sessizce hiçbir konu bulamaz — 02.10.2026'da
+// yaşanan "konular açık değil" hatası tam buydu.
+describe("seviyeEtiketi", () => {
+  test("havuz ve süzgeç tek kaynaktan aynı metni üretir", () => {
+    expect(seviyeEtiketi("5")).toBe("5. Sınıf");
+    expect(seviyeEtiketi("8")).toBe("8. Sınıf");
+    expect(seviyeEtiketi("11")).toBe("11. Sınıf");
+  });
+
+  test("ortaokul seviyelerinin hepsi etiketlenebiliyor", () => {
+    for (const s of ORTAOKUL_SEVIYELERI) {
+      expect(seviyeEtiketi(s), s).toBe(`${s}. Sınıf`);
+    }
   });
 });

@@ -135,6 +135,14 @@ export const KURUM_KADEMESI_ETIKET: Record<KurumKademesi, string> = {
 // `students.hedef_bolum` kolonu AYNI kalıyor (serbest metin); değişen yalnız
 // ekrandaki etiket. Ayrı kolon açmak aynı bilgiyi iki yere dağıtırdı.
 
+// Konu havuzundaki seviye etiketi. Ödev formu konuları `"5. Sınıf"` kalıbıyla
+// süzüyor (bkz. OgretmenPanel GorevVerBolumu, dersKonulari); biçim ayrışırsa
+// süzgeç SESSİZCE hiçbir konu bulamaz — "konular açık değil" hatası tam
+// buydu (02.10.2026). Tek kaynak olsun diye burada.
+export function seviyeEtiketi(seviye: string): string {
+  return `${seviye}. Sınıf`;
+}
+
 export function alanSorulurMu(kademe: Kademe | KurumKademesi | null | undefined): boolean {
   return kademe !== "ortaokul";
 }

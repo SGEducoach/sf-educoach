@@ -5,7 +5,7 @@ import type { CalismaKaydi, CalismaOzeti } from "@/lib/ortaokul-calisma";
 import { temaYeterlilikleri } from "@/lib/ortaokul-yeterlilik";
 import type { TemaYeterliligi, YeterlilikKarari } from "@/lib/ortaokul-yeterlilik";
 import type { OrtaokulBolum } from "@/lib/ortaokul-bolum";
-import { seviyeNormalize } from "@/lib/kademe";
+import { seviyeEtiketi, seviyeNormalize } from "@/lib/kademe";
 
 // Maarif | LGS ekranlarının sorguları (migration 0132). Şekillendirme saf
 // tarafta: ortaokul-calisma.ts, ortaokul-yeterlilik.ts.
@@ -53,6 +53,52 @@ export async function ortaokulDersTemaSecenekleri(
         .sort((a, b) => a.sira - b.sira)
         .map((t) => ({ id: t.id, ad: t.ad, kod: t.kod })),
     }));
+}
+
+// Öğretmenin "Ödev ver" formu için ortaokul konu havuzu.
+//
+// Form zaten `{ ders, konu, seviye }` şeklinde bir liste süzüyor (lise
+// MUFREDAT_KONULARI); ortaokul müfredatı AYNI ŞEKLE çevrilince formun süzme
+// mantığı değişmeden çalışıyor. `seviye` "5. Sınıf" biçiminde olmalı —
+// formun seviye karşılaştırması bu kalıba bakıyor.
+//
+// Kullanıcı bildirimi (02.10.2026): "ödev ver lise branş listesi gibi
+// açılıyor, ve konular açık değil" — sebebi buydu: ortaokul öğretmenine lise
+// konu havuzu veriliyordu, 5-8 için hiç eşleşme çıkmıyordu.
+export async function ortaokulKonuHavuzu(
+  supabase: SupabaseClient,
+  seviyeler: readonly string[],
+): Promise<{ ders: string; konu: string; seviye: string }[]> {
+  const temiz = [...new Set(seviyeler.map((s) => seviyeNormalize(s)).filter((s): s is string => !!s))];
+  if (temiz.length === 0) return [];
+
+  const { data: surum } = await supabase
+    .from("ortaokul_mufredat_surumleri").select("id").eq("durum", "aktif").maybeSingle();
+  if (!surum?.id) return [];
+
+  const { data } = await supabase
+    .from("ortaokul_mufredat_dersleri")
+    .select("ad, sinif_seviyesi, sira, ortaokul_mufredat_temalari(ad, kod, sira)")
+    .eq("surum_id", surum.id)
+    .in("sinif_seviyesi", temiz);
+
+  type Satir = {
+    ad: string; sinif_seviyesi: string; sira: number;
+    ortaokul_mufredat_temalari: { ad: string | null; kod: string; sira: number }[] | null;
+  };
+
+  const havuz: { ders: string; konu: string; seviye: string }[] = [];
+  for (const d of ((data ?? []) as unknown as Satir[]).sort((a, b) => a.sira - b.sira || a.ad.localeCompare(b.ad, "tr"))) {
+    for (const t of [...(d.ortaokul_mufredat_temalari ?? [])].sort((a, b) => a.sira - b.sira)) {
+      havuz.push({
+        ders: d.ad,
+        // Adı çıkarılamamış tema için kod gösterilir; boş bırakmaktan iyi.
+        konu: t.ad?.trim() ? t.ad : t.kod,
+        seviye: seviyeEtiketi(d.sinif_seviyesi),
+      });
+    }
+  }
+  return havuz;
 }
 
 // ---- Öğrenci çalışma kayıtları ----
