@@ -6,6 +6,17 @@ export type SesliSoruVerisi = {
   sureDakika: number;
 };
 
+export const SESLI_GIRIS_SESSIZLIK_MS = 4000;
+
+export function sessizlikSayaciOlustur(onSureDoldu: () => void) {
+  let sayac: ReturnType<typeof setTimeout> | null = null;
+  const temizle = () => { if (sayac !== null) clearTimeout(sayac); sayac = null; };
+  return {
+    yenile: () => { temizle(); sayac = setTimeout(onSureDoldu, SESLI_GIRIS_SESSIZLIK_MS); },
+    temizle,
+  };
+}
+
 export function sesTanimaHataMesaji(kod: string, ios: boolean, anaEkran: boolean): string {
   const iosOnerisi = ios
     ? ` iPhone'da Safari sekmesinde deneyin${anaEkran ? " (Ana Ekran simgesinden değil)" : ""}; olmazsa komut alanına dokunup klavyenin mikrofonunu kullanın.`
@@ -19,6 +30,13 @@ export function sesTanimaHataMesaji(kod: string, ios: boolean, anaEkran: boolean
     case "no-speech": return "Ses algılanmadı. Tekrar deneyin veya komut alanına dokunup klavyenin mikrofonunu kullanın.";
     default: return `Ses tanıma tamamlanamadı (hata kodu: ${kod || "bilinmiyor"}).${iosOnerisi}`;
   }
+}
+
+export function yayineviKomutunuCoz(metin: string): string {
+  return metin.trim()
+    .replace(/^(?:yayınevi|yayın\s*evi)\s*[:\-]?\s*/i, "")
+    .replace(/\s+(?:yayınevi|yayın\s*evi)$/i, "")
+    .trim();
 }
 
 function normalize(metin: string): string {

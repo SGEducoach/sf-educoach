@@ -1,9 +1,33 @@
-import { describe, expect, it } from "vitest";
-import { sesliSoruCozumunuCoz, sesTanimaHataMesaji } from "./sesli-soru-girisi";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { sesliSoruCozumunuCoz, sesTanimaHataMesaji, sessizlikSayaciOlustur, yayineviKomutunuCoz } from "./sesli-soru-girisi";
 
 const dersler = ["Türkçe", "Matematik", "Biyoloji", "Din Kültürü", "Tarih", "Tarih-1"];
 
 describe("sesli soru girişi", () => {
+  afterEach(() => vi.useRealTimers());
+
+  it("son algılanan sesten dört saniye sonra dinlemeyi durdurur", () => {
+    vi.useFakeTimers();
+    const durdur = vi.fn();
+    const sayac = sessizlikSayaciOlustur(durdur);
+    sayac.yenile();
+    vi.advanceTimersByTime(3000);
+    sayac.yenile();
+    vi.advanceTimersByTime(3999);
+    expect(durdur).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1);
+    expect(durdur).toHaveBeenCalledOnce();
+    sayac.yenile();
+    sayac.temizle();
+    vi.advanceTimersByTime(4000);
+    expect(durdur).toHaveBeenCalledOnce();
+  });
+
+  it("yayınevi komutundaki alan adını ayırır", () => {
+    expect(yayineviKomutunuCoz("Yayınevi Palme")).toBe("Palme");
+    expect(yayineviKomutunuCoz("MEB yayınevi")).toBe("MEB");
+    expect(yayineviKomutunuCoz("Yayın evi Okyanus")).toBe("Okyanus");
+  });
   it("iOS tanıma hatalarını nedenine göre açıklar", () => {
     expect(sesTanimaHataMesaji("service-not-allowed", true, false)).toContain("Safari sekmesinde");
     expect(sesTanimaHataMesaji("network", true, true)).toContain("Ana Ekran simgesinden değil");

@@ -20,7 +20,7 @@ import { rehberDenemeEkle, rehberKonuCalismaEkle, rehberSoruCozumuEkle } from "@
 import { REHBER_GERIYE_DONUK_GUN } from "@/lib/rehberlik";
 import { YukleniyorOverlay } from "@/components/YukleniyorOverlay";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
-import { sesliSoruCozumunuCoz, sesTanimaHataMesaji, type SesliSoruVerisi } from "@/lib/sesli-soru-girisi";
+import { sesliSoruCozumunuCoz, sesTanimaHataMesaji, sessizlikSayaciOlustur, yayineviKomutunuCoz, type SesliSoruVerisi } from "@/lib/sesli-soru-girisi";
 
 // Türkiye saatine göre "bugün" — bkz. src/lib/tarih.ts: naif
 // `new Date().toISOString()` yaklaşımı UTC+3 saat diliminde gece yarısı ile
@@ -99,12 +99,52 @@ type SesTanima = {
   lang: string;
   continuous: boolean;
   interimResults: boolean;
+  onstart: (() => void) | null;
   onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
   onerror: ((event: { error: string }) => void) | null;
   onend: (() => void) | null;
   start: () => void;
   stop: () => void;
 };
+
+function sesTanimaBaslat(onMetin: (metin: string) => void, onHata: (hata: string) => void, onDurum: (dinliyor: boolean) => void, onBitis: () => void): SesTanima | null {
+  const pencere = window as typeof window & {
+    SpeechRecognition?: new () => SesTanima;
+    webkitSpeechRecognition?: new () => SesTanima;
+  };
+  const Tanima = pencere.SpeechRecognition ?? pencere.webkitSpeechRecognition;
+  if (!Tanima) {
+    onHata("Bu tarayıcı ses tanımayı desteklemiyor. Komut alanına dokunup klavyenin mikrofonunu kullanın veya komutu yazın.");
+    return null;
+  }
+  const oturum = new Tanima();
+  let sonucVar = false;
+  const sayac = sessizlikSayaciOlustur(() => {
+    if (!sonucVar) onHata("4 saniye ses algılanmadı. Tekrar deneyin veya komutu yazın.");
+    oturum.stop();
+  });
+  oturum.lang = "tr-TR";
+  oturum.continuous = true;
+  oturum.interimResults = true;
+  oturum.onstart = sayac.yenile;
+  oturum.onresult = (event) => {
+    const parcalar: string[] = [];
+    for (let i = 0; i < event.results.length; i++) {
+      const parca = event.results[i]?.[0]?.transcript?.trim();
+      if (parca) parcalar.push(parca);
+    }
+    if (parcalar.length) { sonucVar = true; onMetin(parcalar.join(" ")); sayac.yenile(); }
+  };
+  oturum.onerror = (event) => {
+    sayac.temizle();
+    if (event.error === "aborted") return;
+    const ios = /(?:iPhone|iPad|iPod)/.test(navigator.userAgent);
+    onHata(sesTanimaHataMesaji(event.error, ios, window.matchMedia("(display-mode: standalone)").matches));
+  };
+  oturum.onend = () => { sayac.temizle(); onDurum(false); onBitis(); };
+  try { oturum.start(); onDurum(true); return oturum; }
+  catch { sayac.temizle(); onHata("Mikrofon başlatılamadı. Tekrar deneyin veya komutu yazın."); return null; }
+}
 
 function SesliSoruGirisi({ dersler, onUygula }: { dersler: string[]; onUygula: (veri: SesliSoruVerisi) => void }) {
   const [metin, setMetin] = useState("");
@@ -125,35 +165,9 @@ function SesliSoruGirisi({ dersler, onUygula }: { dersler: string[]; onUygula: (
       klavyeyleDikteEt(); return;
     }
     if (dinliyor) { tanima.current?.stop(); return; }
-    const pencere = window as typeof window & {
-      SpeechRecognition?: new () => SesTanima;
-      webkitSpeechRecognition?: new () => SesTanima;
-    };
-    const Tanima = pencere.SpeechRecognition ?? pencere.webkitSpeechRecognition;
-    if (!Tanima) {
-      setHata("Bu tarayıcı ses tanımayı desteklemiyor. Komut alanına dokunup klavyenin mikrofonunu kullanın veya komutu yazın.");
-      return;
-    }
     setHata(null);
     setMetin("");
-    const oturum = new Tanima();
-    oturum.lang = "tr-TR";
-    oturum.continuous = false;
-    oturum.interimResults = false;
-    oturum.onresult = (event) => {
-      const sonuc = event.results[0]?.[0]?.transcript;
-      if (sonuc) setMetin(sonuc);
-    };
-    oturum.onerror = (event) => {
-      if (event.error === "aborted") return;
-      const ios = /(?:iPhone|iPad|iPod)/.test(navigator.userAgent);
-      const anaEkran = window.matchMedia("(display-mode: standalone)").matches;
-      setHata(sesTanimaHataMesaji(event.error, ios, anaEkran));
-    };
-    oturum.onend = () => { setDinliyor(false); tanima.current = null; };
-    tanima.current = oturum;
-    try { oturum.start(); setDinliyor(true); }
-    catch { tanima.current = null; setHata("Mikrofon başlatılamadı. Tekrar deneyin veya komutu yazın."); }
+    tanima.current = sesTanimaBaslat(setMetin, setHata, setDinliyor, () => { tanima.current = null; });
   }
 
   function uygula() {
@@ -172,7 +186,7 @@ function SesliSoruGirisi({ dersler, onUygula }: { dersler: string[]; onUygula: (
           {dinliyor ? <MicOff size={14} /> : <Mic size={14} />}{dinliyor ? "Durdur" : "Konuş / dikte et"}
         </button>
       </div>
-      <p className="text-[11px]" style={{ color: TEXT_MUTED }}>Örnek: “Matematik 20 doğru 5 yanlış 2 boş 40 dakika.” Yayınevi ve konuyu formda tamamlayın.</p>
+      <p className="text-[11px]" style={{ color: TEXT_MUTED }}>Örnek: “Matematik 20 doğru 5 yanlış 2 boş 40 dakika.” Son algılanan sesten sonra 4 saniye beklenir. Konuyu formda tamamlayın.</p>
       <label className="flex flex-col gap-1"><Etiket>Algılanan komut — düzeltebilirsiniz</Etiket>
         <Girdi ref={komutGirdisi} value={metin} onChange={(e) => setMetin(e.target.value)} placeholder="Komut burada görünür veya elle yazılabilir" />
       </label>
@@ -181,6 +195,44 @@ function SesliSoruGirisi({ dersler, onUygula }: { dersler: string[]; onUygula: (
         className="sfec-btn self-start rounded-xl px-3 py-1.5 text-xs font-bold disabled:opacity-50"
         style={{ background: SKY, color: BG0 }}>Forma aktar</button>
       <p className="text-[10px]" style={{ color: TEXT_MUTED }}>Otomatik kayıt yapılmaz. Bilgileri kontrol edip Kaydet’e ayrıca basın.</p>
+    </div>
+  );
+}
+
+function SesliYayineviGirisi({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const [dinliyor, setDinliyor] = useState(false);
+  const [hata, setHata] = useState<string | null>(null);
+  const tanima = useRef<SesTanima | null>(null);
+  const girdi = useRef<HTMLInputElement>(null);
+
+  useEffect(() => () => { tanima.current?.stop(); tanima.current = null; }, []);
+
+  function baslat() {
+    if (/(?:iPhone|iPad|iPod)/.test(navigator.userAgent) && /CriOS/.test(navigator.userAgent)) {
+      setHata("Chrome/iPhone'da yayınevi kutusuna dokunup klavyenin mikrofonuna basın; Safari sekmesinde doğrudan da söyleyebilirsiniz.");
+      girdi.current?.focus();
+      return;
+    }
+    if (dinliyor) { tanima.current?.stop(); return; }
+    setHata(null);
+    tanima.current = sesTanimaBaslat((metin) => {
+      const yayinevi = yayineviKomutunuCoz(metin);
+      if (yayinevi) onChange(yayinevi);
+    }, setHata, setDinliyor, () => { tanima.current = null; });
+  }
+
+  return (
+    <div className="flex flex-col gap-1">
+      <Etiket>Yayınevi</Etiket>
+      <div className="flex gap-2">
+        <Girdi ref={girdi} aria-label="Yayınevi" placeholder="örn. Palme, MEB, Okul kitabı" value={value} onChange={(e) => onChange(e.target.value)} required />
+        <button type="button" onClick={baslat} aria-label={dinliyor ? "Yayınevi dinlemeyi durdur" : "Yayınevini sesle gir"}
+          className="sfec-btn shrink-0 flex items-center gap-1 rounded-xl px-3 text-xs font-bold"
+          style={{ background: dinliyor ? BLUSH : SKY_BG, color: dinliyor ? BG0 : SKY, border: `1px solid ${BORDER_STRONG}` }}>
+          {dinliyor ? <MicOff size={14} /> : <Mic size={14} />}{dinliyor ? "Durdur" : "Söyle"}
+        </button>
+      </div>
+      {hata && <p role="alert" className="text-xs" style={{ color: BLUSH }}>{hata}</p>}
     </div>
   );
 }
@@ -697,11 +749,9 @@ export function SoruCozumuForm({ dersListesi, konuOnerileri, onBasari, prefillDe
       <p style={{ color: TEXT_MUTED }} className="text-[11px] -mt-1">Süre, şu an bitirdiğin <strong>tek oturumun</strong> süresi — haftalık/günlük toplam değil.
         {toplamSoru > 0 && <> En fazla <strong>{sureUstSiniri} dakika</strong> (soru başına ~2 dk).</>}
       </p>
-      <label className="flex flex-col gap-1"><Etiket>Yayınevi</Etiket>
-        <Girdi placeholder="örn. Palme, MEB, Okul kitabı" value={yayinevi} onChange={(e) => setYayinevi(e.target.value)} required />
-      </label>
+      <SesliYayineviGirisi value={yayinevi} onChange={setYayinevi} />
       {sesliVeriAktarildi && !yayinevi.trim() && (
-        <p role="status" className="text-xs font-semibold" style={{ color: BLUSH }}>Yayınevini girmen gerekiyor; sesli komuttan doldurulmaz.</p>
+        <p role="status" className="text-xs font-semibold" style={{ color: BLUSH }}>Yayınevini girmen veya “Söyle” düğmesiyle sesli doldurman gerekiyor.</p>
       )}
       {net !== null && (
         <div style={{ color: MINT }} className="text-xs font-bold">Net: {net}</div>
