@@ -13,7 +13,7 @@ import { DUYURU_MIN_UZUNLUK, duyuruGonderimIzniKontrol } from "@/lib/duyuru-guve
 import { dersSoruSayisi, sinifSiraKarsilastir } from "@/lib/types";
 import type { AytAlan, DenemeTuru, DenemeZorlugu, UserRole, KurumTuru } from "@/lib/types";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
-import { tgDenemeArsiviGetir, TG_DENEME_ONBELLEK_ETIKETI, type TgDenemeIlani } from "@/lib/tg-deneme-ilanlari";
+import { tgDenemeArsiviGetir, type TgDenemeIlani } from "@/lib/tg-deneme-ilanlari";
 import { anaSayfaAyarlariniGetir, anaSayfaSliderGorselleriGetir, type AnaSayfaAyarlari, type AnaSayfaSliderGorseli } from "@/lib/ana-sayfa";
 import { anaSayfaDuyurulariniGetir, type AnaSayfaDuyurusu } from "@/lib/ana-sayfa-duyurulari";
 import { SITE_TEMA_ANAHTAR, temaGecerliMi } from "@/lib/site-tema";
@@ -1673,13 +1673,50 @@ export async function mufredatAltKonuSil(id: string): Promise<{ error: string | 
 // bağımlılık gerektirmeyen bu yapı kuruldu. Arşivleme mantığı için bkz.
 // src/lib/tg-deneme-ilanlari.ts (AKTIF_LIMIT, sıralama bazlı — ayrı bir
 // durum sütunu yok).
+// PANO YETKİSİ (kullanıcı kararı 02.10.2026): admin bütün panolara, kurum
+// moderatörü/müdürü YALNIZ kendi kurumuna müdahil olur; diğer kullanıcılar
+// salt okuyucu. RLS de aynısını söylüyor (migration 0134) ama bu eylemler
+// SERVİS ANAHTARIYLA yazdığı için yetkiyi burada da uygulamak zorunlu.
+//
+// GÜVENLİK: moderatör için kurum kimliği VERİTABANINDAN okunuyor, istemciden
+// gelen değere asla güvenilmiyor. Admin ise istediği kurumu seçebilir.
+// Ayraç `ok`: `hata: string` boş dizge de olabileceği için TypeScript
+// `if (yetki.hata)` ile daraltamıyor — açık bir boolean gerekiyor.
+type PanoYetkisi =
+  | { ok: false; hata: string }
+  | { ok: true; supabase: Awaited<ReturnType<typeof createClient>>; user: { id: string }; admin: ReturnType<typeof createAdminClient>; schoolId: string; adminMi: boolean };
+
+async function panoYetkisi(istenenSchoolId?: string | null): Promise<PanoYetkisi> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, hata: "Oturum bulunamadı." };
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
+
+  if (profile?.role === "admin") {
+    const secili = String(istenenSchoolId ?? "").trim();
+    if (!secili) return { ok: false, hata: "Hangi kurumun panosu olduğunu seçin." };
+    return { ok: true, supabase, user, admin: createAdminClient(), schoolId: secili, adminMi: true };
+  }
+
+  const { data: mod } = await supabase.from("school_moderators").select("school_id").eq("profile_id", user.id).limit(1).maybeSingle();
+  let kendi = (mod?.school_id as string | undefined) ?? null;
+  if (!kendi && profile?.role === "mudur") {
+    const { data: t } = await supabase.from("teachers").select("school_id").eq("id", user.id).maybeSingle();
+    kendi = (t?.school_id as string | undefined) ?? null;
+  }
+  if (!kendi) return { ok: false, hata: "Pano yönetme yetkiniz yok." };
+  return { ok: true, supabase, user, admin: createAdminClient(), schoolId: kendi, adminMi: false };
+}
+
 const TG_DENEME_TARIH_MAKS = 100;
 const TG_DENEME_BASLIK_MAKS = 150;
 const TG_DENEME_ACIKLAMA_MAKS = 500;
 const TG_DENEME_DOSYA_MAKS_MB = 15;
 
 export async function tgDenemeIlaniEkle(formData: FormData): Promise<{ error: string | null }> {
-  const { supabase, user, admin } = await requireAdmin();
+  const yetki = await panoYetkisi(String(formData.get("schoolId") ?? ""));
+  if (!yetki.ok) return { error: yetki.hata };
+  const { supabase, user, admin, schoolId } = yetki;
 
   const dosya = formData.get("dosya") as File | null;
   // Kullanıcı bulgusu (27.08.2026): "metin formatı da diğerleriyle eşit
@@ -1736,6 +1773,7 @@ export async function tgDenemeIlaniEkle(formData: FormData): Promise<{ error: st
   if (yuklemeHatasi) return { error: "Dosya yüklenemedi: " + yuklemeHatasi.message };
 
   const { error: eklemeHatasi } = await admin.from("tg_deneme_ilanlari").insert({
+    school_id: schoolId,
     tarih, baslik, aciklama, dosya_yolu: dosyaYolu, dosya_tipi: dosyaTipi, genislik, yukseklik,
     olusturan_id: user.id,
   });
@@ -1745,31 +1783,35 @@ export async function tgDenemeIlaniEkle(formData: FormData): Promise<{ error: st
     return { error: eklemeHatasi.message };
   }
 
-  await auditLogYaz(supabase, user.id, "tg_deneme_ilani_ekle", { dosya_yolu: dosyaYolu, dosya_tipi: dosyaTipi });
-  revalidateTag(TG_DENEME_ONBELLEK_ETIKETI, "max");
-  revalidatePath("/");
+  await auditLogYaz(supabase, user.id, "tg_deneme_ilani_ekle", { school_id: schoolId, dosya_yolu: dosyaYolu, dosya_tipi: dosyaTipi });
   revalidatePath("/dashboard", "layout");
   revalidatePath("/yonetici", "layout");
   return { error: null };
 }
 
-export async function tgDenemeArsiviniGetir(): Promise<{ error: string | null; ilanlar: TgDenemeIlani[] }> {
-  const { admin } = await requireAdmin();
-  return { error: null, ilanlar: await tgDenemeArsiviGetir(admin) };
+export async function tgDenemeArsiviniGetir(istenenSchoolId?: string): Promise<{ error: string | null; ilanlar: TgDenemeIlani[]; schoolId: string | null }> {
+  const yetki = await panoYetkisi(istenenSchoolId);
+  if (!yetki.ok) return { error: yetki.hata, ilanlar: [], schoolId: null };
+  return { error: null, ilanlar: await tgDenemeArsiviGetir(yetki.admin, yetki.schoolId), schoolId: yetki.schoolId };
 }
 
 export async function tgDenemeIlaniSil(id: string): Promise<{ error: string | null }> {
-  const { supabase, user, admin } = await requireAdmin();
-  const { data: ilan } = await admin.from("tg_deneme_ilanlari").select("dosya_yolu").eq("id", id).maybeSingle();
+  // Yetki İLANIN KENDİ kurumuna göre: moderatör başka kurumun ilanını silemez.
+  const admin0 = createAdminClient();
+  const { data: hedef } = await admin0.from("tg_deneme_ilanlari").select("school_id, dosya_yolu").eq("id", id).maybeSingle();
+  if (!hedef) return { error: "İlan bulunamadı." };
+  const yetki = await panoYetkisi(hedef.school_id as string);
+  if (!yetki.ok) return { error: yetki.hata };
+  const { supabase, user, admin, schoolId } = yetki;
+  if (schoolId !== hedef.school_id) return { error: "Bu ilan sizin kurumunuza ait değil." };
+  const ilan = hedef;
   const { error } = await admin.from("tg_deneme_ilanlari").delete().eq("id", id);
   if (error) return { error: error.message };
   if (ilan?.dosya_yolu) {
     const { error: silmeHatasi } = await admin.storage.from("tg-denemeleri").remove([ilan.dosya_yolu]);
     if (silmeHatasi) console.warn("TG deneme ilanı dosyası silinemedi (kayıt zaten silindi):", silmeHatasi.message);
   }
-  await auditLogYaz(supabase, user.id, "tg_deneme_ilani_sil", { id });
-  revalidateTag(TG_DENEME_ONBELLEK_ETIKETI, "max");
-  revalidatePath("/");
+  await auditLogYaz(supabase, user.id, "tg_deneme_ilani_sil", { id, school_id: schoolId });
   revalidatePath("/dashboard", "layout");
   revalidatePath("/yonetici", "layout");
   return { error: null };

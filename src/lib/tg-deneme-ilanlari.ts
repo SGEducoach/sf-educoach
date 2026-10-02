@@ -1,6 +1,4 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { unstable_cache } from "next/cache";
-import { anonSunucuOkuyucu } from "@/lib/supabase/anon-server";
 
 // TG Denemeleri — Google Drive bypass planı (27.08.2026 kullanıcı isteği):
 // admin panelinden PDF/JPEG yükleyip yazdığı duyurular. Bilinçli olarak
@@ -42,39 +40,39 @@ function satiriDonustur(r: TgDenemeIlaniRow): TgDenemeIlani {
   };
 }
 
-// Kullanıcının dashboard'da göreceği (herkese açık, tüm roller) aktif akış —
-// en yeni AKTIF_LIMIT kayıt. RLS zaten "select using (true)" (bkz. migration
-// 0082), bu yüzden hem admin/service-role hem normal (anon-key) client ile
-// çağrılabilir.
-// Performans (2026-09-04): aktif ilan listesi 60 sn paylaşımlı önbellekte;
-// admin ekleme/silme action'ları revalidateTag("tg-deneme-ilanlari") ile
-// anında tazeler. Çerezsiz okuyucu (RLS select herkese açık) — bu yüzden
-// supabase parametresi geriye dönük uyumluluk için kaldı, kullanılmıyor.
-export const TG_DENEME_ONBELLEK_ETIKETI = "tg-deneme-ilanlari";
-
-const ilanlariOku = unstable_cache(
-  async (): Promise<TgDenemeIlani[]> => {
-    const { data, error } = await anonSunucuOkuyucu()
-      .from("tg_deneme_ilanlari")
-      .select("id, tarih, baslik, aciklama, dosya_yolu, dosya_tipi, genislik, yukseklik, created_at")
-      .order("created_at", { ascending: false })
-      .limit(AKTIF_LIMIT);
-    if (error) { console.error("tg_deneme_ilanlari okunamadı:", error.message); return []; }
-    return (data ?? []).map(satiriDonustur);
-  },
-  ["tg-deneme-ilanlari"],
-  { revalidate: 60, tags: [TG_DENEME_ONBELLEK_ETIKETI] },
-);
-
-export async function tgDenemeIlanlariGetir(_supabase?: SupabaseClient): Promise<TgDenemeIlani[]> {
-  return ilanlariOku();
-}
-
-// Admin yönetim listesi: yayındaki ve arşivdeki ilanlar birlikte silinebilir.
-export async function tgDenemeArsiviGetir(supabase: SupabaseClient): Promise<TgDenemeIlani[]> {
+// PANO ARTIK KURUMA AİT (kullanıcı isteği 02.10.2026, migration 0134).
+//
+// Önceki hâl: tek bir global akış vardı; `unstable_cache` SABİT anahtarla
+// ve ÇEREZSİZ okuyucuyla (anonSunucuOkuyucu) çalışıyordu çünkü RLS
+// `select using (true)` idi. İkisi de artık geçerli değil:
+//  * sabit anahtarlı paylaşımlı önbellek bir kurumun panosunu başka kuruma
+//    gösterebilirdi;
+//  * anon okuyucu yeni RLS'te hiçbir satır göremez (kurum üyeliği gerekiyor).
+//
+// Bu yüzden okuma KULLANICININ KENDİ istemcisiyle yapılıyor ve paylaşımlı
+// önbellek KALDIRILDI: yetkiyi tek bir yerde (RLS) tutmak, 20 satırlık
+// indeksli bir sorgu için 60 saniyelik önbellekten daha değerli. Önbelleği
+// geri getirmek isteyen, anahtara school_id koymak ZORUNDA.
+export async function tgDenemeIlanlariGetir(
+  supabase: SupabaseClient,
+  schoolId: string | null | undefined,
+): Promise<TgDenemeIlani[]> {
+  if (!schoolId) return [];
   const { data, error } = await supabase
     .from("tg_deneme_ilanlari")
     .select("id, tarih, baslik, aciklama, dosya_yolu, dosya_tipi, genislik, yukseklik, created_at")
+    .eq("school_id", schoolId)
+    .order("created_at", { ascending: false })
+    .limit(AKTIF_LIMIT);
+  if (error) { console.error("tg_deneme_ilanlari okunamadı:", error.message); return []; }
+  return (data ?? []).map(satiriDonustur);
+}
+// Admin yönetim listesi: yayındaki ve arşivdeki ilanlar birlikte silinebilir.
+export async function tgDenemeArsiviGetir(supabase: SupabaseClient, schoolId: string): Promise<TgDenemeIlani[]> {
+  const { data, error } = await supabase
+    .from("tg_deneme_ilanlari")
+    .select("id, tarih, baslik, aciklama, dosya_yolu, dosya_tipi, genislik, yukseklik, created_at")
+    .eq("school_id", schoolId)
     .order("created_at", { ascending: false })
     .range(0, AKTIF_LIMIT + 199); // Admin: yayındaki ve arşivdeki en yeni 220 ilan.
   if (error) { console.error("tg_deneme_ilanlari arşivi okunamadı:", error.message); return []; }

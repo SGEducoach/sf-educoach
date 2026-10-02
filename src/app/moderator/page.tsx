@@ -5,6 +5,7 @@ import { ModeratorPanel } from "@/components/moderator/ModeratorPanel";
 import { moderatorKullanicilariGetir } from "@/app/moderator/actions";
 import type { UserRole } from "@/lib/types";
 import { YonetimNavigasyonu } from "@/components/dashboard/YonetimNavigasyonu";
+import { TgDenemeYonetimi } from "@/components/yonetici/TgDenemeYonetimi";
 
 // ?okul=<schoolId>: admin'in /yonetici → "Moderatörler" listesinden bir
 // okula tıklayıp o okulun moderatör panelini görüntülemesi için — sadece
@@ -38,6 +39,12 @@ export default async function ModeratorPage({ searchParams }: { searchParams: Pr
         <ModeratorPanel {...veri}
           schoolId={adminGoruntuluyor ? params.okul : undefined}
         />
+        {/* Kurum moderatörü KENDİ kurumunun panosunu yönetir (kullanıcı kararı
+            02.10.2026, migration 0134). `okullar` geçilmiyor: kurum sunucuda
+            moderatörün kendi kaydından okunuyor, istemciden gelmiyor.
+            Admin başka bir kurumu görüntülerken bu kart gizli — admin bütün
+            panoları /yonetici > İçerik altından yönetiyor. */}
+        {!adminGoruntuluyor && <section className="sfec-section"><TgDenemeYonetimi /></section>}
       </main>
     </div>
   );

@@ -4,7 +4,6 @@ import { createClient } from "@/lib/supabase/server";
 import { AnaSayfa } from "@/components/AnaSayfa";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { anaSayfaAyarlariniGetir, anaSayfaSliderGorselleriGetir } from "@/lib/ana-sayfa";
-import { tgDenemeIlanlariGetir } from "@/lib/tg-deneme-ilanlari";
 import { anaSayfaDuyurulariniGetir } from "@/lib/ana-sayfa-duyurulari";
 
 export const metadata: Metadata = {
@@ -35,10 +34,13 @@ export default async function Home() {
   const { data: { user } } = await supabase.auth.getUser();
   if (user) redirect("/dashboard");
 
-  const [ayarlar, sliderGorselleri, tgIlanlar, duyurular] = await Promise.all([
+  // PANO ARTIK HERKESE ACIK SAYFADA YOK (02.10.2026): pano kuruma baglandi
+  // (migration 0134), bir kurumun panosunu giris yapmamis ziyaretciye
+  // gostermek o kurumun icerigini yayinlamak olurdu. Site duyurulari
+  // (ana_sayfa_duyurulari) burada kalmaya devam ediyor.
+  const [ayarlar, sliderGorselleri, duyurular] = await Promise.all([
     anaSayfaAyarlariniGetir(supabase),
     anaSayfaSliderGorselleriGetir(supabase),
-    tgDenemeIlanlariGetir(supabase),
     anaSayfaDuyurulariniGetir(supabase),
   ]);
 
@@ -64,7 +66,6 @@ export default async function Home() {
         govde={ayarlar.govde}
         sliderGecisSaniye={ayarlar.sliderGecisSaniye}
         sliderGorselleri={sliderGorselleri}
-        tgIlanlar={tgIlanlar}
         duyurular={duyurular}
       />
       {/* Ölçüm etiketi yalnızca herkese açık sayfalarda — bkz. GoogleAnalytics */}

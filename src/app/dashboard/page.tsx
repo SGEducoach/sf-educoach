@@ -253,7 +253,7 @@ export default async function DashboardPage({
           {aktifBolum === "profil" ? (
             <OgrenciProfilim userId={user.id} ad={profile.ad} kademe={ogrenciKademesi} />
           ) : aktifBolum === "tg-denemeleri" ? (
-            <TgDenemeleri bugun={bugununTarihiTR()} dbIlanlar={await tgDenemeIlanlariGetir(supabase)} />
+            <TgDenemeleri bugun={bugununTarihiTR()} dbIlanlar={await tgDenemeIlanlariGetir(supabase, kurum?.id)} />
           ) : grupKocu && aktifBolum === "ozet" ? (
             <GrupKocIcerik />
           ) : grupKocu && aktifBolum === "denemeler" ? (
@@ -853,12 +853,18 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   if (secilenOgrenciId && aktifBolum !== "planlar") {
     const { data: ogrenci } = await okulOkumaClient
       .from("students")
-      .select("id, profiles!students_id_fkey(ad)")
+      .select("id, okul_no, profiles!students_id_fkey(ad), schools(ad, tur), classes(seviye, sube)")
       .eq("id", secilenOgrenciId)
       .eq("school_id", teacher.school_id)
       .single();
 
-    type OgrenciRow = { id: string; profiles: { ad: string } | null };
+    type OgrenciRow = {
+      id: string;
+      okul_no: string | null;
+      profiles: { ad: string } | null;
+      schools: { ad: string; tur: KurumTuru } | null;
+      classes: { seviye: string; sube: string } | null;
+    };
     const o = ogrenci as unknown as OgrenciRow | null;
 
     if (o) {
@@ -888,6 +894,11 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
             <ChevronLeft size={14} /> Listeye dön
           </Link>
           <h1 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-bold print:hidden">{ogrenciAdi}</h1>
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs print:hidden" style={{ color: TEXT_MUTED }}>
+            <span>Okul: <strong style={{ color: TEXT }}>{o.schools?.ad ?? "—"}</strong></span>
+            <span>Sınıf: <strong style={{ color: TEXT }}>{o.classes ? `${o.classes.seviye}-${o.classes.sube}` : "—"}</strong></span>
+            <span>{o.schools?.tur === "dershane" ? "Kullanıcı adı" : "Öğrenci no"}: <strong style={{ color: TEXT }}>{o.okul_no || "—"}</strong></span>
+          </div>
           <AnalizPaneli veri={analiz} ogrenciAdi={ogrenciAdi}
             konuHakimiyetiSatirlari={konuHakimiyetiOzeti.satirlar} konuHakimiyetiTamGorunum={konuHakimiyetiOzeti.tamGorunum}
             konuHakimiyetiAytAlan={konuHakimiyetiOzeti.aytAlan} ogretmenGorunumu kohortKarsilastirma={kohort} />

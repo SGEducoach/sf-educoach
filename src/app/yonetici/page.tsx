@@ -120,7 +120,7 @@ export default async function YoneticiPage({
               <section className="sfec-section"><PlatformIstatistikleri /></section>
               <section className="sfec-section"><DershaneDenemeSuresiAyari bitis={dershaneDenemeBitisi} doldu={suresiDolduMu(dershaneDenemeBitisi)} /></section>
               <section className="sfec-section"><YoneticiDuyuruPaneli okullar={okulListesi.map((o) => ({ id: o.id, ad: o.ad }))} /></section>
-              <section className="sfec-section"><TgDenemeYonetimi /></section>
+              <section className="sfec-section"><TgDenemeYonetimi okullar={okulListesi.map((o) => ({ id: o.id, ad: o.ad }))} /></section>
             </>
           )}
           {aktifBolum === "kullanicilar" && <section className="sfec-section"><KullaniciArama /></section>}

@@ -14,7 +14,15 @@ import { BG0, BG1, BG1_ALT, BLUSH, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON
 // değil) — "bazen aralık bazen tek tarih girmek gerekiyor" (27.08.2026).
 // Arşiv, akıştaki ilk 20'nin ÖTESİNDEKİ (21.'den itibaren) kayıtları
 // gösterir — bkz. tg-deneme-ilanlari.ts.
-export function TgDenemeYonetimi() {
+// PANO KURUMA BAĞLI (02.10.2026, migration 0134): admin bütün panolara,
+// kurum moderatörü/müdürü yalnız kendi kurumuna müdahil olur.
+//
+// `okullar` YALNIZ admin için dolu gelir: admin hangi kurumun panosuna
+// yazdığını seçer. Moderatörde liste boş geçilir ve kurum sunucuda kendi
+// kaydından okunur — istemciden gelen kurum kimliğine GÜVENİLMEZ.
+export function TgDenemeYonetimi({ okullar = [] }: { okullar?: { id: string; ad: string }[] }) {
+  const adminMi = okullar.length > 0;
+  const [schoolId, setSchoolId] = useState(okullar[0]?.id ?? "");
   const dosyaRef = useRef<HTMLInputElement>(null);
   const [acik, setAcik] = useState(false);
   const [tarih, setTarih] = useState("");
@@ -37,8 +45,11 @@ export function TgDenemeYonetimi() {
     if (!dosya) return setHata("Bir PDF, JPEG veya PNG dosyası seçin.");
     if (!tarih.trim()) return setHata("Tarih gerekli.");
     if (!baslik.trim()) return setHata("Başlık gerekli.");
+    if (adminMi && !schoolId) return setHata("Hangi kurumun panosu olduğunu seçin.");
 
     const formData = new FormData();
+    // Moderatörde boş gider; sunucu kurumu kendi kaydından bulur.
+    if (adminMi) formData.set("schoolId", schoolId);
     formData.set("dosya", dosya);
     formData.set("tarih", tarih.trim());
     formData.set("baslik", baslik.trim());
@@ -50,7 +61,7 @@ export function TgDenemeYonetimi() {
       setBasari("Yayınlandı — Pano akışında görünecek.");
       setTarih(""); setBaslik(""); setAciklama("");
       if (dosyaRef.current) dosyaRef.current.value = "";
-      if (arsivAcik) { const liste = await tgDenemeArsiviniGetir(); if (liste.error) setHata(liste.error); else setArsiv(liste.ilanlar); }
+      if (arsivAcik) { const liste = await tgDenemeArsiviniGetir(adminMi ? schoolId : undefined); if (liste.error) setHata(liste.error); else setArsiv(liste.ilanlar); }
     });
   }
 
@@ -59,7 +70,7 @@ export function TgDenemeYonetimi() {
     setArsivAcik(acilacak);
     if (acilacak) {
       startArsivTransition(async () => {
-        const res = await tgDenemeArsiviniGetir();
+        const res = await tgDenemeArsiviniGetir(adminMi ? schoolId : undefined);
         if (res.error) setHata(res.error); else setArsiv(res.ilanlar);
       });
     }
@@ -97,6 +108,18 @@ export function TgDenemeYonetimi() {
 
       {acik && (
         <form onSubmit={ekle} className="mt-4 flex flex-col gap-2.5 rounded-2xl p-4" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
+          {/* Admin hangi kurumun panosuna yazdığını seçer; moderatörde bu
+              alan hiç çıkmaz çünkü kurumu zaten tek ve sunucuda biliniyor. */}
+          {adminMi && (
+            <label className="flex flex-col gap-1">
+              <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Hangi kurumun panosu</span>
+              <select value={schoolId} onChange={(e) => { setSchoolId(e.target.value); setArsiv(null); }}
+                className="rounded-xl px-3 py-2 text-sm outline-none"
+                style={{ background: BG0, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
+                {okullar.map((o) => <option key={o.id} value={o.id}>{o.ad}</option>)}
+              </select>
+            </label>
+          )}
           <label className="flex flex-col gap-1">
             <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Afiş (PDF, JPEG veya PNG — en fazla 15MB)</span>
             <input ref={dosyaRef} type="file" accept="application/pdf,image/jpeg,image/png"

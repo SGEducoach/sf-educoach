@@ -25,6 +25,8 @@ export function suresiDolduMu(bitisTarihi: string | null): boolean {
 // (kendi menüsü kurum türüne göre değiştiği için); deneme süresi
 // kontrolü için artık TÜM rollerde gerekiyor.
 export interface KullaniciKurumu {
+  // Kurumun kimliği — Pano kuruma bağlı olduğu için gerekli (migration 0134).
+  id: string;
   tur: KurumTuru;
   // Grup Koçluk (18.09.2026): grup, dershanenin alt türü; kendi bitiş
   // tarihi olduğu için platform geneli dershane deneme süresinden muaf.
@@ -54,6 +56,7 @@ async function okulBilgisi(supabase: SupabaseClient, schoolId: string | null | u
   const bugun = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Istanbul" });
   const grupMu = s.grup_kapasitesi !== null;
   return {
+    id: schoolId,
     tur: s.tur as KurumTuru, grupMu, aktif: s.aktif !== false,
     kademe: (s.kademe as KurumKademesi | null) ?? null,
     yurtlu: s.yurtlu === true,

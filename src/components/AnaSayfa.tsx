@@ -2,7 +2,6 @@
 import { GraduationCap, School, Users, UserRoundCheck } from "lucide-react";
 import { SiteUstNavigasyon, SiteAltligi } from "@/components/SiteUstNavigasyon";
 import { AnaSayfaSlider } from "@/components/AnaSayfaSlider";
-import { AnaSayfaTgAkisi } from "@/components/AnaSayfaTgAkisi";
 import { AnaSayfaDuyurular } from "@/components/AnaSayfaDuyurular";
 import { IkonStili } from "@/components/IkonStili";
 import type { AnaSayfaSliderGorseli } from "@/lib/ana-sayfa";
@@ -16,7 +15,10 @@ const roller=[
  {ad:"Veli",Icon:Users,renk:"#C2410C",zemin:"#FFF7ED",metin:"Çocuğunu başkalarıyla kıyaslamadan, kişiye özel gelişimini ve öğretmen geri bildirimlerini güvenle takip."},
  {ad:"Müdür",Icon:School,renk:"#047857",zemin:"#ECFDF5",metin:"Okul veya dershane genelindeki akademik gelişimi, sınıfları ve koçluk sürecini tek yerden izleme."},
 ];
-export function AnaSayfa({baslik,govde,sliderGecisSaniye,sliderGorselleri,tgIlanlar,duyurular}:{baslik:string;govde:string;sliderGecisSaniye:number;sliderGorselleri:AnaSayfaSliderGorseli[];tgIlanlar:TgDenemeIlani[];duyurular:AnaSayfaDuyurusu[]}){
+// Pano (TG akisi) 02.10.2026'da BURADAN KALDIRILDI: pano kuruma baglandi
+// (migration 0134), bir kurumun panosu giris yapmamis ziyaretciye gosterilemez.
+// Site duyurulari kaldi; duyurular bolumu artik tek basina tam genislikte.
+export function AnaSayfa({baslik,govde,sliderGecisSaniye,sliderGorselleri,duyurular}:{baslik:string;govde:string;sliderGecisSaniye:number;sliderGorselleri:AnaSayfaSliderGorseli[];duyurular:AnaSayfaDuyurusu[]}){
  const paragraflar=govde.split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean);
  return <IkonStili><div className="flex min-h-dvh flex-col" style={{background:BEYAZ}}>
   <SiteUstNavigasyon/>
@@ -28,8 +30,7 @@ export function AnaSayfa({baslik,govde,sliderGecisSaniye,sliderGorselleri,tgIlan
     <p className="mx-auto mt-3 max-w-3xl text-center text-base leading-7" style={{color:GRI}}>Okul ve dershanelerin kullanabildiği SeFu Koç; öğrenci, öğretmen, veli ve müdür rollerini aynı gelişim sürecinde buluşturan YKS hazırlık ve öğrenci takip platformudur.</p>
     <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{roller.map(({ad,Icon,renk,zemin,metin})=><article key={ad} className="flex flex-col items-center rounded-3xl p-5 text-center sm:items-start sm:text-left" style={{background:zemin,border:`1px solid ${renk}33`}}><div className="flex h-11 w-11 items-center justify-center rounded-2xl" style={{background:`${renk}18`}}><Icon color={renk}/></div><h3 className="mt-4 text-lg font-extrabold" style={{color:renk}}>{ad}</h3><p className="mt-2 text-sm leading-6" style={{color:GRI}}>{metin}</p></article>)}</div>
    </section>
-   <section className="mx-auto grid max-w-6xl gap-5 px-5 pb-14 sm:px-8 lg:grid-cols-2">
-    <div className="min-h-72 overflow-hidden rounded-3xl border border-[#DDE7EA] bg-[#F7FAFB] p-5 shadow-sm"><AnaSayfaTgAkisi dbIlanlar={tgIlanlar}/></div>
+   <section className="mx-auto max-w-6xl px-5 pb-14 sm:px-8">
     <AnaSayfaDuyurular duyurular={duyurular}/>
    </section>
    <section className="border-t border-[#E4E9EE] bg-[#F7FAFB]"><div className="mx-auto max-w-5xl px-5 py-14 sm:px-8 sm:py-20"><h2 className="text-balance text-2xl font-extrabold leading-tight sm:text-3xl" style={{color:LACIVERT,fontFamily:"var(--font-baloo)"}}>{baslik}</h2><div className="mt-5 space-y-4">{paragraflar.map((p,i)=><p key={i} className="text-base leading-7 sm:text-lg" style={{color:GRI}}>{p}</p>)}</div></div></section>
