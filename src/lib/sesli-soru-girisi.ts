@@ -6,6 +6,21 @@ export type SesliSoruVerisi = {
   sureDakika: number;
 };
 
+export function sesTanimaHataMesaji(kod: string, ios: boolean, anaEkran: boolean): string {
+  const iosOnerisi = ios
+    ? ` iPhone'da Safari sekmesinde deneyin${anaEkran ? " (Ana Ekran simgesinden değil)" : ""}; olmazsa komut alanına dokunup klavyenin mikrofonunu kullanın.`
+    : " Komut alanına yazarak da devam edebilirsiniz.";
+  switch (kod) {
+    case "not-allowed": return `Mikrofon veya konuşma tanıma izni verilmedi. Tarayıcı izinlerini kontrol edin.${iosOnerisi}`;
+    case "service-not-allowed": return `Bu tarayıcıda konuşma tanıma servisi kullanılamıyor.${iosOnerisi}`;
+    case "network": return `Konuşma tanıma servisine bağlanılamadı. İnternet bağlantısını kontrol edin.${iosOnerisi}`;
+    case "audio-capture": return `Mikrofondan ses alınamadı. Mikrofon iznini ve başka bir uygulamanın mikrofonu kullanıp kullanmadığını kontrol edin.${iosOnerisi}`;
+    case "language-not-supported": return `Bu tarayıcı Türkçe konuşma tanımayı desteklemiyor.${iosOnerisi}`;
+    case "no-speech": return "Ses algılanmadı. Tekrar deneyin veya komut alanına dokunup klavyenin mikrofonunu kullanın.";
+    default: return `Ses tanıma tamamlanamadı (hata kodu: ${kod || "bilinmiyor"}).${iosOnerisi}`;
+  }
+}
+
 function normalize(metin: string): string {
   return metin.toLocaleLowerCase("tr-TR")
     .replaceAll("ı", "i").replaceAll("ş", "s").replaceAll("ğ", "g")

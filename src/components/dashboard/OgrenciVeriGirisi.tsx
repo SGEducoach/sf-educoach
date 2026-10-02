@@ -20,7 +20,7 @@ import { rehberDenemeEkle, rehberKonuCalismaEkle, rehberSoruCozumuEkle } from "@
 import { REHBER_GERIYE_DONUK_GUN } from "@/lib/rehberlik";
 import { YukleniyorOverlay } from "@/components/YukleniyorOverlay";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
-import { sesliSoruCozumunuCoz, type SesliSoruVerisi } from "@/lib/sesli-soru-girisi";
+import { sesliSoruCozumunuCoz, sesTanimaHataMesaji, type SesliSoruVerisi } from "@/lib/sesli-soru-girisi";
 
 // Türkiye saatine göre "bugün" — bkz. src/lib/tarih.ts: naif
 // `new Date().toISOString()` yaklaşımı UTC+3 saat diliminde gece yarısı ile
@@ -88,7 +88,7 @@ type Sekme = "konu" | "soru" | "deneme";
 export function Etiket({ children }: { children: React.ReactNode }) {
   return <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">{children}</span>;
 }
-function Girdi(props: React.InputHTMLAttributes<HTMLInputElement>) {
+function Girdi(props: React.ComponentPropsWithRef<"input">) {
   return <input {...props} className="text-sm px-2.5 py-1.5 rounded-xl outline-none w-full" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }} />;
 }
 function Secim({ children, ...props }: React.SelectHTMLAttributes<HTMLSelectElement>) {
@@ -111,10 +111,19 @@ function SesliSoruGirisi({ dersler, onUygula }: { dersler: string[]; onUygula: (
   const [dinliyor, setDinliyor] = useState(false);
   const [hata, setHata] = useState<string | null>(null);
   const tanima = useRef<SesTanima | null>(null);
+  const komutGirdisi = useRef<HTMLInputElement>(null);
 
   useEffect(() => () => { tanima.current?.stop(); tanima.current = null; }, []);
 
+  function klavyeyleDikteEt() {
+    setHata("Chrome/iPhone'da komut alanına dokunup açılan klavyenin mikrofonuna basın. İsterseniz siteyi Safari sekmesinde de deneyebilirsiniz.");
+    komutGirdisi.current?.focus();
+  }
+
   function baslat() {
+    if (/(?:iPhone|iPad|iPod)/.test(navigator.userAgent) && /CriOS/.test(navigator.userAgent)) {
+      klavyeyleDikteEt(); return;
+    }
     if (dinliyor) { tanima.current?.stop(); return; }
     const pencere = window as typeof window & {
       SpeechRecognition?: new () => SesTanima;
@@ -122,7 +131,7 @@ function SesliSoruGirisi({ dersler, onUygula }: { dersler: string[]; onUygula: (
     };
     const Tanima = pencere.SpeechRecognition ?? pencere.webkitSpeechRecognition;
     if (!Tanima) {
-      setHata("Bu tarayıcı ses tanımayı desteklemiyor. Komutu aşağıya yazarak da deneyebilirsiniz.");
+      setHata("Bu tarayıcı ses tanımayı desteklemiyor. Komut alanına dokunup klavyenin mikrofonunu kullanın veya komutu yazın.");
       return;
     }
     setHata(null);
@@ -136,9 +145,10 @@ function SesliSoruGirisi({ dersler, onUygula }: { dersler: string[]; onUygula: (
       if (sonuc) setMetin(sonuc);
     };
     oturum.onerror = (event) => {
-      setHata(event.error === "not-allowed" ? "Mikrofon izni verilmedi. İzin verin veya komutu yazın." :
-        event.error === "no-speech" ? "Ses algılanmadı. Tekrar deneyin." :
-        "Ses tanıma tamamlanamadı. Komutu yazarak da deneyebilirsiniz.");
+      if (event.error === "aborted") return;
+      const ios = /(?:iPhone|iPad|iPod)/.test(navigator.userAgent);
+      const anaEkran = window.matchMedia("(display-mode: standalone)").matches;
+      setHata(sesTanimaHataMesaji(event.error, ios, anaEkran));
     };
     oturum.onend = () => { setDinliyor(false); tanima.current = null; };
     tanima.current = oturum;
@@ -159,12 +169,12 @@ function SesliSoruGirisi({ dersler, onUygula }: { dersler: string[]; onUygula: (
         <span className="text-xs font-bold" style={{ color: SKY }}>Sesli giriş denemesi</span>
         <button type="button" onClick={baslat} className="sfec-btn flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold"
           style={{ background: dinliyor ? BLUSH : BG1_ALT, color: dinliyor ? BG0 : TEXT }}>
-          {dinliyor ? <MicOff size={14} /> : <Mic size={14} />}{dinliyor ? "Durdur" : "Konuş"}
+          {dinliyor ? <MicOff size={14} /> : <Mic size={14} />}{dinliyor ? "Durdur" : "Konuş / dikte et"}
         </button>
       </div>
-      <p className="text-[11px]" style={{ color: TEXT_MUTED }}>Örnek: “Matematik 20 doğru 5 yanlış 2 boş 40 dakika.” Rakamları söyleyin; yayınevi ve konuyu formda tamamlayın.</p>
+      <p className="text-[11px]" style={{ color: TEXT_MUTED }}>Örnek: “Matematik 20 doğru 5 yanlış 2 boş 40 dakika.” Yayınevi ve konuyu formda tamamlayın.</p>
       <label className="flex flex-col gap-1"><Etiket>Algılanan komut — düzeltebilirsiniz</Etiket>
-        <Girdi value={metin} onChange={(e) => setMetin(e.target.value)} placeholder="Komut burada görünür veya elle yazılabilir" />
+        <Girdi ref={komutGirdisi} value={metin} onChange={(e) => setMetin(e.target.value)} placeholder="Komut burada görünür veya elle yazılabilir" />
       </label>
       {hata && <p role="alert" className="text-xs" style={{ color: BLUSH }}>{hata}</p>}
       <button type="button" onClick={uygula} disabled={!metin.trim() || dinliyor}

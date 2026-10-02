@@ -1,9 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { sesliSoruCozumunuCoz } from "./sesli-soru-girisi";
+import { sesliSoruCozumunuCoz, sesTanimaHataMesaji } from "./sesli-soru-girisi";
 
 const dersler = ["Türkçe", "Matematik", "Biyoloji", "Din Kültürü", "Tarih", "Tarih-1"];
 
 describe("sesli soru girişi", () => {
+  it("iOS tanıma hatalarını nedenine göre açıklar", () => {
+    expect(sesTanimaHataMesaji("service-not-allowed", true, false)).toContain("Safari sekmesinde");
+    expect(sesTanimaHataMesaji("network", true, true)).toContain("Ana Ekran simgesinden değil");
+    expect(sesTanimaHataMesaji("audio-capture", false, false)).toContain("Mikrofondan ses alınamadı");
+    expect(sesTanimaHataMesaji("unknown", true, false)).toContain("hata kodu: unknown");
+  });
   it("Türkçe komutu form verisine çevirir", () => {
     expect(sesliSoruCozumunuCoz("Matematik 20 doğru 5 yanlış 2 boş 40 dakika", dersler)).toEqual({
       veri: { ders: "Matematik", dogru: 20, yanlis: 5, bos: 2, sureDakika: 40 }, hata: null,
