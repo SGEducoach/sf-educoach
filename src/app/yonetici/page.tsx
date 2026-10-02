@@ -70,8 +70,8 @@ export default async function YoneticiPage({
   const aktifBolum = (params.bolum ?? "ozet") as DashboardBolumu;
   if (!dashboardMenusu("admin").some((oge) => oge.bolum === aktifBolum)) redirect("/yonetici");
 
-  const { data: okullar } = await supabase.from("schools").select("id, ad, okul_kodu, tur, aktif, kademe").is("grup_kapasitesi", null).order("ad");
-  const okulListesi = (okullar ?? []) as { id: string; ad: string; okul_kodu: string; tur: "okul" | "dershane"; aktif: boolean; kademe?: KurumKademesi }[];
+  const { data: okullar } = await supabase.from("schools").select("id, ad, okul_kodu, tur, aktif, kademe, yurtlu").is("grup_kapasitesi", null).order("ad");
+  const okulListesi = (okullar ?? []) as { id: string; ad: string; okul_kodu: string; tur: "okul" | "dershane"; aktif: boolean; kademe?: KurumKademesi; yurtlu?: boolean }[];
   const gorunecekOkulId = params.okul || okulListesi[0]?.id || null;
 
   const [{ data: siniflar }, { data: ogretmenler }] = await Promise.all([
@@ -155,6 +155,7 @@ export default async function YoneticiPage({
               <NobetProgramYukleme
                 okulId={gorunecekOkulId}
                 okulAdi={okulListesi.find((o) => o.id === gorunecekOkulId)?.ad ?? ""}
+                yurtlu={okulListesi.find((o) => o.id === gorunecekOkulId)?.yurtlu === true}
               />
             </section>
           )}

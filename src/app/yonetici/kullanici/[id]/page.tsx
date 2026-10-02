@@ -36,27 +36,27 @@ async function kullaniciSonucInsa(
   const taban: KullaniciSonuc = {
     id: profil.id, kullaniciKodu: profil.kullanici_kodu, ad: profil.ad, email: profil.email, telefon: profil.telefon, role, aktif: profil.aktif,
     okulAdi: null, okulId: null, kurumTuru: null, sinifAdi: null, sinifId: null, okulNo: null, brans: null,
-    yurtOgrencisi: null, aytAlan: null, hedefBolum: null, hedefNetTyt: null, hedefNetAyt: null,
+    yurtOgrencisi: null, kurumYurtlu: false, aytAlan: null, hedefBolum: null, hedefNetTyt: null, hedefNetAyt: null,
     moderatorMu: !!moderatorKaydi,
   };
   if (role === "ogrenci") {
     const { data } = await admin.from("students")
-      .select("okul_no, school_id, class_id, yurt_ogrencisi, ayt_alan, hedef_bolum, hedef_net_tyt, hedef_net_ayt, schools(ad, tur), classes(seviye, sube)")
+      .select("okul_no, school_id, class_id, yurt_ogrencisi, ayt_alan, hedef_bolum, hedef_net_tyt, hedef_net_ayt, schools(ad, tur, yurtlu), classes(seviye, sube)")
       .eq("id", profil.id).maybeSingle();
     if (!data) return taban;
-    const okul = data.schools as unknown as { ad: string; tur: KurumTuru } | null;
+    const okul = data.schools as unknown as { ad: string; tur: KurumTuru; yurtlu: boolean | null } | null;
     const sinif = data.classes as unknown as { seviye: string; sube: string } | null;
     return {
       ...taban, okulAdi: okul?.ad ?? null, okulId: data.school_id, kurumTuru: okul?.tur ?? null, sinifAdi: sinif ? `${sinif.seviye}-${sinif.sube}` : null,
-      sinifId: data.class_id, okulNo: data.okul_no, yurtOgrencisi: data.yurt_ogrencisi, aytAlan: data.ayt_alan,
+      sinifId: data.class_id, okulNo: data.okul_no, yurtOgrencisi: data.yurt_ogrencisi, kurumYurtlu: okul?.yurtlu === true, aytAlan: data.ayt_alan,
       hedefBolum: data.hedef_bolum, hedefNetTyt: data.hedef_net_tyt, hedefNetAyt: data.hedef_net_ayt,
     };
   }
   if (role === "ogretmen" || role === "mudur") {
-    const { data } = await admin.from("teachers").select("brans, school_id, schools(ad, tur)").eq("id", profil.id).maybeSingle();
+    const { data } = await admin.from("teachers").select("brans, school_id, schools(ad, tur, yurtlu)").eq("id", profil.id).maybeSingle();
     if (!data) return taban;
-    const okul = data.schools as unknown as { ad: string; tur: KurumTuru } | null;
-    return { ...taban, okulAdi: okul?.ad ?? null, okulId: data.school_id, kurumTuru: okul?.tur ?? null, brans: data.brans };
+    const okul = data.schools as unknown as { ad: string; tur: KurumTuru; yurtlu: boolean | null } | null;
+    return { ...taban, okulAdi: okul?.ad ?? null, okulId: data.school_id, kurumTuru: okul?.tur ?? null, kurumYurtlu: okul?.yurtlu === true, brans: data.brans };
   }
   return taban;
 }

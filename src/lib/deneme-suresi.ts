@@ -37,6 +37,8 @@ export interface KullaniciKurumu {
   // Kurumun kademesi (migration 0128). Ortaokul öğretmeninin menüsü buna
   // göre değişiyor (Konu Yeterliliği), eski kayıtlarda null olabilir.
   kademe: KurumKademesi | null;
+  // Yurdu var mı (migration 0133). false ise yurt arayüzleri hiç çizilmiyor.
+  yurtlu: boolean;
 }
 
 export const GRUP_SALT_OKUNUR_MESAJI =
@@ -47,13 +49,14 @@ export const GRUP_DONDURULDU_MESAJI =
 
 async function okulBilgisi(supabase: SupabaseClient, schoolId: string | null | undefined): Promise<KullaniciKurumu | undefined> {
   if (!schoolId) return undefined;
-  const { data: s } = await supabase.from("schools").select("tur, kademe, grup_kapasitesi, grup_bitis_tarihi, aktif").eq("id", schoolId).maybeSingle();
+  const { data: s } = await supabase.from("schools").select("tur, kademe, yurtlu, grup_kapasitesi, grup_bitis_tarihi, aktif").eq("id", schoolId).maybeSingle();
   if (!s) return undefined;
   const bugun = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Istanbul" });
   const grupMu = s.grup_kapasitesi !== null;
   return {
     tur: s.tur as KurumTuru, grupMu, aktif: s.aktif !== false,
     kademe: (s.kademe as KurumKademesi | null) ?? null,
+    yurtlu: s.yurtlu === true,
     suresiDoldu: grupMu && !!s.grup_bitis_tarihi && (s.grup_bitis_tarihi as string) < bugun,
   };
 }

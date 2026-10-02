@@ -39,14 +39,14 @@ async function requireModerator(targetSchoolId?: string) {
     const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
     if (profile?.role === "admin") {
       const admin = createAdminClient();
-      const { data: okul } = await admin.from("schools").select("ad, tur, kademe").eq("id", targetSchoolId).maybeSingle();
+      const { data: okul } = await admin.from("schools").select("ad, tur, kademe, yurtlu").eq("id", targetSchoolId).maybeSingle();
       if (!okul) redirect("/yonetici");
-      return { user, admin, schoolId: targetSchoolId, okulAdi: okul.ad, kurumTuru: okul.tur as KurumTuru, kademe: okul.kademe as KurumKademesi };
+      return { user, admin, schoolId: targetSchoolId, okulAdi: okul.ad, kurumTuru: okul.tur as KurumTuru, kademe: okul.kademe as KurumKademesi, yurtlu: okul.yurtlu === true };
     }
   }
-  const { data: yetki } = await supabase.from("school_moderators").select("school_id, schools(ad, tur, kademe, grup_kapasitesi)").eq("profile_id", user.id).maybeSingle();
+  const { data: yetki } = await supabase.from("school_moderators").select("school_id, schools(ad, tur, kademe, yurtlu, grup_kapasitesi)").eq("profile_id", user.id).maybeSingle();
   if (!yetki) redirect("/dashboard");
-  const okul = yetki.schools as unknown as { ad: string; tur: string; kademe: string | null; grup_kapasitesi: number | null } | null;
+  const okul = yetki.schools as unknown as { ad: string; tur: string; kademe: string | null; yurtlu: boolean | null; grup_kapasitesi: number | null } | null;
   // Grup Koçluk koçu grubunu "Grubum"dan yönetir (kapasite, dondurma ve süre
   // kuralları orada); moderatör paneli ona kapalı — dondurulmuş/salt okunur
   // grupta bu panelden işlem yapılamasın (Faz 3, 18.09.2026).
@@ -55,6 +55,7 @@ async function requireModerator(targetSchoolId?: string) {
     user, admin: createAdminClient(), schoolId: yetki.school_id, okulAdi: okul?.ad ?? "Okul",
     kurumTuru: (okul?.tur as KurumTuru | undefined) ?? "okul",
     kademe: (okul?.kademe as KurumKademesi | null | undefined) ?? null,
+    yurtlu: okul?.yurtlu === true,
   };
 }
 
@@ -74,8 +75,8 @@ async function hedefOkuldaMi(admin: ReturnType<typeof createAdminClient>, school
 // sayfasına yönlendiriliyor (bkz. profil-actions.ts, ModeratorProfilim.tsx).
 // Branş listesi kurumun KADEMESİNE göre değişiyor (ortaokulda "Türkçe",
 // İnkılap ayrı branş değil) — panele kurum türü ve kademe de taşınıyor.
-export async function moderatorKullanicilariGetir(targetSchoolId?: string): Promise<{ okulAdi: string; kullanicilar: ModeratorKullanici[]; kurumTuru: KurumTuru; kademe: KurumKademesi | null }> {
-  const { user, admin, schoolId, okulAdi, kurumTuru, kademe } = await requireModerator(targetSchoolId);
+export async function moderatorKullanicilariGetir(targetSchoolId?: string): Promise<{ okulAdi: string; kullanicilar: ModeratorKullanici[]; kurumTuru: KurumTuru; kademe: KurumKademesi | null; yurtlu: boolean }> {
+  const { user, admin, schoolId, okulAdi, kurumTuru, kademe, yurtlu } = await requireModerator(targetSchoolId);
   const [{ data: students }, { data: teachers }, { data: parents }] = await Promise.all([
     admin.from("students").select("id, okul_no, yurt_ogrencisi, classes(seviye, sube)").eq("school_id", schoolId),
     admin.from("teachers").select("id, brans, classes(seviye, sube)").eq("school_id", schoolId),
@@ -83,7 +84,7 @@ export async function moderatorKullanicilariGetir(targetSchoolId?: string): Prom
   ]);
   const ids = [...new Set([...(students ?? []).map(x => x.id), ...(teachers ?? []).map(x => x.id), ...(parents ?? []).map(x => x.parent_id)])]
     .filter((id) => id !== user.id);
-  if (!ids.length) return { okulAdi, kullanicilar: [], kurumTuru, kademe };
+  if (!ids.length) return { okulAdi, kullanicilar: [], kurumTuru, kademe, yurtlu };
   const [{ data: profiles }, { data: moderatorler }] = await Promise.all([
     admin.from("profiles").select("id, kullanici_kodu, ad, email, role, aktif").in("id", ids).neq("role", "admin"),
     admin.from("school_moderators").select("profile_id").in("profile_id", ids),
@@ -95,6 +96,7 @@ export async function moderatorKullanicilariGetir(targetSchoolId?: string): Prom
     okulAdi,
     kurumTuru,
     kademe,
+    yurtlu,
     kullanicilar: ((profiles ?? []) as { id: string; kullanici_kodu: string; ad: string; email: string | null; role: UserRole; aktif: boolean }[]).map(p => {
       const s = studentMap.get(p.id) as { okul_no: string; yurt_ogrencisi: boolean; classes: { seviye: string; sube: string } | null } | undefined;
       const t = teacherMap.get(p.id) as { brans: string; classes: { seviye: string; sube: string } | null } | undefined;

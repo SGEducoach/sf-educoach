@@ -17,10 +17,13 @@ import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUT
 import { teslimEdilebilirEpostaMi } from "@/lib/validators";
 import { SosyalEtkinlikler } from "@/components/dashboard/SosyalEtkinlikler";
 
-export function ModeratorPanel({ okulAdi, kullanicilar, schoolId, kurumTuru, kademe }: {
+export function ModeratorPanel({ okulAdi, kullanicilar, schoolId, kurumTuru, kademe, yurtlu = false }: {
   okulAdi: string; kullanicilar: ModeratorKullanici[];
   // Branş listesi kurumun kademesine göre (ortaokul/lise/dershane).
   kurumTuru?: KurumTuru; kademe?: KurumKademesi | null;
+  // Yurdu olmayan kurumda "yurt öğrencisi" işareti hiç gösterilmiyor
+  // (migration 0133, kullanıcı isteği 02.10.2026).
+  yurtlu?: boolean;
   // schoolId: yalnızca admin /yonetici → Moderatörler'den bu okulu
   // GÖRÜNTÜLERKEN geçilir (bkz. moderator/page.tsx) — aksiyon fonksiyonlarına
   // iletilir ki requireModerator() admin'in kendi (var olmayan) moderatör
@@ -151,7 +154,7 @@ export function ModeratorPanel({ okulAdi, kullanicilar, schoolId, kurumTuru, kad
       <p style={{ color: TEXT_MUTED }} className="mt-3 text-xs font-semibold">Listelenen kişi: <strong style={{ color: TEXT }}>{gosterilenler.length}</strong></p>
     </div>
     <div className="sfec-liste">
-      {sayfadakiler.map(k => <KullaniciKarti key={k.id} kullanici={k} schoolId={schoolId} kurumTuru={kurumTuru} kademe={kademe} onMesaj={setMesaj} />)}
+      {sayfadakiler.map(k => <KullaniciKarti key={k.id} kullanici={k} schoolId={schoolId} kurumTuru={kurumTuru} kademe={kademe} yurtlu={yurtlu} onMesaj={setMesaj} />)}
       {gosterilenler.length === 0 && <div className="col-span-full rounded-2xl p-6 text-center text-sm" style={{ color: TEXT_MUTED, background: BG1, border: `2px solid ${BORDER}` }}>Bu filtrelere uygun kullanıcı bulunamadı.</div>}
     </div>
     {toplamSayfa > 1 && <nav aria-label="Kullanıcı listesi sayfaları" className="flex flex-wrap items-center justify-center gap-2">
@@ -408,7 +411,7 @@ function Alan({ etiket, value, onChange, type = "text" }: { etiket: string; valu
   return <label className="flex flex-col gap-1"><span className="text-[10px] font-semibold" style={{ color: TEXT_MUTED }}>{etiket}</span><input type={type} value={value} onChange={(e) => onChange(e.target.value)} className="rounded-lg px-2.5 py-2 text-xs outline-none" style={{ background: BG1, color: TEXT, border: `2px solid ${BORDER_STRONG}` }} /></label>;
 }
 
-function KullaniciKarti({ kullanici: k, schoolId, onMesaj, kurumTuru, kademe }: { kullanici: ModeratorKullanici; schoolId?: string; onMesaj: (m: string) => void; kurumTuru?: KurumTuru; kademe?: KurumKademesi | null }) {
+function KullaniciKarti({ kullanici: k, schoolId, onMesaj, kurumTuru, kademe, yurtlu }: { kullanici: ModeratorKullanici; schoolId?: string; onMesaj: (m: string) => void; kurumTuru?: KurumTuru; kademe?: KurumKademesi | null; yurtlu?: boolean }) {
   const [pending, startTransition] = useTransition();
   const [duzenleAcik, setDuzenleAcik] = useState(false);
   const [sifreAcik, setSifreAcik] = useState(false);
@@ -496,7 +499,7 @@ function KullaniciKarti({ kullanici: k, schoolId, onMesaj, kurumTuru, kademe }: 
         <ModeratorOgretmenBransFormu teacherId={k.id} schoolId={schoolId} kurumTuru={kurumTuru} kademe={kademe} onDone={(msg) => { onMesaj(msg); setDuzenleAcik(false); }} />
       )}
 
-      {k.kategori === "ogrenci" && (
+      {k.kategori === "ogrenci" && yurtlu && (
         <div className="mt-2 flex flex-col gap-2 sm:flex-row">
           <button disabled={pending} title="Hafta içi telefonuna erişemeyen öğrenciler için hatırlatmalar hafta sonuna göre esnetilir"
             onClick={() => startTransition(async () => { const r = await moderatorYurtDurumuDegistir(k.id, !k.yurtOgrencisi, schoolId); onMesaj(r.error ? `Hata: ${r.error}` : "İşlem tamamlandı."); })}

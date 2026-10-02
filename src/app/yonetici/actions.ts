@@ -62,6 +62,9 @@ export interface KullaniciSonuc {
   okulNo: string | null;
   brans: string | null;
   yurtOgrencisi: boolean | null;
+  // Kurumun yurdu var mı (migration 0133): yoksa "yurt öğrencisi" düğmesi
+  // hiç gösterilmiyor.
+  kurumYurtlu: boolean;
   aytAlan: AytAlan | null;
   hedefBolum: string | null;
   hedefNetTyt: number | null;
@@ -142,10 +145,10 @@ export async function kullaniciAra(sorgu: string, rolFiltre: UserRole | "hepsi",
 
   const [ogrenciDetay, ogretmenDetay, moderatorler] = await Promise.all([
     ogrenciIdleri.length
-      ? supabase.from("students").select("id, okul_no, school_id, class_id, yurt_ogrencisi, ayt_alan, hedef_bolum, hedef_net_tyt, hedef_net_ayt, schools(ad, tur), classes(seviye, sube)").in("id", ogrenciIdleri)
+      ? supabase.from("students").select("id, okul_no, school_id, class_id, yurt_ogrencisi, ayt_alan, hedef_bolum, hedef_net_tyt, hedef_net_ayt, schools(ad, tur, yurtlu), classes(seviye, sube)").in("id", ogrenciIdleri)
       : Promise.resolve({ data: [] }),
     ogretmenIdleri.length
-      ? supabase.from("teachers").select("id, brans, school_id, schools(ad, tur)").in("id", ogretmenIdleri)
+      ? supabase.from("teachers").select("id, brans, school_id, schools(ad, tur, yurtlu)").in("id", ogretmenIdleri)
       : Promise.resolve({ data: [] }),
     ogretmenIdleri.length
       ? supabase.from("school_moderators").select("profile_id").in("profile_id", ogretmenIdleri)
@@ -156,9 +159,9 @@ export async function kullaniciAra(sorgu: string, rolFiltre: UserRole | "hepsi",
   type OgrenciRow = {
     id: string; okul_no: string; school_id: string; class_id: string; yurt_ogrencisi: boolean;
     ayt_alan: AytAlan; hedef_bolum: string; hedef_net_tyt: number | null; hedef_net_ayt: number | null;
-    schools: { ad: string; tur: KurumTuru } | null; classes: { seviye: string; sube: string } | null;
+    schools: { ad: string; tur: KurumTuru; yurtlu: boolean | null } | null; classes: { seviye: string; sube: string } | null;
   };
-  type OgretmenRow = { id: string; brans: string; school_id: string; schools: { ad: string; tur: KurumTuru } | null };
+  type OgretmenRow = { id: string; brans: string; school_id: string; schools: { ad: string; tur: KurumTuru; yurtlu: boolean | null } | null };
   const ogrenciMap = new Map(((ogrenciDetay.data as unknown as OgrenciRow[]) ?? []).map((o) => [o.id, o]));
   const ogretmenMap = new Map(((ogretmenDetay.data as unknown as OgretmenRow[]) ?? []).map((o) => [o.id, o]));
 
@@ -175,6 +178,7 @@ export async function kullaniciAra(sorgu: string, rolFiltre: UserRole | "hepsi",
       okulNo: o?.okul_no ?? null,
       brans: t?.brans ?? null,
       yurtOgrencisi: o?.yurt_ogrencisi ?? null,
+      kurumYurtlu: (o?.schools?.yurtlu ?? t?.schools?.yurtlu) === true,
       aytAlan: o?.ayt_alan ?? null,
       hedefBolum: o?.hedef_bolum ?? null,
       hedefNetTyt: o?.hedef_net_tyt ?? null,

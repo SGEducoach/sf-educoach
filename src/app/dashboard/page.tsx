@@ -263,7 +263,7 @@ export default async function DashboardPage({
             <>
               {role === "ogrenci" && <OgrenciIcerik userId={user.id} ad={profile.ad} donem={donem} haftaBaslangic={haftaninPazartesisi(params.hafta)} aktifBolum={aktifBolum} gecmisHafta={Number(params.gecmis ?? 0)} seciliDersId={params.ders} seciliKonu={params.konu} seciliBolum={params.kisim} kademe={ogrenciKademesi} sinifSeviyesi={ogrenciSinifSeviyesi} />}
               {(role === "ogretmen" || role === "mudur") && (
-                <OgretmenIcerik userId={user.id} role={role} kurumTuru={kurumTuru} brans={brans} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} secilenOgretmenId={params.ogretmen} donem={donem} aktifBolum={aktifBolum} seciliDersId={params.ders} seciliBolum={params.kisim} kademe={menuKademesi} grupMu={grupKocu} />
+                <OgretmenIcerik userId={user.id} role={role} kurumTuru={kurumTuru} brans={brans} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} secilenOgretmenId={params.ogretmen} donem={donem} aktifBolum={aktifBolum} seciliDersId={params.ders} seciliBolum={params.kisim} kademe={menuKademesi} yurtlu={kurum?.yurtlu === true} grupMu={grupKocu} />
               )}
               {role === "veli" && <VeliIcerik userId={user.id} ad={profile.ad} secilenOgrenciId={params.ogrenci} donem={donem} aktifBolum={aktifBolum} />}
             </>
@@ -676,12 +676,14 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
   );
 }
 
-async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, secilenOgrenciId, secilenOgretmenId, donem, aktifBolum, seciliDersId, seciliBolum, kademe, grupMu = false }: {
+async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, secilenOgrenciId, secilenOgretmenId, donem, aktifBolum, seciliDersId, seciliBolum, kademe, yurtlu = false, grupMu = false }: {
   userId: string; role: "ogretmen" | "mudur"; kurumTuru?: KurumTuru; brans?: string; secilenSinifId?: string; secilenOgrenciId?: string; secilenOgretmenId?: string; donem: RaporDonemi; aktifBolum: DashboardBolumu;
   // Ortaokul Konu Yeterliliği ekranının seçimleri (?ders=, ?kisim=).
   seciliDersId?: string; seciliBolum?: string;
   // Kurumun kademesi: ortaokulda ödev formunun konu havuzu değişiyor.
   kademe?: "ortaokul" | "lise" | "ikisi" | null;
+  // Kurumun yurdu var mı (migration 0133): yoksa yurt arayüzleri çizilmiyor.
+  yurtlu?: boolean;
   // Grup Koçluk koçu: ekran metinleri "grup" diline geçer (denetim 27.09.2026).
   grupMu?: boolean;
 }) {
@@ -1140,6 +1142,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       yurtNobetGorevleri={yurtNobetGorevleri}
       nobetDevirOgretmenleri={nobetDevirOgretmenleri}
       dershaneMi={dershaneMi}
+      yurtlu={yurtlu}
       okulOgretmenleri={okulOgretmenleri}
       secilenOgretmenId={secilenOgretmenId}
       secilenOgretmenProgrami={secilenOgretmenProgrami}

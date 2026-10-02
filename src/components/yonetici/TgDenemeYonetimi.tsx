@@ -47,7 +47,7 @@ export function TgDenemeYonetimi() {
     startTransition(async () => {
       const res = await tgDenemeIlaniEkle(formData);
       if (res.error) return setHata(res.error);
-      setBasari("Yayınlandı — TG Denemeleri akışında görünecek.");
+      setBasari("Yayınlandı — Pano akışında görünecek.");
       setTarih(""); setBaslik(""); setAciklama("");
       if (dosyaRef.current) dosyaRef.current.value = "";
       if (arsivAcik) { const liste = await tgDenemeArsiviniGetir(); if (liste.error) setHata(liste.error); else setArsiv(liste.ilanlar); }
@@ -83,7 +83,7 @@ export function TgDenemeYonetimi() {
           <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: MINT_BG }}>
             <Newspaper size={13} color={MINT} />
           </div>
-          <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">TG Denemeleri</span>
+          <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Pano</span>
         </div>
         <button type="button" onClick={() => setAcik((v) => !v)}
           className="sfec-btn flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-full"

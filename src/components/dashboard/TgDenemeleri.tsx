@@ -48,13 +48,16 @@ export function TgDenemeleri({ bugun, dbIlanlar }: { bugun: string; dbIlanlar: T
       <div className="flex flex-wrap items-end justify-between gap-3 px-1">
         <div>
           <div className="mb-1 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: TEXT_MUTED }}>
-            <CalendarDays size={14} color={MINT} aria-hidden="true" /> Türkiye geneli sınav haberleri
+            {/* Kullanıcı isteği (02.10.2026): başlık "TG Denemeler" değil
+                "Pano" — içerik yalnız TG denemeleriyle sınırlı değil, bu üst
+                satırdan ve alt açıklamadan anlaşılmalı. Yükleme akışı aynı. */}
+            <CalendarDays size={14} color={MINT} aria-hidden="true" /> Duyurular, sınav haberleri ve afişler
           </div>
           <h1 id="tg-denemeleri-baslik" className="text-2xl font-extrabold sm:text-3xl" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>
-            TG Denemeler
+            Pano
           </h1>
           <p className="mt-1 max-w-2xl text-sm" style={{ color: TEXT_MUTED }}>
-            Genel takvimler ve yaklaşan deneme afişleri
+            Takvimler, duyurular ve yaklaşan deneme afişleri — tek yerde
           </p>
         </div>
       </div>

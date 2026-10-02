@@ -33,6 +33,8 @@ interface OkulSatiri {
   aktif: boolean;
   // Kurumun kademesi (migration 0128) — sınıf seviyesi seçeneklerini belirler.
   kademe?: KurumKademesi;
+  // Yurdu var mı (migration 0133) — yurt arayüzleri buna göre gösteriliyor.
+  yurtlu?: boolean;
 }
 interface SinifSatiri {
   id: string;
@@ -177,6 +179,36 @@ export function AdminPanel({
   );
 }
 
+// Yurtlu / yurtsuz seçimi (kullanıcı isteği 02.10.2026, migration 0133).
+//
+// Yurdu olmayan kurumda yurt nöbeti, yurt öğrencisi işareti ve nöbet devri
+// arayüzleri hiç gösterilmiyor — canlıda 8 kurumdan 7'si bu alanları boşuna
+// görüyordu. Dershanede yurt kavramı olmadığı için seçenek orada sunulmuyor.
+function YurtluSecimi({ yurtlu, setYurtlu }: { yurtlu: boolean; setYurtlu: (v: boolean) => void }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex flex-wrap gap-1.5">
+        {([[false, "Yurtsuz"], [true, "Yurtlu"]] as const).map(([deger, etiket]) => (
+          <button key={etiket} type="button" onClick={() => setYurtlu(deger)}
+            className="sfec-btn rounded-full px-3.5 py-1.5 text-xs font-bold"
+            style={{
+              background: yurtlu === deger ? MINT : BG0,
+              color: yurtlu === deger ? MINT_ON : TEXT,
+              border: `2px solid ${yurtlu === deger ? MINT : BORDER_STRONG}`,
+            }}>
+            {etiket}
+          </button>
+        ))}
+      </div>
+      <p className="text-[11px]" style={{ color: TEXT_MUTED }}>
+        {yurtlu
+          ? "Yurt nöbeti, nöbet devri ve yurt öğrencisi işaretleme açık olur."
+          : "Yurda dair hiçbir alan gösterilmez (nöbet, nöbet devri, yurt öğrencisi)."}
+      </p>
+    </div>
+  );
+}
+
 // Kurum seçimi düğmeleri — ekleme ve düzenleme formu AYNI bileşeni kullanıyor.
 // Daha önce iki yere ayrı yazılmıştı; bir seçenek eklendiğinde birinin
 // unutulması kaçınılmazdı.
@@ -204,6 +236,7 @@ function KurumSecimiDugmeleri({ secim, setSecim }: { secim: KurumSecimi; setSeci
 function OkulEkleFormu({ onDone }: { onDone: (yeniOkulId?: string) => void }) {
   const [ad, setAd] = useState("");
   const [secim, setSecim] = useState<KurumSecimi>("lise");
+  const [yurtlu, setYurtlu] = useState(false);
   const [okulKodu, setOkulKodu] = useState("");
   const [hata, setHata] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -213,7 +246,7 @@ function OkulEkleFormu({ onDone }: { onDone: (yeniOkulId?: string) => void }) {
     setHata(null);
     const { tur, kademe } = kurumSeciminiCoz(secim);
     startTransition(async () => {
-      const res = await okulEkle({ ad, tur, okulKodu, kademe });
+      const res = await okulEkle({ ad, tur, okulKodu, kademe, yurtlu });
       if (res.error) return setHata(res.error);
       setAd(""); setOkulKodu("");
       onDone(res.id ?? undefined);
@@ -225,6 +258,7 @@ function OkulEkleFormu({ onDone }: { onDone: (yeniOkulId?: string) => void }) {
       <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[13px] font-bold">Yeni kurum</span>
       <KurumSecimiDugmeleri secim={secim} setSecim={setSecim} />
       <p className="text-[11px]" style={{ color: TEXT_MUTED }}>{KURUM_SECIMI_ACIKLAMA[secim]}</p>
+      {secim !== "dershane" && <YurtluSecimi yurtlu={yurtlu} setYurtlu={setYurtlu} />}
       <div className="flex gap-2 flex-wrap">
         <input value={ad} onChange={(e) => setAd(e.target.value)} placeholder="Kurum adı" required
           className="text-sm px-3 py-1.5 rounded-xl outline-none flex-1 min-w-[140px]" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
@@ -244,6 +278,7 @@ function OkulDuzenleFormu({ okul, onDone }: { okul: OkulSatiri; onDone: () => vo
   const [ad, setAd] = useState(okul.ad);
   const [okulKodu, setOkulKodu] = useState(okul.okul_kodu);
   const [secim, setSecim] = useState<KurumSecimi>(kurumSecimi(okul.tur, okul.kademe));
+  const [yurtlu, setYurtlu] = useState(okul.yurtlu === true);
   const [hata, setHata] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [aktiflikPending, startAktiflikTransition] = useTransition();
@@ -253,7 +288,7 @@ function OkulDuzenleFormu({ okul, onDone }: { okul: OkulSatiri; onDone: () => vo
     setHata(null);
     startTransition(async () => {
       const { tur, kademe } = kurumSeciminiCoz(secim);
-      const res = await okulDuzenle(okul.id, { ad, okulKodu, tur, kademe });
+      const res = await okulDuzenle(okul.id, { ad, okulKodu, tur, kademe, yurtlu });
       if (res.error) return setHata(res.error);
       onDone();
     });
@@ -274,6 +309,7 @@ function OkulDuzenleFormu({ okul, onDone }: { okul: OkulSatiri; onDone: () => vo
           oluşturmak yerine buradan değiştirilir. Sınıf seviyesi seçenekleri
           anında buna göre daralır. */}
       <KurumSecimiDugmeleri secim={secim} setSecim={setSecim} />
+      {secim !== "dershane" && <YurtluSecimi yurtlu={yurtlu} setYurtlu={setYurtlu} />}
       {secim !== kurumSecimi(okul.tur, okul.kademe) && (
         <p className="text-[11px] font-semibold" style={{ color: BLUSH }}>
           Kademe değişiyor. Mevcut sınıflar silinmez; bundan sonra açacağın sınıfların seviyeleri yeni kademeye göre listelenir.

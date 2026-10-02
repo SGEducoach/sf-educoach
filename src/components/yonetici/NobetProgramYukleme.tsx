@@ -171,7 +171,9 @@ function DuzenlemeSatiri({ ogretmenler, adSoyad, onAdDegis, disabled, onKaydet, 
   );
 }
 
-export function NobetProgramYukleme({ okulId, okulAdi }: { okulId: string; okulAdi: string }) {
+// Yurtlu olmayan kurumda yurt kutuları HİÇ çizilmiyor (migration 0133,
+// kullanıcı isteği 02.10.2026). Ders programı ve OKUL nöbeti her kurumda var.
+export function NobetProgramYukleme({ okulId, okulAdi, yurtlu = false }: { okulId: string; okulAdi: string; yurtlu?: boolean }) {
   const [pending, startTransition] = useTransition();
   const [hata, setHata] = useState<string | null>(null);
   const [programOzeti, setProgramOzeti] = useState<ProgramYuklemeOzeti | null>(null);
@@ -374,7 +376,7 @@ export function NobetProgramYukleme({ okulId, okulAdi }: { okulId: string; okulA
         )}
       </Kutu>
 
-      <Kutu baslik="Yurt (Belletmen) Nöbet Listesi PDF" ikon={<CalendarDays size={13} color={MINT} />}>
+      {yurtlu && <Kutu baslik="Yurt (Belletmen) Nöbet Listesi PDF" ikon={<CalendarDays size={13} color={MINT} />}>
         <DosyaSecimi ref={yurtGirdisi} dosya={yurtDosyasi} pending={pending} etiket="Nöbet listesini yükle"
           onSec={setYurtDosyasi} onYukle={yurtYukle} onTemizle={yurduTemizle} />
         <label className="mt-2 flex items-center gap-2 text-[11px] font-semibold" style={{ color: TEXT_MUTED }}>
@@ -391,7 +393,7 @@ export function NobetProgramYukleme({ okulId, okulAdi }: { okulId: string; okulA
             <Uyarilar uyarilar={yurtOzeti.uyarilar} />
           </div>
         )}
-      </Kutu>
+      </Kutu>}
 
       <Kutu baslik="Okul Nöbetleri (haftalık)" ikon={<CalendarDays size={13} color={MINT} />}>
         <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -454,7 +456,7 @@ export function NobetProgramYukleme({ okulId, okulAdi }: { okulId: string; okulA
         </div>
       </Kutu>
 
-      <Kutu baslik="Yurt Nöbeti Görevleri" ikon={<CalendarDays size={13} color={MINT} />}>
+      {yurtlu && <Kutu baslik="Yurt Nöbeti Görevleri" ikon={<CalendarDays size={13} color={MINT} />}>
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <input value={yeniYurtNobeti.adSoyad} onChange={(e) => setYeniYurtNobeti({ ...yeniYurtNobeti, adSoyad: e.target.value })}
             placeholder="Ad Soyad" className="min-w-[160px] flex-1 rounded-xl px-3 py-2 text-xs" style={girdiStili} />
@@ -506,7 +508,7 @@ export function NobetProgramYukleme({ okulId, okulAdi }: { okulId: string; okulA
             </div>
           ))}
         </div>
-      </Kutu>
+      </Kutu>}
     </div>
   );
 }

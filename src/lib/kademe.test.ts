@@ -204,14 +204,14 @@ describe("panelBransListesi", () => {
   test("lise kurumunda liste değişmedi — okula özel branşlar dahil", () => {
     const liste = panelBransListesi("okul", "lise");
     expect(liste).toContain("Türk Dili ve Edebiyatı");
-    expect(liste).toContain("Bilişim");
+    expect(liste).toContain("Bilişim Teknolojileri");
     expect(liste).not.toContain("Fen Bilimleri");
   });
 
   test("dershanede lise listesi, okula özel branşlar yok", () => {
     const liste = panelBransListesi("dershane", "lise");
     expect(liste).toContain("Türk Dili ve Edebiyatı");
-    expect(liste).not.toContain("Bilişim");
+    expect(liste).not.toContain("Bilişim Teknolojileri");
   });
 
   test("kademe bilinmiyorsa eski davranış (lise)", () => {
@@ -276,5 +276,34 @@ describe("seviyeEtiketi", () => {
     for (const s of ORTAOKUL_SEVIYELERI) {
       expect(seviyeEtiketi(s), s).toBe(`${s}. Sınıf`);
     }
+  });
+});
+
+// Bilişim / Bilgisayar birleşmesi (kullanıcı kararı 02.10.2026).
+// "Bilişim Teknolojileri" OKULA ÖZEL bir branş (dershanede yok), bu yüzden
+// taban BRANS_LISTESI'nde değil — birleşme panelBransListesi düzeyinde
+// doğrulanıyor.
+describe("Bilişim Teknolojileri tek branş", () => {
+  test("eski adlar hiçbir listede yok", () => {
+    for (const kademe of ["ortaokul", "lise", "ikisi", null] as const) {
+      for (const eski of ["Bilişim", "Bilgisayar"]) {
+        expect(panelBransListesi("okul", kademe), `${kademe}/${eski}`).not.toContain(eski);
+      }
+    }
+  });
+
+  test("okul kurumunda her kademede AYNI metinle var", () => {
+    for (const kademe of ["ortaokul", "lise", "ikisi"] as const) {
+      expect(panelBransListesi("okul", kademe), String(kademe)).toContain("Bilişim Teknolojileri");
+    }
+  });
+
+  test("ikisi kademesinde tek kez görünür — iki listede de var", () => {
+    const liste = panelBransListesi("okul", "ikisi");
+    expect(liste.filter((b) => b === "Bilişim Teknolojileri")).toHaveLength(1);
+  });
+
+  test("dershanede sunulmuyor", () => {
+    expect(panelBransListesi("dershane", "lise")).not.toContain("Bilişim Teknolojileri");
   });
 });

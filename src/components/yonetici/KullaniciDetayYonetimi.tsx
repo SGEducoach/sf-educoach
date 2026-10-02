@@ -120,7 +120,8 @@ export function KullaniciDetayYonetimi({ kullanici }: { kullanici: KullaniciSonu
         <button type="button" onClick={profilKaydet} disabled={pending} className="sfec-btn self-start rounded-full px-3 py-1.5 text-[11px] font-bold" style={{ background: MINT, color: MINT_ON }}>
           <span className="flex items-center gap-1"><Save size={11} /> {pending ? "Kaydediliyor..." : "Profili kaydet"}</span>
         </button>
-        {kullanici.role === "ogrenci" && (
+        {/* Yurdu olmayan kurumda bu düğme hiç çizilmiyor (migration 0133). */}
+        {kullanici.role === "ogrenci" && kullanici.kurumYurtlu && (
           <button type="button" onClick={yurtDegistir} disabled={yurtPending}
             title="Hafta içi telefonuna erişemeyen öğrenciler için hatırlatmalar hafta sonuna göre esnetilir"
             className="sfec-btn self-start flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-bold disabled:opacity-60"

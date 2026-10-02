@@ -382,7 +382,12 @@ export const BRANS_LISTESI = [
 
 // Bu iki branş yalnız okul kurumlarında sunulur. Ortak listeyi değiştirmeyerek
 // dershane kayıt ve düzenleme ekranlarının mevcut seçeneklerini koruyoruz.
-export const OKUL_OZEL_BRANSLARI = ["Bilişim", "Bilgisayar"] as const;
+// Kullanıcı kararı (02.10.2026): "Bilişim" ve "Bilgisayar" ayrı branşlardı,
+// aynı işi yapan öğretmen iki ayrı branş gibi görünüyordu. Tek ada indirildi:
+// MEB adı "Bilişim Teknolojileri", ORTAOKUL_BRANSLARI'nda da aynı metin —
+// böylece lise/ortaokul arasında da bölünmüyor (migration 0133 eski kayıtları
+// çevirdi).
+export const OKUL_OZEL_BRANSLARI = ["Bilişim Teknolojileri"] as const;
 
 export function kurumBransListesi(kurumTuru: KurumTuru | null | undefined): readonly string[] {
   if (kurumTuru !== "okul") return BRANS_LISTESI;
