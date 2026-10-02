@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useRef, useState, useTransition } from "react";
-import { BookOpen, PenLine, ClipboardList, Sparkles, Loader2, ChevronDown, ChevronUp, CalendarClock } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { BookOpen, PenLine, ClipboardList, Sparkles, Loader2, ChevronDown, ChevronUp, CalendarClock, Mic, MicOff } from "lucide-react";
 import type {
   AytAlan, DenemeTuru, DenemeZorlugu, HedefeYakinlik, TakipCevabi, VerimlilikDuzeyi,
 } from "@/lib/types";
@@ -20,6 +20,7 @@ import { rehberDenemeEkle, rehberKonuCalismaEkle, rehberSoruCozumuEkle } from "@
 import { REHBER_GERIYE_DONUK_GUN } from "@/lib/rehberlik";
 import { YukleniyorOverlay } from "@/components/YukleniyorOverlay";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
+import { sesliSoruCozumunuCoz, type SesliSoruVerisi } from "@/lib/sesli-soru-girisi";
 
 // Türkiye saatine göre "bugün" — bkz. src/lib/tarih.ts: naif
 // `new Date().toISOString()` yaklaşımı UTC+3 saat diliminde gece yarısı ile
@@ -92,6 +93,86 @@ function Girdi(props: React.InputHTMLAttributes<HTMLInputElement>) {
 }
 function Secim({ children, ...props }: React.SelectHTMLAttributes<HTMLSelectElement>) {
   return <select {...props} className="text-sm px-2.5 py-1.5 rounded-xl outline-none w-full" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>{children}</select>;
+}
+
+type SesTanima = {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
+  onerror: ((event: { error: string }) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+};
+
+function SesliSoruGirisi({ dersler, onUygula }: { dersler: string[]; onUygula: (veri: SesliSoruVerisi) => void }) {
+  const [metin, setMetin] = useState("");
+  const [dinliyor, setDinliyor] = useState(false);
+  const [hata, setHata] = useState<string | null>(null);
+  const tanima = useRef<SesTanima | null>(null);
+
+  useEffect(() => () => { tanima.current?.stop(); tanima.current = null; }, []);
+
+  function baslat() {
+    if (dinliyor) { tanima.current?.stop(); return; }
+    const pencere = window as typeof window & {
+      SpeechRecognition?: new () => SesTanima;
+      webkitSpeechRecognition?: new () => SesTanima;
+    };
+    const Tanima = pencere.SpeechRecognition ?? pencere.webkitSpeechRecognition;
+    if (!Tanima) {
+      setHata("Bu tarayıcı ses tanımayı desteklemiyor. Komutu aşağıya yazarak da deneyebilirsiniz.");
+      return;
+    }
+    setHata(null);
+    setMetin("");
+    const oturum = new Tanima();
+    oturum.lang = "tr-TR";
+    oturum.continuous = false;
+    oturum.interimResults = false;
+    oturum.onresult = (event) => {
+      const sonuc = event.results[0]?.[0]?.transcript;
+      if (sonuc) setMetin(sonuc);
+    };
+    oturum.onerror = (event) => {
+      setHata(event.error === "not-allowed" ? "Mikrofon izni verilmedi. İzin verin veya komutu yazın." :
+        event.error === "no-speech" ? "Ses algılanmadı. Tekrar deneyin." :
+        "Ses tanıma tamamlanamadı. Komutu yazarak da deneyebilirsiniz.");
+    };
+    oturum.onend = () => { setDinliyor(false); tanima.current = null; };
+    tanima.current = oturum;
+    try { oturum.start(); setDinliyor(true); }
+    catch { tanima.current = null; setHata("Mikrofon başlatılamadı. Tekrar deneyin veya komutu yazın."); }
+  }
+
+  function uygula() {
+    const sonuc = sesliSoruCozumunuCoz(metin, dersler);
+    if (!sonuc.veri) { setHata(sonuc.hata); return; }
+    setHata(null);
+    onUygula(sonuc.veri);
+  }
+
+  return (
+    <div className="rounded-2xl p-3 flex flex-col gap-2" style={{ background: SKY_BG, border: `1px solid ${BORDER_STRONG}` }}>
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-bold" style={{ color: SKY }}>Sesli giriş denemesi</span>
+        <button type="button" onClick={baslat} className="sfec-btn flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold"
+          style={{ background: dinliyor ? BLUSH : BG1_ALT, color: dinliyor ? BG0 : TEXT }}>
+          {dinliyor ? <MicOff size={14} /> : <Mic size={14} />}{dinliyor ? "Durdur" : "Konuş"}
+        </button>
+      </div>
+      <p className="text-[11px]" style={{ color: TEXT_MUTED }}>Örnek: “Matematik 20 doğru 5 yanlış 2 boş 40 dakika.” Rakamları söyleyin; yayınevi ve konuyu formda tamamlayın.</p>
+      <label className="flex flex-col gap-1"><Etiket>Algılanan komut — düzeltebilirsiniz</Etiket>
+        <Girdi value={metin} onChange={(e) => setMetin(e.target.value)} placeholder="Komut burada görünür veya elle yazılabilir" />
+      </label>
+      {hata && <p role="alert" className="text-xs" style={{ color: BLUSH }}>{hata}</p>}
+      <button type="button" onClick={uygula} disabled={!metin.trim() || dinliyor}
+        className="sfec-btn self-start rounded-xl px-3 py-1.5 text-xs font-bold disabled:opacity-50"
+        style={{ background: SKY, color: BG0 }}>Forma aktar</button>
+      <p className="text-[10px]" style={{ color: TEXT_MUTED }}>Otomatik kayıt yapılmaz. Bilgileri kontrol edip Kaydet’e ayrıca basın.</p>
+    </div>
+  );
 }
 
 // Genel 3-seçenekli buton grubu — Konu Çalışma/Soru Çözümü/Deneme'de aynı
@@ -522,6 +603,7 @@ export function SoruCozumuForm({ dersListesi, konuOnerileri, onBasari, prefillDe
   const [oneriAcik, setOneriAcik] = useState(false);
   const [yayinevi, setYayinevi] = useState("");
   const [tarih, setTarih] = useState(() => baslangicTarihi(gorevTarihi));
+  const [sureDakika, setSureDakika] = useState("");
   const [hata, setHata] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -553,13 +635,18 @@ export function SoruCozumuForm({ dersListesi, konuOnerileri, onBasari, prefillDe
       if (res.error) setHata(res.error);
       else {
         onBasari(`Soru çözümü kaydedildi (net: ${net}).`, res.verimlilikSorulsunMu);
-        setDogru(""); setYanlis(""); setBos(""); setKonu(""); setAramaMetni(""); setYayinevi(""); setTarih(bugununTarihi());
+        setDogru(""); setYanlis(""); setBos(""); setSureDakika(""); setKonu(""); setAramaMetni(""); setYayinevi(""); setTarih(bugununTarihi());
       }
     });
   }
 
   return (
     <form action={submit} className="flex flex-col gap-3">
+      <SesliSoruGirisi dersler={dersListesi} onUygula={(veri) => {
+        setDers(veri.ders); setDogru(String(veri.dogru)); setYanlis(String(veri.yanlis));
+        setBos(String(veri.bos)); setSureDakika(String(veri.sureDakika));
+        setKonu(""); setAramaMetni(""); setHata(null);
+      }} />
       <GecmisTarihSecici tarih={tarih} setTarih={setTarih} geriyeMaksGun={geriyeMaksGunHesapla("soru", gorevAtamaId, rehberOgrenciId)} />
       <label className="flex flex-col gap-1"><Etiket>Ders</Etiket>
         <Secim value={ders} onChange={(e) => { setDers(e.target.value); setKonu(""); setAramaMetni(""); }} required>
@@ -593,7 +680,7 @@ export function SoruCozumuForm({ dersListesi, konuOnerileri, onBasari, prefillDe
           <Girdi name="bos" type="number" min={0} max={SORU_SAYISI_UST_SINIR} required value={bos} onChange={(e) => setBos(e.target.value)} />
         </label>
         <label className="flex flex-col gap-1"><Etiket>Süre (dk)</Etiket>
-          <Girdi name="sureDakika" type="number" min={1} max={toplamSoru > 0 ? sureUstSiniri : undefined} required />
+          <Girdi name="sureDakika" type="number" min={1} max={toplamSoru > 0 ? sureUstSiniri : undefined} required value={sureDakika} onChange={(e) => setSureDakika(e.target.value)} />
         </label>
       </div>
       <p style={{ color: TEXT_MUTED }} className="text-[11px] -mt-1">Süre, şu an bitirdiğin <strong>tek oturumun</strong> süresi — haftalık/günlük toplam değil.
