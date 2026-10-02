@@ -45,6 +45,12 @@ next-env.d.ts
 # telif/boyut nedeniyle GitHub'a gitmesin
 /dokumanlar/
 
+# İş çıktıları (rapor/afiş/PDF/sunum) — koda ait değil, depoya girmesin.
+# 02.10.2026'a kadar 17 dosya (27 MB) buraya işlenmişti; takipten düşürüldü,
+# dosyalar diskte kaldı. .vercelignore bu klasörü zaten dışlıyor, yani siteye
+# hiç gitmiyorlar.
+/output/
+
 # Geçici XLS okuyucu ve yerel SQL doğrulama bağımlılıkları
 /tmp/xls-reader/
 /tmp/sql-tests/
