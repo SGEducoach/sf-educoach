@@ -154,7 +154,16 @@ export const TG_DENEME_HABERLERI: TgDenemeHaberi[] = [
 // (en yeni ilan en önde) ekleniyor; statik takvim listesi bilinçli olarak
 // hiç değiştirilmedi/silinmedi, sonuna aynen ekleniyor. Arşivleme (20
 // ilan sınırı) SADECE admin ilanları için geçerli — bkz. tg-deneme-ilanlari.ts.
-export function tgDenemeAkisiOlustur(dbIlanlari: TgDenemeIlani[], bugun = bugununTarihiTR()): TgDenemeHaberi[] {
+// STATİK TAKVİMLER LİSEYE ÖZGÜ: TG_DENEME_HABERLERI içinde "TYT-AYT Genel
+// Deneme Takvimi", "9, 10 ve 11. Sınıf" gibi kayıtlar var. Ortaokul
+// kurumunda bunlar YANLIŞ içerik — o panoda yalnız kurumun kendi yüklediği
+// ilanlar görünür (kullanıcı isteği 02.10.2026: ortaokul panelini ortaokula
+// göre özelleştir).
+export function tgDenemeAkisiOlustur(
+  dbIlanlari: TgDenemeIlani[],
+  bugun = bugununTarihiTR(),
+  statikTakvimlerDahil = true,
+): TgDenemeHaberi[] {
   const donusturulmus: TgDenemeHaberi[] = dbIlanlari.map((ilan) => ({
     id: `ilan-${ilan.id}`,
     kategori: "Duyuru",
@@ -170,5 +179,6 @@ export function tgDenemeAkisiOlustur(dbIlanlari: TgDenemeIlani[], bugun = bugunu
     kaynakHref: ilan.dosyaTipi === "pdf" ? tgDenemeDosyaUrl(ilan.dosyaYolu) : undefined,
     dosyaTipi: ilan.dosyaTipi,
   }));
-  return [...donusturulmus, ...TG_DENEME_HABERLERI].filter(ilan => ilan.sonTarih >= bugun);
+  const statikler = statikTakvimlerDahil ? TG_DENEME_HABERLERI : [];
+  return [...donusturulmus, ...statikler].filter(ilan => ilan.sonTarih >= bugun);
 }

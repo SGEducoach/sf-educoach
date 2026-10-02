@@ -272,6 +272,18 @@ const GRUP_KOC_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Pano", ikon: "takvim" },
 ];
 
+// Ortaokulda YKS'ye ÖZGÜ bölümler menüden düşer (kullanıcı isteği
+// 02.10.2026: ortaokul panelini ortaokula göre özelleştir).
+//
+// "yapay-zeka" = lise Konu Haritası (konu hâkimiyeti, TYT/AYT taksonomisi).
+// Ortaokulun karşılığı "Konu Yeterliliği" (Maarif|LGS, migration 0132) —
+// ikisini aynı menüde göstermek hem tekrar hem yanlış taksonomi olurdu.
+export const ORTAOKULDA_GOSTERILMEYEN: DashboardBolumu[] = ["yapay-zeka"];
+
+function ortaokulaUyarla(menu: DashboardMenuOgesi[]): DashboardMenuOgesi[] {
+  return menu.filter((oge) => !ORTAOKULDA_GOSTERILMEYEN.includes(oge.bolum));
+}
+
 export function dashboardMenusu(
   role: UserRole,
   kurumTuru?: KurumTuru,
@@ -286,12 +298,20 @@ export function dashboardMenusu(
   // Ortaokul ogretmeni: Maarif|LGS yeterlilik karari ekrani (kullanici karari
   // 01.10.2026). Lise menusu aynen korunuyor, yalniz bir kalem EKLENIYOR.
   if (role === "ogretmen" && (kademe === "ortaokul" || kademe === "ikisi") && brans !== REHBER_BRANSI) {
-    return [...OGRETMEN_MENUSU, ORTAOKUL_YETERLILIK_MENU_OGESI];
+    // DÜZELTME (02.10.2026): bu dal önce erken dönüyordu ve aşağıdaki okul
+    // dalını atlıyordu — ortaokul öğretmeni "Ajandam"ı KAYBETMİŞTİ. Ortaokul
+    // bir okul kurumu, Ajandam ona da ait.
+    const taban = kurumTuru === "okul" ? [...OGRETMEN_MENUSU, TAKVIM_MENU_OGESI] : [...OGRETMEN_MENUSU];
+    return [...ortaokulaUyarla(taban), ORTAOKUL_YETERLILIK_MENU_OGESI];
   }
   if (role === "ogrenci") return kurumTuru === "okul" ? [...OGRENCI_MENUSU, { bolum:"etkinlikler", href:"/dashboard/etkinlikler", etiket:"Etkinlikler", ikon:"takvim" }] : OGRENCI_MENUSU;
   if (role === "veli") return VELI_MENUSU;
   if (role === "ogretmen") return brans === REHBER_BRANSI ? (kurumTuru === "dershane" ? DERSHANE_REHBER_MENUSU : REHBER_OGRETMEN_MENUSU) : kurumTuru === "okul" && etkinlikBransiMi(brans) ? [...OGRETMEN_MENUSU, TAKVIM_MENU_OGESI, { bolum:"etkinlikler", href:"/dashboard/etkinlikler", etiket:"Etkinlik Grupları", ikon:"takvim" }] : kurumTuru === "okul" ? [...OGRETMEN_MENUSU, TAKVIM_MENU_OGESI] : OGRETMEN_MENUSU;
-  if (role === "mudur") return kurumTuru === "dershane" ? DERSHANE_MUDUR_MENUSU : [...MUDUR_MENUSU, TAKVIM_MENU_OGESI];
+  if (role === "mudur") {
+    if (kurumTuru === "dershane") return DERSHANE_MUDUR_MENUSU;
+    const taban = [...MUDUR_MENUSU, TAKVIM_MENU_OGESI];
+    return kademe === "ortaokul" ? ortaokulaUyarla(taban) : taban;
+  }
   if (role === "admin") return ADMIN_MENUSU;
   return [];
 }

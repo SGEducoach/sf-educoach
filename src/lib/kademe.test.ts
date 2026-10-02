@@ -307,3 +307,50 @@ describe("Bilişim Teknolojileri tek branş", () => {
     expect(panelBransListesi("dershane", "lise")).not.toContain("Bilişim Teknolojileri");
   });
 });
+
+// Ortaokul panelinin rol menüleri (kullanıcı isteği 02.10.2026).
+describe("ortaokul kurumunda rol menüleri", () => {
+  const ogretmenOrtaokul = dashboardMenusu("ogretmen", "okul", "Matematik", false, "ortaokul");
+  const ogretmenLise = dashboardMenusu("ogretmen", "okul", "Matematik", false, "lise");
+
+  test("YKS Konu Haritası ortaokul öğretmeninde YOK, lisede var", () => {
+    expect(ogretmenOrtaokul.map((o) => o.bolum)).not.toContain("yapay-zeka");
+    expect(ogretmenLise.map((o) => o.bolum)).toContain("yapay-zeka");
+  });
+
+  test("ortaokul öğretmeninde Konu Yeterliliği var", () => {
+    expect(ogretmenOrtaokul.map((o) => o.bolum)).toContain("ortaokul-yeterlilik");
+  });
+
+  // GERİLEME TESTİ: 01.10.2026'da eklediğim ortaokul dalı erken dönüyordu ve
+  // okul dalını atlıyordu; ortaokul öğretmeni "Ajandam"ı kaybetmişti.
+  test("ortaokul öğretmeni Ajandam'ı kaybetmiyor", () => {
+    expect(ogretmenOrtaokul.map((o) => o.bolum)).toContain("takvim");
+    expect(ogretmenLise.map((o) => o.bolum)).toContain("takvim");
+  });
+
+  test("ortaokul öğretmeninin kalan kalemleri duruyor", () => {
+    for (const b of ["ozet", "gorevler", "duyurular", "talepler", "tg-denemeleri"]) {
+      expect(ogretmenOrtaokul.map((o) => o.bolum), b).toContain(b);
+    }
+  });
+
+  test("müdürde de YKS Konu Haritası yalnız lisede", () => {
+    expect(dashboardMenusu("mudur", "okul", undefined, false, "ortaokul").map((o) => o.bolum)).not.toContain("yapay-zeka");
+    expect(dashboardMenusu("mudur", "okul", undefined, false, "lise").map((o) => o.bolum)).toContain("yapay-zeka");
+    // Ajanda müdürde de kalmalı.
+    expect(dashboardMenusu("mudur", "okul", undefined, false, "ortaokul").map((o) => o.bolum)).toContain("takvim");
+  });
+
+  test("dershane müdürü kademeden etkilenmiyor", () => {
+    const a = dashboardMenusu("mudur", "dershane", undefined, false, "ortaokul").map((o) => o.bolum);
+    const b = dashboardMenusu("mudur", "dershane", undefined, false, "lise").map((o) => o.bolum);
+    expect(a).toEqual(b);
+  });
+
+  test("rehber öğretmen menüsü kademeden etkilenmiyor", () => {
+    const a = dashboardMenusu("ogretmen", "okul", REHBER_BRANSI, false, "ortaokul").map((o) => o.bolum);
+    const b = dashboardMenusu("ogretmen", "okul", REHBER_BRANSI, false, "lise").map((o) => o.bolum);
+    expect(a).toEqual(b);
+  });
+});

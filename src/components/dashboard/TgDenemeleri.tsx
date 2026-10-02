@@ -13,11 +13,14 @@ const GECIS_SURESI = 10_000;
 // eklenen, en yeni 20) statik takvim listesinin BAŞINA ekleniyor, bkz.
 // tgDenemeAkisiOlustur. PDF ilanlar <embed> ile (next/image PDF gösteremez),
 // resimler eskisi gibi <Image> ile gösteriliyor.
-export function TgDenemeleri({ bugun, dbIlanlar }: { bugun: string; dbIlanlar: TgDenemeIlani[] }) {
+// Ortaokul kurumunda (kullanıcı isteği 02.10.2026): liseye özgü statik
+// deneme takvimleri HİÇ gösterilmez ve metinler "deneme" yerine okul
+// duyurusu dilini kullanır.
+export function TgDenemeleri({ bugun, dbIlanlar, ortaokulMu = false }: { bugun: string; dbIlanlar: TgDenemeIlani[]; ortaokulMu?: boolean }) {
   const [aktif, setAktif] = useState(0);
   const [otomatik, setOtomatik] = useState(true);
   const dokunmaBaslangici = useRef<number | null>(null);
-  const haberler = tgDenemeAkisiOlustur(dbIlanlar, bugun).slice(0, 10);
+  const haberler = tgDenemeAkisiOlustur(dbIlanlar, bugun, !ortaokulMu).slice(0, 10);
   const haber = haberler[aktif % Math.max(1, haberler.length)];
 
   // Kullanıcı kararı: fare üzerine gelince akış durmasın — tek durdurma
@@ -40,7 +43,17 @@ export function TgDenemeleri({ bugun, dbIlanlar }: { bugun: string; dbIlanlar: T
     git(aktif + (fark < 0 ? 1 : -1));
   }
 
-  if (!haber) return <p style={{ color: TEXT_MUTED }}>Güncel TG deneme duyurusu bulunmuyor.</p>;
+  // Ortaokulda statik takvim yok; pano gerçekten boş olabiliyor. "TG deneme"
+  // demek orada hem yanlış hem anlaşılmaz.
+  if (!haber) {
+    return (
+      <p style={{ color: TEXT_MUTED }}>
+        {ortaokulMu
+          ? "Panoda şu an bir duyuru yok. Okulun bir şey paylaştığında burada görünecek."
+          : "Güncel TG deneme duyurusu bulunmuyor."}
+      </p>
+    );
+  }
   const gecti = haber.sonTarih < bugun;
 
   return (
@@ -51,13 +64,13 @@ export function TgDenemeleri({ bugun, dbIlanlar }: { bugun: string; dbIlanlar: T
             {/* Kullanıcı isteği (02.10.2026): başlık "TG Denemeler" değil
                 "Pano" — içerik yalnız TG denemeleriyle sınırlı değil, bu üst
                 satırdan ve alt açıklamadan anlaşılmalı. Yükleme akışı aynı. */}
-            <CalendarDays size={14} color={MINT} aria-hidden="true" /> Duyurular, sınav haberleri ve afişler
+            <CalendarDays size={14} color={MINT} aria-hidden="true" /> {ortaokulMu ? "Okulundan duyurular ve afişler" : "Duyurular, sınav haberleri ve afişler"}
           </div>
           <h1 id="tg-denemeleri-baslik" className="text-2xl font-extrabold sm:text-3xl" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>
             Pano
           </h1>
           <p className="mt-1 max-w-2xl text-sm" style={{ color: TEXT_MUTED }}>
-            Takvimler, duyurular ve yaklaşan deneme afişleri — tek yerde
+            {ortaokulMu ? "Okulunun duyuruları, etkinlikleri ve afişleri — tek yerde" : "Takvimler, duyurular ve yaklaşan deneme afişleri — tek yerde"}
           </p>
         </div>
       </div>

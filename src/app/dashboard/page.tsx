@@ -253,7 +253,7 @@ export default async function DashboardPage({
           {aktifBolum === "profil" ? (
             <OgrenciProfilim userId={user.id} ad={profile.ad} kademe={ogrenciKademesi} />
           ) : aktifBolum === "tg-denemeleri" ? (
-            <TgDenemeleri bugun={bugununTarihiTR()} dbIlanlar={await tgDenemeIlanlariGetir(supabase, kurum?.id)} />
+            <TgDenemeleri bugun={bugununTarihiTR()} dbIlanlar={await tgDenemeIlanlariGetir(supabase, kurum?.id)} ortaokulMu={kurum?.kademe === "ortaokul"} />
           ) : grupKocu && aktifBolum === "ozet" ? (
             <GrupKocIcerik />
           ) : grupKocu && aktifBolum === "denemeler" ? (
