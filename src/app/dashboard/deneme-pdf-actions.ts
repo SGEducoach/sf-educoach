@@ -216,6 +216,7 @@ async function sonuclariEslestirVeKaydet(params: {
   kazanimMap?: Map<string, DenemeKazanimSonucu[]>;
   karneOzetMap?: Map<string, KarneBirinciSayfa>;
   okunamayanAdlar?: string[];
+  pdfMuafiyeti?: boolean;
 }): Promise<{ otomatikEslesen: number; kayitBekleyen: number; incelemeBekleyen: number }> {
   const { admin, userId, schoolId, yayinevi, tarih, tur, ayristirilan, ogrenciler, onKayitlar } = params;
   const sinifMap = params.sinifMap ?? new Map<string, string>();
@@ -327,6 +328,7 @@ async function sonuclariEslestirVeKaydet(params: {
       const granulerDersSonuclari = granulerKarneMap.get(adNorm);
       const sonuc = await ogretmenDenemeSonucuKaydet(admin, {
         studentId: eslesenler[0].id,
+        pdfAktoruId: params.pdfMuafiyeti ? userId : undefined,
         tarih,
         tur,
         yayinevi,
@@ -862,6 +864,7 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
     admin: adminClient, userId: user.id, schoolId, yayinevi: kayitYayinevi, tarih, tur,
     ayristirilan, ogrenciler, onKayitlar,
     sinifMap: pdfSinifMap, granulerKarneMap, kazanimMap, karneOzetMap, okunamayanAdlar,
+    pdfMuafiyeti: true,
   });
 
   revalidatePath("/dashboard");

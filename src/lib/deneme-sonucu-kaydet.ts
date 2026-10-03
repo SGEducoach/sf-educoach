@@ -57,6 +57,7 @@ export async function okulDenemeKaydiniHazirla(
     tur: DenemeTuru;
     yayinevi?: string;
     yeniKayitAlanlari: Record<string, unknown>;
+    pdfAktoruId?: string;
   },
 ): Promise<{ error: string | null; denemeId: string | null; devralindi: boolean }> {
   const { data: okulKayitlari, error: aramaHatasi } = await admin
@@ -105,6 +106,20 @@ export async function okulDenemeKaydiniHazirla(
     return { error: null, denemeId: ogrenciKaydi.id as string, devralindi: true };
   }
 
+  // Yalnızca PDF yükleme/eşleştirme için yetkili admin veya moderatörün
+  // eski tarihli kaydı DB'deki sınırlı RPC üzerinden açılır. Diğer girişler
+  // normal 7 günlük tetikleyiciden geçmeye devam eder.
+  if (input.pdfAktoruId && input.yayinevi !== undefined) {
+    const { data: yeniId, error: olusturmaHatasi } = await admin.rpc("pdf_deneme_eski_tarih_olustur", {
+      p_actor_id: input.pdfAktoruId,
+      p_student_id: input.studentId,
+      p_tarih: input.tarih,
+      p_tur: input.tur,
+      p_yayinevi: input.yayinevi,
+    });
+    return { error: olusturmaHatasi?.message ?? null, denemeId: yeniId as string | null, devralindi: false };
+  }
+
   const { data: yeniDeneme, error: olusturmaHatasi } = await admin
     .from("denemeler")
     .insert({ ...input.yeniKayitAlanlari, student_id: input.studentId, tarih: input.tarih, tur: input.tur, kaynak: "ogretmen" })
@@ -126,6 +141,7 @@ export async function ogretmenDenemeSonucuKaydet(
     dersSonuclari: DenemeDersSonucu[];
     kazanimSonuclari?: DenemeKazanimSonucu[];
     karneOzeti?: KarneBirinciSayfa;
+    pdfAktoruId?: string;
   },
 ): Promise<{ error: string | null; denemeId: string | null }> {
   const hazirlik = await okulDenemeKaydiniHazirla(admin, {
@@ -133,6 +149,7 @@ export async function ogretmenDenemeSonucuKaydet(
     tarih: input.tarih,
     tur: input.tur,
     yayinevi: input.yayinevi,
+    pdfAktoruId: input.pdfAktoruId,
     yeniKayitAlanlari: { hedefe_yakinlik: "belirsiz", zorluk: "orta", yayinevi: input.yayinevi },
   });
   if (hazirlik.error || !hazirlik.denemeId) return { error: hazirlik.error ?? "Deneme oluşturulamadı.", denemeId: null };
@@ -214,7 +231,7 @@ export async function bekleyenPdfSonuclariniOgrenciyeAktar(
   const [{ data: onKayitlar, error: onKayitHatasi }, { data: aktifler, error: aktifHatasi }, { data: bekleyenler, error: bekleyenHatasi }] = await Promise.all([
     admin.from("pending_dershane_ogrenciler").select("id, ad").eq("school_id", input.schoolId).is("kullanildi_at", null),
     admin.from("students").select("id, profiles!students_id_fkey(ad)").eq("school_id", input.schoolId),
-    admin.from("pdf_deneme_eslesme_bekleyenler").select("id, ad_soyad_ham, ders_sonuclari, yayinevi, tarih, tur")
+    admin.from("pdf_deneme_eslesme_bekleyenler").select("id, ad_soyad_ham, ders_sonuclari, yayinevi, tarih, tur, olusturan_mudur_id")
       .eq("school_id", input.schoolId).eq("durum", "bekliyor"),
   ]);
 
@@ -246,6 +263,7 @@ export async function bekleyenPdfSonuclariniOgrenciyeAktar(
       tarih: String(bekleyen.tarih),
       tur: String(bekleyen.tur) as DenemeTuru,
       yayinevi: String(bekleyen.yayinevi),
+      pdfAktoruId: bekleyen.olusturan_mudur_id ? String(bekleyen.olusturan_mudur_id) : undefined,
       dersSonuclari: bekleyen.ders_sonuclari as unknown as DenemeDersSonucu[],
     });
     if (sonuc.error) {

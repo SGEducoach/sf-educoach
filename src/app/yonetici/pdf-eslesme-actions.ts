@@ -215,6 +215,7 @@ export async function pdfEslesmeAta(id: string, studentId: string): Promise<{ er
 
   const kayit = await ogretmenDenemeSonucuKaydet(admin, {
     studentId,
+    pdfAktoruId: user.id,
     tarih: bekleyen.tarih,
     tur: bekleyen.tur as DenemeTuru,
     yayinevi: bekleyen.yayinevi,

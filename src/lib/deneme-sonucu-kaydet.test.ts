@@ -62,6 +62,26 @@ const GIRDI = {
 };
 
 describe("ogretmenDenemeSonucuKaydet — öğrenci kaydıyla çakışma", () => {
+  test("PDF eşleştirmesinde yeni kayıt yetkili aktörle sınırlı veritabanı yolundan açılır", async () => {
+    const tablolar: Record<string, Satir[]> = { denemeler: [], deneme_ders_sonuclari: [] };
+    const istemci = sahteIstemci(tablolar);
+    const cagrilar: { ad: string; arg: Record<string, unknown> }[] = [];
+    (istemci as unknown as { rpc: (ad: string, arg: Record<string, unknown>) => Promise<{ data: string; error: null }> }).rpc = async (ad, arg) => {
+      cagrilar.push({ ad, arg });
+      tablolar.denemeler.push({ id: "pdf-deneme", student_id: arg.p_student_id, kaynak: "ogretmen" });
+      return { data: "pdf-deneme", error: null };
+    };
+
+    const sonuc = await ogretmenDenemeSonucuKaydet(istemci, { ...GIRDI, pdfAktoruId: "moderator-1" });
+
+    expect(sonuc).toEqual({ error: null, denemeId: "pdf-deneme" });
+    expect(cagrilar).toEqual([{ ad: "pdf_deneme_eski_tarih_olustur", arg: {
+      p_actor_id: "moderator-1", p_student_id: "ogr-1", p_tarih: GIRDI.tarih,
+      p_tur: "TYT", p_yayinevi: "Dublör",
+    } }]);
+    expect(tablolar.denemeler).toHaveLength(1);
+  });
+
   test("öğrenci aynı denemeyi girdiyse ikinci kayıt açılmaz, onun kaydı okul kaydına döner", async () => {
     const tablolar: Record<string, Satir[]> = {
       denemeler: [{ id: "d-ogr", student_id: "ogr-1", tarih: "2026-09-20", tur: "TYT", kaynak: "ogrenci", yayinevi: "bilmiyorum" }],
