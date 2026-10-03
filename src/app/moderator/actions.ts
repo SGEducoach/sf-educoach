@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { adNormalize, hedefBolumNormalize, okulNoGecerliMi, rastgeleSifre, sifreGecerliMi, telefonGecerliMi, teslimEdilebilirEpostaMi } from "@/lib/validators";
 import type { AytAlan, KurumKademesi, KurumTuru, SinifSeviyesi, UserRole } from "@/lib/types";
+import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
 
 export interface ModeratorKullanici {
   id: string;
@@ -66,6 +67,59 @@ async function hedefOkuldaMi(admin: ReturnType<typeof createAdminClient>, school
     admin.from("parent_students").select("parent_id, students!inner(school_id)").eq("parent_id", targetId).eq("students.school_id", schoolId).limit(1),
   ]);
   return !!student || !!teacher || !!parent?.length;
+}
+
+export interface ModeratorKurumKonusu { id: string; ders: string; ustKonu: string; altBaslik: string; }
+
+export async function moderatorKurumKonulariGetir(): Promise<{ error: string | null; konular: ModeratorKurumKonusu[]; ortakKonular: { ders: string; ustKonu: string; altBaslik: string }[] }> {
+  const { admin, schoolId } = await requireModerator();
+  const [{ data, error }, { data: ortak, error: ortakHatasi }] = await Promise.all([
+    admin.from("kurum_mufredat_alt_konulari")
+      .select("id, ders, ust_konu, alt_baslik").eq("school_id", schoolId).order("ders").order("ust_konu").order("alt_baslik"),
+    admin.from("mufredat_alt_konular").select("ders, ust_konu, alt_baslik"),
+  ]);
+  return {
+    error: error?.message ?? ortakHatasi?.message ?? null,
+    konular: ((data ?? []) as { id: string; ders: string; ust_konu: string; alt_baslik: string }[])
+      .map((k) => ({ id: k.id, ders: k.ders, ustKonu: k.ust_konu, altBaslik: k.alt_baslik })),
+    ortakKonular: ((ortak ?? []) as { ders: string; ust_konu: string; alt_baslik: string }[])
+      .map((k) => ({ ders: k.ders, ustKonu: k.ust_konu, altBaslik: k.alt_baslik })),
+  };
+}
+
+export async function moderatorKurumKonusuEkle(ders: string, ustKonu: string, altBaslik: string): Promise<{ error: string | null }> {
+  const { admin, schoolId, user } = await requireModerator();
+  const temizDers = ders.trim();
+  const ust = ustKonu.trim();
+  const alt = altBaslik.trim().replace(/\s+/g, " ");
+  if (!MUFREDAT_KONULARI.some((k) => k.ders === temizDers && k.konu === ust))
+    return { error: "Geçerli bir ders ve üst başlık seçin." };
+  if (alt.length < 2 || alt.length > 120) return { error: "Alt konu 2-120 karakter olmalı." };
+  const [{ data: mevcut, error: mevcutHatasi }, { data: ortak, error: ortakHatasi }] = await Promise.all([
+    admin.from("kurum_mufredat_alt_konulari").select("alt_baslik").eq("school_id", schoolId).eq("ders", temizDers),
+    admin.from("mufredat_alt_konular").select("alt_baslik").eq("ders", temizDers),
+  ]);
+  if (mevcutHatasi || ortakHatasi) return { error: mevcutHatasi?.message ?? ortakHatasi?.message ?? "Konular okunamadı." };
+  if ([...(mevcut ?? []), ...(ortak ?? [])].some((k) => k.alt_baslik.toLocaleLowerCase("tr-TR") === alt.toLocaleLowerCase("tr-TR")))
+    return { error: "Bu alt konu listede zaten var." };
+  const { error } = await admin.from("kurum_mufredat_alt_konulari").insert({ school_id: schoolId, ders: temizDers, ust_konu: ust, alt_baslik: alt });
+  if (error) return { error: error.message };
+  await admin.from("admin_audit_log").insert({ actor_id: user.id, eylem: "kurum_alt_konusu_ekle", detay: { school_id: schoolId, ders: temizDers, ust_konu: ust, alt_baslik: alt } });
+  revalidatePath("/moderator/kurum-konulari");
+  revalidatePath("/dashboard");
+  return { error: null };
+}
+
+export async function moderatorKurumKonusuSil(id: string): Promise<{ error: string | null }> {
+  const { admin, schoolId, user } = await requireModerator();
+  const { data, error } = await admin.from("kurum_mufredat_alt_konulari")
+    .delete().eq("id", id).eq("school_id", schoolId).select("ders, ust_konu, alt_baslik").maybeSingle();
+  if (error) return { error: error.message };
+  if (!data) return { error: "Konu bulunamadı." };
+  await admin.from("admin_audit_log").insert({ actor_id: user.id, eylem: "kurum_alt_konusu_sil", detay: { school_id: schoolId, ders: data.ders, ust_konu: data.ust_konu, alt_baslik: data.alt_baslik } });
+  revalidatePath("/moderator/kurum-konulari");
+  revalidatePath("/dashboard");
+  return { error: null };
 }
 
 // Moderatör kendi hesabını (öğretmen/müdür olarak school_moderators

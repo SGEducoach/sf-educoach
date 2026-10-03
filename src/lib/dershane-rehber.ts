@@ -7,6 +7,7 @@ import { gerekYokHaritasiGetir } from "@/lib/konu-hakimiyeti";
 import { TYT_DERSLERI, AYT_DERSLERI, dokuzOnSinifMi, maarifHiyerarsiSinifMi } from "@/lib/types";
 import type { AytAlan } from "@/lib/types";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
+import { kurumAltKonulariGetir, kurumHiyerarsiKonulari, type KurumAltKonusu } from "@/lib/kurum-alt-konulari";
 
 // Dershane rehberlik servisi (kullanıcı isteği 13.09.2026) — rehber öğretmen
 // öğrenci adına ödev verir, veri girer, program yapar. Öğrenci tablolarının
@@ -89,7 +90,7 @@ function tek<T>(deger: T | T[] | null | undefined): T | null {
 export async function rehberOgrenciTakibiVerisiGetir(
   schoolId: string,
   secilenOgrenciId?: string,
-): Promise<{ ogrenciler: RehberOgrenci[]; secilen: RehberSecilenOgrenci | null }> {
+): Promise<{ ogrenciler: RehberOgrenci[]; secilen: RehberSecilenOgrenci | null; kurumKonulari: KurumAltKonusu[] }> {
   const admin = createAdminClient();
   const { data } = await admin
     .from("students")
@@ -109,9 +110,10 @@ export async function rehberOgrenciTakibiVerisiGetir(
   const ogrenciler = satirlar
     .map((s) => ({ id: s.id, ad: tek(s.profiles)?.ad?.trim() || "İsimsiz öğrenci", okulNo: (s.okul_no ?? "").trim(), sinifAdi: sinifAdi(s) }))
     .sort((a, b) => a.sinifAdi.localeCompare(b.sinifAdi, "tr", { numeric: true }) || a.ad.localeCompare(b.ad, "tr"));
+  const kurumKonulari = await kurumAltKonulariGetir(admin, schoolId);
 
   const ham = secilenOgrenciId ? satirlar.find((s) => s.id === secilenOgrenciId) : undefined;
-  if (!ham) return { ogrenciler, secilen: null };
+  if (!ham) return { ogrenciler, secilen: null, kurumKonulari };
 
   const seviye = tek(ham.classes)?.seviye ?? null;
   const dersListesi = dokuzOnSinifMi(seviye)
@@ -151,6 +153,7 @@ export async function rehberOgrenciTakibiVerisiGetir(
 
   return {
     ogrenciler,
+    kurumKonulari,
     secilen: {
       id: ham.id,
       ad: tek(ham.profiles)?.ad?.trim() || "İsimsiz öğrenci",
@@ -159,7 +162,8 @@ export async function rehberOgrenciTakibiVerisiGetir(
       sinifSeviyesi: seviye,
       dersListesi,
       mufredatAltKonulari: ((altKonularHam ?? []) as { ders: string; ust_konu: string; alt_baslik: string }[])
-        .map((r) => ({ ders: r.ders, ustKonu: r.ust_konu, altBaslik: r.alt_baslik })),
+        .map((r) => ({ ders: r.ders, ustKonu: r.ust_konu, altBaslik: r.alt_baslik }))
+        .concat(kurumHiyerarsiKonulari(kurumKonulari)),
       gerekYokListesi: Array.from(gerekYok),
       program,
     },

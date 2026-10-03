@@ -260,7 +260,7 @@ export function SecenekSecici<T extends string>({ baslik, secenekler, value, onC
 
 export function OgrenciVeriGirisi({ aytAlan, konuOnerileri, sinifSeviyesi, konuSayaclari, mufredatAltKonulari, gerekYokListesi }: {
   aytAlan: AytAlan;
-  konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
+  konuOnerileri: { ders: string; konu: string; seviye?: string | null; ustKonu?: string }[];
   sinifSeviyesi?: string | null;
   konuSayaclari?: Record<string, { tamamlanan: number; toplam: number }>;
   mufredatAltKonulari?: { ders: string; ustKonu: string; altBaslik: string }[];
@@ -366,7 +366,7 @@ function KonuOneriDropdown({ oneriler, aktif, onSec }: {
 // oku" ile o an AI anlatımı gösterilir; süre ve konuya hakimiyet — yani
 // konuyu ne kadar anladığın — bunu OKUDUKTAN/çalıştıktan SONRA girilir.
 export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, sinifSeviyesi, mufredatAltKonulari, gerekYokListesi, onBasari, prefillDers, prefillKonu, gorevAtamaId, gorevTarihi, rehberOgrenciId }: {
-  dersListesi: string[]; konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
+  dersListesi: string[]; konuOnerileri: { ders: string; konu: string; seviye?: string | null; ustKonu?: string }[];
   konuSayaclari?: Record<string, { tamamlanan: number; toplam: number }>;
   sinifSeviyesi?: string | null;
   mufredatAltKonulari?: { ders: string; ustKonu: string; altBaslik: string }[];
@@ -423,7 +423,7 @@ export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, sin
   // ile eşleşenler üst başlık adayı. Alt başlıklar seçilen üst başlığa göre
   // mufredatAltKonulari'ndan filtrelenir.
   const ustBasliklar = hiyerarsiAktif
-    ? konuOnerileri.filter((o) => o.ders === ders && o.seviye === `${sinifSeviyesi}. Sınıf`)
+    ? konuOnerileri.filter((o) => o.ders === ders && o.seviye === `${sinifSeviyesi}. Sınıf` && !o.ustKonu)
     : [];
   const altBasliklar = hiyerarsiAktif && ustBaslik
     ? (mufredatAltKonulari ?? []).filter((a) => a.ders === ders && a.ustKonu === ustBaslik)

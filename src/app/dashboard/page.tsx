@@ -30,6 +30,7 @@ import { konuHakimiyetiGetir, konuHakimiyetiOzetiGetir, tamGorunumMu, gerekYokHa
 import { KonuHakimiyetiEkrani } from "@/components/dashboard/KonuHakimiyetiEkrani";
 import { AYT_ALAN_ETIKET, sinifSiraKarsilastir, dokuzOnSinifMi, TYT_DERSLERI, AYT_DERSLERI } from "@/lib/types";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
+import { kurumAltKonulariGetir, kurumHiyerarsiKonulari, kurumKonuOnerileri } from "@/lib/kurum-alt-konulari";
 import type { AytAlan, KurumTuru, UserRole } from "@/lib/types";
 import { BG1, BG1_ALT, BORDER, BORDER_STRONG, TEXT, TEXT_MUTED, MINT, MINT_BG, BUTTER, BUTTER_BG } from "@/lib/theme";
 import { Gorevlerim } from "@/components/dashboard/Gorevlerim";
@@ -434,7 +435,7 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
     gerekYokSeti,
     { data: gorevAtamalariHam },
   ] = await Promise.all([
-    supabase.from("students").select("okul_no, ayt_alan, hedef_bolum, schools(ad, tur), classes(seviye, sube)").eq("id", userId).single(),
+    supabase.from("students").select("school_id, okul_no, ayt_alan, hedef_bolum, schools(ad, tur), classes(seviye, sube)").eq("id", userId).single(),
     analizVerisiGetir(supabase, userId, donem),
     // Konu girişi sırasında öneri (datalist): resmî müfredat listesi (188
     // konu, sınıf etiketli) + öğrencilerin serbest girip daha önce
@@ -495,7 +496,7 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
   }
 
   type Row = {
-    okul_no: string; ayt_alan: AytAlan; hedef_bolum: string;
+    school_id: string; okul_no: string; ayt_alan: AytAlan; hedef_bolum: string;
     schools: { ad: string; tur: string } | null; classes: { seviye: string; sube: string } | null;
   };
   const s = student as unknown as Row | null;
@@ -509,10 +510,12 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
   }
 
   const uretilenKonular = (konuOnerileriHam as { ders: string; konu: string; seviye: string | null }[]) ?? [];
+  const kurumKonulari = await kurumAltKonulariGetir(supabase, s.school_id);
   const konuOneriAnahtarlari = new Set(MUFREDAT_KONULARI.map((k) => `${k.ders}|${k.konu}`));
   const konuOnerileri = [
     ...MUFREDAT_KONULARI,
     ...uretilenKonular.filter((k) => !konuOneriAnahtarlari.has(`${k.ders}|${k.konu}`)),
+    ...kurumKonuOnerileri(kurumKonulari).filter((k) => !konuOneriAnahtarlari.has(`${k.ders}|${k.konu}`)),
   ];
 
   const tamamlananSet = new Set<string>();
@@ -539,7 +542,8 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
   if (aktifBolum === "veri-girisi" && ["9", "10", "11", "12"].includes(s.classes?.seviye ?? "")) {
     const { data: altKonularHam } = await supabase.from("mufredat_alt_konular").select("ders, ust_konu, alt_baslik").order("sira");
     mufredatAltKonulari = ((altKonularHam as { ders: string; ust_konu: string; alt_baslik: string }[]) ?? [])
-      .map((r) => ({ ders: r.ders, ustKonu: r.ust_konu, altBaslik: r.alt_baslik }));
+      .map((r) => ({ ders: r.ders, ustKonu: r.ust_konu, altBaslik: r.alt_baslik }))
+      .concat(kurumHiyerarsiKonulari(kurumKonulari));
   }
 
   const dokuzOnMu = dokuzOnSinifMi(s.classes?.seviye ?? null);
@@ -743,8 +747,8 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
         </div>
       );
     }
-    const { ogrenciler, secilen } = await rehberOgrenciTakibiVerisiGetir(teacher.school_id, secilenOgrenciId);
-    return <RehberOgrenciTakibi ogrenciler={ogrenciler} secilen={secilen} konuOnerileri={MUFREDAT_KONULARI} grupMu={grupMu} />;
+    const { ogrenciler, secilen, kurumKonulari } = await rehberOgrenciTakibiVerisiGetir(teacher.school_id, secilenOgrenciId);
+    return <RehberOgrenciTakibi ogrenciler={ogrenciler} secilen={secilen} konuOnerileri={[...MUFREDAT_KONULARI, ...kurumKonuOnerileri(kurumKonulari)]} grupMu={grupMu} />;
   }
 
   if (aktifBolum === "etkinlikler") {
@@ -1043,6 +1047,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   // öğretmen (müdür değil) de düşebildiğinden kurumTuru burada da kontrol
   // ediliyor.
   const dershaneMi = kurumTuru === "dershane";
+  const ogretmenKurumKonulari = await kurumAltKonulariGetir(supabase, teacher.school_id);
   const dersVerisiGerekli = (aktifBolum === "takvim" || aktifBolum === "dersler") && role === "ogretmen";
   const nobetVerisiGerekli = aktifBolum === "takvim" || dersVerisiGerekli;
   // Okulun yüklediği nöbetler (17.09.2026): okul nöbeti programın başlığında
@@ -1145,7 +1150,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       ogretmenDersleri={ogretmenDersleri}
       bekleyenOnaylar={bekleyenOnaylar}
       verdigimGorevler={verdigimGorevler}
-      konuOnerileri={ortaokulKonulari ?? MUFREDAT_KONULARI}
+      konuOnerileri={ortaokulKonulari ?? [...MUFREDAT_KONULARI, ...kurumKonuOnerileri(ogretmenKurumKonulari)]}
       kademe={kademe}
       aktifBolum={aktifBolum}
       dersProgramiSatirlari={dersProgramiSatirlari}
