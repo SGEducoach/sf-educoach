@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { ArrowRightLeft, BedDouble, ChevronDown, KeyRound, MailWarning, Plus, Save, Search, Settings, ShieldCheck, Trash2, UserCheck, UserPlus, UserX, X } from "lucide-react";
 import {
   moderatorAktiflikDegistir, moderatorHesapSil, moderatorKurumBilgisiGetir, moderatorKurumGuncelle,
   moderatorOgrenciEkle, moderatorOgrenciSinifTasi, moderatorOgretmenBransDegistir, moderatorOgretmenEkle,
   moderatorEpostaKaydet, moderatorOkulSiniflari, moderatorSifreBelirle, moderatorSifreSifirla, moderatorSinifEkle,
   moderatorSinifOgretmenleriGetir, moderatorSinifOgretmeniAta, moderatorSinifSil, moderatorYurtDurumuDegistir,
+  moderatorOgrenciKayitlari, moderatorOgrenciKaydiGuncelle, moderatorOgrenciKaydiSil,
   type ModeratorKullanici, type ModeratorOgretmenSecenegi, type ModeratorSinifOzeti,
 } from "@/app/moderator/actions";
 import { AYT_ALAN_ETIKET } from "@/lib/types";
@@ -16,6 +17,7 @@ import type { AytAlan, SinifSeviyesi } from "@/lib/types";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 import { KULLANICI_ADI_IPUCU, kullaniciAdiSanitize, okulNoSanitize, teslimEdilebilirEpostaMi } from "@/lib/validators";
 import { SosyalEtkinlikler } from "@/components/dashboard/SosyalEtkinlikler";
+import type { OgrenciYonetimKaydi } from "@/app/yonetici/actions";
 
 export function ModeratorPanel({ okulAdi, kullanicilar, schoolId, kurumTuru, kademe, yurtlu = false, bolum = "ogrenciler" }: {
   okulAdi: string; kullanicilar: ModeratorKullanici[];
@@ -47,7 +49,7 @@ export function ModeratorPanel({ okulAdi, kullanicilar, schoolId, kurumTuru, kad
       <KullaniciBolumu baslik="Öğrenciler" kullanicilar={kullanicilar} sekmeler={["ogrenci", "veli"]}
         ekleEtiketi="Öğrenci ekle"
         ekleFormu={(kapat) => <OgrenciEkleFormu schoolId={schoolId} dershane={dershane} onDone={(msg) => { setMesaj(msg); if (!msg.startsWith("Hata")) kapat(); }} />}
-        aciklama="Öğrenci eklemek için önce Sınıflar bölümünden sınıfları oluşturun. Bir öğrenciyi çıkarmak için adına tıklayıp “Pasifleştir / Sil”i kullanın."
+        aciklama="Öğrenci eklemek için önce Sınıflar bölümünden sınıfları oluşturun. Hatalı çalışma, soru veya deneme girişlerini öğrencinin adına tıklayıp Kayıtlar bölümünden düzeltin."
         schoolId={schoolId} kurumTuru={kurumTuru} kademe={kademe} yurtlu={yurtlu} onMesaj={setMesaj} />
     )}
     {bolum === "ogretmenler" && (
@@ -463,10 +465,70 @@ function Alan({ etiket, value, onChange, type = "text" }: { etiket: string; valu
   return <label className="flex flex-col gap-1"><span className="text-[10px] font-semibold" style={{ color: TEXT_MUTED }}>{etiket}</span><input type={type} value={value} onChange={(e) => onChange(e.target.value)} className="rounded-lg px-2.5 py-2 text-xs outline-none" style={{ background: BG1, color: TEXT, border: `2px solid ${BORDER_STRONG}` }} /></label>;
 }
 
+function ModeratorOgrenciKayitlari({ studentId, schoolId }: { studentId: string; schoolId?: string }) {
+  const [kayitlar, setKayitlar] = useState<OgrenciYonetimKaydi[]>([]);
+  const [hata, setHata] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+  const yukle = useCallback(() => {
+    moderatorOgrenciKayitlari(studentId, schoolId).then((r) => {
+      setHata(r.error);
+      setKayitlar(r.kayitlar);
+    });
+  }, [studentId, schoolId]);
+  useEffect(() => { startTransition(yukle); }, [yukle]);
+  function kaydet(k: OgrenciYonetimKaydi, degerler: { tarih: string; sureDakika?: number; ders: string; konu?: string; dogru?: number; yanlis?: number }) {
+    startTransition(async () => {
+      const r = await moderatorOgrenciKaydiGuncelle({ studentId, id: k.id, tur: k.tur, ...degerler }, schoolId);
+      if (r.error) return setHata(r.error);
+      yukle();
+    });
+  }
+  function sil(k: OgrenciYonetimKaydi) {
+    if (!window.confirm(`Bu ${k.tur} kaydı kalıcı olarak silinsin mi?`)) return;
+    startTransition(async () => {
+      const r = await moderatorOgrenciKaydiSil(studentId, k.id, k.tur, schoolId);
+      if (r.error) return setHata(r.error);
+      yukle();
+    });
+  }
+  return <div className="mt-3 rounded-xl p-3" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
+    <p className="mb-2 text-xs font-bold" style={{ color: TEXT }}>Öğrenci çalışma, soru ve deneme kayıtları</p>
+    <div className="flex max-h-96 flex-col gap-2 overflow-y-auto">
+      {!pending && kayitlar.length === 0 && !hata && <p className="text-xs" style={{ color: TEXT_MUTED }}>Kayıt bulunamadı.</p>}
+      {kayitlar.map((k) => <ModeratorKayitSatiri key={`${k.tur}-${k.id}`} kayit={k} disabled={pending} onSave={(v) => kaydet(k, v)} onDelete={() => sil(k)} />)}
+    </div>
+    {hata && <p role="alert" className="mt-2 text-xs font-semibold" style={{ color: BLUSH }}>{hata}</p>}
+  </div>;
+}
+
+function ModeratorKayitSatiri({ kayit, disabled, onSave, onDelete }: { kayit: OgrenciYonetimKaydi; disabled: boolean; onSave: (v: { tarih: string; sureDakika?: number; ders: string; konu?: string; dogru?: number; yanlis?: number }) => void; onDelete: () => void }) {
+  const [tarih, setTarih] = useState(kayit.tarih);
+  const [sure, setSure] = useState(String(kayit.sureDakika ?? ""));
+  const [ders, setDers] = useState(kayit.ders);
+  const [konu, setKonu] = useState(kayit.konu ?? "");
+  const [dogru, setDogru] = useState(String(kayit.dogru ?? 0));
+  const [yanlis, setYanlis] = useState(String(kayit.yanlis ?? 0));
+  return <div className="grid grid-cols-1 items-center gap-2 rounded-lg p-2 sm:grid-cols-[1fr_auto_auto]" style={{ background: BG1, border: `2px solid ${BORDER_STRONG}` }}>
+    <div className="grid grid-cols-2 gap-1 text-xs" style={{ color: TEXT }}>
+      <strong className="col-span-2">{kayit.tur.toLocaleUpperCase("tr-TR")}</strong>
+      {kayit.tur === "deneme" ? <select value={ders} onChange={(e) => setDers(e.target.value)} style={{ border: `2px solid ${BORDER_STRONG}` }}><option>TYT</option><option>AYT</option></select> : <input value={ders} onChange={(e) => setDers(e.target.value)} placeholder="Ders" style={{ border: `2px solid ${BORDER_STRONG}` }} />}
+      {kayit.tur === "konu" && <input value={konu} onChange={(e) => setKonu(e.target.value)} placeholder="Konu" style={{ border: `2px solid ${BORDER_STRONG}` }} />}
+      {kayit.tur === "soru" && <><input type="number" min={0} value={dogru} onChange={(e) => setDogru(e.target.value)} placeholder="Doğru" style={{ border: `2px solid ${BORDER_STRONG}` }} /><input type="number" min={0} value={yanlis} onChange={(e) => setYanlis(e.target.value)} placeholder="Yanlış" style={{ border: `2px solid ${BORDER_STRONG}` }} /></>}
+    </div>
+    <input type="date" value={tarih} onChange={(e) => setTarih(e.target.value)} className="rounded px-2 py-1 text-xs" style={{ color: TEXT, border: `2px solid ${BORDER_STRONG}` }} />
+    <div className="flex items-center gap-1">
+      {kayit.tur !== "deneme" && <input type="number" min={1} max={480} value={sure} onChange={(e) => setSure(e.target.value)} className="w-20 rounded px-2 py-1 text-xs" style={{ color: TEXT, border: `2px solid ${BORDER_STRONG}` }} />}
+      <button type="button" disabled={disabled} onClick={() => onSave({ tarih, sureDakika: kayit.tur === "deneme" ? undefined : Number(sure), ders, konu, dogru: Number(dogru), yanlis: Number(yanlis) })} title="Kaydet" style={{ color: MINT }}><Save size={14} /></button>
+      <button type="button" disabled={disabled} onClick={onDelete} title="Sil" style={{ color: BLUSH }}><Trash2 size={14} /></button>
+    </div>
+  </div>;
+}
+
 function KullaniciKarti({ kullanici: k, schoolId, onMesaj, kurumTuru, kademe, yurtlu }: { kullanici: ModeratorKullanici; schoolId?: string; onMesaj: (m: string) => void; kurumTuru?: KurumTuru; kademe?: KurumKademesi | null; yurtlu?: boolean }) {
   const [pending, startTransition] = useTransition();
   const [duzenleAcik, setDuzenleAcik] = useState(false);
   const [sifreAcik, setSifreAcik] = useState(false);
+  const [kayitlarAcik, setKayitlarAcik] = useState(false);
   const [yeniSifre, setYeniSifre] = useState("");
   // Kullanıcı isteği (26.08.2026): Pasifleştir/Sil artık doğrudan görünmüyor
   // — "Diğer ayarlar" tıklanınca açılıyor.
@@ -511,6 +573,7 @@ function KullaniciKarti({ kullanici: k, schoolId, onMesaj, kurumTuru, kademe, yu
           küçültülecek" — kart başına buton sayısı fazla olduğundan (özellikle
           öğrenci kartlarında) daha kompakt bir dolgu/yazı boyutuna geçildi. */}
       <div className="mt-3 flex flex-wrap gap-1.5">
+        {k.kategori === "ogrenci" && <button type="button" onClick={() => setKayitlarAcik((v) => !v)} className="sfec-btn flex-1 rounded-lg px-2 py-1.5 text-[10px] font-bold" style={{ color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>Çalışma kayıtları</button>}
         <button disabled={pending || !epostaKayitli} title={epostaKayitli ? undefined : "Önce e-posta kaydedin"} onClick={() => startTransition(async () => { const r = await moderatorSifreSifirla(k.id, schoolId); onMesaj(r.error ? `Hata: ${r.error}` : `Geçici şifre (${k.ad}): ${r.sifre}`); })} className="sfec-btn flex-1 rounded-lg px-2 py-1.5 text-[10px] font-bold disabled:opacity-50" style={{ color: TEXT, border: `2px solid ${BORDER_STRONG}` }}><KeyRound className="mr-1 inline" size={11}/>Rastgele şifre</button>
         <button disabled={pending || !epostaKayitli} title={epostaKayitli ? undefined : "Önce e-posta kaydedin"} onClick={() => setSifreAcik((v) => !v)} className="sfec-btn flex-1 rounded-lg px-2 py-1.5 text-[10px] font-bold disabled:opacity-50" style={{ background: sifreAcik ? MINT : "transparent", color: sifreAcik ? MINT_ON : TEXT, border: `2px solid ${BORDER_STRONG}` }}><KeyRound className="mr-1 inline" size={11}/>Şifre belirle</button>
         {(k.kategori === "ogrenci" || k.kategori === "ogretmen") && (
@@ -544,6 +607,7 @@ function KullaniciKarti({ kullanici: k, schoolId, onMesaj, kurumTuru, kademe, yu
         </div>
       )}
 
+      {kayitlarAcik && k.kategori === "ogrenci" && <ModeratorOgrenciKayitlari studentId={k.id} schoolId={schoolId} />}
       {duzenleAcik && k.kategori === "ogrenci" && (
         <ModeratorOgrenciSinifTasiFormu studentId={k.id} schoolId={schoolId} onDone={(msg) => { onMesaj(msg); setDuzenleAcik(false); }} />
       )}

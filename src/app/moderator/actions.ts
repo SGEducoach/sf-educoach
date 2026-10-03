@@ -8,6 +8,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { adNormalize, hedefBolumNormalize, ogrenciGirisKimligiHatasi, rastgeleSifre, sifreGecerliMi, telefonGecerliMi, teslimEdilebilirEpostaMi } from "@/lib/validators";
 import type { AytAlan, KurumKademesi, KurumTuru, SinifSeviyesi, UserRole } from "@/lib/types";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
+import type { OgrenciYonetimKaydi, OgrenciKayitTuru } from "@/app/yonetici/actions";
 
 export interface ModeratorKullanici {
   id: string;
@@ -67,6 +68,80 @@ async function hedefOkuldaMi(admin: ReturnType<typeof createAdminClient>, school
     admin.from("parent_students").select("parent_id, students!inner(school_id)").eq("parent_id", targetId).eq("students.school_id", schoolId).limit(1),
   ]);
   return !!student || !!teacher || !!parent?.length;
+}
+
+async function kurumOgrencisiMi(admin: ReturnType<typeof createAdminClient>, schoolId: string, studentId: string) {
+  const { data, error } = await admin.from("students").select("id").eq("id", studentId).eq("school_id", schoolId).maybeSingle();
+  return !error && !!data;
+}
+
+const ogrenciKayitTablolari = { konu: "konu_calismalar", soru: "soru_cozumleri", deneme: "denemeler" } as const;
+
+export async function moderatorOgrenciKayitlari(studentId: string, targetSchoolId?: string): Promise<{ error: string | null; kayitlar: OgrenciYonetimKaydi[] }> {
+  const { admin, schoolId } = await requireModerator(targetSchoolId);
+  if (!(await kurumOgrencisiMi(admin, schoolId, studentId))) return { error: "Öğrenci bu kuruma ait değil.", kayitlar: [] };
+  const [konular, sorular, denemeler] = await Promise.all([
+    admin.from("konu_calismalar").select("id, tarih, ders, konu, sure_dakika").eq("student_id", studentId).order("tarih", { ascending: false }).limit(30),
+    admin.from("soru_cozumleri").select("id, tarih, ders, dogru, yanlis, sure_dakika").eq("student_id", studentId).order("tarih", { ascending: false }).limit(30),
+    admin.from("denemeler").select("id, tarih, tur").eq("student_id", studentId).order("tarih", { ascending: false }).limit(30),
+  ]);
+  const error = konular.error ?? sorular.error ?? denemeler.error;
+  if (error) return { error: error.message, kayitlar: [] };
+  const kayitlar: OgrenciYonetimKaydi[] = [
+    ...(konular.data ?? []).map((r) => ({ id: r.id, tur: "konu" as const, tarih: r.tarih, ders: r.ders, aciklama: r.konu, sureDakika: r.sure_dakika, konu: r.konu })),
+    ...(sorular.data ?? []).map((r) => ({ id: r.id, tur: "soru" as const, tarih: r.tarih, ders: r.ders, aciklama: `${r.dogru} doğru / ${r.yanlis} yanlış`, sureDakika: r.sure_dakika, dogru: r.dogru, yanlis: r.yanlis })),
+    ...(denemeler.data ?? []).map((r) => ({ id: r.id, tur: "deneme" as const, tarih: r.tarih, ders: r.tur, aciklama: `${r.tur} denemesi` })),
+  ].sort((a, b) => b.tarih.localeCompare(a.tarih));
+  return { error: null, kayitlar };
+}
+
+export async function moderatorOgrenciKaydiGuncelle(input: { studentId: string; id: string; tur: OgrenciKayitTuru; tarih: string; sureDakika?: number; ders: string; konu?: string; dogru?: number; yanlis?: number }, targetSchoolId?: string) {
+  const { admin, schoolId, user } = await requireModerator(targetSchoolId);
+  if (!(await kurumOgrencisiMi(admin, schoolId, input.studentId))) return { error: "Öğrenci bu kuruma ait değil." };
+  if (!Object.hasOwn(ogrenciKayitTablolari, input.tur)) return { error: "Kayıt türü geçersiz." };
+  const tablo = ogrenciKayitTablolari[input.tur];
+  const { data: kayit, error: okumaHatasi } = await admin.from(tablo).select("id").eq("id", input.id).eq("student_id", input.studentId).maybeSingle();
+  if (okumaHatasi) return { error: okumaHatasi.message };
+  if (!kayit) return { error: "Kayıt bu öğrenciye ait değil." };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.tarih)) return { error: "Tarih geçersiz." };
+  if (input.tur !== "deneme" && (!Number.isInteger(input.sureDakika) || input.sureDakika! < 1 || input.sureDakika! > 480)) return { error: "Süre 1-480 dakika arasında olmalı." };
+  const ders = input.ders.trim();
+  if (!ders) return { error: "Ders boş olamaz." };
+  let error: { message: string } | null = null;
+  if (input.tur === "konu") {
+    const konu = input.konu?.trim();
+    if (!konu) return { error: "Konu boş olamaz." };
+    ({ error } = await admin.from("konu_calismalar").update({ tarih: input.tarih, sure_dakika: input.sureDakika, ders, konu }).eq("id", input.id).eq("student_id", input.studentId));
+  } else if (input.tur === "soru") {
+    if (!Number.isInteger(input.dogru) || !Number.isInteger(input.yanlis) || input.dogru! < 0 || input.yanlis! < 0) return { error: "Doğru ve yanlış sayıları geçersiz." };
+    ({ error } = await admin.from("soru_cozumleri").update({ tarih: input.tarih, sure_dakika: input.sureDakika, ders, dogru: input.dogru, yanlis: input.yanlis }).eq("id", input.id).eq("student_id", input.studentId));
+  } else {
+    if (ders !== "TYT" && ders !== "AYT") return { error: "Deneme türü TYT veya AYT olmalı." };
+    ({ error } = await admin.from("denemeler").update({ tarih: input.tarih, tur: ders }).eq("id", input.id).eq("student_id", input.studentId));
+  }
+  if (error) return { error: error.message };
+  await admin.from("admin_audit_log").insert({ actor_id: user.id, eylem: "moderator_ogrenci_kaydi_guncelle", detay: { school_id: schoolId, student_id: input.studentId, kayit_id: input.id, tur: input.tur } });
+  revalidatePath("/moderator");
+  revalidatePath("/dashboard");
+  return { error: null };
+}
+
+export async function moderatorOgrenciKaydiSil(studentId: string, id: string, tur: OgrenciKayitTuru, targetSchoolId?: string) {
+  const { admin, schoolId, user } = await requireModerator(targetSchoolId);
+  if (!(await kurumOgrencisiMi(admin, schoolId, studentId))) return { error: "Öğrenci bu kuruma ait değil." };
+  if (!Object.hasOwn(ogrenciKayitTablolari, tur)) return { error: "Kayıt türü geçersiz." };
+  const tablo = ogrenciKayitTablolari[tur];
+  const { data: kayit, error: okumaHatasi } = await admin.from(tablo).select("id, gorev_atama_id").eq("id", id).eq("student_id", studentId).maybeSingle();
+  if (okumaHatasi) return { error: okumaHatasi.message };
+  if (!kayit) return { error: "Kayıt bu öğrenciye ait değil." };
+  const { data: silinen, error } = await admin.from(tablo).delete().eq("id", id).eq("student_id", studentId).select("id").maybeSingle();
+  if (error) return { error: error.message };
+  if (!silinen) return { error: "Kayıt silinemedi." };
+  if (kayit.gorev_atama_id) await admin.from("gorev_atamalari").update({ durum: "bekliyor" }).eq("id", kayit.gorev_atama_id).eq("student_id", studentId);
+  await admin.from("admin_audit_log").insert({ actor_id: user.id, eylem: "moderator_ogrenci_kaydi_sil", detay: { school_id: schoolId, student_id: studentId, kayit_id: id, tur } });
+  revalidatePath("/moderator");
+  revalidatePath("/dashboard");
+  return { error: null };
 }
 
 export interface ModeratorKurumKonusu { id: string; ders: string; ustKonu: string; altBaslik: string; }
