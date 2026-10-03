@@ -15,12 +15,12 @@ export function AnaSayfaPanolar({ ilanlar }: { ilanlar: AnaSayfaPanoIlani[] }) {
   }, [ilanlar.length]);
   const ilan = ilanlar[aktif % Math.max(ilanlar.length, 1)];
 
-  return <section className="flex h-72 min-w-0 flex-col overflow-hidden rounded-3xl border border-[#DDE7EA] bg-[#F7FAFB] p-5 shadow-sm" aria-label="Kurum panoları">
+  return <section className="flex h-72 min-w-0 flex-col overflow-hidden rounded-3xl border border-[#DDE7EA] bg-[#F7FAFB] p-5 shadow-sm" aria-label="Kurum haberleri">
     <div className="min-w-0">
       <p className="truncate text-[11px] font-extrabold uppercase tracking-[.12em]" style={{ color: LACIVERT }}>
-        {ilan?.kurumAdi ?? "Kurum panoları"}
+        {ilan?.kurumAdi ?? "Kurum haberleri"}
       </p>
-      <div className="mt-1 flex items-center gap-2"><CalendarDays size={16} color={TURKUAZ}/><h2 className="text-xs font-bold uppercase tracking-[.14em]" style={{ color: TURKUAZ }}>Pano</h2></div>
+      <div className="mt-1 flex items-center gap-2"><CalendarDays size={16} color={TURKUAZ}/><h2 className="text-xs font-bold uppercase tracking-[.14em]" style={{ color: TURKUAZ }}>Haberler</h2></div>
     </div>
     {ilan ? <div key={ilan.id} className="sfec-tg-haber-gir my-auto flex min-h-0 gap-4 overflow-hidden rounded-2xl bg-white p-3">
       <a href={ilan.dosyaUrl} target="_blank" rel="noopener noreferrer" aria-label={`${ilan.baslik} dosyasını aç`}
@@ -38,11 +38,11 @@ export function AnaSayfaPanolar({ ilanlar }: { ilanlar: AnaSayfaPanoIlani[] }) {
           {ilan.dosyaTipi === "pdf" ? "PDF’i aç" : "Afişi aç"}<ExternalLink size={12} aria-hidden="true" />
         </a>
       </div>
-    </div> : <p className="my-auto text-center text-sm" style={{ color: GRI }}>Panolarda henüz güncel bir paylaşım yok.</p>}
-    {ilanlar.length > 1 && <div className="flex items-center justify-center gap-2" aria-label="Pano geçişleri">
-      <button type="button" onClick={() => setAktif((i) => (i - 1 + ilanlar.length) % ilanlar.length)} aria-label="Önceki pano paylaşımı" className="grid h-8 w-8 place-items-center rounded-full border border-[#D5DCE1] bg-white"><ChevronLeft size={16}/></button>
+    </div> : <p className="my-auto text-center text-sm" style={{ color: GRI }}>Henüz güncel bir haber yok.</p>}
+    {ilanlar.length > 1 && <div className="flex items-center justify-center gap-2" aria-label="Haber geçişleri">
+      <button type="button" onClick={() => setAktif((i) => (i - 1 + ilanlar.length) % ilanlar.length)} aria-label="Önceki haber" className="grid h-8 w-8 place-items-center rounded-full border border-[#D5DCE1] bg-white"><ChevronLeft size={16}/></button>
       <span className="text-xs font-bold tabular-nums" style={{ color: GRI }}>{aktif + 1} / {ilanlar.length}</span>
-      <button type="button" onClick={() => setAktif((i) => (i + 1) % ilanlar.length)} aria-label="Sonraki pano paylaşımı" className="grid h-8 w-8 place-items-center rounded-full border border-[#D5DCE1] bg-white"><ChevronRight size={16}/></button>
+      <button type="button" onClick={() => setAktif((i) => (i + 1) % ilanlar.length)} aria-label="Sonraki haber" className="grid h-8 w-8 place-items-center rounded-full border border-[#D5DCE1] bg-white"><ChevronRight size={16}/></button>
     </div>}
   </section>;
 }
