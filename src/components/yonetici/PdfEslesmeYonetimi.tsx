@@ -9,8 +9,13 @@ import { BG1, BORDER, BUTTER, TEXT, TEXT_MUTED } from "@/lib/theme";
 // değil, yüklenen PDF'teki BÜTÜN adları durumlarıyla gösteriyor — bir denetim
 // ekranı. "Bekleyen yok" demek bu yüzden yanlış olurdu: liste boşsa henüz hiç
 // PDF yüklenmemiş demektir.
-export async function PdfEslesmeYonetimi() {
-  const { bekleyenler, kirpildi } = await pdfEslesmeBekleyenleriGetir();
+// kurumId: yönetici bir kurumun moderatör panelini görüntülerken listeyi o
+// kuruma daraltmak için. Dershane moderatörü için daraltma zaten sunucuda
+// (pdf-eslesme-actions.ts requireEslesmeYetkisi) yapılıyor.
+export async function PdfEslesmeYonetimi({ kurumId }: { kurumId?: string } = {}) {
+  const sonuc = await pdfEslesmeBekleyenleriGetir();
+  const kirpildi = sonuc.kirpildi;
+  const bekleyenler = kurumId ? sonuc.bekleyenler.filter((b) => b.schoolId === kurumId) : sonuc.bekleyenler;
 
   return (
     <div className="rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>

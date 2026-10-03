@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { SINIF_SEVIYELERI } from "@/lib/types";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { adNormalize, hedefBolumNormalize, okulNoGecerliMi, rastgeleSifre, sifreGecerliMi, telefonGecerliMi, teslimEdilebilirEpostaMi } from "@/lib/validators";
+import { adNormalize, hedefBolumNormalize, ogrenciGirisKimligiHatasi, rastgeleSifre, sifreGecerliMi, telefonGecerliMi, teslimEdilebilirEpostaMi } from "@/lib/validators";
 import type { AytAlan, KurumKademesi, KurumTuru, SinifSeviyesi, UserRole } from "@/lib/types";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
 
@@ -336,7 +336,7 @@ export async function moderatorOgretmenBransDegistir(teacherId: string, brans: s
 function manuelEklemeHatasi(mesaj: string): string {
   const m = (mesaj ?? "").trim();
   if (m.includes("already been registered") || m.includes("already registered")) return "Bu e-posta zaten kayıtlı.";
-  if (m.includes("okul_no")) return "Bu okul numarası zaten kullanılıyor.";
+  if (m.includes("okul_no")) return "Bu okul numarası / kullanıcı adı zaten kullanılıyor.";
   // Supabase, veritabanı tetikleyicisi hata verdiğinde gövdesiz 500 döndürüyor
   // ve supabase-js bunu message="{}" yapıyor (bkz. dashboard/actions.ts'teki
   // aynı isimli fonksiyon) — ham/boş mesaj kullanıcıya gösterilmiyor.
@@ -367,12 +367,18 @@ export async function moderatorOgretmenEkle(input: { ad: string; email: string; 
 export async function moderatorOgrenciEkle(input: {
   ad: string; email: string; okulNo: string; telefon: string; classId: string; aytAlan: AytAlan; hedefBolum: string;
 }, targetSchoolId?: string) {
-  const { user, admin, schoolId } = await requireModerator(targetSchoolId);
+  const { user, admin, schoolId, kurumTuru } = await requireModerator(targetSchoolId);
   const ad = adNormalize(input.ad);
   const email = input.email.trim().toLowerCase();
+  // Dershanede okul_no kolonu "kullanıcı adı" olarak kullanılıyor (en az 6
+  // karakter, migration 0051 ogrenci_no_format_kontrol). Önceden burada her
+  // kurum için 1-5 haneli sayı isteniyordu; dershanede bu, veritabanı
+  // kuralıyla çeliştiği için öğrenci HİÇ eklenemiyordu (bulgu 03.10.2026).
+  const girisKimligi = input.okulNo.trim();
   if (!ad) return { error: "Ad Soyad gerekli.", sifre: null };
   if (!email) return { error: "E-posta gerekli.", sifre: null };
-  if (!okulNoGecerliMi(input.okulNo)) return { error: "Okul no geçersiz (sadece rakam, en fazla 5 hane).", sifre: null };
+  const kimlikHatasi = ogrenciGirisKimligiHatasi(girisKimligi, kurumTuru === "dershane" ? "dershane" : "okul");
+  if (kimlikHatasi) return { error: kimlikHatasi, sifre: null };
   if (input.telefon && !telefonGecerliMi(input.telefon)) return { error: "Telefon numarası geçersiz.", sifre: null };
   if (!input.classId) return { error: "Sınıf seçin.", sifre: null };
   const { data: hedefSinif } = await admin.from("classes").select("school_id").eq("id", input.classId).maybeSingle();
@@ -389,15 +395,89 @@ export async function moderatorOgrenciEkle(input: {
     email, password: sifre, email_confirm: true,
     user_metadata: {
       role: "ogrenci", ad, telefon: input.telefon || null, school_id: schoolId, class_id: input.classId,
-      okul_no: input.okulNo, ayt_alan: input.aytAlan, hedef_bolum: hedefBolum,
+      okul_no: girisKimligi, ayt_alan: input.aytAlan, hedef_bolum: hedefBolum,
       admin_ekledi: true, // izinli öğrenci listesi kontrolünden muaf (bkz. migration 0026)
       yonetici_jetonu: jeton, // resmî liste kontrolünden muaf (bkz. migration 0096)
     },
   });
   if (error) return { error: manuelEklemeHatasi(error.message), sifre: null };
-  await admin.from("admin_audit_log").insert({ actor_id: user.id, eylem: "moderator_ogrenci_ekle", detay: { ogrenci_id: created.user?.id, okul_no: input.okulNo, school_id: schoolId, class_id: input.classId } });
+  await admin.from("admin_audit_log").insert({ actor_id: user.id, eylem: "moderator_ogrenci_ekle", detay: { ogrenci_id: created.user?.id, okul_no: girisKimligi, school_id: schoolId, class_id: input.classId } });
   revalidatePath("/moderator");
   return { error: null, sifre };
+}
+
+// ============ Sınıf öğretmeni tanımlama (kullanıcı isteği 03.10.2026) ============
+// Admin'in sinifOgretmeniAta (dashboard/actions.ts) akışının kurum-sınırlı
+// eşdeğeri. teachers.class_id benzersiz: bir sınıfın tek sınıf öğretmeni
+// olur. Service-role ile class_id değiştirmek migration 0137 gerektirir.
+export interface ModeratorSinifOzeti {
+  id: string; seviye: string; sube: string;
+  ogrenciSayisi: number;
+  sinifOgretmeniId: string | null;
+}
+export interface ModeratorOgretmenSecenegi { id: string; ad: string; brans: string; sinifId: string | null }
+
+export async function moderatorSinifOgretmenleriGetir(targetSchoolId?: string): Promise<{
+  error: string | null; siniflar: ModeratorSinifOzeti[]; ogretmenler: ModeratorOgretmenSecenegi[];
+}> {
+  const { admin, schoolId } = await requireModerator(targetSchoolId);
+  const [{ data: siniflar, error: sinifHatasi }, { data: ogretmenler, error: ogretmenHatasi }, { data: ogrenciler }] = await Promise.all([
+    admin.from("classes").select("id, seviye, sube").eq("school_id", schoolId).order("seviye").order("sube"),
+    admin.from("teachers").select("id, brans, class_id, profiles!teachers_id_fkey(ad, aktif)").eq("school_id", schoolId),
+    admin.from("students").select("class_id").eq("school_id", schoolId),
+  ]);
+  if (sinifHatasi || ogretmenHatasi) return { error: (sinifHatasi ?? ogretmenHatasi)!.message, siniflar: [], ogretmenler: [] };
+  type OgretmenRow = { id: string; brans: string; class_id: string | null; profiles: { ad: string; aktif: boolean } | null };
+  const ogretmenListesi = ((ogretmenler ?? []) as unknown as OgretmenRow[])
+    .filter((t) => t.profiles && t.profiles.aktif !== false)
+    .map((t) => ({ id: t.id, ad: t.profiles!.ad, brans: t.brans, sinifId: t.class_id }))
+    .sort((a, b) => a.ad.localeCompare(b.ad, "tr"));
+  const ogrenciSayaci = new Map<string, number>();
+  for (const o of ogrenciler ?? []) ogrenciSayaci.set(o.class_id as string, (ogrenciSayaci.get(o.class_id as string) ?? 0) + 1);
+  return {
+    error: null,
+    ogretmenler: ogretmenListesi,
+    siniflar: (siniflar ?? []).map((c) => ({
+      id: c.id, seviye: c.seviye, sube: c.sube,
+      ogrenciSayisi: ogrenciSayaci.get(c.id) ?? 0,
+      sinifOgretmeniId: ogretmenListesi.find((t) => t.sinifId === c.id)?.id ?? null,
+    })),
+  };
+}
+
+// classId: hedef sınıf; teacherId null → o sınıfın sınıf öğretmenliği boşaltılır.
+export async function moderatorSinifOgretmeniAta(classId: string, teacherId: string | null, targetSchoolId?: string): Promise<{ error: string | null }> {
+  const { user, admin, schoolId } = await requireModerator(targetSchoolId);
+  const { data: sinif } = await admin.from("classes").select("school_id").eq("id", classId).maybeSingle();
+  if (!sinif || sinif.school_id !== schoolId) return { error: "Bu sınıf kurumunuza ait değil." };
+  if (teacherId) {
+    const { data: ogretmen } = await admin.from("teachers").select("school_id").eq("id", teacherId).maybeSingle();
+    if (!ogretmen || ogretmen.school_id !== schoolId) return { error: "Bu öğretmen kurumunuzda değil." };
+  }
+
+  // Önce sınıfın mevcut sınıf öğretmenini boşalt (benzersizlik kısıtı yüzünden
+  // yeni atamadan önce yapılmalı), sonra seçilen öğretmeni ata. Seçilen
+  // öğretmen başka bir sınıfın sınıf öğretmeniyse oradan bu sınıfa geçer.
+  const { error: bosaltmaHatasi } = await admin.from("teachers").update({ class_id: null }).eq("class_id", classId).eq("school_id", schoolId);
+  if (bosaltmaHatasi) return { error: sinifOgretmeniHatasi(bosaltmaHatasi) };
+  if (teacherId) {
+    const { error } = await admin.from("teachers").update({ class_id: classId }).eq("id", teacherId);
+    if (error) return { error: sinifOgretmeniHatasi(error) };
+  }
+  await admin.from("admin_audit_log").insert({
+    actor_id: user.id,
+    eylem: teacherId ? "moderator_sinif_ogretmeni_ata" : "moderator_sinif_ogretmenligi_bosalt",
+    detay: { school_id: schoolId, class_id: classId, ogretmen_id: teacherId },
+  });
+  revalidatePath("/moderator");
+  return { error: null };
+}
+
+function sinifOgretmeniHatasi(error: { code?: string; message?: string }): string {
+  if (error.code === "23505") return "Bu sınıfın zaten bir sınıf öğretmeni var.";
+  // Migration 0137 henüz uygulanmadıysa koruma tetikleyicisi bu mesajla durdurur.
+  if (error.message?.includes("yönetici tarafından")) return "Sınıf öğretmeni ataması için veritabanı güncellemesi (migration 0137) henüz uygulanmamış. SeFu Koç yönetimine bildirin.";
+  return error.message ?? "Sınıf öğretmeni kaydedilemedi.";
 }
 
 // ============ Kurum ayarları (isim, kurum kodu) ============

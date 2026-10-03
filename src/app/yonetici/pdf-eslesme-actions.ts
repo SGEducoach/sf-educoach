@@ -2,8 +2,8 @@
 
 // DERSHANE MODU (Faz D5) — admin'in (site yöneticisi) PDF deneme eşleştirme
 // inceleme kuyruğu. Ayrı bir dosyada tutuluyor (yonetici/actions.ts zaten
-// büyük ve bu oturumda eşzamanlı düzenleniyor) — requireAdmin() burada
-// kasıtlı olarak yeniden tanımlı (yonetici/actions.ts'teki aynı desen,
+// büyük ve bu oturumda eşzamanlı düzenleniyor) — yetki kontrolü burada
+// (requireEslesmeYetkisi) kasıtlı olarak yeniden tanımlı (yonetici/actions.ts'teki aynı desen,
 // bkz. oradaki gerekçe: service-role client RLS'i bypass ettiğinden bu
 // kontrol olmadan herhangi bir oturum açmış kullanıcı admin API'sini
 // tetikleyebilirdi).
@@ -11,6 +11,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { dershaneModeratorKurumu } from "@/lib/dershane-auth";
 import { ogretmenDenemeSonucuKaydet, yayineviAyniMi } from "@/lib/deneme-sonucu-kaydet";
 import { adlarBenzerMi } from "@/lib/ad-benzerligi";
 import { adNormalize } from "@/lib/validators";
@@ -18,13 +19,24 @@ import { eslestirilebilirMi, pdfEslesmeDurumEtiketi } from "@/lib/pdf-eslesme-du
 import type { PdfEslesmeDurumEtiketi, PdfEslesmeDurumu } from "@/lib/pdf-eslesme-durum";
 import type { DenemeTuru } from "@/lib/types";
 
-async function requireAdmin() {
+// Yetki: yönetici bütün kurumları görür (kurumFiltresi null); dershane
+// moderatörü (kullanıcı isteği 03.10.2026) yalnızca KENDİ kurumunun
+// satırlarını görür ve eşleştirir — kurum her zaman sunucuda
+// school_moderators kaydından okunur, istemciden gelen id'ye güvenilmez.
+async function requireEslesmeYetkisi(): Promise<{ user: { id: string }; admin: ReturnType<typeof createAdminClient>; kurumFiltresi: string | null }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/yonetici");
+  if (!user) redirect("/login");
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  if (profile?.role !== "admin") redirect("/");
-  return { supabase, user, admin: createAdminClient() };
+  if (profile?.role === "admin") return { user, admin: createAdminClient(), kurumFiltresi: null };
+  const moderator = await dershaneModeratorKurumu();
+  if (!moderator) redirect("/dashboard");
+  return { user, admin: moderator.admin, kurumFiltresi: moderator.schoolId };
+}
+
+function eslesmeYollariniYenile() {
+  revalidatePath("/yonetici");
+  revalidatePath("/moderator");
 }
 
 export interface PdfEslesmeBekleyeni {
@@ -53,10 +65,12 @@ export interface PdfEslesmeBekleyeni {
 const EKRAN_SATIR_SINIRI = 500;
 
 export async function pdfEslesmeBekleyenleriGetir(): Promise<{ error: string | null; bekleyenler: PdfEslesmeBekleyeni[]; kirpildi: boolean }> {
-  const { admin } = await requireAdmin();
-  const { data, error } = await admin
+  const { admin, kurumFiltresi } = await requireEslesmeYetkisi();
+  let sorgu = admin
     .from("pdf_deneme_eslesme_bekleyenler")
-    .select("id, ad_soyad_ham, ders_sonuclari, ogrenci_no, yayinevi, tarih, tur, school_id, durum, atanan_student_id, created_at, schools(ad)")
+    .select("id, ad_soyad_ham, ders_sonuclari, ogrenci_no, yayinevi, tarih, tur, school_id, durum, atanan_student_id, created_at, schools(ad)");
+  if (kurumFiltresi) sorgu = sorgu.eq("school_id", kurumFiltresi);
+  const { data, error } = await sorgu
     .order("created_at", { ascending: false })
     .limit(EKRAN_SATIR_SINIRI + 1);
   if (error) return { error: error.message, bekleyenler: [], kirpildi: false };
@@ -128,7 +142,8 @@ export async function pdfEslesmeOgrencileriGetir(
   schoolId: string,
   deneme?: { tarih: string; tur: string; yayinevi: string },
 ): Promise<{ error: string | null; ogrenciler: PdfEslesmeOgrencisi[] }> {
-  const { admin } = await requireAdmin();
+  const { admin, kurumFiltresi } = await requireEslesmeYetkisi();
+  if (kurumFiltresi && kurumFiltresi !== schoolId) return { error: "Bu kurumun öğrencilerini görme yetkiniz yok.", ogrenciler: [] };
   const { data, error } = await admin.from("students")
     .select("id, profiles!students_id_fkey(ad), classes(seviye, sube)").eq("school_id", schoolId);
   if (error) return { error: error.message, ogrenciler: [] };
@@ -157,7 +172,7 @@ export async function pdfEslesmeOgrencileriGetir(
 }
 
 export async function pdfEslesmeAta(id: string, studentId: string): Promise<{ error: string | null }> {
-  const { user, admin } = await requireAdmin();
+  const { user, admin, kurumFiltresi } = await requireEslesmeYetkisi();
   const { data: bekleyen, error: bulmaHatasi } = await admin
     .from("pdf_deneme_eslesme_bekleyenler")
     .select("*")
@@ -165,6 +180,7 @@ export async function pdfEslesmeAta(id: string, studentId: string): Promise<{ er
     .maybeSingle();
   if (bulmaHatasi) return { error: bulmaHatasi.message };
   if (!bekleyen) return { error: "Kayıt bulunamadı veya zaten işlenmiş." };
+  if (kurumFiltresi && bekleyen.school_id !== kurumFiltresi) return { error: "Bu kayıt kurumunuza ait değil." };
 
   const { data: hedefOgrenci, error: ogrenciHatasi } = await admin.from("students")
     .select("id, school_id").eq("id", studentId).maybeSingle();
@@ -210,15 +226,17 @@ export async function pdfEslesmeAta(id: string, studentId: string): Promise<{ er
     .update({ durum: "atandi", atanan_student_id: studentId }).eq("id", id);
   if (guncellemeHatasi) return { error: guncellemeHatasi.message };
   await admin.from("admin_audit_log").insert({ actor_id: user.id, eylem: "pdf_deneme_eslesme_ata", detay: { bekleyen_id: id, student_id: studentId } });
-  revalidatePath("/yonetici");
+  eslesmeYollariniYenile();
   return { error: null };
 }
 
 export async function pdfEslesmeReddet(id: string): Promise<{ error: string | null }> {
-  const { user, admin } = await requireAdmin();
-  const { error } = await admin.from("pdf_deneme_eslesme_bekleyenler").update({ durum: "reddedildi" }).eq("id", id).eq("durum", "bekliyor");
+  const { user, admin, kurumFiltresi } = await requireEslesmeYetkisi();
+  let guncelleme = admin.from("pdf_deneme_eslesme_bekleyenler").update({ durum: "reddedildi" }).eq("id", id).eq("durum", "bekliyor");
+  if (kurumFiltresi) guncelleme = guncelleme.eq("school_id", kurumFiltresi);
+  const { error } = await guncelleme;
   if (error) return { error: error.message };
   await admin.from("admin_audit_log").insert({ actor_id: user.id, eylem: "pdf_deneme_eslesme_reddet", detay: { bekleyen_id: id } });
-  revalidatePath("/yonetici");
+  eslesmeYollariniYenile();
   return { error: null };
 }

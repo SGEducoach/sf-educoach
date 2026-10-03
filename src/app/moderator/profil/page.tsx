@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Header } from "@/components/dashboard/Header";
 import { ModeratorProfilim } from "@/components/moderator/ModeratorProfilim";
-import { YonetimNavigasyonu } from "@/components/dashboard/YonetimNavigasyonu";
+import { ModeratorNavigasyonu } from "@/components/moderator/ModeratorNavigasyonu";
 import type { UserRole } from "@/lib/types";
 
 // Moderatörün kendi hesabını yönettiği sayfa — admin-override
@@ -15,7 +15,7 @@ export default async function ModeratorProfilPage() {
   if (!user) redirect("/login");
   const [{ data: profil }, { data: yetki }] = await Promise.all([
     supabase.from("profiles").select("ad, role").eq("id", user.id).maybeSingle(),
-    supabase.from("school_moderators").select("school_id").eq("profile_id", user.id).maybeSingle(),
+    supabase.from("school_moderators").select("school_id, schools(tur)").eq("profile_id", user.id).maybeSingle(),
   ]);
   if (!profil || !yetki) redirect("/dashboard");
 
@@ -23,7 +23,7 @@ export default async function ModeratorProfilPage() {
     <div className="flex min-h-screen flex-col">
       <Header ad={profil.ad} role={profil.role as UserRole} moderatorMu rolEtiketi="Moderatör" mobilNavigasyon={false} />
       <main id="ana-icerik" className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 px-4 py-7 pb-24 sm:px-6">
-        <YonetimNavigasyonu tur="moderator" aktif="profil" />
+        <ModeratorNavigasyonu aktif="profil" dershane={(yetki.schools as unknown as { tur: string } | null)?.tur === "dershane"} />
         <ModeratorProfilim />
       </main>
     </div>
