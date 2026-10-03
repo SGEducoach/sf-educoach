@@ -3529,7 +3529,7 @@ $$;
 revoke all on function public.aktif_gun_kaydet() from public, anon;
 grant execute on function public.aktif_gun_kaydet() to authenticated;
 
--- ============ Kuruma özel müfredat alt konuları (migration 0125) ============
+-- ============ Kuruma özel müfredat alt konuları (migration 0135) ============
 -- Moderatörün eklediği branş alt konuları yalnız kendi kurumunda görünür.
 create table if not exists public.kurum_mufredat_alt_konulari (
   id uuid primary key default gen_random_uuid(),
