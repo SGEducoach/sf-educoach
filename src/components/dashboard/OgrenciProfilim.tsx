@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { SifreDegistir } from "@/components/SifreDegistir";
+import { HesapBaglama } from "@/components/dashboard/HesapBaglama";
 import { AYT_ALAN_ETIKET } from "@/lib/types";
 import type { AytAlan } from "@/lib/types";
 import { alanSorulurMu, hedefEtiketi } from "@/lib/kademe";
@@ -18,11 +19,19 @@ import { BG1, BORDER, TEXT, TEXT_MUTED } from "@/lib/theme";
 // "Hedef bölüm" de "Hedef meslek" olur.
 export async function OgrenciProfilim({ userId, ad, kademe }: { userId: string; ad: string; kademe?: Kademe | null }) {
   const supabase = await createClient();
-  const { data: ogrenci } = await supabase
-    .from("students")
-    .select("okul_no, ayt_alan, hedef_bolum, classes(seviye, sube), schools(ad, tur)")
-    .eq("id", userId)
-    .maybeSingle();
+  const [{ data: ogrenci }, { data: baglantiHam }] = await Promise.all([
+    supabase
+      .from("students")
+      .select("okul_no, ayt_alan, hedef_bolum, classes(seviye, sube), schools(ad, tur)")
+      .eq("id", userId)
+      .maybeSingle(),
+    // Diğer kurumdaki hesapla bağlantı (migration 0136).
+    supabase.rpc("hesap_baglantim"),
+  ]);
+  const baglantiSatiri = (Array.isArray(baglantiHam) ? baglantiHam[0] : baglantiHam) as {
+    es_kurum: string | null; es_kurum_turu: string | null; baglanti_tarihi: string | null;
+    bekleyen_kod: string | null; kod_son_gecerlilik: string | null;
+  } | null | undefined;
 
   const sinif = ogrenci?.classes as unknown as { seviye: string; sube: string } | null;
   const okul = ogrenci?.schools as unknown as { ad: string; tur: string } | null;
@@ -59,6 +68,14 @@ export async function OgrenciProfilim({ userId, ad, kademe }: { userId: string; 
           ))}
         </dl>
       </div>
+
+      <HesapBaglama baglanti={{
+        esKurum: baglantiSatiri?.es_kurum ?? null,
+        esKurumTuru: baglantiSatiri?.es_kurum_turu ?? null,
+        baglantiTarihi: baglantiSatiri?.baglanti_tarihi ?? null,
+        bekleyenKod: baglantiSatiri?.bekleyen_kod ?? null,
+        kodSonGecerlilik: baglantiSatiri?.kod_son_gecerlilik ?? null,
+      }} />
 
       <SifreDegistir />
     </div>
