@@ -3553,7 +3553,7 @@ create policy "kurum_mufredat_alt_konulari_select" on public.kurum_mufredat_alt_
     or exists (select 1 from public.teachers t where t.id = auth.uid() and t.school_id = kurum_mufredat_alt_konulari.school_id)
     or exists (select 1 from public.school_moderators m where m.profile_id = auth.uid() and m.school_id = kurum_mufredat_alt_konulari.school_id)
   );
--- ============ Hata bildirimi yanıtları (migration 0137) ============
+-- ============ Hata bildirimi yanıtları (migration 0138) ============
 -- Eski kümülatif şema hata_bildirimleri tablosunu atlamıştı; yanıt tablosunun
 -- dış anahtarı için 0064'teki ana kayıt yapısı da burada bulunmalı.
 create table if not exists public.hata_bildirimleri (
