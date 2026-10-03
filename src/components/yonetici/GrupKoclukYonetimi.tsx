@@ -8,6 +8,7 @@ import {
 } from "@/app/yonetici/grup-actions";
 import { GRUP_KAPASITELERI } from "@/lib/grup-kocluk";
 import { BG0, BG1, BG1_ALT, BLUSH, BLUSH_BG, BORDER, BORDER_STRONG, BUTTER, BUTTER_BG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
+import { KurumSilmeButonu } from "@/components/yonetici/KurumSilmeButonu";
 
 // Grup Koçluk — Faz 2 (kullanıcı isteği ve kararları 18.09.2026): kurum
 // dışı koçlar için grup açma ve yönetme. Grup = dershanenin alt türü; koç
@@ -292,6 +293,7 @@ function GrupKarti({ grup: g, onDegisti, onKocBilgisi }: { grup: GrupSatiri; onD
         </button>
       </div>
       {hata && <p className="text-xs font-semibold" style={{ color: BLUSH }}>{hata}</p>}
+      <KurumSilmeButonu schoolId={g.id} onDeleted={onDegisti} />
     </div>
   );
 }

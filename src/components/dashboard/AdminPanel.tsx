@@ -24,6 +24,7 @@ import type { KurumSecimi } from "@/lib/kademe";
 import type { KurumKademesi, KurumTuru } from "@/lib/types";
 import { telefonSanitize, okulNoSanitize, TELEFON_IPUCU } from "@/lib/validators";
 import { ogrenciKaydiEslestir } from "@/lib/ogrenci-eslestirme";
+import { KurumSilmeButonu } from "@/components/yonetici/KurumSilmeButonu";
 
 interface OkulSatiri {
   id: string;
@@ -123,6 +124,7 @@ export function AdminPanel({
         {gorunenOkul && okulDuzenleAcik && (
           <OkulDuzenleFormu okul={gorunenOkul} onDone={() => setOkulDuzenleAcik(false)} />
         )}
+        {gorunenOkul && okulDuzenleAcik && <div className="mt-3"><KurumSilmeButonu schoolId={gorunenOkul.id} onDeleted={() => { setOkulDuzenleAcik(false); router.replace("/yonetici/okullar"); router.refresh(); }} /></div>}
 
         {!gorunenOkul ? (
           <p style={{ color: TEXT_MUTED }} className="text-sm py-4 text-center">Henüz kayıtlı okul yok.</p>
