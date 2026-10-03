@@ -5,6 +5,7 @@ import { AnaSayfa } from "@/components/AnaSayfa";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { anaSayfaAyarlariniGetir, anaSayfaSliderGorselleriGetir } from "@/lib/ana-sayfa";
 import { anaSayfaDuyurulariniGetir } from "@/lib/ana-sayfa-duyurulari";
+import { anaSayfaPanolariniGetir } from "@/lib/ana-sayfa-panolar";
 
 export const metadata: Metadata = {
   title: "SeFu Koç | YKS Hazırlık ve Öğrenci Takip Platformu",
@@ -34,14 +35,13 @@ export default async function Home() {
   const { data: { user } } = await supabase.auth.getUser();
   if (user) redirect("/dashboard");
 
-  // PANO ARTIK HERKESE ACIK SAYFADA YOK (02.10.2026): pano kuruma baglandi
-  // (migration 0134), bir kurumun panosunu giris yapmamis ziyaretciye
-  // gostermek o kurumun icerigini yayinlamak olurdu. Site duyurulari
-  // (ana_sayfa_duyurulari) burada kalmaya devam ediyor.
-  const [ayarlar, sliderGorselleri, duyurular] = await Promise.all([
+  // Kurum panolarındaki güncel ilanlar, kaynak kurum adıyla ana sayfada
+  // yayınlanır; pano yönetimi kurum yetkileriyle sınırlı kalır.
+  const [ayarlar, sliderGorselleri, duyurular, panoIlanlari] = await Promise.all([
     anaSayfaAyarlariniGetir(supabase),
     anaSayfaSliderGorselleriGetir(supabase),
     anaSayfaDuyurulariniGetir(supabase),
+    anaSayfaPanolariniGetir(),
   ]);
 
   // Kurumsal kimlik işaretlemesi (23.09.2026): Google'ın arama sonucunda
@@ -67,6 +67,7 @@ export default async function Home() {
         sliderGecisSaniye={ayarlar.sliderGecisSaniye}
         sliderGorselleri={sliderGorselleri}
         duyurular={duyurular}
+        panoIlanlari={panoIlanlari}
       />
       {/* Ölçüm etiketi yalnızca herkese açık sayfalarda — bkz. GoogleAnalytics */}
       <GoogleAnalytics />

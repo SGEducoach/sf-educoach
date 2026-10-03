@@ -1827,6 +1827,8 @@ export async function tgDenemeIlaniEkle(formData: FormData): Promise<{ error: st
   await auditLogYaz(supabase, user.id, "tg_deneme_ilani_ekle", { school_id: schoolId, dosya_yolu: dosyaYolu, dosya_tipi: dosyaTipi });
   revalidatePath("/dashboard", "layout");
   revalidatePath("/yonetici", "layout");
+  revalidateTag(ANA_SAYFA_ONBELLEK_ETIKETI, "max");
+  revalidatePath("/");
   return { error: null };
 }
 
@@ -1855,6 +1857,8 @@ export async function tgDenemeIlaniSil(id: string): Promise<{ error: string | nu
   await auditLogYaz(supabase, user.id, "tg_deneme_ilani_sil", { id, school_id: schoolId });
   revalidatePath("/dashboard", "layout");
   revalidatePath("/yonetici", "layout");
+  revalidateTag(ANA_SAYFA_ONBELLEK_ETIKETI, "max");
+  revalidatePath("/");
   return { error: null };
 }
 

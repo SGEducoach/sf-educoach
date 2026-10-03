@@ -148,6 +148,7 @@ export function TgDenemeYonetimi({ okullar = [] }: { okullar?: { id: string; ad:
           </label>
           {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
           {basari && <div style={{ color: MINT }} className="text-xs font-semibold">{basari}</div>}
+          <p className="text-xs leading-5" style={{ color: TEXT_MUTED }}>Paylaşımınız kurum panosunda ve herkese açık ana sayfada görünür.</p>
           <button type="submit" disabled={pending}
             className="sfec-btn self-start text-sm font-bold px-4 py-2.5 rounded-xl disabled:opacity-60"
             style={{ background: MINT, color: MINT_ON }}>
