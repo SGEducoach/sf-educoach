@@ -1,0 +1,348 @@
+{"kind":"deck","id":"pr/nbylxh","name":"Deck"}
+{"kind":"layout","layoutId":"baac82ee-23c9-407a-a95f-5ddb3bf5f337","name":"Master","type":"master"}
+{"kind":"layout","layoutId":"8dbd09c6-54e8-40b1-b1b2-6504ce03174c","name":"Title Slide","type":"title"}
+{"kind":"slide","id":"sl/qobw0t","slide":1,"title":"NOKTALAMA","textShapes":4}
+{"kind":"textbox","id":"sh/nylcza5k","slide":1,"text":"NOKTALAMA\nİŞARETLERİ","textPreview":"NOKTALAMA | İŞARETLERİ","textChars":20,"textLines":2,"bbox":[70,110,760,210]}
+{"kind":"textbox","id":"sh/ozut8fm5","slide":1,"text":"TDK yazım kurallarındaki açıklamaların tamamı","textPreview":"TDK yazım kurallarındaki açıklamaların tamamı","textChars":45,"textLines":1,"bbox":[74,342,760,56]}
+{"kind":"textbox","id":"sh/903u1kna","slide":1,"text":".  ,  ;  :  …  ?  !  —  /  “ ”  ( )  [ ]  ’","textPreview":".  ,  ;  :  …  ?  !  —  /  “ ”  ( )  [ ]  ’","textChars":43,"textLines":1,"bbox":[74,450,1120,82]}
+{"kind":"textbox","id":"sh/etsb254n","slide":1,"text":"Kurallar, uyarılar ve örnek kullanımlar","textPreview":"Kurallar, uyarılar ve örnek kullanımlar","textChars":39,"textLines":1,"bbox":[74,588,700,42]}
+{"kind":"notes","id":"nt/qobw0t","slide":1,"text":"Kaynak: https://tdk.gov.tr/icerik/yazim-kurallari/noktalama-isaretleri-aciklamalar/"}
+{"kind":"slide","id":"sl/oq0yjo","slide":2,"title":"Aa","textShapes":9}
+{"kind":"shape","id":"sh/mdkfm18b","slide":2,"bbox":[0,0,1280,22]}
+{"kind":"textbox","id":"sh/9gbexg72","slide":2,"text":"Aa","textPreview":"Aa","textChars":2,"textLines":1,"bbox":[54,44,124,104]}
+{"kind":"textbox","id":"sh/of2xobqh","slide":2,"text":"Noktalamanın temel ilkeleri","textPreview":"Noktalamanın temel ilkeleri","textChars":27,"textLines":1,"bbox":[202,50,940,80]}
+{"kind":"textbox","id":"sh/b2dwzqps","slide":2,"text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[1175,55,50,38]}
+{"kind":"textbox","id":"sh/ah4fql8n","slide":2,"text":"Türk Dil Kurumu • Noktalama İşaretleri","textPreview":"Türk Dil Kurumu • Noktalama İşaretleri","textChars":38,"textLines":1,"bbox":[54,681,800,20]}
+{"kind":"textbox","id":"sh/x4ve1g7y","slide":2,"text":"Aa","textPreview":"Aa","textChars":2,"textLines":1,"bbox":[960,400,250,190]}
+{"kind":"textbox","id":"sh/w3mxsvqd","slide":2,"text":"Noktalama; duygu ve düşünceyi açık anlatır, cümlenin yapısını ve duraklarını belirler.","textPreview":"Noktalama; duygu ve düşünceyi açık anlatır, cümlenin yapısını ve duraklarını belirler.","textChars":86,"textLines":1,"bbox":[70,160,1140,113.5]}
+{"kind":"textbox","id":"sh/rm9wnmpo","slide":2,"text":"Okumayı ve anlamayı kolaylaştırır; vurgu ve ton gibi söyleyiş özelliklerini gösterir.","textPreview":"Okumayı ve anlamayı kolaylaştırır; vurgu ve ton gibi söyleyiş özelliklerini gösterir.","textChars":85,"textLines":1,"bbox":[70,285.5,1140,113.5]}
+{"kind":"textbox","id":"sh/ql0veh83","slide":2,"text":"Nokta, virgül, noktalı virgül, iki nokta, üç nokta, soru, ünlem, tırnak, ayraç ve kesme işaretleri ilgili kelimeye bitişik yazılır.","textPreview":"Nokta, virgül, noktalı virgül, iki nokta, üç nokta, soru, ünlem, tırnak, ayraç ve kesme işaretleri ilgili kelimeye bitişik yazılır.","textChars":131,"textLines":1,"bbox":[70,411,1140,113.5]}
+{"kind":"textbox","id":"sh/8zy5kv6l","slide":2,"text":"Kesme dışındaki işaretlerden sonra bir harf boşluğu bırakılır.","textPreview":"Kesme dışındaki işaretlerden sonra bir harf boşluğu bırakılır.","textChars":62,"textLines":1,"bbox":[70,536.5,1140,113.5]}
+{"kind":"notes","id":"nt/oq0yjo","slide":2,"text":"Kaynak: https://tdk.gov.tr/icerik/yazim-kurallari/noktalama-isaretleri-aciklamalar/ (erişim: 28.09.2026)."}
+{"kind":"slide","id":"sl/akgc68","slide":3,"title":".","textShapes":10}
+{"kind":"shape","id":"sh/ilg7yh8r","slide":3,"bbox":[0,0,1280,22]}
+{"kind":"textbox","id":"sh/5o76twri","slide":3,"text":".","textPreview":".","textChars":1,"textLines":1,"bbox":[54,44,124,104]}
+{"kind":"textbox","id":"sh/knyp0rqx","slide":3,"text":"Nokta: cümle, kısaltma ve sıralama","textPreview":"Nokta: cümle, kısaltma ve sıralama","textChars":34,"textLines":1,"bbox":[202,50,940,80]}
+{"kind":"textbox","id":"sh/vi5on29g","slide":3,"text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[1175,55,50,38]}
+{"kind":"textbox","id":"sh/axw7ux8v","slide":3,"text":"Türk Dil Kurumu • Noktalama İşaretleri","textPreview":"Türk Dil Kurumu • Noktalama İşaretleri","textChars":38,"textLines":1,"bbox":[54,681,800,20]}
+{"kind":"textbox","id":"sh/xkn6pcr6","slide":3,"text":".","textPreview":".","textChars":1,"textLines":1,"bbox":[960,400,250,190]}
+{"kind":"textbox","id":"sh/wjepw7ql","slide":3,"text":"1. Cümlenin sonuna konur. Örnek: Türk Dil Kurumu, 1932 yılında kurulmuştur.","textPreview":"1. Cümlenin sonuna konur. Örnek: Türk Dil Kurumu, 1932 yılında kurulmuştur.","textChars":75,"textLines":1,"bbox":[70,160,1140,88.4]}
+{"kind":"textbox","id":"sh/fe98z69k","slide":3,"text":"2. Bazı kısaltmaların sonunda kullanılır: Alb., Dr., Prof., Cad., Sok., s., vb., İng.","textPreview":"2. Bazı kısaltmaların sonunda kullanılır: Alb., Dr., Prof., Cad., Sok., s., vb., İng.","textChars":85,"textLines":1,"bbox":[70,260.4,1140,88.4]}
+{"kind":"textbox","id":"sh/et07618z","slide":3,"text":"3. Sayılardan sonra sıra bildirir: 3., 15.; II. Mehmet, XV. yüzyıl, 4. Levent.","textPreview":"3. Sayılardan sonra sıra bildirir: 3., 15.; II. Mehmet, XV. yüzyıl, 4. Levent.","textChars":78,"textLines":1,"bbox":[70,360.8,1140,88.4]}
+{"kind":"textbox","id":"sh/grmdk76d","slide":3,"text":"4. Virgül veya çizgiyle sıralanan rakamlarda yalnız sonuncudan sonra konur: 3, 4 ve 7. maddeler; XII–XIV. yüzyıllar.","textPreview":"4. Virgül veya çizgiyle sıralanan rakamlarda yalnız sonuncudan sonra konur: 3, 4 ve 7. maddeler; XII–XIV. yüzyıllar.","textChars":116,"textLines":1,"bbox":[70,461.2,1140,88.4]}
+{"kind":"textbox","id":"sh/hcvudcny","slide":3,"text":"5. Maddeleri gösteren rakam ve harflerden sonra kullanılır: I., 1., A., a.","textPreview":"5. Maddeleri gösteren rakam ve harflerden sonra kullanılır: I., 1., A., a.","textChars":74,"textLines":1,"bbox":[70,561.6,1140,88.4]}
+{"kind":"notes","id":"nt/akgc68","slide":3,"text":"Kaynak: https://tdk.gov.tr/icerik/yazim-kurallari/noktalama-isaretleri-aciklamalar/ (erişim: 28.09.2026)."}
+{"kind":"slide","id":"sl/bnzcy0","slide":4,"title":".","textShapes":12}
+{"kind":"shape","id":"sh/4b2pcbuh","slide":4,"bbox":[0,0,1280,22]}
+{"kind":"textbox","id":"sh/3ato36dc","slide":4,"text":".","textPreview":".","textChars":1,"textLines":1,"bbox":[54,44,124,104]}
+{"kind":"textbox","id":"sh/29k7a1cr","slide":4,"text":"Nokta: tarih, saat, sayı ve teknik kullanım","textPreview":"Nokta: tarih, saat, sayı ve teknik kullanım","textChars":43,"textLines":1,"bbox":[202,50,940,80]}
+{"kind":"textbox","id":"sh/d0v69gve","slide":4,"text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[1175,55,50,38]}
+{"kind":"textbox","id":"sh/cfmpgbut","slide":4,"text":"Türk Dil Kurumu • Noktalama İşaretleri","textPreview":"Türk Dil Kurumu • Noktalama İşaretleri","textChars":38,"textLines":1,"bbox":[54,681,800,20]}
+{"kind":"textbox","id":"sh/redo7qd8","slide":4,"text":".","textPreview":".","textChars":1,"textLines":1,"bbox":[960,400,250,190]}
+{"kind":"textbox","id":"sh/qd47elcn","slide":4,"text":"6. Tarihte gün, ay ve yılı ayırır: 29.5.1453, 29.X.1923.","textPreview":"6. Tarihte gün, ay ve yılı ayırır: 29.5.1453, 29.X.1923.","textChars":56,"textLines":1,"bbox":[70,160,546,128.67]}
+{"kind":"textbox","id":"sh/14f6d0va","slide":4,"text":"7. Saat ve dakikayı ayırır: 09.15, 13.00, 17.30.","textPreview":"7. Saat ve dakikayı ayırır: 09.15, 13.00, 17.30.","textChars":48,"textLines":1,"bbox":[70,300.67,546,128.67]}
+{"kind":"textbox","id":"sh/036pkvup","slide":4,"text":"8. Kitap ve dergi künyelerinin sonuna konur.","textPreview":"8. Kitap ve dergi künyelerinin sonuna konur.","textChars":44,"textLines":1,"bbox":[70,441.33,546,128.67]}
+{"kind":"textbox","id":"sh/mporuxov","slide":4,"text":"9. Dört ve daha çok rakamlı sayıları üçlü gruplara ayırır: 1.000, 326.197, 49.750.812.","textPreview":"9. Dört ve daha çok rakamlı sayıları üçlü gruplara ayırır: 1.000, 326.197, 49.750.812.","textChars":86,"textLines":1,"bbox":[664,160,546,128.67]}
+{"kind":"textbox","id":"sh/nqxs325g","slide":4,"text":"10. Genel ağ adreslerinde kullanılır: tdk.gov.tr.","textPreview":"10. Genel ağ adreslerinde kullanılır: tdk.gov.tr.","textChars":49,"textLines":1,"bbox":[664,300.67,546,128.67]}
+{"kind":"textbox","id":"sh/or69w761","slide":4,"text":"11. Matematikte çarpma işareti yerine kullanılabilir: 4.5=20.","textPreview":"11. Matematikte çarpma işareti yerine kullanılabilir: 4.5=20.","textChars":61,"textLines":1,"bbox":[664,441.33,546,128.67]}
+{"kind":"textbox","id":"sh/9sfa5cnm","slide":4,"text":"UYARI  Ay adı yazıyla yazılırsa önce ve sonra nokta kullanılmaz: 29 Mayıs 1453.","textPreview":"UYARI  Ay adı yazıyla yazılırsa önce ve sonra nokta kullanılmaz: 29 Mayıs 1453.","textChars":79,"textLines":1,"bbox":[70,586,1140,74]}
+{"kind":"notes","id":"nt/bnzcy0","slide":4,"text":"Kaynak: https://tdk.gov.tr/icerik/yazim-kurallari/noktalama-isaretleri-aciklamalar/ (erişim: 28.09.2026)."}
+{"kind":"slide","id":"sl/hltny5","slide":5,"title":",","textShapes":10}
+{"kind":"shape","id":"sh/ah4vu1ob","slide":5,"bbox":[0,0,1280,22]}
+{"kind":"textbox","id":"sh/xkfe5g72","slide":5,"text":",","textPreview":",","textChars":1,"textLines":1,"bbox":[54,44,124,104]}
+{"kind":"textbox","id":"sh/wj6dwb6h","slide":5,"text":"Virgül: sıralama ve cümle yapısı","textPreview":"Virgül: sıralama ve cümle yapısı","textChars":32,"textLines":1,"bbox":[202,50,940,80]}
+{"kind":"textbox","id":"sh/nedcz6p0","slide":5,"text":"05","textPreview":"05","textChars":2,"textLines":1,"bbox":[1175,55,50,38]}
+{"kind":"textbox","id":"sh/md4vq1of","slide":5,"text":"Türk Dil Kurumu • Noktalama İşaretleri","textPreview":"Türk Dil Kurumu • Noktalama İşaretleri","textChars":38,"textLines":1,"bbox":[54,681,800,20]}
+{"kind":"textbox","id":"sh/9gvu1w7q","slide":5,"text":",","textPreview":",","textChars":1,"textLines":1,"bbox":[960,400,250,190]}
+{"kind":"textbox","id":"sh/8fmdsb6l","slide":5,"text":"1. Eş görevli kelime ve kelime gruplarını ayırır: sessiz dereler, solgun ağaçlar, sarı güller.","textPreview":"1. Eş görevli kelime ve kelime gruplarını ayırır: sessiz dereler, solgun ağaçlar, sarı güller.","textChars":94,"textLines":1,"bbox":[70,160,1140,88.4]}
+{"kind":"textbox","id":"sh/zatcvmpo","slide":5,"text":"2. Sıralı cümleleri ayırır: Umduk, bekledik, düşündük.","textPreview":"2. Sıralı cümleleri ayırır: Umduk, bekledik, düşündük.","textChars":54,"textLines":1,"bbox":[70,260.4,1140,88.4]}
+{"kind":"textbox","id":"sh/e9kvmh83","slide":5,"text":"3. Uzun cümlede yüklemden uzak düşen özneyi belirtir.","textPreview":"3. Uzun cümlede yüklemden uzak düşen özneyi belirtir.","textChars":53,"textLines":1,"bbox":[70,360.8,1140,88.4]}
+{"kind":"textbox","id":"sh/kr6x4z2t","slide":5,"text":"4. Ara söz ve ara cümlelerin başına ve sonuna konur.","textPreview":"4. Ara söz ve ara cümlelerin başına ve sonuna konur.","textChars":52,"textLines":1,"bbox":[70,461.2,1140,88.4]}
+{"kind":"textbox","id":"sh/lsfyx43e","slide":5,"text":"5. Anlamı güçlendiren tekrarların arasına konur: Akşam, yine akşam, yine akşam.","textPreview":"5. Anlamı güçlendiren tekrarların arasına konur: Akşam, yine akşam, yine akşam.","textChars":79,"textLines":1,"bbox":[70,561.6,1140,88.4]}
+{"kind":"notes","id":"nt/hltny5","slide":5,"text":"Kaynak: https://tdk.gov.tr/icerik/yazim-kurallari/noktalama-isaretleri-aciklamalar/ (erişim: 28.09.2026)."}
+{"kind":"slide","id":"sl/od2w32","slide":6,"title":",","textShapes":11}
+{"kind":"shape","id":"sh/90fmtsry","slide":6,"bbox":[0,0,1280,22]}
+{"kind":"textbox","id":"sh/mx43ixs7","slide":6,"text":",","textPreview":",","textChars":1,"textLines":1,"bbox":[54,44,124,104]}
+{"kind":"textbox","id":"sh/nyd4r29s","slide":6,"text":"Virgül: alıntı, konuşma ve hitap","textPreview":"Virgül: alıntı, konuşma ve hitap","textChars":32,"textLines":1,"bbox":[202,50,940,80]}
+{"kind":"textbox","id":"sh/wn6lo7a9","slide":6,"text":"06","textPreview":"06","textChars":2,"textLines":1,"bbox":[1175,55,50,38]}
+{"kind":"textbox","id":"sh/xofmxcru","slide":6,"text":"Türk Dil Kurumu • Noktalama İşaretleri","textPreview":"Türk Dil Kurumu • Noktalama İşaretleri","textChars":38,"textLines":1,"bbox":[54,681,800,20]}
+{"kind":"textbox","id":"sh/alo3mxsj","slide":6,"text":",","textPreview":",","textChars":1,"textLines":1,"bbox":[960,400,250,190]}
+{"kind":"textbox","id":"sh/vmx4v29o","slide":6,"text":"6. Tırnak içinde olmayan alıntı cümlesinden sonra konur: Adana’ya yarın gideceğim, dedi.","textPreview":"6. Tırnak içinde olmayan alıntı cümlesinden sonra konur: Adana’ya yarın gideceğim, dedi.","textChars":88,"textLines":1,"bbox":[70,160,546,155.33]}
+{"kind":"textbox","id":"sh/cr2lc3a5","slide":6,"text":"7. Konuşma çizgisinden sonraki alıntının bitimine konur: — Gidiyor musunuz, diye sordu.","textPreview":"7. Konuşma çizgisinden sonraki alıntının bitimine konur: — Gidiyor musunuz, diye sordu.","textChars":87,"textLines":1,"bbox":[70,327.33,546,155.33]}
+{"kind":"textbox","id":"sh/dsv2l8rq","slide":6,"text":"8. Edebî eserde konuşma bölümünden önceki ifadenin sonuna konur.","textPreview":"8. Edebî eserde konuşma bölümünden önceki ifadenin sonuna konur.","textChars":64,"textLines":1,"bbox":[70,494.67,546,155.33]}
+{"kind":"textbox","id":"sh/tcnadsfq","slide":6,"text":"9. Ret, kabul ve teşvik bildiren sözlerden sonra konur: Peki, gideriz. Haydi, geç kalıyoruz.","textPreview":"9. Ret, kabul ve teşvik bildiren sözlerden sonra konur: Peki, gideriz. Haydi, geç kalıyoruz.","textChars":92,"textLines":1,"bbox":[664,160,546,155.33]}
+{"kind":"textbox","id":"sh/8be9k7e5","slide":6,"text":"10. Yapı ve anlam bağını belirginleştirerek anlam karışıklığını önler.","textPreview":"10. Yapı ve anlam bağını belirginleştirerek anlam karışıklığını önler.","textChars":70,"textLines":1,"bbox":[664,327.33,546,155.33]}
+{"kind":"textbox","id":"sh/7alsb2x0","slide":6,"text":"11. Hitap sözlerinden sonra konur: Sayın Başkan, Sevgili Kardeşim,","textPreview":"11. Hitap sözlerinden sonra konur: Sayın Başkan, Sevgili Kardeşim,","textChars":66,"textLines":1,"bbox":[664,494.67,546,155.33]}
+{"kind":"notes","id":"nt/od2w32","slide":6,"text":"Kaynak: https://tdk.gov.tr/icerik/yazim-kurallari/noktalama-isaretleri-aciklamalar/ (erişim: 28.09.2026)."}
+{"kind":"slide","id":"sl/x8s4hd","slide":7,"title":",","textShapes":9}
+{"kind":"shape","id":"sh/v698jal0","slide":7,"bbox":[0,0,1280,22]}
+{"kind":"textbox","id":"sh/w7i9sfml","slide":7,"text":",","textPreview":",","textChars":1,"textLines":1,"bbox":[54,44,124,104]}
+{"kind":"textbox","id":"sh/h8rqlk3q","slide":7,"text":"Virgül: sayı, fiilimsi ve zamir","textPreview":"Virgül: sayı, fiilimsi ve zamir","textChars":31,"textLines":1,"bbox":[202,50,940,80]}
+{"kind":"textbox","id":"sh/mhgrm543","slide":7,"text":"07","textPreview":"07","textChars":2,"textLines":1,"bbox":[1175,55,50,38]}
+{"kind":"textbox","id":"sh/72p8falo","slide":7,"text":"Türk Dil Kurumu • Noktalama İşaretleri","textPreview":"Türk Dil Kurumu • Noktalama İşaretleri","textChars":38,"textLines":1,"bbox":[54,681,800,20]}
+{"kind":"textbox","id":"sh/83i9ofm9","slide":7,"text":",","textPreview":",","textChars":1,"textLines":1,"bbox":[960,400,250,190]}
+{"kind":"textbox","id":"sh/94rqh03u","slide":7,"text":"12. Ondalık kesri ayırır: 38,6; 0,45.","textPreview":"12. Ondalık kesri ayırır: 38,6; 0,45.","textChars":37,"textLines":1,"bbox":[70,160,1140,113.5]}
+{"kind":"textbox","id":"sh/6dkryp4n","slide":7,"text":"13. Art arda gelen zarf-fiil eki almış kelimelerden sonra konur: Bir karara varıp, arkadaşına bakarak konuştu.","textPreview":"13. Art arda gelen zarf-fiil eki almış kelimelerden sonra konur: Bir karara varıp, arkadaşına bakarak konuştu.","textChars":110,"textLines":1,"bbox":[70,285.5,1140,113.5]}
+{"kind":"textbox","id":"sh/rytsrul8","slide":7,"text":"14. Özne görevindeki bu, şu, o zamirlerinden sonra konur: Bu, benim gibi yazarlar için kolay olmaz.","textPreview":"14. Özne görevindeki bu, şu, o zamirlerinden sonra konur: Bu, benim gibi yazarlar için kolay olmaz.","textChars":99,"textLines":1,"bbox":[70,411,1140,113.5]}
+{"kind":"textbox","id":"sh/be18j29w","slide":7,"text":"15. Künyede yazar, eser, basımevi, yer ve yıl bilgilerini ayırır. Soyadı önceyse soyadından sonra da virgül gelir.","textPreview":"15. Künyede yazar, eser, basımevi, yer ve yıl bilgilerini ayırır. Soyadı önceyse soyadından sonra da virgül gelir.","textChars":114,"textLines":1,"bbox":[70,536.5,1140,113.5]}
+{"kind":"notes","id":"nt/x8s4hd","slide":7,"text":"Kaynak: https://tdk.gov.tr/icerik/yazim-kurallari/noktalama-isaretleri-aciklamalar/ (erişim: 28.09.2026)."}
+{"kind":"slide","id":"sl/udldz2","slide":8,"title":",","textShapes":11}
+{"kind":"shape","id":"sh/twfudc3a","slide":8,"bbox":[0,0,1280,22]}
+{"kind":"textbox","id":"sh/69ovixkj","slide":8,"text":",","textPreview":",","textChars":1,"textLines":1,"bbox":[54,44,124,104]}
+{"kind":"textbox","id":"sh/raxcb2l4","slide":8,"text":"Virgül: kullanılmadığı yerler","textPreview":"Virgül: kullanılmadığı yerler","textChars":29,"textLines":1,"bbox":[202,50,940,80]}
+{"kind":"textbox","id":"sh/47mdg72t","slide":8,"text":"08","textPreview":"08","textChars":2,"textLines":1,"bbox":[1175,55,50,38]}
+{"kind":"textbox","id":"sh/58vu9s3e","slide":8,"text":"Türk Dil Kurumu • Noktalama İşaretleri","textPreview":"Türk Dil Kurumu • Noktalama İşaretleri","textChars":38,"textLines":1,"bbox":[54,681,800,20]}
+{"kind":"textbox","id":"sh/i54vexkn","slide":8,"text":",","textPreview":",","textChars":1,"textLines":1,"bbox":[960,400,250,190]}
+{"kind":"textbox","id":"sh/j6dc72l8","slide":8,"text":"Tek bir zarf-fiil eki almış kelimeden sonra virgül konmaz.","textPreview":"Tek bir zarf-fiil eki almış kelimeden sonra virgül konmaz.","textChars":58,"textLines":1,"bbox":[70,160,546,155.33]}
+{"kind":"textbox","id":"sh/o3qdsr2x","slide":8,"text":"ve, veya, yahut, ya…ya bağlaçlarının önce ve sonuna virgül konmaz.","textPreview":"ve, veya, yahut, ya…ya bağlaçlarının önce ve sonuna virgül konmaz.","textChars":66,"textLines":1,"bbox":[70,327.33,546,155.33]}
+{"kind":"textbox","id":"sh/p4zelw3i","slide":8,"text":"Hem…hem, ya…ya, gerek…gerek, ister…ister, ne…ne gibi tekrarlı bağlaçların çevresinde kullanılmaz.","textPreview":"Hem…hem, ya…ya, gerek…gerek, ister…ister, ne…ne gibi tekrarlı bağlaçların çevresinde kullanılmaz.","textChars":97,"textLines":1,"bbox":[70,494.67,546,155.33]}
+{"kind":"textbox","id":"sh/1gzuxgzq","slide":8,"text":"Pekiştirme ve bağlama görevindeki da/de bağlacından sonra kullanılmaz.","textPreview":"Pekiştirme ve bağlama görevindeki da/de bağlacından sonra kullanılmaz.","textChars":70,"textLines":1,"bbox":[664,160,546,155.33]}
+{"kind":"textbox","id":"sh/0fqtoby5","slide":8,"text":"-ınca/-ince anlamındaki mı/mi ekinden sonra kullanılmaz.","textPreview":"-ınca/-ince anlamındaki mı/mi ekinden sonra kullanılmaz.","textChars":56,"textLines":1,"bbox":[664,327.33,546,155.33]}
+{"kind":"textbox","id":"sh/zexcv6hk","slide":8,"text":"Şart ekinden sonra virgül konmaz.","textPreview":"Şart ekinden sonra virgül konmaz.","textChars":33,"textLines":1,"bbox":[664,494.67,546,155.33]}
+{"kind":"notes","id":"nt/udldz2","slide":8,"text":"Kaynak: https://tdk.gov.tr/icerik/yazim-kurallari/noktalama-isaretleri-aciklamalar/ (erişim: 28.09.2026)."}
+{"kind":"slide","id":"sl/ws1vm1","slide":9,"title":";","textShapes":8}
+{"kind":"shape","id":"sh/vu5sraxw","slide":9,"bbox":[0,0,1280,22]}
+{"kind":"textbox","id":"sh/wvetkfeh","slide":9,"text":";","textPreview":";","textChars":1,"textLines":1,"bbox":[54,44,124,104]}
+{"kind":"textbox","id":"sh/xwnatkf2","slide":9,"text":"Noktalı virgül","textPreview":"Noktalı virgül","textChars":14,"textLines":1,"bbox":[202,50,940,80]}
+{"kind":"textbox","id":"sh/m5cre5wf","slide":9,"text":"09","textPreview":"09","textChars":2,"textLines":1,"bbox":[1175,55,50,38]}
+{"kind":"textbox","id":"sh/nqlsnqx0","slide":9,"text":"Türk Dil Kurumu • Noktalama İşaretleri","textPreview":"Türk Dil Kurumu • Noktalama İşaretleri","textChars":38,"textLines":1,"bbox":[54,681,800,20]}
+{"kind":"textbox","id":"sh/8ru9gvel","slide":9,"text":";","textPreview":";","textChars":1,"textLines":1,"bbox":[960,400,250,190]}
+{"kind":"textbox","id":"sh/9snap0f6","slide":9,"text":"1. Virgüllerle ayrılmış tür veya takımları ayırır: Türkiye, İngiltere, Azerbaycan; Ankara, Londra, Bakü.","textPreview":"1. Virgüllerle ayrılmış tür veya takımları ayırır: Türkiye, İngiltere, Azerbaycan; Ankara, Londra, Bakü.","textChars":104,"textLines":1,"bbox":[70,160,1140,155.33]}
+{"kind":"textbox","id":"sh/6lgbqpwj","slide":9,"text":"2. Kendi içinde virgül bulunan sıralı cümleleri ayırır: İçim içime sığmıyor; bağırmak, gülmek, ağlamak istiyorum.","textPreview":"2. Kendi içinde virgül bulunan sıralı cümleleri ayırır: İçim içime sığmıyor; bağırmak, gülmek, ağlamak istiyorum.","textChars":113,"textLines":1,"bbox":[70,327.33,1140,155.33]}
+{"kind":"textbox","id":"sh/7mpszud4","slide":9,"text":"3. İkiden fazla eş değer ögesi bulunan ve virgül içeren cümlede özneden sonra gelebilir: Yeni usul şiirimiz; zevksiz, köksüz, acemice görünüyordu.","textPreview":"3. İkiden fazla eş değer ögesi bulunan ve virgül içeren cümlede özneden sonra gelebilir: Yeni usul şiirimiz; zevksiz, köksüz, acemice gör...","textChars":146,"textLines":1,"bbox":[70,494.67,1140,155.33]}
+{"kind":"notes","id":"nt/ws1vm1","slide":9,"text":"Kaynak: https://tdk.gov.tr/icerik/yazim-kurallari/noktalama-isaretleri-aciklamalar/ (erişim: 28.09.2026)."}
+{"kind":"slide","id":"sl/ppurj0","slide":10,"title":":","textShapes":12}
+{"kind":"shape","id":"sh/xgrmpo7m","slide":10,"bbox":[0,0,1280,22]}
+{"kind":"textbox","id":"sh/ad03etov","slide":10,"text":":","textPreview":":","textChars":1,"textLines":1,"bbox":[54,44,124,104]}
+{"kind":"textbox","id":"sh/be94nypg","slide":10,"text":"İki nokta","textPreview":"İki nokta","textChars":9,"textLines":1,"bbox":[202,50,940,80]}
+{"kind":"textbox","id":"sh/kj25k36x","slide":10,"text":"10","textPreview":"10","textChars":2,"textLines":1,"bbox":[1175,55,50,38]}
+{"kind":"textbox","id":"sh/lkbmt87i","slide":10,"text":"Türk Dil Kurumu • Noktalama İşaretleri","textPreview":"Türk Dil Kurumu • Noktalama İşaretleri","textChars":38,"textLines":1,"bbox":[54,681,800,20]}
+{"kind":"textbox","id":"sh/yh0nito7","slide":10,"text":":","textPreview":":","textChars":1,"textLines":1,"bbox":[960,400,250,190]}
+{"kind":"textbox","id":"sh/ji94rypc","slide":10,"text":"1. Ardından örnek verilecek cümlenin sonuna konur.","textPreview":"1. Ardından örnek verilecek cümlenin sonuna konur.","textChars":50,"textLines":1,"bbox":[70,160,546,113.5]}
+{"kind":"textbox","id":"sh/0nyl8z6t","slide":10,"text":"2. Ardından açıklama verilecek cümlenin sonuna konur: Kendimi takdim edeyim: Meclis kâtiplerindenim.","textPreview":"2. Ardından açıklama verilecek cümlenin sonuna konur: Kendimi takdim edeyim: Meclis kâtiplerindenim.","textChars":100,"textLines":1,"bbox":[70,285.5,546,113.5]}
+{"kind":"textbox","id":"sh/1o7mh47e","slide":10,"text":"3. Ses bilgisinde uzun ünlüyü gösterir: a:ile, ka:til, usu:le, i:cat.","textPreview":"3. Ses bilgisinde uzun ünlüyü gösterir: a:ile, ka:til, usu:le, i:cat.","textChars":69,"textLines":1,"bbox":[70,411,546,113.5]}
+{"kind":"textbox","id":"sh/ho7alg3e","slide":10,"text":"4. Karşılıklı konuşmada konuşanın adından sonra konur: Bilge Kağan: Türklerim, işitin!","textPreview":"4. Karşılıklı konuşmada konuşanın adından sonra konur: Bilge Kağan: Türklerim, işitin!","textChars":86,"textLines":1,"bbox":[70,536.5,546,113.5]}
+{"kind":"textbox","id":"sh/wny9sbm9","slide":10,"text":"5. Edebî eserlerde konuşma bölümünden önceki ifadenin sonuna konur.","textPreview":"5. Edebî eserlerde konuşma bölümünden önceki ifadenin sonuna konur.","textChars":67,"textLines":1,"bbox":[664,160,546,155.33]}
+{"kind":"textbox","id":"sh/vmpsj6lo","slide":10,"text":"6. Genel ağ adreslerinde kullanılır: http://tdk.gov.tr.","textPreview":"6. Genel ağ adreslerinde kullanılır: http://tdk.gov.tr.","textChars":55,"textLines":1,"bbox":[664,327.33,546,155.33]}
+{"kind":"textbox","id":"sh/ulgrq143","slide":10,"text":"7. Matematikte bölme işareti olabilir: 56:8=7.","textPreview":"7. Matematikte bölme işareti olabilir: 56:8=7.","textChars":46,"textLines":1,"bbox":[664,494.67,546,155.33]}
+{"kind":"notes","id":"nt/ppurj0","slide":10,"text":"Kaynak: https://tdk.gov.tr/icerik/yazim-kurallari/noktalama-isaretleri-aciklamalar/ (erişim: 28.09.2026)."}
+{"kind":"slide","id":"sl/5trtzb","slide":11,"title":"…","textShapes":12}
+{"kind":"shape","id":"sh/nmlofm5g","slide":11,"bbox":[0,0,1280,22]}
+{"kind":"textbox","id":"sh/8nu58r61","slide":11,"text":"…","textPreview":"…","textChars":1,"textLines":1,"bbox":[54,44,124,104]}
+{"kind":"textbox","id":"sh/9o36hwnm","slide":11,"text":"Üç nokta","textPreview":"Üç nokta","textChars":8,"textLines":1,"bbox":[202,50,940,80]}
+{"kind":"textbox","id":"sh/upcna1o7","slide":11,"text":"11","textPreview":"11","textChars":2,"textLines":1,"bbox":[1175,55,50,38]}
+{"kind":"textbox","id":"sh/vqlojm5s","slide":11,"text":"Türk Dil Kurumu • Noktalama İşaretleri","textPreview":"Türk Dil Kurumu • Noktalama İşaretleri","textChars":38,"textLines":1,"bbox":[54,681,800,20]}
+{"kind":"textbox","id":"sh/wru5cr6x","slide":11,"text":"…","textPreview":"…","textChars":1,"textLines":1,"bbox":[960,400,250,190]}
+{"kind":"textbox","id":"sh/hs36lwni","slide":11,"text":"1. Anlatımca tamamlanmamış cümlenin sonuna konur.","textPreview":"1. Anlatımca tamamlanmamış cümlenin sonuna konur.","textChars":49,"textLines":1,"bbox":[70,160,546,128.67]}
+{"kind":"textbox","id":"sh/qt8nyxon","slide":11,"text":"2. Açık yazılmak istenmeyen kelime veya bölümün yerine kullanılır: b…","textPreview":"2. Açık yazılmak istenmeyen kelime veya bölümün yerine kullanılır: b…","textChars":69,"textLines":1,"bbox":[70,300.67,546,128.67]}
+{"kind":"textbox","id":"sh/bu147258","slide":11,"text":"3. Alıntıda alınmayan baş, orta veya son bölümlerin yerine konur.","textPreview":"3. Alıntıda alınmayan baş, orta veya son bölümlerin yerine konur.","textChars":65,"textLines":1,"bbox":[70,441.33,546,128.67]}
+{"kind":"textbox","id":"sh/7ul8ze1w","slide":11,"text":"4. Sözün kesildiğini, devamının hayale bırakıldığını gösterir veya anlatımı güçlendirir.","textPreview":"4. Sözün kesildiğini, devamının hayale bırakıldığını gösterir veya anlatımı güçlendirir.","textChars":88,"textLines":1,"bbox":[664,160,546,128.67]}
+{"kind":"textbox","id":"sh/6tc769kb","slide":11,"text":"5. Ünlem ve seslenmelerde anlatımı pekiştirir.","textPreview":"5. Ünlem ve seslenmelerde anlatımı pekiştirir.","textChars":46,"textLines":1,"bbox":[664,300.67,546,128.67]}
+{"kind":"textbox","id":"sh/twnq1oj2","slide":11,"text":"6. Karşılıklı konuşmada eksik veya yetersiz cevabı gösterir.","textPreview":"6. Karşılıklı konuşmada eksik veya yetersiz cevabı gösterir.","textChars":60,"textLines":1,"bbox":[664,441.33,546,128.67]}
+{"kind":"textbox","id":"sh/8vep8j2h","slide":11,"text":"UYARI  Ünlem ve soru işaretinden sonra üç nokta yerine iki nokta yeterlidir: !.. ?..  •  Üç nokta yerine iki veya daha çok nokta kullanılmaz.","textPreview":"UYARI  Ünlem ve soru işaretinden sonra üç nokta yerine iki nokta yeterlidir: !.. ?..  •  Üç nokta yerine iki veya daha çok nokta kullanıl...","textChars":141,"textLines":1,"bbox":[70,586,1140,74]}
+{"kind":"notes","id":"nt/5trtzb","slide":11,"text":"Kaynak: https://tdk.gov.tr/icerik/yazim-kurallari/noktalama-isaretleri-aciklamalar/ (erişim: 28.09.2026)."}
+{"kind":"slide","id":"sl/p18bfb","slide":12,"title":"?","textShapes":9}
+{"kind":"shape","id":"sh/hknmx8ne","slide":12,"bbox":[0,0,1280,22]}
+{"kind":"textbox","id":"sh/uxw3mt4n","slide":12,"text":"?","textPreview":"?","textChars":1,"textLines":1,"bbox":[54,44,124,104]}
+{"kind":"textbox","id":"sh/vi54vy58","slide":12,"text":"Soru işareti","textPreview":"Soru işareti","textChars":12,"textLines":1,"bbox":[202,50,940,80]}
+{"kind":"textbox","id":"sh/4nyls3mp","slide":12,"text":"12","textPreview":"12","textChars":2,"textLines":1,"bbox":[1175,55,50,38]}
+{"kind":"textbox","id":"sh/5o7m18na","slide":12,"text":"Türk Dil Kurumu • Noktalama İşaretleri","textPreview":"Türk Dil Kurumu • Noktalama İşaretleri","textChars":38,"textLines":1,"bbox":[54,681,800,20]}
+{"kind":"textbox","id":"sh/ilw3qd4z","slide":12,"text":"?","textPreview":"?","textChars":1,"textLines":1,"bbox":[960,400,250,190]}
+{"kind":"textbox","id":"sh/3m54zi54","slide":12,"text":"1. Soru eki veya soru sözü içeren cümle ve sözlerin sonuna konur.","textPreview":"1. Soru eki veya soru sözü içeren cümle ve sözlerin sonuna konur.","textChars":65,"textLines":1,"bbox":[70,160,1140,128.67]}
+{"kind":"textbox","id":"sh/srylwnm1","slide":12,"text":"2. Soru anlamı taşıyan, fakat soru eki veya sözü içermeyen cümlelerin sonuna konur: — Adınız?","textPreview":"2. Soru anlamı taşıyan, fakat soru eki veya sözü içermeyen cümlelerin sonuna konur: — Adınız?","textChars":93,"textLines":1,"bbox":[70,300.67,1140,128.67]}
+{"kind":"textbox","id":"sh/ds7m5snm","slide":12,"text":"3. Bilinmeyen, kesin olmayan veya şüpheli yer, tarih ve benzeri bilgilerde kullanılır: 1496 (?) yılında…","textPreview":"3. Bilinmeyen, kesin olmayan veya şüpheli yer, tarih ve benzeri bilgilerde kullanılır: 1496 (?) yılında…","textChars":104,"textLines":1,"bbox":[70,441.33,1140,128.67]}
+{"kind":"textbox","id":"sh/1kb2x4zm","slide":12,"text":"UYARI  mı/mi ekli yan cümle zarf tümleciyse cümlenin sonuna soru işareti gelmez: Akşam oldu mu sürüler döner.  •  Soru anlamlı sıralı ve bağlı cümlelerde işaret en sona konur.","textPreview":"UYARI  mı/mi ekli yan cümle zarf tümleciyse cümlenin sonuna soru işareti gelmez: Akşam oldu mu sürüler döner.  •  Soru anlamlı sıralı ve ...","textChars":175,"textLines":1,"bbox":[70,586,1140,74]}
+{"kind":"notes","id":"nt/p18bfb","slide":12,"text":"Kaynak: https://tdk.gov.tr/icerik/yazim-kurallari/noktalama-isaretleri-aciklamalar/ (erişim: 28.09.2026)."}
+{"kind":"slide","id":"sl/llu109","slide":13,"title":"!","textShapes":9}
+{"kind":"shape","id":"sh/1o76dsre","slide":13,"bbox":[0,0,1280,22]}
+{"kind":"textbox","id":"sh/elwnidsn","slide":13,"text":"!","textPreview":"!","textChars":1,"textLines":1,"bbox":[54,44,124,104]}
+{"kind":"textbox","id":"sh/fm5obi98","slide":13,"text":"Ünlem işareti","textPreview":"Ünlem işareti","textChars":13,"textLines":1,"bbox":[202,50,940,80]}
+{"kind":"textbox","id":"sh/orypo7ap","slide":13,"text":"13","textPreview":"13","textChars":2,"textLines":1,"bbox":[1175,55,50,38]}
+{"kind":"textbox","id":"sh/ps76hsra","slide":13,"text":"Türk Dil Kurumu • Noktalama İşaretleri","textPreview":"Türk Dil Kurumu • Noktalama İşaretleri","textChars":38,"textLines":1,"bbox":[54,681,800,20]}
+{"kind":"textbox","id":"sh/2pg7mxsj","slide":13,"text":"!","textPreview":"!","textChars":1,"textLines":1,"bbox":[960,400,250,190]}
+{"kind":"textbox","id":"sh/nqpof294","slide":13,"text":"1. Sevinç, kıvanç, acı, korku ve şaşma gibi duyguları anlatan cümle veya ibarelerin sonuna konur.","textPreview":"1. Sevinç, kıvanç, acı, korku ve şaşma gibi duyguları anlatan cümle veya ibarelerin sonuna konur.","textChars":97,"textLines":1,"bbox":[70,160,1140,128.67]}
+{"kind":"textbox","id":"sh/cvips7a1","slide":13,"text":"2. Seslenme, hitap ve uyarı sözlerinden sonra kullanılır: Dur, yolcu!","textPreview":"2. Seslenme, hitap ve uyarı sözlerinden sonra kullanılır: Dur, yolcu!","textChars":69,"textLines":1,"bbox":[70,300.67,1140,128.67]}
+{"kind":"textbox","id":"sh/xwr6lcr6","slide":13,"text":"3. Alay, kinaye veya küçümseme anlamı için ilgili sözden sonra yay ayraç içinde yazılır: akıllı (!).","textPreview":"3. Alay, kinaye veya küçümseme anlamı için ilgili sözden sonra yay ayraç içinde yazılır: akıllı (!).","textChars":100,"textLines":1,"bbox":[70,441.33,1140,128.67]}
+{"kind":"textbox","id":"sh/t4fatwr6","slide":13,"text":"UYARI  Seslenme ve hitap sözünün hemen ardından ya da cümlenin sonunda kullanılabilir.","textPreview":"UYARI  Seslenme ve hitap sözünün hemen ardından ya da cümlenin sonunda kullanılabilir.","textChars":86,"textLines":1,"bbox":[70,586,1140,74]}
+{"kind":"notes","id":"nt/llu109","slide":13,"text":"Kaynak: https://tdk.gov.tr/icerik/yazim-kurallari/noktalama-isaretleri-aciklamalar/ (erişim: 28.09.2026)."}
+{"kind":"slide","id":"sl/iyxbud","slide":14,"title":"-","textShapes":11}
+{"kind":"shape","id":"sh/hczmhgby","slide":14,"bbox":[0,0,1280,22]}
+{"kind":"textbox","id":"sh/u9836ls7","slide":14,"text":"-","textPreview":"-","textChars":1,"textLines":1,"bbox":[54,44,124,104]}
+{"kind":"textbox","id":"sh/fah4fqts","slide":14,"text":"Kısa çizgi: sözcük yapısı","textPreview":"Kısa çizgi: sözcük yapısı","textChars":25,"textLines":1,"bbox":[202,50,940,80]}
+{"kind":"textbox","id":"sh/s76l4bah","slide":14,"text":"14","textPreview":"14","textChars":2,"textLines":1,"bbox":[1175,55,50,38]}
+{"kind":"textbox","id":"sh/t8fmdgbm","slide":14,"text":"Türk Dil Kurumu • Noktalama İşaretleri","textPreview":"Türk Dil Kurumu • Noktalama İşaretleri","textChars":38,"textLines":1,"bbox":[54,681,800,20]}
+{"kind":"textbox","id":"sh/6lo321sb","slide":14,"text":"-","textPreview":"-","textChars":1,"textLines":1,"bbox":[960,400,250,190]}
+{"kind":"textbox","id":"sh/7mx4b6tw","slide":14,"text":"1. Satıra sığmayan kelime bölünürken satır sonuna konur.","textPreview":"1. Satıra sığmayan kelime bölünürken satır sonuna konur.","textChars":56,"textLines":1,"bbox":[70,160,546,155.33]}
+{"kind":"textbox","id":"sh/kj6l0ra5","slide":14,"text":"2. Ara söz ve ara cümlelerin başına ve sonuna bitişik yazılır: sürü -dört inekle birkaç koyun- köye girdi.","textPreview":"2. Ara söz ve ara cümlelerin başına ve sonuna bitişik yazılır: sürü -dört inekle birkaç koyun- köye girdi.","textChars":106,"textLines":1,"bbox":[70,327.33,546,155.33]}
+{"kind":"textbox","id":"sh/5kfm9wbq","slide":14,"text":"3. Kök, gövde ve ekleri ayırır: al-ış, gör-gü-süz-lük.","textPreview":"3. Kök, gövde ve ekleri ayırır: al-ış, gör-gü-süz-lük.","textChars":54,"textLines":1,"bbox":[70,494.67,546,155.33]}
+{"kind":"textbox","id":"sh/d0zyxsf2","slide":14,"text":"4. Fiil kök ve gövdelerini gösterir: al-, başar-, yazdır-.","textPreview":"4. Fiil kök ve gövdelerini gösterir: al-, başar-, yazdır-.","textChars":58,"textLines":1,"bbox":[664,160,546,155.33]}
+{"kind":"textbox","id":"sh/szqxonyx","slide":14,"text":"5. İsim yapma eklerinin başına; fiil yapma eklerinin başına ve sonuna konur: -lık, -la-, -tır-.","textPreview":"5. İsim yapma eklerinin başına; fiil yapma eklerinin başına ve sonuna konur: -lık, -la-, -tır-.","textChars":95,"textLines":1,"bbox":[664,327.33,546,155.33]}
+{"kind":"textbox","id":"sh/ryhgvixc","slide":14,"text":"6. Heceleri gösterir: a-raş-tır-ma, prog-ram.","textPreview":"6. Heceleri gösterir: a-raş-tır-ma, prog-ram.","textChars":45,"textLines":1,"bbox":[664,494.67,546,155.33]}
+{"kind":"notes","id":"nt/iyxbud","slide":14,"text":"Kaynak: https://tdk.gov.tr/icerik/yazim-kurallari/noktalama-isaretleri-aciklamalar/ (erişim: 28.09.2026)."}
+{"kind":"slide","id":"sl/4cib27","slide":15,"title":"-","textShapes":9}
+{"kind":"shape","id":"sh/pgrudcja","slide":15,"bbox":[0,0,1280,22]}
+{"kind":"textbox","id":"sh/2t0vixkz","slide":15,"text":"-","textPreview":"-","textChars":1,"textLines":1,"bbox":[54,44,124,104]}
+{"kind":"textbox","id":"sh/3e9cb214","slide":15,"text":"Kısa çizgi: aralık ve matematik","textPreview":"Kısa çizgi: aralık ve matematik","textChars":31,"textLines":1,"bbox":[202,50,940,80]}
+{"kind":"textbox","id":"sh/cj2do721","slide":15,"text":"15","textPreview":"15","textChars":2,"textLines":1,"bbox":[1175,55,50,38]}
+{"kind":"textbox","id":"sh/dkbuhcjm","slide":15,"text":"Türk Dil Kurumu • Noktalama İşaretleri","textPreview":"Türk Dil Kurumu • Noktalama İşaretleri","textChars":38,"textLines":1,"bbox":[54,681,800,20]}
+{"kind":"textbox","id":"sh/qhkvmhkv","slide":15,"text":"-","textPreview":"-","textChars":1,"textLines":1,"bbox":[960,400,250,190]}
+{"kind":"textbox","id":"sh/ritcfm1g","slide":15,"text":"7. “Arasında, ve, ile, ila, …-den …-e” anlamlarında kullanılır: Aydın-İzmir yolu, 09.30-10.30, 1914-1918.","textPreview":"7. “Arasında, ve, ile, ila, …-den …-e” anlamlarında kullanılır: Aydın-İzmir yolu, 09.30-10.30, 1914-1918.","textChars":105,"textLines":1,"bbox":[70,160,1140,128.67]}
+{"kind":"textbox","id":"sh/snytcn2h","slide":15,"text":"8. Matematikte çıkarma işaretidir: 50-20=30.","textPreview":"8. Matematikte çıkarma işaretidir: 50-20=30.","textChars":44,"textLines":1,"bbox":[70,300.67,1140,128.67]}
+{"kind":"textbox","id":"sh/to7u5sj2","slide":15,"text":"9. Sıfırdan küçük değerleri gösterir: -2 °C.","textPreview":"9. Sıfırdan küçük değerleri gösterir: -2 °C.","textChars":44,"textLines":1,"bbox":[70,441.33,1140,128.67]}
+{"kind":"textbox","id":"sh/l4buhwru","slide":15,"text":"UYARI  Sayı adlarının yinelenmesinde kısa çizgi kullanılmaz: on on beş yıl, üç beş kişi.","textPreview":"UYARI  Sayı adlarının yinelenmesinde kısa çizgi kullanılmaz: on on beş yıl, üç beş kişi.","textChars":88,"textLines":1,"bbox":[70,586,1140,74]}
+{"kind":"notes","id":"nt/4cib27","slide":15,"text":"Kaynak: https://tdk.gov.tr/icerik/yazim-kurallari/noktalama-isaretleri-aciklamalar/ (erişim: 28.09.2026)."}
+{"kind":"slide","id":"sl/2fsvpk","slide":16,"title":"—","textShapes":8}
+{"kind":"shape","id":"sh/610b6x8z","slide":16,"bbox":[0,0,1280,22]}
+{"kind":"textbox","id":"sh/t4ru1cra","slide":16,"text":"—","textPreview":"—","textChars":1,"textLines":1,"bbox":[54,44,124,104]}
+{"kind":"textbox","id":"sh/83it87qp","slide":16,"text":"Uzun çizgi","textPreview":"Uzun çizgi","textChars":10,"textLines":1,"bbox":[202,50,940,80]}
+{"kind":"textbox","id":"sh/je9cv298","slide":16,"text":"16","textPreview":"16","textChars":2,"textLines":1,"bbox":[1175,55,50,38]}
+{"kind":"textbox","id":"sh/ydgb2x8n","slide":16,"text":"Türk Dil Kurumu • Noktalama İşaretleri","textPreview":"Türk Dil Kurumu • Noktalama İşaretleri","textChars":38,"textLines":1,"bbox":[54,681,800,20]}
+{"kind":"textbox","id":"sh/lgruxsre","slide":16,"text":"—","textPreview":"—","textChars":1,"textLines":1,"bbox":[960,400,250,190]}
+{"kind":"textbox","id":"sh/kfit47qt","slide":16,"text":"Satır başına alınan konuşmaları gösterir; “konuşma çizgisi” adı da kullanılır.","textPreview":"Satır başına alınan konuşmaları gösterir; “konuşma çizgisi” adı da kullanılır.","textChars":78,"textLines":1,"bbox":[70,160,1140,155.33]}
+{"kind":"textbox","id":"sh/3atc7m9c","slide":16,"text":"Oyunlarda konuşanın adından sonra gelebilir: Sıtkı Bey — Kaleyi kurtarmak için…","textPreview":"Oyunlarda konuşanın adından sonra gelebilir: Sıtkı Bey — Kaleyi kurtarmak için…","textChars":79,"textLines":1,"bbox":[70,327.33,1140,155.33]}
+{"kind":"textbox","id":"sh/i9kbeh87","slide":16,"text":"Konuşmalar tırnak içinde verildiğinde uzun çizgi kullanılmaz.","textPreview":"Konuşmalar tırnak içinde verildiğinde uzun çizgi kullanılmaz.","textChars":61,"textLines":1,"bbox":[70,494.67,1140,155.33]}
+{"kind":"notes","id":"nt/2fsvpk","slide":16,"text":"Kaynak: https://tdk.gov.tr/icerik/yazim-kurallari/noktalama-isaretleri-aciklamalar/ (erişim: 28.09.2026)."}
+{"kind":"slide","id":"sl/du6rfs","slide":17,"title":"/","textShapes":12}
+{"kind":"shape","id":"sh/6pgj2h4z","slide":17,"bbox":[0,0,1280,22]}
+{"kind":"textbox","id":"sh/ts7ixc3a","slide":17,"text":"/","textPreview":"/","textChars":1,"textLines":1,"bbox":[54,44,124,104]}
+{"kind":"textbox","id":"sh/sry14725","slide":17,"text":"Eğik çizgi","textPreview":"Eğik çizgi","textChars":10,"textLines":1,"bbox":[202,50,940,80]}
+{"kind":"textbox","id":"sh/fup0zmlg","slide":17,"text":"17","textPreview":"17","textChars":2,"textLines":1,"bbox":[1175,55,50,38]}
+{"kind":"textbox","id":"sh/utgj6hkv","slide":17,"text":"Türk Dil Kurumu • Noktalama İşaretleri","textPreview":"Türk Dil Kurumu • Noktalama İşaretleri","textChars":38,"textLines":1,"bbox":[54,681,800,20]}
+{"kind":"textbox","id":"sh/hwri1w3m","slide":17,"text":"/","textPreview":"/","textChars":1,"textLines":1,"bbox":[960,400,250,190]}
+{"kind":"textbox","id":"sh/gvi18r21","slide":17,"text":"1. Dizeler yan yana yazıldığında aralarına konur.","textPreview":"1. Dizeler yan yana yazıldığında aralarına konur.","textChars":49,"textLines":1,"bbox":[70,160,546,113.5]}
+{"kind":"textbox","id":"sh/3y9k3mls","slide":17,"text":"2. Adreste apartman ile daire numarasını; semt ile şehir adını ayırır: No.: 21/6 Kurtuluş / ANKARA.","textPreview":"2. Adreste apartman ile daire numarasını; semt ile şehir adını ayırır: No.: 21/6 Kurtuluş / ANKARA.","textChars":99,"textLines":1,"bbox":[70,285.5,546,113.5]}
+{"kind":"textbox","id":"sh/2x0ja1k7","slide":17,"text":"3. Tarihte gün, ay ve yılı ayırır: 18/11/1969, 15/IX/1994.","textPreview":"3. Tarihte gün, ay ve yılı ayırır: 18/11/1969, 15/IX/1994.","textChars":58,"textLines":1,"bbox":[70,411,546,113.5]}
+{"kind":"textbox","id":"sh/oz2d4v6l","slide":17,"text":"4. Dil bilgisinde eklerin farklı biçimlerini gösterir: -a/-e, -lık/-lik.","textPreview":"4. Dil bilgisinde eklerin farklı biçimlerini gösterir: -a/-e, -lık/-lik.","textChars":72,"textLines":1,"bbox":[70,536.5,546,113.5]}
+{"kind":"textbox","id":"sh/90bux0n6","slide":17,"text":"5. Genel ağ adreslerinde kullanılır.","textPreview":"5. Genel ağ adreslerinde kullanılır.","textChars":36,"textLines":1,"bbox":[664,160,546,155.33]}
+{"kind":"textbox","id":"sh/mx0b25of","slide":17,"text":"6. Matematikte bölme işaretidir: 70/2=35.","textPreview":"6. Matematikte bölme işaretidir: 70/2=35.","textChars":41,"textLines":1,"bbox":[664,327.33,546,155.33]}
+{"kind":"textbox","id":"sh/ny9cvq50","slide":17,"text":"7. Birimler arası oranı boşluksuz gösterir: g/sn.","textPreview":"7. Birimler arası oranı boşluksuz gösterir: g/sn.","textChars":49,"textLines":1,"bbox":[664,494.67,546,155.33]}
+{"kind":"notes","id":"nt/du6rfs","slide":17,"text":"Kaynak: https://tdk.gov.tr/icerik/yazim-kurallari/noktalama-isaretleri-aciklamalar/ (erişim: 28.09.2026)."}
+{"kind":"slide","id":"sl/2uxdbp","slide":18,"title":"\\","textShapes":7}
+{"kind":"shape","id":"sh/buxcra58","slide":18,"bbox":[0,0,1280,22]}
+{"kind":"textbox","id":"sh/wv6t0fmd","slide":18,"text":"\\","textPreview":"\\","textChars":1,"textLines":1,"bbox":[54,44,124,104]}
+{"kind":"textbox","id":"sh/xwfutkny","slide":18,"text":"Ters eğik çizgi","textPreview":"Ters eğik çizgi","textChars":15,"textLines":1,"bbox":[202,50,940,80]}
+{"kind":"textbox","id":"sh/yxob254j","slide":18,"text":"18","textPreview":"18","textChars":2,"textLines":1,"bbox":[1175,55,50,38]}
+{"kind":"textbox","id":"sh/jyhcva54","slide":18,"text":"Türk Dil Kurumu • Noktalama İşaretleri","textPreview":"Türk Dil Kurumu • Noktalama İşaretleri","textChars":38,"textLines":1,"bbox":[54,681,800,20]}
+{"kind":"textbox","id":"sh/kzqt4fmp","slide":18,"text":"\\","textPreview":"\\","textChars":1,"textLines":1,"bbox":[960,400,250,190]}
+{"kind":"textbox","id":"sh/l0zuxkna","slide":18,"text":"Bilişim uygulamalarında art arda gelen dizinleri birbirinden ayırır.","textPreview":"Bilişim uygulamalarında art arda gelen dizinleri birbirinden ayırır.","textChars":68,"textLines":1,"bbox":[70,160,1140,239]}
+{"kind":"textbox","id":"sh/6l8v6p4v","slide":18,"text":"Örnek: C:\\Belgelerim\\Türk İşaret Dili\\Kitapçık.indd","textPreview":"Örnek: C:\\Belgelerim\\Türk İşaret Dili\\Kitapçık.indd","textChars":51,"textLines":1,"bbox":[70,411,1140,239]}
+{"kind":"notes","id":"nt/2uxdbp","slide":18,"text":"Kaynak: https://tdk.gov.tr/icerik/yazim-kurallari/noktalama-isaretleri-aciklamalar/ (erişim: 28.09.2026)."}
+{"kind":"slide","id":"sl/wjx7tp","slide":19,"title":"“ ”","textShapes":10}
+{"kind":"shape","id":"sh/6lsfet8z","slide":19,"bbox":[0,0,1280,22]}
+{"kind":"textbox","id":"sh/tojy98rq","slide":19,"text":"“ ”","textPreview":"“ ”","textChars":3,"textLines":1,"bbox":[54,44,124,104]}
+{"kind":"textbox","id":"sh/snaxg3q5","slide":19,"text":"Tırnak işareti","textPreview":"Tırnak işareti","textChars":14,"textLines":1,"bbox":[202,50,940,80]}
+{"kind":"textbox","id":"sh/jy1w3y9o","slide":19,"text":"19","textPreview":"19","textChars":2,"textLines":1,"bbox":[1175,55,50,38]}
+{"kind":"textbox","id":"sh/ix8fat83","slide":19,"text":"Türk Dil Kurumu • Noktalama İşaretleri","textPreview":"Türk Dil Kurumu • Noktalama İşaretleri","textChars":38,"textLines":1,"bbox":[54,681,800,20]}
+{"kind":"textbox","id":"sh/5kje58re","slide":19,"text":"“ ”","textPreview":"“ ”","textChars":3,"textLines":1,"bbox":[960,400,250,190]}
+{"kind":"textbox","id":"sh/kzaxc3qt","slide":19,"text":"1. Başka bir kişiden veya yazıdan olduğu gibi aktarılan sözleri içine alır.","textPreview":"1. Başka bir kişiden veya yazıdan olduğu gibi aktarılan sözleri içine alır.","textChars":75,"textLines":1,"bbox":[70,160,1140,93.5]}
+{"kind":"textbox","id":"sh/3ulgfi9s","slide":19,"text":"2. Özel olarak vurgulanmak istenen sözleri gösterir: yeni bir “barış taarruzu”.","textPreview":"2. Özel olarak vurgulanmak istenen sözleri gösterir: yeni bir “barış taarruzu”.","textChars":79,"textLines":1,"bbox":[70,265.5,1140,93.5]}
+{"kind":"textbox","id":"sh/2tcfmx87","slide":19,"text":"3. Cümle içinde eser, yazı ve bölüm adlarını gösterir: “Kendi Gök Kubbemiz”, “Yazım Kuralları”.","textPreview":"3. Cümle içinde eser, yazı ve bölüm adlarını gösterir: “Kendi Gök Kubbemiz”, “Yazım Kuralları”.","textChars":95,"textLines":1,"bbox":[70,371,1140,93.5]}
+{"kind":"textbox","id":"sh/8vul83qp","slide":19,"text":"4. Bilimsel çalışmalarda künye verilirken makale adları tırnak içinde yazılır.","textPreview":"4. Bilimsel çalışmalarda künye verilirken makale adları tırnak içinde yazılır.","textChars":78,"textLines":1,"bbox":[70,476.5,1140,93.5]}
+{"kind":"textbox","id":"sh/tw3mh87a","slide":19,"text":"UYARI  Alıntının sonundaki işaretler tırnak içinde kalır.  •  Tırnaklı söze gelen ek için kesme kullanılmaz: “Bit Palas”ını.  •  Vurgulanan sözler ve eser adları eğik yazıyla da gösterilebilir.","textPreview":"UYARI  Alıntının sonundaki işaretler tırnak içinde kalır.  •  Tırnaklı söze gelen ek için kesme kullanılmaz: “Bit Palas”ını.  •  Vurgulan...","textChars":193,"textLines":1,"bbox":[70,586,1140,74]}
+{"kind":"notes","id":"nt/wjx7tp","slide":19,"text":"Kaynak: https://tdk.gov.tr/icerik/yazim-kurallari/noktalama-isaretleri-aciklamalar/ (erişim: 28.09.2026)."}
+{"kind":"slide","id":"sl/xmvedn","slide":20,"title":"‘ ’","textShapes":8}
+{"kind":"shape","id":"sh/adcjals3","slide":20,"bbox":[0,0,1280,22]}
+{"kind":"textbox","id":"sh/x03250ru","slide":20,"text":"‘ ’","textPreview":"‘ ’","textChars":3,"textLines":1,"bbox":[54,44,124,104]}
+{"kind":"textbox","id":"sh/czu1cva9","slide":20,"text":"Tek tırnak ve denden","textPreview":"Tek tırnak ve denden","textChars":20,"textLines":1,"bbox":[202,50,940,80]}
+{"kind":"textbox","id":"sh/na1kzq9c","slide":20,"text":"20","textPreview":"20","textChars":2,"textLines":1,"bbox":[1175,55,50,38]}
+{"kind":"textbox","id":"sh/29sj6lsr","slide":20,"text":"Türk Dil Kurumu • Noktalama İşaretleri","textPreview":"Türk Dil Kurumu • Noktalama İşaretleri","textChars":38,"textLines":1,"bbox":[54,681,800,20]}
+{"kind":"textbox","id":"sh/pcj21gri","slide":20,"text":"‘ ’","textPreview":"‘ ’","textChars":3,"textLines":1,"bbox":[960,400,250,190]}
+{"kind":"textbox","id":"sh/oba18bax","slide":20,"text":"Tek tırnak, tırnak içindeki cümlede yeniden tırnağa alınması gereken söz veya ibareyi gösterir.","textPreview":"Tek tırnak, tırnak içindeki cümlede yeniden tırnağa alınması gereken söz veya ibareyi gösterir.","textChars":95,"textLines":1,"bbox":[70,160,1140,155.33]}
+{"kind":"textbox","id":"sh/765kba9w","slide":20,"text":"Örnek: “Şiirler içinde ‘Han Duvarları’ gibisi var mı?”","textPreview":"Örnek: “Şiirler içinde ‘Han Duvarları’ gibisi var mı?”","textChars":54,"textLines":1,"bbox":[70,327.33,1140,155.33]}
+{"kind":"textbox","id":"sh/m5w3i5sb","slide":20,"text":"Denden işareti (“), bir çizelgede alt alta gelen aynı söz, söz grubu veya sayının tekrar yazılmasını önler.","textPreview":"Denden işareti (“), bir çizelgede alt alta gelen aynı söz, söz grubu veya sayının tekrar yazılmasını önler.","textChars":107,"textLines":1,"bbox":[70,494.67,1140,155.33]}
+{"kind":"notes","id":"nt/xmvedn","slide":20,"text":"Kaynak: https://tdk.gov.tr/icerik/yazim-kurallari/noktalama-isaretleri-aciklamalar/ (erişim: 28.09.2026)."}
+{"kind":"slide","id":"sl/v12duv","slide":21,"title":"( )","textShapes":9}
+{"kind":"shape","id":"sh/6107q587","slide":21,"bbox":[0,0,1280,22]}
+{"kind":"textbox","id":"sh/t4r6l07y","slide":21,"text":"( )","textPreview":"( )","textChars":3,"textLines":1,"bbox":[54,44,124,104]}
+{"kind":"textbox","id":"sh/s3ipsv6d","slide":21,"text":"Yay ayraç: ek bilgi ve kaynak","textPreview":"Yay ayraç: ek bilgi ve kaynak","textChars":29,"textLines":1,"bbox":[202,50,940,80]}
+{"kind":"textbox","id":"sh/f69onapo","slide":21,"text":"21","textPreview":"21","textChars":2,"textLines":1,"bbox":[1175,55,50,38]}
+{"kind":"textbox","id":"sh/e507u5oj","slide":21,"text":"Türk Dil Kurumu • Noktalama İşaretleri","textPreview":"Türk Dil Kurumu • Noktalama İşaretleri","textChars":38,"textLines":1,"bbox":[54,681,800,20]}
+{"kind":"textbox","id":"sh/18r6pk7u","slide":21,"text":"( )","textPreview":"( )","textChars":3,"textLines":1,"bbox":[960,400,250,190]}
+{"kind":"textbox","id":"sh/07ipwf69","slide":21,"text":"1. Cümlenin anlamını tamamlayan, fakat cümle dışında kalan ek bilgiyi gösterir. Ayraç içindeki yargı uygun işaretle biter.","textPreview":"1. Cümlenin anlamını tamamlayan, fakat cümle dışında kalan ek bilgiyi gösterir. Ayraç içindeki yargı uygun işaretle biter.","textChars":122,"textLines":1,"bbox":[70,160,1140,113.5]}
+{"kind":"textbox","id":"sh/natorup0","slide":21,"text":"2. Özel veya cins isme ait ek ayraçtan önce yazılır: Yunus Emre’nin (1240?-1320).","textPreview":"2. Özel veya cins isme ait ek ayraçtan önce yazılır: Yunus Emre’nin (1240?-1320).","textChars":81,"textLines":1,"bbox":[70,285.5,1140,113.5]}
+{"kind":"textbox","id":"sh/29k7ypof","slide":21,"text":"3. Tiyatro ve senaryoda konuşanın hareket ve durumunu açıklar.","textPreview":"3. Tiyatro ve senaryoda konuşanın hareket ve durumunu açıklar.","textChars":62,"textLines":1,"bbox":[70,411,1140,113.5]}
+{"kind":"textbox","id":"sh/8ze1snmh","slide":21,"text":"4. Alıntının kaynağını, yazarını veya künye bilgisini gösterir.","textPreview":"4. Alıntının kaynağını, yazarını veya künye bilgisini gösterir.","textChars":63,"textLines":1,"bbox":[70,536.5,1140,113.5]}
+{"kind":"notes","id":"nt/v12duv","slide":21,"text":"Kaynak: https://tdk.gov.tr/icerik/yazim-kurallari/noktalama-isaretleri-aciklamalar/ (erişim: 28.09.2026)."}
+{"kind":"slide","id":"sl/d4moyk","slide":22,"title":"( )","textShapes":9}
+{"kind":"shape","id":"sh/il0ze5k7","slide":22,"bbox":[0,0,1280,22]}
+{"kind":"textbox","id":"sh/5orypkjy","slide":22,"text":"( )","textPreview":"( )","textChars":3,"textLines":1,"bbox":[54,44,124,104]}
+{"kind":"textbox","id":"sh/4nihgf2d","slide":22,"text":"Yay ayraç: eksiltme ve işaretler","textPreview":"Yay ayraç: eksiltme ve işaretler","textChars":32,"textLines":1,"bbox":[202,50,940,80]}
+{"kind":"textbox","id":"sh/rq90ru14","slide":22,"text":"22","textPreview":"22","textChars":2,"textLines":1,"bbox":[1175,55,50,38]}
+{"kind":"textbox","id":"sh/6p0zipkj","slide":22,"text":"Türk Dil Kurumu • Noktalama İşaretleri","textPreview":"Türk Dil Kurumu • Noktalama İşaretleri","textChars":38,"textLines":1,"bbox":[54,681,800,20]}
+{"kind":"textbox","id":"sh/tcbit4ju","slide":22,"text":"( )","textPreview":"( )","textChars":3,"textLines":1,"bbox":[960,400,250,190]}
+{"kind":"textbox","id":"sh/sbihkzi9","slide":22,"text":"5. Alıntıda çıkarılan bölümün yerine konan üç nokta yay ayraç içine alınabilir: (…).","textPreview":"5. Alıntıda çıkarılan bölümün yerine konan üç nokta yay ayraç içine alınabilir: (…).","textChars":84,"textLines":1,"bbox":[70,160,1140,113.5]}
+{"kind":"textbox","id":"sh/7upgfq1k","slide":22,"text":"6. Alay, kinaye veya küçümseme bildiren ünlem yay ayraç içine alınır: (!).","textPreview":"6. Alay, kinaye veya küçümseme bildiren ünlem yay ayraç içine alınır: (!).","textChars":74,"textLines":1,"bbox":[70,285.5,1140,113.5]}
+{"kind":"textbox","id":"sh/mtgz6lkz","slide":22,"text":"7. Şüpheli veya kesin olmayan bilgi için soru işareti yay ayraç içine alınır: (?).","textPreview":"7. Şüpheli veya kesin olmayan bilgi için soru işareti yay ayraç içine alınır: (?).","textChars":82,"textLines":1,"bbox":[70,411,1140,113.5]}
+{"kind":"textbox","id":"sh/s765w3eh","slide":22,"text":"8. Maddeleri gösteren sayı ve harflerden sonra kapama ayracı kullanılır: I), 1), A), a).","textPreview":"8. Maddeleri gösteren sayı ve harflerden sonra kapama ayracı kullanılır: I), 1), A), a).","textChars":88,"textLines":1,"bbox":[70,536.5,1140,113.5]}
+{"kind":"notes","id":"nt/d4moyk","slide":22,"text":"Kaynak: https://tdk.gov.tr/icerik/yazim-kurallari/noktalama-isaretleri-aciklamalar/ (erişim: 28.09.2026)."}
+{"kind":"slide","id":"sl/d7qert","slide":23,"title":"[ ]","textShapes":8}
+{"kind":"shape","id":"sh/1cre1ofa","slide":23,"bbox":[0,0,1280,22]}
+{"kind":"textbox","id":"sh/e90vq9gj","slide":23,"text":"[ ]","textPreview":"[ ]","textChars":3,"textLines":1,"bbox":[54,44,124,104]}
+{"kind":"textbox","id":"sh/za9wzex4","slide":23,"text":"Köşeli ayraç","textPreview":"Köşeli ayraç","textChars":12,"textLines":1,"bbox":[202,50,940,80]}
+{"kind":"textbox","id":"sh/c7ydojyd","slide":23,"text":"23","textPreview":"23","textChars":2,"textLines":1,"bbox":[1175,55,50,38]}
+{"kind":"textbox","id":"sh/d87exofy","slide":23,"text":"Türk Dil Kurumu • Noktalama İşaretleri","textPreview":"Türk Dil Kurumu • Noktalama İşaretleri","textChars":38,"textLines":1,"bbox":[54,681,800,20]}
+{"kind":"textbox","id":"sh/qlgvm9gn","slide":23,"text":"[ ]","textPreview":"[ ]","textChars":3,"textLines":1,"bbox":[960,400,250,190]}
+{"kind":"textbox","id":"sh/r6pwvexs","slide":23,"text":"1. Ayraç içinde yeniden ayraç gerektiğinde, yay ayraçtan önce köşeli ayraç kullanılır: [Cevat Şakir Kabaağaçlı (1886-1973)].","textPreview":"1. Ayraç içinde yeniden ayraç gerektiğinde, yay ayraçtan önce köşeli ayraç kullanılır: [Cevat Şakir Kabaağaçlı (1886-1973)].","textChars":124,"textLines":1,"bbox":[70,160,1140,155.33]}
+{"kind":"textbox","id":"sh/4jydkzyh","slide":23,"text":"2. Aktarma, çeviri ve alıntıda çalışmayı yapanın eklediği sözleri gösterir: fark[ın], çık[tığını].","textPreview":"2. Aktarma, çeviri ve alıntıda çalışmayı yapanın eklediği sözleri gösterir: fark[ın], çık[tığını].","textChars":98,"textLines":1,"bbox":[70,327.33,1140,155.33]}
+{"kind":"textbox","id":"sh/pk7et4f2","slide":23,"text":"3. Kaynak künyesinde bazı tamamlayıcı ayrıntıları gösterir: Reşat Nuri [Güntekin].","textPreview":"3. Kaynak künyesinde bazı tamamlayıcı ayrıntıları gösterir: Reşat Nuri [Güntekin].","textChars":82,"textLines":1,"bbox":[70,494.67,1140,155.33]}
+{"kind":"notes","id":"nt/d7qert","slide":23,"text":"Kaynak: https://tdk.gov.tr/icerik/yazim-kurallari/noktalama-isaretleri-aciklamalar/ (erişim: 28.09.2026)."}
+{"kind":"slide","id":"sl/2iia6t","slide":24,"title":"’","textShapes":10}
+{"kind":"shape","id":"sh/10julo3e","slide":24,"bbox":[0,0,1280,22]}
+{"kind":"textbox","id":"sh/exsva9kn","slide":24,"text":"’","textPreview":"’","textChars":1,"textLines":1,"bbox":[54,44,124,104]}
+{"kind":"textbox","id":"sh/fy1cjel8","slide":24,"text":"Kesme işareti: özel adlar","textPreview":"Kesme işareti: özel adlar","textChars":25,"textLines":1,"bbox":[202,50,940,80]}
+{"kind":"textbox","id":"sh/onadgj2p","slide":24,"text":"24","textPreview":"24","textChars":2,"textLines":1,"bbox":[1175,55,50,38]}
+{"kind":"textbox","id":"sh/po3epo3a","slide":24,"text":"Türk Dil Kurumu • Noktalama İşaretleri","textPreview":"Türk Dil Kurumu • Noktalama İşaretleri","textChars":38,"textLines":1,"bbox":[54,681,800,20]}
+{"kind":"textbox","id":"sh/21svetkz","slide":24,"text":"’","textPreview":"’","textChars":1,"textLines":1,"bbox":[960,400,250,190]}
+{"kind":"textbox","id":"sh/321cnelk","slide":24,"text":"1. Özel adlara gelen iyelik, durum ve bildirme eklerini ayırır: Türkiye’mizin, Atatürk’üm, Boğazı’nın.","textPreview":"1. Özel adlara gelen iyelik, durum ve bildirme eklerini ayırır: Türkiye’mizin, Atatürk’üm, Boğazı’nın.","textChars":102,"textLines":1,"bbox":[70,160,1140,88.4]}
+{"kind":"textbox","id":"sh/crudk321","slide":24,"text":"Yer bildiren özel adın kısaltmalı söyleyişinde kullanılır: Hisar’dan, Boğaz’dan.","textPreview":"Yer bildiren özel adın kısaltmalı söyleyişinde kullanılır: Hisar’dan, Boğaz’dan.","textChars":80,"textLines":1,"bbox":[70,260.4,1140,88.4]}
+{"kind":"textbox","id":"sh/ds3et83m","slide":24,"text":"Belirli bir kanun, tüzük veya yönetmelik kastedildiğinde büyük harfle yazılan ada gelen eki ayırır: Bu Kanun’un.","textPreview":"Belirli bir kanun, tüzük veya yönetmelik kastedildiğinde büyük harfle yazılan ada gelen eki ayırır: Bu Kanun’un.","textChars":112,"textLines":1,"bbox":[70,360.8,1140,88.4]}
+{"kind":"textbox","id":"sh/14ratw32","slide":24,"text":"Özel adın ayraç içindeki açıklamasında kesme, ayraçtan önce gelir: Yunus Emre’nin (1240?-1320).","textPreview":"Özel adın ayraç içindeki açıklamasında kesme, ayraçtan önce gelir: Yunus Emre’nin (1240?-1320).","textChars":95,"textLines":1,"bbox":[70,461.2,1140,88.4]}
+{"kind":"textbox","id":"sh/03it0r2h","slide":24,"text":"Avrupa Birliği ek aldığında kesmeyle yazılır: Avrupa Birliği’ne.","textPreview":"Avrupa Birliği ek aldığında kesmeyle yazılır: Avrupa Birliği’ne.","textChars":64,"textLines":1,"bbox":[70,561.6,1140,88.4]}
+{"kind":"notes","id":"nt/2iia6t","slide":24,"text":"Kaynak: https://tdk.gov.tr/icerik/yazim-kurallari/noktalama-isaretleri-aciklamalar/ (erişim: 28.09.2026)."}
+{"kind":"slide","id":"sl/x6h9b9","slide":25,"title":"’","textShapes":11}
+{"kind":"shape","id":"sh/618r6hgb","slide":25,"bbox":[0,0,1280,22]}
+{"kind":"textbox","id":"sh/t4zq1wzm","slide":25,"text":"’","textPreview":"’","textChars":1,"textLines":1,"bbox":[54,44,124,104]}
+{"kind":"textbox","id":"sh/83q98ryh","slide":25,"text":"Kesme işareti: özel adlarda uyarılar","textPreview":"Kesme işareti: özel adlarda uyarılar","textChars":36,"textLines":1,"bbox":[202,50,940,80]}
+{"kind":"textbox","id":"sh/jyx8v2hk","slide":25,"text":"25","textPreview":"25","textChars":2,"textLines":1,"bbox":[1175,55,50,38]}
+{"kind":"textbox","id":"sh/yxo72xgz","slide":25,"text":"Türk Dil Kurumu • Noktalama İşaretleri","textPreview":"Türk Dil Kurumu • Noktalama İşaretleri","textChars":38,"textLines":1,"bbox":[54,681,800,20]}
+{"kind":"textbox","id":"sh/l0zqxczq","slide":25,"text":"’","textPreview":"’","textChars":1,"textLines":1,"bbox":[960,400,250,190]}
+{"kind":"textbox","id":"sh/kz6p47y5","slide":25,"text":"Üçüncü tekil kişi iyelik eki taşıyan özel ada başka bir iyelik eki gelirse kesme kullanılmaz: Boğaz Köprümüzün.","textPreview":"Üçüncü tekil kişi iyelik eki taşıyan özel ada başka bir iyelik eki gelirse kesme kullanılmaz: Boğaz Köprümüzün.","textChars":111,"textLines":1,"bbox":[70,160,546,155.33]}
+{"kind":"textbox","id":"sh/3u1876h4","slide":25,"text":"Kurum, kuruluş, kurul, birleşim, oturum ve iş yeri adlarına gelen ekler kesmeyle ayrılmaz: Türk Dil Kurumundan.","textPreview":"Kurum, kuruluş, kurul, birleşim, oturum ve iş yeri adlarına gelen ekler kesmeyle ayrılmaz: Türk Dil Kurumundan.","textChars":111,"textLines":1,"bbox":[70,327.33,546,155.33]}
+{"kind":"textbox","id":"sh/itsre1gj","slide":25,"text":"Başbakanlık ve Rektörlük gibi sözlere ünlüyle başlayan ek doğrudan gelir: Başbakanlığa, Rektörlüğe.","textPreview":"Başbakanlık ve Rektörlük gibi sözlere ünlüyle başlayan ek doğrudan gelir: Başbakanlığa, Rektörlüğe.","textChars":99,"textLines":1,"bbox":[70,494.67,546,155.33]}
+{"kind":"textbox","id":"sh/8nqhc3u9","slide":25,"text":"Özel adlara gelen yapım ekleri, çokluk eki ve bunlardan sonraki ekler ayrılmaz: Türkçe, Türklüğün, Ahmetler.","textPreview":"Özel adlara gelen yapım ekleri, çokluk eki ve bunlardan sonraki ekler ayrılmaz: Türkçe, Türklüğün, Ahmetler.","textChars":108,"textLines":1,"bbox":[664,160,546,155.33]}
+{"kind":"textbox","id":"sh/9ojil8vu","slide":25,"text":"p, ç, t, k ile biten özel adlar ek aldığında söyleyişte yumuşar: Ahmedi, Sinobu, Zonguldağı.","textPreview":"p, ç, t, k ile biten özel adlar ek aldığında söyleyişte yumuşar: Ahmedi, Sinobu, Zonguldağı.","textChars":92,"textLines":1,"bbox":[664,327.33,546,155.33]}
+{"kind":"textbox","id":"sh/m18zatcj","slide":25,"text":"Özel ad yerine kullanılan “o” zamiri küçük yazılır ve eki kesmeyle ayrılmaz.","textPreview":"Özel ad yerine kullanılan “o” zamiri küçük yazılır ve eki kesmeyle ayrılmaz.","textChars":76,"textLines":1,"bbox":[664,494.67,546,155.33]}
+{"kind":"notes","id":"nt/x6h9b9","slide":25,"text":"Kaynak: https://tdk.gov.tr/icerik/yazim-kurallari/noktalama-isaretleri-aciklamalar/ (erişim: 28.09.2026)."}
+{"kind":"slide","id":"sl/urrzha","slide":26,"title":"’","textShapes":11}
+{"kind":"shape","id":"sh/ex8vmd0v","slide":26,"bbox":[0,0,1280,22]}
+{"kind":"textbox","id":"sh/10zuxsj6","slide":26,"text":"’","textPreview":"’","textChars":1,"textLines":1,"bbox":[54,44,124,104]}
+{"kind":"textbox","id":"sh/0zqdoni1","slide":26,"text":"Kesme işareti: diğer kullanımlar","textPreview":"Kesme işareti: diğer kullanımlar","textChars":32,"textLines":1,"bbox":[202,50,940,80]}
+{"kind":"textbox","id":"sh/raxcri14","slide":26,"text":"26","textPreview":"26","textChars":2,"textLines":1,"bbox":[1175,55,50,38]}
+{"kind":"textbox","id":"sh/q9ovid0j","slide":26,"text":"Türk Dil Kurumu • Noktalama İşaretleri","textPreview":"Türk Dil Kurumu • Noktalama İşaretleri","textChars":38,"textLines":1,"bbox":[54,681,800,20]}
+{"kind":"textbox","id":"sh/dwzutsja","slide":26,"text":"’","textPreview":"’","textChars":1,"textLines":1,"bbox":[960,400,250,190]}
+{"kind":"textbox","id":"sh/sb6dknip","slide":26,"text":"2. Kişi adından sonra gelen saygı ve ünvan sözüne eklenen eki ayırır: Nihat Bey’e, Türk Dil Kurumu Başkanı’na.","textPreview":"2. Kişi adından sonra gelen saygı ve ünvan sözüne eklenen eki ayırır: Nihat Bey’e, Türk Dil Kurumu Başkanı’na.","textChars":110,"textLines":1,"bbox":[70,160,546,155.33]}
+{"kind":"textbox","id":"sh/b61c321o","slide":26,"text":"3. Kısaltmalara gelen ekleri ayırır: TBMM’nin, TDK’nin, TV’ye.","textPreview":"3. Kısaltmalara gelen ekleri ayırır: TBMM’nin, TDK’nin, TV’ye.","textChars":62,"textLines":1,"bbox":[70,327.33,546,155.33]}
+{"kind":"textbox","id":"sh/a5svux03","slide":26,"text":"4. Sayılara gelen ekleri ayırır: 1985’te, 8’inci, 2’nci, 657’yle.","textPreview":"4. Sayılara gelen ekleri ayırır: 1985’te, 8’inci, 2’nci, 657’yle.","textChars":65,"textLines":1,"bbox":[70,494.67,546,155.33]}
+{"kind":"textbox","id":"sh/4buhk7m1","slide":26,"text":"5. Belirli tarih bildiren ay ve gün adlarına gelen ekleri ayırır: 17 Aralık’a, 12 Temmuz 2010 Pazartesi’nin.","textPreview":"5. Belirli tarih bildiren ay ve gün adlarına gelen ekleri ayırır: 17 Aralık’a, 12 Temmuz 2010 Pazartesi’nin.","textChars":108,"textLines":1,"bbox":[664,160,546,155.33]}
+{"kind":"textbox","id":"sh/pc3ytcnm","slide":26,"text":"6. Ölçü ve söyleyiş gereği düşen sesleri gösterir: m’ola, n’eyleyim, par’etmez.","textPreview":"6. Ölçü ve söyleyiş gereği düşen sesleri gösterir: m’ola, n’eyleyim, par’etmez.","textChars":79,"textLines":1,"bbox":[664,327.33,546,155.33]}
+{"kind":"textbox","id":"sh/2pczihov","slide":26,"text":"7. Bir ek veya harften sonra gelen eki ayırır: a’dan z’ye, -lık’la.","textPreview":"7. Bir ek veya harften sonra gelen eki ayırır: a’dan z’ye, -lık’la.","textChars":67,"textLines":1,"bbox":[664,494.67,546,155.33]}
+{"kind":"notes","id":"nt/urrzha","slide":26,"text":"Kaynak: https://tdk.gov.tr/icerik/yazim-kurallari/noktalama-isaretleri-aciklamalar/ (erişim: 28.09.2026)."}
+{"kind":"slide","id":"sl/2g7301","slide":27,"title":"✓","textShapes":16}
+{"kind":"shape","id":"sh/4fapwby1","slide":27,"bbox":[0,0,1280,22]}
+{"kind":"textbox","id":"sh/je18n6xg","slide":27,"text":"✓","textPreview":"✓","textChars":1,"textLines":1,"bbox":[54,44,124,104]}
+{"kind":"textbox","id":"sh/ids7u1gv","slide":27,"text":"Hızlı başvuru matrisi","textPreview":"Hızlı başvuru matrisi","textChars":21,"textLines":1,"bbox":[202,50,940,80]}
+{"kind":"textbox","id":"sh/hcjqlwfa","slide":27,"text":"27","textPreview":"27","textChars":2,"textLines":1,"bbox":[1175,55,50,38]}
+{"kind":"textbox","id":"sh/wrapsbyp","slide":27,"text":"Türk Dil Kurumu • Noktalama İşaretleri","textPreview":"Türk Dil Kurumu • Noktalama İşaretleri","textChars":38,"textLines":1,"bbox":[54,681,800,20]}
+{"kind":"textbox","id":"sh/vq18j6xk","slide":27,"text":"Cümleyi bitirir","textPreview":"Cümleyi bitirir","textChars":15,"textLines":1,"bbox":[90,150,370,65]}
+{"kind":"textbox","id":"sh/up87q1gz","slide":27,"text":".  ?  !  …","textPreview":".  ?  !  …","textChars":10,"textLines":1,"bbox":[480,150,690,65]}
+{"kind":"textbox","id":"sh/9ozqhwfe","slide":27,"text":"Ögeleri ayırır","textPreview":"Ögeleri ayırır","textChars":14,"textLines":1,"bbox":[90,226,370,65]}
+{"kind":"textbox","id":"sh/8nqporyt","slide":27,"text":",  ;  :","textPreview":",  ;  :","textChars":7,"textLines":1,"bbox":[480,226,690,65]}
+{"kind":"textbox","id":"sh/ilcfat8v","slide":27,"text":"Konuşma ve alıntı","textPreview":"Konuşma ve alıntı","textChars":17,"textLines":1,"bbox":[90,302,370,65]}
+{"kind":"textbox","id":"sh/jmlwjypg","slide":27,"text":"—  “ ”  ‘ ’","textPreview":"—  “ ”  ‘ ’","textChars":11,"textLines":1,"bbox":[480,302,690,65]}
+{"kind":"textbox","id":"sh/4nexc3q1","slide":27,"text":"Ek bilgi ve belirsizlik","textPreview":"Ek bilgi ve belirsizlik","textChars":23,"textLines":1,"bbox":[90,378,370,65]}
+{"kind":"textbox","id":"sh/5onelo7m","slide":27,"text":"( )  [ ]  (?)  (!)","textPreview":"( )  [ ]  (?)  (!)","textChars":18,"textLines":1,"bbox":[480,378,690,65]}
+{"kind":"textbox","id":"sh/uxcv698z","slide":27,"text":"Sözcük ve aralık","textPreview":"Sözcük ve aralık","textChars":16,"textLines":1,"bbox":[90,454,370,65]}
+{"kind":"textbox","id":"sh/vylwfepk","slide":27,"text":"-  /  \\","textPreview":"-  /  \\","textChars":7,"textLines":1,"bbox":[480,454,690,65]}
+{"kind":"textbox","id":"sh/wzux8jq5","slide":27,"text":"Ekleri ayırır","textPreview":"Ekleri ayırır","textChars":13,"textLines":1,"bbox":[90,530,370,65]}
+{"kind":"textbox","id":"sh/hk3eho7q","slide":27,"text":"’","textPreview":"’","textChars":1,"textLines":1,"bbox":[480,530,690,65]}
+{"kind":"notes","id":"nt/2g7301","slide":27,"text":"Kaynak: https://tdk.gov.tr/icerik/yazim-kurallari/noktalama-isaretleri-aciklamalar/ (erişim: 28.09.2026)."}

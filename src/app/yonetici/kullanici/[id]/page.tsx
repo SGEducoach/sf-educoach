@@ -14,6 +14,7 @@ import { DersProgramiYonetimi } from "@/components/dashboard/DersProgramiYonetim
 import { GeriDonButonu } from "@/components/yonetici/GeriDonButonu";
 import { ProfiliYonetToggle } from "@/components/yonetici/ProfiliYonetToggle";
 import { OgrenciVeriKayitlari } from "@/components/yonetici/OgrenciVeriKayitlari";
+import { OgrenciSonIslemleri } from "@/components/yonetici/OgrenciSonIslemleri";
 import type { KullaniciSonuc } from "@/app/yonetici/actions";
 import { ogretmenProgramiGetir } from "@/lib/ders-programi";
 import { BG1, BG1_ALT, BORDER, MINT, TEXT, TEXT_MUTED } from "@/lib/theme";
@@ -132,6 +133,7 @@ async function OgrenciSayfasi({ admin, userId, ad, donem }: { admin: AdminClient
       <Bilgi icon={UserRound} etiket={okul?.tur === "dershane" ? "Kullanıcı adı" : "Okul no"} deger={ogrenci.okul_no} />
       <Bilgi icon={CheckCircle2} etiket="Hedef" deger={ogrenci.hedef_bolum ? ogrenci.hedef_bolum.toLocaleUpperCase("tr-TR") : "—"} />
     </section>
+    <OgrenciSonIslemleri studentId={userId} />
     <AnalizPaneli veri={analiz} ogrenciAdi={ad}
       konuHakimiyetiSatirlari={konuHakimiyetiOzeti.satirlar} konuHakimiyetiTamGorunum={konuHakimiyetiOzeti.tamGorunum}
       konuHakimiyetiAytAlan={konuHakimiyetiOzeti.aytAlan} ogretmenGorunumu kohortKarsilastirma={kohort} />

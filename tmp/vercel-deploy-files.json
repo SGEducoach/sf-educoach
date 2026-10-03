@@ -1,0 +1,1508 @@
+{
+  "framework": {
+    "name": "Next.js",
+    "slug": "nextjs"
+  },
+  "basePath": "E:\\SG_EDUCOACH",
+  "fileCount": 222,
+  "totalSize": 8686306,
+  "ignoredCount": 15,
+  "ignored": [
+    ".claude",
+    ".env.local",
+    ".env.local.example",
+    ".git",
+    ".gitignore",
+    ".next",
+    ".vercel",
+    "SG_EDUCOACH - Kısayol.lnk",
+    "dokumanlar",
+    "moderator_talepleri_ve_calisma_plani.pdf",
+    "node_modules",
+    "output",
+    "scripts",
+    "supabase",
+    "tmp"
+  ],
+  "directories": [
+    {
+      "path": "public",
+      "fileCount": 29,
+      "size": 6413930
+    },
+    {
+      "path": "src",
+      "fileCount": 176,
+      "size": 1710127
+    },
+    {
+      "path": "package-lock.json",
+      "fileCount": 1,
+      "size": 319111
+    },
+    {
+      "path": "tsconfig.tsbuildinfo",
+      "fileCount": 1,
+      "size": 226785
+    },
+    {
+      "path": "docs",
+      "fileCount": 3,
+      "size": 7747
+    },
+    {
+      "path": "README.md",
+      "fileCount": 1,
+      "size": 3352
+    },
+    {
+      "path": "next.config.ts",
+      "fileCount": 1,
+      "size": 1485
+    },
+    {
+      "path": "package.json",
+      "fileCount": 1,
+      "size": 902
+    },
+    {
+      "path": "AGENTS.md",
+      "fileCount": 1,
+      "size": 678
+    },
+    {
+      "path": "tsconfig.json",
+      "fileCount": 1,
+      "size": 670
+    },
+    {
+      "path": "eslint.config.mjs",
+      "fileCount": 1,
+      "size": 465
+    },
+    {
+      "path": "vercel.json",
+      "fileCount": 1,
+      "size": 400
+    },
+    {
+      "path": "next-env.d.ts",
+      "fileCount": 1,
+      "size": 296
+    },
+    {
+      "path": ".vercelignore",
+      "fileCount": 1,
+      "size": 240
+    },
+    {
+      "path": "postcss.config.mjs",
+      "fileCount": 1,
+      "size": 94
+    },
+    {
+      "path": ".gitattributes",
+      "fileCount": 1,
+      "size": 13
+    },
+    {
+      "path": "CLAUDE.md",
+      "fileCount": 1,
+      "size": 11
+    }
+  ],
+  "largestFiles": [
+    {
+      "path": "public/tg-denemeleri/limit-genel-takvim.pdf",
+      "size": 1529007,
+      "mode": 33206,
+      "sha": "1bccdb8b16d11f7e3a93600b382a7caaaf89aef7"
+    },
+    {
+      "path": "public/tg-denemeleri/kr-akademi-genel.jpeg",
+      "size": 742869,
+      "mode": 33206,
+      "sha": "a5ebaf6e87f2ff52ebd2491c7d4a141741ee6290"
+    },
+    {
+      "path": "public/tg-denemeleri/kr-akademi-secili.jpeg",
+      "size": 541067,
+      "mode": 33206,
+      "sha": "4e4c21e9cf69af06f17900af3c2aacde48d57a53"
+    },
+    {
+      "path": "public/tg-denemeleri/karekok-genel.jpeg",
+      "size": 377478,
+      "mode": 33206,
+      "sha": "7716ec76a4bfa5e0ee2148bbcf5df87816514f0e"
+    },
+    {
+      "path": "public/tg-denemeleri/toder-genel.jpeg",
+      "size": 346032,
+      "mode": 33206,
+      "sha": "cad0cccf7265dbc02466788dd8965d8090193f5a"
+    },
+    {
+      "path": "public/tg-denemeleri/genel-takvim-9-10-11.png",
+      "size": 330373,
+      "mode": 33206,
+      "sha": "51b9dedc316d33f345ca95ce87a09fa3fb45abac"
+    },
+    {
+      "path": "public/tg-denemeleri/yayinlar-ortak-takvim.jpeg",
+      "size": 323630,
+      "mode": 33206,
+      "sha": "068bb4112f87ac9763d70a705a98227dcd3dca81"
+    },
+    {
+      "path": "package-lock.json",
+      "size": 319111,
+      "mode": 33206,
+      "sha": "04b77b43721aa8cce9eb2e875820c44fac34260a"
+    },
+    {
+      "path": "public/tg-denemeleri/isler-lise-genel.jpeg",
+      "size": 309061,
+      "mode": 33206,
+      "sha": "d019698905f58478382a69c905b64c1e6dd269f7"
+    },
+    {
+      "path": "public/tg-denemeleri/isler-11-sinif.jpeg",
+      "size": 308717,
+      "mode": 33206,
+      "sha": "9bf66125b332f94da1fe6b84de57c3c459434ac0"
+    }
+  ],
+  "files": [
+    {
+      "path": ".gitattributes",
+      "size": 13,
+      "mode": 33206,
+      "sha": "b3b56f13bc28a63c8272c444d5885aefee9d254b"
+    },
+    {
+      "path": ".vercelignore",
+      "size": 240,
+      "mode": 33206,
+      "sha": "a3fce7128477996a5ca2a1be4806ee6c942468cd"
+    },
+    {
+      "path": "AGENTS.md",
+      "size": 678,
+      "mode": 33206,
+      "sha": "8a38a9be445fb29e9ce77bb23d1086eb2dc3d656"
+    },
+    {
+      "path": "CLAUDE.md",
+      "size": 11,
+      "mode": 33206,
+      "sha": "c140473a3a5fbe89301c99d9d0d1b76c5971f2c3"
+    },
+    {
+      "path": "docs/google-analytics-kurulum.md",
+      "size": 2084,
+      "mode": 33206,
+      "sha": "b071005c38bb756da95fb5e119596d82e80d49c6"
+    },
+    {
+      "path": "docs/tg-denemeleri-google-drive.md",
+      "size": 1317,
+      "mode": 33206,
+      "sha": "522e0eff08164e4a936dcae1fc1171a1d984f965"
+    },
+    {
+      "path": "docs/YONETIM_VE_ACIL_MUDAHALE.md",
+      "size": 4346,
+      "mode": 33206,
+      "sha": "d8690570705b1ad0a34e41fad51c73b6f6559bfc"
+    },
+    {
+      "path": "eslint.config.mjs",
+      "size": 465,
+      "mode": 33206,
+      "sha": "44d5bed565a8dd284af3e17f3b16a1c752008d0e"
+    },
+    {
+      "path": "next-env.d.ts",
+      "size": 296,
+      "mode": 33206,
+      "sha": "b23d2b0e9411866941f1dd73e7477766d205cb8e"
+    },
+    {
+      "path": "next.config.ts",
+      "size": 1485,
+      "mode": 33206,
+      "sha": "8ccf6d4aa404059c61277ea840d4db35e68087e1"
+    },
+    {
+      "path": "package-lock.json",
+      "size": 319111,
+      "mode": 33206,
+      "sha": "04b77b43721aa8cce9eb2e875820c44fac34260a"
+    },
+    {
+      "path": "package.json",
+      "size": 902,
+      "mode": 33206,
+      "sha": "a2efc4a434780d061aa3af0289276cd4c15fc765"
+    },
+    {
+      "path": "postcss.config.mjs",
+      "size": 94,
+      "mode": 33206,
+      "sha": "8f8be689e9af58f80351df6e6b551146822f42a4"
+    },
+    {
+      "path": "public/apple-touch-icon.png",
+      "size": 24546,
+      "mode": 33206,
+      "sha": "c2937b662249d6535c24289e9c9fbf35273ad2b9"
+    },
+    {
+      "path": "public/characters/einstein-mascot.webp",
+      "size": 55678,
+      "mode": 33206,
+      "sha": "14266964210808dcf590b171144eb9e1c8d72722"
+    },
+    {
+      "path": "public/icon-192.png",
+      "size": 27136,
+      "mode": 33206,
+      "sha": "6b0908be7a9e8f77e9be3f4867b95ea82a526ce9"
+    },
+    {
+      "path": "public/icon-512.png",
+      "size": 131529,
+      "mode": 33206,
+      "sha": "dad7b32df6e2e54059e5c7a35334158a23730244"
+    },
+    {
+      "path": "public/istanbul-universitesi-kapi.png",
+      "size": 99267,
+      "mode": 33206,
+      "sha": "a942c45992d324fd8a07cf449976d74382a44061"
+    },
+    {
+      "path": "public/landing/ogrenci-640.webp",
+      "size": 20270,
+      "mode": 33206,
+      "sha": "c574bdc5c6236ffa013f2aa20e7345ee581fc404"
+    },
+    {
+      "path": "public/landing/ogrenci-960.webp",
+      "size": 32858,
+      "mode": 33206,
+      "sha": "a7eb3a00b561a912b8484adb5a5f4c4606e6e202"
+    },
+    {
+      "path": "public/landing/ogrenci.jpg",
+      "size": 155450,
+      "mode": 33206,
+      "sha": "3bedb02eb0a947b40c0758129e32ed61747dc08f"
+    },
+    {
+      "path": "public/landing/ogretmen-640.webp",
+      "size": 24364,
+      "mode": 33206,
+      "sha": "ef650bd1f8a12a427d1b1647952ed4416a3dffd8"
+    },
+    {
+      "path": "public/landing/ogretmen-960.webp",
+      "size": 39394,
+      "mode": 33206,
+      "sha": "ad0a685f66836347db4a812542b6188b9172cebb"
+    },
+    {
+      "path": "public/landing/ogretmen.jpg",
+      "size": 177443,
+      "mode": 33206,
+      "sha": "2aebb83efa7de4be9086bf9f071001700ed4e7aa"
+    },
+    {
+      "path": "public/landing/veli-640.webp",
+      "size": 16156,
+      "mode": 33206,
+      "sha": "24aa141665e2ef97b1fea9c13fd2cb4db2d4b6b2"
+    },
+    {
+      "path": "public/landing/veli-960.webp",
+      "size": 27472,
+      "mode": 33206,
+      "sha": "0aab00b35b5d56cf1e98ad056101384d8cec0986"
+    },
+    {
+      "path": "public/landing/veli.jpg",
+      "size": 163151,
+      "mode": 33206,
+      "sha": "5aa0389c2eb893750976fe14dea9711dc41b44e2"
+    },
+    {
+      "path": "public/logo-login.png",
+      "size": 78266,
+      "mode": 33206,
+      "sha": "1962541e68e74e61c61d8d15f1def6a8bdbbdac3"
+    },
+    {
+      "path": "public/logo.png",
+      "size": 76103,
+      "mode": 33206,
+      "sha": "9ae60422c1564ec2f2d7b12ee461378abd74ec83"
+    },
+    {
+      "path": "public/manifest.json",
+      "size": 449,
+      "mode": 33206,
+      "sha": "2bc1107a4877e567349e730fc802226d09f6627d"
+    },
+    {
+      "path": "public/sw.js",
+      "size": 1844,
+      "mode": 33206,
+      "sha": "e26a826af78a2208619e2aa2d3a8e6975a8a51fb"
+    },
+    {
+      "path": "public/tg-denemeleri/genel-takvim-9-10-11.png",
+      "size": 330373,
+      "mode": 33206,
+      "sha": "51b9dedc316d33f345ca95ce87a09fa3fb45abac"
+    },
+    {
+      "path": "public/tg-denemeleri/genel-takvim-tyt-ayt.png",
+      "size": 290200,
+      "mode": 33206,
+      "sha": "a50daa46d8bbe675b3613c7c661908d3ccd0f214"
+    },
+    {
+      "path": "public/tg-denemeleri/isler-11-sinif.jpeg",
+      "size": 308717,
+      "mode": 33206,
+      "sha": "9bf66125b332f94da1fe6b84de57c3c459434ac0"
+    },
+    {
+      "path": "public/tg-denemeleri/isler-lise-genel.jpeg",
+      "size": 309061,
+      "mode": 33206,
+      "sha": "d019698905f58478382a69c905b64c1e6dd269f7"
+    },
+    {
+      "path": "public/tg-denemeleri/karekok-genel.jpeg",
+      "size": 377478,
+      "mode": 33206,
+      "sha": "7716ec76a4bfa5e0ee2148bbcf5df87816514f0e"
+    },
+    {
+      "path": "public/tg-denemeleri/kr-akademi-genel.jpeg",
+      "size": 742869,
+      "mode": 33206,
+      "sha": "a5ebaf6e87f2ff52ebd2491c7d4a141741ee6290"
+    },
+    {
+      "path": "public/tg-denemeleri/kr-akademi-secili.jpeg",
+      "size": 541067,
+      "mode": 33206,
+      "sha": "4e4c21e9cf69af06f17900af3c2aacde48d57a53"
+    },
+    {
+      "path": "public/tg-denemeleri/limit-genel-takvim.pdf",
+      "size": 1529007,
+      "mode": 33206,
+      "sha": "1bccdb8b16d11f7e3a93600b382a7caaaf89aef7"
+    },
+    {
+      "path": "public/tg-denemeleri/limit-turkiye-geneli.jpeg",
+      "size": 164120,
+      "mode": 33206,
+      "sha": "b0700412d31d17334d6f139fd71a2b286101ebfa"
+    },
+    {
+      "path": "public/tg-denemeleri/toder-genel.jpeg",
+      "size": 346032,
+      "mode": 33206,
+      "sha": "cad0cccf7265dbc02466788dd8965d8090193f5a"
+    },
+    {
+      "path": "public/tg-denemeleri/yayinlar-ortak-takvim.jpeg",
+      "size": 323630,
+      "mode": 33206,
+      "sha": "068bb4112f87ac9763d70a705a98227dcd3dca81"
+    },
+    {
+      "path": "README.md",
+      "size": 3352,
+      "mode": 33206,
+      "sha": "1cc4adc81d18e5eb7a12d97f37f4c225aa9bc4ff"
+    },
+    {
+      "path": "src/app/__preview",
+      "size": 0,
+      "mode": 16822
+    },
+    {
+      "path": "src/app/api/bildirim/okundu/route.ts",
+      "size": 1348,
+      "mode": 33206,
+      "sha": "e5681a4ad48844910c89c93131fba82e6eca1393"
+    },
+    {
+      "path": "src/app/api/cron/hatirlatmalar/route.ts",
+      "size": 13402,
+      "mode": 33206,
+      "sha": "ceb4ddfd081afb271ea8e872e52a111d6f19f38a"
+    },
+    {
+      "path": "src/app/api/cron/yurt-nobeti-bildirim/route.ts",
+      "size": 5207,
+      "mode": 33206,
+      "sha": "2e8b51a996a3fcf97c1c4f2bb1b24e025a9109ba"
+    },
+    {
+      "path": "src/app/api/dershane/deneme-sablonu/route.ts",
+      "size": 2382,
+      "mode": 33206,
+      "sha": "05578fbd1cd9eb35ee1dcd4d0e06e9efa01d7221"
+    },
+    {
+      "path": "src/app/api/dershane/roster-sablonu/route.ts",
+      "size": 3228,
+      "mode": 33206,
+      "sha": "ce9d88faa0de289591b91d0f86fad08499d4fbc5"
+    },
+    {
+      "path": "src/app/api/giris/route.ts",
+      "size": 9634,
+      "mode": 33206,
+      "sha": "8bd77a44e83269432ef98119e121ee727e3a96e0"
+    },
+    {
+      "path": "src/app/api/veli/dogrula/route.ts",
+      "size": 2610,
+      "mode": 33206,
+      "sha": "13d0ac85fc9710fc438c2d3422477522a25c4165"
+    },
+    {
+      "path": "src/app/api/veli/talep/route.ts",
+      "size": 3066,
+      "mode": 33206,
+      "sha": "b02a86f1596a9918bd1bc6b7754337cc8809b604"
+    },
+    {
+      "path": "src/app/api/veli/tamamla/route.ts",
+      "size": 4181,
+      "mode": 33206,
+      "sha": "4852f3080784e60b6b1ad51259878fe39055ac5d"
+    },
+    {
+      "path": "src/app/dashboard/[bolum]/page.tsx",
+      "size": 748,
+      "mode": 33206,
+      "sha": "bd3f70c1f39ca54bbfaa66c8de9f577f0af3ae0e"
+    },
+    {
+      "path": "src/app/dashboard/actions.ts",
+      "size": 40274,
+      "mode": 33206,
+      "sha": "52c246658c876ff2d69d62b421ec5ffbefb7e7fc"
+    },
+    {
+      "path": "src/app/dashboard/bildirim-actions.ts",
+      "size": 3929,
+      "mode": 33206,
+      "sha": "37be22672cd9365636c65b7dd1c2169a881c32c0"
+    },
+    {
+      "path": "src/app/dashboard/deneme-pdf-actions.ts",
+      "size": 34212,
+      "mode": 33206,
+      "sha": "23011ffe3d46395389bb1d62897ae52b7d2ed02c"
+    },
+    {
+      "path": "src/app/dashboard/ders-programi-actions.ts",
+      "size": 5112,
+      "mode": 33206,
+      "sha": "dc9ef4d411e39cae07797e114d0ded3961b02989"
+    },
+    {
+      "path": "src/app/dashboard/gorev-actions.ts",
+      "size": 9041,
+      "mode": 33206,
+      "sha": "39cca03d847434e6d5511152b182268d34bb74d6"
+    },
+    {
+      "path": "src/app/dashboard/hata-actions.ts",
+      "size": 1527,
+      "mode": 33206,
+      "sha": "08c008431e24b50dfa8151a8cdc43a9693e1456b"
+    },
+    {
+      "path": "src/app/dashboard/konu-hakimiyeti-actions.ts",
+      "size": 3382,
+      "mode": 33206,
+      "sha": "69a4640648116d9d4ad6bf3bd215698a7437b204"
+    },
+    {
+      "path": "src/app/dashboard/loading.tsx",
+      "size": 151,
+      "mode": 33206,
+      "sha": "a6a69902a1bbbd7c1f75513c9234ae3ddd6e39f6"
+    },
+    {
+      "path": "src/app/dashboard/page.tsx",
+      "size": 46474,
+      "mode": 33206,
+      "sha": "259b16045d0c37cb8095dd1520949280de3c633f"
+    },
+    {
+      "path": "src/app/dashboard/push-actions.ts",
+      "size": 1062,
+      "mode": 33206,
+      "sha": "c0e7e710bb633ea08da76c259ec25977fde529cb"
+    },
+    {
+      "path": "src/app/dashboard/veri-actions.ts",
+      "size": 19942,
+      "mode": 33206,
+      "sha": "b9541d44222e944a11c2180690778f1b1fc7d08b"
+    },
+    {
+      "path": "src/app/favicon.ico",
+      "size": 285478,
+      "mode": 33206,
+      "sha": "218576d42587bd9bf7dde377a1c89f9c566f9277"
+    },
+    {
+      "path": "src/app/globals.css",
+      "size": 12693,
+      "mode": 33206,
+      "sha": "6d0036de454f31258dabdd6793a9b39b0b38c614"
+    },
+    {
+      "path": "src/app/layout.tsx",
+      "size": 2268,
+      "mode": 33206,
+      "sha": "b9195255667e564f95997db33fd533db153c15c1"
+    },
+    {
+      "path": "src/app/login/LoginForm.tsx",
+      "size": 22935,
+      "mode": 33206,
+      "sha": "14ff9f744c523680d7f418e24631d92751784fbe"
+    },
+    {
+      "path": "src/app/login/page.tsx",
+      "size": 143,
+      "mode": 33206,
+      "sha": "735bb2c4ddaace626927f8fb0b884f4e46f7427a"
+    },
+    {
+      "path": "src/app/moderator/actions.ts",
+      "size": 23936,
+      "mode": 33206,
+      "sha": "15492b74516df146752493e1e5e54321e1a57c5f"
+    },
+    {
+      "path": "src/app/moderator/konu-haritasi/page.tsx",
+      "size": 1684,
+      "mode": 33206,
+      "sha": "e806d32a5940527ab0d7aeca84c505b0ee61e03e"
+    },
+    {
+      "path": "src/app/moderator/loading.tsx",
+      "size": 151,
+      "mode": 33206,
+      "sha": "edef10b95b917c1c4f87592a72f7f2fda43f0240"
+    },
+    {
+      "path": "src/app/moderator/page.tsx",
+      "size": 2333,
+      "mode": 33206,
+      "sha": "f8188c171fe9faa6aba8b06943e7c8b4b033e755"
+    },
+    {
+      "path": "src/app/moderator/profil/page.tsx",
+      "size": 1549,
+      "mode": 33206,
+      "sha": "1862930d95e9cf22ef63109da49255a269298ac3"
+    },
+    {
+      "path": "src/app/moderator/rozetler/page.tsx",
+      "size": 1718,
+      "mode": 33206,
+      "sha": "0acb96ed949587823f2961b88cfdf5b5a3452d8e"
+    },
+    {
+      "path": "src/app/not-found.tsx",
+      "size": 397,
+      "mode": 33206,
+      "sha": "688b115943b268b9da9a17d5865a3155c052d103"
+    },
+    {
+      "path": "src/app/page.tsx",
+      "size": 1410,
+      "mode": 33206,
+      "sha": "f2e2981a43a6608dc2b8ea46f438ca22efd588fb"
+    },
+    {
+      "path": "src/app/preview-dashboard",
+      "size": 0,
+      "mode": 16822
+    },
+    {
+      "path": "src/app/sifre-sifirla/page.tsx",
+      "size": 171,
+      "mode": 33206,
+      "sha": "8f767cd53f57567445678e41a8e3466ca8e5557b"
+    },
+    {
+      "path": "src/app/sifre-sifirla/SifreSifirlaForm.tsx",
+      "size": 6060,
+      "mode": 33206,
+      "sha": "329287b74bde479f1fb9cee2eeb1a3c0e78233fe"
+    },
+    {
+      "path": "src/app/signup/dershane-actions.ts",
+      "size": 3526,
+      "mode": 33206,
+      "sha": "60f41979e9eab61e6379c423dd3f99388105f918"
+    },
+    {
+      "path": "src/app/signup/kurallar-varsayilan.ts",
+      "size": 3000,
+      "mode": 33206,
+      "sha": "c1e5aa4d0e40517f55f4debc4b19a82ac9e28ee0"
+    },
+    {
+      "path": "src/app/signup/page.tsx",
+      "size": 571,
+      "mode": 33206,
+      "sha": "fd8b1c56982bb9f78ced8c4c2f889b92f8718da1"
+    },
+    {
+      "path": "src/app/signup/SignupForm.tsx",
+      "size": 38725,
+      "mode": 33206,
+      "sha": "b28856552533dde10cff87ffabd721fc79a4a7bc"
+    },
+    {
+      "path": "src/app/site-bakimda/page.tsx",
+      "size": 365,
+      "mode": 33206,
+      "sha": "7c751dff9afc64c2d737f57fd8b685153b7bd468"
+    },
+    {
+      "path": "src/app/sitemap.ts",
+      "size": 551,
+      "mode": 33206,
+      "sha": "13ea6510b10e919c1afaefa877f7de12955ec087"
+    },
+    {
+      "path": "src/app/yonetici/[bolum]/page.tsx",
+      "size": 984,
+      "mode": 33206,
+      "sha": "11146a87ce71c210ff0af299345897abf581d543"
+    },
+    {
+      "path": "src/app/yonetici/actions.ts",
+      "size": 91917,
+      "mode": 33206,
+      "sha": "69672aa091cb82654970b23879b525f89acccb7d"
+    },
+    {
+      "path": "src/app/yonetici/google-analytics/page.tsx",
+      "size": 5640,
+      "mode": 33206,
+      "sha": "151f9bd3f634216d246897ad10d174562deb8fd0"
+    },
+    {
+      "path": "src/app/yonetici/kullanici/[id]/page.tsx",
+      "size": 15178,
+      "mode": 33206,
+      "sha": "41308dec79ae1355cf2a4f370ec469f7b2fef2b4"
+    },
+    {
+      "path": "src/app/yonetici/loading.tsx",
+      "size": 150,
+      "mode": 33206,
+      "sha": "4259f0b09c75bba8292546f9c8fbdb0ecef9468b"
+    },
+    {
+      "path": "src/app/yonetici/moderatorler-actions.ts",
+      "size": 5122,
+      "mode": 33206,
+      "sha": "28574a5710dea3b2592451710d13657ed9b63928"
+    },
+    {
+      "path": "src/app/yonetici/page.tsx",
+      "size": 8562,
+      "mode": 33206,
+      "sha": "92da8161727e8fb2ef842d43d1e055b12c060f07"
+    },
+    {
+      "path": "src/app/yonetici/pdf-eslesme-actions.ts",
+      "size": 5405,
+      "mode": 33206,
+      "sha": "18b031f7d52254f578074ef64dc5ca4de7e1e352"
+    },
+    {
+      "path": "src/app/yonetici/profil-actions.ts",
+      "size": 2915,
+      "mode": 33206,
+      "sha": "df7fc66827faeeade157c753408b73021e7a34c4"
+    },
+    {
+      "path": "src/app/yonetici/rozetler/page.tsx",
+      "size": 3445,
+      "mode": 33206,
+      "sha": "c785ded6b33b2bffb2427bb2a579513802fbc083"
+    },
+    {
+      "path": "src/app/yonetici/yapay-zeka/page.tsx",
+      "size": 3652,
+      "mode": 33206,
+      "sha": "2243c8ae76f1701a97e386e526f159a7ee1a8b22"
+    },
+    {
+      "path": "src/components/AnaSayfa.tsx",
+      "size": 5424,
+      "mode": 33206,
+      "sha": "609654f3acd497cd449cc41d9c41765498450aa5"
+    },
+    {
+      "path": "src/components/AnaSayfaSlider.module.css",
+      "size": 1504,
+      "mode": 33206,
+      "sha": "e5d69fcb183d6bb456a01a4b0bef150a00f4f6cf"
+    },
+    {
+      "path": "src/components/AnaSayfaSlider.tsx",
+      "size": 3582,
+      "mode": 33206,
+      "sha": "86bb8efbef26a312c81974ebecf9bb6aafe95e6d"
+    },
+    {
+      "path": "src/components/AnaSayfaTgAkisi.tsx",
+      "size": 4169,
+      "mode": 33206,
+      "sha": "c7942fede390f0ee2002fe65b217a97b37cc9993"
+    },
+    {
+      "path": "src/components/dashboard/AdminPanel.tsx",
+      "size": 51427,
+      "mode": 33206,
+      "sha": "3c23e8f61c71722fa72c84e4a631bd0d13744eec"
+    },
+    {
+      "path": "src/components/dashboard/AnalizPaneli.tsx",
+      "size": 40377,
+      "mode": 33206,
+      "sha": "99675b00f92207d4322bab661df8c395440fa6bb"
+    },
+    {
+      "path": "src/components/dashboard/BildirimAyarlari.tsx",
+      "size": 14312,
+      "mode": 33206,
+      "sha": "af2a29a7c5802e1f955ba1fbf4995aa7e093f87d"
+    },
+    {
+      "path": "src/components/dashboard/DashboardYanMenu.tsx",
+      "size": 4074,
+      "mode": 33206,
+      "sha": "893a58ab9198ba89e8cedb9976b923cbd98d220b"
+    },
+    {
+      "path": "src/components/dashboard/DershaneAnaSayfa.tsx",
+      "size": 6878,
+      "mode": 33206,
+      "sha": "0675877fdd0eaedb420d99db5ff404612e9217f6"
+    },
+    {
+      "path": "src/components/dashboard/DershaneDenemePdfFormu.tsx",
+      "size": 7995,
+      "mode": 33206,
+      "sha": "1cbd1470617e45a0c90d0e0d0bb32170a8f64680"
+    },
+    {
+      "path": "src/components/dashboard/DershaneKullaniciListesi.tsx",
+      "size": 7611,
+      "mode": 33206,
+      "sha": "bdb29026c98145983f9e703393e144538d28ee3a"
+    },
+    {
+      "path": "src/components/dashboard/DershaneMudurPaneli.tsx",
+      "size": 5888,
+      "mode": 33206,
+      "sha": "c16df9062a68721e103babcf829c1a3d9c5e5097"
+    },
+    {
+      "path": "src/components/dashboard/DershaneOgretmenEkleFormu.tsx",
+      "size": 5908,
+      "mode": 33206,
+      "sha": "14cea18ba706c4fb5ea70dd722b215e0e27def7a"
+    },
+    {
+      "path": "src/components/dashboard/DershaneRosterEkleFormu.tsx",
+      "size": 8306,
+      "mode": 33206,
+      "sha": "e8d504090aa2fce92c1ef40d8f9a0d5e482ffcf4"
+    },
+    {
+      "path": "src/components/dashboard/DershaneRosterTopluEkleFormu.tsx",
+      "size": 4332,
+      "mode": 33206,
+      "sha": "51401205c556a2040b1dde5bdabe576bb8c33205"
+    },
+    {
+      "path": "src/components/dashboard/DershaneSinifEkleFormu.tsx",
+      "size": 3219,
+      "mode": 33206,
+      "sha": "e2eace7ca587093fb6ce32e5e5820a9179b569de"
+    },
+    {
+      "path": "src/components/dashboard/DersProgramiGrid.tsx",
+      "size": 4371,
+      "mode": 33206,
+      "sha": "ac6cafda27e1197794432ed2cf174e2bacb7d883"
+    },
+    {
+      "path": "src/components/dashboard/DersProgramiYonetimi.tsx",
+      "size": 5499,
+      "mode": 33206,
+      "sha": "12806ec1efc6ed147445f85c7dc1e9c42671d2bd"
+    },
+    {
+      "path": "src/components/dashboard/DuyuruFormu.tsx",
+      "size": 10576,
+      "mode": 33206,
+      "sha": "c487057829161ecc930b1dc00c902c30eed10723"
+    },
+    {
+      "path": "src/components/dashboard/Gorevlerim.tsx",
+      "size": 41067,
+      "mode": 33206,
+      "sha": "f9d4b937a26867511801db2ece7d0b096d90f5f9"
+    },
+    {
+      "path": "src/components/dashboard/HataBildirButonu.tsx",
+      "size": 4638,
+      "mode": 33206,
+      "sha": "899ede92e9a7328a3797af93d3b877a47e37a3ac"
+    },
+    {
+      "path": "src/components/dashboard/Header.tsx",
+      "size": 7549,
+      "mode": 33206,
+      "sha": "28d4adfea3d4bffeb08ec2aa21de1f17f2c3cb40"
+    },
+    {
+      "path": "src/components/dashboard/HosgeldinPopuplari.tsx",
+      "size": 5897,
+      "mode": 33206,
+      "sha": "70336f6cbd0bcda1706c12d3c7af3ceb5abdb0fa"
+    },
+    {
+      "path": "src/components/dashboard/KonuHakimiyetiEkrani.tsx",
+      "size": 14382,
+      "mode": 33206,
+      "sha": "32d79f7d079bb54475f3a3b5af55e1ffe7abdc3d"
+    },
+    {
+      "path": "src/components/dashboard/KonuHaritasiRaporu.tsx",
+      "size": 11093,
+      "mode": 33206,
+      "sha": "9b618b62053745a9e2646be8eff08375903bb613"
+    },
+    {
+      "path": "src/components/dashboard/MaskotKonusmaBalonu.tsx",
+      "size": 1627,
+      "mode": 33206,
+      "sha": "55497b7b2a4dcd4598326c7ed49fd78f99dd30db"
+    },
+    {
+      "path": "src/components/dashboard/MesajlarimIkonu.tsx",
+      "size": 6062,
+      "mode": 33206,
+      "sha": "14e9c2517cb44dc22c4b0d79b2d990224432ab07"
+    },
+    {
+      "path": "src/components/dashboard/MobilMenu.tsx",
+      "size": 7544,
+      "mode": 33206,
+      "sha": "c6cb70b38fb6d89d98397b16630046977a0d3557"
+    },
+    {
+      "path": "src/components/dashboard/OgrenciVeriGirisi.tsx",
+      "size": 40393,
+      "mode": 33206,
+      "sha": "0bb3c4732286e58b2dc1ef7e293ec0d609766568"
+    },
+    {
+      "path": "src/components/dashboard/OgretmenPanel.tsx",
+      "size": 53871,
+      "mode": 33206,
+      "sha": "43d81d8ab2d8df76c1b7f3c5cac3f58421142ec2"
+    },
+    {
+      "path": "src/components/dashboard/RehberlikPaneli.tsx",
+      "size": 11862,
+      "mode": 33206,
+      "sha": "909578d23766edf232c75e24fb0438aa38b74743"
+    },
+    {
+      "path": "src/components/dashboard/RozetGoruntulemePaneli.tsx",
+      "size": 3008,
+      "mode": 33206,
+      "sha": "ce86ba767f76349381831a54840248a0c46500c1"
+    },
+    {
+      "path": "src/components/dashboard/Rozetlerim.tsx",
+      "size": 23133,
+      "mode": 33206,
+      "sha": "fe51df085199f44927e792368443b5afc1fb3760"
+    },
+    {
+      "path": "src/components/dashboard/RozetOgrenciSecici.tsx",
+      "size": 3375,
+      "mode": 33206,
+      "sha": "1b2514c0ceae92da241e0c1328e0fb7a39404655"
+    },
+    {
+      "path": "src/components/dashboard/TgDenemeleri.tsx",
+      "size": 10264,
+      "mode": 33206,
+      "sha": "acc7dbb89590816892a0315c3418503a294a7563"
+    },
+    {
+      "path": "src/components/dashboard/YonetimNavigasyonu.tsx",
+      "size": 1661,
+      "mode": 33206,
+      "sha": "ec836aea022de691c87836fef8ededbcabed86c0"
+    },
+    {
+      "path": "src/components/dashboard/YurtNobetiTablosu.tsx",
+      "size": 5473,
+      "mode": 33206,
+      "sha": "6a7d1e671a99c081aa90889e1b0811877768aaad"
+    },
+    {
+      "path": "src/components/dashboard/ZorunluSifreDegisikligiKapisi.tsx",
+      "size": 4276,
+      "mode": 33206,
+      "sha": "e216f283f67a4b1f6618615ad229d71df2397bc6"
+    },
+    {
+      "path": "src/components/DashboardIskeleti.tsx",
+      "size": 2956,
+      "mode": 33206,
+      "sha": "58cce5cc7b67e3f1a8baabc4a5f462afbfdbbecf"
+    },
+    {
+      "path": "src/components/DenemeSuresiSonaErdiEkrani.tsx",
+      "size": 1745,
+      "mode": 33206,
+      "sha": "8d3dd7de8ade01adfc4c8405c8a7944a805b9e83"
+    },
+    {
+      "path": "src/components/GirisKarsilamaSayfasi.tsx",
+      "size": 12109,
+      "mode": 33206,
+      "sha": "5732cdec2f1e4991f4f4c4ba6abe74b239b26b1f"
+    },
+    {
+      "path": "src/components/GlobalIslemGostergesi.tsx",
+      "size": 1696,
+      "mode": 33206,
+      "sha": "a344ea1ac8a1098e0840f38f1692fdc48011e7a9"
+    },
+    {
+      "path": "src/components/KisiselBilgilerFormu.tsx",
+      "size": 4028,
+      "mode": 33206,
+      "sha": "c4312e71068d3980fe7a4d858f54cd8f2de33d9f"
+    },
+    {
+      "path": "src/components/KurumTuruSecici.tsx",
+      "size": 1304,
+      "mode": 33206,
+      "sha": "39c58cbabe1fc75631665c23e971d5660b6f32d2"
+    },
+    {
+      "path": "src/components/moderator/ModeratorPanel.tsx",
+      "size": 36202,
+      "mode": 33206,
+      "sha": "45ab425617fe133d9d982c8874b619eebe983de9"
+    },
+    {
+      "path": "src/components/moderator/ModeratorProfilim.tsx",
+      "size": 1416,
+      "mode": 33206,
+      "sha": "8f920d7d9bf4da7460b5e9be08e621a4e12884da"
+    },
+    {
+      "path": "src/components/OturumZamanAsimi.tsx",
+      "size": 1481,
+      "mode": 33206,
+      "sha": "1c11ff968575a5a763c4eef151bac1aacc1c4620"
+    },
+    {
+      "path": "src/components/SeFuWordmark.tsx",
+      "size": 1579,
+      "mode": 33206,
+      "sha": "9f5c78558ac811f413e3494677694cb5ffac9985"
+    },
+    {
+      "path": "src/components/SifreDegistir.tsx",
+      "size": 4484,
+      "mode": 33206,
+      "sha": "5956f2b3651848249ffa8281d30bdd4843b05265"
+    },
+    {
+      "path": "src/components/SiteBakimdaEkrani.tsx",
+      "size": 947,
+      "mode": 33206,
+      "sha": "8ee684e39607849e7c981929e4afb9f8fe72aa90"
+    },
+    {
+      "path": "src/components/yonetici/AdminlerYonetimi.tsx",
+      "size": 14200,
+      "mode": 33206,
+      "sha": "af347642acc58f7b239399e25ced80496ea9367b"
+    },
+    {
+      "path": "src/components/yonetici/AdminProfilim.tsx",
+      "size": 1492,
+      "mode": 33206,
+      "sha": "7de8b28bcca88e32e332dece47327268253fd427"
+    },
+    {
+      "path": "src/components/yonetici/AnaSayfaAyarlariYonetimi.tsx",
+      "size": 8258,
+      "mode": 33206,
+      "sha": "54db23ed9f9594841e1ab49f8b86dbb39e5b970c"
+    },
+    {
+      "path": "src/components/yonetici/DershaneDenemeSuresiAyari.tsx",
+      "size": 3098,
+      "mode": 33206,
+      "sha": "b77d6c8caa10f55f67edde9c3fa0a41f78fd4dee"
+    },
+    {
+      "path": "src/components/yonetici/GeriDonButonu.tsx",
+      "size": 1150,
+      "mode": 33206,
+      "sha": "691a51181a7dd6e71d0d645340fc479054ed7c2c"
+    },
+    {
+      "path": "src/components/yonetici/HataBildirimleriYonetimi.tsx",
+      "size": 2077,
+      "mode": 33206,
+      "sha": "d68e9fa2f0f41168b349834c3c0035768ed8af90"
+    },
+    {
+      "path": "src/components/yonetici/HataBildirimListesi.tsx",
+      "size": 2572,
+      "mode": 33206,
+      "sha": "ca83c47a3b9ffb365df713f42ecf45c15d56b198"
+    },
+    {
+      "path": "src/components/yonetici/IslemGecmisi.tsx",
+      "size": 4752,
+      "mode": 33206,
+      "sha": "799694d4cd36da906a20a1e75afa6d44e1643d51"
+    },
+    {
+      "path": "src/components/yonetici/IzinliOgrenciListesi.tsx",
+      "size": 5978,
+      "mode": 33206,
+      "sha": "e15d18911d04ab0bd214eff175b87733a72e0158"
+    },
+    {
+      "path": "src/components/yonetici/KonuAnlatimYonetimi.tsx",
+      "size": 7434,
+      "mode": 33206,
+      "sha": "2686b3a72f69dbc2dc7f90570e227d969c33b9bd"
+    },
+    {
+      "path": "src/components/yonetici/KullaniciArama.tsx",
+      "size": 23489,
+      "mode": 33206,
+      "sha": "ed0067d95f86d643e137411e60b293803478ae1f"
+    },
+    {
+      "path": "src/components/yonetici/KullaniciDetayYonetimi.tsx",
+      "size": 19862,
+      "mode": 33206,
+      "sha": "dc7b8adba9601039fc0d6eca1f06f1c22bc19388"
+    },
+    {
+      "path": "src/components/yonetici/KurallarYonetimi.tsx",
+      "size": 4995,
+      "mode": 33206,
+      "sha": "7d21fa10356e35086bc46706fc412feaf76ac603"
+    },
+    {
+      "path": "src/components/yonetici/ModeratorAtamaFormu.tsx",
+      "size": 4838,
+      "mode": 33206,
+      "sha": "930969db449a8dd84ad409c3c1794ea2f562b1a6"
+    },
+    {
+      "path": "src/components/yonetici/ModeratorlerListesi.tsx",
+      "size": 2158,
+      "mode": 33206,
+      "sha": "171f75246b0fbbc6957ef444b3f15258c5df948e"
+    },
+    {
+      "path": "src/components/yonetici/MufredatHiyerarsiYonetimi.tsx",
+      "size": 7896,
+      "mode": 33206,
+      "sha": "3d2932ff266965ee6cea2dc4926658362ce12093"
+    },
+    {
+      "path": "src/components/yonetici/PdfEslesmeListesi.tsx",
+      "size": 4211,
+      "mode": 33206,
+      "sha": "232285d6bffa3c6901edea8e3c28b98c19750ab9"
+    },
+    {
+      "path": "src/components/yonetici/PdfEslesmeYonetimi.tsx",
+      "size": 1194,
+      "mode": 33206,
+      "sha": "dde62c76d78d44f2101f8abfb7b5c645c124f518"
+    },
+    {
+      "path": "src/components/yonetici/PlatformIstatistikleri.tsx",
+      "size": 3052,
+      "mode": 33206,
+      "sha": "6fcc7e179d9b365bdee6a60998d00029e111be30"
+    },
+    {
+      "path": "src/components/yonetici/ProfiliYonetToggle.tsx",
+      "size": 1228,
+      "mode": 33206,
+      "sha": "67bcb52b66b9fe6d6e936ff7d32d5ada7803f262"
+    },
+    {
+      "path": "src/components/yonetici/SiteAyarlariYonetimi.tsx",
+      "size": 3069,
+      "mode": 33206,
+      "sha": "9063c4bddc8f63bff0afb23da86ee75927aea4b2"
+    },
+    {
+      "path": "src/components/yonetici/TgDenemeYonetimi.tsx",
+      "size": 9830,
+      "mode": 33206,
+      "sha": "765cc4294a85ae0cf278b49ceaa48c6ee5fe03ce"
+    },
+    {
+      "path": "src/components/yonetici/VeliTalepleri.tsx",
+      "size": 6774,
+      "mode": 33206,
+      "sha": "6a3308b21786d246fa0c66274555595aebd2f4b1"
+    },
+    {
+      "path": "src/components/yonetici/YoneticiDuyuruPaneli.tsx",
+      "size": 12517,
+      "mode": 33206,
+      "sha": "fe1fe3aee8916bfde4ca85536cb95b02fcd4fcc1"
+    },
+    {
+      "path": "src/components/yonetici/YoneticiGirisForm.tsx",
+      "size": 4085,
+      "mode": 33206,
+      "sha": "3933783937293af0f7a7b511677d2e30021aa413"
+    },
+    {
+      "path": "src/components/YukleniyorOverlay.tsx",
+      "size": 1328,
+      "mode": 33206,
+      "sha": "d4805a22a820f173e43a1b8011cbe773bd056c81"
+    },
+    {
+      "path": "src/lib/ana-sayfa.ts",
+      "size": 1798,
+      "mode": 33206,
+      "sha": "6f70042cdd43b8f43c008a5d1c7706567511e092"
+    },
+    {
+      "path": "src/lib/analiz-kohort.ts",
+      "size": 4089,
+      "mode": 33206,
+      "sha": "aaf02e97145b0a2db78d3f6fed5c47a16bbc5ae9"
+    },
+    {
+      "path": "src/lib/analiz-motoru.ts",
+      "size": 27191,
+      "mode": 33206,
+      "sha": "e4c1893120aa9e7859e0a4ebdd0ccbf95bbe3240"
+    },
+    {
+      "path": "src/lib/analiz.ts",
+      "size": 15420,
+      "mode": 33206,
+      "sha": "26c65a4f1f285793fabd6e7af83f3c6fb4bd0852"
+    },
+    {
+      "path": "src/lib/anthropic.ts",
+      "size": 514,
+      "mode": 33206,
+      "sha": "26af0cc72b54a0991a8831a108ee24883e8d57d6"
+    },
+    {
+      "path": "src/lib/app-ayarlari.ts",
+      "size": 667,
+      "mode": 33206,
+      "sha": "7e8014e2615472630e21904746c97709d2e82a91"
+    },
+    {
+      "path": "src/lib/bildirim-gonder.ts",
+      "size": 746,
+      "mode": 33206,
+      "sha": "6fcf1ae4aa4e03c354cd89fbb551bd4dec5ac2e7"
+    },
+    {
+      "path": "src/lib/dashboard-navigation.ts",
+      "size": 11490,
+      "mode": 33206,
+      "sha": "70737ea8a85c3941a482baa4346b0a20c741dc17"
+    },
+    {
+      "path": "src/lib/deneme-dersleri.ts",
+      "size": 758,
+      "mode": 33206,
+      "sha": "7d439676017c386fa381de81e4ceb0aa2be7756b"
+    },
+    {
+      "path": "src/lib/deneme-pdf-ayristirici.ts",
+      "size": 58253,
+      "mode": 33206,
+      "sha": "fc0f541c52f09548fbb1f196ad36a7da75743399"
+    },
+    {
+      "path": "src/lib/deneme-sonucu-kaydet.ts",
+      "size": 6947,
+      "mode": 33206,
+      "sha": "671b1a3fd2363dbcb30f3ced1f6a1f4b56802171"
+    },
+    {
+      "path": "src/lib/deneme-suresi.ts",
+      "size": 2727,
+      "mode": 33206,
+      "sha": "b3c9ab90ec5589c8496f0ce6adeb879dc14b25c7"
+    },
+    {
+      "path": "src/lib/ders-programi.ts",
+      "size": 3565,
+      "mode": 33206,
+      "sha": "8f5c40ef9ed018d556e340a27a63ecd081e6ac99"
+    },
+    {
+      "path": "src/lib/dershane-ana-sayfa.ts",
+      "size": 5686,
+      "mode": 33206,
+      "sha": "fc852e0822c008241004593af0c8bcd78ab08e01"
+    },
+    {
+      "path": "src/lib/dershane-auth.ts",
+      "size": 1546,
+      "mode": 33206,
+      "sha": "f42908cb21688eb00062faccb5e879362ee2816d"
+    },
+    {
+      "path": "src/lib/duyuru-guvenligi.ts",
+      "size": 1540,
+      "mode": 33206,
+      "sha": "d76aa4ef98d866037aea56b0f54158f5d7631ce5"
+    },
+    {
+      "path": "src/lib/google-analytics.ts",
+      "size": 3540,
+      "mode": 33206,
+      "sha": "25f5bd938e6c1f9b33e0ac87ed30333893889f48"
+    },
+    {
+      "path": "src/lib/islem-gecmisi.ts",
+      "size": 3844,
+      "mode": 33206,
+      "sha": "9600f6421f01e20d2cffd62b5db3fa016d14dd13"
+    },
+    {
+      "path": "src/lib/konu-anlatimi.ts",
+      "size": 1664,
+      "mode": 33206,
+      "sha": "78484f9d2b63aafb637dd2dc4784fb189a3ed95e"
+    },
+    {
+      "path": "src/lib/konu-hakimiyeti.ts",
+      "size": 14873,
+      "mode": 33206,
+      "sha": "7c4338bab88d1f3be8c0e2145c41d8bf58f12b61"
+    },
+    {
+      "path": "src/lib/konu-raporu.ts",
+      "size": 3848,
+      "mode": 33206,
+      "sha": "9177cefc19b571a369be32c3023ef4269827d292"
+    },
+    {
+      "path": "src/lib/kurum.ts",
+      "size": 543,
+      "mode": 33206,
+      "sha": "b0cce637ecce49585ce8fe323eb633bb2878a4f9"
+    },
+    {
+      "path": "src/lib/manipulasyon-takip.ts",
+      "size": 1956,
+      "mode": 33206,
+      "sha": "9a27c46193817ca9123ef45f5c8116b80377221d"
+    },
+    {
+      "path": "src/lib/mufredat-konulari.json",
+      "size": 21375,
+      "mode": 33206,
+      "sha": "774ec990099f3be08d83561b4e4268ef84b330dc"
+    },
+    {
+      "path": "src/lib/mufredat-konulari.ts",
+      "size": 2926,
+      "mode": 33206,
+      "sha": "ce4b3982a3f88494e7d52bc02a4584cff589823a"
+    },
+    {
+      "path": "src/lib/ogrenci-eslestirme.ts",
+      "size": 3005,
+      "mode": 33206,
+      "sha": "f24e5f3f1b38340a6a6199a92b4defcfc1dd1eef"
+    },
+    {
+      "path": "src/lib/push-send.ts",
+      "size": 5168,
+      "mode": 33206,
+      "sha": "a79a6424aca4d1f97779993577ecb2c5f89a4255"
+    },
+    {
+      "path": "src/lib/push-subscribe.ts",
+      "size": 1667,
+      "mode": 33206,
+      "sha": "c062e5e4cd6fe50f735fca311549e7d81c337c2f"
+    },
+    {
+      "path": "src/lib/rehberlik.ts",
+      "size": 583,
+      "mode": 33206,
+      "sha": "0dfc666bb5d7e0867b8dfb2319a9588ad60c8450"
+    },
+    {
+      "path": "src/lib/rozet-gorunumu.ts",
+      "size": 7109,
+      "mode": 33206,
+      "sha": "ab88b42ed2de011f2af062bdacfa890543a99437"
+    },
+    {
+      "path": "src/lib/saat-araligi.ts",
+      "size": 1244,
+      "mode": 33206,
+      "sha": "206cae6e4636639eadd812e3f7feae801173ab31"
+    },
+    {
+      "path": "src/lib/site-ayarlari.ts",
+      "size": 502,
+      "mode": 33206,
+      "sha": "12df1f8e34a549a09c55cc0d52ab6ef52593ced4"
+    },
+    {
+      "path": "src/lib/site-duyuru.ts",
+      "size": 2537,
+      "mode": 33206,
+      "sha": "c0ebfc2bb32bf5cf9eb3d870830bcd9332225426"
+    },
+    {
+      "path": "src/lib/supabase/admin.ts",
+      "size": 725,
+      "mode": 33206,
+      "sha": "817ef309d424f697053254b43ede1c0fd6863a13"
+    },
+    {
+      "path": "src/lib/supabase/client.ts",
+      "size": 292,
+      "mode": 33206,
+      "sha": "3c833c6e27326facffcf0bb3f8c02d02f6575937"
+    },
+    {
+      "path": "src/lib/supabase/middleware.ts",
+      "size": 4625,
+      "mode": 33206,
+      "sha": "62ccbb4fb3e65a372321bd4c0927bcb3e7d0748f"
+    },
+    {
+      "path": "src/lib/supabase/server.ts",
+      "size": 924,
+      "mode": 33206,
+      "sha": "01b95106d27b03dd6a0400c857988d58213f3afb"
+    },
+    {
+      "path": "src/lib/tarih.ts",
+      "size": 1510,
+      "mode": 33206,
+      "sha": "06cb206a7e18890507f9963423a2efb9b8aa5e92"
+    },
+    {
+      "path": "src/lib/tg-deneme-ilanlari.ts",
+      "size": 3046,
+      "mode": 33206,
+      "sha": "d69e3f8fa06573f51d9fa3bc90f5fb9a32dbd5d0"
+    },
+    {
+      "path": "src/lib/tg-denemeleri.ts",
+      "size": 7362,
+      "mode": 33206,
+      "sha": "56143bc5a0ee783cb036a6f4b2e3fac6abc003df"
+    },
+    {
+      "path": "src/lib/theme.ts",
+      "size": 1954,
+      "mode": 33206,
+      "sha": "57f0dcd326ca523f24263dd7053ced59cc80f768"
+    },
+    {
+      "path": "src/lib/types.ts",
+      "size": 16031,
+      "mode": 33206,
+      "sha": "3dd2c0a95ac08929df320e60ecd2edf775e9b4de"
+    },
+    {
+      "path": "src/lib/validators.ts",
+      "size": 3511,
+      "mode": 33206,
+      "sha": "f064d2551f00eb3989713672d3c090402723f765"
+    },
+    {
+      "path": "src/lib/veli-kvkk.ts",
+      "size": 1451,
+      "mode": 33206,
+      "sha": "07c9a0e7c0a39d43871186c8ed7330eaae7f8616"
+    },
+    {
+      "path": "src/proxy.ts",
+      "size": 1718,
+      "mode": 33206,
+      "sha": "d1c562f2733a6b272be23132236eb0936ed46d01"
+    },
+    {
+      "path": "tsconfig.json",
+      "size": 670,
+      "mode": 33206,
+      "sha": "27dded29dc880f958ee67c9ed276fb2b1412f515"
+    },
+    {
+      "path": "tsconfig.tsbuildinfo",
+      "size": 226785,
+      "mode": 33206,
+      "sha": "decfd9c28dde638939b0d6fb947690340741dfef"
+    },
+    {
+      "path": "vercel.json",
+      "size": 400,
+      "mode": 33206,
+      "sha": "1d127e08f13550aa01afb0effc681205a4e79c70"
+    }
+  ]
+}

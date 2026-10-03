@@ -1,0 +1,2 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<ns0:Relationships xmlns:ns0="http://schemas.openxmlformats.org/package/2006/relationships"><ns0:Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image-19-1.png" /><ns0:Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml" /></ns0:Relationships>

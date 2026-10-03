@@ -1,0 +1,557 @@
+
+I inspected the application at E:\SG_EDUCOACH in read-only mode. The opencode subfolder is unrelated to the application root.
+The central finding is that “Site ayarları” is a composite admin section containing three controls:
+1. Site maintenance mode.
+2. Public homepage text, slider timing, and slider images.
+3. Public homepage announcements.
+Settings are stored in Supabase. There is no settings context provider and no theme preference in localStorage. Different settings reach the UI through server components, server actions, and request middleware.
+1. Admin “Site ayarları” section
+Routing and composition
+The menu entry is defined in [src/lib/dashboard-navigation.ts (line 166)](E:/SG_EDUCOACH/src/lib/dashboard-navigation.ts:166):
+{
+  bolum: "site-ayarlari",
+  href: "/yonetici/site-ayarlari",
+  etiket: "Site ayarları",
+  ikon: "ayarlar",
+}
+The URL is handled by the catch-all admin route in [src/app/yonetici/[bolum\]/page.tsx (line 11)](E:/SG_EDUCOACH/src/app/yonetici/[bolum]/page.tsx:11). It validates the route and delegates rendering to the shared admin page:
+return YoneticiPage({
+  searchParams: Promise.resolve({ ...mevcutArama, bolum }),
+});
+The actual server component is [src/app/yonetici/page.tsx (line 43)](E:/SG_EDUCOACH/src/app/yonetici/page.tsx:43). It:
+- Creates a server-side Supabase client.
+- Reads the authenticated user.
+- Checks profiles.role === "admin".
+- Fetches settings only when aktifBolum === "site-ayarlari".
+- Passes the initial data to three client components.
+Relevant section:
+const { kapali: siteKapali } =
+  aktifBolum === "site-ayarlari"
+    ? await siteAyarlariGetir()
+    : { kapali: false };
+
+const { ayarlar: anaSayfaAyarlari, gorseller: anaSayfaGorselleri } =
+  aktifBolum === "site-ayarlari"
+    ? await anaSayfaAyarlariGetir()
+    : {
+        ayarlar: { baslik: "", govde: "", sliderGecisSaniye: 6 },
+        gorseller: [],
+      };
+
+const anaSayfaDuyurulari =
+  aktifBolum === "site-ayarlari"
+    ? await anaSayfaDuyurulariniGetir(supabase)
+    : [];
+Rendering occurs at lines 136–141:
+{aktifBolum === "site-ayarlari" && (
+  <section className="sfec-section">
+    <SiteAyarlariYonetimi kapaliBaslangic={siteKapali} />
+    <AnaSayfaAyarlariYonetimi
+      ayarlarBaslangic={anaSayfaAyarlari}
+      gorsellerBaslangic={anaSayfaGorselleri}
+    />
+    <AnaSayfaDuyuruYonetimi baslangic={anaSayfaDuyurulari} />
+  </section>
+)}
+Maintenance-mode editor
+The UI is [src/components/yonetici/SiteAyarlariYonetimi.tsx (line 12)](E:/SG_EDUCOACH/src/components/yonetici/SiteAyarlariYonetimi.tsx:12).
+It is a client component that:
+- Initializes React state from the server-fetched kapaliBaslangic.
+- Asks for confirmation when enabling maintenance.
+- Calls the siteKapaliDegistir() server action.
+- Updates local React state.
+- Calls router.refresh() after a successful save.
+function degistir() {
+  const yeni = !kapali;
+
+  if (
+    yeni &&
+    !window.confirm(
+      "Site bakıma alınsın mı? Admin dışındaki tüm roller..."
+    )
+  ) return;
+
+  startTransition(async () => {
+    const r = await siteKapaliDegistir(yeni);
+    if (r.error) return setMesaj(`Hata: ${r.error}`);
+
+    setKapali(yeni);
+    router.refresh();
+  });
+}
+There is no form API endpoint, browser storage, or context involved. The client component invokes a Next.js server action directly.
+Homepage settings editor
+The UI is [src/components/yonetici/AnaSayfaAyarlariYonetimi.tsx (line 14)](E:/SG_EDUCOACH/src/components/yonetici/AnaSayfaAyarlariYonetimi.tsx:14).
+It edits:
+- baslik
+- govde
+- slider_gecis_saniye
+- Slider images
+The text fields are maintained in local React state while editing. Saving calls:
+const res = await anaSayfaAyarlariniGuncelle({
+  baslik: baslik.trim(),
+  govde: govde.trim(),
+  sliderGecisSaniye: saniye,
+});
+The server-side implementation is in [src/app/yonetici/actions.ts (line 1718)](E:/SG_EDUCOACH/src/app/yonetici/actions.ts:1718):
+const { error } = await admin.from("ana_sayfa_ayarlari").upsert({
+  id: 1,
+  baslik,
+  govde,
+  slider_gecis_saniye: input.sliderGecisSaniye,
+  updated_at: new Date().toISOString(),
+});
+
+await auditLogYaz(
+  supabase,
+  user.id,
+  "ana_sayfa_ayarlari_guncelle",
+  {},
+);
+
+revalidatePath("/");
+revalidatePath("/yonetici");
+Validation exists on both sides:
+- Title required.
+- Title limited to 200 characters.
+- Body limited to 4,000 characters.
+- Slider interval must be an integer of at least four seconds.
+Slider uploads go through anaSayfaSliderGorseliEkle() in [src/app/yonetici/actions.ts (line 1742)](E:/SG_EDUCOACH/src/app/yonetici/actions.ts:1742). It:
+1. Checks MIME type: JPEG, PNG, or WebP.
+2. Enforces a 15 MB limit.
+3. Calculates the next sira.
+4. Uploads the binary to the public Supabase Storage bucket ana-sayfa.
+5. Inserts dosya_yolu and sira into ana_sayfa_slider_gorselleri.
+6. Writes an audit record.
+7. Revalidates / and /yonetici.
+Deletion removes both the database record and the Storage object.
+Homepage announcement editor
+The third card is [src/components/yonetici/AnaSayfaDuyuruYonetimi.tsx (line 1)](E:/SG_EDUCOACH/src/components/yonetici/AnaSayfaDuyuruYonetimi.tsx:1).
+It calls these server actions:
+- anaSayfaDuyurusuKaydet()
+- anaSayfaDuyurusuSil()
+They live in [src/app/yonetici/actions.ts (line 1797)](E:/SG_EDUCOACH/src/app/yonetici/actions.ts:1797). The save action validates a 120-character title and 2,000-character body, inserts or updates Supabase, records an audit event, and revalidates / and /yonetici.
+A database trigger retains only the six newest announcements.
+Server-action authorization
+All admin settings actions use requireAdmin() in [src/app/yonetici/actions.ts (line 24)](E:/SG_EDUCOACH/src/app/yonetici/actions.ts:24):
+async function requireAdmin() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) redirect("/yonetici");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.role !== "admin") redirect("/");
+
+  return {
+    supabase,
+    user,
+    admin: createAdminClient(),
+  };
+}
+The code verifies the authenticated role before creating and using the service-role Supabase client. Successful mutations are generally recorded in admin_audit_log.
+2. Where settings are stored
+platform_ayarlari
+This is the main platform-wide singleton table.
+It is created in [supabase/migrations/0065_dershane_deneme_suresi.sql (line 9)](E:/SG_EDUCOACH/supabase/migrations/0065_dershane_deneme_suresi.sql:9), extended by [0072_site_bakim_modu_ve_admin_gizliligi.sql (line 15)](E:/SG_EDUCOACH/supabase/migrations/0072_site_bakim_modu_ve_admin_gizliligi.sql:15), and extended again by [0076_yonetici_duyuru_banner.sql (line 8)](E:/SG_EDUCOACH/supabase/migrations/0076_yonetici_duyuru_banner.sql:8).
+Effective schema:
+create table public.platform_ayarlari (
+  id integer primary key default 1 check (id = 1),
+  dershane_deneme_bitis timestamptz,
+  updated_at timestamptz not null default now(),
+
+  -- migration 0072
+  site_kapali boolean not null default false,
+
+  -- migration 0076
+  aktif_duyuru_metni text,
+  aktif_duyuru_bitis timestamptz,
+  aktif_duyuru_kurum_id uuid
+    references public.schools(id)
+    on delete set null
+);
+RLS:
+alter table public.platform_ayarlari enable row level security;
+
+create policy "platform_ayarlari_select"
+  on public.platform_ayarlari
+  for select
+  using (true);
+
+create policy "platform_ayarlari_admin_all"
+  on public.platform_ayarlari
+  for all
+  using (public.is_admin())
+  with check (public.is_admin());
+It is publicly readable because maintenance status may be needed before login. Writes are restricted to admins by RLS; the application additionally performs explicit server-side admin verification.
+ana_sayfa_ayarlari
+Defined in [supabase/migrations/0085_ana_sayfa_ayarlari.sql (line 6)](E:/SG_EDUCOACH/supabase/migrations/0085_ana_sayfa_ayarlari.sql:6):
+create table public.ana_sayfa_ayarlari (
+  id int primary key default 1,
+  baslik text not null,
+  govde text not null,
+  slider_gecis_saniye int not null
+    default 6
+    check (slider_gecis_saniye >= 4),
+  updated_at timestamptz not null default now(),
+  constraint ana_sayfa_ayarlari_singleton check (id = 1)
+);
+RLS:
+create policy "ana_sayfa_ayarlari_select_all"
+  on public.ana_sayfa_ayarlari
+  for select using (true);
+
+create policy "ana_sayfa_ayarlari_update_admin"
+  on public.ana_sayfa_ayarlari
+  for update using (public.is_admin());
+
+create policy "ana_sayfa_ayarlari_insert_admin"
+  on public.ana_sayfa_ayarlari
+  for insert with check (public.is_admin());
+ana_sayfa_slider_gorselleri
+Also defined in migration 0085:
+create table public.ana_sayfa_slider_gorselleri (
+  id uuid primary key default gen_random_uuid(),
+  dosya_yolu text not null,
+  sira int not null default 0,
+  created_at timestamptz not null default now()
+);
+The records are public-readable and admin-writable. The image files are stored in the public ana-sayfa Supabase Storage bucket.
+The URL helper is [src/lib/ana-sayfa.ts (line 47)](E:/SG_EDUCOACH/src/lib/ana-sayfa.ts:47):
+export function anaSayfaDosyaUrl(dosyaYolu: string): string {
+  const taban =
+    process.env.NEXT_PUBLIC_SUPABASE_URL!.replace(/\/$/, "");
+
+  return `${taban}/storage/v1/object/public/ana-sayfa/${dosyaYolu}`;
+}
+ana_sayfa_duyurulari
+Defined in [supabase/migrations/0090_ana_sayfa_duyurulari.sql (line 1)](E:/SG_EDUCOACH/supabase/migrations/0090_ana_sayfa_duyurulari.sql:1):
+create table public.ana_sayfa_duyurulari (
+  id uuid primary key default gen_random_uuid(),
+  baslik text not null check (char_length(baslik) between 1 and 120),
+  icerik text not null check (char_length(icerik) between 1 and 2000),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+It is public-readable and admin-writable. A trigger uses a transaction advisory lock and removes records after the newest six.
+app_ayarlari
+This is a separate, general-purpose key/value table. It powers the registration rules rather than the “Site ayarları” route itself.
+Defined in [supabase/migrations/0022_app_ayarlari.sql (line 7)](E:/SG_EDUCOACH/supabase/migrations/0022_app_ayarlari.sql:7) and present in [supabase/schema.sql (line 735)](E:/SG_EDUCOACH/supabase/schema.sql:735):
+create table public.app_ayarlari (
+  anahtar text primary key,
+  deger text not null,
+  guncelleyen_id uuid
+    references public.profiles(id)
+    on delete set null,
+  updated_at timestamptz not null default now()
+);
+Known keys:
+kurallar_metni
+kurallar_versiyon
+The helper [src/lib/app-ayarlari.ts (line 8)](E:/SG_EDUCOACH/src/lib/app-ayarlari.ts:8) reads one value at a time:
+export async function appAyariGetir(
+  anahtar: string,
+): Promise<string | null> {
+  const supabase = await createClient();
+
+  const { data } = await supabase
+    .from("app_ayarlari")
+    .select("deger")
+    .eq("anahtar", anahtar)
+    .maybeSingle();
+
+  return data?.deger ?? null;
+}
+The admin-side editor is a separate menu section, “Kurallar,” implemented by [src/components/yonetici/KurallarYonetimi.tsx (line 12)](E:/SG_EDUCOACH/src/components/yonetici/KurallarYonetimi.tsx:12).
+When updated, kurallar_versiyon is changed to v${Date.now()}. The signup page reads both values server-side in [src/app/signup/page.tsx (line 7)](E:/SG_EDUCOACH/src/app/signup/page.tsx:7).
+The only relevant localStorage use is the user’s acceptance of a particular rules version in SignupForm. It does not store the setting text, maintenance status, colors, or theme.
+Schema consistency issue
+There is an important repository inconsistency:
+- README.md says [supabase/schema.sql (line 1)](E:/SG_EDUCOACH/supabase/schema.sql:1) should represent the complete fresh-install result of every migration.
+- app_ayarlari is present there.
+- Searches found no definitions for platform_ayarlari, ana_sayfa_ayarlari, ana_sayfa_slider_gorselleri, or ana_sayfa_duyurulari in schema.sql.
+Those tables currently exist only in later migration files. Therefore a fresh database created solely from schema.sql would not match the application’s current requirements.
+3. How settings flow from DB to UI
+There is no shared settings provider or React context.
+Maintenance mode
+```mermaid
+flowchart LR
+    A[Admin toggle] --> B[siteKapaliDegistir server action]
+    B --> C[platform_ayarlari.site_kapali]
+    C --> D[Request middleware]
+    D --> E{Closed and non-admin?}
+    E -->|Yes| F[Rewrite to /site-bakimda]
+    E -->|No| G[Requested page]
+```
+
+
+
+Detailed path:
+1. [SiteAyarlariYonetimi.tsx (line 18)](E:/SG_EDUCOACH/src/components/yonetici/SiteAyarlariYonetimi.tsx:18) calls siteKapaliDegistir.
+2. [actions.ts (line 692)](E:/SG_EDUCOACH/src/app/yonetici/actions.ts:692) upserts singleton row id = 1.
+3. [src/proxy.ts (line 24)](E:/SG_EDUCOACH/src/proxy.ts:24) delegates matched requests to updateSession().
+4. [src/lib/supabase/middleware.ts (line 17)](E:/SG_EDUCOACH/src/lib/supabase/middleware.ts:17) reads site_kapali.
+5. The value is cached in process memory for 45 seconds.
+6. For /, /dashboard, /moderator, /login, and /signup, a closed site rewrites non-admin traffic to /site-bakimda.
+7. Admin users bypass the rewrite.
+8. [src/app/site-bakimda/page.tsx (line 1)](E:/SG_EDUCOACH/src/app/site-bakimda/page.tsx:1) renders [SiteBakimdaEkrani.tsx (line 8)](E:/SG_EDUCOACH/src/components/SiteBakimdaEkrani.tsx:8).
+Because the cache is per Vercel instance, a maintenance-mode change can take up to approximately 45 seconds to appear everywhere.
+One migration comment says /login and /signup remain open, but the current middleware includes both in maintenance coverage. The middleware is the authoritative runtime behavior.
+Homepage settings
+```mermaid
+flowchart LR
+    A[Admin form] --> B[Server action]
+    B --> C[Supabase tables and Storage]
+    C --> D[revalidatePath /]
+    D --> E[Home server component fetch]
+    E --> F[Props passed to AnaSayfa]
+```
+
+
+
+The public homepage is [src/app/page.tsx (line 15)](E:/SG_EDUCOACH/src/app/page.tsx:15). On every relevant render it concurrently fetches:
+const [ayarlar, sliderGorselleri, tgIlanlar, duyurular] =
+  await Promise.all([
+    anaSayfaAyarlariniGetir(supabase),
+    anaSayfaSliderGorselleriGetir(supabase),
+    tgDenemeIlanlariGetir(supabase),
+    anaSayfaDuyurulariniGetir(supabase),
+  ]);
+It passes plain serializable props into [src/components/AnaSayfa.tsx (line 18)](E:/SG_EDUCOACH/src/components/AnaSayfa.tsx:18):
+<AnaSayfa
+  baslik={ayarlar.baslik}
+  govde={ayarlar.govde}
+  sliderGecisSaniye={ayarlar.sliderGecisSaniye}
+  sliderGorselleri={sliderGorselleri}
+  tgIlanlar={tgIlanlar}
+  duyurular={duyurular}
+/>
+The fetch helpers in [src/lib/ana-sayfa.ts (line 25)](E:/SG_EDUCOACH/src/lib/ana-sayfa.ts:25) return safe defaults if the settings row cannot be read:
+const VARSAYILAN_AYARLAR = {
+  baslik: "www.sefukoc.com",
+  govde: "",
+  sliderGecisSaniye: 6,
+};
+4. Theme and color system
+Primary source of truth
+The dark dashboard theme is defined in [src/app/globals.css (line 8)](E:/SG_EDUCOACH/src/app/globals.css:8):
+:root {
+  color-scheme: dark;
+
+  --background: #08090b;
+  --foreground: #c2e9f8;
+
+  --sfec-bg0: #08090b;
+  --sfec-bg1: #111316;
+  --sfec-bg1-alt: #191a1d;
+
+  --sfec-border: #315d6d;
+  --sfec-border-strong: #78c9e8;
+
+  --sfec-text: #c2e9f8;
+  --sfec-text-muted: #8fc6d9;
+
+  --sfec-mint: #c2e9f8;
+  --sfec-mint-on: #0b3b4d;
+  --sfec-mint-bg: rgba(194, 233, 248, 0.18);
+  --sfec-seafoam: #78c9e8;
+
+  --sfec-shell-bg: #0b0c0f;
+  --sfec-panel-shadow: 0 16px 34px rgba(0, 0, 0, 0.45);
+
+  --sfec-hero-bg:
+    linear-gradient(135deg, #111316 0%, #191a1d 62%, #0c0d10 100%);
+
+  --sfec-nav-bg:
+    linear-gradient(135deg, #08090b 0%, #181a1e 50%, #08090b 100%);
+
+  --sfec-marka-mavi: #c2e9f8;
+  --sfec-marka-kirmizi: #c2e9f8;
+  --sfec-marka-kirmizi-vurgu: #78c9e8;
+}
+Additional specialized variables include:
+--sfec-ai-bg
+--sfec-ai-border
+--sfec-ai-glow-1
+--sfec-ai-glow-2
+--sfec-ai-accent-text
+--sfec-ai-chip-bg
+
+--sfec-gorev-sayfa-bg
+--sfec-gorev-sayfa-border
+--sfec-gorev-takvim-bg
+--sfec-plan-sayfa-bg
+--sfec-plan-sayfa-border
+--sfec-plan-takvim-bg
+
+--sfec-oyun-konu
+--sfec-oyun-soru
+--sfec-oyun-deneme
+The actual page background is applied globally:
+body {
+  min-height: 100dvh;
+  background: var(--background);
+  color: var(--foreground);
+}
+TypeScript theme bridge
+[src/lib/theme.ts (line 3)](E:/SG_EDUCOACH/src/lib/theme.ts:3) exposes the CSS variables to inline React styles:
+export const BG0 = "var(--sfec-bg0)";
+export const BG1 = "var(--sfec-bg1)";
+export const BG1_ALT = "var(--sfec-bg1-alt)";
+export const BORDER = "var(--sfec-border)";
+export const BORDER_STRONG = "var(--sfec-border-strong)";
+export const TEXT = "var(--sfec-text)";
+export const TEXT_MUTED = "var(--sfec-text-muted)";
+export const MINT = "var(--sfec-mint)";
+export const MINT_BG = "var(--sfec-mint-bg)";
+export const MINT_ON = "var(--sfec-mint-on)";
+export const NAV_BG = "var(--sfec-nav-bg)";
+Some secondary semantic colors remain hard-coded TypeScript constants, including SKY, PEACH, BUTTER, BLUSH, and LILAC.
+Tailwind setup
+There is no tailwind.config.js or tailwind.config.ts.
+Tailwind CSS v4 is loaded directly with:
+@import "tailwindcss";
+The theme bridge in globals.css is:
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-nunito);
+  --font-display: var(--font-baloo);
+}
+[postcss.config.mjs (line 1)](E:/SG_EDUCOACH/postcss.config.mjs:1) enables @tailwindcss/postcss.
+Dark-mode behavior
+Dark mode is no longer switchable.
+The source comments state that the previous light/dark system was removed. There is currently:
+- No data-theme assignment.
+- No theme provider.
+- No dark-mode React context.
+- No theme selector in admin settings.
+- No localStorage theme preference.
+- No active prefers-color-scheme color selection.
+- No Tailwind dark: variant usage found.
+- No TemaDenetimi component in the current source tree.
+[src/app/layout.tsx (line 36)](E:/SG_EDUCOACH/src/app/layout.tsx:36) explains that an earlier pre-paint theme script was removed. Browser chrome/PWA color is fixed at:
+export const viewport = {
+  themeColor: "#08090b",
+};
+The only theme substitution is print output. At [globals.css (line 440)](E:/SG_EDUCOACH/src/app/globals.css:440), @media print converts report content to white backgrounds and dark text.
+Public homepage exception
+Although the global root theme is dark, the public homepage deliberately overrides it with hard-coded light colors in [src/components/AnaSayfa.tsx (line 11)](E:/SG_EDUCOACH/src/components/AnaSayfa.tsx:11):
+const LACIVERT = "#0F2540";
+const BEYAZ = "#FFF";
+const GRI = "#3F4B5A";
+Its outer container sets background: BEYAZ. Therefore the dashboard/admin application uses the global dark palette, while the marketing homepage is an intentionally light, locally styled exception.
+Existing theme customization
+There is no user-configurable or admin-configurable theme. None of the identified settings tables contains color, palette, theme, light/dark, or CSS-variable columns.
+To add admin theme customization, the project would need a new persistence model and an application point—probably CSS custom properties on <html> or <body> from RootLayout. Neither exists today.
+5. Site-wide application model
+[src/app/layout.tsx (line 47)](E:/SG_EDUCOACH/src/app/layout.tsx:47) is the global application wrapper. It:
+- Imports globals.css.
+- Applies the Montserrat font variables.
+- Sets lang="tr".
+- Adds the skip link.
+- Renders every route.
+- Adds GlobalIslemGostergesi.
+It does not fetch settings and does not wrap the application in a settings or theme provider:
+<html
+  lang="tr"
+  className={`${montserratGovde.variable}
+              ${montserratBaslik.variable}
+              h-full antialiased`}
+>
+  <body className="min-h-full flex flex-col font-sans">
+    <a href="#ana-icerik" className="sfec-skip-link">
+      İçeriğe geç
+    </a>
+    {children}
+    <GlobalIslemGostergesi />
+  </body>
+</html>
+The project therefore has three distinct application mechanisms:
+Setting type	Read point	Application mechanism
+Theme/colors	globals.css imported by root layout	Global CSS variables
+Maintenance mode	Supabase middleware	Request rewrite before page rendering
+Homepage settings	Homepage server component	Server fetch, then props
+Registration rules	Signup server component	Server fetch, then props
+Active site announcement banner	Per-role/header helpers	Supabase fetch and component props
+
+
+6. Deployment
+Application scripts
+[package.json (line 5)](E:/SG_EDUCOACH/package.json:5) contains only standard Next.js scripts:
+{
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  }
+}
+There is no custom deploy script.
+Vercel configuration
+[vercel.json (line 1)](E:/SG_EDUCOACH/vercel.json:1) only configures scheduled jobs:
+{
+  "crons": [
+    {
+      "path": "/api/cron/hatirlatmalar",
+      "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/yurt-nobeti-bildirim?sira=1",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/yurt-nobeti-bildirim?sira=2",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/yurt-nobeti-bildirim?sira=3",
+      "schedule": "0 18 * * *"
+    }
+  ]
+}
+The repository has a local .vercel link, indicating that this checkout has been connected to a Vercel project. Its identifiers should remain private and are excluded from Git.
+The Git remote is:
+https://github.com/SGEducoach/sf-educoach.git
+The active branch is main. I found no GitHub Actions workflow and no explicit CLI deployment script. The repository documentation treats Vercel’s Deployments interface as the production control point. A Git-triggered Vercel workflow is likely, but that specific automatic trigger is not documented in the repository.
+Deployment exclusions
+[.vercelignore (line 1)](E:/SG_EDUCOACH/.vercelignore:1) excludes:
+- .env*
+- dokumanlar/
+- tmp/
+- output/
+- scripts/
+- supabase/
+- Root PDFs and shortcuts
+- Tool-specific directories such as .claude, .codex, and .agents
+This means migrations are not bundled into the web deployment. They must be applied separately to Supabase.
+Next.js production configuration
+[next.config.ts (line 1)](E:/SG_EDUCOACH/next.config.ts:1) configures:
+experimental: {
+  serverActions: {
+    bodySizeLimit: "15mb",
+  },
+},
+serverExternalPackages: ["pdfjs-dist"],
+The 15 MB limit supports scanned PDF uploads through server actions. pdfjs-dist remains external to avoid Vercel server-bundle and native-environment problems documented in the file comments.
+Deployment and operations documentation
+Relevant files:
+- [README.md (line 1)](E:/SG_EDUCOACH/README.md:1) — local setup, required environment variables, database conventions, maintenance scripts, and application architecture.
+- [docs/YONETIM_VE_ACIL_MUDAHALE.md (line 1)](E:/SG_EDUCOACH/docs/YONETIM_VE_ACIL_MUDAHALE.md:1) — production ownership, rollback, database safety, and release checklist.
+- [docs/google-analytics-kurulum.md (line 1)](E:/SG_EDUCOACH/docs/google-analytics-kurulum.md:1) — GA4/Vercel environment variables and redeployment requirements.
+- [docs/tg-denemeleri-google-drive.md (line 1)](E:/SG_EDUCOACH/docs/tg-denemeleri-google-drive.md:1) — Google Drive integration values that must be placed in Vercel.
+- [.env.local.example (line 1)](E:/SG_EDUCOACH/.env.local.example:1) — environment-variable template.
+- [src/proxy.ts (line 4)](E:/SG_EDUCOACH/src/proxy.ts:4) — redirects historical Vercel aliases to www.sefukoc.com.
+The release checklist requires:
+1. A separate descriptive commit.
+2. Successful TypeScript, ESLint, and production-build checks.
+3. A numbered migration applied to live Supabase when the DB changes.
+4. Mobile verification at iPhone 14 Pro Max dimensions.
+5. Authorization and institution-boundary testing.
+6. A live post-deployment smoke test.
+The strongest architectural concern found during this review is the cumulative supabase/schema.sql drift. The later settings migrations need to be incorporated there if that file is expected to remain a valid fresh-install schema.

@@ -45,11 +45,11 @@ export function TgDenemeYonetimi({ okullar = [] }: { okullar?: { id: string; ad:
     if (!dosya) return setHata("Bir PDF, JPEG veya PNG dosyası seçin.");
     if (!tarih.trim()) return setHata("Tarih gerekli.");
     if (!baslik.trim()) return setHata("Başlık gerekli.");
-    if (adminMi && !schoolId) return setHata("Hangi kurumun panosu olduğunu seçin.");
 
     const formData = new FormData();
     // Moderatörde boş gider; sunucu kurumu kendi kaydından bulur.
-    if (adminMi) formData.set("schoolId", schoolId);
+    // Admin boş bırakırsa veya sefu-yonetim seçerse backend otomatik yönetir.
+    if (adminMi && schoolId) formData.set("schoolId", schoolId);
     formData.set("dosya", dosya);
     formData.set("tarih", tarih.trim());
     formData.set("baslik", baslik.trim());
@@ -108,14 +108,14 @@ export function TgDenemeYonetimi({ okullar = [] }: { okullar?: { id: string; ad:
 
       {acik && (
         <form onSubmit={ekle} className="mt-4 flex flex-col gap-2.5 rounded-2xl p-4" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
-          {/* Admin hangi kurumun panosuna yazdığını seçer; moderatörde bu
-              alan hiç çıkmaz çünkü kurumu zaten tek ve sunucuda biliniyor. */}
+          {/* Admin hangi kurumun panosuna yazdığını seçer; seçilmezse otomatik Sefu Yönetim olarak kaydedilir. */}
           {adminMi && (
             <label className="flex flex-col gap-1">
               <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Hangi kurumun panosu</span>
               <select value={schoolId} onChange={(e) => { setSchoolId(e.target.value); setArsiv(null); }}
                 className="rounded-xl px-3 py-2 text-sm outline-none"
                 style={{ background: BG0, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
+                <option value="">Sefu Yönetim (Kurum Dışı / Genel Duyuru)</option>
                 {okullar.map((o) => <option key={o.id} value={o.id}>{o.ad}</option>)}
               </select>
             </label>

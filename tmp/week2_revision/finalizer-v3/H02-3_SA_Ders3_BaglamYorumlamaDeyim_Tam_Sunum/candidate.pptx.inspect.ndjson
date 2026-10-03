@@ -1,0 +1,518 @@
+{"kind":"deck","id":"pr/48044u","name":"Deck"}
+{"kind":"layout","layoutId":"/ppt/slideMasters/slideMaster1.xml","name":"","type":"master"}
+{"kind":"layout","layoutId":"/ppt/slideLayouts/slideLayout1.xml","name":"DEFAULT"}
+{"kind":"slide","id":"sl/y90nupkv","slide":1,"title":"SÖZCÜKTE ANLAM · DERS 3/3","textShapes":11}
+{"kind":"shape","id":"sh/547294r6","slide":1,"name":"Shape 0","bbox":[825.6,0,454.08,720]}
+{"kind":"textbox","id":"sh/k3yl0zql","slide":1,"name":"Text 1","text":"SÖZCÜKTE ANLAM · DERS 3/3","textPreview":"SÖZCÜKTE ANLAM · DERS 3/3","textChars":25,"textLines":1,"bbox":[67.2,100.8,768,33.6]}
+{"kind":"textbox","id":"sh/7qp4be9c","slide":1,"name":"Text 2","text":"Bağlamsal Anlam\nYorumlama ve Deyimler","textPreview":"Bağlamsal Anlam | Yorumlama ve Deyimler","textChars":37,"textLines":2,"bbox":[62.4,129.6,729.6,168]}
+{"kind":"textbox","id":"sh/65g3298r","slide":1,"name":"Text 3","text":"Bir Söz Ne Anlatmak İstiyor? Deyim Doğru mu Açıklanmış?","textPreview":"Bir Söz Ne Anlatmak İstiyor? Deyim Doğru mu Açıklanmış?","textChars":55,"textLines":1,"bbox":[67.2,292.8,729.6,48]}
+{"kind":"shape","id":"sh/ts7md4r2","slide":1,"name":"Shape 4","bbox":[67.2,369.6,260.16,40.32]}
+{"kind":"textbox","id":"sh/sryl4zqx","slide":1,"name":"Text 5","text":"40 dk · Blokta 2 föy","textPreview":"40 dk · Blokta 2 föy","textChars":20,"textLines":1,"bbox":[67.2,369.6,260.16,40.32]}
+{"kind":"shape","id":"sh/fu94fe98","slide":1,"name":"Shape 6","bbox":[346.56,369.6,350.88,40.32]}
+{"kind":"textbox","id":"sh/utg3698n","slide":1,"name":"Text 7","text":"Anlam Bilgisi · Hafta 3","textPreview":"Anlam Bilgisi · Hafta 3","textChars":23,"textLines":1,"bbox":[346.56,369.6,350.88,40.32]}
+{"kind":"shape","id":"sh/wn6dc7eh","slide":1,"name":"Shape 8","bbox":[67.2,451.2,52.8,52.8]}
+{"kind":"textbox","id":"sh/ul4vaxgb","slide":1,"name":"Text 9","text":"Sedat GÜLER ve Claude Opus 5  ·  TYT Türkçe Ders Anlatım Serisi","textPreview":"Sedat GÜLER ve Claude Opus 5  ·  TYT Türkçe Ders Anlatım Serisi","textChars":63,"textLines":1,"bbox":[134.4,451.2,480,52.8]}
+{"kind":"shape","id":"sh/vmdcj2xw","slide":1,"name":"Shape 10","bbox":[873.6,163.2,345.6,86.4]}
+{"kind":"textbox","id":"sh/4r6dg7et","slide":1,"name":"Text 11","text":"\"Devlerin omuzlarında\ndurduğumuz içindir.\"","textPreview":"\"Devlerin omuzlarında | durduğumuz içindir.\"","textChars":42,"textLines":2,"bbox":[873.6,163.2,345.6,86.4]}
+{"kind":"textbox","id":"sh/5sfepcfe","slide":1,"name":"Text 12","text":"Bu sözle asıl anlatılmak istenen ne?","textPreview":"Bu sözle asıl anlatılmak istenen ne?","textChars":36,"textLines":1,"bbox":[873.6,259.2,345.6,28.8]}
+{"kind":"shape","id":"sh/ipovexwn","slide":1,"name":"Shape 13","bbox":[873.6,297.6,345.6,57.6]}
+{"kind":"textbox","id":"sh/3qxwn2x8","slide":1,"name":"Text 14","text":"Birikimden yararlanmak","textPreview":"Birikimden yararlanmak","textChars":22,"textLines":1,"bbox":[873.6,297.6,345.6,57.6]}
+{"kind":"textbox","id":"sh/sfqdkrep","slide":1,"name":"Text 15","text":"Sözlük anlamı değil, YAZARIN NE\nKASTETTİĞİ aranır.","textPreview":"Sözlük anlamı değil, YAZARIN NE | KASTETTİĞİ aranır.","textChars":50,"textLines":2,"bbox":[873.6,369.6,345.6,69.06]}
+{"kind":"shape","id":"sh/dgzetcfa","slide":1,"name":"Shape 16","bbox":[873.6,451.2,345.6,72]}
+{"kind":"textbox","id":"sh/1cvuxc7e","slide":1,"name":"Text 17","text":"YORUMLAMA VE DEYİM","textPreview":"YORUMLAMA VE DEYİM","textChars":18,"textLines":1,"bbox":[873.6,451.2,345.6,72]}
+{"kind":"shape","id":"sh/0bmd476t","slide":1,"name":"Shape 18","bbox":[1017.6,542.4,81.6,81.6]}
+{"kind":"image","id":"im/cfmxk3yp","slide":1,"name":"Image 0","bbox":[77.76,461.76,31.68,31.68]}
+{"kind":"image","id":"im/dgvyd8fa","slide":1,"name":"Image 1","bbox":[1035.96,560.76,44.88,44.88]}
+{"kind":"notes","id":"nt/y90nupkv","slide":1,"text":""}
+{"kind":"slide","id":"sl/hwbqtkby","slide":2,"title":"KAZANIM","textShapes":12}
+{"kind":"shape","id":"sh/9072xkry","slide":2,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/b29kza94","slide":2,"name":"Text 1","text":"KAZANIM","textPreview":"KAZANIM","textChars":7,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/a10jqpsj","slide":2,"name":"Text 2","text":"Bugün Ne Öğreneceğiz?","textPreview":"Bugün Ne Öğreneceğiz?","textChars":21,"textLines":1,"bbox":[153.6,88.32,864,67.2]}
+{"kind":"shape","id":"sh/x4r21kru","slide":2,"name":"Shape 3","bbox":[67.2,192,1142.4,109.52]}
+{"kind":"shape","id":"sh/w3i1sfa9","slide":2,"name":"Shape 4","bbox":[91.2,220.36,52.8,52.8]}
+{"kind":"textbox","id":"sh/r65knqtk","slide":2,"name":"Text 5","text":"1","textPreview":"1","textChars":1,"textLines":1,"bbox":[91.2,220.36,52.8,52.8]}
+{"kind":"textbox","id":"sh/q5wjelsz","slide":2,"name":"Text 6","text":"Parçadaki altı çizili bir sözü anlamca karşılayabilecek başka bir kullanımı (bağlamsal eş anlam) bulabilecek.","textPreview":"Parçadaki altı çizili bir sözü anlamca karşılayabilecek başka bir kullanımı (bağlamsal eş anlam) bulabilecek.","textChars":109,"textLines":1,"bbox":[168,192,1017.6,79.52]}
+{"kind":"shape","id":"sh/ove9o7yd","slide":2,"name":"Shape 7","bbox":[67.2,317.07,1142.4,109.52]}
+{"kind":"shape","id":"sh/9wnqhczy","slide":2,"name":"Shape 8","bbox":[91.2,345.43,52.8,52.8]}
+{"kind":"textbox","id":"sh/mtwrmxg7","slide":2,"name":"Text 9","text":"2","textPreview":"2","textChars":1,"textLines":1,"bbox":[91.2,345.43,52.8,52.8]}
+{"kind":"textbox","id":"sh/nu58f2hs","slide":2,"name":"Text 10","text":"Altı çizili bir sözle asıl anlatılmak istenenin ne olduğunu — sözlük anlamı değil, yazarın KASTETTİĞİ fikri — yorumlayabilecek.","textPreview":"Altı çizili bir sözle asıl anlatılmak istenenin ne olduğunu — sözlük anlamı değil, yazarın KASTETTİĞİ fikri — yorumlayabilecek.","textChars":127,"textLines":1,"bbox":[168,317.07,1017.6,79.52]}
+{"kind":"shape","id":"sh/wjy9sry9","slide":2,"name":"Shape 11","bbox":[67.2,442.14,1142.4,109.52]}
+{"kind":"shape","id":"sh/xk7qlczu","slide":2,"name":"Shape 12","bbox":[91.2,470.5,52.8,52.8]}
+{"kind":"textbox","id":"sh/ahwrqhgj","slide":2,"name":"Text 13","text":"3","textPreview":"3","textChars":1,"textLines":1,"bbox":[91.2,470.5,52.8,52.8]}
+{"kind":"textbox","id":"sh/bip8jmho","slide":2,"name":"Text 14","text":"Numaralanmış deyimlerden hangisinin açıklamasının GERÇEK deyim anlamıyla uyuşmadığını belirleyebilecek.","textPreview":"Numaralanmış deyimlerden hangisinin açıklamasının GERÇEK deyim anlamıyla uyuşmadığını belirleyebilecek.","textChars":103,"textLines":1,"bbox":[168,442.14,1017.6,79.52]}
+{"kind":"shape","id":"sh/cnupgny5","slide":2,"name":"Shape 15","bbox":[67.2,567.22,1142.4,109.52]}
+{"kind":"shape","id":"sh/do3q9szq","slide":2,"name":"Shape 16","bbox":[91.2,595.58,52.8,52.8]}
+{"kind":"textbox","id":"sh/t8byxkn2","slide":2,"name":"Text 17","text":"4","textPreview":"4","textChars":1,"textLines":1,"bbox":[91.2,595.58,52.8,52.8]}
+{"kind":"textbox","id":"sh/s72xofmh","slide":2,"name":"Text 18","text":"Gerçek ÖSYM sorularında bu üç tipi hızlı ve doğru çözebilecek — Sözcükte Anlam konusunu TAMAMLAYACAK.","textPreview":"Gerçek ÖSYM sorularında bu üç tipi hızlı ve doğru çözebilecek — Sözcükte Anlam konusunu TAMAMLAYACAK.","textChars":101,"textLines":1,"bbox":[168,567.22,1017.6,79.52]}
+{"kind":"textbox","id":"sh/76twva5c","slide":2,"name":"Text 19","text":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Kazanım","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Kazanım","textChars":41,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/65kfmpor","slide":2,"name":"Text 20","text":"Ders 3 / 3","textPreview":"Ders 3 / 3","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/ypcfi5kf","slide":2,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/hwbqtkby","slide":2,"text":""}
+{"kind":"slide","id":"sl/ofy9wn61","slide":3,"title":"BAĞLANTI","textShapes":13}
+{"kind":"shape","id":"sh/cza94vmx","slide":3,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/298ryl4v","slide":3,"name":"Text 1","text":"BAĞLANTI","textPreview":"BAĞLANTI","textChars":8,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/3ah8rqlg","slide":3,"name":"Text 2","text":"Sözcükte Anlam'ın Son Dersi","textPreview":"Sözcükte Anlam'ın Son Dersi","textChars":27,"textLines":1,"bbox":[153.6,88.32,1008,67.2]}
+{"kind":"shape","id":"sh/obq90bml","slide":3,"name":"Shape 3","bbox":[67.2,172.8,1142.4,161.07]}
+{"kind":"textbox","id":"sh/pcjqtg36","slide":3,"name":"Text 4","text":"Geçen ders (2/3) boşluk doldurma ve numaralanmış sözleri gördük. Bugün (3/3) son 3 tipi işleyip Sözcükte Anlam konusunu TAMAMLAYACAĞIZ: bağlamsal eş anlam bulma (4/7 yıl), sözü yorumlama (4/7 yıl) ve deyim anlamını doğrulama (2/7 yıl). Bu dersten sonra sıradaki konu Cümlede Anlam olacak.","textPreview":"Geçen ders (2/3) boşluk doldurma ve numaralanmış sözleri gördük. Bugün (3/3) son 3 tipi işleyip Sözcükte Anlam konusunu TAMAMLAYACAĞIZ: b...","textChars":288,"textLines":1,"bbox":[96,172.8,1084.8,151.47]}
+{"kind":"shape","id":"sh/m5cra54z","slide":3,"name":"Shape 5","bbox":[86.4,338.67,340.8,244.04]}
+{"kind":"textbox","id":"sh/n6ls3alk","slide":3,"name":"Text 6","text":"Ders 2/3 (geçen ders)","textPreview":"Ders 2/3 (geçen ders)","textChars":21,"textLines":1,"bbox":[110.4,362.67,292.8,38.81]}
+{"kind":"textbox","id":"sh/n2l4fq98","slide":3,"name":"Text 7","text":"Çok Anlamlılık ve Bağlama\nUygun Sözcük tamamlandı.","textPreview":"Çok Anlamlılık ve Bağlama | Uygun Sözcük tamamlandı.","textChars":50,"textLines":2,"bbox":[110.4,406.28,292.8,162.03]}
+{"kind":"shape","id":"sh/m1c3mlsn","slide":3,"name":"Shape 8","bbox":[475.2,338.67,340.8,225.6]}
+{"kind":"textbox","id":"sh/943mhgre","slide":3,"name":"Text 9","text":"Ders 3/3 (bugün)","textPreview":"Ders 3/3 (bugün)","textChars":16,"textLines":1,"bbox":[499.2,362.67,292.8,39.76]}
+{"kind":"textbox","id":"sh/83ulovat","slide":3,"name":"Text 10","text":"Bağlamsal Anlam Yorumlama\nve Deyimler.","textPreview":"Bağlamsal Anlam Yorumlama | ve Deyimler.","textChars":38,"textLines":2,"bbox":[499.2,407.23,292.8,124.16]}
+{"kind":"shape","id":"sh/v6l4jq94","slide":3,"name":"Shape 11","bbox":[864,338.67,340.8,225.6]}
+{"kind":"textbox","id":"sh/a5c3ql8z","slide":3,"name":"Text 12","text":"Sıradaki Konu","textPreview":"Sıradaki Konu","textChars":13,"textLines":1,"bbox":[888,362.67,292.8,39.76]}
+{"kind":"textbox","id":"sh/x8nml0ra","slide":3,"name":"Text 13","text":"Cümlede Anlam\n(4 ders)","textPreview":"Cümlede Anlam | (4 ders)","textChars":22,"textLines":2,"bbox":[888,407.23,292.8,90.08]}
+{"kind":"textbox","id":"sh/w7ulsvqp","slide":3,"name":"Text 14","text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[432,338.67,38.4,45.44]}
+{"kind":"textbox","id":"sh/ja54na9g","slide":3,"name":"Text 15","text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[825.6,338.67,38.4,45.44]}
+{"kind":"textbox","id":"sh/i9w3u58v","slide":3,"name":"Text 16","text":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Bağlantı","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Bağlantı","textChars":42,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/e10f2twf","slide":3,"name":"Text 17","text":"Ders 3 / 3","textPreview":"Ders 3 / 3","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/o32dw321","slide":3,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/ofy9wn61","slide":3,"text":""}
+{"kind":"slide","id":"sl/jyx0ra1s","slide":4,"title":"HAZIRLIK SORUSU","textShapes":7}
+{"kind":"shape","id":"sh/1cj2d8b6","slide":4,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/rm1k7yt4","slide":4,"name":"Text 1","text":"HAZIRLIK SORUSU","textPreview":"HAZIRLIK SORUSU","textChars":15,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/ql8jytsj","slide":4,"name":"Text 2","text":"\"Dizleri Titredi\" Derken Ne Anlatılmak İsteniyor?","textPreview":"\"Dizleri Titredi\" Derken Ne Anlatılmak İsteniyor?","textChars":49,"textLines":1,"bbox":[153.6,88.32,864,67.2]}
+{"kind":"textbox","id":"sh/doj29oba","slide":4,"name":"Text 3","text":"Aşağıdaki cümleyi okuyun ve 2 dakika düşünün: \"Sahneye çıkacağını öğrenince dizlerinin titrediğini hissetti.\" Bu sözle yazar bize gerçekten dizlerin fiziksel olarak titrediğini mi anlatmak istiyor?","textPreview":"Aşağıdaki cümleyi okuyun ve 2 dakika düşünün: \"Sahneye çıkacağını öğrenince dizlerinin titrediğini hissetti.\" Bu sözle yazar bize gerçekt...","textChars":197,"textLines":1,"bbox":[67.2,177.6,1142.4,113.6]}
+{"kind":"shape","id":"sh/sna103ap","slide":4,"name":"Shape 4","bbox":[470.4,300.8,336,86.4]}
+{"kind":"textbox","id":"sh/3ihk3et8","slide":4,"name":"Text 5","text":"\"dizleri titredi\"","textPreview":"\"dizleri titredi\"","textChars":17,"textLines":1,"bbox":[470.4,300.8,336,39.76]}
+{"kind":"shape","id":"sh/ih8ju9sn","slide":4,"name":"Shape 6","bbox":[67.2,416,1142.4,161.07]}
+{"kind":"textbox","id":"sh/kbm987y5","slide":4,"name":"Text 7","text":"Cevap:  Hayır. \"Dizleri titremek\" burada \"çok korktu / çok heyecanlandı\" anlamında kullanılmış — sözün YÜZEYSEL/sözlük anlamı değil, yazarın ASIL KASTETTİĞİ duygu durumu önemlidir. İşte bugün tam olarak bunu öğreneceğiz: bir söz GERÇEKTE NE ANLATMAK İSTİYOR, nasıl doğru yorumlarız?","textPreview":"Cevap:  Hayır. \"Dizleri titremek\" burada \"çok korktu / çok heyecanlandı\" anlamında kullanılmış — sözün YÜZEYSEL/sözlük anlamı değil, yaza...","textChars":282,"textLines":1,"bbox":[96,416,1084.8,151.47]}
+{"kind":"textbox","id":"sh/5cva1cfq","slide":4,"name":"Text 8","text":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Hazırlık Sorusu","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Hazırlık Sorusu","textChars":49,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/i94r6xgz","slide":4,"name":"Text 9","text":"Ders 3 / 3","textPreview":"Ders 3 / 3","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/gfm5gvit","slide":4,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/jyx0ra1s","slide":4,"text":""}
+{"kind":"slide","id":"sl/i107q5of","slide":5,"title":"ANLATIM · 1/3","textShapes":15}
+{"kind":"shape","id":"sh/dgbulwnm","slide":5,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/z2tcnm5s","slide":5,"name":"Text 1","text":"ANLATIM · 1/3","textPreview":"ANLATIM · 1/3","textChars":13,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/yhkbe1o7","slide":5,"name":"Text 2","text":"Tip 3 — Bağlamsal Eş Anlam Bulma","textPreview":"Tip 3 — Bağlamsal Eş Anlam Bulma","textChars":32,"textLines":1,"bbox":[153.6,88.32,864,67.2]}
+{"kind":"shape","id":"sh/l4bupwny","slide":5,"name":"Shape 3","bbox":[67.2,187.2,1142.4,100.8]}
+{"kind":"textbox","id":"sh/032tgr6d","slide":5,"name":"Text 4","text":"Tanım:  Parçada bir sözcük/söz altı çizilerek verilir; bu sözü ANLAMCA karşılayabilecek (aynı anlamı taşıyan) bir kullanımı seçeneklerde bulmamız istenir. 2020-2026 taramasında 4/7 yıl çıkmıştır.","textPreview":"Tanım:  Parçada bir sözcük/söz altı çizilerek verilir; bu sözü ANLAMCA karşılayabilecek (aynı anlamı taşıyan) bir kullanımı seçeneklerde ...","textChars":195,"textLines":1,"bbox":[96,187.2,1084.8,100.8]}
+{"kind":"textbox","id":"sh/n6dcr65o","slide":5,"name":"Text 5","text":"Çözüm stratejisi:","textPreview":"Çözüm stratejisi:","textChars":17,"textLines":1,"bbox":[67.2,302.4,1142.4,39.76]}
+{"kind":"shape","id":"sh/m5kbi1oj","slide":5,"name":"Shape 6","bbox":[67.2,350.4,1142.4,99.52]}
+{"kind":"shape","id":"sh/w32dkbuh","slide":5,"name":"Shape 7","bbox":[91.2,373.76,52.8,52.8]}
+{"kind":"textbox","id":"sh/x4vedgvm","slide":5,"name":"Text 8","text":"1","textPreview":"1","textChars":1,"textLines":1,"bbox":[91.2,373.76,52.8,52.8]}
+{"kind":"textbox","id":"sh/ahkvi1cb","slide":5,"name":"Text 9","text":"Altı çizili sözün KESİN anlamını belirleyin","textPreview":"Altı çizili sözün KESİN anlamını belirleyin","textChars":43,"textLines":1,"bbox":[168,360,633.6,38.4]}
+{"kind":"textbox","id":"sh/v2twb6dw","slide":5,"name":"Text 10","text":"Bazen mecaz, bazen deyimsel bir anlam taşır — önce bu sözün parçadaki tam anlamını netleştirin.","textPreview":"Bazen mecaz, bazen deyimsel bir anlam taşır — önce bu sözün parçadaki tam anlamını netleştirin.","textChars":95,"textLines":1,"bbox":[168,398.4,633.6,28.8]}
+{"kind":"shape","id":"sh/k7mxovud","slide":5,"name":"Shape 11","bbox":[67.2,462.4,1142.4,99.52]}
+{"kind":"shape","id":"sh/58vehgvy","slide":5,"name":"Shape 12","bbox":[91.2,485.76,52.8,52.8]}
+{"kind":"textbox","id":"sh/i54fmlc7","slide":5,"name":"Text 13","text":"2","textPreview":"2","textChars":1,"textLines":1,"bbox":[91.2,485.76,52.8,52.8]}
+{"kind":"textbox","id":"sh/j6dwfqds","slide":5,"name":"Text 14","text":"AYNI ANLAMI arayın, aynı kelimeyi değil","textPreview":"AYNI ANLAMI arayın, aynı kelimeyi değil","textChars":39,"textLines":1,"bbox":[168,472,633.6,38.4]}
+{"kind":"textbox","id":"sh/sb6xsvu9","slide":5,"name":"Text 15","text":"Doğru seçenek genelde altı çizili kelimeyi tekrar etmez — FARKLI kelimelerle AYNI FİKRİ ifade eder.","textPreview":"Doğru seçenek genelde altı çizili kelimeyi tekrar etmez — FARKLI kelimelerle AYNI FİKRİ ifade eder.","textChars":99,"textLines":1,"bbox":[168,510.4,633.6,28.8]}
+{"kind":"shape","id":"sh/tcfel0vu","slide":5,"name":"Shape 16","bbox":[67.2,574.4,1142.4,99.52]}
+{"kind":"shape","id":"sh/hgrmpwj2","slide":5,"name":"Shape 17","bbox":[91.2,597.76,52.8,52.8]}
+{"kind":"textbox","id":"sh/gfi5grih","slide":5,"name":"Text 18","text":"3","textPreview":"3","textChars":1,"textLines":1,"bbox":[91.2,597.76,52.8,52.8]}
+{"kind":"textbox","id":"sh/fe94nm1w","slide":5,"name":"Text 19","text":"Her seçeneği ayrı bir bağlamda test edin","textPreview":"Her seçeneği ayrı bir bağlamda test edin","textChars":40,"textLines":1,"bbox":[168,584,633.6,38.4]}
+{"kind":"textbox","id":"sh/ud0ne10b","slide":5,"name":"Text 20","text":"Seçenekteki cümle, altı çizili sözün taşıdığı anlamı taşıyabiliyor mu, tek tek kontrol edin.","textPreview":"Seçenekteki cümle, altı çizili sözün taşıdığı anlamı taşıyabiliyor mu, tek tek kontrol edin.","textChars":92,"textLines":1,"bbox":[168,622.4,633.6,28.8]}
+{"kind":"textbox","id":"sh/pkr6tgjy","slide":5,"name":"Text 21","text":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Anlatım — Bağlamsal Eş Anlam","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Anlatım — Bağlamsal Eş Anlam","textChars":62,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/4ji5kbid","slide":5,"name":"Text 22","text":"Ders 3 / 3","textPreview":"Ders 3 / 3","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/8j2x8b6t","slide":5,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/i107q5of","slide":5,"text":""}
+{"kind":"slide","id":"sl/x8f69ofe","slide":6,"title":"ANLATIM · 2/3","textShapes":15}
+{"kind":"shape","id":"sh/yhg7epsj","slide":6,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/87ipkzal","slide":6,"name":"Text 1","text":"ANLATIM · 2/3","textPreview":"ANLATIM · 2/3","textChars":13,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/98rqt4r6","slide":6,"name":"Text 2","text":"Tip 4 — Sözü Yorumlama","textPreview":"Tip 4 — Sözü Yorumlama","textChars":22,"textLines":1,"bbox":[153.6,88.32,864,67.2]}
+{"kind":"shape","id":"sh/ml07i9sv","slide":6,"name":"Shape 3","bbox":[67.2,187.2,1142.4,100.8]}
+{"kind":"textbox","id":"sh/7m98ru9g","slide":6,"name":"Text 4","text":"Tanım:  Altı çizili bir söz/cümle verilir; \"bu sözle asıl anlatılmak istenen nedir?\" sorulur. Sözün YÜZEYSEL/sözlük anlamı değil, yazarın NE KASTETTİĞİ (çıkarım) aranır. 4/7 yıl çıkmıştır.","textPreview":"Tanım:  Altı çizili bir söz/cümle verilir; \"bu sözle asıl anlatılmak istenen nedir?\" sorulur. Sözün YÜZEYSEL/sözlük anlamı değil, yazarın...","textChars":188,"textLines":1,"bbox":[96,187.2,1084.8,100.8]}
+{"kind":"textbox","id":"sh/oryp8fah","slide":6,"name":"Text 5","text":"Çözüm stratejisi:","textPreview":"Çözüm stratejisi:","textChars":17,"textLines":1,"bbox":[67.2,302.4,1142.4,39.76]}
+{"kind":"shape","id":"sh/pc76hkr2","slide":6,"name":"Shape 6","bbox":[67.2,350.4,1142.4,99.52]}
+{"kind":"shape","id":"sh/h4bupgn6","slide":6,"name":"Shape 7","bbox":[91.2,373.76,52.8,52.8]}
+{"kind":"textbox","id":"sh/w32twb6l","slide":6,"name":"Text 8","text":"1","textPreview":"1","textChars":1,"textLines":1,"bbox":[91.2,373.76,52.8,52.8]}
+{"kind":"textbox","id":"sh/v2tcn650","slide":6,"name":"Text 9","text":"Sözü bağlamından koparmayın","textPreview":"Sözü bağlamından koparmayın","textChars":27,"textLines":1,"bbox":[168,360,633.6,38.4]}
+{"kind":"textbox","id":"sh/u1kbu1ov","slide":6,"name":"Text 10","text":"Öncesi ve sonrasındaki cümlelerle birlikte okuyun — metnin geri kalanı asıl anlamı netleştirir.","textPreview":"Öncesi ve sonrasındaki cümlelerle birlikte okuyun — metnin geri kalanı asıl anlamı netleştirir.","textChars":95,"textLines":1,"bbox":[168,398.4,633.6,28.8]}
+{"kind":"shape","id":"sh/5svutgni","slide":6,"name":"Shape 11","bbox":[67.2,462.4,1142.4,99.52]}
+{"kind":"shape","id":"sh/47mt0b6x","slide":6,"name":"Shape 12","bbox":[91.2,485.76,52.8,52.8]}
+{"kind":"textbox","id":"sh/j6dcr65c","slide":6,"name":"Text 13","text":"2","textPreview":"2","textChars":1,"textLines":1,"bbox":[91.2,485.76,52.8,52.8]}
+{"kind":"textbox","id":"sh/i54bylor","slide":6,"name":"Text 14","text":"Genel fikre odaklanın","textPreview":"Genel fikre odaklanın","textChars":21,"textLines":1,"bbox":[168,472,633.6,38.4]}
+{"kind":"textbox","id":"sh/twfux0ne","slide":6,"name":"Text 15","text":"Yazarın asıl vurgulamak istediği düşünceyi bulun; mecazi/deyimsel söylemi genel bir yargıya çevirin.","textPreview":"Yazarın asıl vurgulamak istediği düşünceyi bulun; mecazi/deyimsel söylemi genel bir yargıya çevirin.","textChars":100,"textLines":1,"bbox":[168,510.4,633.6,28.8]}
+{"kind":"shape","id":"sh/svmt4v6t","slide":6,"name":"Shape 16","bbox":[67.2,574.4,1142.4,99.52]}
+{"kind":"shape","id":"sh/cbe5g3ih","slide":6,"name":"Shape 17","bbox":[91.2,597.76,52.8,52.8]}
+{"kind":"textbox","id":"sh/dcnm98zm","slide":6,"name":"Text 18","text":"3","textPreview":"3","textChars":1,"textLines":1,"bbox":[91.2,597.76,52.8,52.8]}
+{"kind":"textbox","id":"sh/qpwnet0b","slide":6,"name":"Text 19","text":"\"Doğru ama alakasız\" seçeneklere dikkat","textPreview":"\"Doğru ama alakasız\" seçeneklere dikkat","textChars":39,"textLines":1,"bbox":[168,584,633.6,38.4]}
+{"kind":"textbox","id":"sh/bq547yhw","slide":6,"name":"Text 20","text":"Bazı seçenekler doğru bir GENEL fikir olabilir ama METİNDEKİ ÖZEL bağlama uymayabilir — bunları eleyin.","textPreview":"Bazı seçenekler doğru bir GENEL fikir olabilir ama METİNDEKİ ÖZEL bağlama uymayabilir — bunları eleyin.","textChars":103,"textLines":1,"bbox":[168,622.4,633.6,28.8]}
+{"kind":"textbox","id":"sh/0fy5k3id","slide":6,"name":"Text 21","text":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Anlatım — Sözü Yorumlama","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Anlatım — Sözü Yorumlama","textChars":58,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/lg76d8zy","slide":6,"name":"Text 22","text":"Ders 3 / 3","textPreview":"Ders 3 / 3","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/90zqp0r6","slide":6,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/x8f69ofe","slide":6,"text":""}
+{"kind":"slide","id":"sl/gnmp4jqx","slide":7,"title":"ANLATIM · 3/3","textShapes":12}
+{"kind":"shape","id":"sh/cb2tkvap","slide":7,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/ydkbm5sv","slide":7,"name":"Text 1","text":"ANLATIM · 3/3","textPreview":"ANLATIM · 3/3","textChars":13,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/zedcfa9g","slide":7,"name":"Text 2","text":"Tip 6 — Deyim Anlamını Doğrulama","textPreview":"Tip 6 — Deyim Anlamını Doğrulama","textChars":32,"textLines":1,"bbox":[153.6,88.32,864,67.2]}
+{"kind":"shape","id":"sh/kzmdova1","slide":7,"name":"Shape 3","bbox":[67.2,172.8,1142.4,123.2]}
+{"kind":"textbox","id":"sh/l0vuh0rm","slide":7,"name":"Text 4","text":"Tanım:  Parçada numaralanmış birkaç deyim geçer; her birinin yanında bir açıklama verilir (Tip 2'ye benzer, ama sözcük değil DEYİM üzerinden). Hangi açıklamanın deyimin GERÇEK anlamıyla uyuşmadığı sorulur. 2/7 yıl çıkmıştır.","textPreview":"Tanım:  Parçada numaralanmış birkaç deyim geçer; her birinin yanında bir açıklama verilir (Tip 2'ye benzer, ama sözcük değil DEYİM üzerin...","textChars":224,"textLines":1,"bbox":[96,172.8,1084.8,113.6]}
+{"kind":"textbox","id":"sh/eh0ba1sr","slide":7,"name":"Text 5","text":"Çözüm stratejisi:","textPreview":"Çözüm stratejisi:","textChars":17,"textLines":1,"bbox":[67.2,300.8,1142.4,39.76]}
+{"kind":"shape","id":"sh/fi9c369c","slide":7,"name":"Shape 6","bbox":[67.2,341.52,1142.4,163.38]}
+{"kind":"shape","id":"sh/baxkjqlk","slide":7,"name":"Shape 7","bbox":[91.2,396.81,52.8,52.8]}
+{"kind":"textbox","id":"sh/a9ojq5kz","slide":7,"name":"Text 8","text":"1","textPreview":"1","textChars":1,"textLines":1,"bbox":[91.2,396.81,52.8,52.8]}
+{"kind":"textbox","id":"sh/xcz2l03q","slide":7,"name":"Text 9","text":"Yerleşik anlamı hatırlayın","textPreview":"Yerleşik anlamı hatırlayın","textChars":26,"textLines":1,"bbox":[168,351.12,1017.6,38.81]}
+{"kind":"textbox","id":"sh/cbq1sv25","slide":7,"name":"Text 10","text":"Deyimin GÜNLÜK KONUŞMADAKİ yerleşik anlamını düşünün — parçadaki açıklama bu yerleşik anlamla TAM örtüşmeli.","textPreview":"Deyimin GÜNLÜK KONUŞMADAKİ yerleşik anlamını düşünün — parçadaki açıklama bu yerleşik anlamla TAM örtüşmeli.","textChars":108,"textLines":1,"bbox":[168,394.73,1017.6,75.73]}
+{"kind":"shape","id":"sh/n6x0fqlo","slide":7,"name":"Shape 11","bbox":[67.2,507.39,1142.4,170.19]}
+{"kind":"shape","id":"sh/25ojml43","slide":7,"name":"Shape 12","bbox":[91.2,566.09,52.8,52.8]}
+{"kind":"textbox","id":"sh/p8fih03e","slide":7,"name":"Text 13","text":"2","textPreview":"2","textChars":1,"textLines":1,"bbox":[91.2,566.09,52.8,52.8]}
+{"kind":"textbox","id":"sh/o761ov2t","slide":7,"name":"Text 14","text":"Benzer deyimlerle karıştırmayın","textPreview":"Benzer deyimlerle karıştırmayın","textChars":31,"textLines":1,"bbox":[168,516.99,1017.6,38.81]}
+{"kind":"textbox","id":"sh/f2d0b6lc","slide":7,"name":"Text 15","text":"Yanlış olan seçenek, çoğu zaman deyimi BAŞKA BENZER bir deyimle karıştırır (ör. \"gözden düşmek\" ile \"gözden kaçırmak\").","textPreview":"Yanlış olan seçenek, çoğu zaman deyimi BAŞKA BENZER bir deyimle karıştırır (ör. \"gözden düşmek\" ile \"gözden kaçırmak\").","textChars":119,"textLines":1,"bbox":[168,560.61,1017.6,75.73]}
+{"kind":"textbox","id":"sh/eh4jil4r","slide":7,"name":"Text 16","text":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Anlatım — Deyim Anlamını Doğrulama","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Anlatım — Deyim Anlamını Doğrulama","textChars":68,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/id4ju1oz","slide":7,"name":"Text 17","text":"Ders 3 / 3","textPreview":"Ders 3 / 3","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/gb25wj6t","slide":7,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/gnmp4jqx","slide":7,"text":""}
+{"kind":"slide","id":"sl/fu1gfa1s","slide":8,"title":"DİKKAT!","textShapes":9}
+{"kind":"shape","id":"sh/18byd4zy","slide":8,"name":"Shape 0","bbox":[854.4,0,425.28,720]}
+{"kind":"shape","id":"sh/g72x4zyd","slide":8,"name":"Shape 1","bbox":[67.2,57.6,76.8,76.8]}
+{"kind":"textbox","id":"sh/6h0fypgb","slide":8,"name":"Text 2","text":"DİKKAT!","textPreview":"DİKKAT!","textChars":7,"textLines":1,"bbox":[158.4,59.52,576,72]}
+{"kind":"textbox","id":"sh/tkby9kzm","slide":8,"name":"Text 3","text":"Sözü Yorumlarken Sık Yapılan Hatalar!","textPreview":"Sözü Yorumlarken Sık Yapılan Hatalar!","textChars":37,"textLines":1,"bbox":[67.2,172.8,1104,39.76]}
+{"kind":"textbox","id":"sh/sjix0zy1","slide":8,"name":"Text 4","text":"Yorumlama sorularında öğrencilerin en sık düştüğü tuzaklar, sözü bağlamdan koparmak veya seçenekleri yeterince metinle karşılaştırmamaktan kaynaklanır.","textPreview":"Yorumlama sorularında öğrencilerin en sık düştüğü tuzaklar, sözü bağlamdan koparmak veya seçenekleri yeterince metinle karşılaştırmamakta...","textChars":151,"textLines":1,"bbox":[67.2,217.36,1104,79.52]}
+{"kind":"shape","id":"sh/je9g3ahk","slide":8,"name":"Shape 5","bbox":[67.2,309.4,1104,120.4]}
+{"kind":"textbox","id":"sh/id0fu50z","slide":8,"name":"Text 6","text":"Bağlamdan koparma tuzağı","textPreview":"Bağlamdan koparma tuzağı","textChars":24,"textLines":1,"bbox":[96,309.4,345.6,39.76]}
+{"kind":"textbox","id":"sh/o7ydoret","slide":8,"name":"Text 7","text":"Altı çizili sözü TEK BAŞINA yorumlamak — çoğu zaman metnin geri kalanı, sözün asıl neyi anlattığını netleştirir.","textPreview":"Altı çizili sözü TEK BAŞINA yorumlamak — çoğu zaman metnin geri kalanı, sözün asıl neyi anlattığını netleştirir.","textChars":112,"textLines":1,"bbox":[451.2,309.4,700.8,107.92]}
+{"kind":"shape","id":"sh/98rehwve","slide":8,"name":"Shape 8","bbox":[67.2,432.92,1104,120.4]}
+{"kind":"textbox","id":"sh/m5gvmhwn","slide":8,"name":"Text 9","text":"\"Doğru ama alakasız\" tuzağı","textPreview":"\"Doğru ama alakasız\" tuzağı","textChars":27,"textLines":1,"bbox":[96,432.92,345.6,35.97]}
+{"kind":"textbox","id":"sh/n6pwfmd8","slide":8,"name":"Text 10","text":"En \"güzel\" veya en \"genel geçer\" görünen seçeneği işaretlemek — seçenek doğru bir GENEL fikir olabilir ama METİNDEKİ ÖZEL bağlama uymayabilir.","textPreview":"En \"güzel\" veya en \"genel geçer\" görünen seçeneği işaretlemek — seçenek doğru bir GENEL fikir olabilir ama METİNDEKİ ÖZEL bağlama uymayab...","textChars":142,"textLines":1,"bbox":[451.2,432.92,700.8,107.92]}
+{"kind":"shape","id":"sh/0jydkreh","slide":8,"name":"Shape 11","bbox":[67.2,556.44,1104,120.4]}
+{"kind":"textbox","id":"sh/1k7edwv2","slide":8,"name":"Text 12","text":"Sınavda ayırt etme yöntemi","textPreview":"Sınavda ayırt etme yöntemi","textChars":26,"textLines":1,"bbox":[96,556.44,345.6,36.92]}
+{"kind":"textbox","id":"sh/ehgvihwr","slide":8,"name":"Text 13","text":"Seçeneği metnin YALNIZCA o cümlesiyle değil, PARÇANIN TAMAMIYLA karşılaştırın — asıl fikir genelde birkaç cümlede birlikte kurulur.","textPreview":"Seçeneği metnin YALNIZCA o cümlesiyle değil, PARÇANIN TAMAMIYLA karşılaştırın — asıl fikir genelde birkaç cümlede birlikte kurulur.","textChars":131,"textLines":1,"bbox":[451.2,556.44,700.8,107.92]}
+{"kind":"image","id":"im/0rmpoj2t","slide":8,"name":"Image 0","bbox":[84.48,74.88,42.24,42.24]}
+{"kind":"notes","id":"nt/fu1gfa1s","slide":8,"text":""}
+{"kind":"slide","id":"sl/udsvah03","slide":9,"title":"DİKKAT!","textShapes":8}
+{"kind":"shape","id":"sh/1cfmhgne","slide":9,"name":"Shape 0","bbox":[854.4,0,425.28,720]}
+{"kind":"shape","id":"sh/0b65obm9","slide":9,"name":"Shape 1","bbox":[67.2,57.6,76.8,76.8]}
+{"kind":"textbox","id":"sh/mdonql4z","slide":9,"name":"Text 2","text":"DİKKAT!","textPreview":"DİKKAT!","textChars":7,"textLines":1,"bbox":[158.4,59.52,576,72]}
+{"kind":"textbox","id":"sh/9gzml0nq","slide":9,"name":"Text 3","text":"Deyimler Birbirine Karıştırılmasın!","textPreview":"Deyimler Birbirine Karıştırılmasın!","textChars":35,"textLines":1,"bbox":[67.2,172.8,1104,39.76]}
+{"kind":"shape","id":"sh/ofq5svm5","slide":9,"name":"Shape 4","bbox":[67.2,228.59,57.6,57.6]}
+{"kind":"textbox","id":"sh/bih4na5w","slide":9,"name":"Text 5","text":"1","textPreview":"1","textChars":1,"textLines":1,"bbox":[67.2,228.59,57.6,57.6]}
+{"kind":"textbox","id":"sh/ah8nu54b","slide":9,"name":"Text 6","text":"Aynı organ/kavramla kurulan deyimleri birbirine benzetmek.","textPreview":"Aynı organ/kavramla kurulan deyimleri birbirine benzetmek.","textChars":58,"textLines":1,"bbox":[144,236.56,1017.6,39.76]}
+{"kind":"textbox","id":"sh/oza1gfyh","slide":9,"name":"Text 7","text":"Türkçede göz, el, kalp, dil gibi kavramlarla kurulan birçok deyim vardır — benzer görünseler de anlamları TAMAMEN farklı olabilir (\"gözü kesmek\" ile \"gözden düşmek\" gibi).","textPreview":"Türkçede göz, el, kalp, dil gibi kavramlarla kurulan birçok deyim vardır — benzer görünseler de anlamları TAMAMEN farklı olabilir (\"gözü ...","textChars":171,"textLines":1,"bbox":[144,283.01,1017.6,119.28]}
+{"kind":"shape","id":"sh/p0ji9kf2","slide":9,"name":"Shape 8","bbox":[67.2,416.4,57.6,57.6]}
+{"kind":"textbox","id":"sh/2xsjepgb","slide":9,"name":"Text 9","text":"2","textPreview":"2","textChars":1,"textLines":1,"bbox":[67.2,416.4,57.6,57.6]}
+{"kind":"textbox","id":"sh/3y107axw","slide":9,"name":"Text 10","text":"Açıklamanın BAŞKA bir deyimin tanımı olabileceğini düşünmemek.","textPreview":"Açıklamanın BAŞKA bir deyimin tanımı olabileceğini düşünmemek.","textChars":62,"textLines":1,"bbox":[144,424.37,1017.6,39.76]}
+{"kind":"textbox","id":"sh/cnu1kzyd","slide":9,"name":"Text 11","text":"ÖSYM sık sık bu karışıklığı kullanır: bir deyime, aslında BAŞKA bir deyime ait olan açıklamayı yakıştırır (ör. \"gözden düşmek\" ≠ \"gözden kaçırmak\"). Açıklamayı okurken \"bu, gerçekten BU deyimin mi anlamı?\" diye sorun.","textPreview":"ÖSYM sık sık bu karışıklığı kullanır: bir deyime, aslında BAŞKA bir deyime ait olan açıklamayı yakıştırır (ör. \"gözden düşmek\" ≠ \"gözden ...","textChars":217,"textLines":1,"bbox":[144,470.83,1017.6,159.04]}
+{"kind":"image","id":"im/6lo7qlc3","slide":9,"name":"Image 0","bbox":[84.48,74.88,42.24,42.24]}
+{"kind":"notes","id":"nt/udsvah03","slide":9,"text":""}
+{"kind":"slide","id":"sl/m90b6t0r","slide":10,"title":"SINIF ETKINLIĞI","textShapes":13}
+{"kind":"shape","id":"sh/xc3mho32","slide":10,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/zelojyl8","slide":10,"name":"Text 1","text":"SINIF ETKINLIĞI","textPreview":"SINIF ETKINLIĞI","textChars":15,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/ydcnatkn","slide":10,"name":"Text 2","text":"Yorumu ve Deyimi Kontrol Edin (3 Dakika)","textPreview":"Yorumu ve Deyimi Kontrol Edin (3 Dakika)","textChars":40,"textLines":1,"bbox":[153.6,88.32,1056,67.2]}
+{"kind":"textbox","id":"sh/l036l83y","slide":10,"name":"Text 3","text":"1-4: verilen yorumun altı çizili sözle uyup uymadığını belirleyin. 5-8: deyimin açıklamasının DOĞRU mu YANLIŞ mı olduğunu belirleyin. Süre: 3 dakika.","textPreview":"1-4: verilen yorumun altı çizili sözle uyup uymadığını belirleyin. 5-8: deyimin açıklamasının DOĞRU mu YANLIŞ mı olduğunu belirleyin. Sür...","textChars":149,"textLines":1,"bbox":[67.2,172.8,1142.4,68.16]}
+{"kind":"shape","id":"sh/kzu5c32t","slide":10,"name":"Shape 4","bbox":[67.2,246.78,561.6,96.48]}
+{"kind":"textbox","id":"sh/725onyl4","slide":10,"name":"Text 5","text":"1.  \"Baltayı taşa vurdu.\" → \"İstemeden yersiz bir söz söyledi\" yorumu doğru mu?","textPreview":"1.  \"Baltayı taşa vurdu.\" → \"İstemeden yersiz bir söz söyledi\" yorumu doğru mu?","textChars":79,"textLines":1,"bbox":[86.4,246.78,528,68.16]}
+{"kind":"shape","id":"sh/m1cnetkj","slide":10,"name":"Shape 6","bbox":[648,246.78,561.6,96.48]}
+{"kind":"textbox","id":"sh/s7yt4b21","slide":10,"name":"Text 7","text":"2.  \"Dört gözle bekliyordu.\" → \"Çok istekli, sabırsızca bekliyordu\" yorumu doğru mu?","textPreview":"2.  \"Dört gözle bekliyordu.\" → \"Çok istekli, sabırsızca bekliyordu\" yorumu doğru mu?","textChars":84,"textLines":1,"bbox":[667.2,246.78,528,68.16]}
+{"kind":"shape","id":"sh/d87uxg3m","slide":10,"name":"Shape 8","bbox":[67.2,347.58,561.6,126.72]}
+{"kind":"textbox","id":"sh/q5gb21kb","slide":10,"name":"Text 9","text":"3.  \"Bulanık suda balık avlıyordu.\" → \"Karmaşadan kendi çıkarına yararlanıyordu\" yorumu doğru mu?","textPreview":"3.  \"Bulanık suda balık avlıyordu.\" → \"Karmaşadan kendi çıkarına yararlanıyordu\" yorumu doğru mu?","textChars":97,"textLines":1,"bbox":[86.4,347.58,528,102.24]}
+{"kind":"shape","id":"sh/r6pcv6lw","slide":10,"name":"Shape 10","bbox":[648,347.58,561.6,96.48]}
+{"kind":"textbox","id":"sh/0bit8b2d","slide":10,"name":"Text 11","text":"4.  \"Ateşle oynuyordu.\" → \"Çok eğleniyordu\" yorumu doğru mu?","textPreview":"4.  \"Ateşle oynuyordu.\" → \"Çok eğleniyordu\" yorumu doğru mu?","textChars":60,"textLines":1,"bbox":[667.2,347.58,528,68.16]}
+{"kind":"shape","id":"sh/1cru1g3y","slide":10,"name":"Shape 12","bbox":[67.2,478.62,561.6,96.48]}
+{"kind":"textbox","id":"sh/e9gb61k7","slide":10,"name":"Text 13","text":"5.  \"Kulağı delik\" → \"Her şeyden haberi olan\" — doğru mu?","textPreview":"5.  \"Kulağı delik\" → \"Her şeyden haberi olan\" — doğru mu?","textChars":57,"textLines":1,"bbox":[86.4,478.62,528,68.16]}
+{"kind":"shape","id":"sh/fapcz6ls","slide":10,"name":"Shape 14","bbox":[648,478.62,561.6,96.48]}
+{"kind":"textbox","id":"sh/ozitcv29","slide":10,"name":"Text 15","text":"6.  \"Ağzı kulaklarına varmak\" → \"Çok üzülmek\" — doğru mu?","textPreview":"6.  \"Ağzı kulaklarına varmak\" → \"Çok üzülmek\" — doğru mu?","textChars":57,"textLines":1,"bbox":[667.2,478.62,528,68.16]}
+{"kind":"shape","id":"sh/p0ru503u","slide":10,"name":"Shape 16","bbox":[67.2,579.42,561.6,96.48]}
+{"kind":"textbox","id":"sh/xwnupgvy","slide":10,"name":"Text 17","text":"7.  \"Eli ayağı dolaşmak\" → \"Şaşırıp ne yapacağını bilememek\" — doğru mu?","textPreview":"7.  \"Eli ayağı dolaşmak\" → \"Şaşırıp ne yapacağını bilememek\" — doğru mu?","textChars":72,"textLines":1,"bbox":[86.4,579.42,528,68.16]}
+{"kind":"shape","id":"sh/wvetgbud","slide":10,"name":"Shape 18","bbox":[648,579.42,561.6,96.48]}
+{"kind":"textbox","id":"sh/bu5cnqd8","slide":10,"name":"Text 19","text":"8.  \"Burnu büyümek\" → \"Alçakgönüllü davranmak\" — doğru mu?","textPreview":"8.  \"Burnu büyümek\" → \"Alçakgönüllü davranmak\" — doğru mu?","textChars":58,"textLines":1,"bbox":[667.2,579.42,528,68.16]}
+{"kind":"textbox","id":"sh/atwbelcn","slide":10,"name":"Text 20","text":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Sınıf Etkinliği","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Sınıf Etkinliği","textChars":49,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/lk7ut0va","slide":10,"name":"Text 21","text":"Ders 3 / 3","textPreview":"Ders 3 / 3","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/v6xczqp0","slide":10,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/m90b6t0r","slide":10,"text":""}
+{"kind":"slide","id":"sl/jetc3ut0","slide":11,"title":"ETKINLIK","textShapes":28}
+{"kind":"shape","id":"sh/xcryxg7y","slide":11,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/n69grmpw","slide":11,"name":"Text 1","text":"ETKINLIK","textPreview":"ETKINLIK","textChars":8,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/250zy18b","slide":11,"name":"Text 2","text":"Cevap Anahtarı","textPreview":"Cevap Anahtarı","textChars":14,"textLines":1,"bbox":[153.6,88.32,864,67.2]}
+{"kind":"shape","id":"sh/98rytw72","slide":11,"name":"Shape 3","bbox":[67.2,192,268.8,228.96]}
+{"kind":"textbox","id":"sh/o7ih0r6h","slide":11,"name":"Text 4","text":"1. yorum","textPreview":"1. yorum","textChars":8,"textLines":1,"bbox":[81.6,206.4,240,38.4]}
+{"kind":"shape","id":"sh/72t03qp0","slide":11,"name":"Shape 5","bbox":[81.6,249.6,240,72]}
+{"kind":"textbox","id":"sh/61kzalof","slide":11,"name":"Text 6","text":"DOĞRU","textPreview":"DOĞRU","textChars":5,"textLines":1,"bbox":[81.6,249.6,240,72]}
+{"kind":"textbox","id":"sh/ofqtgnyt","slide":11,"name":"Text 7","text":"\"baltayı taşa vurmak\" = yersiz söz söylemek","textPreview":"\"baltayı taşa vurmak\" = yersiz söz söylemek","textChars":43,"textLines":1,"bbox":[81.6,331.2,240,52.8]}
+{"kind":"shape","id":"sh/9gza9sze","slide":11,"name":"Shape 8","bbox":[355.2,192,268.8,228.96]}
+{"kind":"textbox","id":"sh/mdobedg3","slide":11,"name":"Text 9","text":"2. yorum","textPreview":"2. yorum","textChars":8,"textLines":1,"bbox":[369.6,206.4,240,38.4]}
+{"kind":"shape","id":"sh/nehs7iho","slide":11,"name":"Shape 10","bbox":[369.6,249.6,240,72]}
+{"kind":"textbox","id":"sh/0b6tc3yx","slide":11,"name":"Text 11","text":"DOĞRU","textPreview":"DOĞRU","textChars":5,"textLines":1,"bbox":[369.6,249.6,240,72]}
+{"kind":"textbox","id":"sh/1cfa58zi","slide":11,"name":"Text 12","text":"\"dört gözle beklemek\" = sabırsızca istemek","textPreview":"\"dört gözle beklemek\" = sabırsızca istemek","textChars":42,"textLines":1,"bbox":[369.6,331.2,240,52.8]}
+{"kind":"shape","id":"sh/epobatgr","slide":11,"name":"Shape 13","bbox":[643.2,192,268.8,228.96]}
+{"kind":"textbox","id":"sh/zaxs3yhc","slide":11,"name":"Text 14","text":"3. yorum","textPreview":"3. yorum","textChars":8,"textLines":1,"bbox":[657.6,206.4,240,38.4]}
+{"kind":"shape","id":"sh/cn6t83y1","slide":11,"name":"Shape 15","bbox":[657.6,249.6,240,72]}
+{"kind":"textbox","id":"sh/dofa18z6","slide":11,"name":"Text 16","text":"DOĞRU","textPreview":"DOĞRU","textChars":5,"textLines":1,"bbox":[657.6,249.6,240,72]}
+{"kind":"textbox","id":"sh/tsnip0ny","slide":11,"name":"Text 17","text":"\"bulanık suda balık avlamak\" = karmaşadan yararlanmak","textPreview":"\"bulanık suda balık avlamak\" = karmaşadan yararlanmak","textChars":53,"textLines":1,"bbox":[657.6,331.2,240,52.8]}
+{"kind":"shape","id":"sh/87ehgv6d","slide":11,"name":"Shape 18","bbox":[931.2,192,268.8,228.96]}
+{"kind":"textbox","id":"sh/7650nq5s","slide":11,"name":"Text 19","text":"4. yorum","textPreview":"4. yorum","textChars":8,"textLines":1,"bbox":[945.6,206.4,240,38.4]}
+{"kind":"shape","id":"sh/65wzelo7","slide":11,"name":"Shape 20","bbox":[945.6,249.6,240,72]}
+{"kind":"textbox","id":"sh/l43ilgn2","slide":11,"name":"Text 21","text":"YANLIŞ","textPreview":"YANLIŞ","textChars":6,"textLines":1,"bbox":[945.6,249.6,240,72]}
+{"kind":"textbox","id":"sh/k3uhcb6h","slide":11,"name":"Text 22","text":"\"ateşle oynamak\" = tehlikeli bir işe girişmek","textPreview":"\"ateşle oynamak\" = tehlikeli bir işe girişmek","textChars":45,"textLines":1,"bbox":[945.6,331.2,240,52.8]}
+{"kind":"shape","id":"sh/j2lgjq5w","slide":11,"name":"Shape 23","bbox":[67.2,444.96,268.8,228.96]}
+{"kind":"textbox","id":"sh/y1czalob","slide":11,"name":"Text 24","text":"5. deyim","textPreview":"5. deyim","textChars":8,"textLines":1,"bbox":[81.6,459.36,240,38.4]}
+{"kind":"shape","id":"sh/p07ixkn6","slide":11,"name":"Shape 25","bbox":[81.6,502.56,240,72]}
+{"kind":"textbox","id":"sh/4zyhofml","slide":11,"name":"Text 26","text":"DOĞRU","textPreview":"DOĞRU","textChars":5,"textLines":1,"bbox":[81.6,502.56,240,72]}
+{"kind":"textbox","id":"sh/m58fih43","slide":11,"name":"Text 27","text":"\"kulağı delik\" gerçekten her şeyden haberdar demek","textPreview":"\"kulağı delik\" gerçekten her şeyden haberdar demek","textChars":50,"textLines":1,"bbox":[81.6,584.16,240,52.8]}
+{"kind":"shape","id":"sh/n61wbmlo","slide":11,"name":"Shape 28","bbox":[355.2,444.96,268.8,228.96]}
+{"kind":"textbox","id":"sh/o7axk7m9","slide":11,"name":"Text 29","text":"6. deyim","textPreview":"6. deyim","textChars":8,"textLines":1,"bbox":[369.6,459.36,240,38.4]}
+{"kind":"shape","id":"sh/98jedc3u","slide":11,"name":"Shape 30","bbox":[369.6,502.56,240,72]}
+{"kind":"textbox","id":"sh/eh8fex47","slide":11,"name":"Text 31","text":"YANLIŞ","textPreview":"YANLIŞ","textChars":6,"textLines":1,"bbox":[369.6,502.56,240,72]}
+{"kind":"textbox","id":"sh/z2hw72lc","slide":11,"name":"Text 32","text":"\"ağzı kulaklarına varmak\" = çok SEVİNMEK, üzülmek değil","textPreview":"\"ağzı kulaklarına varmak\" = çok SEVİNMEK, üzülmek değil","textChars":55,"textLines":1,"bbox":[369.6,584.16,240,52.8]}
+{"kind":"shape","id":"sh/03qxg7mx","slide":11,"name":"Shape 33","bbox":[643.2,444.96,268.8,228.96]}
+{"kind":"textbox","id":"sh/14ze9c3i","slide":11,"name":"Text 34","text":"7. deyim","textPreview":"7. deyim","textChars":8,"textLines":1,"bbox":[657.6,459.36,240,38.4]}
+{"kind":"shape","id":"sh/ydcfq1kb","slide":11,"name":"Shape 35","bbox":[657.6,502.56,240,72]}
+{"kind":"textbox","id":"sh/jylwj6lw","slide":11,"name":"Text 36","text":"DOĞRU","textPreview":"DOĞRU","textChars":5,"textLines":1,"bbox":[657.6,502.56,240,72]}
+{"kind":"textbox","id":"sh/3qhsfypc","slide":11,"name":"Text 37","text":"\"eli ayağı dolaşmak\" gerçekten şaşkınlık demek","textPreview":"\"eli ayağı dolaşmak\" gerçekten şaşkınlık demek","textChars":46,"textLines":1,"bbox":[657.6,584.16,240,52.8]}
+{"kind":"shape","id":"sh/ip8bmtor","slide":11,"name":"Shape 38","bbox":[931.2,444.96,268.8,228.96]}
+{"kind":"textbox","id":"sh/5sjah872","slide":11,"name":"Text 39","text":"8. deyim","textPreview":"8. deyim","textChars":8,"textLines":1,"bbox":[945.6,459.36,240,38.4]}
+{"kind":"shape","id":"sh/4rato36h","slide":11,"name":"Shape 40","bbox":[945.6,502.56,240,72]}
+{"kind":"textbox","id":"sh/v2hsbyp0","slide":11,"name":"Text 41","text":"YANLIŞ","textPreview":"YANLIŞ","textChars":6,"textLines":1,"bbox":[945.6,502.56,240,72]}
+{"kind":"textbox","id":"sh/u18bit8f","slide":11,"name":"Text 42","text":"\"burnu büyümek\" = KİBİRLENMEK, alçakgönüllülük değil","textPreview":"\"burnu büyümek\" = KİBİRLENMEK, alçakgönüllülük değil","textChars":52,"textLines":1,"bbox":[945.6,584.16,240,52.8]}
+{"kind":"textbox","id":"sh/h4zado76","slide":11,"name":"Text 43","text":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Etkinlik Cevapları","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Etkinlik Cevapları","textChars":52,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/g3qtkj6l","slide":11,"name":"Text 44","text":"Ders 3 / 3","textPreview":"Ders 3 / 3","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/k7a58rul","slide":11,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/jetc3ut0","slide":11,"text":""}
+{"kind":"slide","id":"sl/hgzapcr6","slide":12,"title":"HIZLI HATIRLATMA","textShapes":10}
+{"kind":"shape","id":"sh/q50nydsj","slide":12,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/o3i5w3ad","slide":12,"name":"Text 1","text":"HIZLI HATIRLATMA","textPreview":"HIZLI HATIRLATMA","textChars":16,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/p4r6p8by","slide":12,"name":"Text 2","text":"Kaldığımız Yer","textPreview":"Kaldığımız Yer","textChars":14,"textLines":1,"bbox":[153.6,88.32,864,67.2]}
+{"kind":"shape","id":"sh/21gnuts7","slide":12,"name":"Shape 3","bbox":[86.4,206.4,350.4,240]}
+{"kind":"textbox","id":"sh/32ponyts","slide":12,"name":"Text 4","text":"Tip 3","textPreview":"Tip 3","textChars":5,"textLines":1,"bbox":[110.4,230.4,302.4,39.76]}
+{"kind":"textbox","id":"sh/gzy5s3a1","slide":12,"name":"Text 5","text":"Bağlamsal eş anlam —\naynı ANLAMI, farklı\nkelimelerle arayın.","textPreview":"Bağlamsal eş anlam — | aynı ANLAMI, farklı | kelimelerle arayın.","textChars":60,"textLines":3,"bbox":[110.4,274.96,302.4,134.72]}
+{"kind":"shape","id":"sh/1076lobm","slide":12,"name":"Shape 6","bbox":[475.2,206.4,350.4,255.55]}
+{"kind":"textbox","id":"sh/hcfy9k3u","slide":12,"name":"Text 7","text":"Tip 4","textPreview":"Tip 4","textChars":5,"textLines":1,"bbox":[499.2,230.4,302.4,39.76]}
+{"kind":"textbox","id":"sh/gb6x0zm9","slide":12,"name":"Text 8","text":"Sözü yorumlama —\nyazarın NE KASTETTİĞİNİ\nbağlamdan çıkarın.","textPreview":"Sözü yorumlama — | yazarın NE KASTETTİĞİNİ | bağlamdan çıkarın.","textChars":59,"textLines":3,"bbox":[499.2,274.96,302.4,172.59]}
+{"kind":"shape","id":"sh/vaxg7ulo","slide":12,"name":"Shape 9","bbox":[864,206.4,350.4,240]}
+{"kind":"textbox","id":"sh/u9ofyp43","slide":12,"name":"Text 10","text":"Tip 6","textPreview":"Tip 6","textChars":5,"textLines":1,"bbox":[888,230.4,302.4,39.76]}
+{"kind":"textbox","id":"sh/t8fy5k3i","slide":12,"name":"Text 11","text":"Deyim doğrulama —\nbenzer deyimlerle\nkarıştırmayın.","textPreview":"Deyim doğrulama — | benzer deyimlerle | karıştırmayın.","textChars":50,"textLines":3,"bbox":[888,274.96,302.4,134.72]}
+{"kind":"textbox","id":"sh/876xwfmx","slide":12,"name":"Text 12","text":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Hızlı Hatırlatma","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Hızlı Hatırlatma","textChars":50,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/7mdg3als","slide":12,"name":"Text 13","text":"Ders 3 / 3","textPreview":"Ders 3 / 3","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/9czix0b6","slide":12,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/hgzapcr6","slide":12,"text":""}
+{"kind":"slide","id":"sl/6lsnupw7","slide":13,"title":"DERINLEŞME · 1/2","textShapes":10}
+{"kind":"shape","id":"sh/xc7eds76","slide":13,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/jepwf2pc","slide":13,"name":"Text 1","text":"DERINLEŞME · 1/2","textPreview":"DERINLEŞME · 1/2","textChars":16,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/idgvmx8r","slide":13,"name":"Text 2","text":"Bağlamsal Eş Anlamda \"Aynı Kelime\" Tuzağı","textPreview":"Bağlamsal Eş Anlamda \"Aynı Kelime\" Tuzağı","textChars":41,"textLines":1,"bbox":[153.6,88.32,864,67.2]}
+{"kind":"shape","id":"sh/5grehs7i","slide":13,"name":"Shape 3","bbox":[67.2,182.4,1142.4,100.8]}
+{"kind":"textbox","id":"sh/kfidonqx","slide":13,"name":"Text 4","text":"Gözlem:  Seçeneklerde bazen altı çizili sözcüğün AYNI KELİMESİ geçer — ama farklı, uymayan bir anlamda kullanılmıştır. Bu bir tuzaktır: doğru seçenek genelde FARKLI kelimelerle AYNI ANLAMI verir.","textPreview":"Gözlem:  Seçeneklerde bazen altı çizili sözcüğün AYNI KELİMESİ geçer — ama farklı, uymayan bir anlamda kullanılmıştır. Bu bir tuzaktır: d...","textChars":195,"textLines":1,"bbox":[96,182.4,1084.8,100.8]}
+{"kind":"shape","id":"sh/zi5c3y98","slide":13,"name":"Shape 5","bbox":[67.2,302.4,1142.4,110.4]}
+{"kind":"shape","id":"sh/ehwvat8n","slide":13,"name":"Shape 6","bbox":[86.4,331.2,249.6,73.92]}
+{"kind":"textbox","id":"sh/c3e1gjyd","slide":13,"name":"Text 7","text":"\"yeknesak\" (tekdüze, hep aynı)","textPreview":"\"yeknesak\" (tekdüze, hep aynı)","textChars":30,"textLines":1,"bbox":[86.4,331.2,249.6,57.32]}
+{"kind":"textbox","id":"sh/x4ni9ofy","slide":13,"name":"Text 8","text":"\"Eserlerin geneline hâkim olan temalar, ilk başta TEKDÜZELİK hissi oluştursa da...\" — farklı kelime (\"tekdüzelik\"), AYNI ANLAM — DOĞRU eşleşme.","textPreview":"\"Eserlerin geneline hâkim olan temalar, ilk başta TEKDÜZELİK hissi oluştursa da...\" — farklı kelime (\"tekdüzelik\"), AYNI ANLAM — DOĞRU eş...","textChars":143,"textLines":1,"bbox":[360,302.4,825.6,110.4]}
+{"kind":"shape","id":"sh/a1wze9g7","slide":13,"name":"Shape 9","bbox":[67.2,425.28,1142.4,110.4]}
+{"kind":"shape","id":"sh/b2507exs","slide":13,"name":"Shape 10","bbox":[86.4,475.2,249.6,73.92]}
+{"kind":"textbox","id":"sh/kre1k3y9","slide":13,"name":"Text 11","text":"\"yeknesak\" (tekdüze, hep aynı)","textPreview":"\"yeknesak\" (tekdüze, hep aynı)","textChars":30,"textLines":1,"bbox":[86.4,475.2,249.6,52.8]}
+{"kind":"textbox","id":"sh/ls7idofu","slide":13,"name":"Text 12","text":"\"...eleştirmenin gerçek sanatı tanıyabilmesi ve TEK ANLAMLILIĞA hapsolmaması...\" — \"tek\" kelimesi kulağa benzer gelir ama kavram FARKLIDIR — YANLIŞ tuzak.","textPreview":"\"...eleştirmenin gerçek sanatı tanıyabilmesi ve TEK ANLAMLILIĞA hapsolmaması...\" — \"tek\" kelimesi kulağa benzer gelir ama kavram FARKLIDI...","textChars":154,"textLines":1,"bbox":[360,425.28,825.6,110.4]}
+{"kind":"shape","id":"sh/y5wjitgj","slide":13,"name":"Shape 13","bbox":[67.2,561.6,1142.4,57.6]}
+{"kind":"textbox","id":"sh/z650byxo","slide":13,"name":"Text 14","text":"Önemli: kelimenin kendisi değil, TAŞIDIĞI KAVRAM aranır — kulağa benzer gelen kelimeler farklı kavramlara ait olabilir.","textPreview":"Önemli: kelimenin kendisi değil, TAŞIDIĞI KAVRAM aranır — kulağa benzer gelen kelimeler farklı kavramlara ait olabilir.","textChars":119,"textLines":1,"bbox":[96,561.6,1084.8,57.6]}
+{"kind":"textbox","id":"sh/0buh8zy5","slide":13,"name":"Text 15","text":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Derinleşme — Aynı Kelime Tuzağı","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Derinleşme — Aynı Kelime Tuzağı","textChars":65,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/1w3i14fq","slide":13,"name":"Text 16","text":"Ders 3 / 3","textPreview":"Ders 3 / 3","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/mhgf6t4n","slide":13,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/6lsnupw7","slide":13,"text":""}
+{"kind":"slide","id":"sl/vaxsvy10","slide":14,"title":"DERINLEŞME · 2/2","textShapes":18}
+{"kind":"shape","id":"sh/547mhg3m","slide":14,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/76p4jqls","slide":14,"name":"Text 1","text":"DERINLEŞME · 2/2","textPreview":"DERINLEŞME · 2/2","textChars":16,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/65gnqlk7","slide":14,"name":"Text 2","text":"Deyim Karışıklığı Haritası","textPreview":"Deyim Karışıklığı Haritası","textChars":26,"textLines":1,"bbox":[153.6,88.32,864,67.2]}
+{"kind":"shape","id":"sh/t87ml0ji","slide":14,"name":"Shape 3","bbox":[67.2,182.4,1142.4,96]}
+{"kind":"textbox","id":"sh/s7y5sv2x","slide":14,"name":"Text 4","text":"Gözlem:  ÖSYM, deyim sorularında sıklıkla BENZER GÖRÜNEN iki deyimin anlamını birbirine karıştırır. Bu sık karışan çiftleri önceden bilmek, sınavda hız kazandırır.","textPreview":"Gözlem:  ÖSYM, deyim sorularında sıklıkla BENZER GÖRÜNEN iki deyimin anlamını birbirine karıştırır. Bu sık karışan çiftleri önceden bilme...","textChars":163,"textLines":1,"bbox":[96,182.4,1084.8,96]}
+{"kind":"shape","id":"sh/na5476l8","slide":14,"name":"Shape 5","bbox":[67.2,302.4,1142.4,81.6]}
+{"kind":"shape","id":"sh/m9c3e1kn","slide":14,"name":"Shape 6","bbox":[86.4,316.8,278.4,52.8]}
+{"kind":"textbox","id":"sh/wrm9kvep","slide":14,"name":"Text 7","text":"gözden düşmek","textPreview":"gözden düşmek","textChars":13,"textLines":1,"bbox":[86.4,316.8,278.4,52.8]}
+{"kind":"textbox","id":"sh/hsvat0fa","slide":14,"name":"Text 8","text":"itibarını/saygınlığını kaybetmek","textPreview":"itibarını/saygınlığını kaybetmek","textChars":32,"textLines":1,"bbox":[379.2,312,278.4,62.4]}
+{"kind":"shape","id":"sh/upkrilwj","slide":14,"name":"Shape 9","bbox":[672,316.8,278.4,52.8]}
+{"kind":"textbox","id":"sh/vqdsrqx4","slide":14,"name":"Text 10","text":"gözden kaçırmak","textPreview":"gözden kaçırmak","textChars":15,"textLines":1,"bbox":[672,316.8,278.4,52.8]}
+{"kind":"textbox","id":"sh/4vm9ovel","slide":14,"name":"Text 11","text":"fark etmemek, atlamak","textPreview":"fark etmemek, atlamak","textChars":21,"textLines":1,"bbox":[964.8,312,230.4,62.4]}
+{"kind":"shape","id":"sh/5wvax0f6","slide":14,"name":"Shape 12","bbox":[67.2,396.48,1142.4,81.6]}
+{"kind":"shape","id":"sh/it4rm5wv","slide":14,"name":"Shape 13","bbox":[86.4,410.88,278.4,52.8]}
+{"kind":"textbox","id":"sh/judsvqxg","slide":14,"name":"Text 14","text":"ağzı kulaklarına varmak","textPreview":"ağzı kulaklarına varmak","textChars":23,"textLines":1,"bbox":[86.4,410.88,278.4,52.8]}
+{"kind":"textbox","id":"sh/0z29cbyh","slide":14,"name":"Text 15","text":"çok sevinmek","textPreview":"çok sevinmek","textChars":12,"textLines":1,"bbox":[379.2,406.08,278.4,62.4]}
+{"kind":"shape","id":"sh/l0bqlgf2","slide":14,"name":"Shape 16","bbox":[672,410.88,278.4,52.8]}
+{"kind":"textbox","id":"sh/1kjyt83e","slide":14,"name":"Text 17","text":"ağzı açık kalmak","textPreview":"ağzı açık kalmak","textChars":16,"textLines":1,"bbox":[672,410.88,278.4,52.8]}
+{"kind":"textbox","id":"sh/gjax03m9","slide":14,"name":"Text 18","text":"çok şaşırmak","textPreview":"çok şaşırmak","textChars":12,"textLines":1,"bbox":[964.8,406.08,230.4,62.4]}
+{"kind":"shape","id":"sh/fi1grylo","slide":14,"name":"Shape 19","bbox":[67.2,490.56,1142.4,81.6]}
+{"kind":"shape","id":"sh/ehsfyt43","slide":14,"name":"Shape 20","bbox":[86.4,504.96,278.4,52.8]}
+{"kind":"textbox","id":"sh/p8jyx83q","slide":14,"name":"Text 21","text":"eli açık olmak","textPreview":"eli açık olmak","textChars":14,"textLines":1,"bbox":[86.4,504.96,278.4,52.8]}
+{"kind":"textbox","id":"sh/o7ah4nm5","slide":14,"name":"Text 22","text":"cömert olmak","textPreview":"cömert olmak","textChars":12,"textLines":1,"bbox":[379.2,500.16,278.4,62.4]}
+{"kind":"shape","id":"sh/361gvilk","slide":14,"name":"Shape 23","bbox":[672,504.96,278.4,52.8]}
+{"kind":"textbox","id":"sh/25sf2d4z","slide":14,"name":"Text 24","text":"eli sıkı olmak","textPreview":"eli sıkı olmak","textChars":14,"textLines":1,"bbox":[672,504.96,278.4,52.8]}
+{"kind":"textbox","id":"sh/dc3y1s3m","slide":14,"name":"Text 25","text":"cimri olmak","textPreview":"cimri olmak","textChars":11,"textLines":1,"bbox":[964.8,500.16,230.4,62.4]}
+{"kind":"shape","id":"sh/cbuh8nmh","slide":14,"name":"Shape 26","bbox":[67.2,590.4,1142.4,52.8]}
+{"kind":"textbox","id":"sh/uh4v2pkj","slide":14,"name":"Text 27","text":"Pratik ipucu: iki deyim benzer bir organ/kavram içeriyorsa, sınavdan önce anlamlarını KESİN olarak birbirinden ayırın.","textPreview":"Pratik ipucu: iki deyim benzer bir organ/kavram içeriyorsa, sınavdan önce anlamlarını KESİN olarak birbirinden ayırın.","textChars":118,"textLines":1,"bbox":[96,590.4,1084.8,52.8]}
+{"kind":"textbox","id":"sh/vixcvu14","slide":14,"name":"Text 28","text":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Derinleşme — Deyim Karışıklığı","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Derinleşme — Deyim Karışıklığı","textChars":64,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/wj6d4z2p","slide":14,"name":"Text 29","text":"Ders 3 / 3","textPreview":"Ders 3 / 3","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/mx0ra5cv","slide":14,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/vaxsvy10","slide":14,"text":""}
+{"kind":"slide","id":"sl/gny5sjyp","slide":15,"title":"ÖRNEK SORU · 1/3","textShapes":11}
+{"kind":"shape","id":"sh/8z2h8bq1","slide":15,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/ytkf2h8j","slide":15,"name":"Text 1","text":"ÖRNEK SORU · 1/3","textPreview":"ÖRNEK SORU · 1/3","textChars":16,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/zutgvm94","slide":15,"name":"Text 2","text":"Soru Çözümü","textPreview":"Soru Çözümü","textChars":11,"textLines":1,"bbox":[153.6,88.32,825.6,67.2]}
+{"kind":"shape","id":"sh/kv2h4rqp","slide":15,"name":"Shape 3","bbox":[993.6,65.28,216,38.4]}
+{"kind":"textbox","id":"sh/lwbyxwra","slide":15,"name":"Text 4","text":"ÖSYM (TYT - 2022)","textPreview":"ÖSYM (TYT - 2022)","textChars":17,"textLines":1,"bbox":[993.6,65.28,216,38.4]}
+{"kind":"shape","id":"sh/ip4zel83","slide":15,"name":"Shape 5","bbox":[67.2,187.2,1145.28,465.6]}
+{"kind":"textbox","id":"sh/3qdg7qpo","slide":15,"name":"Text 6","text":"Füruzan'ın hikâyeciliğinde eleştirmenlerce zayıf bulunan yanlardan biri yeknesak karakter üretimidir. Her hikâyesinde belli çevrelerde karşılaşılabilecek birkaç tipi anlatması ve bunların dışına çıkmaması bu eleştiriye dayanak gösterilebilir.\n\nBu parçada altı çizili sözü (\"yeknesak\") anlamca karşılayabilecek bir kullanım aşağıdakilerin hangisinde vardır?","textPreview":"Füruzan'ın hikâyeciliğinde eleştirmenlerce zayıf bulunan yanlardan biri yeknesak karakter üretimidir. Her hikâyesinde belli çevrelerde ka...","textChars":356,"textLines":3,"bbox":[96,206.4,1087.68,85.68]}
+{"kind":"textbox","id":"sh/fm1gzq5o","slide":15,"name":"Text 7","text":"A)  Bir yazarın eserlerindeki olağanüstü karakterleri beğenmişsek yazarın sonraki eserlerinde de aynı karakterleri arama eğilimine gireriz.","textPreview":"A)  Bir yazarın eserlerindeki olağanüstü karakterleri beğenmişsek yazarın sonraki eserlerinde de aynı karakterleri arama eğilimine gireriz.","textChars":139,"textLines":1,"bbox":[96,317.04,1087.68,47.9]}
+{"kind":"textbox","id":"sh/e1sf65o3","slide":15,"name":"Text 8","text":"B)  Eleştirmenin en büyük yetkinliği, sanat eserine dair teknik unsurları bilmekten de öte gerçek sanatı tanıyabilmesi ve tek anlamlılığa hapsolmamasıdır.","textPreview":"B)  Eleştirmenin en büyük yetkinliği, sanat eserine dair teknik unsurları bilmekten de öte gerçek sanatı tanıyabilmesi ve tek anlamlılığa...","textChars":154,"textLines":1,"bbox":[96,379.39,1087.68,47.9]}
+{"kind":"textbox","id":"sh/1ojy10ne","slide":15,"name":"Text 9","text":"C)  Eserlerinin geneline hâkim olan temalar, ilk başta tekdüzelik hissi oluştursa da bir araya geldiklerinde bir bütünün parçalarını andırır.","textPreview":"C)  Eserlerinin geneline hâkim olan temalar, ilk başta tekdüzelik hissi oluştursa da bir araya geldiklerinde bir bütünün parçalarını andı...","textChars":141,"textLines":1,"bbox":[96,441.74,1087.68,47.9]}
+{"kind":"textbox","id":"sh/gnax8v6t","slide":15,"name":"Text 10","text":"D)  Deneme yazarları, hayal kurdukları için mi daha sonsuz bir evrene sahiptir yoksa öğrendiklerini özgün düşünce dünyalarına aktarabildikleri için mi?","textPreview":"D)  Deneme yazarları, hayal kurdukları için mi daha sonsuz bir evrene sahiptir yoksa öğrendiklerini özgün düşünce dünyalarına aktarabildi...","textChars":151,"textLines":1,"bbox":[96,504.1,1087.68,47.9]}
+{"kind":"textbox","id":"sh/nqlg3a5k","slide":15,"name":"Text 11","text":"E)  Edebî eserdeki karakterin hayatın normal akışı içinde sıradan bir görüntüye bürünmesi yerine evrensel bir kimlikle donatılması onu belirli bir tip hâline getirir.","textPreview":"E)  Edebî eserdeki karakterin hayatın normal akışı içinde sıradan bir görüntüye bürünmesi yerine evrensel bir kimlikle donatılması onu be...","textChars":166,"textLines":1,"bbox":[96,566.45,1087.68,47.9]}
+{"kind":"textbox","id":"sh/7qp0zepo","slide":15,"name":"Text 18","text":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Örnek Soru 1 — gerçek ÖSYM sorusu (Tip 3)","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Örnek Soru 1 — gerçek ÖSYM sorusu (Tip 3)","textChars":75,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/8by18jq9","slide":15,"name":"Text 19","text":"Ders 3 / 3","textPreview":"Ders 3 / 3","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/q90rupk7","slide":15,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/gny5sjyp","slide":15,"text":""}
+{"kind":"slide","id":"sl/c7uhcr6t","slide":16,"title":"ÖRNEK SORU · 1/3  ·  ÇÖZÜM","textShapes":9}
+{"kind":"shape","id":"sh/90vqdczq","slide":16,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/v2d8fmhw","slide":16,"name":"Text 1","text":"ÖRNEK SORU · 1/3  ·  ÇÖZÜM","textPreview":"ÖRNEK SORU · 1/3  ·  ÇÖZÜM","textChars":26,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/a14rmhgb","slide":16,"name":"Text 2","text":"Çözüm","textPreview":"Çözüm","textChars":5,"textLines":1,"bbox":[153.6,88.32,825.6,67.2]}
+{"kind":"shape","id":"sh/xovqhcz2","slide":16,"name":"Shape 3","bbox":[993.6,65.28,216,38.4]}
+{"kind":"textbox","id":"sh/w3m9o7yh","slide":16,"name":"Text 4","text":"ÖSYM (TYT - 2022)","textPreview":"ÖSYM (TYT - 2022)","textChars":17,"textLines":1,"bbox":[993.6,65.28,216,38.4]}
+{"kind":"shape","id":"sh/1graxo3i","slide":16,"name":"Shape 12","bbox":[67.2,187.2,1145.28,465.6]}
+{"kind":"textbox","id":"sh/edgr294r","slide":16,"name":"Text 13","text":"ÇÖZÜM","textPreview":"ÇÖZÜM","textChars":5,"textLines":1,"bbox":[96,206.4,1087.68,43.2]}
+{"kind":"shape","id":"sh/fepsvelc","slide":16,"name":"Shape 14","bbox":[96,264,81.6,81.6]}
+{"kind":"textbox","id":"sh/oji9832t","slide":16,"name":"Text 15","text":"C","textPreview":"C","textChars":1,"textLines":1,"bbox":[96,264,81.6,81.6]}
+{"kind":"textbox","id":"sh/p4ra1o3e","slide":16,"name":"Text 16","text":"Doğru cevap","textPreview":"Doğru cevap","textChars":11,"textLines":1,"bbox":[196.8,264,480,81.6]}
+{"kind":"textbox","id":"sh/x0nalovi","slide":16,"name":"Text 17","text":"C  → doğru cevap.\n\n\"Yeknesak\" = tekdüze, hep aynı, çeşitlilik göstermeyen. C seçeneğindeki \"TEKDÜZELİK\" kelimesi bunun doğrudan eş anlamlısıdır — \"temalar ilk başta tekdüzelik hissi oluştursa da...\" cümlesi aynı kavramı taşır. B'deki \"tek anlamlılık\" kulağa benzer gelse de FARKLI bir kavramdır (yeknesaklık değil, çok anlamlılığın zıttı) — tuzaktır.","textPreview":"C  → doğru cevap. |  | \"Yeknesak\" = tekdüze, hep aynı, çeşitlilik göstermeyen. C seçeneğindeki \"TEKDÜZELİK\" kelimesi bunun doğrudan eş an...","textChars":350,"textLines":3,"bbox":[96,374.4,1087.68,254.4]}
+{"kind":"textbox","id":"sh/wze9cjud","slide":16,"name":"Text 18","text":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Örnek Soru 1 — çözüm — gerçek ÖSYM sorusu (Tip 3)","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Örnek Soru 1 — çözüm — gerçek ÖSYM sorusu (Tip 3)","textChars":83,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/by58jeds","slide":16,"name":"Text 19","text":"Ders 3 / 3","textPreview":"Ders 3 / 3","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/903ypovu","slide":16,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/c7uhcr6t","slide":16,"text":""}
+{"kind":"slide","id":"sl/14bup87q","slide":17,"title":"ÖRNEK SORU · 2/3","textShapes":11}
+{"kind":"shape","id":"sh/1c7e50ni","slide":17,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/rm5czq50","slide":17,"name":"Text 1","text":"ÖRNEK SORU · 2/3","textPreview":"ÖRNEK SORU · 2/3","textChars":16,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/6lwvql4v","slide":17,"name":"Text 2","text":"Soru Çözümü","textPreview":"Soru Çözümü","textChars":11,"textLines":1,"bbox":[153.6,88.32,825.6,67.2]}
+{"kind":"shape","id":"sh/t8ne10n6","slide":17,"name":"Shape 3","bbox":[993.6,65.28,216,38.4]}
+{"kind":"textbox","id":"sh/snedsvml","slide":17,"name":"Text 4","text":"ÖSYM (TYT - 2026)","textPreview":"ÖSYM (TYT - 2026)","textChars":17,"textLines":1,"bbox":[993.6,65.28,216,38.4]}
+{"kind":"shape","id":"sh/jilcvq54","slide":17,"name":"Shape 5","bbox":[67.2,187.2,1145.28,465.6]}
+{"kind":"textbox","id":"sh/ihcvml4j","slide":17,"name":"Text 6","text":"Newton'ın \"Eğer ileriyi gördüysek devlerin omuzlarında durduğumuz içindir.\" sözünü duymuşsunuzdur. Bu söz bilimsel ilerlemenin ana ilkelerinden birinin altını çizer. Zihinsel ve eylemsel perspektife yönelik bir dikkat çekme ifadesidir. Newton'a katılıyorum. Bana göre de devler ve onların omuzları olmasaydı insanlık için duvarın ardını görmek pek mümkün olmazdı.\n\nBu parçada altı çizili sözle (\"devlerin omuzlarında durmak\") anlatılmak istenen aşağıdakilerin hangisidir?","textPreview":"Newton'ın \"Eğer ileriyi gördüysek devlerin omuzlarında durduğumuz içindir.\" sözünü duymuşsunuzdur. Bu söz bilimsel ilerlemenin ana ilkele...","textChars":471,"textLines":3,"bbox":[96,206.4,1087.68,152.09]}
+{"kind":"textbox","id":"sh/4by9or6l","slide":17,"name":"Text 7","text":"A)  Toplumsal fayda sağlayacak çalışmalara yönelmek","textPreview":"A)  Toplumsal fayda sağlayacak çalışmalara yönelmek","textChars":51,"textLines":1,"bbox":[96,383.45,1087.68,28.31]}
+{"kind":"textbox","id":"sh/pc7qhwn6","slide":17,"name":"Text 8","text":"B)  Olumsuz tecrübeleri sorgulayarak bugünü inşa etmek","textPreview":"B)  Olumsuz tecrübeleri sorgulayarak bugünü inşa etmek","textChars":54,"textLines":1,"bbox":[96,432.52,1087.68,28.31]}
+{"kind":"textbox","id":"sh/29grm1of","slide":17,"name":"Text 9","text":"C)  Bilimde daha iyiye ulaşma konusunda azim göstermek","textPreview":"C)  Bilimde daha iyiye ulaşma konusunda azim göstermek","textChars":54,"textLines":1,"bbox":[96,481.59,1087.68,28.31]}
+{"kind":"textbox","id":"sh/3ap8fm50","slide":17,"name":"Text 10","text":"D)  Engelleri aşarken ihtiyatlı bir davranış sergilemek","textPreview":"D)  Engelleri aşarken ihtiyatlı bir davranış sergilemek","textChars":55,"textLines":1,"bbox":[96,530.66,1087.68,28.31]}
+{"kind":"textbox","id":"sh/gnepkr69","slide":17,"name":"Text 11","text":"E)  Birikimin sağladığı imkânla görüş açısını genişletmek","textPreview":"E)  Birikimin sağladığı imkânla görüş açısını genişletmek","textChars":57,"textLines":1,"bbox":[96,579.73,1087.68,28.31]}
+{"kind":"textbox","id":"sh/8ze9gbyx","slide":17,"name":"Text 18","text":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Örnek Soru 2 — gerçek ÖSYM sorusu (Tip 4)","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Örnek Soru 2 — gerçek ÖSYM sorusu (Tip 4)","textChars":75,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/ny5876xc","slide":17,"name":"Text 19","text":"Ders 3 / 3","textPreview":"Ders 3 / 3","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/10ju18nq","slide":17,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/14bup87q","slide":17,"text":""}
+{"kind":"slide","id":"sl/7qto7e10","slide":18,"title":"ÖRNEK SORU · 2/3  ·  ÇÖZÜM","textShapes":9}
+{"kind":"shape","id":"sh/1sfqxsv6","slide":18,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/nux8zidc","slide":18,"name":"Text 1","text":"ÖRNEK SORU · 2/3  ·  ÇÖZÜM","textPreview":"ÖRNEK SORU · 2/3  ·  ÇÖZÜM","textChars":26,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/2to76dcr","slide":18,"name":"Text 2","text":"Çözüm","textPreview":"Çözüm","textChars":5,"textLines":1,"bbox":[153.6,88.32,825.6,67.2]}
+{"kind":"shape","id":"sh/9wzq1svi","slide":18,"name":"Shape 3","bbox":[993.6,65.28,216,38.4]}
+{"kind":"textbox","id":"sh/ov6p8nux","slide":18,"name":"Text 4","text":"ÖSYM (TYT - 2026)","textPreview":"ÖSYM (TYT - 2026)","textChars":17,"textLines":1,"bbox":[993.6,65.28,216,38.4]}
+{"kind":"shape","id":"sh/x07i5wj2","slide":18,"name":"Shape 12","bbox":[67.2,187.2,1145.28,465.6]}
+{"kind":"textbox","id":"sh/axgza10b","slide":18,"name":"Text 13","text":"ÇÖZÜM","textPreview":"ÇÖZÜM","textChars":5,"textLines":1,"bbox":[96,206.4,1087.68,43.2]}
+{"kind":"shape","id":"sh/vyp03m1w","slide":18,"name":"Shape 14","bbox":[96,264,81.6,81.6]}
+{"kind":"textbox","id":"sh/c3uh07id","slide":18,"name":"Text 15","text":"E","textPreview":"E","textChars":1,"textLines":1,"bbox":[96,264,81.6,81.6]}
+{"kind":"textbox","id":"sh/d43itcjy","slide":18,"name":"Text 16","text":"Doğru cevap","textPreview":"Doğru cevap","textChars":11,"textLines":1,"bbox":[196.8,264,480,81.6]}
+{"kind":"textbox","id":"sh/t8v6h47a","slide":18,"name":"Text 17","text":"E  → doğru cevap.\n\n\"Devlerin omuzlarında durmak\" ünlü bir söz — kendinden önceki kuşakların BİRİKİMİNİ kullanarak daha ileriyi görebilmeyi anlatır. E seçeneği tam olarak bunu ifade eder: \"birikimin sağladığı imkânla görüş açısını genişletmek.\" Diğer seçenekler metnin ana fikrine (geçmiş birikimden yararlanma) değil, alakasız ya da kısmen ilgili genel fikirlere değinir.","textPreview":"E  → doğru cevap. |  | \"Devlerin omuzlarında durmak\" ünlü bir söz — kendinden önceki kuşakların BİRİKİMİNİ kullanarak daha ileriyi görebi...","textChars":371,"textLines":3,"bbox":[96,374.4,1087.68,254.4]}
+{"kind":"textbox","id":"sh/s72p8z6p","slide":18,"name":"Text 18","text":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Örnek Soru 2 — çözüm — gerçek ÖSYM sorusu (Tip 4)","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Örnek Soru 2 — çözüm — gerçek ÖSYM sorusu (Tip 4)","textChars":83,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/rmtofup4","slide":18,"name":"Text 19","text":"Ders 3 / 3","textPreview":"Ders 3 / 3","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/5svm18n2","slide":18,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/7qto7e10","slide":18,"text":""}
+{"kind":"slide","id":"sl/y5wne50z","slide":19,"title":"ÖRNEK SORU · 3/3","textShapes":11}
+{"kind":"shape","id":"sh/wrelszu9","slide":19,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/itw3upcf","slide":19,"name":"Text 1","text":"ÖRNEK SORU · 3/3","textPreview":"ÖRNEK SORU · 3/3","textChars":16,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/je5knut0","slide":19,"name":"Text 2","text":"Soru Çözümü","textPreview":"Soru Çözümü","textChars":11,"textLines":1,"bbox":[153.6,88.32,825.6,67.2]}
+{"kind":"shape","id":"sh/4felwzu5","slide":19,"name":"Shape 3","bbox":[993.6,65.28,216,38.4]}
+{"kind":"textbox","id":"sh/5gnmp4bq","slide":19,"name":"Text 4","text":"ÖSYM (TYT - 2024)","textPreview":"ÖSYM (TYT - 2024)","textChars":17,"textLines":1,"bbox":[993.6,65.28,216,38.4]}
+{"kind":"shape","id":"sh/6hw3y9sb","slide":19,"name":"Shape 5","bbox":[67.2,187.2,1145.28,465.6]}
+{"kind":"textbox","id":"sh/rip4retw","slide":19,"name":"Text 6","text":"Deyimlerin bir kısmı gözle ilgilidir. Örneğin gözü ısırmak (I) deyimiyle o kişiyi daha önce görmüş olduğumuzu ve tanıdığımızı anlatmak isteriz. Gözü dönmek (II) deyimi, aşırı istek veya öfke nedeniyle kişinin saldıracak duruma gelmesini belirtir. Göz kulak olmak (III), bir kimseyi veya nesneyi görüp gözetmek durumunu belirtir. Gözden düşmek (IV), bir iş veya durumu dikkatinden kaçırmak eylemini gösterir. Göz açtırmamak (V) ise birinin bir iş yapmasına fırsat vermemeyi ifade eder.\n\nBu parçada numaralanmış deyimlerden hangisinin açıklaması yanlıştır?","textPreview":"Deyimlerin bir kısmı gözle ilgilidir. Örneğin gözü ısırmak (I) deyimiyle o kişiyi daha önce görmüş olduğumuzu ve tanıdığımızı anlatmak is...","textChars":554,"textLines":3,"bbox":[96,206.4,1087.68,180.39]}
+{"kind":"textbox","id":"sh/fapkr6pw","slide":19,"name":"Text 7","text":"A)  I","textPreview":"A)  I","textChars":5,"textLines":1,"bbox":[96,411.75,1087.68,29.54]}
+{"kind":"textbox","id":"sh/upg3i18r","slide":19,"name":"Text 8","text":"B)  II","textPreview":"B)  II","textChars":6,"textLines":1,"bbox":[96,455.16,1087.68,29.54]}
+{"kind":"textbox","id":"sh/1cr2tg72","slide":19,"name":"Text 9","text":"C)  III","textPreview":"C)  III","textChars":7,"textLines":1,"bbox":[96,498.57,1087.68,29.54]}
+{"kind":"textbox","id":"sh/gbylkbqh","slide":19,"name":"Text 10","text":"D)  IV","textPreview":"D)  IV","textChars":6,"textLines":1,"bbox":[96,541.98,1087.68,29.54]}
+{"kind":"textbox","id":"sh/7mpknmp0","slide":19,"name":"Text 11","text":"E)  V","textPreview":"E)  V","textChars":5,"textLines":1,"bbox":[96,585.39,1087.68,29.54]}
+{"kind":"textbox","id":"sh/nedoru9c","slide":19,"name":"Text 18","text":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Örnek Soru 3 — gerçek ÖSYM sorusu (Tip 6)","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Örnek Soru 3 — gerçek ÖSYM sorusu (Tip 6)","textChars":75,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/8zm5kzax","slide":19,"name":"Text 19","text":"Ders 3 / 3","textPreview":"Ders 3 / 3","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/et836t8v","slide":19,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/y5wne50z","slide":19,"text":""}
+{"kind":"slide","id":"sl/69wfm9o7","slide":20,"title":"ÖRNEK SORU · 3/3  ·  ÇÖZÜM","textShapes":9}
+{"kind":"shape","id":"sh/xg7axgf2","slide":20,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/napsr6x0","slide":20,"name":"Text 1","text":"ÖRNEK SORU · 3/3  ·  ÇÖZÜM","textPreview":"ÖRNEK SORU · 3/3  ·  ÇÖZÜM","textChars":26,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/29wby1wf","slide":20,"name":"Text 2","text":"Çözüm","textPreview":"Çözüm","textChars":5,"textLines":1,"bbox":[153.6,88.32,825.6,67.2]}
+{"kind":"shape","id":"sh/pc7atgf6","slide":20,"name":"Shape 3","bbox":[993.6,65.28,216,38.4]}
+{"kind":"textbox","id":"sh/obyt0bel","slide":20,"name":"Text 4","text":"ÖSYM (TYT - 2024)","textPreview":"ÖSYM (TYT - 2024)","textChars":17,"textLines":1,"bbox":[993.6,65.28,216,38.4]}
+{"kind":"shape","id":"sh/9cjahgry","slide":20,"name":"Shape 12","bbox":[67.2,187.2,1145.28,465.6]}
+{"kind":"textbox","id":"sh/m98r618n","slide":20,"name":"Text 13","text":"ÇÖZÜM","textPreview":"ÇÖZÜM","textChars":5,"textLines":1,"bbox":[96,206.4,1087.68,43.2]}
+{"kind":"shape","id":"sh/7a1sf698","slide":20,"name":"Shape 14","bbox":[96,264,81.6,81.6]}
+{"kind":"textbox","id":"sh/s7utkvqx","slide":20,"name":"Text 15","text":"D","textPreview":"D","textChars":1,"textLines":1,"bbox":[96,264,81.6,81.6]}
+{"kind":"textbox","id":"sh/t83at0ri","slide":20,"name":"Text 16","text":"Doğru cevap","textPreview":"Doğru cevap","textChars":11,"textLines":1,"bbox":[196.8,264,480,81.6]}
+{"kind":"textbox","id":"sh/1czihwva","slide":20,"name":"Text 17","text":"D  → doğru cevap.\n\n\"Gözden düşmek\" gerçekte \"eskisi kadar saygı/itibar görmemek, değerini yitirmek\" demektir — metindeki açıklama (\"bir iş veya durumu dikkatinden kaçırmak\") aslında BAŞKA bir deyimin (\"gözden kaçırmak\") anlamıdır. I, II, III ve V'in açıklamaları deyimlerin gerçek/yerleşik anlamlarıyla örtüşmektedir.","textPreview":"D  → doğru cevap. |  | \"Gözden düşmek\" gerçekte \"eskisi kadar saygı/itibar görmemek, değerini yitirmek\" demektir — metindeki açıklama (\"b...","textChars":317,"textLines":3,"bbox":[96,374.4,1087.68,254.4]}
+{"kind":"textbox","id":"sh/gbq1obep","slide":20,"name":"Text 18","text":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Örnek Soru 3 — çözüm — gerçek ÖSYM sorusu (Tip 6)","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Örnek Soru 3 — çözüm — gerçek ÖSYM sorusu (Tip 6)","textChars":83,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/fax0f6d4","slide":20,"name":"Text 19","text":"Ders 3 / 3","textPreview":"Ders 3 / 3","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/1wvmtgne","slide":20,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/69wfm9o7","slide":20,"text":""}
+{"kind":"slide","id":"sl/nid43ytk","slide":21,"title":"DERS SONU KONTROL","textShapes":18}
+{"kind":"shape","id":"sh/9gb6xgbi","slide":21,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/vitozqt8","slide":21,"name":"Text 1","text":"DERS SONU KONTROL","textPreview":"DERS SONU KONTROL","textChars":17,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/ahk7qls3","slide":21,"name":"Text 2","text":"Hızlı Kontrol","textPreview":"Hızlı Kontrol","textChars":13,"textLines":1,"bbox":[153.6,88.32,864,67.2]}
+{"kind":"textbox","id":"sh/xkbq10be","slide":21,"name":"Text 3","text":"Aşağıdaki dört soru kalıbını birlikte hızlıca tanıyalım — hangi TİP olduğunu söyleyin:","textPreview":"Aşağıdaki dört soru kalıbını birlikte hızlıca tanıyalım — hangi TİP olduğunu söyleyin:","textChars":86,"textLines":1,"bbox":[67.2,172.8,1142.4,79.52]}
+{"kind":"shape","id":"sh/wj2psvat","slide":21,"name":"Shape 4","bbox":[81.6,257.12,264,256]}
+{"kind":"textbox","id":"sh/jmd83atk","slide":21,"name":"Text 5","text":"\"Altı çizili sözü anlamca karşılayabilecek kullanım hangisinde vardır?\"","textPreview":"\"Altı çizili sözü anlamca karşılayabilecek kullanım hangisinde vardır?\"","textChars":71,"textLines":1,"bbox":[91.2,266.72,244.8,151.47]}
+{"kind":"textbox","id":"sh/il47u5sz","slide":21,"name":"Text 6","text":"↓","textPreview":"↓","textChars":1,"textLines":1,"bbox":[81.6,422.99,264,37.87]}
+{"kind":"textbox","id":"sh/cri1gnql","slide":21,"name":"Text 7","text":"TİP 3","textPreview":"TİP 3","textChars":5,"textLines":1,"bbox":[81.6,465.65,264,37.87]}
+{"kind":"shape","id":"sh/dsri9sr6","slide":21,"name":"Shape 8","bbox":[364.8,257.12,264,256]}
+{"kind":"textbox","id":"sh/qpgjex8f","slide":21,"name":"Text 9","text":"\"Altı çizili sözle anlatılmak istenen aşağıdakilerden hangisidir?\"","textPreview":"\"Altı çizili sözle anlatılmak istenen aşağıdakilerden hangisidir?\"","textChars":66,"textLines":1,"bbox":[374.4,266.72,244.8,151.47]}
+{"kind":"textbox","id":"sh/rqp07290","slide":21,"name":"Text 10","text":"↓","textPreview":"↓","textChars":1,"textLines":1,"bbox":[364.8,422.99,264,37.87]}
+{"kind":"textbox","id":"sh/0vi1k7qx","slide":21,"name":"Text 11","text":"TİP 4","textPreview":"TİP 4","textChars":5,"textLines":1,"bbox":[364.8,465.65,264,37.87]}
+{"kind":"shape","id":"sh/1gridcr2","slide":21,"name":"Shape 12","bbox":[648,257.12,264,256]}
+{"kind":"textbox","id":"sh/et0jix8r","slide":21,"name":"Text 13","text":"\"Numaralanmış deyimlerden hangisinin açıklaması yanlıştır?\"","textPreview":"\"Numaralanmış deyimlerden hangisinin açıklaması yanlıştır?\"","textChars":59,"textLines":1,"bbox":[657.6,266.72,244.8,151.47]}
+{"kind":"textbox","id":"sh/zu90b29c","slide":21,"name":"Text 14","text":"↓","textPreview":"↓","textChars":1,"textLines":1,"bbox":[648,422.99,264,37.87]}
+{"kind":"textbox","id":"sh/oj21o7qt","slide":21,"name":"Text 15","text":"TİP 6","textPreview":"TİP 6","textChars":5,"textLines":1,"bbox":[648,465.65,264,37.87]}
+{"kind":"shape","id":"sh/9kb2hcre","slide":21,"name":"Shape 16","bbox":[931.2,257.12,264,218.13]}
+{"kind":"textbox","id":"sh/x07i1cji","slide":21,"name":"Text 17","text":"\"Bu sözle asıl vurgulanmak istenen nedir?\"","textPreview":"\"Bu sözle asıl vurgulanmak istenen nedir?\"","textChars":42,"textLines":1,"bbox":[940.8,266.72,244.8,113.6]}
+{"kind":"textbox","id":"sh/wfy1s7ix","slide":21,"name":"Text 18","text":"↓","textPreview":"↓","textChars":1,"textLines":1,"bbox":[931.2,385.12,264,37.87]}
+{"kind":"textbox","id":"sh/vep0z21c","slide":21,"name":"Text 19","text":"TİP 4","textPreview":"TİP 4","textChars":5,"textLines":1,"bbox":[931.2,427.79,264,37.87]}
+{"kind":"shape","id":"sh/adgjqx0r","slide":21,"name":"Shape 20","bbox":[67.2,551.52,1142.4,85.33]}
+{"kind":"textbox","id":"sh/54ri5wje","slide":21,"name":"Text 21","text":"Bu üç tipi soru kökünden hızlıca tanıyabiliyorsanız, Sözcükte Anlam konusunu tamamladınız!","textPreview":"Bu üç tipi soru kökünden hızlıca tanıyabiliyorsanız, Sözcükte Anlam konusunu tamamladınız!","textChars":90,"textLines":1,"bbox":[96,551.52,1084.8,75.73]}
+{"kind":"textbox","id":"sh/k3y1wri9","slide":21,"name":"Text 22","text":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Hızlı Kontrol","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Hızlı Kontrol","textChars":47,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/j2p03m1o","slide":21,"name":"Text 23","text":"Ders 3 / 3","textPreview":"Ders 3 / 3","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/lg3qtc3y","slide":21,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/nid43ytk","slide":21,"text":""}
+{"kind":"slide","id":"sl/zyxsni5k","slide":22,"title":"Ders Özeti","textShapes":10}
+{"kind":"shape","id":"sh/qpwjmh8n","slide":22,"name":"Shape 0","bbox":[0,0,441.6,720]}
+{"kind":"shape","id":"sh/rq50vmp8","slide":22,"name":"Shape 1","bbox":[86.4,105.6,86.4,86.4]}
+{"kind":"textbox","id":"sh/po3itc72","slide":22,"name":"Text 2","text":"Ders Özeti","textPreview":"Ders Özeti","textChars":10,"textLines":1,"bbox":[67.2,228.16,336,45.44]}
+{"kind":"textbox","id":"sh/2lczih8r","slide":22,"name":"Text 3","text":"Bağlamsal Anlam Yorumlama ve Deyimler — Ders 3/3","textPreview":"Bağlamsal Anlam Yorumlama ve Deyimler — Ders 3/3","textChars":48,"textLines":1,"bbox":[67.2,278.72,345.6,68.16]}
+{"kind":"textbox","id":"sh/3ml0rmpw","slide":22,"name":"Text 4","text":"SÖZCÜKTE ANLAM KONUSU TAMAMLANDI","textPreview":"SÖZCÜKTE ANLAM KONUSU TAMAMLANDI","textChars":32,"textLines":1,"bbox":[67.2,479.12,345.6,68.16]}
+{"kind":"textbox","id":"sh/gjuhg7ql","slide":22,"name":"Text 5","text":"BUGÜN ÖĞRENDIKLERIMIZ","textPreview":"BUGÜN ÖĞRENDIKLERIMIZ","textChars":21,"textLines":1,"bbox":[489.6,81.6,768,33.6]}
+{"kind":"shape","id":"sh/hk3ipcr6","slide":22,"name":"Shape 6","bbox":[489.6,129.6,417.6,48]}
+{"kind":"textbox","id":"sh/dkfmp4zy","slide":22,"name":"Text 7","text":"Tip 3: Bağlamsal Eş Anlam","textPreview":"Tip 3: Bağlamsal Eş Anlam","textChars":25,"textLines":1,"bbox":[489.6,129.6,417.6,48]}
+{"kind":"shape","id":"sh/cj65wzyd","slide":22,"name":"Shape 8","bbox":[489.6,177.6,360,49.36]}
+{"kind":"textbox","id":"sh/rid4nuhs","slide":22,"name":"Text 9","text":"Tip 4: Sözü Yorumlama","textPreview":"Tip 4: Sözü Yorumlama","textChars":21,"textLines":1,"bbox":[489.6,177.6,360,39.76]}
+{"kind":"shape","id":"sh/qh4nupg7","slide":22,"name":"Shape 10","bbox":[489.6,228.16,374.4,49.36]}
+{"kind":"textbox","id":"sh/pwvmlkzm","slide":22,"name":"Text 11","text":"Tip 6: Deyim Doğrulama","textPreview":"Tip 6: Deyim Doğrulama","textChars":22,"textLines":1,"bbox":[489.6,228.16,374.4,39.76]}
+{"kind":"shape","id":"sh/4vm5sfy1","slide":22,"name":"Shape 12","bbox":[489.6,278.72,724.8,199.2]}
+{"kind":"textbox","id":"sh/3ud4juhg","slide":22,"name":"Text 13","text":"Bu 3 dersle Sözcükte Anlam konusunu tamamladık: gerçek/mecaz anlam (Ders 1), bağlama uygun sözcük ve numaralanmış sözler (Ders 2), bağlamsal eş anlam, sözü yorumlama ve deyim doğrulama (Ders 3) — hepsi gerçek 2020-2026 ÖSYM sorularıyla desteklendi.","textPreview":"Bu 3 dersle Sözcükte Anlam konusunu tamamladık: gerçek/mecaz anlam (Ders 1), bağlama uygun sözcük ve numaralanmış sözler (Ders 2), bağlam...","textChars":248,"textLines":1,"bbox":[518.4,293.12,672,170.4]}
+{"kind":"shape","id":"sh/2t4nqpgb","slide":22,"name":"Shape 14","bbox":[489.6,566.48,724.8,110.4]}
+{"kind":"textbox","id":"sh/hsvmhkzq","slide":22,"name":"Text 15","text":"SIRADAKİ KONU","textPreview":"SIRADAKİ KONU","textChars":13,"textLines":1,"bbox":[518.4,582.8,667.2,34.08]}
+{"kind":"textbox","id":"sh/grm5ofy5","slide":22,"name":"Text 16","text":"Cümlede Anlam (4 ders)  →","textPreview":"Cümlede Anlam (4 ders)  →","textChars":25,"textLines":1,"bbox":[518.4,621.68,662.4,39.76]}
+{"kind":"image","id":"im/fip4jid8","slide":22,"name":"Image 0","bbox":[105.84,125.04,47.52,47.52]}
+{"kind":"notes","id":"nt/zyxsni5k","slide":22,"text":""}
+{"kind":"slide","id":"sl/m1wvqtk3","slide":23,"title":"PEKIŞTIRME","textShapes":14}
+{"kind":"shape","id":"sh/1gbmxs7a","slide":23,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/ra9kryp8","slide":23,"name":"Text 1","text":"PEKIŞTIRME","textPreview":"PEKIŞTIRME","textChars":10,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/qp03yt8n","slide":23,"name":"Text 2","text":"Ödev: Yorumu ve Deyimi Değerlendir","textPreview":"Ödev: Yorumu ve Deyimi Değerlendir","textChars":34,"textLines":1,"bbox":[153.6,88.32,1056,67.2]}
+{"kind":"textbox","id":"sh/dcb2t87y","slide":23,"name":"Text 3","text":"Sıradaki konuya (Cümlede Anlam) kadar aşağıdaki 8 maddeyi değerlendirip defterinize yazın — Sözcükte Anlam'ın son pekiştirmesi:","textPreview":"Sıradaki konuya (Cümlede Anlam) kadar aşağıdaki 8 maddeyi değerlendirip defterinize yazın — Sözcükte Anlam'ın son pekiştirmesi:","textChars":127,"textLines":1,"bbox":[67.2,172.8,1142.4,68.16]}
+{"kind":"shape","id":"sh/sb2lk36t","slide":23,"name":"Shape 4","bbox":[67.2,243.36,561.6,77.76]}
+{"kind":"textbox","id":"sh/b6d432pc","slide":23,"name":"Text 5","text":"1. \"Suyu bulandırdı.\" → \"Ortamı huzursuz etti\" yorumu doğru mu?","textPreview":"1. \"Suyu bulandırdı.\" → \"Ortamı huzursuz etti\" yorumu doğru mu?","textChars":63,"textLines":1,"bbox":[86.4,243.36,528,68.16]}
+{"kind":"shape","id":"sh/al43uxor","slide":23,"name":"Shape 6","bbox":[648,243.36,561.6,77.76]}
+{"kind":"textbox","id":"sh/4jax4nqd","slide":23,"name":"Text 7","text":"2. \"Kaşıkla verdim, sapıyla gözünü çıkardı.\" → \"Nankörlük etti\" yorumu doğru mu?","textPreview":"2. \"Kaşıkla verdim, sapıyla gözünü çıkardı.\" → \"Nankörlük etti\" yorumu doğru mu?","textChars":80,"textLines":1,"bbox":[667.2,243.36,528,68.16]}
+{"kind":"shape","id":"sh/5kjydsri","slide":23,"name":"Shape 8","bbox":[67.2,323.04,561.6,111.84]}
+{"kind":"textbox","id":"sh/ixsf2d87","slide":23,"name":"Text 9","text":"3. \"Yorganına göre ayağını uzattı.\" → \"İmkânlarını aşan harcama yaptı\" yorumu doğru mu?","textPreview":"3. \"Yorganına göre ayağını uzattı.\" → \"İmkânlarını aşan harcama yaptı\" yorumu doğru mu?","textChars":87,"textLines":1,"bbox":[86.4,323.04,528,102.24]}
+{"kind":"shape","id":"sh/jy1gbi9s","slide":23,"name":"Shape 10","bbox":[648,323.04,561.6,77.76]}
+{"kind":"textbox","id":"sh/wvax03q1","slide":23,"name":"Text 11","text":"4. \"Köprüleri attı.\" → \"Geçmişle bağlarını kopardı\" yorumu doğru mu?","textPreview":"4. \"Köprüleri attı.\" → \"Geçmişle bağlarını kopardı\" yorumu doğru mu?","textChars":68,"textLines":1,"bbox":[667.2,323.04,528,68.16]}
+{"kind":"shape","id":"sh/hwjy98rm","slide":23,"name":"Shape 12","bbox":[67.2,436.8,561.6,77.76]}
+{"kind":"textbox","id":"sh/utsfyt8v","slide":23,"name":"Text 13","text":"5. \"Eli kalem tutmak\" → \"Yazı yazabilmek\" — doğru mu?","textPreview":"5. \"Eli kalem tutmak\" → \"Yazı yazabilmek\" — doğru mu?","textChars":53,"textLines":1,"bbox":[86.4,436.8,528,68.16]}
+{"kind":"shape","id":"sh/vu1w7y9g","slide":23,"name":"Shape 14","bbox":[648,436.8,561.6,77.76]}
+{"kind":"textbox","id":"sh/8rqxw3q5","slide":23,"name":"Text 15","text":"6. \"Ayağı kaymak\" → \"Bir işten kolayca vazgeçmek\" — doğru mu?","textPreview":"6. \"Ayağı kaymak\" → \"Bir işten kolayca vazgeçmek\" — doğru mu?","textChars":61,"textLines":1,"bbox":[667.2,436.8,528,68.16]}
+{"kind":"shape","id":"sh/9sze58rq","slide":23,"name":"Shape 16","bbox":[67.2,516.48,561.6,77.76]}
+{"kind":"textbox","id":"sh/porutkje","slide":23,"name":"Text 17","text":"7. \"Kulak kabartmak\" → \"Dikkatle dinlemeye çalışmak\" — doğru mu?","textPreview":"7. \"Kulak kabartmak\" → \"Dikkatle dinlemeye çalışmak\" — doğru mu?","textChars":64,"textLines":1,"bbox":[86.4,516.48,528,68.16]}
+{"kind":"shape","id":"sh/onid0f2t","slide":23,"name":"Shape 18","bbox":[648,516.48,561.6,77.76]}
+{"kind":"textbox","id":"sh/nm9cru18","slide":23,"name":"Text 19","text":"8. \"Yüz vermek\" → \"İlgi göstermemek\" — doğru mu?","textPreview":"8. \"Yüz vermek\" → \"İlgi göstermemek\" — doğru mu?","textChars":48,"textLines":1,"bbox":[667.2,516.48,528,68.16]}
+{"kind":"shape","id":"sh/2l0vypkn","slide":23,"name":"Shape 20","bbox":[67.2,599.76,1142.4,77.76]}
+{"kind":"textbox","id":"sh/1kru5kj2","slide":23,"name":"Text 21","text":"Not: 5-8'de dikkat — bazı deyimlerin \"mantıklı görünen\" bir açıklaması aslında YANLIŞ olabilir; deyimin GERÇEK/yerleşik kullanımdaki anlamını düşünün.","textPreview":"Not: 5-8'de dikkat — bazı deyimlerin \"mantıklı görünen\" bir açıklaması aslında YANLIŞ olabilir; deyimin GERÇEK/yerleşik kullanımdaki anla...","textChars":150,"textLines":1,"bbox":[96,599.76,1084.8,68.16]}
+{"kind":"textbox","id":"sh/0jidwf2x","slide":23,"name":"Text 22","text":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Ödev","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE ANLAM  ·  Ödev","textChars":38,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/fi9c3a1c","slide":23,"name":"Text 23","text":"Ders 3 / 3","textPreview":"Ders 3 / 3","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/9kf6hsji","slide":23,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/m1wvqtk3","slide":23,"text":""}
+{"kind":"slide","id":"sl/5onypobq","slide":24,"title":"Ders ve Konu Tamamlandı","textShapes":6}
+{"kind":"shape","id":"sh/6987itcr","slide":24,"name":"Shape 0","bbox":[854.4,0,425.28,720]}
+{"kind":"shape","id":"sh/7a18rydc","slide":24,"name":"Shape 1","bbox":[67.2,57.6,76.8,76.8]}
+{"kind":"textbox","id":"sh/58zqpov6","slide":24,"name":"Text 2","text":"Ders ve Konu Tamamlandı","textPreview":"Ders ve Konu Tamamlandı","textChars":23,"textLines":1,"bbox":[158.4,62.4,672,67.2]}
+{"kind":"textbox","id":"sh/il87etcv","slide":24,"name":"Text 3","text":"Bağlamsal Anlam Yorumlama ve Deyimler — Sözcükte Anlam, Ders 3/3","textPreview":"Bağlamsal Anlam Yorumlama ve Deyimler — Sözcükte Anlam, Ders 3/3","textChars":64,"textLines":1,"bbox":[67.2,144,768,38.4]}
+{"kind":"shape","id":"sh/jmh8nyd0","slide":24,"name":"Shape 4","bbox":[67.2,220.8,739.2,192]}
+{"kind":"textbox","id":"sh/43u9snu5","slide":24,"name":"Text 5","text":"Bugün öğrendik:  \nBağlamsal eş anlam bulma (Tip 3), sözü yorumlama (Tip 4) ve deyim anlamını doğrulama (Tip 6) — bu 3 dersle Sözcükte Anlam konusunun TAMAMI, 2020-2026 gerçek ÖSYM sorularıyla birlikte tamamlandı.","textPreview":"Bugün öğrendik:   | Bağlamsal eş anlam bulma (Tip 3), sözü yorumlama (Tip 4) ve deyim anlamını doğrulama (Tip 6) — bu 3 dersle Sözcükte A...","textChars":212,"textLines":2,"bbox":[96,244.8,681.6,144]}
+{"kind":"shape","id":"sh/p43q1sva","slide":24,"name":"Shape 6","bbox":[67.2,436.8,739.2,110.4]}
+{"kind":"textbox","id":"sh/p4z6tcri","slide":24,"name":"Text 7","text":"SIRADAKİ KONU","textPreview":"SIRADAKİ KONU","textChars":13,"textLines":1,"bbox":[96,453.12,624,33.6]}
+{"kind":"textbox","id":"sh/436507qx","slide":24,"name":"Text 8","text":"Cümlede Anlam (4 ders)  →","textPreview":"Cümlede Anlam (4 ders)  →","textChars":25,"textLines":1,"bbox":[96,481.92,662.4,52.8]}
+{"kind":"textbox","id":"sh/3ixor29c","slide":24,"name":"Text 9","text":"TYT Türkçe Ders Anlatım Projesi  ·  Sedat GÜLER ve Claude Opus 5 tarafından üretilmiştir.","textPreview":"TYT Türkçe Ders Anlatım Projesi  ·  Sedat GÜLER ve Claude Opus 5 tarafından üretilmiştir.","textChars":89,"textLines":1,"bbox":[67.2,662.4,576,38.4]}
+{"kind":"image","id":"im/l4r29c3m","slide":24,"name":"Image 0","bbox":[84.48,74.88,42.24,42.24]}
+{"kind":"notes","id":"nt/5onypobq","slide":24,"text":""}

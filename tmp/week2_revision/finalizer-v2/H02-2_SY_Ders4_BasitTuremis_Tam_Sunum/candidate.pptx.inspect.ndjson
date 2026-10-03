@@ -1,0 +1,556 @@
+{"kind":"deck","id":"pr/eiprly","name":"Deck"}
+{"kind":"layout","layoutId":"/ppt/slideMasters/slideMaster1.xml","name":"","type":"master"}
+{"kind":"layout","layoutId":"/ppt/slideLayouts/slideLayout1.xml","name":"DEFAULT"}
+{"kind":"slide","id":"sl/y90nupkv","slide":1,"title":"SÖZCÜKTE YAPI · DERS 4/6","textShapes":12}
+{"kind":"shape","id":"sh/547294r6","slide":1,"name":"Shape 0","bbox":[825.6,0,454.08,720]}
+{"kind":"textbox","id":"sh/k3yl0zql","slide":1,"name":"Text 1","text":"SÖZCÜKTE YAPI · DERS 4/6","textPreview":"SÖZCÜKTE YAPI · DERS 4/6","textChars":24,"textLines":1,"bbox":[67.2,100.8,768,33.6]}
+{"kind":"textbox","id":"sh/7qp4be9c","slide":1,"name":"Text 2","text":"Basit / Türemiş Sözcük","textPreview":"Basit / Türemiş Sözcük","textChars":22,"textLines":1,"bbox":[62.4,144,729.6,153.6]}
+{"kind":"textbox","id":"sh/65g3298r","slide":1,"name":"Text 3","text":"Sözcükte Yapım Eki Var mı, Yok mu?","textPreview":"Sözcükte Yapım Eki Var mı, Yok mu?","textChars":34,"textLines":1,"bbox":[67.2,273.6,720,48]}
+{"kind":"shape","id":"sh/ts7md4r2","slide":1,"name":"Shape 4","bbox":[67.2,360,260.16,40.32]}
+{"kind":"textbox","id":"sh/sryl4zqx","slide":1,"name":"Text 5","text":"40 dk · Blokta 2 föy","textPreview":"40 dk · Blokta 2 föy","textChars":20,"textLines":1,"bbox":[67.2,360,260.16,40.32]}
+{"kind":"shape","id":"sh/fu94fe98","slide":1,"name":"Shape 6","bbox":[346.56,360,324.96,40.32]}
+{"kind":"textbox","id":"sh/utg3698n","slide":1,"name":"Text 7","text":"Dil Bilgisi · Hafta 3","textPreview":"Dil Bilgisi · Hafta 3","textChars":21,"textLines":1,"bbox":[346.56,360,324.96,40.32]}
+{"kind":"shape","id":"sh/wn6dc7eh","slide":1,"name":"Shape 8","bbox":[67.2,441.6,52.8,52.8]}
+{"kind":"textbox","id":"sh/ul4vaxgb","slide":1,"name":"Text 9","text":"Sedat GÜLER ve Claude Opus 5  ·  TYT Türkçe Ders Anlatım Serisi","textPreview":"Sedat GÜLER ve Claude Opus 5  ·  TYT Türkçe Ders Anlatım Serisi","textChars":63,"textLines":1,"bbox":[134.4,441.6,480,52.8]}
+{"kind":"shape","id":"sh/vmdcj2xw","slide":1,"name":"Shape 10","bbox":[902.4,163.2,288,76.8]}
+{"kind":"textbox","id":"sh/4r6dg7et","slide":1,"name":"Text 11","text":"KALEM","textPreview":"KALEM","textChars":5,"textLines":1,"bbox":[902.4,163.2,288,76.8]}
+{"kind":"textbox","id":"sh/5sfepcfe","slide":1,"name":"Text 12","text":"yapım eki yok → BASİT","textPreview":"yapım eki yok → BASİT","textChars":21,"textLines":1,"bbox":[902.4,244.8,288,30.29]}
+{"kind":"shape","id":"sh/ipovexwn","slide":1,"name":"Shape 13","bbox":[902.4,302.4,288,52.8]}
+{"kind":"textbox","id":"sh/3qxwn2x8","slide":1,"name":"Text 14","text":"kalem + lik","textPreview":"kalem + lik","textChars":11,"textLines":1,"bbox":[902.4,302.4,288,52.8]}
+{"kind":"textbox","id":"sh/sfqdkrep","slide":1,"name":"Text 15","text":"↓  yapım eki eklendi","textPreview":"↓  yapım eki eklendi","textChars":20,"textLines":1,"bbox":[902.4,362.88,288,28.8]}
+{"kind":"shape","id":"sh/dgzetcfa","slide":1,"name":"Shape 16","bbox":[873.6,403.2,345.6,81.6]}
+{"kind":"textbox","id":"sh/1cvuxc7e","slide":1,"name":"Text 17","text":"KALEMLİK","textPreview":"KALEMLİK","textChars":8,"textLines":1,"bbox":[873.6,403.2,345.6,81.6]}
+{"kind":"textbox","id":"sh/0bmd476t","slide":1,"name":"Text 18","text":"yeni sözcük → TÜREMİŞ","textPreview":"yeni sözcük → TÜREMİŞ","textChars":21,"textLines":1,"bbox":[873.6,489.6,345.6,30.29]}
+{"kind":"shape","id":"sh/zadcv2p8","slide":1,"name":"Shape 19","bbox":[1017.6,547.2,86.4,86.4]}
+{"kind":"image","id":"im/dgvyd8fa","slide":1,"name":"Image 0","bbox":[77.76,452.16,31.68,31.68]}
+{"kind":"image","id":"im/eh4fmdgv","slide":1,"name":"Image 1","bbox":[1037.04,566.64,47.52,47.52]}
+{"kind":"notes","id":"nt/y90nupkv","slide":1,"text":""}
+{"kind":"slide","id":"sl/hwbqtkby","slide":2,"title":"KAZANIM","textShapes":12}
+{"kind":"shape","id":"sh/9072xkry","slide":2,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/b29kza94","slide":2,"name":"Text 1","text":"KAZANIM","textPreview":"KAZANIM","textChars":7,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/a10jqpsj","slide":2,"name":"Text 2","text":"Bugün Ne Öğreneceğiz?","textPreview":"Bugün Ne Öğreneceğiz?","textChars":21,"textLines":1,"bbox":[153.6,88.32,864,67.2]}
+{"kind":"shape","id":"sh/x4r21kru","slide":2,"name":"Shape 3","bbox":[67.2,192,1142.4,109.52]}
+{"kind":"shape","id":"sh/w3i1sfa9","slide":2,"name":"Shape 4","bbox":[91.2,220.36,52.8,52.8]}
+{"kind":"textbox","id":"sh/r65knqtk","slide":2,"name":"Text 5","text":"1","textPreview":"1","textChars":1,"textLines":1,"bbox":[91.2,220.36,52.8,52.8]}
+{"kind":"textbox","id":"sh/q5wjelsz","slide":2,"name":"Text 6","text":"Basit sözcüğün (hiç yapım eki almamış) ve türemiş sözcüğün (en az bir yapım eki almış) tanımını öğrenecek.","textPreview":"Basit sözcüğün (hiç yapım eki almamış) ve türemiş sözcüğün (en az bir yapım eki almış) tanımını öğrenecek.","textChars":106,"textLines":1,"bbox":[168,192,1017.6,79.52]}
+{"kind":"shape","id":"sh/ove9o7yd","slide":2,"name":"Shape 7","bbox":[67.2,317.07,1142.4,109.52]}
+{"kind":"shape","id":"sh/9wnqhczy","slide":2,"name":"Shape 8","bbox":[91.2,345.43,52.8,52.8]}
+{"kind":"textbox","id":"sh/mtwrmxg7","slide":2,"name":"Text 9","text":"2","textPreview":"2","textChars":1,"textLines":1,"bbox":[91.2,345.43,52.8,52.8]}
+{"kind":"textbox","id":"sh/nu58f2hs","slide":2,"name":"Text 10","text":"Bir sözcüğü basit mi türemiş mi olduğuna karar verirken izlenecek adım adım yöntemi uygulayacak.","textPreview":"Bir sözcüğü basit mi türemiş mi olduğuna karar verirken izlenecek adım adım yöntemi uygulayacak.","textChars":96,"textLines":1,"bbox":[168,317.07,1017.6,79.52]}
+{"kind":"shape","id":"sh/wjy9sry9","slide":2,"name":"Shape 11","bbox":[67.2,442.14,1142.4,109.52]}
+{"kind":"shape","id":"sh/xk7qlczu","slide":2,"name":"Shape 12","bbox":[91.2,470.5,52.8,52.8]}
+{"kind":"textbox","id":"sh/ahwrqhgj","slide":2,"name":"Text 13","text":"3","textPreview":"3","textChars":1,"textLines":1,"bbox":[91.2,470.5,52.8,52.8]}
+{"kind":"textbox","id":"sh/bip8jmho","slide":2,"name":"Text 14","text":"\"Çok ek almak\" ile \"türemiş olmak\"ın aynı şey olmadığını, ek TÜRÜNÜN (yapım/çekim) belirleyici olduğunu kavrayacak.","textPreview":"\"Çok ek almak\" ile \"türemiş olmak\"ın aynı şey olmadığını, ek TÜRÜNÜN (yapım/çekim) belirleyici olduğunu kavrayacak.","textChars":115,"textLines":1,"bbox":[168,442.14,1017.6,79.52]}
+{"kind":"shape","id":"sh/cnupgny5","slide":2,"name":"Shape 15","bbox":[67.2,567.22,1142.4,109.52]}
+{"kind":"shape","id":"sh/do3q9szq","slide":2,"name":"Shape 16","bbox":[91.2,595.58,52.8,52.8]}
+{"kind":"textbox","id":"sh/t8byxkn2","slide":2,"name":"Text 17","text":"4","textPreview":"4","textChars":1,"textLines":1,"bbox":[91.2,595.58,52.8,52.8]}
+{"kind":"textbox","id":"sh/s72xofmh","slide":2,"name":"Text 18","text":"TYT tarzı sorularda basit/türemiş ayrımını gerçek ve pekiştirme sorular üzerinde uygulayarak doğru cevaba ulaşabilecek.","textPreview":"TYT tarzı sorularda basit/türemiş ayrımını gerçek ve pekiştirme sorular üzerinde uygulayarak doğru cevaba ulaşabilecek.","textChars":119,"textLines":1,"bbox":[168,567.22,1017.6,79.52]}
+{"kind":"textbox","id":"sh/76twva5c","slide":2,"name":"Text 19","text":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Kazanım","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Kazanım","textChars":40,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/65kfmpor","slide":2,"name":"Text 20","text":"Ders 4 / 6","textPreview":"Ders 4 / 6","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/ypcfi5kf","slide":2,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/hwbqtkby","slide":2,"text":""}
+{"kind":"slide","id":"sl/ofy9wn61","slide":3,"title":"BAĞLANTI","textShapes":13}
+{"kind":"shape","id":"sh/cza94vmx","slide":3,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/298ryl4v","slide":3,"name":"Text 1","text":"BAĞLANTI","textPreview":"BAĞLANTI","textChars":8,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/3ah8rqlg","slide":3,"name":"Text 2","text":"İki Dersin Sentezi: Basit / Türemiş","textPreview":"İki Dersin Sentezi: Basit / Türemiş","textChars":35,"textLines":1,"bbox":[153.6,88.32,960,67.2]}
+{"kind":"shape","id":"sh/obq90bml","slide":3,"name":"Shape 3","bbox":[67.2,172.8,1142.4,161.07]}
+{"kind":"textbox","id":"sh/pcjqtg36","slide":3,"name":"Text 4","text":"Son iki derste iki tür eki öğrendik: yapım eki (yeni sözcük türetir) ve çekim eki (işlerlik kazandırır). Bugün bu ikisini bir araya getirip tek bir soruya cevap veriyoruz: bir sözcükte YAPIM EKİ var mı? Varsa türemiş, yoksa basittir — sıradaki derste bu ikisinin üstüne birleşik sözcük ekleyeceğiz.","textPreview":"Son iki derste iki tür eki öğrendik: yapım eki (yeni sözcük türetir) ve çekim eki (işlerlik kazandırır). Bugün bu ikisini bir araya getir...","textChars":298,"textLines":1,"bbox":[96,172.8,1084.8,151.47]}
+{"kind":"shape","id":"sh/m5cra54z","slide":3,"name":"Shape 5","bbox":[86.4,338.67,340.8,243.09]}
+{"kind":"textbox","id":"sh/n6ls3alk","slide":3,"name":"Text 6","text":"Yapım + Çekim Eki (geçen iki ders)","textPreview":"Yapım + Çekim Eki (geçen iki ders)","textChars":34,"textLines":1,"bbox":[110.4,362.67,292.8,75.73]}
+{"kind":"textbox","id":"sh/n2l4fq98","slide":3,"name":"Text 7","text":"İki ek türünü ayrı ayrı\ntanıdık.","textPreview":"İki ek türünü ayrı ayrı | tanıdık.","textChars":32,"textLines":2,"bbox":[110.4,443.2,292.8,124.16]}
+{"kind":"textbox","id":"sh/m1c3mlsn","slide":3,"name":"Text 8","text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[434.88,338.67,48,45.44]}
+{"kind":"shape","id":"sh/943mhgre","slide":3,"name":"Shape 9","bbox":[480,338.67,340.8,243.09]}
+{"kind":"textbox","id":"sh/83ulovat","slide":3,"name":"Text 10","text":"Basit / Türemiş (bugün)","textPreview":"Basit / Türemiş (bugün)","textChars":23,"textLines":1,"bbox":[504,362.67,292.8,75.73]}
+{"kind":"textbox","id":"sh/v6l4jq94","slide":3,"name":"Text 11","text":"Sözcükte yapım eki\nvar mı yok mu, ona bakarız.","textPreview":"Sözcükte yapım eki | var mı yok mu, ona bakarız.","textChars":46,"textLines":2,"bbox":[504,443.2,292.8,124.16]}
+{"kind":"textbox","id":"sh/a5c3ql8z","slide":3,"name":"Text 12","text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[828.48,338.67,48,45.44]}
+{"kind":"shape","id":"sh/x8nml0ra","slide":3,"name":"Shape 13","bbox":[873.6,338.67,340.8,244.99]}
+{"kind":"textbox","id":"sh/w7ulsvqp","slide":3,"name":"Text 14","text":"Birleşik Sözcük","textPreview":"Birleşik Sözcük","textChars":15,"textLines":1,"bbox":[897.6,362.67,292.8,39.76]}
+{"kind":"textbox","id":"sh/ja54na9g","slide":3,"name":"Text 15","text":"Sıradaki konu: iki sözcüğün\nbirleşip yeni sözcük olması.","textPreview":"Sıradaki konu: iki sözcüğün | birleşip yeni sözcük olması.","textChars":56,"textLines":2,"bbox":[897.6,407.23,292.8,162.03]}
+{"kind":"textbox","id":"sh/i9w3u58v","slide":3,"name":"Text 16","text":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Bağlantı","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Bağlantı","textChars":41,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/e10f2twf","slide":3,"name":"Text 17","text":"Ders 4 / 6","textPreview":"Ders 4 / 6","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/o32dw321","slide":3,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/ofy9wn61","slide":3,"text":""}
+{"kind":"slide","id":"sl/jyx0ra1s","slide":4,"title":"HAZIRLIK SORUSU","textShapes":8}
+{"kind":"shape","id":"sh/1cj2d8b6","slide":4,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/rm1k7yt4","slide":4,"name":"Text 1","text":"HAZIRLIK SORUSU","textPreview":"HAZIRLIK SORUSU","textChars":15,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/ql8jytsj","slide":4,"name":"Text 2","text":"Hangisi Yeni Sözcük, Hangisi Değil?","textPreview":"Hangisi Yeni Sözcük, Hangisi Değil?","textChars":35,"textLines":1,"bbox":[153.6,88.32,864,67.2]}
+{"kind":"textbox","id":"sh/doj29oba","slide":4,"name":"Text 3","text":"Geçen iki derste \"öğretmen\" (kök + yapım eki) ve \"öğretmenler/öğretmenimiz\" (+ çekim eki) örneklerini gördük. 2 dakika düşünün: aşağıdaki iki sözcükten hangisinde yapım eki VAR, hangisinde YOK?","textPreview":"Geçen iki derste \"öğretmen\" (kök + yapım eki) ve \"öğretmenler/öğretmenimiz\" (+ çekim eki) örneklerini gördük. 2 dakika düşünün: aşağıdaki...","textChars":193,"textLines":1,"bbox":[67.2,177.6,1142.4,113.6]}
+{"kind":"shape","id":"sh/sna103ap","slide":4,"name":"Shape 4","bbox":[278.4,300.8,326.4,86.4]}
+{"kind":"textbox","id":"sh/3ihk3et8","slide":4,"name":"Text 5","text":"kalemlerimiz","textPreview":"kalemlerimiz","textChars":12,"textLines":1,"bbox":[278.4,300.8,326.4,39.76]}
+{"kind":"shape","id":"sh/ih8ju9sn","slide":4,"name":"Shape 6","bbox":[628.8,300.8,326.4,86.4]}
+{"kind":"textbox","id":"sh/kbm987y5","slide":4,"name":"Text 7","text":"öğretmenler","textPreview":"öğretmenler","textChars":11,"textLines":1,"bbox":[628.8,300.8,326.4,39.76]}
+{"kind":"shape","id":"sh/5cva1cfq","slide":4,"name":"Shape 8","bbox":[67.2,440,1142.4,161.07]}
+{"kind":"textbox","id":"sh/i94r6xgz","slide":4,"name":"Text 9","text":"Cevap:  \"kalemlerimiz\" = kalem-ler-imiz — kalem zaten basit bir köktür, eklenenler (çoğul, iyelik) sadece ÇEKİM EKİ; sözcük hâlâ BASİT. \"öğretmenler\" = öğret-men-ler — \"öğret\" fiil köküne önce YAPIM EKİ (-men) eklenmiş, sonra çekim eki (-ler); sözcük TÜREMİŞ. İşte bu ayrıma bugün odaklanıyoruz: BASİT / TÜREMİŞ SÖZCÜK.","textPreview":"Cevap:  \"kalemlerimiz\" = kalem-ler-imiz — kalem zaten basit bir köktür, eklenenler (çoğul, iyelik) sadece ÇEKİM EKİ; sözcük hâlâ BASİT. \"...","textChars":319,"textLines":1,"bbox":[96,440,1084.8,151.47]}
+{"kind":"textbox","id":"sh/jadsz2xk","slide":4,"name":"Text 10","text":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Hazırlık Sorusu","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Hazırlık Sorusu","textChars":48,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/w72947yt","slide":4,"name":"Text 11","text":"Ders 4 / 6","textPreview":"Ders 4 / 6","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/694nal0r","slide":4,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/jyx0ra1s","slide":4,"text":""}
+{"kind":"slide","id":"sl/i107q5of","slide":5,"title":"ANLATIM · 1/3","textShapes":15}
+{"kind":"shape","id":"sh/dgbulwnm","slide":5,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/z2tcnm5s","slide":5,"name":"Text 1","text":"ANLATIM · 1/3","textPreview":"ANLATIM · 1/3","textChars":13,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/yhkbe1o7","slide":5,"name":"Text 2","text":"Basit Sözcük Nedir?","textPreview":"Basit Sözcük Nedir?","textChars":19,"textLines":1,"bbox":[153.6,88.32,864,67.2]}
+{"kind":"shape","id":"sh/l4bupwny","slide":5,"name":"Shape 3","bbox":[67.2,187.2,1142.4,100.8]}
+{"kind":"textbox","id":"sh/032tgr6d","slide":5,"name":"Text 4","text":"Tanım:  Hiç yapım eki almamış sözcüktür. Basit sözcük çekim eki alabilir — önemli olan yapım ekinin hiç olmamasıdır.","textPreview":"Tanım:  Hiç yapım eki almamış sözcüktür. Basit sözcük çekim eki alabilir — önemli olan yapım ekinin hiç olmamasıdır.","textChars":116,"textLines":1,"bbox":[96,187.2,1084.8,100.8]}
+{"kind":"textbox","id":"sh/n6dcr65o","slide":5,"name":"Text 5","text":"Örnek: \"Senin çantanı okulda gördüm.\" cümlesindeki her sözcük basittir — hiçbiri yapım eki almamıştır, hepsi sadece çekim eki taşır:","textPreview":"Örnek: \"Senin çantanı okulda gördüm.\" cümlesindeki her sözcük basittir — hiçbiri yapım eki almamıştır, hepsi sadece çekim eki taşır:","textChars":132,"textLines":1,"bbox":[67.2,312,1142.4,53.68]}
+{"kind":"shape","id":"sh/m5kbi1oj","slide":5,"name":"Shape 6","bbox":[67.2,379.2,1142.4,52.8]}
+{"kind":"shape","id":"sh/w32dkbuh","slide":5,"name":"Shape 7","bbox":[86.4,384.96,230.4,41.28]}
+{"kind":"textbox","id":"sh/x4vedgvm","slide":5,"name":"Text 8","text":"sen-in","textPreview":"sen-in","textChars":6,"textLines":1,"bbox":[86.4,384.96,230.4,41.28]}
+{"kind":"textbox","id":"sh/ahkvi1cb","slide":5,"name":"Text 9","text":"sadece tamlayan eki (çekim)","textPreview":"sadece tamlayan eki (çekim)","textChars":27,"textLines":1,"bbox":[345.6,379.2,835.2,52.8]}
+{"kind":"shape","id":"sh/v2twb6dw","slide":5,"name":"Shape 10","bbox":[67.2,439.68,1142.4,52.8]}
+{"kind":"shape","id":"sh/k7mxovud","slide":5,"name":"Shape 11","bbox":[86.4,445.44,230.4,41.28]}
+{"kind":"textbox","id":"sh/58vehgvy","slide":5,"name":"Text 12","text":"çanta-n-ı","textPreview":"çanta-n-ı","textChars":9,"textLines":1,"bbox":[86.4,445.44,230.4,41.28]}
+{"kind":"textbox","id":"sh/i54fmlc7","slide":5,"name":"Text 13","text":"sadece iyelik + belirtme eki (çekim)","textPreview":"sadece iyelik + belirtme eki (çekim)","textChars":36,"textLines":1,"bbox":[345.6,439.68,835.2,52.8]}
+{"kind":"shape","id":"sh/j6dwfqds","slide":5,"name":"Shape 14","bbox":[67.2,500.16,1142.4,52.8]}
+{"kind":"shape","id":"sh/sb6xsvu9","slide":5,"name":"Shape 15","bbox":[86.4,505.92,230.4,41.28]}
+{"kind":"textbox","id":"sh/tcfel0vu","slide":5,"name":"Text 16","text":"okul-da","textPreview":"okul-da","textChars":7,"textLines":1,"bbox":[86.4,505.92,230.4,41.28]}
+{"kind":"textbox","id":"sh/hgrmpwj2","slide":5,"name":"Text 17","text":"sadece bulunma hâl eki (çekim)","textPreview":"sadece bulunma hâl eki (çekim)","textChars":30,"textLines":1,"bbox":[345.6,500.16,835.2,52.8]}
+{"kind":"shape","id":"sh/gfi5grih","slide":5,"name":"Shape 18","bbox":[67.2,560.64,1142.4,52.8]}
+{"kind":"shape","id":"sh/fe94nm1w","slide":5,"name":"Shape 19","bbox":[86.4,566.4,230.4,41.28]}
+{"kind":"textbox","id":"sh/ud0ne10b","slide":5,"name":"Text 20","text":"gör-dü-m","textPreview":"gör-dü-m","textChars":8,"textLines":1,"bbox":[86.4,566.4,230.4,41.28]}
+{"kind":"textbox","id":"sh/pkr6tgjy","slide":5,"name":"Text 21","text":"sadece kip + şahıs eki (çekim)","textPreview":"sadece kip + şahıs eki (çekim)","textChars":30,"textLines":1,"bbox":[345.6,560.64,835.2,52.8]}
+{"kind":"shape","id":"sh/4ji5kbid","slide":5,"name":"Shape 22","bbox":[67.2,628.8,1142.4,57.6]}
+{"kind":"textbox","id":"sh/3i94r61s","slide":5,"name":"Text 23","text":"Kısaca: Basit sözcükte kökten sonra gelen her ek ÇEKİM EKİDİR — hiç yapım eki yoktur.","textPreview":"Kısaca: Basit sözcükte kökten sonra gelen her ek ÇEKİM EKİDİR — hiç yapım eki yoktur.","textChars":85,"textLines":1,"bbox":[96,628.8,1084.8,57.6]}
+{"kind":"textbox","id":"sh/2h0ni107","slide":5,"name":"Text 24","text":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Anlatım — Basit Sözcük Nedir?","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Anlatım — Basit Sözcük Nedir?","textChars":62,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/5o7mhcju","slide":5,"name":"Text 25","text":"Ders 4 / 6","textPreview":"Ders 4 / 6","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/vmdgjqpk","slide":5,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/i107q5of","slide":5,"text":""}
+{"kind":"slide","id":"sl/x8f69ofe","slide":6,"title":"ANLATIM · 2/3","textShapes":13}
+{"kind":"shape","id":"sh/yhg7epsj","slide":6,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/87ipkzal","slide":6,"name":"Text 1","text":"ANLATIM · 2/3","textPreview":"ANLATIM · 2/3","textChars":13,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/98rqt4r6","slide":6,"name":"Text 2","text":"Türemiş Sözcük Nedir?","textPreview":"Türemiş Sözcük Nedir?","textChars":21,"textLines":1,"bbox":[153.6,88.32,864,67.2]}
+{"kind":"shape","id":"sh/ml07i9sv","slide":6,"name":"Shape 3","bbox":[67.2,187.2,1142.4,100.8]}
+{"kind":"textbox","id":"sh/7m98ru9g","slide":6,"name":"Text 4","text":"Tanım:  En az bir yapım eki almış sözcüktür. Türemiş sözcük, yapım ekinin yanında çekim eki de alabilir.","textPreview":"Tanım:  En az bir yapım eki almış sözcüktür. Türemiş sözcük, yapım ekinin yanında çekim eki de alabilir.","textChars":104,"textLines":1,"bbox":[96,187.2,1084.8,100.8]}
+{"kind":"textbox","id":"sh/oryp8fah","slide":6,"name":"Text 5","text":"Örnek: \"Yaşamda zorluklarla karşılaşılır.\" cümlesindeki her sözcük türemiştir — çünkü her biri en az bir yapım eki taşır:","textPreview":"Örnek: \"Yaşamda zorluklarla karşılaşılır.\" cümlesindeki her sözcük türemiştir — çünkü her biri en az bir yapım eki taşır:","textChars":121,"textLines":1,"bbox":[67.2,312,1142.4,53.68]}
+{"kind":"shape","id":"sh/pc76hkr2","slide":6,"name":"Shape 6","bbox":[67.2,379.2,1142.4,59.52]}
+{"kind":"shape","id":"sh/h4bupgn6","slide":6,"name":"Shape 7","bbox":[86.4,386.88,288,53.44]}
+{"kind":"textbox","id":"sh/w32twb6l","slide":6,"name":"Text 8","text":"yaş-a-m-da","textPreview":"yaş-a-m-da","textChars":10,"textLines":1,"bbox":[86.4,386.88,288,44.16]}
+{"kind":"textbox","id":"sh/v2tcn650","slide":6,"name":"Text 9","text":"yaş (isim kökü) + -a (isimden fiil) + -m (fiilden isim) + -da (çekim)","textPreview":"yaş (isim kökü) + -a (isimden fiil) + -m (fiilden isim) + -da (çekim)","textChars":69,"textLines":1,"bbox":[403.2,379.2,777.6,59.52]}
+{"kind":"shape","id":"sh/u1kbu1ov","slide":6,"name":"Shape 10","bbox":[67.2,448.32,1142.4,59.52]}
+{"kind":"shape","id":"sh/5svutgni","slide":6,"name":"Shape 11","bbox":[86.4,465.28,288,53.44]}
+{"kind":"textbox","id":"sh/47mt0b6x","slide":6,"name":"Text 12","text":"zor-luk-lar-la","textPreview":"zor-luk-lar-la","textChars":14,"textLines":1,"bbox":[86.4,465.28,288,44.16]}
+{"kind":"textbox","id":"sh/j6dcr65c","slide":6,"name":"Text 13","text":"zor (isim kökü) + -luk (isimden isim) + -lar (çekim) + -la (çekim)","textPreview":"zor (isim kökü) + -luk (isimden isim) + -lar (çekim) + -la (çekim)","textChars":66,"textLines":1,"bbox":[403.2,448.32,777.6,59.52]}
+{"kind":"shape","id":"sh/i54bylor","slide":6,"name":"Shape 14","bbox":[67.2,517.44,1142.4,59.52]}
+{"kind":"shape","id":"sh/twfux0ne","slide":6,"name":"Shape 15","bbox":[86.4,543.68,288,53.44]}
+{"kind":"textbox","id":"sh/svmt4v6t","slide":6,"name":"Text 16","text":"karşı-la-ş-ıl-ır","textPreview":"karşı-la-ş-ıl-ır","textChars":16,"textLines":1,"bbox":[86.4,543.68,288,44.16]}
+{"kind":"textbox","id":"sh/cbe5g3ih","slide":6,"name":"Text 17","text":"karşı (isim kökü) + -la, -ş, -ıl (üç yapım eki) + -ır (çekim)","textPreview":"karşı (isim kökü) + -la, -ş, -ıl (üç yapım eki) + -ır (çekim)","textChars":61,"textLines":1,"bbox":[403.2,517.44,777.6,59.52]}
+{"kind":"shape","id":"sh/dcnm98zm","slide":6,"name":"Shape 18","bbox":[67.2,609.6,1142.4,67.2]}
+{"kind":"textbox","id":"sh/qpwnet0b","slide":6,"name":"Text 19","text":"Kısaca: Türemiş sözcükte en az BİR yapım eki vardır — kalan ekler çekim eki olabilir ya da hiç olmayabilir.","textPreview":"Kısaca: Türemiş sözcükte en az BİR yapım eki vardır — kalan ekler çekim eki olabilir ya da hiç olmayabilir.","textChars":107,"textLines":1,"bbox":[96,609.6,1084.8,67.2]}
+{"kind":"textbox","id":"sh/bq547yhw","slide":6,"name":"Text 20","text":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Anlatım — Türemiş Sözcük Nedir?","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Anlatım — Türemiş Sözcük Nedir?","textChars":64,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/0fy5k3id","slide":6,"name":"Text 21","text":"Ders 4 / 6","textPreview":"Ders 4 / 6","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/md8ru5sv","slide":6,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/x8f69ofe","slide":6,"text":""}
+{"kind":"slide","id":"sl/gnmp4jqx","slide":7,"title":"ANLATIM · 3/3","textShapes":14}
+{"kind":"shape","id":"sh/cb2tkvap","slide":7,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/ydkbm5sv","slide":7,"name":"Text 1","text":"ANLATIM · 3/3","textPreview":"ANLATIM · 3/3","textChars":13,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/zedcfa9g","slide":7,"name":"Text 2","text":"Ayırt Etme Yöntemi — Adım Adım","textPreview":"Ayırt Etme Yöntemi — Adım Adım","textChars":30,"textLines":1,"bbox":[153.6,88.32,864,67.2]}
+{"kind":"shape","id":"sh/kzmdova1","slide":7,"name":"Shape 3","bbox":[67.2,172.8,1142.4,100.8]}
+{"kind":"shape","id":"sh/l0vuh0rm","slide":7,"name":"Shape 4","bbox":[91.2,196.8,52.8,52.8]}
+{"kind":"textbox","id":"sh/eh0ba1sr","slide":7,"name":"Text 5","text":"1","textPreview":"1","textChars":1,"textLines":1,"bbox":[91.2,196.8,52.8,52.8]}
+{"kind":"textbox","id":"sh/fi9c369c","slide":7,"name":"Text 6","text":"Sözcüğü köküne kadar ekle­rine ayır","textPreview":"Sözcüğü köküne kadar ekle­rine ayır","textChars":35,"textLines":1,"bbox":[168,182.4,1017.6,38.81]}
+{"kind":"textbox","id":"sh/baxkjqlk","slide":7,"name":"Text 7","text":"Sözcüğü en küçük parçalarına (kök + ekler) böl.","textPreview":"Sözcüğü en küçük parçalarına (kök + ekler) böl.","textChars":47,"textLines":1,"bbox":[168,226.01,1017.6,37.87]}
+{"kind":"shape","id":"sh/a9ojq5kz","slide":7,"name":"Shape 8","bbox":[67.2,282.96,1142.4,138.55]}
+{"kind":"shape","id":"sh/xcz2l03q","slide":7,"name":"Shape 9","bbox":[91.2,325.83,52.8,52.8]}
+{"kind":"textbox","id":"sh/cbq1sv25","slide":7,"name":"Text 10","text":"2","textPreview":"2","textChars":1,"textLines":1,"bbox":[91.2,325.83,52.8,52.8]}
+{"kind":"textbox","id":"sh/n6x0fqlo","slide":7,"name":"Text 11","text":"Her ekin GÖREVİNE bak","textPreview":"Her ekin GÖREVİNE bak","textChars":21,"textLines":1,"bbox":[168,292.56,1017.6,38.81]}
+{"kind":"textbox","id":"sh/25ojml43","slide":7,"name":"Text 12","text":"Ek yeni bir anlam/sözcük mü katıyor (yapım eki) yoksa sadece dilbilgisel görev mi katıyor (çekim eki)?","textPreview":"Ek yeni bir anlam/sözcük mü katıyor (yapım eki) yoksa sadece dilbilgisel görev mi katıyor (çekim eki)?","textChars":102,"textLines":1,"bbox":[168,336.17,1017.6,75.73]}
+{"kind":"shape","id":"sh/p8fih03e","slide":7,"name":"Shape 13","bbox":[67.2,430.87,1142.4,138.55]}
+{"kind":"shape","id":"sh/o761ov2t","slide":7,"name":"Shape 14","bbox":[91.2,473.74,52.8,52.8]}
+{"kind":"textbox","id":"sh/f2d0b6lc","slide":7,"name":"Text 15","text":"3","textPreview":"3","textChars":1,"textLines":1,"bbox":[91.2,473.74,52.8,52.8]}
+{"kind":"textbox","id":"sh/eh4jil4r","slide":7,"name":"Text 16","text":"Karar ver","textPreview":"Karar ver","textChars":9,"textLines":1,"bbox":[168,440.47,1017.6,38.81]}
+{"kind":"textbox","id":"sh/id4ju1oz","slide":7,"name":"Text 17","text":"En az bir yapım eki varsa TÜREMİŞ; hiç yoksa (sadece çekim ekleri varsa ya da hiç ek yoksa) BASİT.","textPreview":"En az bir yapım eki varsa TÜREMİŞ; hiç yoksa (sadece çekim ekleri varsa ya da hiç ek yoksa) BASİT.","textChars":98,"textLines":1,"bbox":[168,484.08,1017.6,75.73]}
+{"kind":"shape","id":"sh/jedkn654","slide":7,"name":"Shape 18","bbox":[67.2,588.13,1142.4,87.23]}
+{"kind":"textbox","id":"sh/4fm1wb6p","slide":7,"name":"Text 19","text":"Altın kural: Kaç ek aldığı önemli değildir — TEK bir yapım eki bile sözcüğü türemiş yapar; İSTER 5 çekim eki alsın, yapım eki yoksa sözcük yine basittir.","textPreview":"Altın kural: Kaç ek aldığı önemli değildir — TEK bir yapım eki bile sözcüğü türemiş yapar; İSTER 5 çekim eki alsın, yapım eki yoksa sözcü...","textChars":153,"textLines":1,"bbox":[96,588.13,1084.8,77.63]}
+{"kind":"textbox","id":"sh/50v2pgna","slide":7,"name":"Text 20","text":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Anlatım — Ayırt Etme Yöntemi","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Anlatım — Ayırt Etme Yöntemi","textChars":61,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/q143ylov","slide":7,"name":"Text 21","text":"Ders 4 / 6","textPreview":"Ders 4 / 6","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/4zm50365","slide":7,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/gnmp4jqx","slide":7,"text":""}
+{"kind":"slide","id":"sl/fu1gfa1s","slide":8,"title":"DİKKAT!","textShapes":9}
+{"kind":"shape","id":"sh/18byd4zy","slide":8,"name":"Shape 0","bbox":[854.4,0,425.28,720]}
+{"kind":"shape","id":"sh/g72x4zyd","slide":8,"name":"Shape 1","bbox":[67.2,57.6,76.8,76.8]}
+{"kind":"textbox","id":"sh/6h0fypgb","slide":8,"name":"Text 2","text":"DİKKAT!","textPreview":"DİKKAT!","textChars":7,"textLines":1,"bbox":[158.4,59.52,576,72]}
+{"kind":"textbox","id":"sh/tkby9kzm","slide":8,"name":"Text 3","text":"Çekim Eki Almak, Sözcüğü Türemiş Yapmaz!","textPreview":"Çekim Eki Almak, Sözcüğü Türemiş Yapmaz!","textChars":40,"textLines":1,"bbox":[67.2,172.8,1104,39.76]}
+{"kind":"textbox","id":"sh/sjix0zy1","slide":8,"name":"Text 4","text":"Öğrenciler çok ek gören bir sözcüğü otomatik olarak \"türemiş\" sanır. Oysa önemli olan ek SAYISI değil, ek TÜRÜDÜR — hiç yapım eki yoksa, kaç çekim eki alırsa alsın sözcük BASİT kalır.","textPreview":"Öğrenciler çok ek gören bir sözcüğü otomatik olarak \"türemiş\" sanır. Oysa önemli olan ek SAYISI değil, ek TÜRÜDÜR — hiç yapım eki yoksa, ...","textChars":183,"textLines":1,"bbox":[67.2,236.56,1104,119.28]}
+{"kind":"shape","id":"sh/je9g3ahk","slide":8,"name":"Shape 5","bbox":[67.2,370.96,1104,92]}
+{"kind":"textbox","id":"sh/id0fu50z","slide":8,"name":"Text 6","text":"Balıklarda","textPreview":"Balıklarda","textChars":10,"textLines":1,"bbox":[96,370.96,288,39.76]}
+{"kind":"textbox","id":"sh/o7ydoret","slide":8,"name":"Text 7","text":"balık-lar-da → \"-lar\" çoğul, \"-da\" hâl eki: 2 ek, ama İKİSİ DE ÇEKİM. Sözcük yine BASİTTİR.","textPreview":"balık-lar-da → \"-lar\" çoğul, \"-da\" hâl eki: 2 ek, ama İKİSİ DE ÇEKİM. Sözcük yine BASİTTİR.","textChars":91,"textLines":1,"bbox":[393.6,370.96,758.4,79.52]}
+{"kind":"shape","id":"sh/98rehwve","slide":8,"name":"Shape 8","bbox":[67.2,477.36,1104,92]}
+{"kind":"textbox","id":"sh/m5gvmhwn","slide":8,"name":"Text 9","text":"Masamızda","textPreview":"Masamızda","textChars":9,"textLines":1,"bbox":[96,477.36,288,39.76]}
+{"kind":"textbox","id":"sh/n6pwfmd8","slide":8,"name":"Text 10","text":"masa-mız-da → \"-mız\" iyelik, \"-da\" hâl eki: 2 çekim eki. Hâlâ BASİTTİR.","textPreview":"masa-mız-da → \"-mız\" iyelik, \"-da\" hâl eki: 2 çekim eki. Hâlâ BASİTTİR.","textChars":71,"textLines":1,"bbox":[393.6,477.36,758.4,79.52]}
+{"kind":"shape","id":"sh/0jydkreh","slide":8,"name":"Shape 11","bbox":[67.2,583.76,1104,92]}
+{"kind":"textbox","id":"sh/1k7edwv2","slide":8,"name":"Text 12","text":"Kitaplarımızdan","textPreview":"Kitaplarımızdan","textChars":15,"textLines":1,"bbox":[96,583.76,288,39.76]}
+{"kind":"textbox","id":"sh/ehgvihwr","slide":8,"name":"Text 13","text":"kitap-lar-ımız-dan → 3 çekim eki üst üste (çoğul+iyelik+hâl) — yine yapım eki YOK, sözcük BASİTTİR.","textPreview":"kitap-lar-ımız-dan → 3 çekim eki üst üste (çoğul+iyelik+hâl) — yine yapım eki YOK, sözcük BASİTTİR.","textChars":99,"textLines":1,"bbox":[393.6,583.76,758.4,79.52]}
+{"kind":"image","id":"im/0rmpoj2t","slide":8,"name":"Image 0","bbox":[84.48,74.88,42.24,42.24]}
+{"kind":"notes","id":"nt/fu1gfa1s","slide":8,"text":""}
+{"kind":"slide","id":"sl/udsvah03","slide":9,"title":"DİKKAT!","textShapes":8}
+{"kind":"shape","id":"sh/1cfmhgne","slide":9,"name":"Shape 0","bbox":[854.4,0,425.28,720]}
+{"kind":"shape","id":"sh/0b65obm9","slide":9,"name":"Shape 1","bbox":[67.2,57.6,76.8,76.8]}
+{"kind":"textbox","id":"sh/mdonql4z","slide":9,"name":"Text 2","text":"DİKKAT!","textPreview":"DİKKAT!","textChars":7,"textLines":1,"bbox":[158.4,59.52,576,72]}
+{"kind":"textbox","id":"sh/9gzml0nq","slide":9,"name":"Text 3","text":"Ters Tuzak: Tek Yapım Eki Bile Türemiş Yapar!","textPreview":"Ters Tuzak: Tek Yapım Eki Bile Türemiş Yapar!","textChars":45,"textLines":1,"bbox":[67.2,172.8,1104,39.76]}
+{"kind":"shape","id":"sh/ofq5svm5","slide":9,"name":"Shape 4","bbox":[67.2,228.59,57.6,57.6]}
+{"kind":"textbox","id":"sh/bih4na5w","slide":9,"name":"Text 5","text":"1","textPreview":"1","textChars":1,"textLines":1,"bbox":[67.2,228.59,57.6,57.6]}
+{"kind":"textbox","id":"sh/ah8nu54b","slide":9,"name":"Text 6","text":"\"Az ek var, o zaman basittir\" yanılgısı.","textPreview":"\"Az ek var, o zaman basittir\" yanılgısı.","textChars":40,"textLines":1,"bbox":[144,236.56,1017.6,39.76]}
+{"kind":"textbox","id":"sh/oza1gfyh","slide":9,"name":"Text 7","text":"\"tatlı\" (tat + -lı) sadece TEK bir yapım eki almıştır — ama bu bile sözcüğü TÜREMİŞ yapmaya yeter. Ek sayısının azlığı basit olduğu anlamına gelmez.","textPreview":"\"tatlı\" (tat + -lı) sadece TEK bir yapım eki almıştır — ama bu bile sözcüğü TÜREMİŞ yapmaya yeter. Ek sayısının azlığı basit olduğu anlam...","textChars":148,"textLines":1,"bbox":[144,283.01,1017.6,116.44]}
+{"kind":"shape","id":"sh/p0ji9kf2","slide":9,"name":"Shape 8","bbox":[67.2,418.36,57.6,57.6]}
+{"kind":"textbox","id":"sh/2xsjepgb","slide":9,"name":"Text 9","text":"2","textPreview":"2","textChars":1,"textLines":1,"bbox":[67.2,418.36,57.6,57.6]}
+{"kind":"textbox","id":"sh/3y107axw","slide":9,"name":"Text 10","text":"Türemiş sözcük çekim eki alınca \"basitleşmez\".","textPreview":"Türemiş sözcük çekim eki alınca \"basitleşmez\".","textChars":46,"textLines":1,"bbox":[144,426.33,1017.6,39.76]}
+{"kind":"textbox","id":"sh/cnu1kzyd","slide":9,"name":"Text 11","text":"\"tatlım\" = tatlı (türemiş) + -m (iyelik çekim eki). Çekim eki eklenmesi kökteki yapım ekini yok saymaz — sözcük hâlâ TÜREMİŞTİR.","textPreview":"\"tatlım\" = tatlı (türemiş) + -m (iyelik çekim eki). Çekim eki eklenmesi kökteki yapım ekini yok saymaz — sözcük hâlâ TÜREMİŞTİR.","textChars":128,"textLines":1,"bbox":[144,472.79,1017.6,79.52]}
+{"kind":"image","id":"im/6lo7qlc3","slide":9,"name":"Image 0","bbox":[84.48,74.88,42.24,42.24]}
+{"kind":"notes","id":"nt/udsvah03","slide":9,"text":""}
+{"kind":"slide","id":"sl/m90b6t0r","slide":10,"title":"SINIF ETKINLIĞI","textShapes":14}
+{"kind":"shape","id":"sh/xc3mho32","slide":10,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/zelojyl8","slide":10,"name":"Text 1","text":"SINIF ETKINLIĞI","textPreview":"SINIF ETKINLIĞI","textChars":15,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/ydcnatkn","slide":10,"name":"Text 2","text":"Basit mi, Türemiş mi? (3 Dakika)","textPreview":"Basit mi, Türemiş mi? (3 Dakika)","textChars":32,"textLines":1,"bbox":[153.6,88.32,864,67.2]}
+{"kind":"textbox","id":"sh/l036l83y","slide":10,"name":"Text 3","text":"Yanınızdaki arkadaşınızla birlikte aşağıdaki 8 sözcüğün BASİT mi TÜREMİŞ mi olduğunu belirleyin. Süre: 3 dakika.","textPreview":"Yanınızdaki arkadaşınızla birlikte aşağıdaki 8 sözcüğün BASİT mi TÜREMİŞ mi olduğunu belirleyin. Süre: 3 dakika.","textChars":112,"textLines":1,"bbox":[67.2,172.8,1142.4,79.52]}
+{"kind":"shape","id":"sh/kzu5c32t","slide":10,"name":"Shape 4","bbox":[81.6,257.12,264,81.6]}
+{"kind":"textbox","id":"sh/725onyl4","slide":10,"name":"Text 5","text":"kalemlik","textPreview":"kalemlik","textChars":8,"textLines":1,"bbox":[81.6,257.12,264,39.76]}
+{"kind":"shape","id":"sh/m1cnetkj","slide":10,"name":"Shape 6","bbox":[364.8,257.12,264,81.6]}
+{"kind":"textbox","id":"sh/s7yt4b21","slide":10,"name":"Text 7","text":"defterimiz","textPreview":"defterimiz","textChars":10,"textLines":1,"bbox":[364.8,257.12,264,39.76]}
+{"kind":"shape","id":"sh/d87uxg3m","slide":10,"name":"Shape 8","bbox":[648,257.12,264,81.6]}
+{"kind":"textbox","id":"sh/q5gb21kb","slide":10,"name":"Text 9","text":"sevgi","textPreview":"sevgi","textChars":5,"textLines":1,"bbox":[648,257.12,264,39.76]}
+{"kind":"shape","id":"sh/r6pcv6lw","slide":10,"name":"Shape 10","bbox":[931.2,257.12,264,81.6]}
+{"kind":"textbox","id":"sh/0bit8b2d","slide":10,"name":"Text 11","text":"sınavlarda","textPreview":"sınavlarda","textChars":10,"textLines":1,"bbox":[931.2,257.12,264,39.76]}
+{"kind":"shape","id":"sh/1cru1g3y","slide":10,"name":"Shape 12","bbox":[81.6,357.92,264,81.6]}
+{"kind":"textbox","id":"sh/e9gb61k7","slide":10,"name":"Text 13","text":"dinlenmek","textPreview":"dinlenmek","textChars":9,"textLines":1,"bbox":[81.6,357.92,264,39.76]}
+{"kind":"shape","id":"sh/fapcz6ls","slide":10,"name":"Shape 14","bbox":[364.8,357.92,264,81.6]}
+{"kind":"textbox","id":"sh/ozitcv29","slide":10,"name":"Text 15","text":"öğrencilerin","textPreview":"öğrencilerin","textChars":12,"textLines":1,"bbox":[364.8,357.92,264,39.76]}
+{"kind":"shape","id":"sh/p0ru503u","slide":10,"name":"Shape 16","bbox":[648,357.92,264,81.6]}
+{"kind":"textbox","id":"sh/xwnupgvy","slide":10,"name":"Text 17","text":"yazılım","textPreview":"yazılım","textChars":7,"textLines":1,"bbox":[648,357.92,264,39.76]}
+{"kind":"shape","id":"sh/wvetgbud","slide":10,"name":"Shape 18","bbox":[931.2,357.92,264,81.6]}
+{"kind":"textbox","id":"sh/bu5cnqd8","slide":10,"name":"Text 19","text":"kitaplarımızdan","textPreview":"kitaplarımızdan","textChars":15,"textLines":1,"bbox":[931.2,357.92,264,39.76]}
+{"kind":"shape","id":"sh/atwbelcn","slide":10,"name":"Shape 20","bbox":[67.2,468.32,1142.4,85.33]}
+{"kind":"textbox","id":"sh/lk7ut0va","slide":10,"name":"Text 21","text":"İpucu: Sözcüğü köke kadar soyun; en az bir YAPIM eki bulursanız türemiş, hiç bulamazsanız (sadece çekim ekleri varsa) basittir.","textPreview":"İpucu: Sözcüğü köke kadar soyun; en az bir YAPIM eki bulursanız türemiş, hiç bulamazsanız (sadece çekim ekleri varsa) basittir.","textChars":127,"textLines":1,"bbox":[96,468.32,1084.8,75.73]}
+{"kind":"textbox","id":"sh/kjytkvup","slide":10,"name":"Text 22","text":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Sınıf Etkinliği","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Sınıf Etkinliği","textChars":48,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/jypcrqd4","slide":10,"name":"Text 23","text":"Ders 4 / 6","textPreview":"Ders 4 / 6","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/h8fu1g7q","slide":10,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/m90b6t0r","slide":10,"text":""}
+{"kind":"slide","id":"sl/jetc3ut0","slide":11,"title":"ETKINLIK","textShapes":28}
+{"kind":"shape","id":"sh/xcryxg7y","slide":11,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/n69grmpw","slide":11,"name":"Text 1","text":"ETKINLIK","textPreview":"ETKINLIK","textChars":8,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/250zy18b","slide":11,"name":"Text 2","text":"Cevap Anahtarı","textPreview":"Cevap Anahtarı","textChars":14,"textLines":1,"bbox":[153.6,88.32,864,67.2]}
+{"kind":"shape","id":"sh/98rytw72","slide":11,"name":"Shape 3","bbox":[67.2,192,268.8,228.96]}
+{"kind":"textbox","id":"sh/o7ih0r6h","slide":11,"name":"Text 4","text":"kalemlik","textPreview":"kalemlik","textChars":8,"textLines":1,"bbox":[81.6,206.4,240,38.4]}
+{"kind":"shape","id":"sh/72t03qp0","slide":11,"name":"Shape 5","bbox":[81.6,249.6,240,72]}
+{"kind":"textbox","id":"sh/61kzalof","slide":11,"name":"Text 6","text":"TÜREMİŞ","textPreview":"TÜREMİŞ","textChars":7,"textLines":1,"bbox":[81.6,249.6,240,72]}
+{"kind":"textbox","id":"sh/ofqtgnyt","slide":11,"name":"Text 7","text":"kalem + -lik","textPreview":"kalem + -lik","textChars":12,"textLines":1,"bbox":[81.6,331.2,240,38.4]}
+{"kind":"shape","id":"sh/9gza9sze","slide":11,"name":"Shape 8","bbox":[355.2,192,268.8,228.96]}
+{"kind":"textbox","id":"sh/mdobedg3","slide":11,"name":"Text 9","text":"defterimiz","textPreview":"defterimiz","textChars":10,"textLines":1,"bbox":[369.6,206.4,240,38.4]}
+{"kind":"shape","id":"sh/nehs7iho","slide":11,"name":"Shape 10","bbox":[369.6,249.6,240,72]}
+{"kind":"textbox","id":"sh/0b6tc3yx","slide":11,"name":"Text 11","text":"BASİT","textPreview":"BASİT","textChars":5,"textLines":1,"bbox":[369.6,249.6,240,72]}
+{"kind":"textbox","id":"sh/1cfa58zi","slide":11,"name":"Text 12","text":"defter + -imiz (çekim)","textPreview":"defter + -imiz (çekim)","textChars":22,"textLines":1,"bbox":[369.6,331.2,240,38.4]}
+{"kind":"shape","id":"sh/epobatgr","slide":11,"name":"Shape 13","bbox":[643.2,192,268.8,228.96]}
+{"kind":"textbox","id":"sh/zaxs3yhc","slide":11,"name":"Text 14","text":"sevgi","textPreview":"sevgi","textChars":5,"textLines":1,"bbox":[657.6,206.4,240,38.4]}
+{"kind":"shape","id":"sh/cn6t83y1","slide":11,"name":"Shape 15","bbox":[657.6,249.6,240,72]}
+{"kind":"textbox","id":"sh/dofa18z6","slide":11,"name":"Text 16","text":"TÜREMİŞ","textPreview":"TÜREMİŞ","textChars":7,"textLines":1,"bbox":[657.6,249.6,240,72]}
+{"kind":"textbox","id":"sh/tsnip0ny","slide":11,"name":"Text 17","text":"sev + -gi","textPreview":"sev + -gi","textChars":9,"textLines":1,"bbox":[657.6,331.2,240,38.4]}
+{"kind":"shape","id":"sh/87ehgv6d","slide":11,"name":"Shape 18","bbox":[931.2,192,268.8,228.96]}
+{"kind":"textbox","id":"sh/7650nq5s","slide":11,"name":"Text 19","text":"sınavlarda","textPreview":"sınavlarda","textChars":10,"textLines":1,"bbox":[945.6,206.4,240,38.4]}
+{"kind":"shape","id":"sh/65wzelo7","slide":11,"name":"Shape 20","bbox":[945.6,249.6,240,72]}
+{"kind":"textbox","id":"sh/l43ilgn2","slide":11,"name":"Text 21","text":"BASİT","textPreview":"BASİT","textChars":5,"textLines":1,"bbox":[945.6,249.6,240,72]}
+{"kind":"textbox","id":"sh/k3uhcb6h","slide":11,"name":"Text 22","text":"sınav + -lar + -da (çekim)","textPreview":"sınav + -lar + -da (çekim)","textChars":26,"textLines":1,"bbox":[945.6,331.2,240,60.59]}
+{"kind":"shape","id":"sh/j2lgjq5w","slide":11,"name":"Shape 23","bbox":[67.2,444.96,268.8,228.96]}
+{"kind":"textbox","id":"sh/y1czalob","slide":11,"name":"Text 24","text":"dinlenmek","textPreview":"dinlenmek","textChars":9,"textLines":1,"bbox":[81.6,459.36,240,38.4]}
+{"kind":"shape","id":"sh/p07ixkn6","slide":11,"name":"Shape 25","bbox":[81.6,502.56,240,72]}
+{"kind":"textbox","id":"sh/4zyhofml","slide":11,"name":"Text 26","text":"TÜREMİŞ","textPreview":"TÜREMİŞ","textChars":7,"textLines":1,"bbox":[81.6,502.56,240,72]}
+{"kind":"textbox","id":"sh/m58fih43","slide":11,"name":"Text 27","text":"dinle + -n + -mek","textPreview":"dinle + -n + -mek","textChars":17,"textLines":1,"bbox":[81.6,584.16,240,38.4]}
+{"kind":"shape","id":"sh/n61wbmlo","slide":11,"name":"Shape 28","bbox":[355.2,444.96,268.8,228.96]}
+{"kind":"textbox","id":"sh/o7axk7m9","slide":11,"name":"Text 29","text":"öğrencilerin","textPreview":"öğrencilerin","textChars":12,"textLines":1,"bbox":[369.6,459.36,240,38.4]}
+{"kind":"shape","id":"sh/98jedc3u","slide":11,"name":"Shape 30","bbox":[369.6,502.56,240,72]}
+{"kind":"textbox","id":"sh/eh8fex47","slide":11,"name":"Text 31","text":"BASİT","textPreview":"BASİT","textChars":5,"textLines":1,"bbox":[369.6,502.56,240,72]}
+{"kind":"textbox","id":"sh/z2hw72lc","slide":11,"name":"Text 32","text":"öğrenci + -ler + -in (çekim)","textPreview":"öğrenci + -ler + -in (çekim)","textChars":28,"textLines":1,"bbox":[369.6,584.16,240,60.59]}
+{"kind":"shape","id":"sh/03qxg7mx","slide":11,"name":"Shape 33","bbox":[643.2,444.96,268.8,228.96]}
+{"kind":"textbox","id":"sh/14ze9c3i","slide":11,"name":"Text 34","text":"yazılım","textPreview":"yazılım","textChars":7,"textLines":1,"bbox":[657.6,459.36,240,38.4]}
+{"kind":"shape","id":"sh/ydcfq1kb","slide":11,"name":"Shape 35","bbox":[657.6,502.56,240,72]}
+{"kind":"textbox","id":"sh/jylwj6lw","slide":11,"name":"Text 36","text":"TÜREMİŞ","textPreview":"TÜREMİŞ","textChars":7,"textLines":1,"bbox":[657.6,502.56,240,72]}
+{"kind":"textbox","id":"sh/3qhsfypc","slide":11,"name":"Text 37","text":"yaz + -ıl + -ım","textPreview":"yaz + -ıl + -ım","textChars":15,"textLines":1,"bbox":[657.6,584.16,240,38.4]}
+{"kind":"shape","id":"sh/ip8bmtor","slide":11,"name":"Shape 38","bbox":[931.2,444.96,268.8,228.96]}
+{"kind":"textbox","id":"sh/5sjah872","slide":11,"name":"Text 39","text":"kitaplarımızdan","textPreview":"kitaplarımızdan","textChars":15,"textLines":1,"bbox":[945.6,459.36,240,38.4]}
+{"kind":"shape","id":"sh/4rato36h","slide":11,"name":"Shape 40","bbox":[945.6,502.56,240,72]}
+{"kind":"textbox","id":"sh/v2hsbyp0","slide":11,"name":"Text 41","text":"BASİT","textPreview":"BASİT","textChars":5,"textLines":1,"bbox":[945.6,502.56,240,72]}
+{"kind":"textbox","id":"sh/u18bit8f","slide":11,"name":"Text 42","text":"kitap + -lar+ımız+dan (çekim)","textPreview":"kitap + -lar+ımız+dan (çekim)","textChars":29,"textLines":1,"bbox":[945.6,584.16,240,60.59]}
+{"kind":"textbox","id":"sh/h4zado76","slide":11,"name":"Text 43","text":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Etkinlik Cevapları","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Etkinlik Cevapları","textChars":51,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/g3qtkj6l","slide":11,"name":"Text 44","text":"Ders 4 / 6","textPreview":"Ders 4 / 6","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/k7a58rul","slide":11,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/jetc3ut0","slide":11,"text":""}
+{"kind":"slide","id":"sl/hgzapcr6","slide":12,"title":"HIZLI HATIRLATMA","textShapes":10}
+{"kind":"shape","id":"sh/q50nydsj","slide":12,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/o3i5w3ad","slide":12,"name":"Text 1","text":"HIZLI HATIRLATMA","textPreview":"HIZLI HATIRLATMA","textChars":16,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/p4r6p8by","slide":12,"name":"Text 2","text":"Kaldığımız Yer","textPreview":"Kaldığımız Yer","textChars":14,"textLines":1,"bbox":[153.6,88.32,864,67.2]}
+{"kind":"shape","id":"sh/21gnuts7","slide":12,"name":"Shape 3","bbox":[86.4,206.4,350.4,202.32]}
+{"kind":"textbox","id":"sh/32ponyts","slide":12,"name":"Text 4","text":"Basit Sözcük","textPreview":"Basit Sözcük","textChars":12,"textLines":1,"bbox":[110.4,230.4,302.4,39.76]}
+{"kind":"textbox","id":"sh/gzy5s3a1","slide":12,"name":"Text 5","text":"Hiç yapım eki almamıştır;\nçekim eki alabilir.","textPreview":"Hiç yapım eki almamıştır; | çekim eki alabilir.","textChars":45,"textLines":2,"bbox":[110.4,274.96,302.4,124.16]}
+{"kind":"shape","id":"sh/1076lobm","slide":12,"name":"Shape 6","bbox":[475.2,206.4,350.4,192]}
+{"kind":"textbox","id":"sh/hcfy9k3u","slide":12,"name":"Text 7","text":"Türemiş Sözcük","textPreview":"Türemiş Sözcük","textChars":14,"textLines":1,"bbox":[499.2,230.4,302.4,39.76]}
+{"kind":"textbox","id":"sh/gb6x0zm9","slide":12,"name":"Text 8","text":"En az bir yapım eki\nalmıştır.","textPreview":"En az bir yapım eki | almıştır.","textChars":29,"textLines":2,"bbox":[499.2,274.96,302.4,90.08]}
+{"kind":"shape","id":"sh/vaxg7ulo","slide":12,"name":"Shape 9","bbox":[864,206.4,350.4,202.32]}
+{"kind":"textbox","id":"sh/u9ofyp43","slide":12,"name":"Text 10","text":"Ayırt Etme","textPreview":"Ayırt Etme","textChars":10,"textLines":1,"bbox":[888,230.4,302.4,39.76]}
+{"kind":"textbox","id":"sh/t8fy5k3i","slide":12,"name":"Text 11","text":"Ek sayısı değil,\nek TÜRÜ (yapım/çekim) önemlidir.","textPreview":"Ek sayısı değil, | ek TÜRÜ (yapım/çekim) önemlidir.","textChars":49,"textLines":2,"bbox":[888,274.96,302.4,124.16]}
+{"kind":"textbox","id":"sh/876xwfmx","slide":12,"name":"Text 12","text":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Hızlı Hatırlatma","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Hızlı Hatırlatma","textChars":49,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/7mdg3als","slide":12,"name":"Text 13","text":"Ders 4 / 6","textPreview":"Ders 4 / 6","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/9czix0b6","slide":12,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/hgzapcr6","slide":12,"text":""}
+{"kind":"slide","id":"sl/6lsnupw7","slide":13,"title":"DERINLEŞME · 1/2","textShapes":22}
+{"kind":"shape","id":"sh/xc7eds76","slide":13,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/jepwf2pc","slide":13,"name":"Text 1","text":"DERINLEŞME · 1/2","textPreview":"DERINLEŞME · 1/2","textChars":16,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/idgvmx8r","slide":13,"name":"Text 2","text":"Gövde ve Gövdeden Türemiş Sözcük","textPreview":"Gövde ve Gövdeden Türemiş Sözcük","textChars":32,"textLines":1,"bbox":[153.6,88.32,864,67.2]}
+{"kind":"shape","id":"sh/5grehs7i","slide":13,"name":"Shape 3","bbox":[67.2,187.2,1142.4,110.4]}
+{"kind":"textbox","id":"sh/kfidonqx","slide":13,"name":"Text 4","text":"Kural:  Bir yapım eki alan sözcüğe GÖVDE, birden çok yapım eki alan sözcüğe ise GÖVDEDEN TÜREMİŞ SÖZCÜK denir. Bütün gövdeler türemiştir — ama her türemiş sözcük gövde değildir.","textPreview":"Kural:  Bir yapım eki alan sözcüğe GÖVDE, birden çok yapım eki alan sözcüğe ise GÖVDEDEN TÜREMİŞ SÖZCÜK denir. Bütün gövdeler türemiştir ...","textChars":177,"textLines":1,"bbox":[96,187.2,1084.8,110.4]}
+{"kind":"shape","id":"sh/zi5c3y98","slide":13,"name":"Shape 5","bbox":[67.2,326.4,1142.4,65.28]}
+{"kind":"textbox","id":"sh/ehwvat8n","slide":13,"name":"Text 6","text":"tatlı","textPreview":"tatlı","textChars":5,"textLines":1,"bbox":[91.2,326.4,182.4,65.28]}
+{"kind":"textbox","id":"sh/c3e1gjyd","slide":13,"name":"Text 7","text":"tat + -lı","textPreview":"tat + -lı","textChars":9,"textLines":1,"bbox":[278.4,326.4,316.8,65.28]}
+{"kind":"textbox","id":"sh/x4ni9ofy","slide":13,"name":"Text 8","text":"1 yapım eki","textPreview":"1 yapım eki","textChars":11,"textLines":1,"bbox":[604.8,326.4,211.2,65.28]}
+{"kind":"shape","id":"sh/a1wze9g7","slide":13,"name":"Shape 9","bbox":[830.4,332.16,345.6,53.76]}
+{"kind":"textbox","id":"sh/b2507exs","slide":13,"name":"Text 10","text":"GÖVDE","textPreview":"GÖVDE","textChars":5,"textLines":1,"bbox":[830.4,332.16,345.6,53.76]}
+{"kind":"shape","id":"sh/kre1k3y9","slide":13,"name":"Shape 11","bbox":[67.2,401.28,1142.4,65.28]}
+{"kind":"textbox","id":"sh/ls7idofu","slide":13,"name":"Text 12","text":"tatlıcılık","textPreview":"tatlıcılık","textChars":10,"textLines":1,"bbox":[91.2,401.28,182.4,65.28]}
+{"kind":"textbox","id":"sh/y5wjitgj","slide":13,"name":"Text 13","text":"tat + -lı + -cı + -lık","textPreview":"tat + -lı + -cı + -lık","textChars":22,"textLines":1,"bbox":[278.4,401.28,316.8,65.28]}
+{"kind":"textbox","id":"sh/z650byxo","slide":13,"name":"Text 14","text":"3 yapım eki","textPreview":"3 yapım eki","textChars":11,"textLines":1,"bbox":[604.8,401.28,211.2,65.28]}
+{"kind":"shape","id":"sh/0buh8zy5","slide":13,"name":"Shape 15","bbox":[830.4,407.04,345.6,53.76]}
+{"kind":"textbox","id":"sh/1w3i14fq","slide":13,"name":"Text 16","text":"GÖVDEDEN TÜREMİŞ","textPreview":"GÖVDEDEN TÜREMİŞ","textChars":16,"textLines":1,"bbox":[830.4,407.04,345.6,53.76]}
+{"kind":"shape","id":"sh/hsvy50re","slide":13,"name":"Shape 17","bbox":[67.2,476.16,1142.4,65.28]}
+{"kind":"textbox","id":"sh/grmxwvqt","slide":13,"name":"Text 18","text":"gözle-","textPreview":"gözle-","textChars":6,"textLines":1,"bbox":[91.2,476.16,182.4,65.28]}
+{"kind":"textbox","id":"sh/fqdg3q98","slide":13,"name":"Text 19","text":"göz + -le","textPreview":"göz + -le","textChars":9,"textLines":1,"bbox":[278.4,476.16,316.8,65.28]}
+{"kind":"textbox","id":"sh/up4fal83","slide":13,"name":"Text 20","text":"1 yapım eki","textPreview":"1 yapım eki","textChars":11,"textLines":1,"bbox":[604.8,476.16,211.2,65.28]}
+{"kind":"shape","id":"sh/pwvy90rq","slide":13,"name":"Shape 21","bbox":[830.4,481.92,345.6,53.76]}
+{"kind":"textbox","id":"sh/4vmh0vq5","slide":13,"name":"Text 22","text":"GÖVDE","textPreview":"GÖVDE","textChars":5,"textLines":1,"bbox":[830.4,481.92,345.6,53.76]}
+{"kind":"shape","id":"sh/3udg7q9k","slide":13,"name":"Shape 23","bbox":[67.2,551.04,1142.4,65.28]}
+{"kind":"textbox","id":"sh/2t4fyl8z","slide":13,"name":"Text 24","text":"gözlem","textPreview":"gözlem","textChars":6,"textLines":1,"bbox":[91.2,551.04,182.4,65.28]}
+{"kind":"textbox","id":"sh/d0fydk7m","slide":13,"name":"Text 25","text":"gözle- + -m","textPreview":"gözle- + -m","textChars":11,"textLines":1,"bbox":[278.4,551.04,316.8,65.28]}
+{"kind":"textbox","id":"sh/cz6h4fq1","slide":13,"name":"Text 26","text":"2 yapım eki","textPreview":"2 yapım eki","textChars":11,"textLines":1,"bbox":[604.8,551.04,211.2,65.28]}
+{"kind":"shape","id":"sh/atg3idk7","slide":13,"name":"Shape 27","bbox":[830.4,556.8,345.6,53.76]}
+{"kind":"textbox","id":"sh/bup4rils","slide":13,"name":"Text 28","text":"GÖVDEDEN TÜREMİŞ","textPreview":"GÖVDEDEN TÜREMİŞ","textChars":16,"textLines":1,"bbox":[830.4,556.8,345.6,53.76]}
+{"kind":"shape","id":"sh/cvylkn2d","slide":13,"name":"Shape 29","bbox":[67.2,643.2,1142.4,43.2]}
+{"kind":"textbox","id":"sh/xw7mts3y","slide":13,"name":"Text 30","text":"Kaynak: Limit Yayınları TYT Türkçe El Kitabı — \"Bütün gövdeler türemiş sözcüktür.\"","textPreview":"Kaynak: Limit Yayınları TYT Türkçe El Kitabı — \"Bütün gövdeler türemiş sözcüktür.\"","textChars":82,"textLines":1,"bbox":[96,643.2,1084.8,43.2]}
+{"kind":"textbox","id":"sh/yxgnmxkj","slide":13,"name":"Text 31","text":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Derinleşme — Gövde ve Gövdeden Türemiş Sözcük","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Derinleşme — Gövde ve Gövdeden Türemiş Sözcük","textChars":78,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/jyp4fil4","slide":13,"name":"Text 32","text":"Ders 4 / 6","textPreview":"Ders 4 / 6","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/zidsv69k","slide":13,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/6lsnupw7","slide":13,"text":""}
+{"kind":"slide","id":"sl/vaxsvy10","slide":14,"title":"DERINLEŞME · 2/2","textShapes":21}
+{"kind":"shape","id":"sh/547mhg3m","slide":14,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/76p4jqls","slide":14,"name":"Text 1","text":"DERINLEŞME · 2/2","textPreview":"DERINLEŞME · 2/2","textChars":16,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/65gnqlk7","slide":14,"name":"Text 2","text":"Basit Sanılan Ama Türemiş Sözcükler","textPreview":"Basit Sanılan Ama Türemiş Sözcükler","textChars":35,"textLines":1,"bbox":[153.6,88.32,864,67.2]}
+{"kind":"shape","id":"sh/t87ml0ji","slide":14,"name":"Shape 3","bbox":[67.2,187.2,1142.4,110.4]}
+{"kind":"textbox","id":"sh/s7y5sv2x","slide":14,"name":"Text 4","text":"Kural:  Günlük dilde \"tek parça\" gibi hissettiren bazı sözcükler, kökle karşılaştırıldığında aslında bir yapım eki taşır. TYT'de bu tür sözcükler en sık şaşırtan tuzaklardandır.","textPreview":"Kural:  Günlük dilde \"tek parça\" gibi hissettiren bazı sözcükler, kökle karşılaştırıldığında aslında bir yapım eki taşır. TYT'de bu tür s...","textChars":177,"textLines":1,"bbox":[96,187.2,1084.8,110.4]}
+{"kind":"shape","id":"sh/na5476l8","slide":14,"name":"Shape 5","bbox":[67.2,326.4,1142.4,55.68]}
+{"kind":"shape","id":"sh/m9c3e1kn","slide":14,"name":"Shape 6","bbox":[86.4,333.12,163.2,42.24]}
+{"kind":"textbox","id":"sh/wrm9kvep","slide":14,"name":"Text 7","text":"ılık","textPreview":"ılık","textChars":4,"textLines":1,"bbox":[86.4,333.12,163.2,42.24]}
+{"kind":"textbox","id":"sh/hsvat0fa","slide":14,"name":"Text 8","text":"ılı- + -k","textPreview":"ılı- + -k","textChars":9,"textLines":1,"bbox":[288,326.4,288,55.68]}
+{"kind":"textbox","id":"sh/upkrilwj","slide":14,"name":"Text 9","text":"fiilden isim yapım eki","textPreview":"fiilden isim yapım eki","textChars":22,"textLines":1,"bbox":[604.8,326.4,576,55.68]}
+{"kind":"shape","id":"sh/vqdsrqx4","slide":14,"name":"Shape 10","bbox":[67.2,389.76,1142.4,55.68]}
+{"kind":"shape","id":"sh/4vm9ovel","slide":14,"name":"Shape 11","bbox":[86.4,396.48,163.2,42.24]}
+{"kind":"textbox","id":"sh/5wvax0f6","slide":14,"name":"Text 12","text":"ışık","textPreview":"ışık","textChars":4,"textLines":1,"bbox":[86.4,396.48,163.2,42.24]}
+{"kind":"textbox","id":"sh/it4rm5wv","slide":14,"name":"Text 13","text":"ışı- + -k","textPreview":"ışı- + -k","textChars":9,"textLines":1,"bbox":[288,389.76,288,55.68]}
+{"kind":"textbox","id":"sh/judsvqxg","slide":14,"name":"Text 14","text":"fiilden isim yapım eki","textPreview":"fiilden isim yapım eki","textChars":22,"textLines":1,"bbox":[604.8,389.76,576,55.68]}
+{"kind":"shape","id":"sh/0z29cbyh","slide":14,"name":"Shape 15","bbox":[67.2,453.12,1142.4,55.68]}
+{"kind":"shape","id":"sh/l0bqlgf2","slide":14,"name":"Shape 16","bbox":[86.4,459.84,163.2,42.24]}
+{"kind":"textbox","id":"sh/1kjyt83e","slide":14,"name":"Text 17","text":"batı","textPreview":"batı","textChars":4,"textLines":1,"bbox":[86.4,459.84,163.2,42.24]}
+{"kind":"textbox","id":"sh/gjax03m9","slide":14,"name":"Text 18","text":"bat- + -ı","textPreview":"bat- + -ı","textChars":9,"textLines":1,"bbox":[288,453.12,288,55.68]}
+{"kind":"textbox","id":"sh/fi1grylo","slide":14,"name":"Text 19","text":"fiilden isim yapım eki","textPreview":"fiilden isim yapım eki","textChars":22,"textLines":1,"bbox":[604.8,453.12,576,55.68]}
+{"kind":"shape","id":"sh/ehsfyt43","slide":14,"name":"Shape 20","bbox":[67.2,516.48,1142.4,55.68]}
+{"kind":"shape","id":"sh/p8jyx83q","slide":14,"name":"Shape 21","bbox":[86.4,523.2,163.2,42.24]}
+{"kind":"textbox","id":"sh/o7ah4nm5","slide":14,"name":"Text 22","text":"doğu","textPreview":"doğu","textChars":4,"textLines":1,"bbox":[86.4,523.2,163.2,42.24]}
+{"kind":"textbox","id":"sh/361gvilk","slide":14,"name":"Text 23","text":"doğ- + -u","textPreview":"doğ- + -u","textChars":9,"textLines":1,"bbox":[288,516.48,288,55.68]}
+{"kind":"textbox","id":"sh/25sf2d4z","slide":14,"name":"Text 24","text":"fiilden isim yapım eki","textPreview":"fiilden isim yapım eki","textChars":22,"textLines":1,"bbox":[604.8,516.48,576,55.68]}
+{"kind":"shape","id":"sh/dc3y1s3m","slide":14,"name":"Shape 25","bbox":[67.2,579.84,1142.4,55.68]}
+{"kind":"shape","id":"sh/cbuh8nmh","slide":14,"name":"Shape 26","bbox":[86.4,586.56,163.2,42.24]}
+{"kind":"textbox","id":"sh/uh4v2pkj","slide":14,"name":"Text 27","text":"kıvrım","textPreview":"kıvrım","textChars":6,"textLines":1,"bbox":[86.4,586.56,163.2,42.24]}
+{"kind":"textbox","id":"sh/vixcvu14","slide":14,"name":"Text 28","text":"kıvır- + -(ı)m","textPreview":"kıvır- + -(ı)m","textChars":14,"textLines":1,"bbox":[288,579.84,288,55.68]}
+{"kind":"textbox","id":"sh/wj6d4z2p","slide":14,"name":"Text 29","text":"fiilden isim yapım eki","textPreview":"fiilden isim yapım eki","textChars":22,"textLines":1,"bbox":[604.8,579.84,576,55.68]}
+{"kind":"shape","id":"sh/hkfexkja","slide":14,"name":"Shape 30","bbox":[67.2,648,1142.4,38.4]}
+{"kind":"textbox","id":"sh/ilov6pkv","slide":14,"name":"Text 31","text":"Kaynak: Okyanus TYT Türkçe Konu Anlatımı — bu sözcükler TÜREMİŞTİR, basit değildir. Köke dikkat!","textPreview":"Kaynak: Okyanus TYT Türkçe Konu Anlatımı — bu sözcükler TÜREMİŞTİR, basit değildir. Köke dikkat!","textChars":96,"textLines":1,"bbox":[96,648,1084.8,38.4]}
+{"kind":"textbox","id":"sh/jmxwzu1g","slide":14,"name":"Text 32","text":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Derinleşme — Basit Sanılan Tuzaklar","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Derinleşme — Basit Sanılan Tuzaklar","textChars":68,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/4n6d8z21","slide":14,"name":"Text 33","text":"Ders 4 / 6","textPreview":"Ders 4 / 6","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/yt0r6lwz","slide":14,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/vaxsvy10","slide":14,"text":""}
+{"kind":"slide","id":"sl/gny5sjyp","slide":15,"title":"ÖRNEK SORU · 1/3","textShapes":11}
+{"kind":"shape","id":"sh/8z2h8bq1","slide":15,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/ytkf2h8j","slide":15,"name":"Text 1","text":"ÖRNEK SORU · 1/3","textPreview":"ÖRNEK SORU · 1/3","textChars":16,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/zutgvm94","slide":15,"name":"Text 2","text":"Soru Çözümü","textPreview":"Soru Çözümü","textChars":11,"textLines":1,"bbox":[153.6,88.32,825.6,67.2]}
+{"kind":"shape","id":"sh/kv2h4rqp","slide":15,"name":"Shape 3","bbox":[993.6,65.28,216,38.4]}
+{"kind":"textbox","id":"sh/lwbyxwra","slide":15,"name":"Text 4","text":"ÖSYM (ÖSS - 2000)","textPreview":"ÖSYM (ÖSS - 2000)","textChars":17,"textLines":1,"bbox":[993.6,65.28,216,38.4]}
+{"kind":"shape","id":"sh/ip4zel83","slide":15,"name":"Shape 5","bbox":[67.2,172.8,1145.28,467.35]}
+{"kind":"textbox","id":"sh/3qdg7qpo","slide":15,"name":"Text 6","text":"Sıfatlar, adlarla fiillerin kök ya da gövdelerine yapım ekleri getirilerek oluşturulur. Aşağıdaki atasözlerinin hangisinde bu yolla yapılmış bir sıfat vardır?","textPreview":"Sıfatlar, adlarla fiillerin kök ya da gövdelerine yapım ekleri getirilerek oluşturulur. Aşağıdaki atasözlerinin hangisinde bu yolla yapıl...","textChars":158,"textLines":1,"bbox":[96,192,1087.68,127.8]}
+{"kind":"textbox","id":"sh/fm1gzq5o","slide":15,"name":"Text 7","text":"A)  Güneş balçıkla sıvanmaz.","textPreview":"A)  Güneş balçıkla sıvanmaz.","textChars":28,"textLines":1,"bbox":[96,344.76,1087.68,40.71]}
+{"kind":"textbox","id":"sh/e1sf65o3","slide":15,"name":"Text 8","text":"B)  Korkunun ecele faydası yoktur.","textPreview":"B)  Korkunun ecele faydası yoktur.","textChars":34,"textLines":1,"bbox":[96,399.04,1087.68,40.71]}
+{"kind":"textbox","id":"sh/1ojy10ne","slide":15,"name":"Text 9","text":"C)  Her ağacın meyvesi yenmez.","textPreview":"C)  Her ağacın meyvesi yenmez.","textChars":30,"textLines":1,"bbox":[96,453.32,1087.68,40.71]}
+{"kind":"textbox","id":"sh/gnax8v6t","slide":15,"name":"Text 10","text":"D)  Mızrak çuvala sığmaz.","textPreview":"D)  Mızrak çuvala sığmaz.","textChars":25,"textLines":1,"bbox":[96,507.59,1087.68,40.71]}
+{"kind":"textbox","id":"sh/nqlg3a5k","slide":15,"name":"Text 11","text":"E)  İşleyen demir pas tutmaz.","textPreview":"E)  İşleyen demir pas tutmaz.","textChars":29,"textLines":1,"bbox":[96,561.87,1087.68,40.71]}
+{"kind":"textbox","id":"sh/7qp0zepo","slide":15,"name":"Text 18","text":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Örnek Soru 1 — gerçek ÖSYM sorusu","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Örnek Soru 1 — gerçek ÖSYM sorusu","textChars":66,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/8by18jq9","slide":15,"name":"Text 19","text":"Ders 4 / 6","textPreview":"Ders 4 / 6","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/q90rupk7","slide":15,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/gny5sjyp","slide":15,"text":""}
+{"kind":"slide","id":"sl/c7uhcr6t","slide":16,"title":"ÖRNEK SORU · 1/3  ·  ÇÖZÜM","textShapes":9}
+{"kind":"shape","id":"sh/90vqdczq","slide":16,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/v2d8fmhw","slide":16,"name":"Text 1","text":"ÖRNEK SORU · 1/3  ·  ÇÖZÜM","textPreview":"ÖRNEK SORU · 1/3  ·  ÇÖZÜM","textChars":26,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/a14rmhgb","slide":16,"name":"Text 2","text":"Çözüm","textPreview":"Çözüm","textChars":5,"textLines":1,"bbox":[153.6,88.32,825.6,67.2]}
+{"kind":"shape","id":"sh/xovqhcz2","slide":16,"name":"Shape 3","bbox":[993.6,65.28,216,38.4]}
+{"kind":"textbox","id":"sh/w3m9o7yh","slide":16,"name":"Text 4","text":"ÖSYM (ÖSS - 2000)","textPreview":"ÖSYM (ÖSS - 2000)","textChars":17,"textLines":1,"bbox":[993.6,65.28,216,38.4]}
+{"kind":"shape","id":"sh/1graxo3i","slide":16,"name":"Shape 12","bbox":[67.2,187.2,1145.28,465.6]}
+{"kind":"textbox","id":"sh/edgr294r","slide":16,"name":"Text 13","text":"ÇÖZÜM","textPreview":"ÇÖZÜM","textChars":5,"textLines":1,"bbox":[96,206.4,1087.68,43.2]}
+{"kind":"shape","id":"sh/fepsvelc","slide":16,"name":"Shape 14","bbox":[96,264,81.6,81.6]}
+{"kind":"textbox","id":"sh/oji9832t","slide":16,"name":"Text 15","text":"E","textPreview":"E","textChars":1,"textLines":1,"bbox":[96,264,81.6,81.6]}
+{"kind":"textbox","id":"sh/p4ra1o3e","slide":16,"name":"Text 16","text":"Doğru cevap","textPreview":"Doğru cevap","textChars":11,"textLines":1,"bbox":[196.8,264,480,81.6]}
+{"kind":"textbox","id":"sh/x0nalovi","slide":16,"name":"Text 17","text":"E) İşleyen demir pas tutmaz.  → doğru cevap.\n\n\"işleyen\" = iş (ad kökü) + -le (isimden fiil yapım eki) + -y (kaynaştırma) + -en (sıfat-fiil eki) — yapım ekiyle TÜREMİŞ bir sıfattır. C'deki \"her\" ise basit bir sıfattır (hiç ek almamıştır), diğer seçeneklerde sıfat yoktur.","textPreview":"E) İşleyen demir pas tutmaz.  → doğru cevap. |  | \"işleyen\" = iş (ad kökü) + -le (isimden fiil yapım eki) + -y (kaynaştırma) + -en (sıfat...","textChars":270,"textLines":3,"bbox":[96,374.4,1087.68,254.4]}
+{"kind":"textbox","id":"sh/wze9cjud","slide":16,"name":"Text 18","text":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Örnek Soru 1 — çözüm — gerçek ÖSYM sorusu","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Örnek Soru 1 — çözüm — gerçek ÖSYM sorusu","textChars":74,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/by58jeds","slide":16,"name":"Text 19","text":"Ders 4 / 6","textPreview":"Ders 4 / 6","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/903ypovu","slide":16,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/c7uhcr6t","slide":16,"text":""}
+{"kind":"slide","id":"sl/14bup87q","slide":17,"title":"ÖRNEK SORU · 2/3","textShapes":11}
+{"kind":"shape","id":"sh/1c7e50ni","slide":17,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/rm5czq50","slide":17,"name":"Text 1","text":"ÖRNEK SORU · 2/3","textPreview":"ÖRNEK SORU · 2/3","textChars":16,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/6lwvql4v","slide":17,"name":"Text 2","text":"Soru Çözümü","textPreview":"Soru Çözümü","textChars":11,"textLines":1,"bbox":[153.6,88.32,825.6,67.2]}
+{"kind":"shape","id":"sh/t8ne10n6","slide":17,"name":"Shape 3","bbox":[964.8,65.28,244.8,38.4]}
+{"kind":"textbox","id":"sh/snedsvml","slide":17,"name":"Text 4","text":"Okyanus (Pekiştirme)","textPreview":"Okyanus (Pekiştirme)","textChars":20,"textLines":1,"bbox":[964.8,65.28,244.8,38.4]}
+{"kind":"shape","id":"sh/jilcvq54","slide":17,"name":"Shape 5","bbox":[67.2,172.8,1145.28,465.6]}
+{"kind":"textbox","id":"sh/ihcvml4j","slide":17,"name":"Text 6","text":"Aşağıdaki cümlelerin hangisinde türemiş isim kullanılmamıştır?","textPreview":"Aşağıdaki cümlelerin hangisinde türemiş isim kullanılmamıştır?","textChars":62,"textLines":1,"bbox":[96,192,1087.68,43.55]}
+{"kind":"textbox","id":"sh/4by9or6l","slide":17,"name":"Text 7","text":"A)  Yolların kuralını şoförler belirliyor.","textPreview":"A)  Yolların kuralını şoförler belirliyor.","textChars":42,"textLines":1,"bbox":[96,260.51,1087.68,41.65]}
+{"kind":"textbox","id":"sh/pc7qhwn6","slide":17,"name":"Text 8","text":"B)  Öğretmenliğe başladığım günleri hatırladım.","textPreview":"B)  Öğretmenliğe başladığım günleri hatırladım.","textChars":47,"textLines":1,"bbox":[96,331.11,1087.68,41.65]}
+{"kind":"textbox","id":"sh/29grm1of","slide":17,"name":"Text 9","text":"C)  Yolda oduncuyla karşılaştım.","textPreview":"C)  Yolda oduncuyla karşılaştım.","textChars":32,"textLines":1,"bbox":[96,401.72,1087.68,41.65]}
+{"kind":"textbox","id":"sh/3ap8fm50","slide":17,"name":"Text 10","text":"D)  Soruların çözümünü internete koymuş.","textPreview":"D)  Soruların çözümünü internete koymuş.","textChars":40,"textLines":1,"bbox":[96,472.33,1087.68,41.65]}
+{"kind":"textbox","id":"sh/gnepkr69","slide":17,"name":"Text 11","text":"E)  Bu gürültüye dayanmam çok zordu.","textPreview":"E)  Bu gürültüye dayanmam çok zordu.","textChars":36,"textLines":1,"bbox":[96,542.94,1087.68,41.65]}
+{"kind":"textbox","id":"sh/8ze9gbyx","slide":17,"name":"Text 18","text":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Örnek Soru 2 — pekiştirme sorusu","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Örnek Soru 2 — pekiştirme sorusu","textChars":65,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/ny5876xc","slide":17,"name":"Text 19","text":"Ders 4 / 6","textPreview":"Ders 4 / 6","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/10ju18nq","slide":17,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/14bup87q","slide":17,"text":""}
+{"kind":"slide","id":"sl/7qto7e10","slide":18,"title":"ÖRNEK SORU · 2/3  ·  ÇÖZÜM","textShapes":9}
+{"kind":"shape","id":"sh/1sfqxsv6","slide":18,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/nux8zidc","slide":18,"name":"Text 1","text":"ÖRNEK SORU · 2/3  ·  ÇÖZÜM","textPreview":"ÖRNEK SORU · 2/3  ·  ÇÖZÜM","textChars":26,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/2to76dcr","slide":18,"name":"Text 2","text":"Çözüm","textPreview":"Çözüm","textChars":5,"textLines":1,"bbox":[153.6,88.32,825.6,67.2]}
+{"kind":"shape","id":"sh/9wzq1svi","slide":18,"name":"Shape 3","bbox":[964.8,65.28,244.8,38.4]}
+{"kind":"textbox","id":"sh/ov6p8nux","slide":18,"name":"Text 4","text":"Okyanus (Pekiştirme)","textPreview":"Okyanus (Pekiştirme)","textChars":20,"textLines":1,"bbox":[964.8,65.28,244.8,38.4]}
+{"kind":"shape","id":"sh/x07i5wj2","slide":18,"name":"Shape 12","bbox":[67.2,187.2,1145.28,465.6]}
+{"kind":"textbox","id":"sh/axgza10b","slide":18,"name":"Text 13","text":"ÇÖZÜM","textPreview":"ÇÖZÜM","textChars":5,"textLines":1,"bbox":[96,206.4,1087.68,43.2]}
+{"kind":"shape","id":"sh/vyp03m1w","slide":18,"name":"Shape 14","bbox":[96,264,81.6,81.6]}
+{"kind":"textbox","id":"sh/c3uh07id","slide":18,"name":"Text 15","text":"A","textPreview":"A","textChars":1,"textLines":1,"bbox":[96,264,81.6,81.6]}
+{"kind":"textbox","id":"sh/d43itcjy","slide":18,"name":"Text 16","text":"Doğru cevap","textPreview":"Doğru cevap","textChars":11,"textLines":1,"bbox":[196.8,264,480,81.6]}
+{"kind":"textbox","id":"sh/t8v6h47a","slide":18,"name":"Text 17","text":"A  → doğru cevap.\n\nA'daki isimler (\"yolların\", \"kuralını\", \"şoförler\") sadece çekim eki almıştır, hepsi basittir. B) öğretmen-lik, C) odun-cu, D) çöz-üm, E) gürül-tü sözcüklerindeki koyu kısımlar birer yapım ekidir — bu seçeneklerde türemiş isim vardır.\n\nKaynak: Okyanus TYT Türkçe Konu Anlatımı, \"Yapısına Göre Sözcükler\" pekiştirme testi (ÖSYM'ye ait değildir, yayınevinin kendi hazırladığı TYT formatında bir sorudur).","textPreview":"A  → doğru cevap. |  | A'daki isimler (\"yolların\", \"kuralını\", \"şoförler\") sadece çekim eki almıştır, hepsi basittir. B) öğretmen-lik, C)...","textChars":421,"textLines":5,"bbox":[96,374.4,1087.68,254.4]}
+{"kind":"textbox","id":"sh/s72p8z6p","slide":18,"name":"Text 18","text":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Örnek Soru 2 — çözüm — pekiştirme sorusu","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Örnek Soru 2 — çözüm — pekiştirme sorusu","textChars":73,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/rmtofup4","slide":18,"name":"Text 19","text":"Ders 4 / 6","textPreview":"Ders 4 / 6","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/5svm18n2","slide":18,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/7qto7e10","slide":18,"text":""}
+{"kind":"slide","id":"sl/y5wne50z","slide":19,"title":"ÖRNEK SORU · 3/3","textShapes":11}
+{"kind":"shape","id":"sh/wrelszu9","slide":19,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/itw3upcf","slide":19,"name":"Text 1","text":"ÖRNEK SORU · 3/3","textPreview":"ÖRNEK SORU · 3/3","textChars":16,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/je5knut0","slide":19,"name":"Text 2","text":"Soru Çözümü","textPreview":"Soru Çözümü","textChars":11,"textLines":1,"bbox":[153.6,88.32,825.6,67.2]}
+{"kind":"shape","id":"sh/4felwzu5","slide":19,"name":"Shape 3","bbox":[964.8,65.28,244.8,38.4]}
+{"kind":"textbox","id":"sh/5gnmp4bq","slide":19,"name":"Text 4","text":"Okyanus (Pekiştirme)","textPreview":"Okyanus (Pekiştirme)","textChars":20,"textLines":1,"bbox":[964.8,65.28,244.8,38.4]}
+{"kind":"shape","id":"sh/6hw3y9sb","slide":19,"name":"Shape 5","bbox":[67.2,172.8,1145.28,465.6]}
+{"kind":"textbox","id":"sh/rip4retw","slide":19,"name":"Text 6","text":"\"Geceleri bir çarpıntı duyarsan / Telaş telaş yağmurdan kaçıyorum / Sarayburnu'ndan geçiyorum / Akşamsa eylülse ıslanmamışsam / Benim görsen belki anlayamazsın\" Bu dizelerde aşağıdakilerden hangisi yoktur?","textPreview":"\"Geceleri bir çarpıntı duyarsan / Telaş telaş yağmurdan kaçıyorum / Sarayburnu'ndan geçiyorum / Akşamsa eylülse ıslanmamışsam / Benim gör...","textChars":205,"textLines":1,"bbox":[96,192,1087.68,116.44]}
+{"kind":"textbox","id":"sh/fapkr6pw","slide":19,"name":"Text 7","text":"A)  Basit fiil","textPreview":"A)  Basit fiil","textChars":14,"textLines":1,"bbox":[96,333.4,1087.68,41.65]}
+{"kind":"textbox","id":"sh/upg3i18r","slide":19,"name":"Text 8","text":"B)  Birleşik fiil","textPreview":"B)  Birleşik fiil","textChars":17,"textLines":1,"bbox":[96,389.52,1087.68,41.65]}
+{"kind":"textbox","id":"sh/1cr2tg72","slide":19,"name":"Text 9","text":"C)  Türemiş isim","textPreview":"C)  Türemiş isim","textChars":16,"textLines":1,"bbox":[96,445.65,1087.68,41.65]}
+{"kind":"textbox","id":"sh/gbylkbqh","slide":19,"name":"Text 10","text":"D)  Ayrılma durumu eki","textPreview":"D)  Ayrılma durumu eki","textChars":22,"textLines":1,"bbox":[96,501.77,1087.68,41.65]}
+{"kind":"textbox","id":"sh/7mpknmp0","slide":19,"name":"Text 11","text":"E)  İsimden fiil yapım eki","textPreview":"E)  İsimden fiil yapım eki","textChars":26,"textLines":1,"bbox":[96,557.9,1087.68,41.65]}
+{"kind":"textbox","id":"sh/nedoru9c","slide":19,"name":"Text 18","text":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Örnek Soru 3 — pekiştirme sorusu","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Örnek Soru 3 — pekiştirme sorusu","textChars":65,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/8zm5kzax","slide":19,"name":"Text 19","text":"Ders 4 / 6","textPreview":"Ders 4 / 6","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/et836t8v","slide":19,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/y5wne50z","slide":19,"text":""}
+{"kind":"slide","id":"sl/69wfm9o7","slide":20,"title":"ÖRNEK SORU · 3/3  ·  ÇÖZÜM","textShapes":9}
+{"kind":"shape","id":"sh/xg7axgf2","slide":20,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/napsr6x0","slide":20,"name":"Text 1","text":"ÖRNEK SORU · 3/3  ·  ÇÖZÜM","textPreview":"ÖRNEK SORU · 3/3  ·  ÇÖZÜM","textChars":26,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/29wby1wf","slide":20,"name":"Text 2","text":"Çözüm","textPreview":"Çözüm","textChars":5,"textLines":1,"bbox":[153.6,88.32,825.6,67.2]}
+{"kind":"shape","id":"sh/pc7atgf6","slide":20,"name":"Shape 3","bbox":[964.8,65.28,244.8,38.4]}
+{"kind":"textbox","id":"sh/obyt0bel","slide":20,"name":"Text 4","text":"Okyanus (Pekiştirme)","textPreview":"Okyanus (Pekiştirme)","textChars":20,"textLines":1,"bbox":[964.8,65.28,244.8,38.4]}
+{"kind":"shape","id":"sh/9cjahgry","slide":20,"name":"Shape 12","bbox":[67.2,187.2,1145.28,465.6]}
+{"kind":"textbox","id":"sh/m98r618n","slide":20,"name":"Text 13","text":"ÇÖZÜM","textPreview":"ÇÖZÜM","textChars":5,"textLines":1,"bbox":[96,206.4,1087.68,43.2]}
+{"kind":"shape","id":"sh/7a1sf698","slide":20,"name":"Shape 14","bbox":[96,264,81.6,81.6]}
+{"kind":"textbox","id":"sh/s7utkvqx","slide":20,"name":"Text 15","text":"E","textPreview":"E","textChars":1,"textLines":1,"bbox":[96,264,81.6,81.6]}
+{"kind":"textbox","id":"sh/t83at0ri","slide":20,"name":"Text 16","text":"Doğru cevap","textPreview":"Doğru cevap","textChars":11,"textLines":1,"bbox":[196.8,264,480,81.6]}
+{"kind":"textbox","id":"sh/1czihwva","slide":20,"name":"Text 17","text":"E) İsimden fiil yapım eki  → doğru cevap (dizelerde bulunmayan).\n\nduy-ar-sa-n (basit fiil), yağmur-dan (ayrılma hâli, çekim), Sarayburnu (türemiş özel isim) gibi unsurlar dizelerde vardır; ancak isim kökünden fiil türeten bir yapım eki (\"-la/-le\" tipi) bu dizelerde geçmemektedir.\n\nKaynak: Okyanus TYT Türkçe Konu Anlatımı, \"Yapısına Göre Sözcükler\" pekiştirme testi (ÖSYM'ye ait değildir, yayınevinin kendi hazırladığı TYT formatında bir sorudur).","textPreview":"E) İsimden fiil yapım eki  → doğru cevap (dizelerde bulunmayan). |  | duy-ar-sa-n (basit fiil), yağmur-dan (ayrılma hâli, çekim), Saraybu...","textChars":448,"textLines":5,"bbox":[96,374.4,1087.68,254.4]}
+{"kind":"textbox","id":"sh/gbq1obep","slide":20,"name":"Text 18","text":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Örnek Soru 3 — çözüm — pekiştirme sorusu","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Örnek Soru 3 — çözüm — pekiştirme sorusu","textChars":73,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/fax0f6d4","slide":20,"name":"Text 19","text":"Ders 4 / 6","textPreview":"Ders 4 / 6","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/1wvmtgne","slide":20,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/69wfm9o7","slide":20,"text":""}
+{"kind":"slide","id":"sl/nid43ytk","slide":21,"title":"DERS SONU KONTROL","textShapes":18}
+{"kind":"shape","id":"sh/9gb6xgbi","slide":21,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/vitozqt8","slide":21,"name":"Text 1","text":"DERS SONU KONTROL","textPreview":"DERS SONU KONTROL","textChars":17,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/ahk7qls3","slide":21,"name":"Text 2","text":"Hızlı Kontrol","textPreview":"Hızlı Kontrol","textChars":13,"textLines":1,"bbox":[153.6,88.32,864,67.2]}
+{"kind":"textbox","id":"sh/xkbq10be","slide":21,"name":"Text 3","text":"Aşağıdaki sözcüklerin basit mi türemiş mi olduğunu birlikte söyleyelim:","textPreview":"Aşağıdaki sözcüklerin basit mi türemiş mi olduğunu birlikte söyleyelim:","textChars":71,"textLines":1,"bbox":[67.2,172.8,1142.4,39.76]}
+{"kind":"shape","id":"sh/wj2psvat","slide":21,"name":"Shape 4","bbox":[81.6,231.76,264,152.91]}
+{"kind":"textbox","id":"sh/jmd83atk","slide":21,"name":"Text 5","text":"gözlük","textPreview":"gözlük","textChars":6,"textLines":1,"bbox":[81.6,246.16,264,39.76]}
+{"kind":"textbox","id":"sh/il47u5sz","slide":21,"name":"Text 6","text":"↓","textPreview":"↓","textChars":1,"textLines":1,"bbox":[81.6,290.72,264,37.87]}
+{"kind":"textbox","id":"sh/cri1gnql","slide":21,"name":"Text 7","text":"TÜREMİŞ","textPreview":"TÜREMİŞ","textChars":7,"textLines":1,"bbox":[81.6,333.39,264,39.76]}
+{"kind":"shape","id":"sh/dsri9sr6","slide":21,"name":"Shape 8","bbox":[364.8,231.76,264,152.91]}
+{"kind":"textbox","id":"sh/qpgjex8f","slide":21,"name":"Text 9","text":"gözlerimiz","textPreview":"gözlerimiz","textChars":10,"textLines":1,"bbox":[364.8,246.16,264,39.76]}
+{"kind":"textbox","id":"sh/rqp07290","slide":21,"name":"Text 10","text":"↓","textPreview":"↓","textChars":1,"textLines":1,"bbox":[364.8,290.72,264,37.87]}
+{"kind":"textbox","id":"sh/0vi1k7qx","slide":21,"name":"Text 11","text":"BASİT","textPreview":"BASİT","textChars":5,"textLines":1,"bbox":[364.8,333.39,264,39.76]}
+{"kind":"shape","id":"sh/1gridcr2","slide":21,"name":"Shape 12","bbox":[648,231.76,264,152.91]}
+{"kind":"textbox","id":"sh/et0jix8r","slide":21,"name":"Text 13","text":"sevimli","textPreview":"sevimli","textChars":7,"textLines":1,"bbox":[648,246.16,264,39.76]}
+{"kind":"textbox","id":"sh/zu90b29c","slide":21,"name":"Text 14","text":"↓","textPreview":"↓","textChars":1,"textLines":1,"bbox":[648,290.72,264,37.87]}
+{"kind":"textbox","id":"sh/oj21o7qt","slide":21,"name":"Text 15","text":"TÜREMİŞ","textPreview":"TÜREMİŞ","textChars":7,"textLines":1,"bbox":[648,333.39,264,39.76]}
+{"kind":"shape","id":"sh/9kb2hcre","slide":21,"name":"Shape 16","bbox":[931.2,231.76,264,152.91]}
+{"kind":"textbox","id":"sh/x07i1cji","slide":21,"name":"Text 17","text":"evlerde","textPreview":"evlerde","textChars":7,"textLines":1,"bbox":[931.2,246.16,264,39.76]}
+{"kind":"textbox","id":"sh/wfy1s7ix","slide":21,"name":"Text 18","text":"↓","textPreview":"↓","textChars":1,"textLines":1,"bbox":[931.2,290.72,264,37.87]}
+{"kind":"textbox","id":"sh/vep0z21c","slide":21,"name":"Text 19","text":"BASİT","textPreview":"BASİT","textChars":5,"textLines":1,"bbox":[931.2,333.39,264,39.76]}
+{"kind":"shape","id":"sh/adgjqx0r","slide":21,"name":"Shape 20","bbox":[67.2,423.07,1142.4,85.33]}
+{"kind":"textbox","id":"sh/54ri5wje","slide":21,"name":"Text 21","text":"Bu dört sözcüğün basit/türemiş kararını doğru verebiliyorsanız, bugünkü hedefe ulaştınız!","textPreview":"Bu dört sözcüğün basit/türemiş kararını doğru verebiliyorsanız, bugünkü hedefe ulaştınız!","textChars":89,"textLines":1,"bbox":[96,423.07,1084.8,75.73]}
+{"kind":"textbox","id":"sh/k3y1wri9","slide":21,"name":"Text 22","text":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Hızlı Kontrol","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Hızlı Kontrol","textChars":46,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/j2p03m1o","slide":21,"name":"Text 23","text":"Ders 4 / 6","textPreview":"Ders 4 / 6","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/lg3qtc3y","slide":21,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/nid43ytk","slide":21,"text":""}
+{"kind":"slide","id":"sl/zyxsni5k","slide":22,"title":"Ders Özeti","textShapes":11}
+{"kind":"shape","id":"sh/qpwjmh8n","slide":22,"name":"Shape 0","bbox":[0,0,441.6,720]}
+{"kind":"shape","id":"sh/rq50vmp8","slide":22,"name":"Shape 1","bbox":[86.4,105.6,86.4,86.4]}
+{"kind":"textbox","id":"sh/po3itc72","slide":22,"name":"Text 2","text":"Ders Özeti","textPreview":"Ders Özeti","textChars":10,"textLines":1,"bbox":[67.2,220.8,336,67.2]}
+{"kind":"textbox","id":"sh/2lczih8r","slide":22,"name":"Text 3","text":"Basit / Türemiş Sözcük — Ders 4/6","textPreview":"Basit / Türemiş Sözcük — Ders 4/6","textChars":33,"textLines":1,"bbox":[67.2,288,336,79.52]}
+{"kind":"textbox","id":"sh/3ml0rmpw","slide":22,"name":"Text 4","text":"BUGÜN ÖĞRENDIKLERIMIZ","textPreview":"BUGÜN ÖĞRENDIKLERIMIZ","textChars":21,"textLines":1,"bbox":[489.6,81.6,768,33.6]}
+{"kind":"shape","id":"sh/gjuhg7ql","slide":22,"name":"Shape 5","bbox":[489.6,129.6,230.4,48]}
+{"kind":"textbox","id":"sh/hk3ipcr6","slide":22,"name":"Text 6","text":"Basit Sözcük","textPreview":"Basit Sözcük","textChars":12,"textLines":1,"bbox":[489.6,129.6,230.4,48]}
+{"kind":"shape","id":"sh/dkfmp4zy","slide":22,"name":"Shape 7","bbox":[739.2,129.6,259.2,48]}
+{"kind":"textbox","id":"sh/cj65wzyd","slide":22,"name":"Text 8","text":"Türemiş Sözcük","textPreview":"Türemiş Sözcük","textChars":14,"textLines":1,"bbox":[739.2,129.6,259.2,48]}
+{"kind":"shape","id":"sh/rid4nuhs","slide":22,"name":"Shape 9","bbox":[489.6,192,316.8,48]}
+{"kind":"textbox","id":"sh/qh4nupg7","slide":22,"name":"Text 10","text":"Ayırt Etme Yöntemi","textPreview":"Ayırt Etme Yöntemi","textChars":18,"textLines":1,"bbox":[489.6,192,316.8,48]}
+{"kind":"shape","id":"sh/pwvmlkzm","slide":22,"name":"Shape 11","bbox":[489.6,254.4,403.2,48]}
+{"kind":"textbox","id":"sh/4vm5sfy1","slide":22,"name":"Text 12","text":"Gövde / Gövdeden Türemiş","textPreview":"Gövde / Gövdeden Türemiş","textChars":24,"textLines":1,"bbox":[489.6,254.4,403.2,48]}
+{"kind":"shape","id":"sh/3ud4juhg","slide":22,"name":"Shape 13","bbox":[912,254.4,230.4,48]}
+{"kind":"textbox","id":"sh/2t4nqpgb","slide":22,"name":"Text 14","text":"Sık Tuzaklar","textPreview":"Sık Tuzaklar","textChars":12,"textLines":1,"bbox":[912,254.4,230.4,48]}
+{"kind":"shape","id":"sh/hsvmhkzq","slide":22,"name":"Shape 15","bbox":[489.6,302.4,724.8,144]}
+{"kind":"textbox","id":"sh/grm5ofy5","slide":22,"name":"Text 16","text":"Basit sözcük, hiç yapım eki almamış (çekim eki alabilir); türemiş sözcük ise en az bir yapım eki almıştır. Belirleyici olan ek SAYISI değil, ek TÜRÜDÜR — bir sözcüğü türemiş yapmak için tek bir yapım eki bile yeterlidir.","textPreview":"Basit sözcük, hiç yapım eki almamış (çekim eki alabilir); türemiş sözcük ise en az bir yapım eki almıştır. Belirleyici olan ek SAYISI değ...","textChars":220,"textLines":1,"bbox":[518.4,316.8,672,115.2]}
+{"kind":"shape","id":"sh/8b654f61","slide":22,"name":"Shape 17","bbox":[489.6,465.6,724.8,110.4]}
+{"kind":"textbox","id":"sh/tcz6dk7m","slide":22,"name":"Text 18","text":"SIRADAKİ DERS","textPreview":"SIRADAKİ DERS","textChars":13,"textLines":1,"bbox":[518.4,481.92,624,33.6]}
+{"kind":"textbox","id":"sh/69on25ov","slide":22,"name":"Text 19","text":"Birleşik Sözcük (Ders 5/6)  →","textPreview":"Birleşik Sözcük (Ders 5/6)  →","textChars":29,"textLines":1,"bbox":[518.4,510.72,624,52.8]}
+{"kind":"image","id":"im/gjylsned","slide":22,"name":"Image 0","bbox":[105.84,125.04,47.52,47.52]}
+{"kind":"notes","id":"nt/zyxsni5k","slide":22,"text":""}
+{"kind":"slide","id":"sl/m1wvqtk3","slide":23,"title":"PEKIŞTIRME","textShapes":16}
+{"kind":"shape","id":"sh/1gbmxs7a","slide":23,"name":"Shape 0","bbox":[67.2,57.6,67.2,67.2]}
+{"kind":"textbox","id":"sh/ra9kryp8","slide":23,"name":"Text 1","text":"PEKIŞTIRME","textPreview":"PEKIŞTIRME","textChars":10,"textLines":1,"bbox":[158.4,59.52,768,33.6]}
+{"kind":"textbox","id":"sh/qp03yt8n","slide":23,"name":"Text 2","text":"Ödev: Basit / Türemiş Ayırma Alıştırması","textPreview":"Ödev: Basit / Türemiş Ayırma Alıştırması","textChars":40,"textLines":1,"bbox":[153.6,88.32,864,67.2]}
+{"kind":"textbox","id":"sh/dcb2t87y","slide":23,"name":"Text 3","text":"Sıradaki derse kadar aşağıdaki 10 sözcüğün BASİT mi TÜREMİŞ mi olduğunu, türemişse hangi ekle türediğini defterinize yazın:","textPreview":"Sıradaki derse kadar aşağıdaki 10 sözcüğün BASİT mi TÜREMİŞ mi olduğunu, türemişse hangi ekle türediğini defterinize yazın:","textChars":123,"textLines":1,"bbox":[67.2,172.8,1142.4,79.52]}
+{"kind":"shape","id":"sh/sb2lk36t","slide":23,"name":"Shape 4","bbox":[67.2,257.12,211.2,67.2]}
+{"kind":"textbox","id":"sh/b6d432pc","slide":23,"name":"Text 5","text":"1. kapıcı","textPreview":"1. kapıcı","textChars":9,"textLines":1,"bbox":[67.2,257.12,211.2,39.76]}
+{"kind":"shape","id":"sh/al43uxor","slide":23,"name":"Shape 6","bbox":[297.6,257.12,211.2,85.33]}
+{"kind":"textbox","id":"sh/4jax4nqd","slide":23,"name":"Text 7","text":"2. kapılarımızdan","textPreview":"2. kapılarımızdan","textChars":17,"textLines":1,"bbox":[297.6,257.12,211.2,75.73]}
+{"kind":"shape","id":"sh/5kjydsri","slide":23,"name":"Shape 8","bbox":[528,257.12,211.2,67.2]}
+{"kind":"textbox","id":"sh/ixsf2d87","slide":23,"name":"Text 9","text":"3. sevinç","textPreview":"3. sevinç","textChars":9,"textLines":1,"bbox":[528,257.12,211.2,39.76]}
+{"kind":"shape","id":"sh/jy1gbi9s","slide":23,"name":"Shape 10","bbox":[758.4,257.12,211.2,85.33]}
+{"kind":"textbox","id":"sh/wvax03q1","slide":23,"name":"Text 11","text":"4. defterlerimizde","textPreview":"4. defterlerimizde","textChars":18,"textLines":1,"bbox":[758.4,257.12,211.2,75.73]}
+{"kind":"shape","id":"sh/hwjy98rm","slide":23,"name":"Shape 12","bbox":[988.8,257.12,211.2,67.2]}
+{"kind":"textbox","id":"sh/utsfyt8v","slide":23,"name":"Text 13","text":"5. gözlük","textPreview":"5. gözlük","textChars":9,"textLines":1,"bbox":[988.8,257.12,211.2,39.76]}
+{"kind":"shape","id":"sh/vu1w7y9g","slide":23,"name":"Shape 14","bbox":[67.2,366.45,211.2,67.2]}
+{"kind":"textbox","id":"sh/8rqxw3q5","slide":23,"name":"Text 15","text":"6. gözlerimize","textPreview":"6. gözlerimize","textChars":14,"textLines":1,"bbox":[67.2,366.45,211.2,39.76]}
+{"kind":"shape","id":"sh/9sze58rq","slide":23,"name":"Shape 16","bbox":[297.6,366.45,211.2,67.2]}
+{"kind":"textbox","id":"sh/porutkje","slide":23,"name":"Text 17","text":"7. tatlandı","textPreview":"7. tatlandı","textChars":11,"textLines":1,"bbox":[297.6,366.45,211.2,39.76]}
+{"kind":"shape","id":"sh/onid0f2t","slide":23,"name":"Shape 18","bbox":[528,366.45,211.2,67.2]}
+{"kind":"textbox","id":"sh/nm9cru18","slide":23,"name":"Text 19","text":"8. tatlarımızı","textPreview":"8. tatlarımızı","textChars":14,"textLines":1,"bbox":[528,366.45,211.2,39.76]}
+{"kind":"shape","id":"sh/2l0vypkn","slide":23,"name":"Shape 20","bbox":[758.4,366.45,211.2,67.2]}
+{"kind":"textbox","id":"sh/1kru5kj2","slide":23,"name":"Text 21","text":"9. yazarlık","textPreview":"9. yazarlık","textChars":11,"textLines":1,"bbox":[758.4,366.45,211.2,39.76]}
+{"kind":"shape","id":"sh/0jidwf2x","slide":23,"name":"Shape 22","bbox":[988.8,366.45,211.2,85.33]}
+{"kind":"textbox","id":"sh/fi9c3a1c","slide":23,"name":"Text 23","text":"10. kalemlerimizi","textPreview":"10. kalemlerimizi","textChars":17,"textLines":1,"bbox":[988.8,366.45,211.2,75.73]}
+{"kind":"shape","id":"sh/ehgvu5kr","slide":23,"name":"Shape 24","bbox":[67.2,485.39,1142.4,85.33]}
+{"kind":"textbox","id":"sh/lgbe14jm","slide":23,"name":"Text 25","text":"Not: Bir sözcüğü türemiş yapan şey ek sayısı değil, en az bir yapım eki taşımasıdır — köke kadar sabırla soyun.","textPreview":"Not: Bir sözcüğü türemiş yapan şey ek sayısı değil, en az bir yapım eki taşımasıdır — köke kadar sabırla soyun.","textChars":111,"textLines":1,"bbox":[96,485.39,1084.8,75.73]}
+{"kind":"textbox","id":"sh/kf2d8zi1","slide":23,"name":"Text 26","text":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Ödev","textPreview":"TYT TÜRKÇE  ·  SÖZCÜKTE YAPI  ·  Ödev","textChars":37,"textLines":1,"bbox":[48,686.4,864,28.8]}
+{"kind":"textbox","id":"sh/ipcjmhw7","slide":23,"name":"Text 27","text":"Ders 4 / 6","textPreview":"Ders 4 / 6","textChars":10,"textLines":1,"bbox":[1039.68,686.4,192,28.8]}
+{"kind":"image","id":"im/g7a9ob2d","slide":23,"name":"Image 0","bbox":[82.32,72.72,36.96,36.96]}
+{"kind":"notes","id":"nt/m1wvqtk3","slide":23,"text":""}
+{"kind":"slide","id":"sl/5onypobq","slide":24,"title":"Ders Tamamlandı","textShapes":6}
+{"kind":"shape","id":"sh/6987itcr","slide":24,"name":"Shape 0","bbox":[854.4,0,425.28,720]}
+{"kind":"shape","id":"sh/7a18rydc","slide":24,"name":"Shape 1","bbox":[67.2,57.6,76.8,76.8]}
+{"kind":"textbox","id":"sh/58zqpov6","slide":24,"name":"Text 2","text":"Ders Tamamlandı","textPreview":"Ders Tamamlandı","textChars":15,"textLines":1,"bbox":[158.4,62.4,672,67.2]}
+{"kind":"textbox","id":"sh/il87etcv","slide":24,"name":"Text 3","text":"Basit / Türemiş Sözcük — Sözcükte Yapı, Ders 4/6","textPreview":"Basit / Türemiş Sözcük — Sözcükte Yapı, Ders 4/6","textChars":48,"textLines":1,"bbox":[67.2,144,768,38.4]}
+{"kind":"shape","id":"sh/jmh8nyd0","slide":24,"name":"Shape 4","bbox":[67.2,220.8,739.2,192]}
+{"kind":"textbox","id":"sh/43u9snu5","slide":24,"name":"Text 5","text":"Bugün öğrendik:  \nBasit ve türemiş sözcük tanımları, ayırt etme yöntemi, gövde/gövdeden türemiş sözcük kavramı ve basit sanılan ama türemiş olan sözcük tuzakları.","textPreview":"Bugün öğrendik:   | Basit ve türemiş sözcük tanımları, ayırt etme yöntemi, gövde/gövdeden türemiş sözcük kavramı ve basit sanılan ama tür...","textChars":162,"textLines":2,"bbox":[96,244.8,681.6,150.38]}
+{"kind":"shape","id":"sh/p43q1sva","slide":24,"name":"Shape 6","bbox":[67.2,436.8,739.2,110.4]}
+{"kind":"textbox","id":"sh/p4z6tcri","slide":24,"name":"Text 7","text":"SIRADAKİ DERS (5/6)","textPreview":"SIRADAKİ DERS (5/6)","textChars":19,"textLines":1,"bbox":[96,453.12,624,33.6]}
+{"kind":"textbox","id":"sh/436507qx","slide":24,"name":"Text 8","text":"Birleşik Sözcük  →","textPreview":"Birleşik Sözcük  →","textChars":18,"textLines":1,"bbox":[96,481.92,624,52.8]}
+{"kind":"textbox","id":"sh/3ixor29c","slide":24,"name":"Text 9","text":"TYT Türkçe Ders Anlatım Projesi  ·  Sedat GÜLER ve Claude Opus 5 tarafından üretilmiştir.","textPreview":"TYT Türkçe Ders Anlatım Projesi  ·  Sedat GÜLER ve Claude Opus 5 tarafından üretilmiştir.","textChars":89,"textLines":1,"bbox":[67.2,662.4,576,38.4]}
+{"kind":"image","id":"im/l4r29c3m","slide":24,"name":"Image 0","bbox":[84.48,74.88,42.24,42.24]}
+{"kind":"notes","id":"nt/5onypobq","slide":24,"text":""}
