@@ -79,7 +79,7 @@ const OGRENCI_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "konu-hakimiyeti", href: "/dashboard/konu-hakimiyeti", etiket: "Konu Hakimiyeti", ikon: "hakimiyet" },
   { bolum: "analiz", href: "/dashboard/analiz", etiket: "Analiz / Rapor", ikon: "analiz" },
   { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Konu Haritası", ikon: "ai" },
-  { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Haberler", ikon: "takvim" },
+  { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Pano", ikon: "takvim" },
   // Kullanıcı isteği (03.09.2026): öğrenci kendi profilini görebilsin ama
   // SADECE şifresini değiştirebilsin — okul no, sınıf, ad gibi kimlik
   // bilgileri salt-okunur (bkz. OgrenciProfilim).
@@ -87,7 +87,7 @@ const OGRENCI_MENUSU: DashboardMenuOgesi[] = [
 ];
 
 // Ortaokul öğrencisi menüsü (tasarım belgesi §5.1). Lise menüsünün kopyası
-// DEĞİL: "Veri girişi", "Analiz / Rapor" gibi YKS'ye özgü
+// DEĞİL: "Veri girişi", "Analiz / Rapor", "Pano" gibi YKS'ye özgü
 // başlıklar yok; dil yaşa uygun ("Ödevlerim" yerine "Görevlerim", "Program
 // yap" yerine "Planım").
 const ORTAOKUL_OGRENCI_MENUSU: DashboardMenuOgesi[] = [
@@ -107,7 +107,7 @@ const ORTAOKUL_YETERLILIK_MENU_OGESI: DashboardMenuOgesi = {
 const VELI_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "ozet", href: "/dashboard", etiket: "Çocuklarım", ikon: "ana-sayfa" },
   { bolum: "analiz", href: "/dashboard/analiz", etiket: "Analiz / Rapor", ikon: "analiz" },
-  { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Haberler", ikon: "takvim" },
+  { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Pano", ikon: "takvim" },
 ];
 
 const OGRETMEN_MENUSU: DashboardMenuOgesi[] = [
@@ -117,7 +117,7 @@ const OGRETMEN_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Konu Haritası", ikon: "ai" },
   { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Duyurular", ikon: "duyuru" },
   { bolum: "talepler", href: "/dashboard/talepler", etiket: "Veli talepleri", ikon: "talep" },
-  { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Haberler", ikon: "takvim" },
+  { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Pano", ikon: "takvim" },
 ];
 
 // Revizyon_2 madde 1 — Ajanda (takvim) menü ögesi yalnızca OKUL öğretmenlerine
@@ -151,7 +151,7 @@ const MUDUR_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "ogretmenler", href: "/dashboard/ogretmenler", etiket: "Öğretmenler", ikon: "ogretmen" },
   { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Konu Haritası", ikon: "ai" },
   { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Duyurular", ikon: "duyuru" },
-  { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Haberler", ikon: "takvim" },
+  { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Pano", ikon: "takvim" },
 ];
 
 // DERSHANE MODU (Faz D3) — dershane müdürü okul müdüründen tamamen farklı
@@ -169,7 +169,7 @@ const DERSHANE_MUDUR_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "denemeler", href: "/dashboard/denemeler", etiket: "Denemeler", ikon: "deneme" },
   { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Konu Haritası", ikon: "ai" },
   { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Duyurular", ikon: "duyuru" },
-  { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Haberler", ikon: "takvim" },
+  { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Pano", ikon: "takvim" },
 ];
 
 // Admin (yönetici) paneli de artık diğer roller gibi tek bir sol menü +
@@ -247,7 +247,7 @@ const REHBER_OGRETMEN_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "ogretmenler", href: "/dashboard/ogretmenler", etiket: "Öğretmenler ve Programlar", ikon: "ogretmen" },
   { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Rehber Öğretmen Duyurusu", ikon: "duyuru" },
   { bolum: "rehberlik", href: "/dashboard/rehberlik", etiket: "Bireysel Mesaj", ikon: "rehberlik" },
-  { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Haberler", ikon: "takvim" },
+  { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Pano", ikon: "takvim" },
   TAKVIM_MENU_OGESI,
 ];
 
@@ -269,7 +269,7 @@ const GRUP_KOC_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Grubun Konu Haritası", ikon: "ai" },
   { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Grup Duyurusu", ikon: "duyuru" },
   { bolum: "rehberlik", href: "/dashboard/rehberlik", etiket: "Bireysel Mesaj", ikon: "rehberlik" },
-  { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Haberler", ikon: "takvim" },
+  { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Pano", ikon: "takvim" },
 ];
 
 // Ortaokulda YKS'ye ÖZGÜ bölümler menüden düşer (kullanıcı isteği

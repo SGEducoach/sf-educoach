@@ -49,7 +49,7 @@ export function TgDenemeleri({ bugun, dbIlanlar, ortaokulMu = false }: { bugun: 
     return (
       <p style={{ color: TEXT_MUTED }}>
         {ortaokulMu
-          ? "Haberler bölümünde şu an bir duyuru yok. Okulun bir şey paylaştığında burada görünecek."
+          ? "Panoda şu an bir duyuru yok. Okulun bir şey paylaştığında burada görünecek."
           : "Güncel TG deneme duyurusu bulunmuyor."}
       </p>
     );
@@ -61,12 +61,13 @@ export function TgDenemeleri({ bugun, dbIlanlar, ortaokulMu = false }: { bugun: 
       <div className="flex flex-wrap items-end justify-between gap-3 px-1">
         <div>
           <div className="mb-1 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: TEXT_MUTED }}>
-            {/* İçerik yalnız TG denemeleriyle sınırlı değil; bu üst
+            {/* Kullanıcı isteği (02.10.2026): başlık "TG Denemeler" değil
+                "Pano" — içerik yalnız TG denemeleriyle sınırlı değil, bu üst
                 satırdan ve alt açıklamadan anlaşılmalı. Yükleme akışı aynı. */}
             <CalendarDays size={14} color={MINT} aria-hidden="true" /> {ortaokulMu ? "Okulundan duyurular ve afişler" : "Duyurular, sınav haberleri ve afişler"}
           </div>
           <h1 id="tg-denemeleri-baslik" className="text-2xl font-extrabold sm:text-3xl" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>
-            Haberler
+            Pano
           </h1>
           <p className="mt-1 max-w-2xl text-sm" style={{ color: TEXT_MUTED }}>
             {ortaokulMu ? "Okulunun duyuruları, etkinlikleri ve afişleri — tek yerde" : "Takvimler, duyurular ve yaklaşan deneme afişleri — tek yerde"}
