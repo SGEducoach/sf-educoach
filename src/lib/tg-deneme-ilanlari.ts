@@ -40,19 +40,6 @@ function satiriDonustur(r: TgDenemeIlaniRow): TgDenemeIlani {
   };
 }
 
-// PANO ARTIK KURUMA AİT (kullanıcı isteği 02.10.2026, migration 0134).
-//
-// Önceki hâl: tek bir global akış vardı; `unstable_cache` SABİT anahtarla
-// ve ÇEREZSİZ okuyucuyla (anonSunucuOkuyucu) çalışıyordu çünkü RLS
-// `select using (true)` idi. İkisi de artık geçerli değil:
-//  * sabit anahtarlı paylaşımlı önbellek bir kurumun panosunu başka kuruma
-//    gösterebilirdi;
-//  * anon okuyucu yeni RLS'te hiçbir satır göremez (kurum üyeliği gerekiyor).
-//
-// Bu yüzden okuma KULLANICININ KENDİ istemcisiyle yapılıyor ve paylaşımlı
-// önbellek KALDIRILDI: yetkiyi tek bir yerde (RLS) tutmak, 20 satırlık
-// indeksli bir sorgu için 60 saniyelik önbellekten daha değerli. Önbelleği
-// geri getirmek isteyen, anahtara school_id koymak ZORUNDA.
 export async function tgDenemeIlanlariGetir(
   supabase: SupabaseClient,
   schoolId: string | null | undefined,
@@ -67,19 +54,19 @@ export async function tgDenemeIlanlariGetir(
   if (error) { console.error("tg_deneme_ilanlari okunamadı:", error.message); return []; }
   return (data ?? []).map(satiriDonustur);
 }
-// Admin yönetim listesi: yayındaki ve arşivdeki ilanlar birlikte silinebilir.
+
 export async function tgDenemeArsiviGetir(supabase: SupabaseClient, schoolId: string): Promise<TgDenemeIlani[]> {
   const { data, error } = await supabase
     .from("tg_deneme_ilanlari")
     .select("id, tarih, baslik, aciklama, dosya_yolu, dosya_tipi, genislik, yukseklik, created_at")
     .eq("school_id", schoolId)
     .order("created_at", { ascending: false })
-    .range(0, AKTIF_LIMIT + 199); // Admin: yayındaki ve arşivdeki en yeni 220 ilan.
+    .range(0, AKTIF_LIMIT + 199);
   if (error) { console.error("tg_deneme_ilanlari arşivi okunamadı:", error.message); return []; }
   return (data ?? []).map(satiriDonustur);
 }
 
+// PROXY URL GÜNCELLEMESİ (Supabase ismi yerine kendi sitemiz üzerinden görünür)
 export function tgDenemeDosyaUrl(dosyaYolu: string): string {
-  const taban = process.env.NEXT_PUBLIC_SUPABASE_URL!.replace(/\/$/, "");
-  return `${taban}/storage/v1/object/public/tg-denemeleri/${dosyaYolu}`;
+  return `/api/dosya?yol=${encodeURIComponent(dosyaYolu)}`;
 }
