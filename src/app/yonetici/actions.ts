@@ -636,31 +636,72 @@ export async function veliTalebiReddet(requestId: string): Promise<{ error: stri
 // migration 0064).
 export interface HataBildirimSonuc {
   id: string;
+  bildirenId: string | null;
   bildirenAd: string | null;
   bildirenRol: UserRole;
   mesaj: string;
   sayfa: string | null;
   durum: "bekliyor" | "cozuldu";
   createdAt: string;
+  yanitlar: { id: string; gonderenRol: "admin" | "kullanici"; mesaj: string; createdAt: string }[];
 }
 
 export async function hataBildirimleriGetir(): Promise<{ error: string | null; bildirimler: HataBildirimSonuc[] }> {
   const { admin } = await requireAdmin();
   const { data, error } = await admin
     .from("hata_bildirimleri")
-    .select("id, bildiren_rol, mesaj, sayfa, durum, created_at, profiles(ad)")
+    .select("id, bildiren_id, bildiren_rol, mesaj, sayfa, durum, created_at, profiles(ad)")
     .order("created_at", { ascending: false })
     .limit(100);
   if (error) return { error: error.message, bildirimler: [] };
 
   type Row = {
-    id: string; bildiren_rol: UserRole; mesaj: string; sayfa: string | null; durum: "bekliyor" | "cozuldu"; created_at: string;
+    id: string; bildiren_id: string | null; bildiren_rol: UserRole; mesaj: string; sayfa: string | null; durum: "bekliyor" | "cozuldu"; created_at: string;
     profiles: { ad: string } | null;
   };
-  const bildirimler = ((data as unknown as Row[]) ?? []).map((r) => ({
-    id: r.id, bildirenAd: r.profiles?.ad ?? null, bildirenRol: r.bildiren_rol, mesaj: r.mesaj, sayfa: r.sayfa, durum: r.durum, createdAt: r.created_at,
+  const satirlar = (data as unknown as Row[]) ?? [];
+  const { data: yanitlar, error: yanitHatasi } = satirlar.length
+    ? await admin.from("hata_bildirimi_yanitlari").select("id, hata_id, gonderen_rol, mesaj, created_at")
+      .in("hata_id", satirlar.map((r) => r.id)).order("created_at", { ascending: true })
+    : { data: [], error: null };
+  if (yanitHatasi) return { error: yanitHatasi.message, bildirimler: [] };
+  type Yanit = { id: string; hata_id: string; gonderen_rol: "admin" | "kullanici"; mesaj: string; created_at: string };
+  const yanitHaritasi = new Map<string, HataBildirimSonuc["yanitlar"]>();
+  for (const y of (yanitlar ?? []) as Yanit[]) {
+    const liste = yanitHaritasi.get(y.hata_id) ?? [];
+    liste.push({ id: y.id, gonderenRol: y.gonderen_rol, mesaj: y.mesaj, createdAt: y.created_at });
+    yanitHaritasi.set(y.hata_id, liste);
+  }
+  const bildirimler = satirlar.map((r) => ({
+    id: r.id, bildirenId: r.bildiren_id, bildirenAd: r.profiles?.ad ?? null, bildirenRol: r.bildiren_rol, mesaj: r.mesaj, sayfa: r.sayfa, durum: r.durum, createdAt: r.created_at,
+    yanitlar: yanitHaritasi.get(r.id) ?? [],
   }));
   return { error: null, bildirimler };
+}
+
+export async function hataBildirimiYanitla(id: string, mesaj: string): Promise<{ error: string | null }> {
+  const { supabase, user, admin } = await requireAdmin();
+  const temiz = mesaj.trim();
+  if (!temiz || temiz.length > 2000) return { error: "Yanıt 1-2000 karakter olmalı." };
+  const { data: bildirim, error: okumaHatasi } = await admin.from("hata_bildirimleri")
+    .select("id, bildiren_id, bildiren_rol").eq("id", id).maybeSingle();
+  if (okumaHatasi) return { error: okumaHatasi.message };
+  if (!bildirim || !bildirim.bildiren_id || bildirim.bildiren_rol === "admin")
+    return { error: "Yanıt gönderilebilecek bir kullanıcı bulunamadı." };
+  const { data: yanit, error: yanitHatasi } = await admin.from("hata_bildirimi_yanitlari")
+    .insert({ hata_id: id, gonderen_id: user.id, gonderen_rol: "admin", mesaj: temiz }).select("id").single();
+  if (yanitHatasi) return { error: yanitHatasi.message };
+  const { error: bildirimHatasi } = await admin.from("bildirimler").insert({
+    profile_id: bildirim.bildiren_id, tur: "sistem", baslik: "Hata bildiriminize yanıt",
+    mesaj: `${temiz}\n\nEk bilgi vermek için Hata bildir bölümündeki açık kaydınızı kullanabilirsiniz.`,
+  });
+  if (bildirimHatasi) {
+    await admin.from("hata_bildirimi_yanitlari").delete().eq("id", yanit.id);
+    return { error: "Yanıt kullanıcıya iletilemedi. Tekrar deneyin." };
+  }
+  await auditLogYaz(supabase, user.id, "hata_bildirimi_yanitlandi", { hata_id: id, yanit_id: yanit.id });
+  revalidatePath("/yonetici");
+  return { error: null };
 }
 
 // 2026-08-26 kullanıcı isteği: "düzeltilen hata bildirimleri ... iş bitince

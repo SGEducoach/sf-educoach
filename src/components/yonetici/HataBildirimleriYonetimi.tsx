@@ -1,6 +1,6 @@
 import { hataBildirimleriGetir } from "@/app/yonetici/actions";
 import { HataBildirimListesi } from "@/components/yonetici/HataBildirimListesi";
-import { BG1, BORDER, TEXT, TEXT_MUTED } from "@/lib/theme";
+import { BG1, BLUSH, BORDER, TEXT, TEXT_MUTED } from "@/lib/theme";
 
 // Faz G (2026-08-25) — tüm rollerden gelen "hata bildir" kayıtları.
 // 2026-08-26 kullanıcı isteği: çözülen bildirimler artık işaretlenmiyor,
@@ -8,12 +8,13 @@ import { BG1, BORDER, TEXT, TEXT_MUTED } from "@/lib/theme";
 // gelen liste zaten sadece "bekliyor" durumundaki kayıtları içeriyor,
 // ayrı bir "Çözülenler" bölümüne gerek kalmadı.
 export async function HataBildirimleriYonetimi() {
-  const { bildirimler } = await hataBildirimleriGetir();
+  const { bildirimler, error } = await hataBildirimleriGetir();
   const adminNotlari = bildirimler.filter((b) => b.bildirenRol === "admin");
   const kullaniciBildirimleri = bildirimler.filter((b) => b.bildirenRol !== "admin");
 
   return (
     <div className="flex flex-col gap-5">
+      {error && <p role="alert" className="rounded-xl px-4 py-3 text-sm" style={{ background: BG1, color: BLUSH }}>Hata bildirimleri yüklenemedi: {error}</p>}
       {adminNotlari.length > 0 && (
         <div className="rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
           <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold mb-1">Claude ile çözülecek notlar</h2>

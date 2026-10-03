@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { startTransition, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Bug } from "lucide-react";
-import { hataBildir } from "@/app/dashboard/hata-actions";
+import { acikHataBildirimlerimGetir, hataBildir, hataBildirimineEkBilgiGonder, type AcikHataBildirimi } from "@/app/dashboard/hata-actions";
 import { BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 
 // Faz G — tüm rollerde erişilebilir "Hata Bildir" tetikleyicisi. `boyut`
@@ -26,6 +26,18 @@ export function HataBildirButonu({ boyut = "ikon" }: { boyut?: "ikon" | "satir" 
   const [mesaj, setMesaj] = useState("");
   const [gonderiliyor, setGonderiliyor] = useState(false);
   const [sonuc, setSonuc] = useState<{ tur: "basari" | "hata"; metin: string } | null>(null);
+  const [acikBildirimler, setAcikBildirimler] = useState<AcikHataBildirimi[] | null>(null);
+  const [ekBilgi, setEkBilgi] = useState<Record<string, string>>({});
+  const [ekBilgiPending, setEkBilgiPending] = useState<string | null>(null);
+
+  function bildirimleriYenile() {
+    startTransition(() => {
+      void acikHataBildirimlerimGetir().then((r) => {
+        setAcikBildirimler(r.bildirimler);
+        if (r.error) setSonuc({ tur: "hata", metin: r.error });
+      });
+    });
+  }
 
   async function gonder(e: React.FormEvent) {
     e.preventDefault();
@@ -36,9 +48,25 @@ export function HataBildirButonu({ boyut = "ikon" }: { boyut?: "ikon" | "satir" 
     if (error) return setSonuc({ tur: "hata", metin: error });
     setSonuc({ tur: "basari", metin: "Bildiriminiz alındı, teşekkürler." });
     setMesaj("");
+    bildirimleriYenile();
   }
 
-  const ac = () => setAcik(true);
+  function ekBilgiGonder(id: string) {
+    const metin = ekBilgi[id]?.trim();
+    if (!metin) return;
+    setEkBilgiPending(id);
+    startTransition(() => {
+      void hataBildirimineEkBilgiGonder(id, metin).then((r) => {
+        setEkBilgiPending(null);
+        if (r.error) return setSonuc({ tur: "hata", metin: r.error });
+        setEkBilgi((onceki) => ({ ...onceki, [id]: "" }));
+        setSonuc({ tur: "basari", metin: "Ek bilginiz yöneticiye iletildi." });
+        bildirimleriYenile();
+      });
+    });
+  }
+
+  const ac = () => { setAcik(true); setAcikBildirimler(null); bildirimleriYenile(); };
 
   return (
     <>
@@ -58,7 +86,7 @@ export function HataBildirButonu({ boyut = "ikon" }: { boyut?: "ikon" | "satir" 
       {acik && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.55)" }}
           onClick={() => setAcik(false)}>
-          <div className="w-full max-w-sm rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER_STRONG}` }}
+          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER_STRONG}` }}
             onClick={(e) => e.stopPropagation()}>
             <h3 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[16px] font-bold mb-1">Hata bildir</h3>
             <p style={{ color: TEXT_MUTED }} className="text-xs mb-3">Yönetici ekibin incelemesi için karşılaştığınız sorunu kısaca anlatınız.</p>
@@ -79,6 +107,25 @@ export function HataBildirButonu({ boyut = "ikon" }: { boyut?: "ikon" | "satir" 
                 </button>
               </div>
             </form>
+            <div className="mt-5 border-t pt-4" style={{ borderColor: BORDER_STRONG }}>
+              <h4 style={{ color: TEXT }} className="text-sm font-bold">Açık bildirimlerim</h4>
+              {acikBildirimler === null ? <p style={{ color: TEXT_MUTED }} className="mt-2 text-xs">Yükleniyor...</p>
+                : acikBildirimler.length === 0 ? <p style={{ color: TEXT_MUTED }} className="mt-2 text-xs">Açık bildiriminiz yok.</p>
+                : <div className="mt-2 space-y-3">{acikBildirimler.map((b) => <div key={b.id} className="rounded-xl p-3" style={{ background: BG0, border: `1px solid ${BORDER_STRONG}` }}>
+                    <p style={{ color: TEXT }} className="text-xs whitespace-pre-wrap">{b.mesaj}</p>
+                    {b.yanitlar.map((y) => <div key={y.id} className="mt-2 rounded-lg px-2 py-1.5" style={{ background: BG1 }}>
+                      <span style={{ color: MINT }} className="text-[11px] font-bold">{y.gonderenRol === "admin" ? "Yönetici" : "Siz"}</span>
+                      <p style={{ color: TEXT }} className="text-xs whitespace-pre-wrap">{y.mesaj}</p>
+                    </div>)}
+                    <textarea value={ekBilgi[b.id] ?? ""} onChange={(e) => setEkBilgi((onceki) => ({ ...onceki, [b.id]: e.target.value }))}
+                      maxLength={2000} rows={2} aria-label="Bu bildirime ek bilgi yazın" placeholder="Ek bilgi veya yanıt yazın..."
+                      className="mt-2 w-full rounded-lg px-2 py-1.5 text-xs" style={{ background: BG1, color: TEXT, border: `1px solid ${BORDER_STRONG}` }} />
+                    <button type="button" onClick={() => ekBilgiGonder(b.id)} disabled={ekBilgiPending === b.id || !ekBilgi[b.id]?.trim()}
+                      className="sfec-btn mt-1 rounded-lg px-3 py-1.5 text-xs font-bold disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+                      Ek bilgiyi gönder
+                    </button>
+                  </div>)}</div>}
+            </div>
           </div>
         </div>
       )}
