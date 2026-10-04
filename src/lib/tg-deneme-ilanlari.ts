@@ -54,12 +54,13 @@ export async function tgDenemeIlanlariGetir(
   if (error) { console.error("tg_deneme_ilanlari okunamadı:", error.message); return []; }
   return (data ?? []).map(satiriDonustur);
 }
-
-export async function tgDenemeArsiviGetir(supabase: SupabaseClient, schoolId: string): Promise<TgDenemeIlani[]> {
-  const { data, error } = await supabase
+// Admin yönetim listesi: yayındaki ve arşivdeki ilanlar birlikte silinebilir.
+export async function tgDenemeArsiviGetir(supabase: SupabaseClient, schoolId: string | null): Promise<TgDenemeIlani[]> {
+  let sorgu = supabase
     .from("tg_deneme_ilanlari")
-    .select("id, tarih, baslik, aciklama, dosya_yolu, dosya_tipi, genislik, yukseklik, created_at")
-    .eq("school_id", schoolId)
+    .select("id, tarih, baslik, aciklama, dosya_yolu, dosya_tipi, genislik, yukseklik, created_at");
+  sorgu = schoolId ? sorgu.eq("school_id", schoolId) : sorgu.is("school_id", null);
+  const { data, error } = await sorgu
     .order("created_at", { ascending: false })
     .range(0, AKTIF_LIMIT + 199);
   if (error) { console.error("tg_deneme_ilanlari arşivi okunamadı:", error.message); return []; }

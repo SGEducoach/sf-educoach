@@ -22,7 +22,7 @@ import { BG0, BG1, BG1_ALT, BLUSH, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON
 // kaydından okunur — istemciden gelen kurum kimliğine GÜVENİLMEZ.
 export function TgDenemeYonetimi({ okullar = [] }: { okullar?: { id: string; ad: string }[] }) {
   const adminMi = okullar.length > 0;
-  const [schoolId, setSchoolId] = useState(okullar[0]?.id ?? "");
+  const [schoolId, setSchoolId] = useState("");
   const dosyaRef = useRef<HTMLInputElement>(null);
   const [acik, setAcik] = useState(false);
   const [tarih, setTarih] = useState("");
@@ -58,7 +58,7 @@ export function TgDenemeYonetimi({ okullar = [] }: { okullar?: { id: string; ad:
     startTransition(async () => {
       const res = await tgDenemeIlaniEkle(formData);
       if (res.error) return setHata(res.error);
-      setBasari("Yayınlandı — Pano akışında görünecek.");
+      setBasari(!adminMi || schoolId ? "Yayınlandı — kurum panosunda ve ana sayfada görünecek." : "Yayınlandı — ana sayfada SeFu Yönetim haberi olarak görünecek.");
       setTarih(""); setBaslik(""); setAciklama("");
       if (dosyaRef.current) dosyaRef.current.value = "";
       if (arsivAcik) { const liste = await tgDenemeArsiviniGetir(adminMi ? schoolId : undefined); if (liste.error) setHata(liste.error); else setArsiv(liste.ilanlar); }
@@ -111,11 +111,11 @@ export function TgDenemeYonetimi({ okullar = [] }: { okullar?: { id: string; ad:
           {/* Admin hangi kurumun panosuna yazdığını seçer; seçilmezse otomatik Sefu Yönetim olarak kaydedilir. */}
           {adminMi && (
             <label className="flex flex-col gap-1">
-              <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Hangi kurumun panosu</span>
+              <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Haber kaynağı</span>
               <select value={schoolId} onChange={(e) => { setSchoolId(e.target.value); setArsiv(null); }}
                 className="rounded-xl px-3 py-2 text-sm outline-none"
                 style={{ background: BG0, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
-                <option value="">Sefu Yönetim (Kurum Dışı / Genel Duyuru)</option>
+                <option value="">SeFu Yönetim (kurum seçilmedi)</option>
                 {okullar.map((o) => <option key={o.id} value={o.id}>{o.ad}</option>)}
               </select>
             </label>
@@ -148,7 +148,7 @@ export function TgDenemeYonetimi({ okullar = [] }: { okullar?: { id: string; ad:
           </label>
           {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
           {basari && <div style={{ color: MINT }} className="text-xs font-semibold">{basari}</div>}
-          <p className="text-xs leading-5" style={{ color: TEXT_MUTED }}>Paylaşımınız kurum panosunda ve herkese açık ana sayfada görünür.</p>
+          <p className="text-xs leading-5" style={{ color: TEXT_MUTED }}>{adminMi && !schoolId ? "Paylaşımınız SeFu Yönetim adıyla herkese açık ana sayfada görünür." : "Paylaşımınız kurum panosunda ve herkese açık ana sayfada görünür."}</p>
           <button type="submit" disabled={pending}
             className="sfec-btn self-start text-sm font-bold px-4 py-2.5 rounded-xl disabled:opacity-60"
             style={{ background: MINT, color: MINT_ON }}>

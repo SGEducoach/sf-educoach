@@ -1725,7 +1725,7 @@ export async function mufredatAltKonuSil(id: string): Promise<{ error: string | 
 // `if (yetki.hata)` ile daraltamıyor — açık bir boolean gerekiyor.
 type PanoYetkisi =
   | { ok: false; hata: string }
-  | { ok: true; supabase: Awaited<ReturnType<typeof createClient>>; user: { id: string }; admin: ReturnType<typeof createAdminClient>; schoolId: string; adminMi: boolean };
+  | { ok: true; supabase: Awaited<ReturnType<typeof createClient>>; user: { id: string }; admin: ReturnType<typeof createAdminClient>; schoolId: string | null; adminMi: boolean };
 
 async function panoYetkisi(istenenSchoolId?: string | null): Promise<PanoYetkisi> {
   const supabase = await createClient();
@@ -1735,8 +1735,10 @@ async function panoYetkisi(istenenSchoolId?: string | null): Promise<PanoYetkisi
 
   if (profile?.role === "admin") {
     const secili = String(istenenSchoolId ?? "").trim();
-    if (!secili) return { ok: false, hata: "Hangi kurumun panosu olduğunu seçin." };
-    return { ok: true, supabase, user, admin: createAdminClient(), schoolId: secili, adminMi: true };
+    if (secili && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(secili)) {
+      return { ok: false, hata: "Kurum seçimi geçersiz." };
+    }
+    return { ok: true, supabase, user, admin: createAdminClient(), schoolId: secili || null, adminMi: true };
   }
 
   const { data: mod } = await supabase.from("school_moderators").select("school_id").eq("profile_id", user.id).limit(1).maybeSingle();
@@ -1824,7 +1826,7 @@ export async function tgDenemeIlaniEkle(formData: FormData): Promise<{ error: st
     return { error: eklemeHatasi.message };
   }
 
-  await auditLogYaz(supabase, user.id, "tg_deneme_ilani_ekle", { school_id: schoolId, dosya_yolu: dosyaYolu, dosya_tipi: dosyaTipi });
+  await auditLogYaz(supabase, user.id, "tg_deneme_ilani_ekle", { school_id: schoolId, kaynak: schoolId ? "kurum" : "Sefu Yönetim", dosya_yolu: dosyaYolu, dosya_tipi: dosyaTipi });
   revalidatePath("/dashboard", "layout");
   revalidatePath("/yonetici", "layout");
   revalidateTag(ANA_SAYFA_ONBELLEK_ETIKETI, "max");
@@ -1843,7 +1845,7 @@ export async function tgDenemeIlaniSil(id: string): Promise<{ error: string | nu
   const admin0 = createAdminClient();
   const { data: hedef } = await admin0.from("tg_deneme_ilanlari").select("school_id, dosya_yolu").eq("id", id).maybeSingle();
   if (!hedef) return { error: "İlan bulunamadı." };
-  const yetki = await panoYetkisi(hedef.school_id as string);
+  const yetki = await panoYetkisi(hedef.school_id as string | null);
   if (!yetki.ok) return { error: yetki.hata };
   const { supabase, user, admin, schoolId } = yetki;
   if (schoolId !== hedef.school_id) return { error: "Bu ilan sizin kurumunuza ait değil." };

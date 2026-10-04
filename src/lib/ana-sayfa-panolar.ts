@@ -35,10 +35,10 @@ const panolariOku = unstable_cache(
     };
     const bugun = bugununTarihiTR();
     return ((data ?? []) as unknown as Row[])
-      .filter((r) => r.schools && (tgDenemeBitisTarihi(r.tarih) ?? "9999-12-31") >= bugun)
+      .filter((r) => (tgDenemeBitisTarihi(r.tarih) ?? "9999-12-31") >= bugun)
       .slice(0, 20)
       .map((r) => ({
-        id: r.id, kurumAdi: r.schools!.ad, tarih: r.tarih,
+        id: r.id, kurumAdi: r.schools?.ad ?? "SeFu Yönetim", tarih: r.tarih,
         baslik: r.baslik, aciklama: r.aciklama,
         dosyaUrl: tgDenemeDosyaUrl(r.dosya_yolu), dosyaTipi: r.dosya_tipi,
       }));
