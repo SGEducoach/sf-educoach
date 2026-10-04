@@ -1,6 +1,6 @@
 # SeFu Koç Android ve iOS uygulama planı
 
-**Durum:** Android kurulabilir web uygulamasının ilk sürümü kodlandı. Mi Pad 7'de ana sayfa düğmesi kurulum başlatmadı. Google Play geliştirici hesabı henüz yok; Android mağaza paketi, cihaz testi ve mağaza yayını tamamlanmadı. iOS uygulaması geliştirilmedi.
+**Durum:** Android kurulabilir web uygulamasının ilk sürümü kodlandı. Mi Pad 7'de ana sayfa düğmesi kurulum başlatmadı. Kişisel Google Play geliştirici hesabı açıldı; Play Console'da uygulama kaydı, Android mağaza paketi, cihaz testi ve mağaza yayını henüz tamamlanmadı. iOS uygulaması geliştirilmedi.
 **Başlangıç noktası:** 4 Ekim 2026. Sonraki bilgisayar veya AI çalışması bu dosyayı ve güncel kodu birlikte incelemeli.
 
 ## Ürün kararı
@@ -63,7 +63,8 @@
 
 ### B. Android mağaza paketi
 
-- **Şu anki engel (4 Ekim 2026):** Google Play Console geliştirici hesabı yok. Hesap açılışı, kimlik/kurum doğrulaması ve Google'ın istediği sözleşme/ödeme işlemleri hesap sahibi tarafından tamamlanmalı. Bunlar olmadan mağazaya uygulama yüklenemez.
+- **Hesap durumu (4 Ekim 2026):** Kişisel Google Play geliştirici hesabı açıldı; Play Console'da SeFu Koç uygulama kaydı henüz oluşturulmadı. Hesap doğrulaması ve cihaz doğrulaması istenirse hesap sahibi tamamlamalı.
+- **Kişisel hesap yayın şartı:** Google'ın yeni kişisel hesaplar için zorunlu kapalı testi, üretim erişimi başvurusundan önce en az 12 test kullanıcısının 14 gün kesintisiz katılımını gerektirir. İç test daha erken yapılabilir; iç test bu zorunlu kapalı testin yerine geçmez. Güncel koşulları Play Console panelinde doğrula.
 - **Paket yöntemi:** Mevcut web uygulamasından Trusted Web Activity (TWA) oluştur. Android paketi web ile aynı hesapları kullanır; Play Store için ayrıca imzalı Android App Bundle (`.aab`) gerekir. PWA kurulum düğmesi mağaza indirimi değildir.
 - **Hesap açılınca kararlar:** Uygulamanın resmî yayıncı adı ve kalıcı Android paket kimliği; imzalama anahtarının güvenli saklama yeri; Play Console'da kişisel/kurumsal hesap türü. Paket kimliği kesinleşmeden üretim anahtarı veya Digital Asset Links dosyası yayımlanmasın.
 - **Paket üretimi:** Resmî Bubblewrap aracıyla canlı `https://www.sefukoc.com/manifest.json` adresinden proje oluştur; uygulama adını ve `/uygulama-basla` başlangıcını doğrula. Yerel Android SDK ve JDK gerekir. İmzalı `.aab` ile cihaz testi için APK üret; anahtar, şifre, APK ve AAB dosyalarını Git'e ekleme.
@@ -92,13 +93,14 @@
 
 ## Devam edecek çalışmaya not
 
-PWA kurulum düğmesi ve karşılama ekranı kodlandı, fakat Mi Pad 7'de kurulum çalıştığı doğrulanmadı. Android mağaza çalışması için ilk dış bağımlılık Play Console hesabıdır. Hesap açıldıktan sonra paket kimliği ve imzalama anahtarını kesinleştirip TWA paketini üretin; gerçek cihazda iç test ve Google Play incelemesini tamamlayın. Her adımda web sürümünü açık tutun.
+PWA kurulum düğmesi ve karşılama ekranı kodlandı, fakat Mi Pad 7'de kurulum çalıştığı doğrulanmadı. Play Console'da uygulama kaydını oluşturun; ardından paket kimliği ve imzalama anahtarını kesinleştirip TWA paketini üretin. Gerçek cihazda iç test, zorunlu kapalı test ve Google Play incelemesini tamamlayın. Her adımda web sürümünü açık tutun.
 
 ## Güncel resmi kaynaklar
 
 - [Chrome: Trusted Web Activity](https://developer.chrome.com/docs/android/trusted-web-activity)
 - [Chrome: TWA hızlı başlangıç ve Bubblewrap](https://developer.chrome.com/docs/android/trusted-web-activity/quick-start)
 - [Google Play geliştirici hesabı açma](https://support.google.com/googleplay/android-developer/answer/6112435)
+- [Google Play yeni kişisel hesapların test koşulları](https://support.google.com/googleplay/android-developer/answer/14151465)
 - [Apple: App Review Guidelines, 4.2 Minimum Functionality](https://developer.apple.com/app-store/review/guidelines/)
 - [Apple: Safari web uygulamasını ana ekrana ekleme](https://developer.apple.com/library/archive/documentation/AppleApplications/Reference/SafariWebContent/ConfiguringWebApplications/ConfiguringWebApplications.html)
 - [Capacitor: `server.url` üretim amacıyla kullanılmaz](https://capacitorjs.com/docs/config)
