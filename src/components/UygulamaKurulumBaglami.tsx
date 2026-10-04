@@ -52,8 +52,12 @@ export function UygulamaKurulumSaglayici({ children }: { children: React.ReactNo
     if (!istem) return "unavailable";
     const seciliIstem = istem;
     setIstem(null);
-    await seciliIstem.prompt();
-    return (await seciliIstem.userChoice).outcome;
+    try {
+      await seciliIstem.prompt();
+      return (await seciliIstem.userChoice).outcome;
+    } catch {
+      return "unavailable";
+    }
   }
 
   return <Baglam.Provider value={{ istem, kurulu, android, kur }}>{children}</Baglam.Provider>;

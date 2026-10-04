@@ -11,7 +11,8 @@ export default function UygulamaSayfasi() {
 
   async function kurulumBaslat() {
     const sonuc = await kur();
-    if (sonuc === "dismissed") setMesaj("Kurulumu daha sonra bu sayfadan tekrar deneyebilirsiniz.");
+    if (sonuc === "dismissed") setMesaj("Kurulum onaylanmadı. Chrome menüsünden ‘Uygulamayı yükle’ seçeneğini kullanabilirsiniz.");
+    if (sonuc === "unavailable") setMesaj("Kurulum isteği açılamadı. Chrome menüsünden ‘Uygulamayı yükle’ seçeneğini deneyin.");
     if (sonuc === "accepted") setMesaj("Kurulum tamamlandığında SeFu Koç simgesinden uygulamayı açın.");
   }
 
@@ -19,6 +20,7 @@ export default function UygulamaSayfasi() {
     <Image src="/icon-192.png" alt="SeFu Koç" width={96} height={96} className="rounded-3xl" priority />
     <h1 className="mt-6 text-3xl font-extrabold">SeFu Koç cebinizde</h1>
     <p className="mt-3 text-sm leading-6">Mevcut hesabınızı ve çalışma verilerinizi Android telefonunuzda kullanın. Web sitesi aynı şekilde çalışmaya devam eder.</p>
+    <p className="mt-2 text-xs">Bu sürüm tarayıcıdan kurulur; APK dosyası indirmez veya Play Store&apos;a yönlendirmez.</p>
 
     {kurulu ? <>
       <p className="mt-8 text-sm">Uygulama hazır.</p>

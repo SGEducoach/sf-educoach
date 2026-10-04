@@ -1,5 +1,6 @@
 "use client";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { GraduationCap, School, Users, UserRoundCheck } from "lucide-react";
 import { SiteUstNavigasyon, SiteAltligi } from "@/components/SiteUstNavigasyon";
 import { AnaSayfaSlider } from "@/components/AnaSayfaSlider";
@@ -9,6 +10,7 @@ import { IkonStili } from "@/components/IkonStili";
 import type { AnaSayfaSliderGorseli } from "@/lib/ana-sayfa";
 import type { AnaSayfaPanoIlani } from "@/lib/ana-sayfa-panolar";
 import type { AnaSayfaDuyurusu } from "@/lib/ana-sayfa-duyurulari";
+import { useUygulamaKurulumu } from "@/components/UygulamaKurulumBaglami";
 
 const LACIVERT="#0F2540",BEYAZ="#FFF",GRI="#3F4B5A";
 const roller=[
@@ -18,6 +20,15 @@ const roller=[
  {ad:"Müdür",Icon:School,renk:"#047857",zemin:"#ECFDF5",metin:"Okul veya dershane genelindeki akademik gelişimi, sınıfları ve koçluk sürecini tek yerden izleme."},
 ];
 export function AnaSayfa({baslik,govde,sliderGecisSaniye,sliderGorselleri,duyurular,panoIlanlari}:{baslik:string;govde:string;sliderGecisSaniye:number;sliderGorselleri:AnaSayfaSliderGorseli[];duyurular:AnaSayfaDuyurusu[];panoIlanlari:AnaSayfaPanoIlani[]}){
+ const router=useRouter();
+ const {istem,android,kurulu,kur}=useUygulamaKurulumu();
+ const [kurulumMesaji,setKurulumMesaji]=useState("");
+ async function androidKurulumu(){
+  if(!android || !istem || kurulu){router.push("/uygulama");return;}
+  const sonuc=await kur();
+  if(sonuc==="accepted") setKurulumMesaji("Telefonunuzun onayından sonra SeFu Koç simgesini açın.");
+  else router.push("/uygulama");
+ }
  const paragraflar=govde.split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean);
  return <IkonStili><div className="flex min-h-dvh flex-col" style={{background:BEYAZ}}>
   <SiteUstNavigasyon/>
@@ -27,7 +38,8 @@ export function AnaSayfa({baslik,govde,sliderGecisSaniye,sliderGorselleri,duyuru
     <h1 className="text-balance text-center text-3xl font-extrabold leading-tight sm:text-4xl" style={{color:LACIVERT,fontFamily:"var(--font-baloo)"}}>SeFu Koç YKS Hazırlık ve Öğrenci Takip Platformu&apos;na Hoş Geldiniz!</h1>
     <h2 className="mt-9 text-center text-2xl font-extrabold" style={{color:LACIVERT,fontFamily:"var(--font-baloo)"}}>İçeride neler var?</h2>
     <p className="mx-auto mt-3 max-w-3xl text-center text-base leading-7" style={{color:GRI}}>Okul ve dershanelerin kullanabildiği SeFu Koç; öğrenci, öğretmen, veli ve müdür rollerini aynı gelişim sürecinde buluşturan YKS hazırlık ve öğrenci takip platformudur.</p>
-    <div className="mt-6 flex justify-center"><Link href="/uygulama" className="rounded-full px-6 py-3 text-sm font-bold" style={{background:"#14B8B0",color:BEYAZ}}>Android uygulamasını edin</Link></div>
+    <div className="mt-6 flex justify-center"><button type="button" onClick={androidKurulumu} className="rounded-full px-6 py-3 text-sm font-bold" style={{background:"#14B8B0",color:BEYAZ}}>{android && istem && !kurulu ? "Android uygulamasını kur" : "Android kurulum adımları"}</button></div>
+    {kurulumMesaji && <p role="status" className="mt-3 text-center text-sm" style={{color:GRI}}>{kurulumMesaji}</p>}
     <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{roller.map(({ad,Icon,renk,zemin,metin})=><article key={ad} className="flex flex-col items-center rounded-3xl p-5 text-center sm:items-start sm:text-left" style={{background:zemin,border:`1px solid ${renk}33`}}><div className="flex h-11 w-11 items-center justify-center rounded-2xl" style={{background:`${renk}18`}}><Icon color={renk}/></div><h3 className="mt-4 text-lg font-extrabold" style={{color:renk}}>{ad}</h3><p className="mt-2 text-sm leading-6" style={{color:GRI}}>{metin}</p></article>)}</div>
    </section>
    <section className="mx-auto max-w-6xl px-5 pb-14 sm:px-8">

@@ -48,7 +48,7 @@
 - `src/components/UygulamaKurulumBaglami.tsx`: Kurulum olayını sayfalar arasında tutma ve service worker kaydı.
 - `public/manifest.json`: Başlangıç adresi ve uygulama kapsamı.
 - `public/sw.js` ve `public/offline.html`: Ağ kesildiğinde genel çevrimdışı uyarısı; kişisel veriler önbelleğe alınmaz.
-- Ana sayfada ve alt menüde Android uygulaması bağlantısı.
+- Ana sayfada Android kurulum düğmesi: tarayıcı kurulum isteği hazırsa doğrudan açar; hazır değilse kurulum yönergelerine götürür. Alt menüde de kurulum sayfası bağlantısı var.
 
 **Doğrulama:** TypeScript, ESLint ve üretim derlemesi geçti. Yerel tarayıcıda ilk düğmenin mevcut girişe gittiği ve sonraki açılışta karşılama ekranının atlandığı kontrol edildi. Gerçek Android cihazında kurulum istemi, simge, bildirim ve dosya/PDF davranışı ayrıca test edilmeli.
 
