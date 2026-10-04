@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { GraduationCap, School, Users, UserRoundCheck } from "lucide-react";
 import { SiteUstNavigasyon, SiteAltligi } from "@/components/SiteUstNavigasyon";
 import { AnaSayfaSlider } from "@/components/AnaSayfaSlider";
@@ -26,6 +27,7 @@ export function AnaSayfa({baslik,govde,sliderGecisSaniye,sliderGorselleri,duyuru
     <h1 className="text-balance text-center text-3xl font-extrabold leading-tight sm:text-4xl" style={{color:LACIVERT,fontFamily:"var(--font-baloo)"}}>SeFu Koç YKS Hazırlık ve Öğrenci Takip Platformu&apos;na Hoş Geldiniz!</h1>
     <h2 className="mt-9 text-center text-2xl font-extrabold" style={{color:LACIVERT,fontFamily:"var(--font-baloo)"}}>İçeride neler var?</h2>
     <p className="mx-auto mt-3 max-w-3xl text-center text-base leading-7" style={{color:GRI}}>Okul ve dershanelerin kullanabildiği SeFu Koç; öğrenci, öğretmen, veli ve müdür rollerini aynı gelişim sürecinde buluşturan YKS hazırlık ve öğrenci takip platformudur.</p>
+    <div className="mt-6 flex justify-center"><Link href="/uygulama" className="rounded-full px-6 py-3 text-sm font-bold" style={{background:"#14B8B0",color:BEYAZ}}>Android uygulamasını edin</Link></div>
     <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{roller.map(({ad,Icon,renk,zemin,metin})=><article key={ad} className="flex flex-col items-center rounded-3xl p-5 text-center sm:items-start sm:text-left" style={{background:zemin,border:`1px solid ${renk}33`}}><div className="flex h-11 w-11 items-center justify-center rounded-2xl" style={{background:`${renk}18`}}><Icon color={renk}/></div><h3 className="mt-4 text-lg font-extrabold" style={{color:renk}}>{ad}</h3><p className="mt-2 text-sm leading-6" style={{color:GRI}}>{metin}</p></article>)}</div>
    </section>
    <section className="mx-auto max-w-6xl px-5 pb-14 sm:px-8">

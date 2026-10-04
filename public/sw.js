@@ -1,11 +1,21 @@
 // SeFu Koç — Web Push service worker
 
-self.addEventListener("install", () => {
+self.addEventListener("install", (event) => {
+  event.waitUntil(caches.open("sefu-offline-v1").then((cache) => cache.add("/offline.html")));
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(self.clients.claim());
+});
+
+// Yalnızca ağ erişimi başarısız olan sayfa gezintilerinde genel yardım
+// ekranını göster. Hesap sayfaları ve öğrenci verileri önbelleğe alınmaz.
+self.addEventListener("fetch", (event) => {
+  if (event.request.mode !== "navigate") return;
+  event.respondWith(fetch(event.request).catch(async () =>
+    (await caches.match("/offline.html")) || Response.error()
+  ));
 });
 
 self.addEventListener("push", (event) => {

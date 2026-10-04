@@ -1,6 +1,6 @@
 # SeFu Koç Android ve iOS uygulama planı
 
-**Durum:** Uygulama geliştirme planı. Bu dosya, uygulamanın yapıldığını veya mağazalarda yayımlandığını göstermez.
+**Durum:** Android kurulabilir web uygulamasının ilk sürümü kodlandı. Android telefonla kurulum testi ve Play Store paketi henüz tamamlanmadı; iOS uygulaması geliştirilmedi.
 **Başlangıç noktası:** 4 Ekim 2026. Sonraki bilgisayar veya AI çalışması bu dosyayı ve güncel kodu birlikte incelemeli.
 
 ## Ürün kararı
@@ -40,6 +40,17 @@
 | `src/app/dashboard/page.tsx` | Rol bazlı mevcut panel. Küçük ekran ve dokunma alanları gözden geçirilmeli. |
 
 ## Uygulama görevleri
+
+### Android ilk sürümünde tamamlananlar (4 Ekim 2026)
+
+- `src/app/uygulama/page.tsx`: Android kurulum istemi varsa kurulum düğmesi; yoksa Chrome menüsü yönergesi.
+- `src/app/uygulama-basla/page.tsx`: İlk açılışta **Kullanmaya Başla**; daha sonraki açılışlarda doğrudan mevcut panele/girişe geçiş.
+- `src/components/UygulamaKurulumBaglami.tsx`: Kurulum olayını sayfalar arasında tutma ve service worker kaydı.
+- `public/manifest.json`: Başlangıç adresi ve uygulama kapsamı.
+- `public/sw.js` ve `public/offline.html`: Ağ kesildiğinde genel çevrimdışı uyarısı; kişisel veriler önbelleğe alınmaz.
+- Ana sayfada ve alt menüde Android uygulaması bağlantısı.
+
+**Doğrulama:** TypeScript, ESLint ve üretim derlemesi geçti. Yerel tarayıcıda ilk düğmenin mevcut girişe gittiği ve sonraki açılışta karşılama ekranının atlandığı kontrol edildi. Gerçek Android cihazında kurulum istemi, simge, bildirim ve dosya/PDF davranışı ayrıca test edilmeli.
 
 ### A. PWA ve mobil deneyim
 

@@ -6,6 +6,7 @@ import { seoAnahtarKelimeleriGetir, siteTemaGetir } from "@/lib/app-ayarlari";
 import { gunduzGeceCssUret } from "@/lib/site-tema";
 import { TEMA_BETIGI } from "@/lib/gunduz-gece";
 import { TemaDenetimi } from "@/components/TemaSecici";
+import { UygulamaKurulumSaglayici } from "@/components/UygulamaKurulumBaglami";
 
 // Not: değişken isimleri (--font-nunito, --font-baloo) kod tabanında onlarca
 // yerde referans veriliyor; tekrar adlandırmak yerine ikisini de Montserrat'a
@@ -101,7 +102,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col font-sans">
         <TemaDenetimi />
         <a href="#ana-icerik" className="sfec-skip-link">İçeriğe geç</a>
-        {children}
+        <UygulamaKurulumSaglayici>{children}</UygulamaKurulumSaglayici>
         <GlobalIslemGostergesi />
       </body>
     </html>
