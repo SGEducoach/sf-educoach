@@ -1,6 +1,6 @@
 # SeFu Koç Android ve iOS uygulama planı
 
-**Durum:** Android kurulabilir web uygulamasının ilk sürümü kodlandı. Mi Pad 7'de ana sayfa düğmesi kurulum başlatmadı. Kişisel Google Play geliştirici hesabı açıldı; Play Console'da uygulama kaydı, Android mağaza paketi, cihaz testi ve mağaza yayını henüz tamamlanmadı. iOS uygulaması geliştirilmedi.
+**Durum:** Android kurulabilir web uygulamasının ilk sürümü kodlandı. Mi Pad 7'de ana sayfa düğmesi kurulum başlatmadı. Google Play kullanılmadan kurulabilecek imzalı Android APK sürüm 1 hazırlandı; `/android` indirme sayfası ve alan adı doğrulaması eklendi. Cihaz testi ve canlı dağıtım doğrulaması henüz tamamlanmadı. iOS uygulaması geliştirilmedi. Android kaynak ve imzalama notları `android/README.md` dosyasında.
 **Başlangıç noktası:** 4 Ekim 2026. Sonraki bilgisayar veya AI çalışması bu dosyayı ve güncel kodu birlikte incelemeli.
 
 ## Ürün kararı

@@ -54,3 +54,14 @@ next-env.d.ts
 # Geçici XLS okuyucu ve yerel SQL doğrulama bağımlılıkları
 /tmp/xls-reader/
 /tmp/sql-tests/
+/tmp/android-build/
+
+# Android paket çıktıları ve imzalama sırları
+/android/.gradle/
+/android/build/
+/android/app/build/
+/android/*.apk
+/android/*.aab
+/android/*.idsig
+/android/*.keystore
+/android/*.jks

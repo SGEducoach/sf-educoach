@@ -30,6 +30,10 @@ export async function proxy(request: NextRequest) {
     hedefUrl.port = "";
     return NextResponse.redirect(hedefUrl, 308);
   }
+  // Android imza doğrulaması ve APK indirmesi oturum hizmetine bağlı olmamalı.
+  if (request.nextUrl.pathname.startsWith("/.well-known/") || request.nextUrl.pathname.startsWith("/indir/")) {
+    return NextResponse.next();
+  }
   return await updateSession(request);
 }
 

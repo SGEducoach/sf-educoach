@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.sefukoc.app",
+      "sha256_cert_fingerprints": [
+        "59:16:CD:07:06:00:46:B8:6D:5E:85:1C:AB:5F:AB:65:E5:1A:E4:F3:59:D8:4D:23:E8:87:FC:62:59:EF:6B:E8"
+      ]
+    }
+  }
+]
