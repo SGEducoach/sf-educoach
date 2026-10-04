@@ -1,5 +1,7 @@
 # SG EduCoach
 
+Android ve iOS uygulama yol haritası: [MOBIL_UYGULAMA_ANDROID_IOS_PLANI.md](MOBIL_UYGULAMA_ANDROID_IOS_PLANI.md).
+
 YKS (TYT/AYT) hazırlık öğrencileri için koçluk platformu — öğrenci, öğretmen, veli, müdür ve admin rolleriyle çalışan bir Next.js + Supabase uygulaması.
 
 Canlı: https://sg-educoach.vercel.app
