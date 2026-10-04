@@ -1,6 +1,6 @@
 # SeFu Koç Android ve iOS uygulama planı
 
-**Durum:** Android kurulabilir web uygulamasının ilk sürümü kodlandı. Android telefonla kurulum testi ve Play Store paketi henüz tamamlanmadı; iOS uygulaması geliştirilmedi.
+**Durum:** Android kurulabilir web uygulamasının ilk sürümü kodlandı. Mi Pad 7'de ana sayfa düğmesi kurulum başlatmadı. Google Play geliştirici hesabı henüz yok; Android mağaza paketi, cihaz testi ve mağaza yayını tamamlanmadı. iOS uygulaması geliştirilmedi.
 **Başlangıç noktası:** 4 Ekim 2026. Sonraki bilgisayar veya AI çalışması bu dosyayı ve güncel kodu birlikte incelemeli.
 
 ## Ürün kararı
@@ -63,6 +63,12 @@
 
 ### B. Android mağaza paketi
 
+- **Şu anki engel (4 Ekim 2026):** Google Play Console geliştirici hesabı yok. Hesap açılışı, kimlik/kurum doğrulaması ve Google'ın istediği sözleşme/ödeme işlemleri hesap sahibi tarafından tamamlanmalı. Bunlar olmadan mağazaya uygulama yüklenemez.
+- **Paket yöntemi:** Mevcut web uygulamasından Trusted Web Activity (TWA) oluştur. Android paketi web ile aynı hesapları kullanır; Play Store için ayrıca imzalı Android App Bundle (`.aab`) gerekir. PWA kurulum düğmesi mağaza indirimi değildir.
+- **Hesap açılınca kararlar:** Uygulamanın resmî yayıncı adı ve kalıcı Android paket kimliği; imzalama anahtarının güvenli saklama yeri; Play Console'da kişisel/kurumsal hesap türü. Paket kimliği kesinleşmeden üretim anahtarı veya Digital Asset Links dosyası yayımlanmasın.
+- **Paket üretimi:** Resmî Bubblewrap aracıyla canlı `https://www.sefukoc.com/manifest.json` adresinden proje oluştur; uygulama adını ve `/uygulama-basla` başlangıcını doğrula. Yerel Android SDK ve JDK gerekir. İmzalı `.aab` ile cihaz testi için APK üret; anahtar, şifre, APK ve AAB dosyalarını Git'e ekleme.
+- **Alan adı doğrulaması:** Kullanılacak imzalama sertifikasının SHA-256 parmak iziyle `https://www.sefukoc.com/.well-known/assetlinks.json` dosyasını hazırla. Bu parmak izi anahtar oluşturulmadan bilinemez. Dosyayı canlıya verdikten sonra Android cihazda adres çubuğu olmadan açılışı test et.
+- **Mağaza içeriği:** Uygulama açıklaması, ekran görüntüleri, gizlilik politikası bağlantısı, hesap silme yöntemi, veri güvenliği ve yaş grubu beyanları gerçek uygulama davranışına göre doğrulanmalı. Mevcut `public/icon-512.png` ve `public/icon-192.png` görselleri paket için adaydır; Play Console grafik ölçüleri ayrıca hazırlanmalı.
 - Üretim alan adının PWA ve Trusted Web Activity koşullarını sağladığını denetle.
 - Android paket kimliği, uygulama adı, ikon, açılış ekranı ve imzalama anahtarını kurum adına belirle; özel anahtarları Git'e koyma.
 - Digital Asset Links doğrulaması, iç test, geri düğmesi, indirme/dosya açma ve bildirim davranışını gerçek cihazda dene.
@@ -86,11 +92,13 @@
 
 ## Devam edecek çalışmaya not
 
-Bu bir uygulama **planıdır**; bu dosya kapsamında mobil paket, kurulum düğmesi veya karşılama ekranı kodlanmadı. Önce A bölümünü iş kalemlerine ayırıp mevcut giriş/oturum akışını cihazlarda test edin. Sonra Android ve iOS mağaza sürümü için hesap ve yayın kararlarını netleştirin. Her adımda web sürümünü açık tutun.
+PWA kurulum düğmesi ve karşılama ekranı kodlandı, fakat Mi Pad 7'de kurulum çalıştığı doğrulanmadı. Android mağaza çalışması için ilk dış bağımlılık Play Console hesabıdır. Hesap açıldıktan sonra paket kimliği ve imzalama anahtarını kesinleştirip TWA paketini üretin; gerçek cihazda iç test ve Google Play incelemesini tamamlayın. Her adımda web sürümünü açık tutun.
 
 ## Güncel resmi kaynaklar
 
 - [Chrome: Trusted Web Activity](https://developer.chrome.com/docs/android/trusted-web-activity)
+- [Chrome: TWA hızlı başlangıç ve Bubblewrap](https://developer.chrome.com/docs/android/trusted-web-activity/quick-start)
+- [Google Play geliştirici hesabı açma](https://support.google.com/googleplay/android-developer/answer/6112435)
 - [Apple: App Review Guidelines, 4.2 Minimum Functionality](https://developer.apple.com/app-store/review/guidelines/)
 - [Apple: Safari web uygulamasını ana ekrana ekleme](https://developer.apple.com/library/archive/documentation/AppleApplications/Reference/SafariWebContent/ConfiguringWebApplications/ConfiguringWebApplications.html)
 - [Capacitor: `server.url` üretim amacıyla kullanılmaz](https://capacitorjs.com/docs/config)
