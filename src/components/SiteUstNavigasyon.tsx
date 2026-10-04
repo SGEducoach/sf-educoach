@@ -103,7 +103,6 @@ export function SiteAltligi() {
         <Link href="/blog" className="inline-flex items-center gap-1 font-semibold"><Rss size={12} /> Blog</Link>
         <Link href="/iletisim" className="inline-flex items-center gap-1 font-semibold"><Mail size={12} /> İletişim</Link>
         <Link href="/login" className="font-semibold">Giriş Yap</Link>
-        <Link href="/uygulama" className="font-semibold">Android Uygulaması</Link>
       </nav>
       </IkonStili>
       <span>© {new Date().getFullYear()} www.sefukoc.com. Tüm hakları saklıdır.</span>
