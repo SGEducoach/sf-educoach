@@ -64,6 +64,7 @@ function noktalariOlustur(bugun: string, bucketlar: Map<number, Biriken>): Hafta
 export async function dershaneAnaSayfaVerisiGetir(
   admin: SupabaseClient,
   schoolId: string,
+  izinliSeviyeler?: string[],
 ): Promise<DershaneAnaSayfaVerisi> {
   const bugun = bugununTarihiTR();
   const baslangicTarihi = tarihEkle(bugun, -(HAFTA_SAYISI * HAFTA_GUN - 1));
@@ -73,7 +74,8 @@ export async function dershaneAnaSayfaVerisiGetir(
     .select("id, classes(id,seviye,sube)")
     .eq("school_id", schoolId);
   type OgrenciRow = { id: string; classes: { id:string; seviye: string; sube:string } | null };
-  const ogrenciler = (ogrencilerHam ?? []) as unknown as OgrenciRow[];
+  const ogrenciler = ((ogrencilerHam ?? []) as unknown as OgrenciRow[])
+    .filter((o) => !izinliSeviyeler || (o.classes && izinliSeviyeler.includes(o.classes.seviye)));
   const seviyeMap = new Map<string, string>();
   const sinifMap = new Map<string, {id:string;ad:string}>();
   for (const o of ogrenciler) if (o.classes) { seviyeMap.set(o.id, o.classes.seviye); sinifMap.set(o.id,{id:o.classes.id,ad:`${o.classes.seviye}-${o.classes.sube}`}); }

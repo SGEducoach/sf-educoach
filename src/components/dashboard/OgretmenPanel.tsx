@@ -188,11 +188,10 @@ export function OgretmenPanel({
       ]
     : role === "mudur" || rehberOgretmenMi
     ? [
-        { deger: "okul", etiket: "Tüm okul" },
-        { deger: "9", etiket: "9. Sınıflar" },
-        { deger: "10", etiket: "10. Sınıflar" },
-        { deger: "11", etiket: "11. Sınıflar" },
-        { deger: "12", etiket: "12. Sınıflar" },
+        { deger: "okul", etiket: rehberOgretmenMi && !dershaneMi && (kademe === "lise" || kademe === "ikisi") ? "Sorumlu olduğum sınıflar" : "Tüm okul" },
+        ...(rehberOgretmenMi && !dershaneMi && (kademe === "lise" || kademe === "ikisi")
+          ? [...new Set(siniflar.map((s) => s.seviye))]
+          : ["9", "10", "11", "12"]).map((seviye) => ({ deger: seviye, etiket: `${seviye}. Sınıflar` })),
         ...siniflar.map((s) => ({ deger: s.id, etiket: `Sadece ${s.seviye}-${s.sube}` })),
       ]
     : undefined;
