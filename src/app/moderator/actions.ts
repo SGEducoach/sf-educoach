@@ -440,7 +440,7 @@ export async function moderatorOgretmenEkle(input: { ad: string; email: string; 
 }
 
 export async function moderatorOgrenciEkle(input: {
-  ad: string; email: string; okulNo: string; telefon: string; classId: string; aytAlan: AytAlan; hedefBolum: string;
+  ad: string; email: string; okulNo: string; telefon: string; classId: string; aytAlan: AytAlan | null; hedefBolum: string;
 }, targetSchoolId?: string) {
   const { user, admin, schoolId, kurumTuru } = await requireModerator(targetSchoolId);
   const ad = adNormalize(input.ad);

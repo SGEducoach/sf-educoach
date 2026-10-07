@@ -340,8 +340,19 @@ export function dersSoruSayisi(tur: DenemeTuru, ders: string): number | undefine
   return kaynak[ders];
 }
 
-export function netHesapla(dogru: number, yanlis: number): number {
-  return Math.round((dogru - yanlis / 4) * 100) / 100;
+// Net formülü KADEMEYE GÖRE DEĞİŞİR (kullanıcı kararı 08.10.2026):
+//   lise (YKS)      → 4 yanlış 1 doğruyu götürür  → D − Y/4
+//   ortaokul (LGS)  → 3 yanlış 1 doğruyu götürür  → D − Y/3
+//
+// Varsayılan BİLİNÇLİ olarak "lise": bu fonksiyon 9 dosyadan çağrılıyor ve
+// hepsi bugün lise verisi işliyor. Varsayılanı değiştirmek tüm lise
+// analizini sessizce kaydırırdı. Ortaokul verisi işleyen çağrı noktaları
+// kademeyi AÇIKÇA geçmek zorunda — geçmezse lise formülü uygulanır.
+export const YANLIS_KATSAYISI = { lise: 4, ortaokul: 3 } as const;
+export type NetKademesi = keyof typeof YANLIS_KATSAYISI;
+
+export function netHesapla(dogru: number, yanlis: number, kademe: NetKademesi = "lise"): number {
+  return Math.round((dogru - yanlis / YANLIS_KATSAYISI[kademe]) * 100) / 100;
 }
 
 export const AYT_ALAN_ETIKET: Record<AytAlan, string> = {

@@ -540,7 +540,9 @@ function OgrenciEkleFormu({ schoolId, siniflar }: { schoolId: string; siniflar: 
   const [pending, startTransition] = useTransition();
   // 9-10. sınıfta AYT alanı sorulmuyor — Branş Denemesi modeli kullanılıyor
   // (bkz. dashboard/OgrenciVeriGirisi). Sunucuya yine bir değer gitmesi
-  // gerektiği için (ayt_alan NOT NULL) varsayılan "SAY" sessizce gönderiliyor.
+  // gerektiği icin varsayilan "SAY" gonderiliyor. ORTAOKULDA ise null
+  // gidiyor (migration 0148) — eskiden kolon NOT NULL oldugu icin 5-8.
+  // sinif ogrencisine de sessizce "SAY" yaziliyordu.
   const dokuzOnMu = dokuzOnSinifMi(siniflar.find((s) => s.id === classId)?.seviye);
   // Ortaokul (5-8) sinifi secilince YKS alani HIC sorulmaz; hedef de bolum
   // degil meslek olur (kullanici karari 01.10.2026). Karar KURUMUN degil
@@ -554,7 +556,7 @@ function OgrenciEkleFormu({ schoolId, siniflar }: { schoolId: string; siniflar: 
     if (!classId) return setHata("Sınıf seçin.");
     startTransition(async () => {
       try {
-        const res = await ogrenciEkleManuel({ ad, email, okulNo, telefon, schoolId, classId, aytAlan, hedefBolum });
+        const res = await ogrenciEkleManuel({ ad, email, okulNo, telefon, schoolId, classId, aytAlan: alanSorulurMu(seciliKademe) ? aytAlan : null, hedefBolum });
         if (res.error || !res.sifre) return setHata(res.error ?? "Öğrenci hesabı oluşturulamadı.");
         setSonuc({ email: email.trim().toLowerCase(), sifre: res.sifre });
         setAd(""); setEmail(""); setOkulNo(""); setTelefon(""); setHedefBolum("");
@@ -665,13 +667,16 @@ function OgrenciTopluEkleFormu({ schoolId, siniflar }: { schoolId: string; sinif
   const gecerliSatirlar = satirlar.filter((s): s is { ad: string; okulNo: string } => s !== null);
   const hatalıSayisi = satirlar.length - gecerliSatirlar.length;
   const dokuzOnMu = dokuzOnSinifMi(siniflar.find((s) => s.id === classId)?.seviye);
+  // O2 (08.10.2026): bu form ortaokulu HIC tanimiyordu — yalniz dokuzOnMu
+  // kontrol ettigi icin 5-8. sinif secilince YKS alan secicisi GORUNUYORDU.
+  const seciliKademe = kademeBul(siniflar.find((s) => s.id === classId)?.seviye);
 
   function ekle() {
     setHata(null);
     if (!classId) return setHata("Sınıf seçin.");
     if (gecerliSatirlar.length === 0) return setHata("Ayrıştırılabilir satır bulunamadı.");
     startTransition(async () => {
-      const res = await ogrencileriTopluEkle({ schoolId, classId, aytAlan, satirlar: gecerliSatirlar });
+      const res = await ogrencileriTopluEkle({ schoolId, classId, aytAlan: alanSorulurMu(seciliKademe) ? aytAlan : null, satirlar: gecerliSatirlar });
       if (res.error) return setHata(res.error);
       setSonuclar(res.sonuclar);
       setMetin("");
@@ -702,7 +707,7 @@ function OgrenciTopluEkleFormu({ schoolId, siniflar }: { schoolId: string; sinif
           <option value="">Sınıf seçin</option>
           {siniflar.map((s) => <option key={s.id} value={s.id}>{s.seviye}-{s.sube}</option>)}
         </select>
-        {!dokuzOnMu && (
+        {!dokuzOnMu && alanSorulurMu(seciliKademe) && (
           <select value={aytAlan} onChange={(e) => setAytAlan(e.target.value as AytAlan)}
             className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
             {(Object.keys(AYT_ALAN_ETIKET) as AytAlan[]).map((a) => <option key={a} value={a}>{AYT_ALAN_ETIKET[a]}</option>)}

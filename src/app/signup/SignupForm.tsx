@@ -217,9 +217,12 @@ function OgrenciKayit({ kurumTuru, schools, classes, router, supabase }: {
 
   const sinifOptions = classes.filter((c) => c.school_id === schoolId);
   // 9-10. sınıfta TYT/AYT sorulmuyor — Branş Denemesi modeli kullanılıyor
-  // (bkz. 9_10_sinif_ekleme_senaryosu.pdf). ayt_alan sütunu yine de NOT
-  // NULL olduğu için varsayılan "SAY" sessizce gönderiliyor, öğrenciye
-  // hiçbir yerde gösterilmiyor.
+  // (bkz. 9_10_sinif_ekleme_senaryosu.pdf); orada varsayılan "SAY" gönderilir
+  // ve öğrenciye hiçbir yerde gösterilmez.
+  //
+  // ORTAOKULDA ise ayt_alan artık NULL gidiyor (migration 0148). Eskiden
+  // kolon NOT NULL olduğu için 5. sınıf öğrencisine de sessizce "SAY"
+  // yazılıyordu — O2 tespitinde bulunan lise izinin kök nedeni buydu.
   const dokuzOnMu = dokuzOnSinifMi(sinifOptions.find((c) => c.id === classId)?.seviye);
   // Ortaokul (5-8): YKS sinav turu/alan bloklari HIC gosterilmez, hedef de
   // bolum degil meslek (kullanici karari 01.10.2026).
@@ -250,7 +253,7 @@ function OgrenciKayit({ kurumTuru, schools, classes, router, supabase }: {
       options: {
         data: {
           role: "ogrenci", ad: adNormalize(ad), telefon, okul_no: okulNo,
-          school_id: schoolId, class_id: classId, ayt_alan: aytAlan, hedef_bolum: hedefBolumNormalize(hedefBolum),
+          school_id: schoolId, class_id: classId, ayt_alan: ortaokulSinifi ? null : aytAlan, hedef_bolum: hedefBolumNormalize(hedefBolum),
           gecici_sifre: true, kvkk_onay_versiyon: OGRENCI_KVKK_VERSIYON,
         },
       },

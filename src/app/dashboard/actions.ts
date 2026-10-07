@@ -257,7 +257,7 @@ export async function ogretmenEkleManuel(input: {
 
 export async function ogrenciEkleManuel(input: {
   ad: string; email: string; okulNo: string; telefon: string; schoolId: string; classId: string;
-  aytAlan: "SAY" | "EA" | "SOZ"; hedefBolum: string;
+  aytAlan: "SAY" | "EA" | "SOZ" | null; hedefBolum: string;
 }): Promise<{ error: string | null; sifre: string | null }> {
   const { supabase, user, admin } = await requireAdmin();
   if (!admin) return { error: "Bu işlem için yönetici yetkisi gerekiyor.", sifre: null };
@@ -307,7 +307,7 @@ export async function dershaneOgrenciKesinKaydet(input: {
   telefon: string;
   veliTelefon?: string;
   classId: string;
-  aytAlan: "SAY" | "EA" | "SOZ";
+  aytAlan: "SAY" | "EA" | "SOZ" | null;
 }): Promise<{
   error: string | null;
   sifre: string | null;
@@ -564,7 +564,7 @@ export interface TopluOgrenciSonuc {
 }
 
 export async function ogrencileriTopluEkle(input: {
-  schoolId: string; classId: string; aytAlan: "SAY" | "EA" | "SOZ";
+  schoolId: string; classId: string; aytAlan: "SAY" | "EA" | "SOZ" | null;
   satirlar: { ad: string; okulNo: string }[];
 }): Promise<{ error: string | null; sonuclar: TopluOgrenciSonuc[] }> {
   const { supabase, user, admin } = await requireAdmin();

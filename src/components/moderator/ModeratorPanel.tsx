@@ -406,7 +406,7 @@ function OgrenciEkleFormu({ schoolId, dershane, onDone }: { schoolId?: string; d
 
   function ekle() {
     startTransition(async () => {
-      const r = await moderatorOgrenciEkle({ ad, email, okulNo, telefon, classId, aytAlan, hedefBolum }, schoolId);
+      const r = await moderatorOgrenciEkle({ ad, email, okulNo, telefon, classId, aytAlan: alanSorulurMu(seciliKademe) ? aytAlan : null, hedefBolum }, schoolId);
       if (r.error) return onDone(`Hata: ${r.error}`);
       onDone(`Öğrenci eklendi. Geçici şifre: ${r.sifre}`);
     });

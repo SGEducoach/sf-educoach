@@ -4273,3 +4273,57 @@ drop policy if exists "ogrenci_oto_programlari_select_rehber" on public.ogrenci_
 create policy "ogrenci_oto_programlari_select_rehber" on public.ogrenci_oto_programlari
   for select to authenticated
   using (public.okul_rehberi_mi() or public.is_admin());
+
+
+-- ============ Ortaokul: lise izlerini arindirma O2 (0147 + 0148) ============
+-- deneme_turu + LGS (0147, enum degeri ayni transactionda kullanilamadigi
+-- icin ayri migration). students.ayt_alan artik NULL olabilir: kolon NOT
+-- NULL oldugu icin uygulama ortaokulda da sessizce "SAY" gonderiyordu --
+-- lise izinin KOK NEDENI buydu. ortaokul_ayt_alanini_temizle tetikleyicisi
+-- (CHECK degil; proje dersi: CHECK UPDATEte de dogrulanir) bir daha
+-- dolmasini engeller. NET FORMULU KADEMEYE GORE: lise D-Y/4, ortaokul
+-- D-Y/3 (src/lib/types.ts netHesapla). Ayrintilar: REHBERLIK_SERVISI.md
+
+alter type public.deneme_turu add value if not exists 'LGS';
+
+alter table public.students alter column ayt_alan drop not null;
+
+alter table public.students disable trigger students_transfer_guard;
+
+update public.students s
+set ayt_alan = null
+from public.classes c
+where c.id = s.class_id and c.seviye in ('5', '6', '7', '8') and s.ayt_alan is not null;
+
+alter table public.students enable trigger students_transfer_guard;
+
+create or replace function public.ortaokul_ayt_alanini_temizle()
+returns trigger language plpgsql security definer set search_path = public
+as $$
+begin
+  if new.class_id is not null and new.ayt_alan is not null and exists (
+    select 1 from public.classes c
+    where c.id = new.class_id and c.seviye in ('5', '6', '7', '8')
+  ) then
+    -- Hata fırlatmak yerine SESSİZCE temizliyoruz: ortaokul kaydını
+    -- reddetmek öğrenci eklemeyi kırardı, oysa niyet "bu alan ortaokulda
+    -- anlamsız"dır. Uygulama tarafı da artık göndermiyor.
+    new.ayt_alan := null;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists ortaokul_ayt_alanini_temizle on public.students;
+create trigger ortaokul_ayt_alanini_temizle
+  before insert or update of class_id, ayt_alan on public.students
+  for each row execute function public.ortaokul_ayt_alanini_temizle();
+
+comment on column public.students.hedef_bolum is
+  'Ogrencinin hedefi. LISEDE hedef BOLUM, ORTAOKULDA hedef MESLEK (bkz. kademe.ts hedefEtiketi). Kolon adi tarihsel, yeniden adlandirilmadi.';
+
+comment on column public.students.ayt_alan is
+  'YKS alan secimi (SAY/EA/SOZ). ORTAOKULDA NULL olmali — ortaokul_ayt_alanini_temizle tetikleyicisi zorlar (0148).';
+
+comment on type public.deneme_turu is
+  'TYT/AYT/BRANS lise, LGS ortaokul (0147). DIKKAT: net formulu kademeye gore DEGISIR — lise D-Y/4, ortaokul D-Y/3 (kullanici karari 08.10.2026, bkz. src/lib/types.ts netHesapla).';
