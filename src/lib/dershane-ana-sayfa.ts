@@ -17,6 +17,12 @@ export interface HaftalikNokta {
   netOrtalama: number | null; // o pencerede hiç deneme yoksa null (0 ile karıştırılmasın)
   soruSayisi: number; // dogru+yanlis toplamı — analiz.ts'teki buHaftaSoru ile AYNI formül
   denemeSayisi: number;
+  // Kapsam (bkz. src/lib/kapsam.ts, Adım 1 07.10.2026): ortalamanın KAÇ
+  // ÖĞRENCİDEN geldiği. KAYIT değil ÖĞRENCİ sayısı — bir öğrenci o
+  // pencerede 5 deneme girdiyse denemeOgrenci 1'dir. netOrtalama yalnız
+  // denemelerden hesaplandığı için onu niteleyen sayı denemeOgrenci.
+  denemeOgrenci: number;
+  soruOgrenci: number;
 }
 
 export interface DershaneAnaSayfaVerisi {
@@ -25,8 +31,10 @@ export interface DershaneAnaSayfaVerisi {
   genel: HaftalikNokta[];
   // Sadece bu kurumda GERÇEKTEN öğrencisi olan kademeler (örn. kurumda
   // sadece 9-10. sınıf varsa 11-12 hiç dönmez, boş çizgi göstermez).
-  kademeler: { seviye: string; noktalar: HaftalikNokta[] }[];
-  siniflar: { id: string; ad: string; noktalar: HaftalikNokta[] }[];
+  // ogrenciSayisi her kapsamda KENDİ paydası — kademe/sınıf ortalamasının
+  // kapsam oranı okulun tamamına değil o kademeye/sınıfa göre hesaplanmalı.
+  kademeler: { seviye: string; ogrenciSayisi: number; noktalar: HaftalikNokta[] }[];
+  siniflar: { id: string; ad: string; ogrenciSayisi: number; noktalar: HaftalikNokta[] }[];
 }
 
 function gunFarkiHesapla(bugun: string, tarih: string): number {
@@ -43,8 +51,14 @@ function bucketIndexHesapla(bugun: string, tarih: string): number | null {
   return idx < HAFTA_SAYISI ? idx : null;
 }
 
-interface Biriken { netToplam: number; denemeSayisi: number; soruSayisi: number }
-function bosBiriken(): Biriken { return { netToplam: 0, denemeSayisi: 0, soruSayisi: 0 }; }
+interface Biriken {
+  netToplam: number; denemeSayisi: number; soruSayisi: number;
+  // Tekilleştirme Set ile: aynı öğrencinin birden fazla kaydı kapsamı şişirmesin.
+  denemeOgrencileri: Set<string>; soruOgrencileri: Set<string>;
+}
+function bosBiriken(): Biriken {
+  return { netToplam: 0, denemeSayisi: 0, soruSayisi: 0, denemeOgrencileri: new Set(), soruOgrencileri: new Set() };
+}
 
 function noktalariOlustur(bugun: string, bucketlar: Map<number, Biriken>): HaftalikNokta[] {
   const noktalar: HaftalikNokta[] = [];
@@ -56,6 +70,8 @@ function noktalariOlustur(bugun: string, bucketlar: Map<number, Biriken>): Hafta
       netOrtalama: b && b.denemeSayisi > 0 ? Math.round((b.netToplam / b.denemeSayisi) * 100) / 100 : null,
       soruSayisi: b?.soruSayisi ?? 0,
       denemeSayisi: b?.denemeSayisi ?? 0,
+      denemeOgrenci: b?.denemeOgrencileri.size ?? 0,
+      soruOgrenci: b?.soruOgrencileri.size ?? 0,
     });
   }
   return noktalar;
@@ -89,12 +105,16 @@ export async function dershaneAnaSayfaVerisiGetir(
   for (const seviye of gorulenSeviyeler) kademeBucket.set(seviye, new Map());
   for (const sinif of gorulenSiniflar) sinifBucket.set(sinif.id,new Map());
 
-  function bicimEkle(idx: number, seviye: string | null, sinifId:string|null, deltaNet: number, deltaDeneme: number, deltaSoru: number) {
+  function bicimEkle(idx: number, seviye: string | null, sinifId:string|null, deltaNet: number, deltaDeneme: number, deltaSoru: number, studentId?: string) {
     const guncelle = (m: Map<number, Biriken>) => {
       const mevcut = m.get(idx) ?? bosBiriken();
       mevcut.netToplam += deltaNet;
       mevcut.denemeSayisi += deltaDeneme;
       mevcut.soruSayisi += deltaSoru;
+      if (studentId) {
+        if (deltaDeneme > 0) mevcut.denemeOgrencileri.add(studentId);
+        if (deltaSoru > 0) mevcut.soruOgrencileri.add(studentId);
+      }
       m.set(idx, mevcut);
     };
     guncelle(genelBucket);
@@ -116,19 +136,27 @@ export async function dershaneAnaSayfaVerisiGetir(
       const idx = bucketIndexHesapla(bugun, d.tarih);
       if (idx === null) continue;
       const net = d.deneme_ders_sonuclari.reduce((t, s) => t + netHesapla(s.dogru, s.yanlis), 0);
-      bicimEkle(idx, seviyeMap.get(d.student_id) ?? null, sinifMap.get(d.student_id)?.id??null, net, 1, 0);
+      bicimEkle(idx, seviyeMap.get(d.student_id) ?? null, sinifMap.get(d.student_id)?.id??null, net, 1, 0, d.student_id);
     }
     for (const s of (sorularHam ?? []) as unknown as SoruRow[]) {
       const idx = bucketIndexHesapla(bugun, s.tarih);
       if (idx === null) continue;
-      bicimEkle(idx, seviyeMap.get(s.student_id) ?? null, sinifMap.get(s.student_id)?.id??null, 0, 0, s.dogru + s.yanlis);
+      bicimEkle(idx, seviyeMap.get(s.student_id) ?? null, sinifMap.get(s.student_id)?.id??null, 0, 0, s.dogru + s.yanlis, s.student_id);
     }
   }
 
   return {
     ogrenciSayisi: studentIds.length,
     genel: noktalariOlustur(bugun, genelBucket),
-    kademeler: gorulenSeviyeler.map((seviye) => ({ seviye, noktalar: noktalariOlustur(bugun, kademeBucket.get(seviye)!) })),
-    siniflar: gorulenSiniflar.map(s=>({id:s.id,ad:s.ad,noktalar:noktalariOlustur(bugun,sinifBucket.get(s.id)!)})),
+    kademeler: gorulenSeviyeler.map((seviye) => ({
+      seviye,
+      ogrenciSayisi: [...seviyeMap.values()].filter((v) => v === seviye).length,
+      noktalar: noktalariOlustur(bugun, kademeBucket.get(seviye)!),
+    })),
+    siniflar: gorulenSiniflar.map(s=>({
+      id:s.id, ad:s.ad,
+      ogrenciSayisi: [...sinifMap.values()].filter((v) => v.id === s.id).length,
+      noktalar:noktalariOlustur(bugun,sinifBucket.get(s.id)!),
+    })),
   };
 }
