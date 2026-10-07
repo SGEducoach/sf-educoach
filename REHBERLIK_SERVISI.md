@@ -93,7 +93,7 @@ ortaokul okullarında da görünüyor (0143'te yalnız lise/ikisi idi).
 
 Bunlar bilinçli olarak bu işin dışında bırakıldı, ayrıca karar gerekiyor:
 
-- ~~**Görüşme kaydı** (gizli)~~ — **İPTAL** (kullanıcı kararı 07.10.2026). Rehber Radarı Faz 4 olarak planlanmıştı, kapsamdan çıkarıldı. Tekrar gündeme gelirse yeniden karar gerekir.
+- **Görüşme kaydı** (gizli) — İPTAL edilmişti, aynı gün *"uzun sürmezse uygula"* denilerek **YAPILDI** (migration 0145). Aşağıdaki Faz 4 bölümüne bkz.
 
 ## Rehber Radarı — analiz panelini kullanışlı hale getirme (07.10.2026)
 
@@ -116,6 +116,24 @@ değiştirilmedi. Satır mevcut öğrenci analizine gidiyor.
 seçildi (src/lib/rehber-bayrak.ts, hepsi gerekçesiyle yazılı). Risk puanı
 bilinçli olarak YOK: puan nedeni gizler. Elenen adaylar: manipülasyon kaydı
 (0 kayıt) ve veli bağlı değil (%98 — herkese yanan şey bayrak değil).
+
+**Adım 4 — Görüşme kayıtları (canlıda, migration 0145).** Rehberin asıl iş
+ürünü: bireysel görüşme, veli görüşmesi, yönlendirme. Gizlilik sınırı
+**RLS'te** zorlanıyor, uygulama katmanında değil — sunucu işlemleri bilerek
+servis anahtarı KULLANMIYOR, kullanıcının kendi istemcisiyle çalışıyor ki tek
+gerçek kapı 0145 politikaları olsun.
+
+| Kim | Görür mü? |
+|---|---|
+| Servis üyesi, öğrenci kendi kademesinde | ✅ okur |
+| Servis üyesi, kademe çakışırsa | ✅ okur |
+| Servis üyesi, kapsamı dışı | ❌ |
+| Öğrenci / veli / branş öğretmeni / **müdür** | ❌ hiçbir koşulda |
+| Başkasının notunu düzenleme/silme | ❌ yalnız yazan |
+
+Hepsi canlı veride geri alınan işlemle doğrulandı. Dar başlangıç bilinçli:
+müdürü açmak gerekirse tek migration, ama geniş başlayıp sızdırmak geri
+alınamaz.
 
 **Kapsam dışı kalanlar:** yıllık çerçeve plan, RAM yönlendirme kaydı.
 - **Risk/takip listesi** (devamsızlık, düşen net, veli talebi).

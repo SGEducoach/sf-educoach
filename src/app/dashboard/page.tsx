@@ -71,6 +71,8 @@ import { RehberlikPaneli } from "@/components/dashboard/RehberlikPaneli";
 import { rehberlikUyeligiGetir } from "@/lib/rehberlik-servisi";
 import { rehberKapsamListesiGetir } from "@/lib/rehber-kapsam-listesi";
 import { RehberKapsamListesi } from "@/components/dashboard/RehberKapsamListesi";
+import { gorusmeleriGetir } from "@/app/dashboard/gorusme-actions";
+import { RehberGorusmeleri } from "@/components/dashboard/RehberGorusmeleri";
 import { RehberOgrenciTakibi } from "@/components/dashboard/RehberOgrenciTakibi";
 import { GrupKocPaneli } from "@/components/dashboard/GrupKocPaneli";
 import { DershaneDenemePdfFormu } from "@/components/dashboard/DershaneDenemePdfFormu";
@@ -817,6 +819,29 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
     }
     const satirlar = await rehberKapsamListesiGetir(createAdminClient(), teacher.school_id, rehberSeviyeleri);
     return <RehberKapsamListesi satirlar={satirlar} seviyeler={rehberSeviyeleri} />;
+  }
+
+  // Faz 4 — görüşme kayıtları (migration 0145). GİZLİ: gizlilik RLS'te
+  // zorlanıyor, menüde gizlemek ve buradaki kontrol yalnızca ek katman.
+  if (aktifBolum === "gorusmeler") {
+    if (!okulRehberi) {
+      return (
+        <div className="sfec-fade rounded-3xl p-6 text-center" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+          <p style={{ color: TEXT_MUTED }} className="text-sm">Bu bölüm sadece Rehberlik Servisi üyelerine açıktır.</p>
+        </div>
+      );
+    }
+    const [{ kayitlar }, kapsamSatirlari] = await Promise.all([
+      gorusmeleriGetir(),
+      rehberKapsamListesiGetir(createAdminClient(), teacher.school_id, rehberSeviyeleri),
+    ]);
+    return (
+      <RehberGorusmeleri
+        ogrenciler={kapsamSatirlari.map((s) => ({ id: s.ogrenciId, ad: s.ad, sinifAdi: s.sinifAdi }))}
+        kayitlar={kayitlar}
+        seviyeler={rehberSeviyeleri}
+      />
+    );
   }
 
   if (aktifBolum === "rehberlik") {

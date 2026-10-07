@@ -13,6 +13,7 @@ export type DashboardBolumu =
   | "yapay-zeka"
   | "tg-denemeleri"
   | "kapsamim"
+  | "gorusmeler"
   | "duyurular"
   | "talepler"
   | "onaylar"
@@ -264,6 +265,13 @@ const KAPSAMIM_MENU_OGESI: DashboardMenuOgesi = {
   bolum: "kapsamim", href: "/dashboard?bolum=kapsamim", etiket: "Kapsamım", ikon: "ogrenci",
 };
 
+// Faz 4 (migration 0145) — rehberin asıl iş ürünü: görüşme kaydı. GİZLİ,
+// yalnız servis üyesi ve yalnız kendi kademesindeki öğrenciler için
+// (gizlilik RLS'te zorlanıyor, menüde gizlemek yeterli bir kontrol DEĞİL).
+const GORUSMELER_MENU_OGESI: DashboardMenuOgesi = {
+  bolum: "gorusmeler", href: "/dashboard?bolum=gorusmeler", etiket: "Görüşme Kayıtları", ikon: "rehberlik",
+};
+
 // Dershane rehberlik servisi (kullanıcı isteği 13.09.2026): öğrenci adına
 // ödev, veri girişi ve program — yalnızca DERSHANE rehber öğretmenine.
 const DERSHANE_REHBER_MENUSU: DashboardMenuOgesi[] = [
@@ -334,7 +342,7 @@ export function dashboardMenusu(
     if (kurumTuru === "dershane") return DERSHANE_REHBER_MENUSU;
     // "Kapsamım" Kurum Performansı'nın HEMEN ARDINDAN gelir: triyaj girişi.
     return okulRehberi
-      ? [REHBER_OGRETMEN_MENUSU[0], KAPSAMIM_MENU_OGESI, ...REHBER_OGRETMEN_MENUSU.slice(1)]
+      ? [REHBER_OGRETMEN_MENUSU[0], KAPSAMIM_MENU_OGESI, GORUSMELER_MENU_OGESI, ...REHBER_OGRETMEN_MENUSU.slice(1)]
       : REHBER_OGRETMEN_MENUSU;
   }
   if (role === "ogretmen") return kurumTuru === "okul" && etkinlikBransiMi(brans) ? [...OGRETMEN_MENUSU, TAKVIM_MENU_OGESI, { bolum:"etkinlikler", href:"/dashboard/etkinlikler", etiket:"Etkinlik Grupları", ikon:"takvim" }] : kurumTuru === "okul" ? [...OGRETMEN_MENUSU, TAKVIM_MENU_OGESI] : OGRETMEN_MENUSU;

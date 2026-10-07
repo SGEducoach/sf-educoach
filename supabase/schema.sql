@@ -4169,3 +4169,78 @@ comment on column public.teachers.rehber_sinif_duzeyleri is
   'TERK EDİLDİ (0144): tek kaynak rehberlik_servisi.sinif_duzeyleri.';
 comment on table public.rehberlik_servisi is
   'Okulun rehberlik servisi üyeleri ve sorumlu oldukları sınıf düzeyleri (0144).';
+
+
+-- ============ Rehberlik gorusme kayitlari (migration 0145) ============
+-- GIZLI tablo: yalniz o okulun Rehberlik Servisi uyeleri, yalniz kendi
+-- kademesindeki ogrenciler icin. Ogrenci/veli/brans ogretmeni/MUDUR
+-- goremez. Politikasi olmayan rol icin erisim varsayilan olarak reddedilir,
+-- yani gizlilik unutulmus bir kontrole degil varsayilana dayaniyor.
+-- Ayrintilar: REHBERLIK_SERVISI.md
+
+create table if not exists public.rehberlik_gorusmeleri (
+  id uuid primary key default gen_random_uuid(),
+  student_id uuid not null references public.students(id) on delete cascade,
+  -- Notu yazan rehber. Hesap silinse bile kayıt kaybolmasın (set null).
+  rehber_id uuid references public.profiles(id) on delete set null,
+  -- Kapsam kontrolü için kurum kopyası: öğrenci okuldan çıksa da notun
+  -- hangi kuruma ait olduğu belli kalır.
+  school_id uuid not null references public.schools(id) on delete cascade,
+
+  tarih date not null default current_date,
+
+  -- Görüşme türü. Rehberin yaptığı iş tek çeşit değil ve raporlamada
+  -- ayrışması gerekiyor (bireysel görüşme ≠ veli görüşmesi ≠ RAM sevki).
+  tur text not null default 'bireysel'
+    check (tur in ('bireysel', 'veli', 'yonlendirme', 'diger')),
+
+  -- "not" PostgreSQL'de ayrılmış sözcük — kolon adı `icerik`.
+  -- Alt sınır 3: boş/anlamsız kayıt birikmesin. Üst sınır 4000: görüşme
+  -- özeti bu kadarla yazılır, daha uzunu dosyaya ait.
+  icerik text not null check (char_length(btrim(icerik)) between 3 and 4000),
+
+  created_at timestamptz not null default now()
+);
+
+create index if not exists rehberlik_gorusmeleri_student_idx
+  on public.rehberlik_gorusmeleri (student_id, tarih desc);
+create index if not exists rehberlik_gorusmeleri_school_idx
+  on public.rehberlik_gorusmeleri (school_id);
+
+alter table public.rehberlik_gorusmeleri enable row level security;
+
+drop policy if exists "gorusme_rehber_okur" on public.rehberlik_gorusmeleri;
+create policy "gorusme_rehber_okur" on public.rehberlik_gorusmeleri
+  for select to authenticated
+  using (
+    public.is_admin()
+    or (
+      public.okul_rehberi_mi()
+      and public.kurum_uyesi_mi(school_id)
+      and public.rehber_ogrenciyi_gorebilir(student_id)
+    )
+  );
+
+drop policy if exists "gorusme_rehber_yazar" on public.rehberlik_gorusmeleri;
+create policy "gorusme_rehber_yazar" on public.rehberlik_gorusmeleri
+  for insert to authenticated
+  with check (
+    rehber_id = auth.uid()
+    and public.okul_rehberi_mi()
+    and public.kurum_uyesi_mi(school_id)
+    and public.rehber_ogrenciyi_gorebilir(student_id)
+  );
+
+drop policy if exists "gorusme_sahibi_duzenler" on public.rehberlik_gorusmeleri;
+create policy "gorusme_sahibi_duzenler" on public.rehberlik_gorusmeleri
+  for update to authenticated
+  using (rehber_id = auth.uid() and public.okul_rehberi_mi())
+  with check (rehber_id = auth.uid() and public.okul_rehberi_mi());
+
+drop policy if exists "gorusme_sahibi_siler" on public.rehberlik_gorusmeleri;
+create policy "gorusme_sahibi_siler" on public.rehberlik_gorusmeleri
+  for delete to authenticated
+  using (rehber_id = auth.uid() and public.okul_rehberi_mi());
+
+comment on table public.rehberlik_gorusmeleri is
+  'Rehberlik gorusme kayitlari (0145). GIZLI: yalniz o okulun servis uyeleri, kendi kademesindeki ogrenciler icin. Ogrenci/veli/brans ogretmeni/mudur GOREMEZ.';

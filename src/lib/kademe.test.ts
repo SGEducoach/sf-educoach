@@ -376,11 +376,13 @@ describe("ortaokul kurumunda rol menüleri", () => {
     const servisUyesi = dashboardMenusu("ogretmen", "okul", "Matematik", false, "lise", true).map((o) => o.bolum);
     const eskiBransli = dashboardMenusu("ogretmen", "okul", REHBER_BRANSI, false, "lise").map((o) => o.bolum);
     // Kimlik branştan gelmiyor: servis üyesinin branşı "Matematik" olsa da
-    // rehber menüsünü alıyor. Tek fark Adım 2'nin "Kapsamım" kalemi — o
-    // yalnız servis üyesine açık (kapsam sinif_duzeyleri'ne dayanıyor).
-    expect(servisUyesi.filter((b) => b !== "kapsamim")).toEqual(eskiBransli);
+    // rehber menüsünü alıyor. Tek fark servise ÖZEL kalemler — "Kapsamım"
+    // (Adım 2) ve "Görüşme Kayıtları" (Faz 4); ikisi de rehberin atandığı
+    // sinif_duzeyleri'ne dayanıyor, eski branş kimliğinde böyle bir kapsam yok.
+    const servisEOzel: string[] = ["kapsamim", "gorusmeler"];
+    expect(servisUyesi.filter((b) => !servisEOzel.includes(b))).toEqual(eskiBransli);
     expect(servisUyesi).toContain("rehberlik");
-    expect(eskiBransli).not.toContain("kapsamim");
+    for (const b of servisEOzel) expect(eskiBransli).not.toContain(b);
   });
 
   test("servis üyesi olmayan öğretmen rehber menüsü ALMAZ", () => {
@@ -406,6 +408,21 @@ describe("ortaokul kurumunda rol menüleri", () => {
     // Mevcut kalemler korunmalı — "Öğrenciler" sınıf bazlı işler için yerinde.
     expect(menu).toContain("ozet");
     expect(menu).toContain("rehberlik");
+  });
+
+  // Faz 4 (migration 0145) — görüşme kayıtları GİZLİ. Menüde gizlemek tek
+  // başına yeterli bir kontrol değil (gizlilik RLS'te), ama sızmaması gerek.
+  test("okul rehberi Görüşme Kayıtları kalemini alır", () => {
+    const menu = dashboardMenusu("ogretmen", "okul", "", false, "lise", true).map((o) => o.bolum);
+    expect(menu).toContain("gorusmeler");
+  });
+
+  test("Görüşme Kayıtları servis üyesi olmayana, müdüre ve dershaneye gösterilmez", () => {
+    expect(dashboardMenusu("ogretmen", "okul", "Matematik", false, "lise", false).map((o) => o.bolum)).not.toContain("gorusmeler");
+    expect(dashboardMenusu("mudur", "okul", undefined, false, "lise").map((o) => o.bolum)).not.toContain("gorusmeler");
+    expect(dashboardMenusu("ogretmen", "dershane", REHBER_BRANSI, false, null, false).map((o) => o.bolum)).not.toContain("gorusmeler");
+    expect(dashboardMenusu("ogrenci", "okul", undefined, false, "lise").map((o) => o.bolum)).not.toContain("gorusmeler");
+    expect(dashboardMenusu("veli").map((o) => o.bolum)).not.toContain("gorusmeler");
   });
 
   test("Kapsamım servis üyesi OLMAYANA gösterilmez", () => {
