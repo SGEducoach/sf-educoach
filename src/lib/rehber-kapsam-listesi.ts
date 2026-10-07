@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { netHesapla } from "@/lib/types";
 import { bugununTarihiTR } from "@/lib/tarih";
+import { bayraklariBelirle, type Bayrak } from "@/lib/rehber-bayrak";
 
 // Rehber Radarı Adım 2 (kullanıcı onayı 07.10.2026) — "tek kapsam listesi".
 //
@@ -38,7 +39,17 @@ export interface KapsamSatiri {
   denemeSayisi: number;
   sonDenemeNeti: number | null;
   yon: NetYonu | null; // null = yön için yeterli deneme yok
+  // Son net ile ondan önceki denemelerin ortalaması arasındaki fark.
+  // Eksi = düşüş. Adım 3 bayrağı büyüklük tabanı için bunu kullanıyor
+  // (yön oku yönü söyler, bayrak EYLEM talep ettiği için büyüklük ister).
+  netDegisimi: number | null;
   acikGorev: number; // durum = 'bekliyor'
+  gorevToplam: number; // oran için payda — min sayı tabanı olmadan yanıltır
+  // Adım 3: "hesabını hiç açmamış" bayrağı. Veri varlığından BAĞIMSIZ —
+  // Elbistan'da 88 öğrenci hiç giriş yapmamış ama veri yoklar 46, yani bir
+  // kısmının verisi öğretmen girişinden/deneme PDF eşleştirmesinden geliyor.
+  girisYapmisMi: boolean;
+  bayraklar: Bayrak[];
 }
 
 export function gunFarki(bugun: string, tarih: string): number {
@@ -61,6 +72,17 @@ export function yonBelirle(netlerYeniden: number[]): NetYonu | null {
   if (fark > bant) return "yukari";
   if (fark < -bant) return "asagi";
   return "sabit";
+}
+
+// Son net ile ondan onceki (en fazla YON_PENCERESI-1) denemenin ortalamasi
+// arasindaki fark. Tek denemede null — iki noktadan az veriyle degisim
+// uydurulmaz (yonBelirle ile ayni ilke).
+export function netDegisimiHesapla(netlerYeniden: number[]): number | null {
+  const son = netlerYeniden.slice(0, YON_PENCERESI);
+  if (son.length < 2) return null;
+  const [guncel, ...oncekiler] = son;
+  const ortalama = oncekiler.reduce((t, n) => t + n, 0) / oncekiler.length;
+  return Math.round((guncel - ortalama) * 100) / 100;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -104,11 +126,14 @@ export async function rehberKapsamListesiGetir(
   const ogrenciIdleri = ogrenciler.map((o) => o.ogrenciId);
   const bugun = bugununTarihiTR();
 
-  const [konu, soru, denemeler, gorevler] = await Promise.all([
+  const [konu, soru, denemeler, gorevler, girisler] = await Promise.all([
     admin.from("konu_calismalar").select("student_id, tarih").in("student_id", ogrenciIdleri),
     admin.from("soru_cozumleri").select("student_id, tarih").in("student_id", ogrenciIdleri),
     admin.from("denemeler").select("student_id, tarih, deneme_ders_sonuclari(dogru, yanlis)").in("student_id", ogrenciIdleri),
-    admin.from("gorev_atamalari").select("student_id, durum").in("student_id", ogrenciIdleri).eq("durum", "bekliyor"),
+    // Durum SÜZÜLMÜYOR: oran için hem açık hem toplam gerekiyor.
+    admin.from("gorev_atamalari").select("student_id, durum").in("student_id", ogrenciIdleri),
+    // Tek bir satır bile varsa öğrenci sisteme en az bir kez girmiş demektir.
+    admin.from("kullanici_aktif_gunler").select("user_id").in("user_id", ogrenciIdleri),
   ]);
 
   // Son hareket: üç tablonun en büyük tarihi.
@@ -136,22 +161,30 @@ export async function rehberKapsamListesiGetir(
   for (const liste of denemeNetleri.values()) liste.sort((a, b) => b.tarih.localeCompare(a.tarih));
 
   const acikGorevSayisi = new Map<string, number>();
-  for (const g of ((gorevler.data ?? []) as { student_id: string }[])) {
-    acikGorevSayisi.set(g.student_id, (acikGorevSayisi.get(g.student_id) ?? 0) + 1);
+  const gorevToplamSayisi = new Map<string, number>();
+  for (const g of ((gorevler.data ?? []) as { student_id: string; durum: string }[])) {
+    gorevToplamSayisi.set(g.student_id, (gorevToplamSayisi.get(g.student_id) ?? 0) + 1);
+    if (g.durum === "bekliyor") acikGorevSayisi.set(g.student_id, (acikGorevSayisi.get(g.student_id) ?? 0) + 1);
   }
+
+  const girisYapanlar = new Set(((girisler.data ?? []) as { user_id: string }[]).map((g) => g.user_id));
 
   return ogrenciler.map((o) => {
     const hareket = sonHareket.get(o.ogrenciId) ?? null;
     const netler = denemeNetleri.get(o.ogrenciId) ?? [];
-    return {
+    const temel = {
       ...o,
       sonHareket: hareket,
       sonHareketGun: hareket ? gunFarki(bugun, hareket) : null,
       denemeSayisi: netler.length,
       sonDenemeNeti: netler.length > 0 ? Math.round(netler[0].net * 100) / 100 : null,
       yon: yonBelirle(netler.map((n) => n.net)),
+      netDegisimi: netDegisimiHesapla(netler.map((n) => n.net)),
       acikGorev: acikGorevSayisi.get(o.ogrenciId) ?? 0,
+      gorevToplam: gorevToplamSayisi.get(o.ogrenciId) ?? 0,
+      girisYapmisMi: girisYapanlar.has(o.ogrenciId),
     };
+    return { ...temel, bayraklar: bayraklariBelirle(temel) };
   }).sort((a, b) => a.ad.localeCompare(b.ad, "tr"));
 }
 

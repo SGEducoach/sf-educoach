@@ -4,7 +4,8 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowDown, ArrowRight, ArrowUp, Search } from "lucide-react";
 import type { KapsamSatiri } from "@/lib/rehber-kapsam-listesi";
-import { BG1, BG1_ALT, BORDER, BLUSH, BUTTER, MINT, TEXT, TEXT_MUTED } from "@/lib/theme";
+import { BAYRAK_SINIRI, NET_DUSUS_ESIGI, SESSIZ_GUN, ozetHesapla, satirAgirligi, type Bayrak } from "@/lib/rehber-bayrak";
+import { BG1, BG1_ALT, BORDER, BLUSH, BLUSH_BG, BUTTER, MINT, TEXT, TEXT_MUTED } from "@/lib/theme";
 
 // Rehber Radarı Adım 2 — sorumlu olunan tüm düzeyler tek tabloda.
 // YORUM YOK, ham gerçek: gerekçeli bayraklar ("net düşüyor" uyarısı,
@@ -13,9 +14,31 @@ import { BG1, BG1_ALT, BORDER, BLUSH, BUTTER, MINT, TEXT, TEXT_MUTED } from "@/l
 // Satır → mevcut öğrenci analizi (?bolum=ozet&sinif=&ogrenci=), yani zaten
 // var olan drill-down. Liste yönlendirir, analiz anlatır.
 
-type Siralama = "ad" | "sonHareket" | "net" | "acikGorev";
+type Siralama = "dikkat" | "ad" | "sonHareket" | "net" | "acikGorev";
 
-const SESSIZ_GUN = 14; // bu kadar gündür iz yoksa "sessiz" süzgecine girer
+// Bayrak rozeti. Ağırlık EKRANDA GÖSTERİLMEZ — Adım 3 ilkesi: bayrak bir
+// SEBEP söyler, puan vermez. Sıralama ağırlığı kullanır, görüntü gerekçeyi.
+function BayrakRozetleri({ bayraklar }: { bayraklar: Bayrak[] }) {
+  if (bayraklar.length === 0) return <span className="text-xs" style={{ color: TEXT_MUTED }}>—</span>;
+  const gosterilen = bayraklar.slice(0, BAYRAK_SINIRI);
+  const kalan = bayraklar.length - gosterilen.length;
+  return (
+    <span className="flex flex-wrap items-center gap-1">
+      {gosterilen.map((b) => (
+        <span
+          key={b.kod}
+          className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+          style={b.seviye === "kritik"
+            ? { background: BLUSH_BG, color: BLUSH }
+            : { color: TEXT_MUTED, border: `1px solid ${BORDER}` }}
+        >
+          {b.metin}
+        </span>
+      ))}
+      {kalan > 0 && <span className="text-[10px]" style={{ color: TEXT_MUTED }}>+{kalan} daha</span>}
+    </span>
+  );
+}
 
 function YonIsareti({ yon }: { yon: KapsamSatiri["yon"] }) {
   if (yon === "yukari") return <ArrowUp size={14} color={MINT} aria-label="yükseliyor" />;
@@ -41,7 +64,7 @@ export function RehberKapsamListesi({ satirlar, seviyeler }: { satirlar: KapsamS
   const [arama, setArama] = useState("");
   const [sinifSuzgeci, setSinifSuzgeci] = useState("");
   const [yalnizSessiz, setYalnizSessiz] = useState(false);
-  const [siralama, setSiralama] = useState<Siralama>("sonHareket");
+  const [siralama, setSiralama] = useState<Siralama>("dikkat");
 
   const siniflar = useMemo(
     () => [...new Set(satirlar.map((s) => s.sinifAdi))].sort((a, b) => a.localeCompare(b, "tr", { numeric: true })),
@@ -58,6 +81,10 @@ export function RehberKapsamListesi({ satirlar, seviyeler }: { satirlar: KapsamS
       return true;
     });
     const sirali = [...suzulmus];
+    // Varsayılan: en ağır bayrak önce. Tek KRİTİK bayrak, üç hafif bayraktan
+    // önce gelir (bkz. satirAgirligi) — rehber önce gerçekten kopmuş
+    // öğrenciyi görsün. Eşitlikte ada göre, sıra kararlı kalsın.
+    if (siralama === "dikkat") sirali.sort((a, b) => satirAgirligi(b.bayraklar) - satirAgirligi(a.bayraklar) || a.ad.localeCompare(b.ad, "tr"));
     if (siralama === "ad") sirali.sort((a, b) => a.ad.localeCompare(b.ad, "tr"));
     // "Hiç iz yok" EN BAŞA gelir — rehberin en çok ilgilenmesi gereken grup.
     if (siralama === "sonHareket") sirali.sort((a, b) => (b.sonHareketGun ?? Number.MAX_SAFE_INTEGER) - (a.sonHareketGun ?? Number.MAX_SAFE_INTEGER));
@@ -67,7 +94,7 @@ export function RehberKapsamListesi({ satirlar, seviyeler }: { satirlar: KapsamS
     return sirali;
   }, [satirlar, arama, sinifSuzgeci, yalnizSessiz, siralama]);
 
-  const sessizSayisi = satirlar.filter((s) => s.sonHareketGun === null || s.sonHareketGun >= SESSIZ_GUN).length;
+  const ozet = useMemo(() => ozetHesapla(satirlar.map((s) => s.bayraklar)), [satirlar]);
 
   if (seviyeler.length === 0) {
     return (
@@ -85,9 +112,28 @@ export function RehberKapsamListesi({ satirlar, seviyeler }: { satirlar: KapsamS
         <h2 className="text-[15px] font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Kapsamım</h2>
         <span className="text-xs" style={{ color: TEXT_MUTED }}>
           {seviyeler.map((s) => `${s}. sınıf`).join(", ")} · {satirlar.length} öğrenci
-          {sessizSayisi > 0 && <> · <strong style={{ color: BUTTER }}>{sessizSayisi} sessiz</strong></>}
+          {ozet.bayrakli > 0 && <> · <strong style={{ color: BLUSH }}>{ozet.bayrakli} dikkat gerektiren</strong></>}
         </span>
       </div>
+
+      {/* Özet: aynı satırlardan türüyor, EK SORGU YOK. "Bu hafta ne var?"
+          sorusunu tek bakışta cevaplıyor. */}
+      {ozet.bayrakli > 0 && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {([
+            ["Hesabını hiç açmamış", ozet.hesapAcilmamis, true],
+            ["Hiç veri girmemiş", ozet.hicVeriYok, true],
+            [`${SESSIZ_GUN}+ gündür sessiz`, ozet.sessiz, false],
+            ["Neti düşen", ozet.netDususu, false],
+            ["Görevi birikmiş", ozet.gorevBirikmis, false],
+          ] as [string, number, boolean][]).filter(([, adet]) => adet > 0).map(([etiket, adet, kritik]) => (
+            <span key={etiket} className="rounded-2xl px-3 py-1.5 text-xs" style={{ background: BG1_ALT }}>
+              <strong style={{ color: kritik ? BLUSH : BUTTER }}>{adet}</strong>
+              <span style={{ color: TEXT_MUTED }}> {etiket}</span>
+            </span>
+          ))}
+        </div>
+      )}
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <div className="flex items-center gap-1.5 rounded-full px-3 py-1.5" style={{ background: BG1_ALT, border: `1px solid ${BORDER}` }}>
@@ -109,6 +155,7 @@ export function RehberKapsamListesi({ satirlar, seviyeler }: { satirlar: KapsamS
           value={siralama} onChange={(e) => setSiralama(e.target.value as Siralama)} aria-label="Sıralama"
           className="rounded-full px-3 py-1.5 text-xs" style={{ background: BG1_ALT, color: TEXT, border: `1px solid ${BORDER}` }}
         >
+          <option value="dikkat">Önce dikkat gerektirenler</option>
           <option value="sonHareket">En uzun süre sessiz olan önce</option>
           <option value="ad">Ada göre</option>
           <option value="net">Son deneme netine göre</option>
@@ -129,6 +176,7 @@ export function RehberKapsamListesi({ satirlar, seviyeler }: { satirlar: KapsamS
               <tr style={{ color: TEXT_MUTED }} className="text-[11px] uppercase tracking-wider">
                 <th className="pb-2 pr-3 font-semibold">Öğrenci</th>
                 <th className="pb-2 pr-3 font-semibold">Sınıf</th>
+                <th className="pb-2 pr-3 font-semibold">Dikkat</th>
                 <th className="pb-2 pr-3 font-semibold">Son hareket</th>
                 <th className="pb-2 pr-3 font-semibold">Son deneme neti</th>
                 <th className="pb-2 pr-3 font-semibold">Yön</th>
@@ -148,6 +196,7 @@ export function RehberKapsamListesi({ satirlar, seviyeler }: { satirlar: KapsamS
                     {s.okulNo && <span className="ml-1.5 text-[11px]" style={{ color: TEXT_MUTED }}>#{s.okulNo}</span>}
                   </td>
                   <td className="py-2 pr-3 text-xs" style={{ color: TEXT_MUTED }}>{s.sinifAdi}</td>
+                  <td className="py-2 pr-3"><BayrakRozetleri bayraklar={s.bayraklar} /></td>
                   <td className="py-2 pr-3 text-xs font-semibold" style={{ color: hareketRengi(s) }}>{hareketMetni(s)}</td>
                   <td className="py-2 pr-3 text-xs" style={{ color: TEXT }}>
                     {s.sonDenemeNeti ?? <span style={{ color: TEXT_MUTED }}>—</span>}
@@ -163,6 +212,8 @@ export function RehberKapsamListesi({ satirlar, seviyeler }: { satirlar: KapsamS
       )}
 
       <p className="mt-3 text-[11px]" style={{ color: TEXT_MUTED }}>
+        Bayraklar bir sebep söyler, puan vermez: &quot;Hesabını hiç açmamış&quot; ile &quot;hiç veri girmemiş&quot; ayrı şeylerdir —
+        birincisi erişim, ikincisi kullanım sorunudur. Neti düşen bayrağı yalnızca {NET_DUSUS_ESIGI} netten fazla düşüşte yanar.
         &quot;Son hareket&quot; konu çalışması, soru çözümü ve deneme kayıtlarının en yenisidir. Yön, son denemenin kendinden önceki
         iki denemenin ortalamasıyla karşılaştırılmasıdır; tek denemede yön gösterilmez. Öğrenci adına tıklayınca analiz sayfası açılır.
       </p>
