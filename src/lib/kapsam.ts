@@ -39,10 +39,13 @@ export function kapsamEtiketi(kapsam: number, toplam: number): string {
 
 // Kapsam yetersizken ortalamanın YERİNE geçen açıklama. Sayı vermiyor —
 // amaç rehberi "düşük performans" yanılgısından çıkarmak.
+// NOT: Türkçe sayı ekleri düzensiz (2'si, 3'ü, 9'u, 10'u, 20'si) — ek
+// üretmek yerine ifade eki GEREKTİRMEYECEK şekilde kuruldu ("öğrenciden
+// yalnızca 2 tanesi"). Buraya sayı+apostrof eki eklemeye çalışma.
 export function kapsamUyarisi(kapsam: number, toplam: number): string {
   if (toplam <= 0) return "Bu kapsamda kayıtlı öğrenci yok.";
-  if (kapsam <= 0) return `Yetersiz veri — ${toplam} öğrencinin hiçbiri bu dönemde deneme girmemiş.`;
-  return `Yetersiz veri — ${toplam} öğrencinin ${kapsam}'i deneme girmiş.`;
+  if (kapsam <= 0) return `Yetersiz veri — ${toplam} öğrenciden hiçbiri bu dönemde deneme girmemiş.`;
+  return `Yetersiz veri — ${toplam} öğrenciden yalnızca ${kapsam} tanesi deneme girmiş.`;
 }
 
 // Ortalama gösterilsin mi, yoksa uyarı mı? Bileşenler bu tek karara bakar.

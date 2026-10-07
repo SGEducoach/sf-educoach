@@ -93,7 +93,7 @@ ortaokul okullarında da görünüyor (0143'te yalnız lise/ikisi idi).
 
 Bunlar bilinçli olarak bu işin dışında bırakıldı, ayrıca karar gerekiyor:
 
-- **Görüşme kaydı** (gizli) — rehberin asıl iş ürünü; şu an hiç yok.
+- ~~**Görüşme kaydı** (gizli)~~ — **İPTAL** (kullanıcı kararı 07.10.2026). Rehber Radarı Faz 4 olarak planlanmıştı, kapsamdan çıkarıldı. Tekrar gündeme gelirse yeniden karar gerekir.
 - **Risk/takip listesi** (devamsızlık, düşen net, veli talebi).
 - **Yıllık çerçeve plan / faaliyet raporu**, RAM yönlendirme kaydı.
 - Rehber menüsündeki "Öğretmenler ve Programlar" **bırakıldı**: gerçekte de
