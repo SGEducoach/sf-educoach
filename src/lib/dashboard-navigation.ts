@@ -284,6 +284,15 @@ function ortaokulaUyarla(menu: DashboardMenuOgesi[]): DashboardMenuOgesi[] {
   return menu.filter((oge) => !ORTAOKULDA_GOSTERILMEYEN.includes(oge.bolum));
 }
 
+// Okul rehberinin kimliği: artık branş DEĞİL, Rehberlik Servisi üyeliği
+// (migration 0144). `okulRehberi` sunucudan geçilir (bkz.
+// src/lib/rehberlik-servisi.ts). `brans === REHBER_BRANSI` karşılaştırması
+// yalnız DERSHANE rehberi ve Grup Koçluk koçu için duruyor — onların kimliği
+// bilinçli olarak eski haliyle bırakıldı.
+export function rehberlikBirimiMi(brans?: string, okulRehberi?: boolean): boolean {
+  return okulRehberi === true || brans === REHBER_BRANSI;
+}
+
 export function dashboardMenusu(
   role: UserRole,
   kurumTuru?: KurumTuru,
@@ -292,12 +301,14 @@ export function dashboardMenusu(
   // Ortaokul menüsü YALNIZCA burada devreye girer: kademe "ortaokul" olarak
   // geçilmezse (bayrak kapalıysa çağıran taraf geçmez) hiçbir şey değişmez.
   kademe?: "ortaokul" | "lise" | "ikisi" | null,
+  okulRehberi = false,
 ): DashboardMenuOgesi[] {
+  const rehber = rehberlikBirimiMi(brans, okulRehberi);
   if (role === "ogretmen" && grupMu) return GRUP_KOC_MENUSU;
   if (role === "ogrenci" && kademe === "ortaokul") return ORTAOKUL_OGRENCI_MENUSU;
   // Ortaokul ogretmeni: Maarif|LGS yeterlilik karari ekrani (kullanici karari
   // 01.10.2026). Lise menusu aynen korunuyor, yalniz bir kalem EKLENIYOR.
-  if (role === "ogretmen" && (kademe === "ortaokul" || kademe === "ikisi") && brans !== REHBER_BRANSI) {
+  if (role === "ogretmen" && (kademe === "ortaokul" || kademe === "ikisi") && !rehber) {
     // DÜZELTME (02.10.2026): bu dal önce erken dönüyordu ve aşağıdaki okul
     // dalını atlıyordu — ortaokul öğretmeni "Ajandam"ı KAYBETMİŞTİ. Ortaokul
     // bir okul kurumu, Ajandam ona da ait.
@@ -306,7 +317,7 @@ export function dashboardMenusu(
   }
   if (role === "ogrenci") return kurumTuru === "okul" ? [...OGRENCI_MENUSU, { bolum:"etkinlikler", href:"/dashboard/etkinlikler", etiket:"Etkinlikler", ikon:"takvim" }] : OGRENCI_MENUSU;
   if (role === "veli") return VELI_MENUSU;
-  if (role === "ogretmen") return brans === REHBER_BRANSI ? (kurumTuru === "dershane" ? DERSHANE_REHBER_MENUSU : REHBER_OGRETMEN_MENUSU) : kurumTuru === "okul" && etkinlikBransiMi(brans) ? [...OGRETMEN_MENUSU, TAKVIM_MENU_OGESI, { bolum:"etkinlikler", href:"/dashboard/etkinlikler", etiket:"Etkinlik Grupları", ikon:"takvim" }] : kurumTuru === "okul" ? [...OGRETMEN_MENUSU, TAKVIM_MENU_OGESI] : OGRETMEN_MENUSU;
+  if (role === "ogretmen") return rehber ? (kurumTuru === "dershane" ? DERSHANE_REHBER_MENUSU : REHBER_OGRETMEN_MENUSU) : kurumTuru === "okul" && etkinlikBransiMi(brans) ? [...OGRETMEN_MENUSU, TAKVIM_MENU_OGESI, { bolum:"etkinlikler", href:"/dashboard/etkinlikler", etiket:"Etkinlik Grupları", ikon:"takvim" }] : kurumTuru === "okul" ? [...OGRETMEN_MENUSU, TAKVIM_MENU_OGESI] : OGRETMEN_MENUSU;
   if (role === "mudur") {
     if (kurumTuru === "dershane") return DERSHANE_MUDUR_MENUSU;
     const taban = [...MUDUR_MENUSU, TAKVIM_MENU_OGESI];
@@ -320,8 +331,9 @@ export function dashboardMenusu(
 export function dashboardMenuYapisi(
   role: UserRole, kurumTuru?: KurumTuru, brans?: string, grupMu = false,
   kademe?: "ortaokul" | "lise" | "ikisi" | null,
+  okulRehberi = false,
 ): DashboardMenuKalemi[] {
-  return role === "admin" ? ADMIN_MENU_YAPISI : dashboardMenusu(role, kurumTuru, brans, grupMu, kademe);
+  return role === "admin" ? ADMIN_MENU_YAPISI : dashboardMenusu(role, kurumTuru, brans, grupMu, kademe, okulRehberi);
 }
 
 export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([

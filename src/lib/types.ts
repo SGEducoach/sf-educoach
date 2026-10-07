@@ -370,9 +370,17 @@ export const BRANS_LISTESI = [
   "İngilizce",
   "Beden Eğitimi",
   "Müzik",
-  // 2026-08-26 kullanıcı isteği — bu branştaki öğretmen (REHBER_BRANSI,
-  // bkz. src/lib/rehberlik.ts) okulun tüm öğrencilerine öğrenci/veli
-  // mesajı gönderebiliyor (bkz. RehberlikPaneli.tsx, rehberMesajGonder).
+  // DİKKAT (07.10.2026, Rehberlik Servisi birimi — migration 0144):
+  // OKULDA bu artık bir branş DEĞİL. Okul rehberinin kimliği
+  // rehberlik_servisi tablosundan gelir ve bu kalem okul listelerinden
+  // `kurumBransListesi` içinde SÜZÜLÜR (bkz. aşağısı).
+  //
+  // Listede kalmasının tek nedeni DERSHANE: dershane rehberi ile Grup
+  // Koçluk koçu kimliğini hâlâ bu branştan alıyor (src/lib/dershane-rehber.ts,
+  // src/lib/grup-koc-auth.ts) ve dershane rehberi kendi kaydını bu seçenekle
+  // yapıyor — listeden çıkarmak o akışı kırardı. Kullanıcı kararı: dershane
+  // rehberliği ve grup koçluğu FARKLI bir iş, kapsam dışı.
+  //
   // Sabit string olarak tutuluyor (rehberlik.ts'i burada import etmek
   // döngüsel bağımlılık riski taşır) — iki dosyadaki değer birbirine
   // bağlı, biri değişirse diğeri de değişmeli.
@@ -389,12 +397,20 @@ export const BRANS_LISTESI = [
 // çevirdi).
 export const OKUL_OZEL_BRANSLARI = ["Bilişim Teknolojileri"] as const;
 
+// Okulda "Rehber Öğretmen" bir branş değil, ayrı bir birim (Rehberlik
+// Servisi, migration 0144) — okul branş listelerinden süzülüyor. Dershane
+// listesi AYNEN kalıyor (yukarıdaki nota bkz.). "Diğer" her zaman en sonda.
+export const OKULDA_BRANS_OLMAYAN = ["Rehber Öğretmen"] as const;
+
 export function kurumBransListesi(kurumTuru: KurumTuru | null | undefined): readonly string[] {
   if (kurumTuru !== "okul") return BRANS_LISTESI;
+  const son = BRANS_LISTESI[BRANS_LISTESI.length - 1];
   return [
-    ...BRANS_LISTESI.slice(0, -1),
+    ...BRANS_LISTESI.slice(0, -1).filter(
+      (brans) => !OKULDA_BRANS_OLMAYAN.includes(brans as (typeof OKULDA_BRANS_OLMAYAN)[number]),
+    ),
     ...OKUL_OZEL_BRANSLARI,
-    BRANS_LISTESI[BRANS_LISTESI.length - 1],
+    son,
   ];
 }
 

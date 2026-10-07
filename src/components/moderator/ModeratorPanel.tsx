@@ -54,7 +54,7 @@ export function ModeratorPanel({ okulAdi, kullanicilar, schoolId, kurumTuru, kad
         schoolId={schoolId} kurumTuru={kurumTuru} kademe={kademe} yurtlu={yurtlu} onMesaj={setMesaj} />
     )}
     {bolum === "ogretmenler" && (
-      <>{kurumTuru === "okul" && (kademe === "lise" || kademe === "ikisi") && <RehberSinifAtamalari schoolId={schoolId} />}<KullaniciBolumu baslik="Öğretmenler" kullanicilar={kullanicilar} sekmeler={["ogretmen"]}
+      <>{kurumTuru === "okul" && <RehberSinifAtamalari schoolId={schoolId} />}<KullaniciBolumu baslik="Öğretmenler" kullanicilar={kullanicilar} sekmeler={["ogretmen"]}
         ekleEtiketi="Öğretmen ekle"
         ekleFormu={(kapat) => <OgretmenEkleFormu schoolId={schoolId} kurumTuru={kurumTuru} kademe={kademe} onDone={(msg) => { setMesaj(msg); if (!msg.startsWith("Hata")) kapat(); }} />}
         aciklama="Sınıf öğretmenliği Sınıflar bölümünden atanır. Bir öğretmeni çıkarmak için adına tıklayıp “Pasifleştir / Sil”i kullanın."

@@ -42,7 +42,7 @@ import { GecikmisIslerKarti } from "@/components/dashboard/GecikmisIslerKarti";
 import { DashboardYanMenu } from "@/components/dashboard/DashboardYanMenu";
 import { TgDenemeleri } from "@/components/dashboard/TgDenemeleri";
 import { tgDenemeIlanlariGetir } from "@/lib/tg-deneme-ilanlari";
-import { dashboardMenusu } from "@/lib/dashboard-navigation";
+import { dashboardMenusu, rehberlikBirimiMi } from "@/lib/dashboard-navigation";
 import { ortaokulAktifMi, panelKademesi } from "@/lib/ortaokul-ayar";
 import { ortaokulDersleriGetir, ortaokulDersHaritasiGetir } from "@/lib/ortaokul-mufredat-sorgu";
 import { OrtaokulDerslerim } from "@/components/dashboard/OrtaokulDerslerim";
@@ -68,7 +68,7 @@ import { dershaneAnaSayfaVerisiGetir } from "@/lib/dershane-ana-sayfa";
 import { DershaneAnaSayfa } from "@/components/dashboard/DershaneAnaSayfa";
 import { DenemeSuresiSonaErdiEkrani } from "@/components/DenemeSuresiSonaErdiEkrani";
 import { RehberlikPaneli } from "@/components/dashboard/RehberlikPaneli";
-import { REHBER_BRANSI } from "@/lib/rehberlik";
+import { rehberlikUyeligiGetir } from "@/lib/rehberlik-servisi";
 import { RehberOgrenciTakibi } from "@/components/dashboard/RehberOgrenciTakibi";
 import { GrupKocPaneli } from "@/components/dashboard/GrupKocPaneli";
 import { DershaneDenemePdfFormu } from "@/components/dashboard/DershaneDenemePdfFormu";
@@ -133,7 +133,7 @@ export default async function DashboardPage({
   // TTFB'ye art arda ekleniyorlardı, şimdi Promise.all ile aynı anda
   // gidiyorlar. Dershane deneme süresi kontrolü kurumTuru'na BAĞLI
   // olduğundan bilinçli olarak hâlâ sonrasında, ayrı bekleniyor.
-  const [kurum, { data: ogretmenBransHam }, { data: moderatorYetkisi }, { count: okunmamisMesajSayisiHam }] = await Promise.all([
+  const [kurum, { data: ogretmenBransHam }, { data: moderatorYetkisi }, { count: okunmamisMesajSayisiHam }, rehberlikUyeligi] = await Promise.all([
     kullaniciKurumuGetir(supabase, user.id, role),
     role === "ogretmen"
       ? supabase.from("teachers").select("brans").eq("id", user.id).maybeSingle()
@@ -144,6 +144,12 @@ export default async function DashboardPage({
     // Yanlış giriş bildirimi artık öğrenci hariç TÜM rollere gidebiliyor
     // (bkz. api/giris/route.ts) — TÜM roller için sayılıyor.
     supabase.from("duyuru_aliciler").select("*", { count: "exact", head: true }).eq("profile_id", user.id).eq("okundu", false),
+    // Rehberlik Servisi üyeliği (migration 0144): okul rehberinin kimliği
+    // artık branş değil, bu üyelik. Menü geçerliliği kontrolünden ÖNCE
+    // gerekiyor, bu yüzden burada çekiliyor (bkz. src/lib/rehberlik-servisi.ts).
+    role === "ogretmen"
+      ? rehberlikUyeligiGetir(supabase, user.id)
+      : Promise.resolve(null),
   ]);
 
   // Dershane 1 haftalık deneme süresi (2026-08-25 kullanıcı isteği, bkz.
@@ -172,6 +178,12 @@ export default async function DashboardPage({
   // (bkz. dashboard-navigation.ts REHBERLIK_MENU_OGESI) branş bilgisine
   // bağlı olduğundan menü geçerliliği kontrolünden ÖNCE çekiliyor.
   const brans = ogretmenBransHam?.brans;
+  // Okul rehberinin kimliği artık BRANŞ DEĞİL, Rehberlik Servisi üyeliği
+  // (kullanıcı kararı 07.10.2026, migration 0144). Dershane rehberi ve Grup
+  // Koçluk koçu kimliğini hâlâ branştan alıyor — bu yüzden aşağıdaki
+  // kontroller rehberlikBirimiMi() ile İKİSİNİ birlikte kapsıyor.
+  const okulRehberi = rehberlikUyeligi !== null;
+  const rehberlikBirimi = role === "ogretmen" && rehberlikBirimiMi(brans, okulRehberi);
   // Grup Koçluk koçu (Faz 3): kendi menüsü ve "Grubum" ana sayfası var.
   const grupKocu = role === "ogretmen" && !!kurum?.grupMu;
   // Grup öğrencisinin ilk girişi (Faz 5): KVKK onayı verilmemişse aktivasyon
@@ -193,7 +205,7 @@ export default async function DashboardPage({
   // Gömülü ilişki çalışma anında NESNE döner, tipte dizi görünür (proje notu).
   const ogrenciSinifSeviyesi = Array.isArray(ogrenciSinifKaydi) ? ogrenciSinifKaydi[0]?.seviye : ogrenciSinifKaydi?.seviye;
   const grupAlanSorulur = !dokuzOnSinifMi(ogrenciSinifSeviyesi);
-  const varsayilanBolum: DashboardBolumu = !grupKocu && ((role === "mudur" && kurumTuru !== "dershane") || (role === "ogretmen" && brans === REHBER_BRANSI))
+  const varsayilanBolum: DashboardBolumu = !grupKocu && ((role === "mudur" && kurumTuru !== "dershane") || rehberlikBirimi)
     ? "kurum-performansi" : "ozet";
   const aktifBolum = (params.bolum ?? varsayilanBolum) as DashboardBolumu;
   // Ortaokul paneli (Faz 1): yalnızca özellik bayrağı AÇIKKEN ve öğrenci
@@ -208,7 +220,7 @@ export default async function DashboardPage({
     : null;
   const menuKademesi = ogrenciKademesi ?? ogretmenKademesi;
   const ogrenciProgramiGizliRotasi = role === "ogretmen" && aktifBolum === "planlar" && !!params.ogrenci;
-  if (!dashboardMenusu(role, kurumTuru, brans, grupKocu, menuKademesi).some((oge) => oge.bolum === aktifBolum) && !ogrenciProgramiGizliRotasi) redirect("/dashboard");
+  if (!dashboardMenusu(role, kurumTuru, brans, grupKocu, menuKademesi, okulRehberi).some((oge) => oge.bolum === aktifBolum) && !ogrenciProgramiGizliRotasi) redirect("/dashboard");
   // Yazılı analizi dürüstlük engeli: öğretmenin panele girdiği günler sayılır
   // (bkz. src/lib/ogretmen-takip.ts, yazili-erisim.ts).
   if (role === "ogretmen") ogretmenAktifGunuKaydet(user.id);
@@ -692,11 +704,12 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   grupMu?: boolean;
 }) {
   const supabase = await createClient();
-  const { data: teacher } = await supabase
-    .from("teachers")
-    .select("school_id, class_id, rehber_sinif_duzeyleri")
-    .eq("id", userId)
-    .single();
+  // rehber_sinif_duzeyleri ARTIK OKUNMUYOR — tek kaynak rehberlik_servisi
+  // (migration 0144, teachers'taki kolon terk edildi).
+  const [{ data: teacher }, rehberlikUyeligi] = await Promise.all([
+    supabase.from("teachers").select("school_id, class_id").eq("id", userId).single(),
+    rehberlikUyeligiGetir(supabase, userId),
+  ]);
 
   if (!teacher) {
     return (
@@ -733,9 +746,14 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
     ? await ortaokulKonuHavuzu(supabase, ORTAOKUL_SEVIYELERI)
     : null;
 
-  const rehberOgretmenMi = role === "ogretmen" && brans === REHBER_BRANSI;
-  const liseOkulRehberiMi = rehberOgretmenMi && kurumTuru === "okul" && (kademe === "lise" || kademe === "ikisi");
-  const rehberSeviyeleri = liseOkulRehberiMi ? (teacher.rehber_sinif_duzeyleri ?? []) : [];
+  // Okul rehberi = Rehberlik Servisi üyesi (0144). Dershane rehberi ve grup
+  // koçu kimliğini hâlâ branştan alıyor; rehberlikBirimiMi ikisini kapsar.
+  const okulRehberi = rehberlikUyeligi !== null;
+  const rehberOgretmenMi = role === "ogretmen" && rehberlikBirimiMi(brans, okulRehberi);
+  // Kapsam sınırı artık okulun KADEMESİNE değil servis üyeliğine bağlı —
+  // böylece ortaokul rehberi de aynı sınırla çalışır (0143'te yalnız lise
+  // kapsamdaydı). Boş dizi = atama yapılmamış = hiçbir öğrenciyi görmez.
+  const rehberSeviyeleri = rehberlikUyeligi?.sinifDuzeyleri ?? [];
   const okulOkumaClient = rehberOgretmenMi ? createAdminClient() : supabase;
 
   // Dershane rehberlik servisi (kullanıcı isteği 13.09.2026): öğrenci adına
@@ -784,16 +802,16 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   // gösteriliyor (bkz. dashboard-navigation.ts) — burada da savunma
   // amaçlı aynı kontrol tekrarlanıyor (doğrudan URL ile erişim denenirse).
   if (aktifBolum === "rehberlik") {
-    if (brans !== REHBER_BRANSI) {
+    if (!rehberOgretmenMi) {
       return (
         <div className="sfec-fade rounded-3xl p-6 text-center" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-          <p style={{ color: TEXT_MUTED }} className="text-sm">Bu bölüm sadece Rehber Öğretmen branşına açıktır.</p>
+          <p style={{ color: TEXT_MUTED }} className="text-sm">Bu bölüm sadece Rehberlik Servisi üyelerine açıktır.</p>
         </div>
       );
     }
-    const { data: ogrenciler } = liseOkulRehberiMi && rehberSeviyeleri.length === 0
+    const { data: ogrenciler } = okulRehberi && rehberSeviyeleri.length === 0
       ? { data: [] }
-      : liseOkulRehberiMi
+      : okulRehberi
       ? await supabase.from("students")
           .select("id, profiles!students_id_fkey(ad), classes!inner(id, seviye, sube)")
           .eq("school_id", teacher.school_id).in("classes.seviye", rehberSeviyeleri)
@@ -817,7 +835,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   // yeniden kullanıldı. Sadece okul müdürü (dershane müdürü zaten kendi
   // ayrı panelinde, "ozet" bölümünde, aynı bileşeni kullanıyor).
   if (aktifBolum === "kurum-performansi" && (role === "mudur" || rehberOgretmenMi) && kurumTuru !== "dershane") {
-    const veri = await dershaneAnaSayfaVerisiGetir(okulOkumaClient, teacher.school_id, liseOkulRehberiMi ? rehberSeviyeleri : undefined);
+    const veri = await dershaneAnaSayfaVerisiGetir(okulOkumaClient, teacher.school_id, okulRehberi ? rehberSeviyeleri : undefined);
     return <section className="sfec-section"><DershaneAnaSayfa veri={veri} /></section>;
   }
 
@@ -828,10 +846,10 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   // Rehber Öğretmen'in sınıf öğretmenliği (homeroom) yok; lise okul rehberi
   // için deneme kapsamı atandığı düzeylerin öğrencileriyle sınırlanır.
   if (aktifBolum === "yapay-zeka" && !(role === "mudur" && kurumTuru === "dershane")) {
-    if (role === "mudur" || brans === REHBER_BRANSI) {
+    if (role === "mudur" || rehberOgretmenMi) {
       const [{ satirlar, error }, denemeKonu] = await Promise.all([
         konuHaritasiGetir(supabase, { schoolId: teacher.school_id }),
-        grupDenemeKonuAnaliziGetir(okulOkumaClient, liseOkulRehberiMi
+        grupDenemeKonuAnaliziGetir(okulOkumaClient, okulRehberi
           ? { schoolId: teacher.school_id, seviyeler: rehberSeviyeleri }
           : { schoolId: teacher.school_id }),
       ]);
@@ -880,7 +898,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
     };
     const o = ogrenci as unknown as OgrenciRow | null;
 
-    if (o && (!liseOkulRehberiMi || (o.classes && rehberSeviyeleri.includes(o.classes.seviye)))) {
+    if (o && (!okulRehberi || (o.classes && rehberSeviyeleri.includes(o.classes.seviye)))) {
       // Yazılı analizi dürüstlük engeli: öğrenci öğretmenin okulunda doğrulanıp
       // profili gösterildiği için görüntüleme sayılır (bkz. ogretmen-takip.ts).
       if (role === "ogretmen") ogrenciProfilGoruntulemesiKaydet(userId, secilenOgrenciId);
@@ -949,7 +967,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   // sınıfları görür. Lise okul rehberi atandığı düzeyleri, müdür tüm okulu
   // görür. Dershane rehberinin ayrı yapısı korunur.
   const erisilebilirSinifIdleri = new Set([teacher.class_id, ...kendiDersAtamalari.map((d) => d.class_id)].filter((id): id is string => !!id));
-  const sinifListesi = liseOkulRehberiMi
+  const sinifListesi = okulRehberi
     ? tumSiniflar.filter((sinif) => rehberSeviyeleri.includes(sinif.seviye))
     : role === "ogretmen" && !rehberOgretmenMi
       ? tumSiniflar.filter((sinif) => erisilebilirSinifIdleri.has(sinif.id))

@@ -64,8 +64,15 @@ describe("bransListesi", () => {
     }
   });
 
-  test("rehber branşı iki listede de aynı sabitten gelir", () => {
-    expect(ORTAOKUL_BRANSLARI).toContain(REHBER_BRANSI);
+  // 07.10.2026 (migration 0144): okulda rehberlik bir BRANŞ DEĞİL, ayrı bir
+  // birim — kimliği rehberlik_servisi üyeliğinden geliyor. Ortaokul
+  // listesinden tamamen kalktı; BRANS_LISTESI'nde yalnız DERSHANE için
+  // duruyor (dershane rehberi kendi kaydını o seçenekle yapıyor).
+  test("rehberlik ortaokul branş listesinde YOK", () => {
+    expect(ORTAOKUL_BRANSLARI).not.toContain(REHBER_BRANSI);
+  });
+
+  test("rehberlik ham listede dershane için duruyor", () => {
     expect(BRANS_LISTESI).toContain(REHBER_BRANSI);
   });
 });
@@ -229,9 +236,18 @@ describe("panelBransListesi", () => {
     expect(new Set(liste).size).toBe(liste.length);
   });
 
-  test("rehber branşı her kademede aynı metinle duruyor", () => {
+  // Okul formlarında rehberlik hiçbir kademede branş olarak SUNULMAZ
+  // (migration 0144) — rehber yapmanın tek yolu Rehberlik Servisi'ne üye
+  // eklemek. Dershane listesi etkilenmiyor.
+  test("rehberlik okul branş listelerinde hiçbir kademede yok", () => {
     for (const kademe of ["ortaokul", "lise", "ikisi"] as const) {
-      expect(panelBransListesi("okul", kademe), kademe).toContain(REHBER_BRANSI);
+      expect(panelBransListesi("okul", kademe), kademe).not.toContain(REHBER_BRANSI);
+    }
+  });
+
+  test("dershane branş listesinde rehberlik duruyor", () => {
+    for (const kademe of ["lise", "ikisi"] as const) {
+      expect(panelBransListesi("dershane", kademe), kademe).toContain(REHBER_BRANSI);
     }
   });
 });
@@ -352,5 +368,35 @@ describe("ortaokul kurumunda rol menüleri", () => {
     const a = dashboardMenusu("ogretmen", "okul", REHBER_BRANSI, false, "ortaokul").map((o) => o.bolum);
     const b = dashboardMenusu("ogretmen", "okul", REHBER_BRANSI, false, "lise").map((o) => o.bolum);
     expect(a).toEqual(b);
+  });
+
+  // ---- Rehberlik Servisi birimi (migration 0144) ----
+  // Kimlik artık BRANŞ DEĞİL, servis üyeliği. Bu testler o geçişi koruyor.
+  test("okul rehberi branşı ne olursa olsun rehber menüsünü alır", () => {
+    const servisUyesi = dashboardMenusu("ogretmen", "okul", "Matematik", false, "lise", true).map((o) => o.bolum);
+    const eskiBransli = dashboardMenusu("ogretmen", "okul", REHBER_BRANSI, false, "lise").map((o) => o.bolum);
+    expect(servisUyesi).toEqual(eskiBransli);
+    expect(servisUyesi).toContain("rehberlik");
+  });
+
+  test("servis üyesi olmayan öğretmen rehber menüsü ALMAZ", () => {
+    const menu = dashboardMenusu("ogretmen", "okul", "Matematik", false, "lise", false).map((o) => o.bolum);
+    expect(menu).not.toContain("rehberlik");
+  });
+
+  // Ortaokulda rehber, branş öğretmeninin "Konu Yeterliliği" kalemini ALMAZ —
+  // yeterlilik kararı branş işi, rehberin işi değil.
+  test("ortaokul rehberi branş öğretmeni kalemlerini almaz", () => {
+    const rehber = dashboardMenusu("ogretmen", "okul", "", false, "ortaokul", true).map((o) => o.bolum);
+    expect(rehber).toContain("rehberlik");
+    expect(rehber).not.toContain("ortaokul-yeterlilik");
+  });
+
+  // Dershane rehberi ve grup koçu kimliğini BİLİNÇLİ olarak hâlâ branştan
+  // alıyor (kapsam kararı: farklı bir iş) — bozulmadığı doğrulanıyor.
+  test("dershane rehberi branş kimliğiyle çalışmaya devam eder", () => {
+    const menu = dashboardMenusu("ogretmen", "dershane", REHBER_BRANSI, false, null, false).map((o) => o.bolum);
+    expect(menu).toContain("ogrenci-takibi");
+    expect(menu).toContain("rehberlik");
   });
 });

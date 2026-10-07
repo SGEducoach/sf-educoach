@@ -22,6 +22,7 @@ import { bekleyenPdfSonuclariniOgrenciyeAktar } from "@/lib/deneme-sonucu-kaydet
 import { SINIF_SEVIYELERI } from "@/lib/types";
 import type { KurumKademesi, SinifSeviyesi } from "@/lib/types";
 import { REHBER_BRANSI, REHBERLIK_DUYURU_BASLIGI } from "@/lib/rehberlik";
+import { rehberlikUyeligiGetir } from "@/lib/rehberlik-servisi";
 
 const DUYURU_MAKS_UZUNLUK = 500;
 
@@ -642,7 +643,7 @@ export async function ogretmenDuyuruGonder(mesaj: string, kapsam?: string, alici
 
   const [{ data: profile }, { data: teacher }] = await Promise.all([
     supabase.from("profiles").select("role, ad").eq("id", user.id).single(),
-    supabase.from("teachers").select("school_id, class_id, brans, rehber_sinif_duzeyleri").eq("id", user.id).single(),
+    supabase.from("teachers").select("school_id, class_id, brans").eq("id", user.id).single(),
   ]);
   if (!teacher || (profile?.role !== "ogretmen" && profile?.role !== "mudur")) {
     return { error: "Bu işlem için öğretmen veya müdür yetkisi gerekiyor.", ...bosSonuc };
@@ -654,17 +655,19 @@ export async function ogretmenDuyuruGonder(mesaj: string, kapsam?: string, alici
   let ogrenciIdleri: string[];
   let baslik: string;
 
-  const rehberMi = profile.role === "ogretmen" && teacher.brans === REHBER_BRANSI;
-  const { data: okul } = rehberMi ? await admin.from("schools").select("tur, kademe").eq("id", teacher.school_id).maybeSingle() : { data: null };
-  if (rehberMi && !okul) return { error: "Kurum bilgisi doğrulanamadı. Tekrar deneyin.", ...bosSonuc };
-  const liseOkulRehberiMi = rehberMi && okul?.tur === "okul" && (okul.kademe === "lise" || okul.kademe === "ikisi");
-  const rehberSeviyeleri = liseOkulRehberiMi ? (teacher.rehber_sinif_duzeyleri ?? []) : [];
-  if (liseOkulRehberiMi && rehberSeviyeleri.length === 0) return { error: "Henüz sorumlu olduğunuz sınıf düzeyi atanmadı.", ...bosSonuc };
+  // Okul rehberinin kimliği ve kapsamı Rehberlik Servisi'nden (migration
+  // 0144) — kurumun kademesine artık bakılmıyor, üyelik yeter. Dershane
+  // rehberi kimliğini hâlâ branştan alıyor, onun kapsam sınırı yok.
+  const rehberlikUyeligi = profile.role === "ogretmen" ? await rehberlikUyeligiGetir(admin, user.id) : null;
+  const okulRehberi = rehberlikUyeligi !== null;
+  const rehberMi = profile.role === "ogretmen" && (okulRehberi || teacher.brans === REHBER_BRANSI);
+  const rehberSeviyeleri = rehberlikUyeligi?.sinifDuzeyleri ?? [];
+  if (okulRehberi && rehberSeviyeleri.length === 0) return { error: "Henüz sorumlu olduğunuz sınıf düzeyi atanmadı.", ...bosSonuc };
   let hedefEtiketi = "";
 
   if (profile.role === "mudur" || rehberMi) {
     if (["9", "10", "11", "12"].includes(kapsam ?? "")) {
-      if (liseOkulRehberiMi && !rehberSeviyeleri.includes(kapsam!)) return { error: "Bu sınıf düzeyi sorumluluğunuzda değil.", ...bosSonuc };
+      if (okulRehberi && !rehberSeviyeleri.includes(kapsam!)) return { error: "Bu sınıf düzeyi sorumluluğunuzda değil.", ...bosSonuc };
       const { data: ogrenciler } = await admin
         .from("students").select("id, classes!inner(seviye)")
         .eq("school_id", teacher.school_id).eq("classes.seviye", kapsam);
@@ -677,18 +680,18 @@ export async function ogretmenDuyuruGonder(mesaj: string, kapsam?: string, alici
       // gönderilirse sessizce reddedilir, boş sonuç döner).
       const { data: sinif } = await admin.from("classes").select("id, seviye, sube").eq("id", kapsam).eq("school_id", teacher.school_id).maybeSingle();
       if (!sinif) return { error: "Seçilen sınıf bu okula ait değil.", ...bosSonuc };
-      if (liseOkulRehberiMi && !rehberSeviyeleri.includes(sinif.seviye)) return { error: "Bu sınıf sorumluluğunuzda değil.", ...bosSonuc };
+      if (okulRehberi && !rehberSeviyeleri.includes(sinif.seviye)) return { error: "Bu sınıf sorumluluğunuzda değil.", ...bosSonuc };
       const { data: ogrenciler } = await admin.from("students").select("id").eq("class_id", sinif.id);
       ogrenciIdleri = (ogrenciler ?? []).map((o) => o.id);
       baslik = rehberMi ? `Rehber Öğretmen duyurusu (${sinif.seviye}-${sinif.sube})` : `Okul yönetiminden duyuru (${sinif.seviye}-${sinif.sube})`;
       hedefEtiketi = `${sinif.seviye}-${sinif.sube} sınıfı`;
     } else {
-      const { data: ogrenciler } = liseOkulRehberiMi
+      const { data: ogrenciler } = okulRehberi
         ? await admin.from("students").select("id, classes!inner(seviye)").eq("school_id", teacher.school_id).in("classes.seviye", rehberSeviyeleri)
         : await admin.from("students").select("id").eq("school_id", teacher.school_id);
       ogrenciIdleri = (ogrenciler ?? []).map((o) => o.id);
       baslik = rehberMi ? "Rehber Öğretmen duyurusu" : "Okul yönetiminden duyuru";
-      hedefEtiketi = liseOkulRehberiMi ? "Sorumlu olduğum sınıflar" : "Tüm okul";
+      hedefEtiketi = okulRehberi ? "Sorumlu olduğum sınıflar" : "Tüm okul";
     }
   } else {
     if (!teacher.class_id) return { error: "Sınıf öğretmeni olmadığınız için duyuru gönderemezsiniz.", ...bosSonuc };
@@ -727,29 +730,30 @@ export async function rehberMesajGonder(ogrenciIdleri: string[], mesaj: string, 
 
   const [{ data: profile }, { data: teacher }] = await Promise.all([
     supabase.from("profiles").select("role, ad").eq("id", user.id).single(),
-    supabase.from("teachers").select("school_id, brans, rehber_sinif_duzeyleri").eq("id", user.id).single(),
+    supabase.from("teachers").select("school_id, brans").eq("id", user.id).single(),
   ]);
-  if (!teacher || profile?.role !== "ogretmen" || teacher.brans !== REHBER_BRANSI) {
-    return { error: "Bu işlem sadece Rehber Öğretmen branşına açıktır.", ...bosSonuc };
+  const admin = createAdminClient();
+  // Rehberlik Servisi üyeliği (0144) VEYA eski branş kimliği (dershane
+  // rehberi / grup koçu) — ikisi de bireysel mesaj gönderebilir.
+  const rehberlikUyeligi = profile?.role === "ogretmen" ? await rehberlikUyeligiGetir(admin, user.id) : null;
+  const okulRehberi = rehberlikUyeligi !== null;
+  if (!teacher || profile?.role !== "ogretmen" || !(okulRehberi || teacher.brans === REHBER_BRANSI)) {
+    return { error: "Bu işlem sadece Rehberlik Servisi üyelerine açıktır.", ...bosSonuc };
   }
 
-  const admin = createAdminClient();
-  const { data: okul } = await admin.from("schools").select("tur, kademe").eq("id", teacher.school_id).maybeSingle();
-  if (!okul) return { error: "Kurum bilgisi doğrulanamadı. Tekrar deneyin.", ...bosSonuc };
-  const liseOkulRehberiMi = okul?.tur === "okul" && (okul.kademe === "lise" || okul.kademe === "ikisi");
-  const rehberSeviyeleri = liseOkulRehberiMi ? (teacher.rehber_sinif_duzeyleri ?? []) : [];
-  if (liseOkulRehberiMi && rehberSeviyeleri.length === 0) return { error: "Henüz sorumlu olduğunuz sınıf düzeyi atanmadı.", ...bosSonuc };
+  const rehberSeviyeleri = rehberlikUyeligi?.sinifDuzeyleri ?? [];
+  if (okulRehberi && rehberSeviyeleri.length === 0) return { error: "Henüz sorumlu olduğunuz sınıf düzeyi atanmadı.", ...bosSonuc };
   const izin = await duyuruGonderimIzniKontrol(admin, user.id);
   if (izin.error) return { error: izin.error, ...bosSonuc };
 
   // İstemciden gelen id listesine körü körüne güvenilmiyor — sadece
   // GERÇEKTEN bu okula ait öğrenciler mesaj alıyor.
-  const { data: ogrenciler } = liseOkulRehberiMi
+  const { data: ogrenciler } = okulRehberi
     ? await admin.from("students").select("id, classes!inner(seviye)")
         .eq("school_id", teacher.school_id).in("id", ogrenciIdleri).in("classes.seviye", rehberSeviyeleri)
     : await admin.from("students").select("id").eq("school_id", teacher.school_id).in("id", ogrenciIdleri);
   const dogrulanmisIdler = (ogrenciler ?? []).map((o) => o.id);
-  if (liseOkulRehberiMi && dogrulanmisIdler.length !== new Set(ogrenciIdleri).size) return { error: "Seçilen öğrencilerden bazıları sorumlu olduğunuz sınıf düzeyinde değil.", ...bosSonuc };
+  if (okulRehberi && dogrulanmisIdler.length !== new Set(ogrenciIdleri).size) return { error: "Seçilen öğrencilerden bazıları sorumlu olduğunuz sınıf düzeyinde değil.", ...bosSonuc };
 
   const hedefEtiketi = dogrulanmisIdler.length === 1
     ? "1 öğrenci"

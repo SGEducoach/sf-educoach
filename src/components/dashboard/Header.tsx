@@ -44,9 +44,15 @@ export async function Header({ ad, role, kurumTuru, brans, grupMu = false, okunm
   // sayfasında render edildiği için bu tek yer yeterli.
   const supabase = await createClient();
   const yoneticiDuyurusu = await aktifYoneticiDuyurusuGetir(supabase);
+  // Okul rehberi artık bir branş değil, Rehberlik Servisi üyesi (migration
+  // 0144) — rol etiketi bu üyelikten geliyor. brans karşılaştırması yalnız
+  // dershane rehberi için duruyor.
+  const okulRehberi = role === "ogretmen" && !grupMu
+    ? (await supabase.rpc("okul_rehberi_mi")).data === true
+    : false;
   const gorunenRolEtiketi = role === "ogretmen" && grupMu
     ? "Grup Koçu"
-    : role === "ogretmen" && brans === REHBER_BRANSI
+    : role === "ogretmen" && (okulRehberi || brans === REHBER_BRANSI)
     ? "Rehber Öğretmen"
     : rolEtiketi ?? rolEtiket[role];
   return (

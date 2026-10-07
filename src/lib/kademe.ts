@@ -61,8 +61,8 @@ export const KADEME_ETIKET: Record<Kademe, string> = {
 // branşı, ortaokul formlarında lise branşı çıkmasın.
 //
 // İki kademede de ders veren öğretmen (Matematik, İngilizce, Din Kültürü,
-// Beden Eğitimi, Müzik, Rehber Öğretmen) için metinler İKİ LİSTEDE DE BİREBİR
-// AYNI olmalı — aksi hâlde aynı öğretmen iki ayrı branş gibi görünür.
+// Beden Eğitimi, Müzik) için metinler İKİ LİSTEDE DE BİREBİR AYNI olmalı —
+// aksi hâlde aynı öğretmen iki ayrı branş gibi görünür.
 export const ORTAOKUL_BRANSLARI = [
   // Lisede branş "Türk Dili ve Edebiyatı"; ortaokulda ÖĞRETMEN BRANŞI
   // "Türkçe"dir (kullanıcı kararı 01.10.2026). Lise adı bu listede YOK.
@@ -81,8 +81,10 @@ export const ORTAOKUL_BRANSLARI = [
   "Beden Eğitimi",
   "Teknoloji ve Tasarım",
   "Bilişim Teknolojileri",
-  // rehberlik.ts'teki REHBER_BRANSI ile birebir aynı olmalı (bkz. oradaki not).
-  "Rehber Öğretmen",
+  // "Rehber Öğretmen" BİLİNÇLİ OLARAK YOK (07.10.2026, migration 0144):
+  // okulda rehberlik bir branş değil, ayrı bir birim — kimliği
+  // rehberlik_servisi tablosundan gelir. Bu liste yalnız okul (ortaokul)
+  // kademesinde kullanılıyor, dershane listesi etkilenmiyor.
   "Diğer",
 ] as const;
 

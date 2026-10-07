@@ -149,7 +149,7 @@ export default async function YoneticiPage({
               ogretmenListesi={ogretmenListesi}
             /></section>
           )}
-          {aktifBolum === "okullar" && gorunecekOkulId && okulListesi.some((o) => o.id === gorunecekOkulId && o.tur === "okul" && (o.kademe === "lise" || o.kademe === "ikisi")) && (
+          {aktifBolum === "okullar" && gorunecekOkulId && okulListesi.some((o) => o.id === gorunecekOkulId && o.tur === "okul") && (
             <section className="sfec-section"><RehberSinifAtamalari schoolId={gorunecekOkulId} /></section>
           )}
           {/* Ders programı + nöbet listesi PDF yükleme (kullanıcı isteği

@@ -15,7 +15,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { bildirimGonder } from "@/lib/bildirim-gonder";
 import { pushGonderProfile } from "@/lib/push-send";
-import { REHBER_BRANSI } from "@/lib/rehberlik";
+import { duzeydenSorumluRehberler } from "@/lib/rehberlik-servisi";
 import { dersinBransi, yardimGirdisiDogrula } from "@/lib/ortaokul-yardim";
 import { panelKademesi } from "@/lib/ortaokul-ayar";
 import { veriHatasiCevir } from "@/lib/veri-hata-mesaji";
@@ -115,11 +115,24 @@ async function ilgililereHaberVer(
   const ogrenciAdi = ogrenciProfili?.ad ?? "Bir öğrenci";
 
   const brans = dersinBransi(dersAdi);
-  const { data: ogretmenler } = await admin
-    .from("teachers").select("id, brans").eq("school_id", schoolId)
-    .in("brans", [brans, REHBER_BRANSI]);
+  // Rehberlik artık bir branş değil (migration 0144): dersin branş
+  // öğretmenlerine EK OLARAK, öğrencinin sınıf düzeyinden SORUMLU rehbere
+  // gider — rehberler kademeleri aralarında paylaştığı için istek yanlış
+  // rehbere düşmesin. O düzeye kimse atanmamışsa tüm servise gider.
+  const { data: ogrenciSinifKaydi } = await admin
+    .from("students").select("classes(seviye)").eq("id", studentId).maybeSingle();
+  const sinifKaydi = (ogrenciSinifKaydi as unknown as { classes: { seviye: string } | { seviye: string }[] | null } | null)?.classes;
+  const sinifSeviyesi = Array.isArray(sinifKaydi) ? sinifKaydi[0]?.seviye : sinifKaydi?.seviye;
 
-  const alicilar = [...new Set(((ogretmenler ?? []) as { id: string }[]).map((t) => t.id))];
+  const [{ data: ogretmenler }, rehberler] = await Promise.all([
+    admin.from("teachers").select("id").eq("school_id", schoolId).eq("brans", brans),
+    duzeydenSorumluRehberler(admin, schoolId, sinifSeviyesi),
+  ]);
+
+  const alicilar = [...new Set([
+    ...((ogretmenler ?? []) as { id: string }[]).map((t) => t.id),
+    ...rehberler,
+  ])];
   if (alicilar.length === 0) {
     return "İsteğin kaydedildi ama kurumunda bu dersin öğretmeni kayıtlı değil. Yöneticin görecek.";
   }
