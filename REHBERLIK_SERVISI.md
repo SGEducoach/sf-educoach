@@ -94,6 +94,30 @@ ortaokul okullarında da görünüyor (0143'te yalnız lise/ikisi idi).
 Bunlar bilinçli olarak bu işin dışında bırakıldı, ayrıca karar gerekiyor:
 
 - ~~**Görüşme kaydı** (gizli)~~ — **İPTAL** (kullanıcı kararı 07.10.2026). Rehber Radarı Faz 4 olarak planlanmıştı, kapsamdan çıkarıldı. Tekrar gündeme gelirse yeniden karar gerekir.
+
+## Rehber Radarı — analiz panelini kullanışlı hale getirme (07.10.2026)
+
+Teşhis ölçümle kuruldu: rehber 190 öğrencisini sınıf sınıf geziyordu, listede
+yalnız ad + okul no vardı; Kurum Performansı ise toplulaştırılmış trend
+gösteriyordu ve 9. sınıf ortalaması 20 öğrencinin 2'sinden hesaplanıyordu.
+Öğrenci bazlı analiz zaten vardı — eksik olan "kimi açacağım" katmanıydı.
+
+**Adım 1 — Kapsam dürüstlüğü (canlıda).** Hiçbir ortalama kaç öğrenciden
+geldiğini söylemeden gösterilmiyor; kapsam eşiğin (`KAPSAM_ESIGI = 0.30`,
+src/lib/kapsam.ts) altındaysa sayı yerine uyarı çıkıyor, güvenilmez çizgiler
+kesikli. Panel müdürle ortak olduğu için ona da yaradı.
+
+**Adım 2 — "Kapsamım" listesi (canlıda).** Sorumlu olunan tüm düzeyler tek
+tabloda: son hareket, son deneme neti, yön, açık görev. Ayrı menü kalemi —
+mevcut "Öğrenciler" müdür/branş öğretmeniyle ortak kod olduğu için
+değiştirilmedi. Satır mevcut öğrenci analizine gidiyor.
+
+**Adım 3 — Gerekçeli bayraklar (canlıda).** Eşikler gerçek dağılım ölçülerek
+seçildi (src/lib/rehber-bayrak.ts, hepsi gerekçesiyle yazılı). Risk puanı
+bilinçli olarak YOK: puan nedeni gizler. Elenen adaylar: manipülasyon kaydı
+(0 kayıt) ve veli bağlı değil (%98 — herkese yanan şey bayrak değil).
+
+**Kapsam dışı kalanlar:** yıllık çerçeve plan, RAM yönlendirme kaydı.
 - **Risk/takip listesi** (devamsızlık, düşen net, veli talebi).
 - **Yıllık çerçeve plan / faaliyet raporu**, RAM yönlendirme kaydı.
 - Rehber menüsündeki "Öğretmenler ve Programlar" **bırakıldı**: gerçekte de
