@@ -73,6 +73,8 @@ import { rehberKapsamListesiGetir } from "@/lib/rehber-kapsam-listesi";
 import { RehberKapsamListesi } from "@/components/dashboard/RehberKapsamListesi";
 import { gorusmeleriGetir } from "@/app/dashboard/gorusme-actions";
 import { RehberGorusmeleri } from "@/components/dashboard/RehberGorusmeleri";
+import { rehberProgramAkibetleri } from "@/app/dashboard/rehber-program-actions";
+import { RehberProgramDestegi } from "@/components/dashboard/RehberProgramDestegi";
 import { RehberOgrenciTakibi } from "@/components/dashboard/RehberOgrenciTakibi";
 import { GrupKocPaneli } from "@/components/dashboard/GrupKocPaneli";
 import { DershaneDenemePdfFormu } from "@/components/dashboard/DershaneDenemePdfFormu";
@@ -823,6 +825,31 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
 
   // Faz 4 — görüşme kayıtları (migration 0145). GİZLİ: gizlilik RLS'te
   // zorlanıyor, menüde gizlemek ve buradaki kontrol yalnızca ek katman.
+  // Program desteği (migration 0146) — rehber, kapsamındaki öğrenciyle
+  // Oto Program sihirbazını birlikte geçer. Yetki her işlemde SUNUCUDA
+  // yeniden doğrulanıyor (programAktoru), buradaki kontrol ek katman.
+  if (aktifBolum === "program-destegi") {
+    if (!okulRehberi) {
+      return (
+        <div className="sfec-fade rounded-3xl p-6 text-center" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+          <p style={{ color: TEXT_MUTED }} className="text-sm">Bu bölüm sadece Rehberlik Servisi üyelerine açıktır.</p>
+        </div>
+      );
+    }
+    const [{ programlar }, kapsamSatirlari] = await Promise.all([
+      rehberProgramAkibetleri(),
+      rehberKapsamListesiGetir(createAdminClient(), teacher.school_id, rehberSeviyeleri),
+    ]);
+    return (
+      <RehberProgramDestegi
+        ogrenciler={kapsamSatirlari.map((s) => ({ id: s.ogrenciId, ad: s.ad, sinifAdi: s.sinifAdi }))}
+        akibetler={programlar}
+        ilkHafta={haftaninPazartesisi(bugununTarihiTR())}
+        seviyeler={rehberSeviyeleri}
+      />
+    );
+  }
+
   if (aktifBolum === "gorusmeler") {
     if (!okulRehberi) {
       return (

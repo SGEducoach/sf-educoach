@@ -10,6 +10,7 @@ import {
 } from "@/lib/oto-program";
 import type { OtoProgramAyari, OtoProgramVerisi, ProgramBlogu, ProgramKapsami } from "@/lib/oto-program";
 import { bugununTarihiTR } from "@/lib/tarih";
+import { rehberlikUyeligiGetir } from "@/lib/rehberlik-servisi";
 
 // SeFu Oto Program (kullanıcı isteği 13.09.2026) — öğrenci sihirbazda
 // ayarları seçer, program istemcide (lib/oto-program.ts) önizlenir ve
@@ -18,13 +19,58 @@ import { bugununTarihiTR } from "@/lib/tarih";
 // yazar (öğrencinin gorevler tablosunda silme izni yok; aynı döneme
 // uygulanmış önceki oto programın bekleyen kalemleri değiştirilir).
 
-async function ogrenciOturumu(): Promise<{ error: string; supabase: null; userId: null } | { error: null; supabase: Awaited<ReturnType<typeof createClient>>; userId: string }> {
+// Rehber desteği (kullanıcı kararı 07.10.2026, migration 0146): sihirbazı
+// öğrencinin kendisi ya da kapsamındaki bir Rehberlik Servisi üyesi
+// çalıştırabilir. ogrenciId VERİLMEZSE davranış birebir eskisi gibi —
+// öğrencinin kendi oturumu.
+//
+// ÖNEMLİ: rehber yolunda üretilen görevler yine olusturan_ogrenci_id =
+// öğrenci olarak yazılır ve rehber_yerlestirdi SET EDİLMEZ; yani program
+// öğrencinin kendi programı olarak kalır, taşıyabilir ve silebilir. Rehberin
+// etkinliği kısıtlamayla değil geri bildirimle korunuyor (bkz. migration
+// 0146 ve rehber-program-actions.ts).
+type ProgramAktoru =
+  | { error: string; supabase: null; userId: null; rehberId: null }
+  | { error: null; supabase: Awaited<ReturnType<typeof createClient>>; userId: string; rehberId: string | null };
+
+const REHBER_MESAJI = "Bu öğrencinin programını hazırlama yetkiniz yok.";
+
+async function programAktoru(ogrenciId?: string): Promise<ProgramAktoru> {
+  const hata = (error: string): ProgramAktoru => ({ error, supabase: null, userId: null, rehberId: null });
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Oturum açılmadı.", supabase: null, userId: null };
+  if (!user) return hata("Oturum açılmadı.");
   const { data: profil } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
-  if (profil?.role !== "ogrenci") return { error: "Oto program yalnızca öğrenci hesabında kullanılabilir.", supabase: null, userId: null };
-  return { error: null, supabase, userId: user.id };
+
+  if (!ogrenciId) {
+    if (profil?.role !== "ogrenci") return hata("Oto program yalnızca öğrenci hesabında kullanılabilir.");
+    return { error: null, supabase, userId: user.id, rehberId: null };
+  }
+
+  if (profil?.role !== "ogretmen") return hata(REHBER_MESAJI);
+  const uyelik = await rehberlikUyeligiGetir(supabase, user.id);
+  if (!uyelik) return hata(REHBER_MESAJI);
+
+  // Yetki AÇIKÇA burada doğrulandıktan sonra servis anahtarı kullanılıyor:
+  // otoProgramVerisiGetir öğrencinin müfredat/konu durumunu birçok tablodan
+  // okuyor ve rehber RLS'i hepsini kapsamıyor. Aynı desen dershane
+  // rehberinde de var (bkz. lib/dershane-rehber.ts). Gizli veri değil —
+  // öğrencinin çalışma verisi ve rehber onu kapsamı gereği zaten görüyor.
+  const admin = createAdminClient();
+  const { data: ogr } = await admin
+    .from("students").select("school_id, classes(seviye)").eq("id", ogrenciId).maybeSingle();
+  if (!ogr || ogr.school_id !== uyelik.schoolId) return hata(REHBER_MESAJI);
+  // Gömülü ilişki çalışma anında NESNE döner, tipte dizi görünür (proje notu).
+  const sinif = (ogr as unknown as { classes: { seviye: string } | { seviye: string }[] | null }).classes;
+  const seviye = Array.isArray(sinif) ? sinif[0]?.seviye : sinif?.seviye;
+  if (!seviye || !uyelik.sinifDuzeyleri.includes(seviye)) return hata(REHBER_MESAJI);
+
+  return {
+    error: null,
+    supabase: admin as unknown as Awaited<ReturnType<typeof createClient>>,
+    userId: ogrenciId,
+    rehberId: user.id,
+  };
 }
 
 function donemHatasi(baslangicTarihi: string, kapsam: ProgramKapsami): string | null {
@@ -47,7 +93,10 @@ export async function haftayiTemizle(haftaBaslangici: string): Promise<{ error: 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(haftaBaslangici ?? "") || haftaninGunu(haftaBaslangici) !== 0) {
     return { error: "Hafta başlangıcı geçersiz.", silinen: 0, cikarilan: 0 };
   }
-  const oturum = await ogrenciOturumu();
+  // BİLİNÇLİ: haftayı temizleme yalnız ÖĞRENCİYE açık. Rehberin öğrencinin
+  // haftasını silmesi, "öğrenci kısıtla sistemden uzaklaşmasın" ilkesinin
+  // tersi olurdu.
+  const oturum = await programAktoru();
   if (oturum.error !== null) return { error: oturum.error, silinen: 0, cikarilan: 0 };
   const { userId } = oturum;
 
@@ -85,10 +134,10 @@ export async function haftayiTemizle(haftaBaslangici: string): Promise<{ error: 
   return { error: null, silinen: kendiGorevIdleri.length, cikarilan: ogretmenAtamaIdleri.length };
 }
 
-export async function otoProgramHazirla(baslangicTarihi: string, kapsam: ProgramKapsami): Promise<{ error: string | null; veri: OtoProgramVerisi | null }> {
+export async function otoProgramHazirla(baslangicTarihi: string, kapsam: ProgramKapsami, ogrenciId?: string): Promise<{ error: string | null; veri: OtoProgramVerisi | null }> {
   const hata = donemHatasi(baslangicTarihi, kapsam);
   if (hata) return { error: hata, veri: null };
-  const oturum = await ogrenciOturumu();
+  const oturum = await programAktoru(ogrenciId);
   if (oturum.error !== null) return { error: oturum.error, veri: null };
   return otoProgramVerisiGetir(oturum.supabase, oturum.userId, baslangicTarihi, KAPSAM_HAFTA_SAYISI[kapsam]);
 }
@@ -98,12 +147,14 @@ export async function otoProgramUygula(input: {
   kapsam: ProgramKapsami;
   ayar: OtoProgramAyari;
   bloklar: ProgramBlogu[];
+  // Rehber, kapsamındaki öğrenci adına çalıştırıyorsa.
+  ogrenciId?: string;
 }): Promise<{ error: string | null; eklenen: number }> {
   const hata = donemHatasi(input.baslangicTarihi, input.kapsam);
   if (hata) return { error: hata, eklenen: 0 };
-  const oturum = await ogrenciOturumu();
+  const oturum = await programAktoru(input.ogrenciId);
   if (oturum.error !== null) return { error: oturum.error, eklenen: 0 };
-  const { supabase, userId } = oturum;
+  const { supabase, userId, rehberId } = oturum;
 
   const haftaSayisi = KAPSAM_HAFTA_SAYISI[input.kapsam];
   const { error: veriHatasi, veri } = await otoProgramVerisiGetir(supabase, userId, input.baslangicTarihi, haftaSayisi);
@@ -141,6 +192,10 @@ export async function otoProgramUygula(input: {
   const { error: programHatasi } = await admin.from("ogrenci_oto_programlari").insert({
     id: programId, student_id: userId, ayar,
     baslangic_tarihi: input.baslangicTarihi, bitis_tarihi: donemSonu, kapsam: input.kapsam,
+    // null = öğrenci kendi hazırladı. blok_sayisi, geri bildirimde
+    // "kaçı silindi" ölçümünün referansı (bkz. migration 0146).
+    hazirlayan_rehber_id: rehberId,
+    blok_sayisi: input.bloklar.length,
   });
   if (programHatasi) return { error: programHatasi.message, eklenen: 0 };
 

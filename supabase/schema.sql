@@ -4244,3 +4244,32 @@ create policy "gorusme_sahibi_siler" on public.rehberlik_gorusmeleri
 
 comment on table public.rehberlik_gorusmeleri is
   'Rehberlik gorusme kayitlari (0145). GIZLI: yalniz o okulun servis uyeleri, kendi kademesindeki ogrenciler icin. Ogrenci/veli/brans ogretmeni/mudur GOREMEZ.';
+
+
+-- ============ Rehberin program destegi (migration 0146) ============
+-- Rehber, kapsamindaki ogrenciyle Oto Program sihirbazini birlikte gecer.
+-- Program OGRENCININ kalir: gorev_atamalari.rehber_yerlestirdi BILINCLI
+-- OLARAK set edilmez, yani ogrenci tasiyabilir/silebilir. Rehberin
+-- etkinligi kisitlamayla degil AKIBET geri bildirimiyle korunuyor;
+-- blok_sayisi "kaci silindi"nin referansi. Ayrintilar: REHBERLIK_SERVISI.md
+
+alter table public.ogrenci_oto_programlari
+  -- null = öğrenci kendi hazırladı (bugüne kadarki tüm kayıtlar böyle).
+  add column if not exists hazirlayan_rehber_id uuid references public.profiles(id) on delete set null,
+  -- Program uygulandığı anda yazılan blok sayısı. Sonradan silinenleri
+  -- ölçmek için gereken referans.
+  add column if not exists blok_sayisi integer not null default 0;
+
+create index if not exists ogrenci_oto_programlari_rehber_idx
+  on public.ogrenci_oto_programlari (hazirlayan_rehber_id)
+  where hazirlayan_rehber_id is not null;
+
+comment on column public.ogrenci_oto_programlari.hazirlayan_rehber_id is
+  'Programi ogrenci adina hazirlayan Rehberlik Servisi uyesi; null = ogrenci kendi hazirladi.';
+comment on column public.ogrenci_oto_programlari.blok_sayisi is
+  'Uygulandigi anda yazilan blok sayisi — rehber geri bildiriminde "kaci silindi" bunun uzerinden olculur.';
+
+drop policy if exists "ogrenci_oto_programlari_select_rehber" on public.ogrenci_oto_programlari;
+create policy "ogrenci_oto_programlari_select_rehber" on public.ogrenci_oto_programlari
+  for select to authenticated
+  using (public.okul_rehberi_mi() or public.is_admin());

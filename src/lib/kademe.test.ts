@@ -379,7 +379,7 @@ describe("ortaokul kurumunda rol menüleri", () => {
     // rehber menüsünü alıyor. Tek fark servise ÖZEL kalemler — "Kapsamım"
     // (Adım 2) ve "Görüşme Kayıtları" (Faz 4); ikisi de rehberin atandığı
     // sinif_duzeyleri'ne dayanıyor, eski branş kimliğinde böyle bir kapsam yok.
-    const servisEOzel: string[] = ["kapsamim", "gorusmeler"];
+    const servisEOzel: string[] = ["kapsamim", "gorusmeler", "program-destegi"];
     expect(servisUyesi.filter((b) => !servisEOzel.includes(b))).toEqual(eskiBransli);
     expect(servisUyesi).toContain("rehberlik");
     for (const b of servisEOzel) expect(eskiBransli).not.toContain(b);
@@ -423,6 +423,21 @@ describe("ortaokul kurumunda rol menüleri", () => {
     expect(dashboardMenusu("ogretmen", "dershane", REHBER_BRANSI, false, null, false).map((o) => o.bolum)).not.toContain("gorusmeler");
     expect(dashboardMenusu("ogrenci", "okul", undefined, false, "lise").map((o) => o.bolum)).not.toContain("gorusmeler");
     expect(dashboardMenusu("veli").map((o) => o.bolum)).not.toContain("gorusmeler");
+  });
+
+  // Program Desteği (migration 0146): rehber öğrenciyle Oto Program
+  // sihirbazını birlikte geçer. Program ÖĞRENCİNİN kalıyor (rehber_yerlestirdi
+  // set edilmiyor), rehberin etkinliği akıbet geri bildirimiyle korunuyor.
+  test("okul rehberi Program Desteği kalemini alır", () => {
+    const menu = dashboardMenusu("ogretmen", "okul", "", false, "lise", true).map((o) => o.bolum);
+    expect(menu).toContain("program-destegi");
+  });
+
+  test("Program Desteği servis üyesi olmayana, müdüre, dershaneye ve öğrenciye gösterilmez", () => {
+    expect(dashboardMenusu("ogretmen", "okul", "Matematik", false, "lise", false).map((o) => o.bolum)).not.toContain("program-destegi");
+    expect(dashboardMenusu("mudur", "okul", undefined, false, "lise").map((o) => o.bolum)).not.toContain("program-destegi");
+    expect(dashboardMenusu("ogretmen", "dershane", REHBER_BRANSI, false, null, false).map((o) => o.bolum)).not.toContain("program-destegi");
+    expect(dashboardMenusu("ogrenci", "okul", undefined, false, "lise").map((o) => o.bolum)).not.toContain("program-destegi");
   });
 
   test("Kapsamım servis üyesi OLMAYANA gösterilmez", () => {

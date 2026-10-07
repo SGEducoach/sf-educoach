@@ -95,7 +95,11 @@ function Periyotlar({ baslik, periyotlar, onChange, okulUyarisi }: {
   );
 }
 
-export function SefuOtoProgramModal({ ilkHafta, onKapat }: { ilkHafta: string; onKapat: () => void }) {
+// ogrenciId: Rehberlik Servisi üyesi kapsamındaki öğrenci adına
+// çalıştırıyorsa (migration 0146). Verilmezse öğrencinin kendi oturumu —
+// davranış birebir eskisi gibi. Yetki her üç işlemde de SUNUCUDA doğrulanır
+// (bkz. programAktoru), bu prop yalnızca kimin adına çalıştığını taşır.
+export function SefuOtoProgramModal({ ilkHafta, onKapat, ogrenciId }: { ilkHafta: string; onKapat: () => void; ogrenciId?: string }) {
   const router = useRouter();
   const bugunPazartesi = haftaninPazartesisi(bugununTarihiTR());
   const guvenliIlkHafta = ilkHafta >= bugunPazartesi ? ilkHafta : bugunPazartesi;
@@ -121,7 +125,7 @@ export function SefuOtoProgramModal({ ilkHafta, onKapat }: { ilkHafta: string; o
   function veriHazirla(sonrakiAdim = 1, tasinacakAyar?: OtoProgramAyari) {
     setHata(null);
     startTransition(async () => {
-      const sonuc = await otoProgramHazirla(baslangicTarihi, kapsam);
+      const sonuc = await otoProgramHazirla(baslangicTarihi, kapsam, ogrenciId);
       if (sonuc.error || !sonuc.veri) return setHata(sonuc.error ?? "Program verisi alınamadı.");
       setVeri(sonuc.veri);
       if (tasinacakAyar) setAyar(tasinacakAyar);
@@ -176,7 +180,7 @@ export function SefuOtoProgramModal({ ilkHafta, onKapat }: { ilkHafta: string; o
     const yeniBaslangic = sonraki < bugunPazartesi ? bugunPazartesi : sonraki;
     setHata(null);
     startTransition(async () => {
-      const sonuc = await otoProgramHazirla(yeniBaslangic, son.kapsam);
+      const sonuc = await otoProgramHazirla(yeniBaslangic, son.kapsam, ogrenciId);
       if (sonuc.error || !sonuc.veri) return setHata(sonuc.error ?? "Program verisi alınamadı.");
       const ayarSorunu = ayarHatasi(son.ayar, sonuc.veri.okulOgrencisi, sonuc.veri.dersListesi);
       if (ayarSorunu) return setHata(`Önceki program taşınamadı: ${ayarSorunu}`);
@@ -219,7 +223,7 @@ export function SefuOtoProgramModal({ ilkHafta, onKapat }: { ilkHafta: string; o
     if (sorun) return setHata(sorun);
     setHata(null);
     startTransition(async () => {
-      const sonuc = await otoProgramUygula({ baslangicTarihi, kapsam, ayar, bloklar });
+      const sonuc = await otoProgramUygula({ baslangicTarihi, kapsam, ayar, bloklar, ogrenciId });
       if (sonuc.error) return setHata(sonuc.error);
       setBasari(`${sonuc.eklenen} çalışma programınıza yerleştirildi.`);
       router.refresh();

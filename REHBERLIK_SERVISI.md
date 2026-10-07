@@ -135,7 +135,32 @@ Hepsi canlı veride geri alınan işlemle doğrulandı. Dar başlangıç bilinç
 müdürü açmak gerekirse tek migration, ama geniş başlayıp sızdırmak geri
 alınamaz.
 
-**Kapsam dışı kalanlar:** yıllık çerçeve plan, RAM yönlendirme kaydı.
+**Adım 5 — Program desteği (canlıda, migration 0146).** Rehber, kapsamındaki
+öğrenciyle SeFu Oto Program sihirbazını birlikte geçer (sihirbaz eskiden
+yalnız öğrenci oturumuna açıktı).
+
+Kullanıcı şartı: *"öğrenci kısıtla sistemden uzaklaşmasın rehberlik
+servisinin etkinliği de körelmesin."* İkisini birden tutan denge:
+
+- **Öğrenci kısıtlanmıyor.** Üretilen görevler `olusturan_ogrenci_id =
+  öğrenci` olarak yazılıyor ve `gorev_atamalari.rehber_yerlestirdi`
+  **set edilmiyor** — o bayrak dershane koçluğu için var ve öğrencinin kalemi
+  oynatmasını engelliyor. Okulda kilit koçluk değil dayatma olurdu.
+- **Etkinlik körelmiyor:** kısıtlama yerine **geri bildirim**. Rehber
+  hazırladığı programın akıbetini görüyor — kaç blok ayakta, kaçı
+  tamamlandı, kaçı öğrenci tarafından kaldırıldı (`blok_sayisi` referansı).
+  "Kaldırıldı" bir başarısızlık işareti değil, sonraki görüşmede
+  konuşulacak veri; ekranda yargı dili yok.
+- **Haftayı temizleme yalnız öğrenciye açık** — rehberin öğrencinin haftasını
+  silmesi aynı ilkenin tersi olurdu.
+
+**Verilmeyen yetkiler (bilinçli):** öğrenci adına *veri girişi* (Adım 3
+bayraklarını yalanlar: "hiç veri girmemiş" rehber girişiyle maskelenir) ve
+öğrenci adına *görev verme* (branş işi; rehberi yeniden branş öğretmenine
+çevirir).
+
+**Kapsam dışı kalanlar:** yıllık çerçeve plan, RAM yönlendirme kaydı,
+öğrenci tarafında "rehberlikle hazırlandı" rozeti.
 - **Risk/takip listesi** (devamsızlık, düşen net, veli talebi).
 - **Yıllık çerçeve plan / faaliyet raporu**, RAM yönlendirme kaydı.
 - Rehber menüsündeki "Öğretmenler ve Programlar" **bırakıldı**: gerçekte de
