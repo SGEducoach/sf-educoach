@@ -28,11 +28,11 @@ describe("kapsamYeterliMi — Elbistan gerçek dağılımı", () => {
     expect(kapsamYeterliMi(2, 20)).toBe(false);
   });
 
-  // Kullanıcıya açıkça söylendi: 10. sınıf eşiğin HEMEN ÜSTÜNDE kalıyor.
-  // Bu test o kararı kayda geçiriyor — eşik 0.30'a çekilirse burası kırılır
-  // ve bilinçli bir karar olduğu görülür.
-  test("10. sınıf (9/35 = %25,7) eşiğin hemen üstünde, yeterli sayılır", () => {
-    expect(kapsamYeterliMi(9, 35)).toBe(true);
+  // 07.10.2026'da eşik 0.25'ten 0.30'a çekildi: 35 öğrencinin 9'undan gelen
+  // bir ortalama kesin sayı gibi gösterilmeye değmez. Bu test o kararı kayda
+  // geçiriyor — eşik 0.25'e dönerse burası kırılır.
+  test("10. sınıf (9/35 = %25,7) artık YETERSİZ sayılır", () => {
+    expect(kapsamYeterliMi(9, 35)).toBe(false);
   });
 
   test("11 ve 12. sınıf (%93 ve %98) yeterli", () => {
@@ -41,8 +41,9 @@ describe("kapsamYeterliMi — Elbistan gerçek dağılımı", () => {
   });
 
   test("eşiğe tam oturan oran yeterli sayılır", () => {
-    expect(kapsamYeterliMi(5, 20)).toBe(true); // tam 0.25
-    expect(KAPSAM_ESIGI).toBe(0.25);
+    expect(kapsamYeterliMi(6, 20)).toBe(true); // tam 0.30
+    expect(kapsamYeterliMi(5, 20)).toBe(false); // 0.25 artık yetmiyor
+    expect(KAPSAM_ESIGI).toBe(0.3);
   });
 
   test("öğrencisi olmayan kapsam yeterli DEĞİL", () => {

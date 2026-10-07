@@ -12,6 +12,7 @@ export type DashboardBolumu =
   | "analiz"
   | "yapay-zeka"
   | "tg-denemeleri"
+  | "kapsamim"
   | "duyurular"
   | "talepler"
   | "onaylar"
@@ -251,6 +252,18 @@ const REHBER_OGRETMEN_MENUSU: DashboardMenuOgesi[] = [
   TAKVIM_MENU_OGESI,
 ];
 
+// Rehber Radarı Adım 2 (kullanıcı onayı 07.10.2026) — sorumlu olunan TÜM
+// düzeylerin öğrencileri tek tabloda. Mevcut "Öğrenciler" bölümü müdür ve
+// branş öğretmeniyle ORTAK KOD olduğu için orası değiştirilmedi, ayrı bir
+// kalem açıldı: rehberin sınıf bazlı işleri "Öğrenciler"de yerinde kalıyor.
+//
+// YALNIZ Rehberlik Servisi üyesine gösterilir (aşağıdaki okulRehberi) —
+// liste rehberin atandığı sinif_duzeyleri'ne dayanıyor, dershane rehberinde
+// ve grup koçunda böyle bir kapsam yok.
+const KAPSAMIM_MENU_OGESI: DashboardMenuOgesi = {
+  bolum: "kapsamim", href: "/dashboard?bolum=kapsamim", etiket: "Kapsamım", ikon: "ogrenci",
+};
+
 // Dershane rehberlik servisi (kullanıcı isteği 13.09.2026): öğrenci adına
 // ödev, veri girişi ve program — yalnızca DERSHANE rehber öğretmenine.
 const DERSHANE_REHBER_MENUSU: DashboardMenuOgesi[] = [
@@ -317,7 +330,14 @@ export function dashboardMenusu(
   }
   if (role === "ogrenci") return kurumTuru === "okul" ? [...OGRENCI_MENUSU, { bolum:"etkinlikler", href:"/dashboard/etkinlikler", etiket:"Etkinlikler", ikon:"takvim" }] : OGRENCI_MENUSU;
   if (role === "veli") return VELI_MENUSU;
-  if (role === "ogretmen") return rehber ? (kurumTuru === "dershane" ? DERSHANE_REHBER_MENUSU : REHBER_OGRETMEN_MENUSU) : kurumTuru === "okul" && etkinlikBransiMi(brans) ? [...OGRETMEN_MENUSU, TAKVIM_MENU_OGESI, { bolum:"etkinlikler", href:"/dashboard/etkinlikler", etiket:"Etkinlik Grupları", ikon:"takvim" }] : kurumTuru === "okul" ? [...OGRETMEN_MENUSU, TAKVIM_MENU_OGESI] : OGRETMEN_MENUSU;
+  if (role === "ogretmen" && rehber) {
+    if (kurumTuru === "dershane") return DERSHANE_REHBER_MENUSU;
+    // "Kapsamım" Kurum Performansı'nın HEMEN ARDINDAN gelir: triyaj girişi.
+    return okulRehberi
+      ? [REHBER_OGRETMEN_MENUSU[0], KAPSAMIM_MENU_OGESI, ...REHBER_OGRETMEN_MENUSU.slice(1)]
+      : REHBER_OGRETMEN_MENUSU;
+  }
+  if (role === "ogretmen") return kurumTuru === "okul" && etkinlikBransiMi(brans) ? [...OGRETMEN_MENUSU, TAKVIM_MENU_OGESI, { bolum:"etkinlikler", href:"/dashboard/etkinlikler", etiket:"Etkinlik Grupları", ikon:"takvim" }] : kurumTuru === "okul" ? [...OGRETMEN_MENUSU, TAKVIM_MENU_OGESI] : OGRETMEN_MENUSU;
   if (role === "mudur") {
     if (kurumTuru === "dershane") return DERSHANE_MUDUR_MENUSU;
     const taban = [...MUDUR_MENUSU, TAKVIM_MENU_OGESI];

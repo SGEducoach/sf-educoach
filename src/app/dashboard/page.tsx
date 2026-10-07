@@ -69,6 +69,8 @@ import { DershaneAnaSayfa } from "@/components/dashboard/DershaneAnaSayfa";
 import { DenemeSuresiSonaErdiEkrani } from "@/components/DenemeSuresiSonaErdiEkrani";
 import { RehberlikPaneli } from "@/components/dashboard/RehberlikPaneli";
 import { rehberlikUyeligiGetir } from "@/lib/rehberlik-servisi";
+import { rehberKapsamListesiGetir } from "@/lib/rehber-kapsam-listesi";
+import { RehberKapsamListesi } from "@/components/dashboard/RehberKapsamListesi";
 import { RehberOgrenciTakibi } from "@/components/dashboard/RehberOgrenciTakibi";
 import { GrupKocPaneli } from "@/components/dashboard/GrupKocPaneli";
 import { DershaneDenemePdfFormu } from "@/components/dashboard/DershaneDenemePdfFormu";
@@ -801,6 +803,22 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   // rehberMesajGonder). Menüde bu bölüm zaten sadece rehber branşına
   // gösteriliyor (bkz. dashboard-navigation.ts) — burada da savunma
   // amaçlı aynı kontrol tekrarlanıyor (doğrudan URL ile erişim denenirse).
+  // Rehber Radarı Adım 2 — sorumlu olunan TÜM düzeyler tek tabloda.
+  // Yalnız Rehberlik Servisi üyesine: liste rehberSeviyeleri'ne dayanıyor.
+  // Menüde de yalnız ona gösteriliyor (dashboard-navigation.ts), burada
+  // doğrudan URL denemesine karşı savunma amaçlı tekrar kontrol ediliyor.
+  if (aktifBolum === "kapsamim") {
+    if (!okulRehberi) {
+      return (
+        <div className="sfec-fade rounded-3xl p-6 text-center" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+          <p style={{ color: TEXT_MUTED }} className="text-sm">Bu bölüm sadece Rehberlik Servisi üyelerine açıktır.</p>
+        </div>
+      );
+    }
+    const satirlar = await rehberKapsamListesiGetir(createAdminClient(), teacher.school_id, rehberSeviyeleri);
+    return <RehberKapsamListesi satirlar={satirlar} seviyeler={rehberSeviyeleri} />;
+  }
+
   if (aktifBolum === "rehberlik") {
     if (!rehberOgretmenMi) {
       return (

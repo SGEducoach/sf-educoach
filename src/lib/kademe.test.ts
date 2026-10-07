@@ -375,8 +375,12 @@ describe("ortaokul kurumunda rol menüleri", () => {
   test("okul rehberi branşı ne olursa olsun rehber menüsünü alır", () => {
     const servisUyesi = dashboardMenusu("ogretmen", "okul", "Matematik", false, "lise", true).map((o) => o.bolum);
     const eskiBransli = dashboardMenusu("ogretmen", "okul", REHBER_BRANSI, false, "lise").map((o) => o.bolum);
-    expect(servisUyesi).toEqual(eskiBransli);
+    // Kimlik branştan gelmiyor: servis üyesinin branşı "Matematik" olsa da
+    // rehber menüsünü alıyor. Tek fark Adım 2'nin "Kapsamım" kalemi — o
+    // yalnız servis üyesine açık (kapsam sinif_duzeyleri'ne dayanıyor).
+    expect(servisUyesi.filter((b) => b !== "kapsamim")).toEqual(eskiBransli);
     expect(servisUyesi).toContain("rehberlik");
+    expect(eskiBransli).not.toContain("kapsamim");
   });
 
   test("servis üyesi olmayan öğretmen rehber menüsü ALMAZ", () => {
@@ -394,6 +398,31 @@ describe("ortaokul kurumunda rol menüleri", () => {
 
   // Dershane rehberi ve grup koçu kimliğini BİLİNÇLİ olarak hâlâ branştan
   // alıyor (kapsam kararı: farklı bir iş) — bozulmadığı doğrulanıyor.
+  // ---- Rehber Radarı Adım 2: "Kapsamım" (07.10.2026) ----
+  test("okul rehberi Kapsamım kalemini alır, Kurum Performansı'nın hemen ardından", () => {
+    const menu = dashboardMenusu("ogretmen", "okul", "", false, "lise", true).map((o) => o.bolum);
+    expect(menu).toContain("kapsamim");
+    expect(menu.indexOf("kapsamim")).toBe(menu.indexOf("kurum-performansi") + 1);
+    // Mevcut kalemler korunmalı — "Öğrenciler" sınıf bazlı işler için yerinde.
+    expect(menu).toContain("ozet");
+    expect(menu).toContain("rehberlik");
+  });
+
+  test("Kapsamım servis üyesi OLMAYANA gösterilmez", () => {
+    // Branş öğretmeni
+    expect(dashboardMenusu("ogretmen", "okul", "Matematik", false, "lise", false).map((o) => o.bolum)).not.toContain("kapsamim");
+    // Müdür
+    expect(dashboardMenusu("mudur", "okul", undefined, false, "lise").map((o) => o.bolum)).not.toContain("kapsamim");
+  });
+
+  // Dershane rehberi ve grup koçunda kapsam (sinif_duzeyleri) kavramı YOK —
+  // DERSHANE_REHBER_MENUSU, REHBER_OGRETMEN_MENUSU'nden dilimlendiği için
+  // bu test sızmayı yakalar.
+  test("dershane rehberi ve grup koçu Kapsamım ALMAZ", () => {
+    expect(dashboardMenusu("ogretmen", "dershane", REHBER_BRANSI, false, null, false).map((o) => o.bolum)).not.toContain("kapsamim");
+    expect(dashboardMenusu("ogretmen", "dershane", REHBER_BRANSI, true, null, false).map((o) => o.bolum)).not.toContain("kapsamim");
+  });
+
   test("dershane rehberi branş kimliğiyle çalışmaya devam eder", () => {
     const menu = dashboardMenusu("ogretmen", "dershane", REHBER_BRANSI, false, null, false).map((o) => o.bolum);
     expect(menu).toContain("ogrenci-takibi");

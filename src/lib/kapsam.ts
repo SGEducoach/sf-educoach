@@ -13,11 +13,15 @@
 // EN AZ BİR denemesi olan ayrı öğrenci sayısı"dır — satır/kayıt sayısı
 // değil, ÖĞRENCİ sayısı (bir öğrenci 5 deneme girerse kapsam 1'dir).
 
-// Bu oranın altında ortalama SAYI OLARAK gösterilmez. Kullanıcı onayı
-// 07.10.2026: 0.25. (Elbistan'da 9. sınıfı susturur; 10. sınıf 9/35 =
-// %25,7 ile eşiğin hemen üstünde kalır. %30'a çekmek 10'u da susturur —
-// değiştirilecek tek yer burası.)
-export const KAPSAM_ESIGI = 0.25;
+// Bu oranın altında ortalama SAYI OLARAK gösterilmez.
+//
+// İlk onay 0.25'ti; 07.10.2026'da 0.30'a çekildi: 10. sınıf 9/35 = %25,7 ile
+// eşiğin 0,7 puan üstünde kalıyordu ve 35 öğrencinin 9'undan gelen bir
+// ortalama kesin bir sayı gibi gösterilmeye değmez. Artık Elbistan'da 9 ve
+// 10 susar, 11 (%93) ve 12 (%98) gösterilir.
+// Değiştirilecek tek yer burası — kapsam.test.ts eşiğe bağlı kararları
+// kayda geçiriyor, oynatırsan hangi kademenin sustuğu testten görünür.
+export const KAPSAM_ESIGI = 0.3;
 
 // null = toplam bilinmiyor/sıfır, oran hesaplanamaz (0 ile karıştırılmasın).
 export function kapsamOrani(kapsam: number, toplam: number): number | null {
