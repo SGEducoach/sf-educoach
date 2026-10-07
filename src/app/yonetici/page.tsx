@@ -36,6 +36,7 @@ import { AdminProfilim } from "@/components/yonetici/AdminProfilim";
 import { YoneticiGirisForm } from "@/components/yonetici/YoneticiGirisForm";
 import { YoneticiDuyuruPaneli } from "@/components/yonetici/YoneticiDuyuruPaneli";
 import { TgDenemeYonetimi } from "@/components/yonetici/TgDenemeYonetimi";
+import { RehberSinifAtamalari } from "@/components/yonetici/RehberSinifAtamalari";
 import { dashboardMenusu } from "@/lib/dashboard-navigation";
 import { YoneticiMesajlar } from "@/components/dashboard/YoneticiMesajlar";
 import type { DashboardBolumu } from "@/lib/dashboard-navigation";
@@ -147,6 +148,9 @@ export default async function YoneticiPage({
               siniflar={((siniflar ?? []) as { id: string; seviye: string; sube: string }[]).sort(sinifSiraKarsilastir)}
               ogretmenListesi={ogretmenListesi}
             /></section>
+          )}
+          {aktifBolum === "okullar" && gorunecekOkulId && okulListesi.some((o) => o.id === gorunecekOkulId && o.tur === "okul" && (o.kademe === "lise" || o.kademe === "ikisi")) && (
+            <section className="sfec-section"><RehberSinifAtamalari schoolId={gorunecekOkulId} /></section>
           )}
           {/* Ders programı + nöbet listesi PDF yükleme (kullanıcı isteği
               17.09.2026) — seçili okul için, AdminPanel'in altında. */}

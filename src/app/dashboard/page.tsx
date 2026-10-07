@@ -694,7 +694,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   const supabase = await createClient();
   const { data: teacher } = await supabase
     .from("teachers")
-    .select("school_id, class_id")
+    .select("school_id, class_id, rehber_sinif_duzeyleri")
     .eq("id", userId)
     .single();
 
@@ -734,6 +734,8 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
     : null;
 
   const rehberOgretmenMi = role === "ogretmen" && brans === REHBER_BRANSI;
+  const liseOkulRehberiMi = rehberOgretmenMi && kurumTuru === "okul" && (kademe === "lise" || kademe === "ikisi");
+  const rehberSeviyeleri = liseOkulRehberiMi ? (teacher.rehber_sinif_duzeyleri ?? []) : [];
   const okulOkumaClient = rehberOgretmenMi ? createAdminClient() : supabase;
 
   // Dershane rehberlik servisi (kullanıcı isteği 13.09.2026): öğrenci adına
@@ -775,7 +777,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
     return <EtkinlikPaneli mod="ogretmen" brans={brans} siniflar={siniflar} ogrenciler={ogrenciler} gruplar={gruplar}/>;
   }
 
-  // 2026-08-26 kullanıcı isteği — Rehber Öğretmen kendi okulunun TÜM
+  // Rehber Öğretmen okulda yalnız atandığı sınıf düzeylerinin
   // öğrencilerine (sınıf öğretmenliği/branş dersi sınırı olmadan) mesaj
   // gönderebiliyor, tek tek veya toplu (bkz. RehberlikPaneli.tsx,
   // rehberMesajGonder). Menüde bu bölüm zaten sadece rehber branşına
@@ -789,10 +791,15 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
         </div>
       );
     }
-    const { data: ogrenciler } = await supabase
-      .from("students")
-      .select("id, profiles!students_id_fkey(ad), classes(id, seviye, sube)")
-      .eq("school_id", teacher.school_id);
+    const { data: ogrenciler } = liseOkulRehberiMi && rehberSeviyeleri.length === 0
+      ? { data: [] }
+      : liseOkulRehberiMi
+      ? await supabase.from("students")
+          .select("id, profiles!students_id_fkey(ad), classes!inner(id, seviye, sube)")
+          .eq("school_id", teacher.school_id).in("classes.seviye", rehberSeviyeleri)
+      : await supabase.from("students")
+          .select("id, profiles!students_id_fkey(ad), classes(id, seviye, sube)")
+          .eq("school_id", teacher.school_id);
     type RehberOgrenciRow = { id: string; profiles: { ad: string } | null; classes: { id: string; seviye: string; sube: string } | null };
     const ogrenciListesi = ((ogrenciler as unknown as RehberOgrenciRow[]) ?? [])
       .map((o) => ({
@@ -810,7 +817,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   // yeniden kullanıldı. Sadece okul müdürü (dershane müdürü zaten kendi
   // ayrı panelinde, "ozet" bölümünde, aynı bileşeni kullanıyor).
   if (aktifBolum === "kurum-performansi" && (role === "mudur" || rehberOgretmenMi) && kurumTuru !== "dershane") {
-    const veri = await dershaneAnaSayfaVerisiGetir(okulOkumaClient, teacher.school_id);
+    const veri = await dershaneAnaSayfaVerisiGetir(okulOkumaClient, teacher.school_id, liseOkulRehberiMi ? rehberSeviyeleri : undefined);
     return <section className="sfec-section"><DershaneAnaSayfa veri={veri} /></section>;
   }
 
@@ -818,13 +825,15 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   // öğretmen sadece kendi sınıfına (kendiSinifiMi ile aynı gerekçe: branş
   // öğretmeninin sınıf öğretmeni OLMADIĞI bir sınıfa dair veri sızmasın)
   // bakar. Dershane müdürü ayrı bileşende (DershaneMudurPaneli) ele alınıyor.
-  // 2026-08-26 kullanıcı isteği — Rehber Öğretmen'in sınıf öğretmenliği
-  // (homeroom) yok, bu yüzden müdürle aynı okul-geneli görünümü alıyor.
+  // Rehber Öğretmen'in sınıf öğretmenliği (homeroom) yok; lise okul rehberi
+  // için deneme kapsamı atandığı düzeylerin öğrencileriyle sınırlanır.
   if (aktifBolum === "yapay-zeka" && !(role === "mudur" && kurumTuru === "dershane")) {
     if (role === "mudur" || brans === REHBER_BRANSI) {
       const [{ satirlar, error }, denemeKonu] = await Promise.all([
         konuHaritasiGetir(supabase, { schoolId: teacher.school_id }),
-        grupDenemeKonuAnaliziGetir(okulOkumaClient, { schoolId: teacher.school_id }),
+        grupDenemeKonuAnaliziGetir(okulOkumaClient, liseOkulRehberiMi
+          ? { schoolId: teacher.school_id, seviyeler: rehberSeviyeleri }
+          : { schoolId: teacher.school_id }),
       ]);
       return (
         <div className="flex flex-col gap-4">
@@ -871,7 +880,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
     };
     const o = ogrenci as unknown as OgrenciRow | null;
 
-    if (o) {
+    if (o && (!liseOkulRehberiMi || (o.classes && rehberSeviyeleri.includes(o.classes.seviye)))) {
       // Yazılı analizi dürüstlük engeli: öğrenci öğretmenin okulunda doğrulanıp
       // profili gösterildiği için görüntüleme sayılır (bkz. ogretmen-takip.ts).
       if (role === "ogretmen") ogrenciProfilGoruntulemesiKaydet(userId, secilenOgrenciId);
@@ -937,12 +946,14 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   const kendiDersAtamalari = (ogretmenDersleriHam as unknown as OgretmenDersiRow[] | null) ?? [];
   const tumSiniflar = ((siniflar ?? []) as { id: string; seviye: string; sube: string }[]).sort(sinifSiraKarsilastir);
   // Normal öğretmen yalnız sınıf öğretmenliği yaptığı veya ders verdiği
-  // sınıfları görür. Rehber öğretmenin kurum geneli erişimi önceki açık
-  // kullanıcı kararına göre korunur; müdür de tüm okul sınıflarını görür.
+  // sınıfları görür. Lise okul rehberi atandığı düzeyleri, müdür tüm okulu
+  // görür. Dershane rehberinin ayrı yapısı korunur.
   const erisilebilirSinifIdleri = new Set([teacher.class_id, ...kendiDersAtamalari.map((d) => d.class_id)].filter((id): id is string => !!id));
-  const sinifListesi = role === "ogretmen" && !rehberOgretmenMi
-    ? tumSiniflar.filter((sinif) => erisilebilirSinifIdleri.has(sinif.id))
-    : tumSiniflar;
+  const sinifListesi = liseOkulRehberiMi
+    ? tumSiniflar.filter((sinif) => rehberSeviyeleri.includes(sinif.seviye))
+    : role === "ogretmen" && !rehberOgretmenMi
+      ? tumSiniflar.filter((sinif) => erisilebilirSinifIdleri.has(sinif.id))
+      : tumSiniflar;
   const secilenSinifErisilebilir = secilenSinifId && sinifListesi.some((sinif) => sinif.id === secilenSinifId) ? secilenSinifId : null;
   const varsayilanSinifId = teacher.class_id && sinifListesi.some((sinif) => sinif.id === teacher.class_id)
     ? teacher.class_id
@@ -1225,8 +1236,15 @@ async function VeliIcerik({ userId, ad, secilenOgrenciId, donem, aktifBolum }: {
 // öğrenciler, sonra son GRUP_DENEME_SAYISI denemenin konu dökümü.
 async function grupDenemeKonuAnaliziGetir(
   client: Awaited<ReturnType<typeof createClient>>,
-  kapsam: { schoolId: string } | { classId: string },
+  kapsam: { schoolId: string; seviyeler?: string[] } | { classId: string },
 ) {
+  if ("schoolId" in kapsam && kapsam.seviyeler?.length === 0) return { error: null, ozet: { denemeler: [], tumu: [], denemeBazli: {} } };
+  if ("schoolId" in kapsam && kapsam.seviyeler) {
+    const { data, error } = await client.from("students").select("id, classes!inner(seviye)")
+      .eq("school_id", kapsam.schoolId).in("classes.seviye", kapsam.seviyeler);
+    if (error) return { error: error.message, ozet: { denemeler: [], tumu: [], denemeBazli: {} } };
+    return denemeKonuAnaliziGetir(client, ((data ?? []) as { id: string }[]).map((o) => o.id), GRUP_DENEME_SAYISI);
+  }
   const sorgu = client.from("students").select("id");
   const { data, error } = "schoolId" in kapsam ? await sorgu.eq("school_id", kapsam.schoolId) : await sorgu.eq("class_id", kapsam.classId);
   if (error) return { error: error.message, ozet: { denemeler: [], tumu: [], denemeBazli: {} } };

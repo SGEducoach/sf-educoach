@@ -18,6 +18,7 @@ import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUT
 import { KULLANICI_ADI_IPUCU, kullaniciAdiSanitize, okulNoSanitize, teslimEdilebilirEpostaMi } from "@/lib/validators";
 import { SosyalEtkinlikler } from "@/components/dashboard/SosyalEtkinlikler";
 import type { OgrenciYonetimKaydi } from "@/app/yonetici/actions";
+import { RehberSinifAtamalari } from "@/components/yonetici/RehberSinifAtamalari";
 
 export function ModeratorPanel({ okulAdi, kullanicilar, schoolId, kurumTuru, kademe, yurtlu = false, bolum = "ogrenciler" }: {
   okulAdi: string; kullanicilar: ModeratorKullanici[];
@@ -53,11 +54,11 @@ export function ModeratorPanel({ okulAdi, kullanicilar, schoolId, kurumTuru, kad
         schoolId={schoolId} kurumTuru={kurumTuru} kademe={kademe} yurtlu={yurtlu} onMesaj={setMesaj} />
     )}
     {bolum === "ogretmenler" && (
-      <KullaniciBolumu baslik="Öğretmenler" kullanicilar={kullanicilar} sekmeler={["ogretmen"]}
+      <>{kurumTuru === "okul" && (kademe === "lise" || kademe === "ikisi") && <RehberSinifAtamalari schoolId={schoolId} />}<KullaniciBolumu baslik="Öğretmenler" kullanicilar={kullanicilar} sekmeler={["ogretmen"]}
         ekleEtiketi="Öğretmen ekle"
         ekleFormu={(kapat) => <OgretmenEkleFormu schoolId={schoolId} kurumTuru={kurumTuru} kademe={kademe} onDone={(msg) => { setMesaj(msg); if (!msg.startsWith("Hata")) kapat(); }} />}
         aciklama="Sınıf öğretmenliği Sınıflar bölümünden atanır. Bir öğretmeni çıkarmak için adına tıklayıp “Pasifleştir / Sil”i kullanın."
-        schoolId={schoolId} kurumTuru={kurumTuru} kademe={kademe} yurtlu={yurtlu} onMesaj={setMesaj} />
+        schoolId={schoolId} kurumTuru={kurumTuru} kademe={kademe} yurtlu={yurtlu} onMesaj={setMesaj} /></>
     )}
     {bolum === "siniflar" && <SiniflarBolumu schoolId={schoolId} kademe={kademe} onMesaj={setMesaj} />}
     {bolum === "kurum" && (
