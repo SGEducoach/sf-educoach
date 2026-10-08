@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { kademeBul, kurumSeviyeleri, panelBransListesi, seviyeEtiketi } from "@/lib/kademe";
+import { ortaokulDersKarsilastir } from "@/lib/ortaokul-ders-sirasi";
 import type { KurumKademesi } from "@/lib/types";
 import { useRouter, useSearchParams } from "next/navigation";
 import { UserPlus, Check, Users, Eye, Plus, X, BookMarked, BedDouble, ClipboardCheck, ListChecks, ArrowRightLeft, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, CalendarPlus } from "lucide-react";
@@ -81,7 +82,7 @@ function ogrencilerOkulNoSirali(ogrenciler: OgrenciSatiri[]): OgrenciSatiri[] {
 }
 
 export function OgretmenPanel({
-  role, bekleyenTalepler, ogrenciler, sinifAdi, siniflar, gorunecekSinifId, kendiSinifId, kendiSinifiMi,
+  role, bekleyenTalepler, ogrenciler, sinifAdi, siniflar, atanabilirSiniflar, gorunecekSinifId, kendiSinifId, kendiSinifiMi,
   ogretmenDersleri, bekleyenOnaylar, verdigimGorevler, konuOnerileri, kademe, aktifBolum,
   dersProgramiSatirlari, okulNobetleri, yurtNobetGorevleri, dershaneMi, yurtlu = false,
   nobetDevirOgretmenleri,
@@ -94,6 +95,13 @@ export function OgretmenPanel({
   ogrenciler: OgrenciSatiri[];
   sinifAdi: string | null;
   siniflar: SinifSatiri[];
+  // "Ders Programım"da öğretmen HANGİ SINIFLARA GİRDİĞİNİ BEYAN EDER, bu
+  // yüzden orada okulun TÜM sınıfları gerekir. `siniflar` ise öğretmenin
+  // ZATEN erişebildiği sınıflar; o liste beyan formuna verilince
+  // tavuk-yumurta oluyordu — ataması olmayan öğretmende liste BOŞ kalıyor,
+  // 11-A'sı olan 11-B'yi hiç ekleyemiyordu (kullanıcı bildirimi 08.10.2026:
+  // "öğretmenlerin girdiği sınıfları seçerken şube seçimi aktif değil").
+  atanabilirSiniflar?: SinifSatiri[];
   gorunecekSinifId: string | null;
   kendiSinifId: string | null;
   kendiSinifiMi: boolean;
@@ -307,7 +315,7 @@ export function OgretmenPanel({
           sinifSeviyesi={siniflar.find((sinif) => sinif.id === gorunecekSinifId)?.seviye} />
       )}
 
-      {(aktifBolum === "takvim" || aktifBolum === "dersler") && <AjandamBolumu role={role} dersler={ogretmenDersleri} siniflar={siniflar} dersProgramiSatirlari={dersProgramiSatirlari ?? []} okulNobetleri={okulNobetleri ?? []} yurtNobetGorevleri={yurtNobetGorevleri ?? []} nobetDevirOgretmenleri={nobetDevirOgretmenleri ?? []} dershaneMi={!!dershaneMi} yurtlu={yurtlu} />}
+      {(aktifBolum === "takvim" || aktifBolum === "dersler") && <AjandamBolumu atanabilirSiniflar={atanabilirSiniflar} role={role} dersler={ogretmenDersleri} siniflar={siniflar} dersProgramiSatirlari={dersProgramiSatirlari ?? []} okulNobetleri={okulNobetleri ?? []} yurtNobetGorevleri={yurtNobetGorevleri ?? []} nobetDevirOgretmenleri={nobetDevirOgretmenleri ?? []} dershaneMi={!!dershaneMi} yurtlu={yurtlu} />}
 
       {aktifBolum === "ogretmenler" && (role === "mudur" || rehberOgretmenMi) && (
         <OgretmenProgramlariBolumu
@@ -699,8 +707,10 @@ function OgretmenProgramlariBolumu({ ogretmenler, secilenOgretmenId, program, no
   );
 }
 
-function AjandamBolumu({ role, dersler, siniflar, dersProgramiSatirlari, okulNobetleri, yurtNobetGorevleri, nobetDevirOgretmenleri, dershaneMi, yurtlu }: {
+function AjandamBolumu({ role, dersler, siniflar, atanabilirSiniflar, dersProgramiSatirlari, okulNobetleri, yurtNobetGorevleri, nobetDevirOgretmenleri, dershaneMi, yurtlu }: {
   role: "ogretmen" | "mudur"; dersler: OgretmenDersiSatiri[]; siniflar: SinifSatiri[];
+  // Beyan formu okulun TÜM sınıflarını ister (bkz. OgretmenPanel propu).
+  atanabilirSiniflar?: SinifSatiri[];
   dersProgramiSatirlari: DersProgramiSatiri[];
   okulNobetleri: OkulNobeti[]; yurtNobetGorevleri: YurtNobetGorevi[]; yurtlu: boolean;
   nobetDevirOgretmenleri: { id: string; ad: string; brans: string }[]; dershaneMi: boolean;
@@ -729,7 +739,7 @@ function AjandamBolumu({ role, dersler, siniflar, dersProgramiSatirlari, okulNob
   return <section id="takvim" className="sfec-section sfec-fade rounded-3xl p-4 sm:p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
     <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-2"><div className="grid h-8 w-8 place-items-center rounded-full" style={{ background: MINT_BG }}><CalendarPlus size={15} color={MINT}/></div><h1 className="text-xl font-extrabold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Ajandam</h1></div><div className="flex max-w-full gap-1 overflow-x-auto rounded-2xl p-1" style={{ background: BG0, border: `1px solid ${BORDER}` }}>{sekmeler.map(s => <button key={s.id} type="button" onClick={() => sekmeSec(s.id)} className="shrink-0 rounded-xl px-3 py-2 text-xs font-bold" style={{ background: sekme === s.id ? MINT : "transparent", color: sekme === s.id ? MINT_ON : TEXT_MUTED }}>{s.ad}</button>)}</div></div>
     {sekme === "takvim" && <Takvim yurtNobetleri={yurtlu ? yurtNobetGorevleri : []} okulNobetleri={okulNobetleri}/>}
-    {sekme === "ders" && role === "ogretmen" && <DerslerimBolumu dersler={dersler} siniflar={siniflar} dersProgramiSatirlari={dersProgramiSatirlari} okulNobetleri={okulNobetleri} yurtNobetGorevleri={yurtNobetGorevleri} nobetDevirOgretmenleri={nobetDevirOgretmenleri} dershaneMi={dershaneMi} yurtlu={yurtlu}/>}
+    {sekme === "ders" && role === "ogretmen" && <DerslerimBolumu dersler={dersler} siniflar={atanabilirSiniflar ?? siniflar} dersProgramiSatirlari={dersProgramiSatirlari} okulNobetleri={okulNobetleri} yurtNobetGorevleri={yurtNobetGorevleri} nobetDevirOgretmenleri={nobetDevirOgretmenleri} dershaneMi={dershaneMi} yurtlu={yurtlu}/>}
     {sekme === "sosyal" && <SosyalEtkinlikler/>}
     {sekme === "yazili" && role === "ogretmen" && <YaziliAnaliziSekmesi sinifOptions={yaziliSiniflari} dersOptions={yaziliDersleri}/>}
   </section>;
@@ -1030,7 +1040,9 @@ export function GorevVerBolumu({ ogrenciler, konuOnerileri, topluSiniflar = [], 
   // Bilgiler…); lise branş listesi hiç karışmaz.
   const havuzDersleri = [...new Set(konuOnerileri.map((k) => k.ders))];
   const dersSecenekleri = ortaokulMu
-    ? [...new Set([...atananDersler, ...havuzDersleri])]
+    // Ortaokulda ders sırası kullanıcı kararından (Türkçe, Matematik, Fen,
+    // Sosyal, İngilizce, Din) — Set'in ekleme sırası değil.
+    ? [...new Set([...atananDersler, ...havuzDersleri])].sort(ortaokulDersKarsilastir)
     : [...new Set([...atananDersler, ...BRANS_LISTESI])]
       .filter((secenek) => !(secenek === "Türk Dili ve Edebiyatı" && turkDiliAtamasiVar && !atananDersler.includes(secenek)));
   // Ortaokulda branş "Türkçe"; lise adıyla göstermek yanlış olur.

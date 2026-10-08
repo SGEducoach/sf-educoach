@@ -6,6 +6,7 @@ import { temaYeterlilikleri } from "@/lib/ortaokul-yeterlilik";
 import type { TemaYeterliligi, YeterlilikKarari } from "@/lib/ortaokul-yeterlilik";
 import type { OrtaokulBolum } from "@/lib/ortaokul-bolum";
 import { seviyeEtiketi, seviyeNormalize } from "@/lib/kademe";
+import { ortaokulDersKarsilastir } from "@/lib/ortaokul-ders-sirasi";
 
 // Maarif | LGS ekranlarının sorguları (migration 0132). Şekillendirme saf
 // tarafta: ortaokul-calisma.ts, ortaokul-yeterlilik.ts.
@@ -44,8 +45,12 @@ export async function ortaokulDersTemaSecenekleri(
     ortaokul_mufredat_temalari: { id: string; ad: string | null; kod: string; sira: number }[] | null;
   };
 
+  // Ders sırası KULLANICI KARARINDAN gelir (Türkçe, Matematik, Fen, Sosyal,
+  // İngilizce, Din) — mufredat tablosundaki `sira` kolonu değerleri eşit
+  // olduğu için eskiden alfabetik sıralanıyordu ve Din başta, Türkçe sonda
+  // çıkıyordu (bkz. ortaokul-ders-sirasi.ts).
   return ((dersler ?? []) as unknown as Satir[])
-    .sort((a, b) => a.sira - b.sira || a.ad.localeCompare(b.ad, "tr"))
+    .sort((a, b) => ortaokulDersKarsilastir(a.ad, b.ad))
     .map((d) => ({
       id: d.id,
       ad: d.ad,

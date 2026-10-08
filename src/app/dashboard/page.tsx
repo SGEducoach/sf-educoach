@@ -1293,6 +1293,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       ogrenciler={ogrenciListesi}
       sinifAdi={sinifAdi}
       siniflar={sinifListesi}
+      atanabilirSiniflar={tumSiniflar}
       gorunecekSinifId={gorunecekSinifId}
       kendiSinifId={teacher.class_id}
       kendiSinifiMi={kendiSinifiMi}
