@@ -90,7 +90,11 @@ describe("ortaokul öğrenci menüsü", () => {
     const orta = dashboardMenusu("ogrenci", "okul", undefined, false, "ortaokul");
     const bolumler = orta.map((o) => o.bolum);
     expect(bolumler).toContain("ortaokul-dersler");
-    for (const yks of ["veri-girisi", "analiz", "tg-denemeleri", "konu-hakimiyeti"]) {
+    // "tg-denemeleri" (Pano) BU LİSTEDEN ÇIKARILDI (O5, 08.10.2026): Pano
+    // YKS'ye özgü değil, okulun duyuru/afiş panosu ve TgDenemeleri ortaokulu
+    // destekliyor (ortaokulMu ile sınav takvimi haberleri çıkarılıyor).
+    // Yokluğu bilinçli bir kural değil, bir boşluktu.
+    for (const yks of ["veri-girisi", "analiz", "konu-hakimiyeti"]) {
       expect(bolumler, yks).not.toContain(yks);
     }
   });
@@ -348,6 +352,23 @@ describe("ortaokul kurumunda rol menüleri", () => {
   test("ortaokul öğretmeninin kalan kalemleri duruyor", () => {
     for (const b of ["ozet", "gorevler", "duyurular", "talepler", "tg-denemeleri"]) {
       expect(ogretmenOrtaokul.map((o) => o.bolum), b).toContain(b);
+    }
+  });
+
+  // O5 (08.10.2026): ortaokul öğrencisi okulunun panosunu göremiyordu.
+  // TgDenemeleri ortaokulu destekliyor (ortaokulMu ile YKS sınav takvimi
+  // haberleri çıkarılıyor), yalnız menü kalemi eksikti.
+  test("ortaokul öğrencisinde Pano var, YKS bölümleri yok", () => {
+    const menu = dashboardMenusu("ogrenci", "okul", undefined, false, "ortaokul").map((o) => o.bolum);
+    expect(menu).toContain("tg-denemeleri");
+    // Ortaokul öğrencisinin kendi ekranları korunmalı.
+    expect(menu).toContain("ortaokul-calisma");
+    expect(menu).toContain("ortaokul-dersler");
+    expect(menu).toContain("ortaokul-yardim");
+    // YKS'ye özgü hiçbir bölüm sızmamalı — Çalışmalarım zaten özeti ve
+    // öğretmen kararlarını gösteriyor, ayrı bir "analiz" kalemi tekrar olur.
+    for (const yks of ["yapay-zeka", "konu-hakimiyeti", "analiz", "veri-girisi"]) {
+      expect(menu, yks).not.toContain(yks);
     }
   });
 

@@ -100,6 +100,11 @@ const ORTAOKUL_OGRENCI_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "ortaokul-calisma", href: "/dashboard/ortaokul-calisma", etiket: "Çalışmalarım", ikon: "veri" },
   { bolum: "planlar", href: "/dashboard/planlar", etiket: "Planım", ikon: "plan" },
   { bolum: "ortaokul-yardim", href: "/dashboard/ortaokul-yardim", etiket: "Yardım İste", ikon: "talep" },
+  // O5 (08.10.2026): Pano ortaokul öğrencisinin menüsünde YOKTU, oysa
+  // TgDenemeleri ortaokulu gerçekten destekliyor — ortaokulMu ile YKS sınav
+  // takvimi haberleri çıkarılıp yalnız okulun duyuru ve afişleri kalıyor.
+  // Öğrenci okulunun panosunu göremiyordu.
+  { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Pano", ikon: "takvim" },
   { bolum: "profil", href: "/dashboard/profil", etiket: "Profilim", ikon: "profil" },
 ];
 
