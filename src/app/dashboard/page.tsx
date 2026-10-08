@@ -999,13 +999,21 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       // Yazılı analizi dürüstlük engeli: öğrenci öğretmenin okulunda doğrulanıp
       // profili gösterildiği için görüntüleme sayılır (bkz. ogretmen-takip.ts).
       if (role === "ogretmen") ogrenciProfilGoruntulemesiKaydet(userId, secilenOgrenciId);
-      const [analiz, konuHakimiyetiOzeti, kohort, denemeKonu, denemeKarneleri] = await Promise.all([
-        analizVerisiGetir(okulOkumaClient, secilenOgrenciId, donem),
-        konuHakimiyetiOzetiGetir(okulOkumaClient, secilenOgrenciId),
-        kohortKarsilastirmasiGetir(okulOkumaClient, secilenOgrenciId),
-        denemeKonuAnaliziGetir(okulOkumaClient, [secilenOgrenciId], OGRENCI_DENEME_SAYISI),
-        denemeKarneleriGetir(okulOkumaClient, secilenOgrenciId),
-      ]);
+      // O4 (08.10.2026) — ORTAOKUL öğrencisine tıklayan öğretmen/müdür
+      // buraya kadar YKS analizini görüyordu (analizVerisiGetir, konu
+      // hâkimiyeti, kohort, deneme karnesi — hepsi TYT/AYT taksonomisi).
+      // Ortaokul çocuğu için bu YANLIŞ BİLGİ. Artık ortaokul raporu
+      // gösteriliyor; beş ağır YKS sorgusu da hiç çalışmıyor.
+      const ortaokulOgrencisi = kademeBul(o.classes?.seviye) === "ortaokul" && await ortaokulAktifMi(supabase);
+      const [analiz, konuHakimiyetiOzeti, kohort, denemeKonu, denemeKarneleri, ortaokulRaporu] = ortaokulOgrencisi
+        ? [null, null, null, null, null, await ortaokulVeliRaporuGetir(okulOkumaClient, secilenOgrenciId)] as const
+        : [...(await Promise.all([
+            analizVerisiGetir(okulOkumaClient, secilenOgrenciId, donem),
+            konuHakimiyetiOzetiGetir(okulOkumaClient, secilenOgrenciId),
+            kohortKarsilastirmasiGetir(okulOkumaClient, secilenOgrenciId),
+            denemeKonuAnaliziGetir(okulOkumaClient, [secilenOgrenciId], OGRENCI_DENEME_SAYISI),
+            denemeKarneleriGetir(okulOkumaClient, secilenOgrenciId),
+          ])), null] as const;
       const ogrenciAdi = o.profiles?.ad ?? "İsimsiz";
       // Dershane müdürünün "ozet" bölümü yok (bkz. DERSHANE_MUDUR_MENUSU) —
       // varsayılan geri dönüş hedefi ona göre değişiyor, aksi halde
@@ -1027,11 +1035,17 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
             <span>Sınıf: <strong style={{ color: TEXT }}>{o.classes ? `${o.classes.seviye}-${o.classes.sube}` : "—"}</strong></span>
             <span>{o.schools?.tur === "dershane" ? "Kullanıcı adı" : "Öğrenci no"}: <strong style={{ color: TEXT }}>{o.okul_no || "—"}</strong></span>
           </div>
-          <AnalizPaneli veri={analiz} ogrenciAdi={ogrenciAdi}
-            konuHakimiyetiSatirlari={konuHakimiyetiOzeti.satirlar} konuHakimiyetiTamGorunum={konuHakimiyetiOzeti.tamGorunum}
-            konuHakimiyetiAytAlan={konuHakimiyetiOzeti.aytAlan} ogretmenGorunumu kohortKarsilastirma={kohort} />
-          <DenemeKarnesi karneler={denemeKarneleri} />
-          <DenemeKonuAnalizi ozet={denemeKonu.ozet} kapsam="ogrenci" hata={denemeKonu.error} />
+          {ortaokulRaporu ? (
+            <VeliOrtaokulRaporu rapor={ortaokulRaporu} ogrenciAdi={ogrenciAdi} />
+          ) : analiz && konuHakimiyetiOzeti && denemeKarneleri && denemeKonu ? (
+            <>
+              <AnalizPaneli veri={analiz} ogrenciAdi={ogrenciAdi}
+                konuHakimiyetiSatirlari={konuHakimiyetiOzeti.satirlar} konuHakimiyetiTamGorunum={konuHakimiyetiOzeti.tamGorunum}
+                konuHakimiyetiAytAlan={konuHakimiyetiOzeti.aytAlan} ogretmenGorunumu kohortKarsilastirma={kohort} />
+              <DenemeKarnesi karneler={denemeKarneleri} />
+              <DenemeKonuAnalizi ozet={denemeKonu.ozet} kapsam="ogrenci" hata={denemeKonu.error} />
+            </>
+          ) : null}
         </div>
       );
     }

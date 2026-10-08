@@ -307,7 +307,12 @@ const GRUP_KOC_MENUSU: DashboardMenuOgesi[] = [
 // "yapay-zeka" = lise Konu Haritası (konu hâkimiyeti, TYT/AYT taksonomisi).
 // Ortaokulun karşılığı "Konu Yeterliliği" (Maarif|LGS, migration 0132) —
 // ikisini aynı menüde göstermek hem tekrar hem yanlış taksonomi olurdu.
-export const ORTAOKULDA_GOSTERILMEYEN: DashboardBolumu[] = ["yapay-zeka"];
+// "onaylar" (Bekleyen onaylar) ÖLÇÜLDÜ ve ortaokulda ÖLÜ bir kalem
+// (O4, 08.10.2026): o ekran `soru_cozumleri` tablosunu okuyor, ortaokul
+// öğrencisi ise `ortaokul_calismalar`'a yazıyor ve o tabloda
+// `onaylandi_mi` kolonu YOK — ortaokulda onay kavramı tasarımca yok.
+// Yani ortaokul öğretmeninde bu kalem daima boş kalıyordu.
+export const ORTAOKULDA_GOSTERILMEYEN: DashboardBolumu[] = ["yapay-zeka", "onaylar"];
 
 function ortaokulaUyarla(menu: DashboardMenuOgesi[]): DashboardMenuOgesi[] {
   return menu.filter((oge) => !ORTAOKULDA_GOSTERILMEYEN.includes(oge.bolum));

@@ -351,6 +351,22 @@ describe("ortaokul kurumunda rol menüleri", () => {
     }
   });
 
+  // O4 (08.10.2026): ortaokulda ONAY KAVRAMI YOK — "Bekleyen onaylar"
+  // ekranı soru_cozumleri'ni okuyor, ortaokul öğrencisi ise
+  // ortaokul_calismalar'a yazıyor ve o tabloda onaylandi_mi kolonu yok.
+  // Kalem ortaokul öğretmeninde daima boş kalıyordu.
+  test("ortaokul öğretmeninde Bekleyen onaylar YOK, lisede VAR", () => {
+    const ortaokul = dashboardMenusu("ogretmen", "okul", "Matematik", false, "ortaokul").map((o) => o.bolum);
+    const lise = dashboardMenusu("ogretmen", "okul", "Matematik", false, "lise").map((o) => o.bolum);
+    expect(ortaokul).not.toContain("onaylar");
+    expect(lise).toContain("onaylar");
+    // Ortaokul öğretmeni Ajandam'ı ve Ödev ver'i KAYBETMEMELİ (02.10.2026
+    // regresyonunun tekrarı olmasın).
+    expect(ortaokul).toContain("takvim");
+    expect(ortaokul).toContain("gorevler");
+    expect(ortaokul).toContain("ortaokul-yeterlilik");
+  });
+
   test("müdürde de YKS Konu Haritası yalnız lisede", () => {
     expect(dashboardMenusu("mudur", "okul", undefined, false, "ortaokul").map((o) => o.bolum)).not.toContain("yapay-zeka");
     expect(dashboardMenusu("mudur", "okul", undefined, false, "lise").map((o) => o.bolum)).toContain("yapay-zeka");
