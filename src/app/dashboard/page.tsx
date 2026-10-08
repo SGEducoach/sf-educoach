@@ -759,6 +759,10 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   // Bölüm menüde yalnız ortaokul kurumunda görünüyor; doğrudan adres yazanı
   // da menü kontrolü (yukarıda) zaten /dashboard'a yönlendiriyor.
   if (aktifBolum === "ortaokul-yeterlilik") {
+    // Rehberlik Servisi üyeliği BURADA çekiliyor: bu dal, aşağıdaki
+    // okulRehberi/rehberSeviyeleri tanımlarından ÖNCE çalışıyor ve o zinciri
+    // yeniden sıralamak ortak akışı riske atardı.
+    const yeterlilikUyeligi = role === "ogretmen" ? await rehberlikUyeligiGetir(supabase, userId) : null;
     return (
       <OrtaokulYeterlilikIcerik
         supabase={supabase}
@@ -767,6 +771,10 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
         seciliDersId={seciliDersId}
         seciliBolum={seciliBolum}
         seciliSinifId={secilenSinifId}
+        teacherId={userId}
+        kendiSinifId={teacher.class_id}
+        tumOgrencileriGorur={role === "mudur" || yeterlilikUyeligi !== null}
+        rehberSeviyeleri={yeterlilikUyeligi?.sinifDuzeyleri ?? null}
       />
     );
   }
@@ -1294,6 +1302,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       sinifAdi={sinifAdi}
       siniflar={sinifListesi}
       atanabilirSiniflar={tumSiniflar}
+      sinifSecildiMi={!!secilenSinifId}
       gorunecekSinifId={gorunecekSinifId}
       kendiSinifId={teacher.class_id}
       kendiSinifiMi={kendiSinifiMi}
@@ -1462,12 +1471,22 @@ function OzetIstatistikKarti({ Icon, etiket, deger, aciklama }: {
 
 // Ortaokul "Konu Yeterliliği" içeriği (öğretmen). Veri sorguları burada,
 // karar düğmeleri istemci bileşeninde (OrtaokulYeterlilik).
-async function OrtaokulYeterlilikIcerik({ supabase, schoolId, seciliOgrenciId, seciliDersId, seciliBolum, seciliSinifId }: {
+async function OrtaokulYeterlilikIcerik({
+  supabase, schoolId, seciliOgrenciId, seciliDersId, seciliBolum, seciliSinifId,
+  teacherId, kendiSinifId, tumOgrencileriGorur, rehberSeviyeleri,
+}: {
   supabase: Awaited<ReturnType<typeof createClient>>;
   schoolId: string;
   seciliOgrenciId?: string;
   seciliDersId?: string;
   seciliBolum?: string;
+  teacherId: string;
+  kendiSinifId: string | null;
+  // Müdür ve Rehberlik Servisi üyesi daha geniş görür (kullanıcı onayı
+  // 08.10.2026: "bir Matematik öğretmeninin, girmediği 8-C'nin öğrencilerine
+  // tema kararı verebilmesi bana doğru gelmiyor").
+  tumOgrencileriGorur: boolean;
+  rehberSeviyeleri: string[] | null;
   // ?sinif= verilmişse SINIF tema haritası, verilmemişse mevcut öğrenci
   // görünümü (Faz 2, 08.10.2026). Yeni parametre eklenmedi: `sinif` zaten
   // searchParams'ta var, iki görünüm aynı ekranda onunla ayrışıyor.
@@ -1502,11 +1521,30 @@ async function OrtaokulYeterlilikIcerik({ supabase, schoolId, seciliOgrenciId, s
 
   // Kurumun ORTAOKUL sınıflarındaki öğrenciler. Lise sınıfları bu ekrana
   // hiç girmiyor — yeterlilik modeli ortaokul müfredatına bağlı.
+  //
+  // KAPSAM (kullanıcı onayı 08.10.2026): branş öğretmeni YALNIZ girdiği
+  // sınıfların öğrencilerini görür. Eskiden okulun TÜM ortaokul öğrencileri
+  // her öğretmene açıktı; bir Matematik öğretmeni girmediği 8-C'nin
+  // öğrencilerine tema kararı verebiliyordu. Müdür ve Rehberlik Servisi
+  // üyesi daha geniş görmeye devam ediyor (rehber kendi kademeleriyle).
+  const erisilebilirSiniflar = tumOgrencileriGorur
+    ? null
+    : await (async () => {
+        const { data: atamalar } = await supabase
+          .from("ogretmen_dersleri").select("class_id").eq("teacher_id", teacherId);
+        return new Set([
+          kendiSinifId,
+          ...((atamalar ?? []) as { class_id: string | null }[]).map((a) => a.class_id),
+        ].filter((id): id is string => !!id));
+      })();
+
   const { data: ham } = await supabase
     .from("students")
     .select("id, profiles!students_id_fkey(ad), classes!inner(id, seviye, sube)")
     .eq("school_id", schoolId)
-    .in("classes.seviye", [...ORTAOKUL_SEVIYELERI]);
+    .in("classes.seviye", rehberSeviyeleri && rehberSeviyeleri.length > 0
+      ? rehberSeviyeleri.filter((s) => (ORTAOKUL_SEVIYELERI as readonly string[]).includes(s))
+      : [...ORTAOKUL_SEVIYELERI]);
 
   type Satir = { id: string; profiles: { ad: string } | null; classes: { id: string; seviye: string; sube: string } | null };
   const ogrenciler = ((ham ?? []) as unknown as Satir[])
@@ -1516,6 +1554,7 @@ async function OrtaokulYeterlilikIcerik({ supabase, schoolId, seciliOgrenciId, s
       sinif: o.classes ? `${o.classes.seviye}-${o.classes.sube}` : null,
       sinifId: o.classes?.id ?? null,
     }] : []))
+    .filter((o) => !erisilebilirSiniflar || (o.sinifId !== null && erisilebilirSiniflar.has(o.sinifId)))
     .sort((a, b) => a.ad.localeCompare(b.ad, "tr"));
 
   const seciliOgrenci = ogrenciler.find((o) => o.id === seciliOgrenciId) ?? ogrenciler[0] ?? null;

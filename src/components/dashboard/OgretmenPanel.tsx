@@ -5,6 +5,8 @@ import { kademeBul, kurumSeviyeleri, panelBransListesi, seviyeEtiketi } from "@/
 import { ortaokulDersKarsilastir } from "@/lib/ortaokul-ders-sirasi";
 import type { KurumKademesi } from "@/lib/types";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
 import { UserPlus, Check, Users, Eye, Plus, X, BookMarked, BedDouble, ClipboardCheck, ListChecks, ArrowRightLeft, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, CalendarPlus } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, PEACH, PEACH_BG, SKY, SKY_BG, TEXT, TEXT_MUTED, BLUSH, BLUSH_BG } from "@/lib/theme";
 import {
@@ -82,7 +84,7 @@ function ogrencilerOkulNoSirali(ogrenciler: OgrenciSatiri[]): OgrenciSatiri[] {
 }
 
 export function OgretmenPanel({
-  role, bekleyenTalepler, ogrenciler, sinifAdi, siniflar, atanabilirSiniflar, gorunecekSinifId, kendiSinifId, kendiSinifiMi,
+  role, bekleyenTalepler, ogrenciler, sinifAdi, siniflar, atanabilirSiniflar, sinifSecildiMi = false, gorunecekSinifId, kendiSinifId, kendiSinifiMi,
   ogretmenDersleri, bekleyenOnaylar, verdigimGorevler, konuOnerileri, kademe, aktifBolum,
   dersProgramiSatirlari, okulNobetleri, yurtNobetGorevleri, dershaneMi, yurtlu = false,
   nobetDevirOgretmenleri,
@@ -102,6 +104,10 @@ export function OgretmenPanel({
   // 11-A'sı olan 11-B'yi hiç ekleyemiyordu (kullanıcı bildirimi 08.10.2026:
   // "öğretmenlerin girdiği sınıfları seçerken şube seçimi aktif değil").
   atanabilirSiniflar?: SinifSatiri[];
+  // Adres çubuğunda ?sinif= var mı. Yoksa öğretmen panele İLK GİRİŞTEDİR ve
+  // öğrenci listesi yerine sınıf kartları gösterilir (kullanıcı isteği
+  // 08.10.2026: "liste kalabalığı giderilir").
+  sinifSecildiMi?: boolean;
   gorunecekSinifId: string | null;
   kendiSinifId: string | null;
   kendiSinifiMi: boolean;
@@ -186,6 +192,11 @@ export function OgretmenPanel({
   // olduğu bir sınıf görüntüleniyorsa (bkz. migration 0047 RLS kuralı).
   const gorevVerilebilirMi = kendiSinifiMi || ogretmenDersleri.some((d) => d.classId === gorunecekSinifId);
 
+  // İlk girişte (adreste ?sinif= yokken) öğrenci listesi yerine sınıf
+  // kartları. Yalnız ÖĞRETMEN için: müdürün akışı değiştirilmedi. Tek sınıfı
+  // olan öğretmene kart göstermek fazladan tıklama olurdu, onda doğrudan
+  // liste açılır.
+  const sinifKartlariGoster = role === "ogretmen" && !sinifSecildiMi && siniflar.length > 1;
   const duyuruMumkunMu = role === "mudur" || rehberOgretmenMi || !!kendiSinifId;
   // Müdür kapsamı seçebiliyor: tüm okul / seviye / belirli şube. Öğretmende
   // kapsam sabit (kendi sınıfı) olduğu için seçici hiç gösterilmiyor.
@@ -329,7 +340,44 @@ export function OgretmenPanel({
 
       {aktifBolum === "planlar" && secilenOgrenciId && <OgrenciAylikProgrami ogrenciAdi={secilenOgrenciAdi} program={secilenOgrenciProgrami} sinifId={gorunecekSinifId} />}
 
-      {aktifBolum === "ozet" && <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+      {/* Sınıf kartları — öğretmen panele ilk girdiğinde (henüz sınıf
+          seçmemişken) öğrenci listesi yerine bunlar çıkar. Kalabalık liste
+          yerine iki sütunlu, ayrı pencereli kartlar; solda SeFu amblemi
+          (yazısız sürüm, kullanıcı kararı), sağda sınıf adı.
+          Müdür bilinçli olarak DIŞARIDA: onun akışı değiştirilmedi. */}
+      {aktifBolum === "ozet" && sinifKartlariGoster && (
+        <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+          <div className="mb-4 flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full" style={{ background: MINT_BG }}>
+              <Users size={13} color={MINT} />
+            </div>
+            <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Sınıflarım</span>
+            <span className="text-xs" style={{ color: TEXT_MUTED }}>· {siniflar.length} sınıf</span>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {siniflar.map((s) => (
+              <Link
+                key={s.id}
+                href={`/dashboard?bolum=ozet&sinif=${s.id}`}
+                className="sfec-btn flex items-center gap-3 rounded-3xl p-4"
+                style={{ background: BG1_ALT, border: `2px solid ${s.id === kendiSinifId ? MINT : BORDER_STRONG}` }}
+              >
+                <Image src="/icon-192.png" alt="" width={40} height={40} className="h-10 w-10 shrink-0 rounded-xl" />
+                <span className="min-w-0 flex-1 text-right">
+                  <span className="block truncate text-lg font-extrabold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>
+                    {s.seviye}-{s.sube}
+                  </span>
+                  {s.id === kendiSinifId && (
+                    <span className="block text-[10px] font-bold" style={{ color: MINT }}>sınıfınız</span>
+                  )}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {aktifBolum === "ozet" && !sinifKartlariGoster && <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: kendiSinifiMi ? MINT_BG : SKY_BG }}>
@@ -355,6 +403,13 @@ export function OgretmenPanel({
               ))}
             </select>
             <span style={{ color: TEXT_MUTED }} className="text-xs">{sinifAdi ?? "—"} · {ogrenciler.length} kişi</span>
+            {role === "ogretmen" && siniflar.length > 1 && (
+              <Link href="/dashboard?bolum=ozet"
+                className="sfec-btn inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-bold"
+                style={{ color: TEXT, border: `1px solid ${BORDER_STRONG}` }}>
+                <ChevronLeft size={13} /> Sınıflarım
+              </Link>
+            )}
           </div>
         </div>
         {ogrenciler.length === 0 ? (
