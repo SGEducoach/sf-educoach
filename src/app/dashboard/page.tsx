@@ -56,7 +56,7 @@ import { ortaokulCalismalariGetir, ortaokulDersTemaSecenekleri, ortaokulKonuHavu
 import { bolumCoz } from "@/lib/ortaokul-bolum";
 import { OrtaokulCalismalarim } from "@/components/dashboard/OrtaokulCalismalarim";
 import { OrtaokulYeterlilik } from "@/components/dashboard/OrtaokulYeterlilik";
-import { ORTAOKUL_SEVIYELERI } from "@/lib/kademe";
+import { ORTAOKUL_SEVIYELERI, kademeBul } from "@/lib/kademe";
 import { yardimMesaji } from "@/lib/ortaokul-yardim";
 import { OrtaokulYardim } from "@/components/dashboard/OrtaokulYardim";
 import type { DashboardBolumu } from "@/lib/dashboard-navigation";
@@ -75,6 +75,8 @@ import { gorusmeleriGetir } from "@/app/dashboard/gorusme-actions";
 import { RehberGorusmeleri } from "@/components/dashboard/RehberGorusmeleri";
 import { rehberProgramAkibetleri } from "@/app/dashboard/rehber-program-actions";
 import { RehberProgramDestegi } from "@/components/dashboard/RehberProgramDestegi";
+import { ortaokulVeliRaporuGetir } from "@/lib/ortaokul-veli-raporu";
+import { VeliOrtaokulRaporu } from "@/components/dashboard/VeliOrtaokulRaporu";
 import { RehberOgrenciTakibi } from "@/components/dashboard/RehberOgrenciTakibi";
 import { GrupKocPaneli } from "@/components/dashboard/GrupKocPaneli";
 import { DershaneDenemePdfFormu } from "@/components/dashboard/DershaneDenemePdfFormu";
@@ -225,6 +227,31 @@ export default async function DashboardPage({
     ? kurum.kademe
     : null;
   const menuKademesi = ogrenciKademesi ?? ogretmenKademesi;
+  // Pano içeriği kademeye göre ayrışıyor ama kaynak KURUMUN kademesiydi:
+  // "ikisi" okulunda `kurum.kademe === "ortaokul"` FALSE olduğu için
+  // ortaokul öğrencisine LİSE panosu gösteriliyordu (O1 tespiti B3).
+  // Artık kaynak kişinin KENDİ sınıf seviyesi.
+  //
+  // Velide seçili çocuğun seviyesi gerekiyor; sorgu yalnız Pano açıkken ve
+  // yalnız veli için çalışır (VeliIcerik aynı seçimi kendi içinde yapıyor).
+  const veliPanoSeviyesi = role === "veli" && aktifBolum === "tg-denemeleri"
+    ? ((await supabase
+        .from("parent_students")
+        .select("students!inner(id, classes(seviye))")
+        .eq("parent_id", user.id)
+        .then(({ data }) => {
+          type Satir = { students: { id: string; classes: { seviye: string } | { seviye: string }[] | null } | null };
+          const satirlar = ((data ?? []) as unknown as Satir[]).filter((s) => s.students);
+          const secili = satirlar.find((s) => s.students!.id === params.ogrenci) ?? satirlar[0];
+          // Gömülü ilişki çalışma anında NESNE döner (proje notu).
+          const sinif = secili?.students?.classes;
+          return Array.isArray(sinif) ? sinif[0]?.seviye : sinif?.seviye;
+        })))
+    : undefined;
+  const panoOrtaokulMu = menuKademesi === "ortaokul"
+    || kademeBul(veliPanoSeviyesi) === "ortaokul"
+    || kurum?.kademe === "ortaokul";
+
   const ogrenciProgramiGizliRotasi = role === "ogretmen" && aktifBolum === "planlar" && !!params.ogrenci;
   if (!dashboardMenusu(role, kurumTuru, brans, grupKocu, menuKademesi, okulRehberi).some((oge) => oge.bolum === aktifBolum) && !ogrenciProgramiGizliRotasi) redirect("/dashboard");
   // Yazılı analizi dürüstlük engeli: öğretmenin panele girdiği günler sayılır
@@ -272,7 +299,7 @@ export default async function DashboardPage({
           {aktifBolum === "profil" ? (
             <OgrenciProfilim userId={user.id} ad={profile.ad} kademe={ogrenciKademesi} />
           ) : aktifBolum === "tg-denemeleri" ? (
-            <TgDenemeleri bugun={bugununTarihiTR()} dbIlanlar={await tgDenemeIlanlariGetir(supabase, kurum?.id)} ortaokulMu={kurum?.kademe === "ortaokul"} />
+            <TgDenemeleri bugun={bugununTarihiTR()} dbIlanlar={await tgDenemeIlanlariGetir(supabase, kurum?.id)} ortaokulMu={panoOrtaokulMu} />
           ) : grupKocu && aktifBolum === "ozet" ? (
             <GrupKocIcerik />
           ) : grupKocu && aktifBolum === "denemeler" ? (
@@ -1275,16 +1302,27 @@ async function VeliIcerik({ userId, ad, secilenOgrenciId, donem, aktifBolum }: {
   const supabase = await createClient();
 
 
+  // O1 (08.10.2026) — sınıf seviyesi EKLENDİ. VELI_MENUSU kademeden
+  // habersiz olduğu için ortaokul velisi "Analiz / Rapor"da doğrudan
+  // AnalizPaneli'ni, yani TYT/AYT net trendini görüyordu (analiz.ts içinde
+  // "ortaokul" hiç geçmiyor, AnalizPaneli TYT/AYT çizgilerini sabit
+  // kodluyor). Artık çocuğun kademesine göre ayrışıyor.
   const { data: links } = await supabase
     .from("parent_students")
-    .select("students(id, okul_no, profiles!students_id_fkey(ad))")
+    .select("students(id, okul_no, profiles!students_id_fkey(ad), classes(seviye))")
     .eq("parent_id", userId);
 
-  type LinkRow = { students: { id: string; okul_no: string; profiles: { ad: string } | null } | null };
+  type LinkRow = { students: { id: string; okul_no: string; profiles: { ad: string } | null; classes: { seviye: string } | { seviye: string }[] | null } | null };
   const cocuklar = ((links as unknown as LinkRow[]) ?? []).filter((l) => l.students);
 
   const seciliId = secilenOgrenciId || cocuklar[0]?.students?.id;
   const seciliCocuk = cocuklar.find((c) => c.students?.id === seciliId);
+  // Gömülü ilişki çalışma anında NESNE döner, tipte dizi görünür (proje notu).
+  const seciliSinifKaydi = seciliCocuk?.students?.classes;
+  const seciliSeviye = Array.isArray(seciliSinifKaydi) ? seciliSinifKaydi[0]?.seviye : seciliSinifKaydi?.seviye;
+  // Kademe ÇOCUĞUN sınıfından türetiliyor, kurumun kademesinden DEĞİL:
+  // "ikisi" okulunda velinin bir çocuğu 5-A, diğeri 11-B olabilir.
+  const seciliOrtaokulMu = kademeBul(seciliSeviye) === "ortaokul" && await ortaokulAktifMi(supabase);
 
   return (
     <div className="flex flex-col gap-6">
@@ -1314,7 +1352,12 @@ async function VeliIcerik({ userId, ad, secilenOgrenciId, donem, aktifBolum }: {
       </div>
 
       {aktifBolum === "analiz" && seciliCocuk?.students && (
-        <VeliAnalizBolumu supabase={supabase} studentId={seciliCocuk.students.id} donem={donem} ogrenciAdi={seciliCocuk.students.profiles?.ad} />
+        seciliOrtaokulMu
+          ? <VeliOrtaokulRaporu
+              rapor={await ortaokulVeliRaporuGetir(supabase, seciliCocuk.students.id)}
+              ogrenciAdi={seciliCocuk.students.profiles?.ad}
+            />
+          : <VeliAnalizBolumu supabase={supabase} studentId={seciliCocuk.students.id} donem={donem} ogrenciAdi={seciliCocuk.students.profiles?.ad} />
       )}
     </div>
   );
