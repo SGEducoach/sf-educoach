@@ -114,7 +114,9 @@ export function yeterlilikOzeti(satirlar: TemaYeterliligi[]): YeterlilikOzeti {
 
 // Destek gereken temalar: öğretmenin müdahale listesi (§10.2 "müdahale
 // önerisi listesi"). Sıra önemli — en çok destek gerekeni başa al.
-const DESTEK_SIRASI: YeterlilikDurumu[] = ["tekrar_zamani", "biraz_pratik", "ogreniyor"];
+// Sınıf haritası da AYNI tanımı kullanıyor (bkz. ortaokul-sinif-haritasi.ts);
+// "destek gereken" iki yerde ayrı tanımlanırsa ekranlar birbirini yalanlar.
+export const DESTEK_SIRASI: YeterlilikDurumu[] = ["tekrar_zamani", "biraz_pratik", "ogreniyor"];
 
 export function destekGerekenler(satirlar: TemaYeterliligi[]): TemaYeterliligi[] {
   return satirlar

@@ -77,6 +77,8 @@ import { rehberProgramAkibetleri } from "@/app/dashboard/rehber-program-actions"
 import { RehberProgramDestegi } from "@/components/dashboard/RehberProgramDestegi";
 import { ortaokulVeliRaporuGetir } from "@/lib/ortaokul-veli-raporu";
 import { VeliOrtaokulRaporu } from "@/components/dashboard/VeliOrtaokulRaporu";
+import { sinifTemaHaritasiGetir } from "@/lib/ortaokul-sinif-haritasi";
+import { OrtaokulSinifHaritasi } from "@/components/dashboard/OrtaokulSinifHaritasi";
 import { RehberOgrenciTakibi } from "@/components/dashboard/RehberOgrenciTakibi";
 import { GrupKocPaneli } from "@/components/dashboard/GrupKocPaneli";
 import { DershaneDenemePdfFormu } from "@/components/dashboard/DershaneDenemePdfFormu";
@@ -764,6 +766,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
         seciliOgrenciId={secilenOgrenciId}
         seciliDersId={seciliDersId}
         seciliBolum={seciliBolum}
+        seciliSinifId={secilenSinifId}
       />
     );
   }
@@ -1458,29 +1461,59 @@ function OzetIstatistikKarti({ Icon, etiket, deger, aciklama }: {
 
 // Ortaokul "Konu Yeterliliği" içeriği (öğretmen). Veri sorguları burada,
 // karar düğmeleri istemci bileşeninde (OrtaokulYeterlilik).
-async function OrtaokulYeterlilikIcerik({ supabase, schoolId, seciliOgrenciId, seciliDersId, seciliBolum }: {
+async function OrtaokulYeterlilikIcerik({ supabase, schoolId, seciliOgrenciId, seciliDersId, seciliBolum, seciliSinifId }: {
   supabase: Awaited<ReturnType<typeof createClient>>;
   schoolId: string;
   seciliOgrenciId?: string;
   seciliDersId?: string;
   seciliBolum?: string;
+  // ?sinif= verilmişse SINIF tema haritası, verilmemişse mevcut öğrenci
+  // görünümü (Faz 2, 08.10.2026). Yeni parametre eklenmedi: `sinif` zaten
+  // searchParams'ta var, iki görünüm aynı ekranda onunla ayrışıyor.
+  seciliSinifId?: string;
 }) {
   const bolum = bolumCoz(seciliBolum);
+
+  if (seciliSinifId) {
+    const { data: sinifHam } = await supabase
+      .from("classes").select("id, seviye, sube").eq("school_id", schoolId)
+      .in("seviye", [...ORTAOKUL_SEVIYELERI]);
+    const siniflar = ((sinifHam ?? []) as { id: string; seviye: string; sube: string }[])
+      .sort(sinifSiraKarsilastir)
+      .map((s) => ({ id: s.id, ad: `${s.seviye}-${s.sube}`, seviye: s.seviye }));
+    const seciliSinif = siniflar.find((s) => s.id === seciliSinifId) ?? siniflar[0] ?? null;
+    const haritaDersleri = await ortaokulDersTemaSecenekleri(supabase, seciliSinif?.seviye);
+    const haritaDersi = haritaDersleri.find((d) => d.id === seciliDersId) ?? haritaDersleri[0] ?? null;
+    const harita = seciliSinif && haritaDersi
+      ? await sinifTemaHaritasiGetir(supabase, schoolId, seciliSinif.id, haritaDersi, bolum)
+      : null;
+    return (
+      <OrtaokulSinifHaritasi
+        bolum={bolum}
+        siniflar={siniflar.map(({ id, ad }) => ({ id, ad }))}
+        seciliSinifId={seciliSinif?.id ?? ""}
+        dersler={haritaDersleri}
+        seciliDers={haritaDersi}
+        harita={harita}
+      />
+    );
+  }
 
   // Kurumun ORTAOKUL sınıflarındaki öğrenciler. Lise sınıfları bu ekrana
   // hiç girmiyor — yeterlilik modeli ortaokul müfredatına bağlı.
   const { data: ham } = await supabase
     .from("students")
-    .select("id, profiles!students_id_fkey(ad), classes!inner(seviye, sube)")
+    .select("id, profiles!students_id_fkey(ad), classes!inner(id, seviye, sube)")
     .eq("school_id", schoolId)
     .in("classes.seviye", [...ORTAOKUL_SEVIYELERI]);
 
-  type Satir = { id: string; profiles: { ad: string } | null; classes: { seviye: string; sube: string } | null };
+  type Satir = { id: string; profiles: { ad: string } | null; classes: { id: string; seviye: string; sube: string } | null };
   const ogrenciler = ((ham ?? []) as unknown as Satir[])
     .flatMap((o) => (o.profiles ? [{
       id: o.id,
       ad: o.profiles.ad,
       sinif: o.classes ? `${o.classes.seviye}-${o.classes.sube}` : null,
+      sinifId: o.classes?.id ?? null,
     }] : []))
     .sort((a, b) => a.ad.localeCompare(b.ad, "tr"));
 
@@ -1503,6 +1536,7 @@ async function OrtaokulYeterlilikIcerik({ supabase, schoolId, seciliOgrenciId, s
       seciliDers={seciliDers}
       satirlar={satirlar}
       bugun={bugununTarihiTR()}
+      sinifHaritasiSinifId={seciliOgrenci?.sinifId ?? null}
     />
   );
 }

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { ClipboardList, GraduationCap } from "lucide-react";
+import { ClipboardList, GraduationCap, LayoutGrid } from "lucide-react";
 import { BOLUM_ACIKLAMA, BOLUM_ETIKET, ORTAOKUL_BOLUMLERI } from "@/lib/ortaokul-bolum";
 import type { OrtaokulBolum } from "@/lib/ortaokul-bolum";
 import { YETERLILIK_DURUMLARI, YETERLILIK_ETIKET, destekGerekenler, yeterlilikOzeti } from "@/lib/ortaokul-yeterlilik";
@@ -35,10 +35,12 @@ export interface YeterlilikOgrencisi {
   id: string;
   ad: string;
   sinif: string | null;
+  // Sınıf tema haritasına geçiş bağlantısı için (Faz 2, 08.10.2026).
+  sinifId?: string | null;
 }
 
 export function OrtaokulYeterlilik({
-  bolum, ogrenciler, seciliOgrenci, dersler, seciliDers, satirlar, bugun,
+  bolum, ogrenciler, seciliOgrenci, dersler, seciliDers, satirlar, bugun, sinifHaritasiSinifId,
 }: {
   bolum: OrtaokulBolum;
   ogrenciler: YeterlilikOgrencisi[];
@@ -47,6 +49,9 @@ export function OrtaokulYeterlilik({
   seciliDers: DersSecenegi | null;
   satirlar: TemaYeterliligi[];
   bugun: string;
+  // Seçili öğrencinin sınıfı — "Sınıf haritası" bağlantısı onun sınıfına
+  // gider; null ise bağlantı hiç gösterilmez.
+  sinifHaritasiSinifId?: string | null;
 }) {
   const ozet = yeterlilikOzeti(satirlar);
   const destek = destekGerekenler(satirlar);
@@ -85,6 +90,14 @@ export function OrtaokulYeterlilik({
             </Link>
           ))}
         </div>
+
+        {sinifHaritasiSinifId && (
+          <Link href={`/dashboard/ortaokul-yeterlilik?kisim=${bolum}&sinif=${sinifHaritasiSinifId}${seciliDers ? `&ders=${seciliDers.id}` : ""}`}
+            className="sfec-btn mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold"
+            style={{ color: TEXT, border: `1px solid ${BORDER_STRONG}` }}>
+            <LayoutGrid size={13} /> Sınıf tema haritasına geç
+          </Link>
+        )}
 
         {ogrenciler.length === 0 ? (
           <p className="mt-3 text-xs" style={{ color: TEXT_MUTED }}>
