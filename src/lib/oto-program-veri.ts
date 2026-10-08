@@ -3,6 +3,7 @@ import type { createClient } from "@/lib/supabase/server";
 import { konuHakimiyetiGetir } from "@/lib/konu-hakimiyeti";
 import { oncelikSiralamasiOlustur } from "@/lib/analiz-motoru";
 import { TYT_DERSLERI, AYT_DERSLERI, dokuzOnSinifMi } from "@/lib/types";
+import { kademeBul } from "@/lib/kademe";
 import type { AytAlan, GorevDurumu } from "@/lib/types";
 import { bugununTarihiTR } from "@/lib/tarih";
 import { gunEkle } from "@/lib/oto-program";
@@ -39,6 +40,20 @@ export async function otoProgramVerisiGetir(
   type OgrenciSatiri = { ayt_alan: AytAlan; classes: { seviye: string } | { seviye: string }[] | null; schools: { tur: string } | { tur: string }[] | null };
   const o = ogrenci as unknown as OgrenciSatiri;
   const seviye = tek(o.classes)?.seviye ?? null;
+  // ORTAOKUL ENGELİ (08.10.2026 lise izleri taraması). Aşağıdaki ders
+  // listesi TYT/AYT taksonomisinden geliyor: `dokuzOnSinifMi("5")` false
+  // döndüğü için 5-8. sınıf öğrencisi TYT_DERSLERI alıyordu (ayt_alan artık
+  // ortaokulda NULL olduğundan AYT kısmı boş kalıyor ama TYT listesi
+  // kalıyordu). Yani bir rehber, kapsamı 5-8'e genişlediği için (migration
+  // 0144) 5. sınıf öğrencisine Fizik/Kimya/Biyoloji içeren program
+  // kurabiliyordu.
+  //
+  // Ortaokulun kendi "Planım" ekranı var (OrtaokulPlanim) ve sihirbazı yok;
+  // bu yüzden engel burada, yani HER İKİ yolu (öğrencinin kendisi ve rehber)
+  // birlikte kapatan tek noktada.
+  if (kademeBul(seviye) === "ortaokul") {
+    return { error: "Oto Program ortaokul öğrencileri için kullanılamıyor — ortaokulda \"Planım\" ekranı kullanılır.", veri: null };
+  }
   const dershaneMi = tek(o.schools)?.tur === "dershane";
   const dokuzOnMu = dokuzOnSinifMi(seviye);
   const dersListesi = dokuzOnMu

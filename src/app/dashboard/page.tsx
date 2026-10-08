@@ -867,9 +867,15 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       rehberProgramAkibetleri(),
       rehberKapsamListesiGetir(createAdminClient(), teacher.school_id, rehberSeviyeleri),
     ]);
+    // Oto Program ORTAOKULDA YOK (bkz. oto-program-veri.ts engeli): ders
+    // listesi TYT/AYT taksonomisinden geliyor ve ortaokulun kendi "Planım"
+    // ekranı var. Rehberin kapsamı 0144 ile 5-12'ye genişlediği için
+    // 5-8. sınıf öğrencileri listeden ÇIKARILIYOR — sunucu zaten reddediyor
+    // ama rehbere çalışmayacak bir seçenek göstermemek daha doğru.
+    const programYapilabilirler = kapsamSatirlari.filter((s) => kademeBul(s.seviye) !== "ortaokul");
     return (
       <RehberProgramDestegi
-        ogrenciler={kapsamSatirlari.map((s) => ({ id: s.ogrenciId, ad: s.ad, sinifAdi: s.sinifAdi }))}
+        ogrenciler={programYapilabilirler.map((s) => ({ id: s.ogrenciId, ad: s.ad, sinifAdi: s.sinifAdi }))}
         akibetler={programlar}
         ilkHafta={haftaninPazartesisi(bugununTarihiTR())}
         seviyeler={rehberSeviyeleri}

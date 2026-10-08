@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { kurumSeviyeleri, seviyeEtiketi } from "@/lib/kademe";
+import { kademeBul, kurumSeviyeleri, panelBransListesi, seviyeEtiketi } from "@/lib/kademe";
 import type { KurumKademesi } from "@/lib/types";
 import { useRouter, useSearchParams } from "next/navigation";
 import { UserPlus, Check, Users, Eye, Plus, X, BookMarked, BedDouble, ClipboardCheck, ListChecks, ArrowRightLeft, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, CalendarPlus } from "lucide-react";
@@ -825,7 +825,19 @@ function DerslerimBolumu({ dersler, siniflar, dersProgramiSatirlari, okulNobetle
   yurtlu: boolean;
 }) {
   const [sinifId, setSinifId] = useState(siniflar[0]?.id ?? "");
-  const [ders, setDers] = useState<string>(BRANS_LISTESI[0]);
+  // "Ders Programım" branş listesi SEÇİLEN SINIFIN kademesinden gelir
+  // (08.10.2026 ortaokul taraması): burada doğrudan BRANS_LISTESI (lise)
+  // kullanılıyordu, yani ortaokul öğretmeni kendi ders atamasını yaparken
+  // Fizik/Kimya/Biyoloji/Felsefe görüyordu.
+  //
+  // Bu yalnız görsel bir hata DEĞİLDİ: ogretmen_dersleri.ders aşağı akıyor —
+  // "Ödev ver"deki atanmış dersler, onay yönlendirmesi ve yardım isteği
+  // yönlendirmesi bundan besleniyor; yanlış branş doğru çalışan ortaokul
+  // akışlarını bozardı.
+  //
+  // Karar SINIFTAN türetiliyor, kurumdan değil: "ikisi" okulunda aynı form
+  // hem 5-A hem 11-B için açılabiliyor.
+  const [secilenDers, setSecilenDers] = useState<string>("");
   const [hata, setHata] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [silinenler, setSilinenler] = useState<Set<string>>(new Set());
@@ -847,6 +859,14 @@ function DerslerimBolumu({ dersler, siniflar, dersProgramiSatirlari, okulNobetle
       else setSilinenler((s) => new Set(s).add(id));
     });
   }
+
+  // Türetilmiş değer — effect içinde setState lint kuralına takılmasın ve
+  // sınıf değişince seçim kendiliğinden geçerli listeye oturaklansın.
+  const bransSecenekleri = panelBransListesi(
+    dershaneMi ? "dershane" : "okul",
+    kademeBul(siniflar.find((s) => s.id === sinifId)?.seviye),
+  );
+  const ders = bransSecenekleri.includes(secilenDers) ? secilenDers : bransSecenekleri[0];
 
   const gosterilecekler = dersler.filter((d) => !silinenler.has(d.id));
 
@@ -902,9 +922,9 @@ function DerslerimBolumu({ dersler, siniflar, dersProgramiSatirlari, okulNobetle
           </label>
           <label className="flex flex-col gap-1">
             <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Ders</span>
-            <select value={ders} onChange={(e) => setDers(e.target.value)}
+            <select value={ders} onChange={(e) => setSecilenDers(e.target.value)}
               className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
-              {BRANS_LISTESI.map((d) => <option key={d} value={d}>{d}</option>)}
+              {bransSecenekleri.map((d) => <option key={d} value={d}>{d}</option>)}
             </select>
           </label>
           <button type="submit" disabled={pending || !sinifId}
