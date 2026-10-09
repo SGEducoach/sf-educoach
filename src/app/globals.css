@@ -259,6 +259,26 @@ body {
   border: 1px solid var(--sfec-border);
 }
 
+/* Ölçüm panelleri ("rack ünitesi" görünümü). Işık ÜSTTEN geliyor:
+   koyu temada gövde panelden KOYU, açık temada AÇIK olur — aynı fiziksel
+   mantığın iki zeminde karşılığı terstir, bu yüzden ikisi ayrı tanımlı. */
+.sfec-olcum-rack {
+  /* color-mix() KULLANILMIYOR: derleyici sadeleştirip ilk renge indiriyor
+     (bu oturumda odak halkasında tarayıcıda ölçüldü). bg0 zaten kabuk
+     zemininden bir ton koyu, rack için doğrudan uygun. */
+  background: var(--sfec-bg0);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+:root[data-tema="gunduz"] .sfec-olcum-rack {
+  background: var(--sfec-bg1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 6px 18px rgba(15, 40, 70, 0.1);
+}
+
 /* Bulanıklık desteklenmiyorsa ya da kullanıcı saydamlığı azaltmışsa düz
    zemine düşülür — yoksa yazı okunaksız bir yüzeyin üstünde kalır. */
 @supports not (backdrop-filter: blur(1px)) {

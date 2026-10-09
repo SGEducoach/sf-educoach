@@ -52,6 +52,9 @@ export interface AnalizOgrencisi {
   aktiflik: number;
   gorevToplam: number;
   gorevTamamlanan: number;
+  /** Görev akıbeti panelinde üç durum ayrı gösteriliyor. */
+  gorevBekleyen: number;
+  gorevTamamlanmayan: number;
   /** Son TREND_PENCERESI günü ve ondan önceki TREND_PENCERESI günü. */
   sonDonem: number;
   oncekiDonem: number;
@@ -205,4 +208,65 @@ export function denemeToplamNeti(
   kademe: NetKademesi,
 ): number {
   return Math.round(dersler.reduce((t, d) => t + netHesapla(d.dogru, d.yanlis, kademe), 0) * 100) / 100;
+}
+
+
+// ——— ÖLÇÜM PANELLERİ (kullanıcı isteği 09.10.2026) ———
+// Bölümün ruhu: sayıyı GEREKÇESİYLE göster, uydurma. Paneller de aynı
+// kurala uyuyor — her biri tek bir ham gerçeği gösteriyor, birleşik bir
+// "başarı puanı" üretmiyor.
+
+export interface SinifAktifligi { sinifAdi: string; mevcut: number; aktif: number }
+
+/**
+ * 1 — EN AKTİF SINIF. Kullanıcı önerisiydi; canlı veride ayırt ettiği
+ * ölçülerek doğrulandı (09.10.2026: en aktif sınıf 11 kişi, sınıf
+ * ortalaması 2,5 — tek sınıf gerçekten ayrışıyor).
+ */
+export function sinifAktiflikSiralamasi(ogrenciler: AnalizOgrencisi[], kac = 5): SinifAktifligi[] {
+  const sayac = new Map<string, { mevcut: number; aktif: number }>();
+  for (const o of ogrenciler) {
+    const s = sayac.get(o.sinifAdi) ?? { mevcut: 0, aktif: 0 };
+    s.mevcut += 1;
+    if (o.aktiflik > 0) s.aktif += 1;
+    sayac.set(o.sinifAdi, s);
+  }
+  return [...sayac.entries()]
+    .map(([sinifAdi, s]) => ({ sinifAdi, ...s }))
+    .sort((a, b) => (b.aktif - a.aktif) || a.sinifAdi.localeCompare(b.sinifAdi, "tr"))
+    .slice(0, kac);
+}
+
+export interface KatilimDilimi { kod: "aktif" | "eski" | "yok"; etiket: string; sayi: number }
+
+/**
+ * 2 — KATILIM. Üç kova ve TOPLAMLARI öğrenci sayısına eşit; "veri yok"
+ * sessizce düşen bir dilim bırakmıyor.
+ */
+export function katilimDagilimi(ogrenciler: AnalizOgrencisi[]): KatilimDilimi[] {
+  let aktif = 0, eski = 0, yok = 0;
+  for (const o of ogrenciler) {
+    if (o.aktiflik > 0) aktif += 1;
+    else if (o.verisiVarMi) eski += 1;
+    else yok += 1;
+  }
+  return [
+    { kod: "aktif", etiket: `Son ${AKTIFLIK_PENCERESI} günde giren`, sayi: aktif },
+    { kod: "eski", etiket: "Eski verisi var", sayi: eski },
+    { kod: "yok", etiket: "Hiç giriş yok", sayi: yok },
+  ];
+}
+
+export interface GorevAkibeti { tamamlandi: number; bekliyor: number; tamamlanmadi: number; toplam: number; oran: number | null }
+
+/** 3 — GÖREV AKIBETİ. Görev yoksa oran null; sıfır göstermek yanıltıcı olur. */
+export function gorevAkibeti(ogrenciler: AnalizOgrencisi[]): GorevAkibeti {
+  let tamamlandi = 0, bekliyor = 0, tamamlanmadi = 0;
+  for (const o of ogrenciler) {
+    tamamlandi += o.gorevTamamlanan;
+    bekliyor += o.gorevBekleyen;
+    tamamlanmadi += o.gorevTamamlanmayan;
+  }
+  const toplam = tamamlandi + bekliyor + tamamlanmadi;
+  return { tamamlandi, bekliyor, tamamlanmadi, toplam, oran: toplam > 0 ? tamamlandi / toplam : null };
 }

@@ -170,9 +170,13 @@ export async function sinifAnaliziGetir(
 
   const gorevToplam = new Map<string, number>();
   const gorevTamam = new Map<string, number>();
+  const gorevBekle = new Map<string, number>();
+  const gorevOlmadi = new Map<string, number>();
   for (const g of ((gorevler.data ?? []) as { student_id: string; durum: string }[])) {
     artir(gorevToplam, g.student_id);
     if (g.durum === "tamamlandi") artir(gorevTamam, g.student_id);
+    else if (g.durum === "bekliyor") artir(gorevBekle, g.student_id);
+    else artir(gorevOlmadi, g.student_id);
   }
 
   const girisYapanlar = new Set(((girisler.data ?? []) as { user_id: string }[]).map((g) => g.user_id));
@@ -203,6 +207,8 @@ export async function sinifAnaliziGetir(
     aktiflik: aktiflik.get(o.ogrenciId) ?? 0,
     gorevToplam: gorevToplam.get(o.ogrenciId) ?? 0,
     gorevTamamlanan: gorevTamam.get(o.ogrenciId) ?? 0,
+    gorevBekleyen: gorevBekle.get(o.ogrenciId) ?? 0,
+    gorevTamamlanmayan: gorevOlmadi.get(o.ogrenciId) ?? 0,
     sonDonem: sonDonem.get(o.ogrenciId) ?? 0,
     oncekiDonem: oncekiDonem.get(o.ogrenciId) ?? 0,
     girisYapmisMi: girisYapanlar.has(o.ogrenciId),

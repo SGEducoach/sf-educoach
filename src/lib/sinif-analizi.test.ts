@@ -1,7 +1,8 @@
 import { describe, expect, test } from "vitest";
 import {
   aktifKullanicilar, denemeToplamNeti, gorevAdamlari, kayipNesilOzeti,
-  netOrtalamasi, netSiralamasi, sayfala, sessizler, uzaklasanlar,
+  gorevAkibeti, katilimDagilimi, netOrtalamasi, netSiralamasi, sayfala, sessizler,
+  sinifAktiflikSiralamasi, uzaklasanlar,
   type AnalizOgrencisi,
 } from "./sinif-analizi";
 
@@ -9,6 +10,7 @@ function ogrenci(ad: string, ek: Partial<AnalizOgrencisi> = {}): AnalizOgrencisi
   return {
     ogrenciId: ad, ad, okulNo: null, sinifId: "s1", sinifAdi: "12-A", kademe: "lise",
     secilenDenemeNeti: null, denemeSayisi: 0, aktiflik: 0, gorevToplam: 0, gorevTamamlanan: 0,
+    gorevBekleyen: 0, gorevTamamlanmayan: 0,
     sonDonem: 0, oncekiDonem: 0, girisYapmisMi: true, verisiVarMi: true, ...ek,
   };
 }
@@ -199,5 +201,52 @@ describe("ortalamaya göre sıralama", () => {
     ]);
     expect(s.map((x) => x.ogrenci.ad)).toEqual(["Çok", "Az"]);
     expect(s[0].deger).toBe(55);
+  });
+});
+
+
+describe("ölçüm panelleri", () => {
+  const kapsam = [
+    ogrenci("a", { sinifAdi: "11-C", aktiflik: 4, verisiVarMi: true }),
+    ogrenci("b", { sinifAdi: "11-C", aktiflik: 2, verisiVarMi: true }),
+    ogrenci("c", { sinifAdi: "10-A", aktiflik: 1, verisiVarMi: true }),
+    // Verisi var ama son 30 günde yok.
+    ogrenci("d", { sinifAdi: "10-A", aktiflik: 0, verisiVarMi: true }),
+    // Hiç verisi yok.
+    ogrenci("e", { sinifAdi: "10-A", aktiflik: 0, verisiVarMi: false }),
+  ];
+
+  test("sınıf aktifliği: aktif sayısına göre sıralanır, mevcut da taşınır", () => {
+    expect(sinifAktiflikSiralamasi(kapsam)).toEqual([
+      { sinifAdi: "11-C", mevcut: 2, aktif: 2 },
+      { sinifAdi: "10-A", mevcut: 3, aktif: 1 },
+    ]);
+  });
+
+  test("sınıf aktifliği: eşitlikte alfabetik, kaç taneyle sınırlanır", () => {
+    const esit = [ogrenci("x", { sinifAdi: "12-B" }), ogrenci("y", { sinifAdi: "12-A" })];
+    expect(sinifAktiflikSiralamasi(esit).map((s) => s.sinifAdi)).toEqual(["12-A", "12-B"]);
+    expect(sinifAktiflikSiralamasi(kapsam, 1)).toHaveLength(1);
+  });
+
+  // Üç kovanın toplamı öğrenci sayısına EŞİT olmalı; biri sessizce düşerse
+  // halka eksik dolar ve yüzde yanlış okunur.
+  test("katılım dağılımı öğrencilerin tamamını kapsar", () => {
+    const d = katilimDagilimi(kapsam);
+    expect(d.map((x) => x.sayi)).toEqual([3, 1, 1]);
+    expect(d.reduce((t, x) => t + x.sayi, 0)).toBe(kapsam.length);
+  });
+
+  test("görev akıbeti üç durumu toplar ve oranı hesaplar", () => {
+    const g = gorevAkibeti([
+      ogrenci("p", { gorevTamamlanan: 2, gorevBekleyen: 3, gorevTamamlanmayan: 5 }),
+      ogrenci("q", { gorevTamamlanan: 0, gorevBekleyen: 1, gorevTamamlanmayan: 9 }),
+    ]);
+    expect(g).toEqual({ tamamlandi: 2, bekliyor: 4, tamamlanmadi: 14, toplam: 20, oran: 0.1 });
+  });
+
+  // Görev yokken 0 göstermek "hiç tamamlamamış" gibi okunur; null doğru.
+  test("hiç görev yoksa oran null", () => {
+    expect(gorevAkibeti([ogrenci("z")]).oran).toBeNull();
   });
 });

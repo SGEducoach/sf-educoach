@@ -4,7 +4,8 @@ import Image from "next/image";
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
-  aktifKullanicilar, gorevAdamlari, kayipNesilOzeti, netOrtalamasi, netSiralamasi,
+  aktifKullanicilar, gorevAdamlari, gorevAkibeti, katilimDagilimi, kayipNesilOzeti,
+  netOrtalamasi, netSiralamasi, sinifAktiflikSiralamasi,
   sayfala, sessizler, uzaklasanlar,
   AKTIFLIK_PENCERESI, GOREV_MIN_SAYI, KISA_LISTE, TREND_PENCERESI,
   type AnalizOgrencisi, type SiraliSatir,
@@ -99,6 +100,7 @@ export function SinifAnaliziPanel({
             ))}
           </div>
         )}
+        {ogrenciler.length > 0 && <OlcumPanelleri kapsam={kapsam} />}
       </div>
     );
   }
@@ -322,6 +324,140 @@ function KayipNesil({ kayitlar, sinifSecildiMi }: { kayitlar: KayipNesilKaydi[];
           <span className="shrink-0 text-xs tabular-nums" style={{ color: TEXT_MUTED }}>{s.toplam} kişilik</span>
           <span className="shrink-0 text-sm font-extrabold tabular-nums" style={{ color: BLUSH }}>{s.eksik} eksik</span>
         </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * ÜÇ ÖLÇÜM PANELİ (kullanıcı isteği 09.10.2026) — giriş ekranındaki iki
+ * sütunluk buton ızgarasının ALTINDA, yan yana üç panel.
+ *
+ * Görünüm "rack ünitesi": gövdeden biraz koyu yüzey, üstten gelen ince
+ * pay ışığı, 9px versal seyrek başlık, sağ üstte kendi rengiyle yanan LED.
+ * Koyu temada rack gövdeden KOYU, açık temada AÇIK olur — ışık mantığı
+ * tersine döner, bu yüzden iki durum ayrı tanımlı.
+ *
+ * Bölümün ruhuna uyması için kural aynı: her panel TEK bir ham gerçeği
+ * gösteriyor, birleşik bir "başarı puanı" üretmiyor.
+ */
+function OlcumPanelleri({ kapsam }: { kapsam: AnalizOgrencisi[] }) {
+  const siniflar = sinifAktiflikSiralamasi(kapsam);
+  const katilim = katilimDagilimi(kapsam);
+  const gorev = gorevAkibeti(kapsam);
+
+  const enAktif = siniflar[0]?.aktif ?? 0;
+  const toplamOgrenci = kapsam.length;
+  const girmeyen = katilim.find((k) => k.kod === "yok")?.sayi ?? 0;
+  const girmeyenYuzde = toplamOgrenci > 0 ? Math.round((girmeyen / toplamOgrenci) * 100) : 0;
+  const renkler: Record<string, string> = { aktif: MINT, eski: BUTTER, yok: BLUSH };
+
+  // Halka: dilimler yüzdeye çevrilip uç uca diziliyor (dasharray 100 birim).
+  // Ofset birikimli; render sırasında değişken yeniden atamak yerine
+  // önceki dilimlerin toplamından türetiliyor (React derleyicisi atamayı
+  // "Cannot reassign variable after render completes" ile reddediyor).
+  const yuzdeler = katilim.map((d) => (toplamOgrenci > 0 ? (d.sayi / toplamOgrenci) * 100 : 0));
+  const halka = katilim.map((d, i) => ({
+    ...d,
+    yuzde: yuzdeler[i],
+    // 25 = 12 yönünden başlat; her dilim öncekilerin toplamı kadar geriye.
+    offset: 25 - yuzdeler.slice(0, i).reduce((t, y) => t + y, 0),
+  }));
+
+  return (
+    <div className="grid gap-3 sm:grid-cols-3">
+      <Rack baslik="En aktif sınıf" led={MINT}>
+        {siniflar.length === 0 ? <RackBos metin="Sınıf verisi yok." /> : (
+          <>
+            <div className="flex flex-1 items-end gap-2">
+              {siniflar.map((s, i) => (
+                <div key={s.sinifAdi} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1.5">
+                  <span className="text-[13px] font-extrabold tabular-nums"
+                    style={{ color: i === 0 ? MINT : TEXT_MUTED, fontFamily: "var(--font-baloo)" }}>{s.aktif}</span>
+                  <div className="w-full rounded-[3px]"
+                    style={{ height: `${enAktif > 0 ? Math.max(3, (s.aktif / enAktif) * 70) : 3}px`, background: i === 0 ? MINT : TEXT_MUTED }} />
+                  <span className="w-full truncate text-center text-[9px] font-semibold" style={{ color: TEXT_MUTED }}>{s.sinifAdi}</span>
+                </div>
+              ))}
+            </div>
+            <p className="m-0 text-[10px] leading-snug" style={{ color: TEXT_MUTED }}>
+              {siniflar[0].sinifAdi} · {siniflar[0].mevcut} kişilik sınıfın {siniflar[0].aktif}&apos;i aktif.
+            </p>
+          </>
+        )}
+      </Rack>
+
+      <Rack baslik="Katılım" led={BLUSH}>
+        <div className="relative flex flex-1 items-center justify-center">
+          <svg width="116" height="116" viewBox="0 0 42 42" aria-hidden="true">
+            <circle cx="21" cy="21" r="15.9" fill="none" stroke={BORDER} strokeWidth="5" />
+            {halka.map((d) => (
+              <circle key={d.kod} cx="21" cy="21" r="15.9" fill="none" stroke={renkler[d.kod]} strokeWidth="5"
+                strokeDasharray={`${d.yuzde} ${100 - d.yuzde}`} strokeDashoffset={d.offset} />
+            ))}
+          </svg>
+          <span className="absolute text-center">
+            <span className="block text-[22px] font-extrabold leading-none tabular-nums"
+              style={{ color: BLUSH, fontFamily: "var(--font-baloo)" }}>%{girmeyenYuzde}</span>
+            <span className="block text-[9px]" style={{ color: TEXT_MUTED }}>hiç giriş yok</span>
+          </span>
+        </div>
+        <RackLejant satirlar={katilim.map((d) => ({ ad: d.etiket, sayi: d.sayi, renk: renkler[d.kod] }))} />
+      </Rack>
+
+      <Rack baslik="Görev akıbeti" led={BUTTER}>
+        {gorev.oran === null ? <RackBos metin="Bu kapsamda görev atanmamış." /> : (
+          <>
+            <div className="py-1 text-center">
+              <span className="block text-[32px] font-extrabold leading-none tabular-nums"
+                style={{ color: BLUSH, fontFamily: "var(--font-baloo)" }}>%{Math.round(gorev.oran * 100)}</span>
+              <span className="mt-0.5 block text-[9px]" style={{ color: TEXT_MUTED }}>{gorev.toplam} görevin tamamlanma oranı</span>
+            </div>
+            <div className="flex h-3 overflow-hidden rounded-[3px]" style={{ border: `1px solid ${BORDER}` }}>
+              <span style={{ width: `${(gorev.tamamlandi / gorev.toplam) * 100}%`, background: MINT }} />
+              <span style={{ width: `${(gorev.bekliyor / gorev.toplam) * 100}%`, background: BUTTER }} />
+              <span style={{ flex: 1, background: BLUSH }} />
+            </div>
+            <div className="mt-auto">
+              <RackLejant satirlar={[
+                { ad: "Tamamlandı", sayi: gorev.tamamlandi, renk: MINT },
+                { ad: "Bekliyor", sayi: gorev.bekliyor, renk: BUTTER },
+                { ad: "Tamamlanmadı", sayi: gorev.tamamlanmadi, renk: BLUSH },
+              ]} />
+            </div>
+          </>
+        )}
+      </Rack>
+    </div>
+  );
+}
+
+function Rack({ baslik, led, children }: { baslik: string; led: string; children: React.ReactNode }) {
+  return (
+    <section className="sfec-olcum-rack flex min-h-[196px] flex-col gap-2.5 rounded-2xl p-3.5"
+      style={{ border: `1px solid ${BORDER_STRONG}` }}>
+      <div className="flex items-center justify-between pb-2" style={{ borderBottom: `1px solid ${BORDER}` }}>
+        <span className="text-[9px] font-bold uppercase" style={{ color: TEXT_MUTED, letterSpacing: "0.14em" }}>{baslik}</span>
+        <span className="h-1.5 w-1.5 rounded-full" style={{ background: led, boxShadow: `0 0 6px ${led}` }} />
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function RackBos({ metin }: { metin: string }) {
+  return <p className="m-auto text-center text-[11px]" style={{ color: TEXT_MUTED }}>{metin}</p>;
+}
+
+function RackLejant({ satirlar }: { satirlar: { ad: string; sayi: number; renk: string }[] }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      {satirlar.map((s) => (
+        <span key={s.ad} className="flex items-center gap-1.5 text-[10px]" style={{ color: TEXT_MUTED }}>
+          <span className="h-1.5 w-1.5 shrink-0 rounded-[2px]" style={{ background: s.renk }} />
+          <span className="flex-1 truncate">{s.ad}</span>
+          <span className="font-bold tabular-nums" style={{ color: TEXT }}>{s.sayi}</span>
+        </span>
       ))}
     </div>
   );
