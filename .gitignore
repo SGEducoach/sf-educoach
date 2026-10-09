@@ -65,3 +65,6 @@ next-env.d.ts
 /android/*.idsig
 /android/*.keystore
 /android/*.jks
+
+# Koke dusen tek dosyalik disa aktarimlar (artifact/gorsellestirme ciktilari).
+/sinif-analizi-kart-temalari-paylasim.html
