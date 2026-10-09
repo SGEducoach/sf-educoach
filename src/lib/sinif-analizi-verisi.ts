@@ -199,6 +199,7 @@ export async function sinifAnaliziGetir(
   const ogrenciler: AnalizOgrencisiHam[] = temel.map((o) => ({
     ...o,
     denemeNetleri: netler.get(o.ogrenciId) ?? {},
+    denemeSayisi: Object.keys(netler.get(o.ogrenciId) ?? {}).length,
     aktiflik: aktiflik.get(o.ogrenciId) ?? 0,
     gorevToplam: gorevToplam.get(o.ogrenciId) ?? 0,
     gorevTamamlanan: gorevTamam.get(o.ogrenciId) ?? 0,

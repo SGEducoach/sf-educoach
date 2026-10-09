@@ -40,8 +40,14 @@ export interface AnalizOgrencisi {
   sinifId: string | null;
   sinifAdi: string;
   kademe: NetKademesi;
-  /** Seçili denemedeki toplam net; o denemeye girmediyse null. */
+  /**
+   * Sıralamaya giren net: ya SEÇİLİ denemenin toplam neti ya da tüm
+   * denemelerin ortalaması (kullanıcı isteği 09.10.2026). Hangisi olduğunu
+   * çağıran taraf belirler; o denemeye girmediyse / hiç denemesi yoksa null.
+   */
   secilenDenemeNeti: number | null;
+  /** Öğrencinin toplam deneme sayısı — ortalamanın kaç denemeye dayandığı. */
+  denemeSayisi: number;
   /** Son AKTIFLIK_PENCERESI gününde girilen soru + konu kaydı sayısı. */
   aktiflik: number;
   gorevToplam: number;
@@ -175,6 +181,22 @@ export function sayfala<T>(liste: T[], sayfa: number, boy = SAYFA_BOYU): { satir
   const sayfaSayisi = Math.max(1, Math.ceil(liste.length / boy));
   const guvenli = Math.min(Math.max(1, sayfa), sayfaSayisi);
   return { satirlar: liste.slice((guvenli - 1) * boy, guvenli * boy), sayfaSayisi, sayfa: guvenli };
+}
+
+/**
+ * Öğrencinin TÜM denemelerinin net ortalaması (kullanıcı isteği 09.10.2026).
+ * Hiç denemesi yoksa null — sıfır DÖNMEZ, yoksa denemeye hiç girmemiş
+ * öğrenci "0 net almış" gibi listenin dibinde görünür.
+ *
+ * DİKKAT: farklı yayınevi/zorluktaki denemelerin ortalaması alınıyor ve
+ * öğrenciler farklı sayıda denemeye girmiş olabiliyor. Bu yüzden satırda
+ * deneme SAYISI da gösteriliyor — okuyan, ortalamanın neye dayandığını
+ * görebilsin.
+ */
+export function netOrtalamasi(denemeNetleri: Record<string, number>): number | null {
+  const degerler = Object.values(denemeNetleri);
+  if (degerler.length === 0) return null;
+  return Math.round((degerler.reduce((t, n) => t + n, 0) / degerler.length) * 100) / 100;
 }
 
 /** Deneme ders sonuçlarından toplam net — kademeye göre yanlış katsayısı. */

@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
-  aktifKullanicilar, gorevAdamlari, kayipNesilOzeti, netSiralamasi,
+  aktifKullanicilar, gorevAdamlari, kayipNesilOzeti, netOrtalamasi, netSiralamasi,
   sayfala, sessizler, uzaklasanlar,
   AKTIFLIK_PENCERESI, GOREV_MIN_SAYI, KISA_LISTE, TREND_PENCERESI,
   type AnalizOgrencisi, type SiraliSatir,
@@ -24,6 +24,10 @@ const BOLUMLER: { kod: Gorunum; baslik: string; aciklama: string; renk: string }
 ];
 
 const TUM_SINIFLAR = "tumu";
+// Tek bir denemeye değil, öğrencinin TÜM denemelerinin ortalamasına göre
+// sıralama (kullanıcı isteği 09.10.2026). Deneme anahtarları
+// "yayinevi|tarih|tur" biçiminde olduğu için bu sabitle çakışmaz.
+const ORTALAMA = "__ortalama__";
 
 export function SinifAnaliziPanel({
   ogrenciler, denemeSecenekleri, kayipNesil, siniflar, sinifSecilebilir, kapsamEtiketi,
@@ -52,7 +56,10 @@ export function SinifAnaliziPanel({
   // veri katmanı tüm denemelerin haritasını gönderiyor.
   const kapsam: AnalizOgrencisi[] = useMemo(() => ogrenciler
     .filter((o) => sinifId === TUM_SINIFLAR || o.sinifId === sinifId)
-    .map(({ denemeNetleri, ...o }) => ({ ...o, secilenDenemeNeti: denemeNetleri[deneme] ?? null })),
+    .map(({ denemeNetleri, ...o }) => ({
+      ...o,
+      secilenDenemeNeti: deneme === ORTALAMA ? netOrtalamasi(denemeNetleri) : denemeNetleri[deneme] ?? null,
+    })),
   [ogrenciler, sinifId, deneme]);
 
   const kayipKapsam = useMemo(
@@ -123,6 +130,7 @@ export function SinifAnaliziPanel({
               aria-label="Deneme seç"
               className="rounded-xl px-3 py-2 text-xs outline-none"
               style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
+              <option value={ORTALAMA}>Tüm denemelerin ortalaması</option>
               {denemeSecenekleri.map((d) => (
                 <option key={d.anahtar} value={d.anahtar}>
                   {d.tarih} · {d.yayinevi} ({d.tur}) — {d.katilan} kişi
@@ -136,7 +144,8 @@ export function SinifAnaliziPanel({
       {gorunum === "kayip"
         ? <KayipNesil kayitlar={kayipKapsam} sinifSecildiMi={secilenSinifAdi !== null} />
         : <Liste gorunum={gorunum} kapsam={kapsam} sayfalaniyorMu={sayfalaniyorMu}
-            sayfa={sayfa} setSayfa={setSayfa} denemeVarMi={denemeSecenekleri.length > 0} />}
+            sayfa={sayfa} setSayfa={setSayfa} denemeVarMi={denemeSecenekleri.length > 0}
+            ortalamaMi={deneme === ORTALAMA} />}
     </div>
   );
 }
@@ -175,13 +184,15 @@ function Satir({ sira, ad, altMetin, sag, sagRenk }: {
   );
 }
 
-function Liste({ gorunum, kapsam, sayfalaniyorMu, sayfa, setSayfa, denemeVarMi }: {
+function Liste({ gorunum, kapsam, sayfalaniyorMu, sayfa, setSayfa, denemeVarMi, ortalamaMi }: {
   gorunum: Exclude<Gorunum, "kayip">;
   kapsam: AnalizOgrencisi[];
   sayfalaniyorMu: boolean;
   sayfa: number;
   setSayfa: (n: number) => void;
   denemeVarMi: boolean;
+  /** Net sırası tek denemeye değil tüm denemelerin ortalamasına göre. */
+  ortalamaMi: boolean;
 }) {
   type Satirlar =
     | { tip: "net"; v: SiraliSatir<number>[] }
@@ -208,7 +219,9 @@ function Liste({ gorunum, kapsam, sayfalaniyorMu, sayfa, setSayfa, denemeVarMi }
   if (tumSatirlar.length === 0) {
     const mesaj =
       hepsi.tip === "net"
-        ? (denemeVarMi ? "Bu denemeye bu kapsamdan kimse girmemiş." : "Henüz deneme sonucu yok.")
+        ? (!denemeVarMi ? "Henüz deneme sonucu yok."
+          : ortalamaMi ? "Bu kapsamda deneme sonucu olan öğrenci yok."
+          : "Bu denemeye bu kapsamdan kimse girmemiş.")
         : hepsi.tip === "aktif" ? `Son ${AKTIFLIK_PENCERESI} günde veri giren yok.`
         : hepsi.tip === "gorev" ? `En az ${GOREV_MIN_SAYI} görevi olup tamamlayan yok.`
         : hepsi.tip === "uzaklasan" ? `Son ${TREND_PENCERESI} günde gerileyen yok — iyi haber.`
@@ -222,7 +235,12 @@ function Liste({ gorunum, kapsam, sayfalaniyorMu, sayfa, setSayfa, denemeVarMi }
         const o = (s as SiraliSatir<unknown>).ogrenci;
         const alt = [o.sinifAdi, o.okulNo ? `No ${o.okulNo}` : null].filter(Boolean).join(" · ");
         if (hepsi.tip === "net") {
-          return <Satir key={o.ogrenciId} sira={s.sira} ad={o.ad} altMetin={alt} sag={`${(s.deger as number).toFixed(2)} net`} sagRenk={MINT} />;
+          // Ortalamada deneme SAYISI da gösteriliyor: farklı yayınevi ve
+          // farklı sayıda denemenin ortalaması alınıyor, okuyan neye
+          // baktığını bilsin.
+          return <Satir key={o.ogrenciId} sira={s.sira} ad={o.ad}
+            altMetin={ortalamaMi ? `${alt} · ${o.denemeSayisi} deneme` : alt}
+            sag={`${(s.deger as number).toFixed(2)}${ortalamaMi ? " ort." : " net"}`} sagRenk={MINT} />;
         }
         if (hepsi.tip === "aktif") {
           return <Satir key={o.ogrenciId} sira={s.sira} ad={o.ad} altMetin={alt} sag={`${s.deger as number} kayıt`} sagRenk={SKY} />;

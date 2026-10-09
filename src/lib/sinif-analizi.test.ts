@@ -1,14 +1,14 @@
 import { describe, expect, test } from "vitest";
 import {
   aktifKullanicilar, denemeToplamNeti, gorevAdamlari, kayipNesilOzeti,
-  netSiralamasi, sayfala, sessizler, uzaklasanlar,
+  netOrtalamasi, netSiralamasi, sayfala, sessizler, uzaklasanlar,
   type AnalizOgrencisi,
 } from "./sinif-analizi";
 
 function ogrenci(ad: string, ek: Partial<AnalizOgrencisi> = {}): AnalizOgrencisi {
   return {
     ogrenciId: ad, ad, okulNo: null, sinifId: "s1", sinifAdi: "12-A", kademe: "lise",
-    secilenDenemeNeti: null, aktiflik: 0, gorevToplam: 0, gorevTamamlanan: 0,
+    secilenDenemeNeti: null, denemeSayisi: 0, aktiflik: 0, gorevToplam: 0, gorevTamamlanan: 0,
     sonDonem: 0, oncekiDonem: 0, girisYapmisMi: true, verisiVarMi: true, ...ek,
   };
 }
@@ -164,5 +164,40 @@ describe("denemeToplamNeti", () => {
 
   test("ders yoksa net sıfır", () => {
     expect(denemeToplamNeti([], "lise")).toBe(0);
+  });
+});
+
+describe("netOrtalamasi", () => {
+  test("tüm denemelerin ortalamasını iki ondalığa yuvarlar", () => {
+    expect(netOrtalamasi({ a: 60, b: 70, c: 80 })).toBe(70);
+    expect(netOrtalamasi({ a: 61.5, b: 70.25 })).toBe(65.88);
+  });
+
+  // Sıfır DÖNMEMELİ: denemeye hiç girmemiş öğrenci "0 net almış" gibi
+  // listenin dibinde görünürse yanlış okunur.
+  test("hiç denemesi yoksa null döner", () => {
+    expect(netOrtalamasi({})).toBeNull();
+  });
+
+  test("tek denemede o denemenin neti çıkar", () => {
+    expect(netOrtalamasi({ a: 42.75 })).toBe(42.75);
+  });
+
+  test("negatif net ortalamayı düşürür", () => {
+    expect(netOrtalamasi({ a: 10, b: -4 })).toBe(3);
+  });
+});
+
+describe("ortalamaya göre sıralama", () => {
+  // Sıralama netSiralamasi ile AYNI yoldan geçer: çağıran taraf
+  // secilenDenemeNeti'ne ortalamayı koyar.
+  test("denemesi olmayan listeye girmez, ortalama sırası doğru", () => {
+    const s = netSiralamasi([
+      ogrenci("Az", { secilenDenemeNeti: netOrtalamasi({ a: 30 }), denemeSayisi: 1 }),
+      ogrenci("Çok", { secilenDenemeNeti: netOrtalamasi({ a: 50, b: 60 }), denemeSayisi: 2 }),
+      ogrenci("Yok", { secilenDenemeNeti: netOrtalamasi({}), denemeSayisi: 0 }),
+    ]);
+    expect(s.map((x) => x.ogrenci.ad)).toEqual(["Çok", "Az"]);
+    expect(s[0].deger).toBe(55);
   });
 });
