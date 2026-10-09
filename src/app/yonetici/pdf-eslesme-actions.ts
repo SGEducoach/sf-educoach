@@ -241,3 +241,62 @@ export async function pdfEslesmeReddet(id: string): Promise<{ error: string | nu
   eslesmeYollariniYenile();
   return { error: null };
 }
+
+// ATAMAYI GERİ AL (08.10.2026). Daha önce bir atama YAPILABİLİYOR ama GERİ
+// ALINAMIYORDU: pdfEslesmeReddet yalnızca "bekliyor" satırlarda çalışıyor,
+// pdfEslesmeAta ise öğrenciye zaten satır atanmışsa "önce eski atamayı
+// düzeltin" diyerek duruyordu — ama düzeltmenin bir yolu yoktu. Canlı 4K
+// yüklemesinde bir öğrenciye adaşının netleri yazıldı ve bu yüzden site
+// üzerinden düzeltilemedi.
+//
+// Yazılan deneme kaydı YALNIZCA bu yüklemenin oluşturduğu kayıtsa silinir.
+// Kuyruk satırı her zaman sonucun hemen ÖNCESİNDE yazılır, bu yüzden
+// yüklemenin açtığı kayıtta deneme.created_at >= kuyruk satırının tarihi
+// olur. Daha ESKİ bir kayıt yüklemeden önce vardı (öğrencinin kendi girdiği
+// kayıt devralınmış olabilir, bkz. okulDenemeKaydiniHazirla) — onu silmek
+// öğrencinin kendi verisini yok ederdi, bu yüzden silinmez, yöneticiye
+// uyarı döner.
+export async function pdfEslesmeAtamayiGeriAl(id: string): Promise<{ error: string | null; uyari: string | null }> {
+  const { user, admin, kurumFiltresi } = await requireEslesmeYetkisi();
+  const { data: kayit, error: bulmaHatasi } = await admin
+    .from("pdf_deneme_eslesme_bekleyenler")
+    .select("*")
+    .eq("id", id).eq("durum", "atandi")
+    .maybeSingle();
+  if (bulmaHatasi) return { error: bulmaHatasi.message, uyari: null };
+  if (!kayit) return { error: "Kayıt bulunamadı veya atanmış değil.", uyari: null };
+  if (kurumFiltresi && kayit.school_id !== kurumFiltresi) return { error: "Bu kayıt kurumunuza ait değil.", uyari: null };
+
+  let uyari: string | null = null;
+  if (kayit.atanan_student_id) {
+    // Yayınevi adı birebir aynı yazılmamış olabilir (bkz. yayineviAyniMi).
+    const { data: adaylar, error: denemeHatasi } = await admin
+      .from("denemeler")
+      .select("id, created_at, yayinevi")
+      .eq("student_id", kayit.atanan_student_id)
+      .eq("tarih", kayit.tarih)
+      .eq("tur", kayit.tur);
+    if (denemeHatasi) return { error: denemeHatasi.message, uyari: null };
+    const ayniDeneme = (adaylar ?? []).filter((d) => yayineviAyniMi(d.yayinevi ?? "", kayit.yayinevi));
+    const yuklemeninActiklari = ayniDeneme.filter((d) => new Date(d.created_at) >= new Date(kayit.created_at));
+    if (yuklemeninActiklari.length > 0) {
+      // deneme_ders_sonuclari / karne / kazanım kayıtları CASCADE ile gider.
+      const { error: silmeHatasi } = await admin.from("denemeler").delete()
+        .in("id", yuklemeninActiklari.map((d) => d.id));
+      if (silmeHatasi) return { error: silmeHatasi.message, uyari: null };
+    } else if (ayniDeneme.length > 0) {
+      uyari = "Öğrencinin bu denemeye ait kaydı yüklemeden ÖNCE de vardı, bu yüzden SİLİNMEDİ — içeriği bu PDF ile güncellenmiş olabilir, elle kontrol edin.";
+    }
+  }
+
+  const { error: guncellemeHatasi } = await admin.from("pdf_deneme_eslesme_bekleyenler")
+    .update({ durum: "bekliyor", atanan_student_id: null }).eq("id", id);
+  if (guncellemeHatasi) return { error: guncellemeHatasi.message, uyari: null };
+  await admin.from("admin_audit_log").insert({
+    actor_id: user.id,
+    eylem: "pdf_deneme_eslesme_geri_al",
+    detay: { bekleyen_id: id, student_id: kayit.atanan_student_id, sonuc_silindi: uyari === null },
+  });
+  eslesmeYollariniYenile();
+  return { error: null, uyari };
+}

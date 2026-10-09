@@ -2,9 +2,9 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Check, X } from "lucide-react";
+import { Check, Undo2, X } from "lucide-react";
 import {
-  pdfEslesmeAta, pdfEslesmeOgrencileriGetir, pdfEslesmeReddet,
+  pdfEslesmeAta, pdfEslesmeAtamayiGeriAl, pdfEslesmeOgrencileriGetir, pdfEslesmeReddet,
   type PdfEslesmeBekleyeni, type PdfEslesmeOgrencisi,
 } from "@/app/yonetici/pdf-eslesme-actions";
 import { adlarBenzerMi, adlarOlasiBenzer } from "@/lib/ad-benzerligi";
@@ -204,6 +204,24 @@ function PdfEslesmeSatiri({ bekleyen, buOturumdaYerlesen, yerlesti }: {
           });
         }} className="sfec-btn shrink-0 flex items-center gap-1 rounded-lg px-3 py-1.5 text-[11px] font-bold" style={{ color: BLUSH, border: `2px solid ${BORDER_STRONG}` }}>
           <X size={12} /> Reddet
+        </button>}
+        {/* Yanlis atama site uzerinden duzeltilebilsin (08.10.2026): daha
+            once atanmis bir satir ne reddedilebiliyor ne geri alinabiliyordu. */}
+        {bekleyen.durumEtiketi === "Eşleştirildi" && <button type="button" disabled={pending} onClick={() => {
+          if (!window.confirm(
+            `"${bekleyen.adSoyadHam}" satırının ataması geri alınsın mı?
+
+`
+            + "Bu yüklemenin oluşturduğu deneme sonucu silinir ve satır tekrar eşleştirme kuyruğuna döner. "
+            + "Öğrencinin kaydı yüklemeden önce de varsa silinmez, uyarı gösterilir.",
+          )) return;
+          startTransition(async () => {
+            const r = await pdfEslesmeAtamayiGeriAl(bekleyen.id);
+            setMesaj(r.error ? `Hata: ${r.error}` : r.uyari ? `Atama geri alındı. ${r.uyari}` : "Atama geri alındı.");
+            if (!r.error) router.refresh();
+          });
+        }} className="sfec-btn shrink-0 flex items-center gap-1 rounded-lg px-3 py-1.5 text-[11px] font-bold" style={{ color: BUTTER, border: `2px solid ${BORDER_STRONG}` }}>
+          <Undo2 size={12} /> Atamayı geri al
         </button>}
       </div>
 
