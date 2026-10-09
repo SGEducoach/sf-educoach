@@ -187,7 +187,7 @@ export function KomutPaleti({ role, kurumTuru, brans, grupMu = false, kademe, ok
                 <span key={ne} className="flex items-center gap-1.5">
                   <kbd className="rounded-md px-1.5 py-0.5 text-[10px] font-semibold not-italic"
                     style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}`, color: TEXT, fontFamily: "inherit" }}>{tus}</kbd>
-                  <span className="text-[10px] font-medium uppercase" style={{ color: TEXT_MUTED, letterSpacing: "0.07em" }}>{ne}</span>
+                  <span className="text-[11px] font-medium" style={{ color: TEXT_MUTED }}>{ne}</span>
                 </span>
               ))}
             </div>

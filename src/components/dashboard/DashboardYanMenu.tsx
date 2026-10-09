@@ -126,8 +126,8 @@ export function DashboardYanMenu({ role, kurumTuru, brans, grupMu = false, kadem
         <button type="button" onClick={genisligiDegistir}
           aria-label={dar ? "Menüyü genişlet" : "Menüyü daralt"}
           aria-expanded={!dar}
-          className={`sfec-btn flex min-h-11 items-center rounded-2xl text-[10px] font-semibold uppercase ${dar ? "justify-center" : "gap-2 px-3"}`}
-          style={{ color: TEXT_MUTED, letterSpacing: "0.09em" }}>
+          className={`sfec-btn flex min-h-11 items-center rounded-2xl text-[12px] font-semibold ${dar ? "justify-center" : "gap-2 px-3"}`}
+          style={{ color: TEXT_MUTED }}>
           {dar ? <ChevronsRight size={16} aria-hidden="true" /> : <><ChevronsLeft size={16} aria-hidden="true" /><span>Daralt</span></>}
         </button>
 

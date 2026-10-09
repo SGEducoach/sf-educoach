@@ -436,9 +436,14 @@ function Rack({ baslik, led, children }: { baslik: string; led: string; children
   return (
     <section className="sfec-olcum-rack flex min-h-[196px] flex-col gap-2.5 rounded-2xl p-3.5"
       style={{ border: `1px solid ${BORDER_STRONG}` }}>
-      <div className="flex items-center justify-between pb-2" style={{ borderBottom: `1px solid ${BORDER}` }}>
-        <span className="text-[9px] font-bold uppercase" style={{ color: TEXT_MUTED, letterSpacing: "0.14em" }}>{baslik}</span>
-        <span className="h-1.5 w-1.5 rounded-full" style={{ background: led, boxShadow: `0 0 6px ${led}` }} />
+      {/* Başlık GERÇEK başlık: panelin diğer başlıklarıyla aynı Baloo,
+          normal yazım. Önce 9px versal + seyrek harf + alt çizgiydi;
+          kullanıcı "şeritte emanet duruyor, bannere yedirilmiş" dedi —
+          haklı: o biçim başlık değil şerit süsü gibi okunuyordu. LED
+          başlığın önünde madde imi olarak duruyor, ayrı bant yok. */}
+      <div className="flex items-center gap-2">
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: led, boxShadow: `0 0 6px ${led}` }} />
+        <span className="text-[13px] font-extrabold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>{baslik}</span>
       </div>
       {children}
     </section>
