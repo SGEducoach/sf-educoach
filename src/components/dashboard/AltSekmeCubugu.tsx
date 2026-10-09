@@ -19,6 +19,7 @@
 // hesap/mesaj kalıyor ve gezinme iki yerde birden durmuyor.
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import {
   BarChart3, BookOpen, BookOpenCheck, Bot, Bug, CalendarDays, CalendarPlus2, CircleUserRound, ClipboardCheck,
@@ -125,7 +126,11 @@ export function AltSekmeCubugu({ role, kurumTuru, brans, grupMu = false, kademe,
         )}
       </nav>
 
-      {dahaAcik && (
+      {/* Palette ile aynı sebeple PORTAL: kabukta isolation: isolate var,
+          üst başlık ise kabuğun DIŞINDA ve açık z-index taşıyor — yığın
+          bağlamı içinde kalan bir örtü başlığı karartamıyor ve başlığa
+          dokunuşlar modal açıkken de geçiyor. */}
+      {dahaAcik && typeof document !== "undefined" && createPortal((
         <div className="fixed inset-0 flex items-end lg:hidden" style={{ zIndex: "var(--z-modal)" }}>
           <button type="button" aria-label="Kapat" onClick={() => setDahaAcik(false)}
             className="fixed inset-0" style={{ background: "rgba(0,0,0,0.55)" }} />
@@ -160,7 +165,7 @@ export function AltSekmeCubugu({ role, kurumTuru, brans, grupMu = false, kademe,
             </div>
           </div>
         </div>
-      )}
+      ), document.body)}
     </>
   );
 }

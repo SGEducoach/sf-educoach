@@ -12,6 +12,7 @@
 // besleniyor, yani yeni bir bölüm eklendiğinde ayrıca bakım istemiyor.
 
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import type { KurumTuru, UserRole } from "@/lib/types";
@@ -128,7 +129,14 @@ export function KomutPaleti({ role, kurumTuru, brans, grupMu = false, kademe, ok
         </button>
       )}
 
-      {acik && (
+      {/* PORTAL ŞART. Palet yan menünün İÇİNDE duruyor; yan menü
+          position: sticky (sticky her zaman kendi yığın bağlamını yaratır)
+          ve kabukta isolation: isolate var (ambiyans ışığı için eklendi).
+          Bu ikisi birleşince paletin yığın sırası yan menünün bağlamına
+          hapsoluyor, DOM'da sonra gelen içerik panelleri üstüne boyanıyor —
+          kullanıcı bildirimi: "bölüm ara pencerelerin altında açılıyor".
+          Sayıyı büyütmek ÇÖZMEZ; bağlamın dışına çıkmak gerekir. */}
+      {acik && typeof document !== "undefined" && createPortal((
         <div className="fixed inset-0 flex items-start justify-center px-4 pt-[12vh]" style={{ zIndex: "var(--z-modal)" }}>
           <button type="button" aria-label="Paleti kapat" onClick={() => setAcik(false)}
             className="fixed inset-0" style={{ background: "rgba(0,0,0,0.5)" }} />
@@ -173,7 +181,7 @@ export function KomutPaleti({ role, kurumTuru, brans, grupMu = false, kademe, ok
             </div>
           </div>
         </div>
-      )}
+      ), document.body)}
     </>
   );
 }
