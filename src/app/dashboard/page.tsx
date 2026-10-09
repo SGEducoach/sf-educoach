@@ -70,6 +70,7 @@ import { DenemeSuresiSonaErdiEkrani } from "@/components/DenemeSuresiSonaErdiEkr
 import { RehberlikPaneli } from "@/components/dashboard/RehberlikPaneli";
 import { rehberlikUyeligiGetir } from "@/lib/rehberlik-servisi";
 import { rehberKapsamListesiGetir } from "@/lib/rehber-kapsam-listesi";
+import { AltSekmeCubugu } from "@/components/dashboard/AltSekmeCubugu";
 import { SinifAnaliziPanel } from "@/components/dashboard/SinifAnaliziPanel";
 import { sinifAnaliziGetir } from "@/lib/sinif-analizi-verisi";
 import { RehberKapsamListesi } from "@/components/dashboard/RehberKapsamListesi";
@@ -279,7 +280,7 @@ export default async function DashboardPage({
           örtük bir uygulama detayı. Bu yüzden müdürde her zaman "Müdür"
           gösterilir, "Moderatör" etiketi öğretmen+moderatör kombinasyonuna
           özel kalır. */}
-      <Header ad={profile.ad} role={role} kurumTuru={kurumTuru} brans={brans} grupMu={grupKocu} okunmamisMesajSayisi={okunmamisMesajSayisi} moderatorMu={!!moderatorYetkisi} rolEtiketi={moderatorYetkisi && role !== "mudur" ? "Moderatör" : undefined} aktifBolum={aktifBolum} rozetler={menuRozetleri} kademe={menuKademesi} />
+      <Header ad={profile.ad} role={role} kurumTuru={kurumTuru} brans={brans} grupMu={grupKocu} okunmamisMesajSayisi={okunmamisMesajSayisi} moderatorMu={!!moderatorYetkisi} rolEtiketi={moderatorYetkisi && role !== "mudur" ? "Moderatör" : undefined} aktifBolum={aktifBolum} rozetler={menuRozetleri} kademe={menuKademesi} mobilNavigasyon={false} />
       {grupAktivasyonu
         ? <GrupOgrenciAktivasyonu ad={profile.ad} alanSorulur={grupAlanSorulur} />
         : <ZorunluSifreDegisikligiKapisi gecici={profile.gecici_sifre} />}
@@ -294,7 +295,7 @@ export default async function DashboardPage({
       )}
       <HosgeldinPopuplari role={role} />
       <div className="mx-auto flex min-h-[calc(100dvh-6.75rem)] w-full max-w-[100rem] flex-1 items-stretch gap-6 px-4 py-6 sm:px-6 lg:py-7">
-        <DashboardYanMenu role={role} kurumTuru={kurumTuru} brans={brans} grupMu={grupKocu} kademe={menuKademesi} aktifBolum={aktifBolum} rozetler={menuRozetleri} />
+        <DashboardYanMenu role={role} kurumTuru={kurumTuru} brans={brans} grupMu={grupKocu} kademe={menuKademesi} aktifBolum={aktifBolum} rozetler={menuRozetleri} okulRehberi={okulRehberi} />
         <main id="ana-icerik" className="sfec-dashboard-main min-h-[calc(100dvh-10.25rem)] min-w-0 w-full flex-1 flex flex-col gap-6">
           {/* Kullanıcı isteği (03.09.2026): Duyuru Geçmişi artık YALNIZCA admin
               panelinde (bkz. duyuru-gecmisi-actions.ts) — müdür menüsünden ve
@@ -320,6 +321,15 @@ export default async function DashboardPage({
           )}
         </main>
       </div>
+      {/* Mobil gezinme (görsel yenileme 4/4): yan menü mobilde hiç
+          görünmüyordu, gezinmenin tek yolu hamburgerdeki dar açılır paneldi.
+          Çubuk başparmak erişiminde; Header'a mobilNavigasyon={false}
+          geçildiği için hamburgerde yalnızca hesap/mesaj kaldı, gezinme iki
+          yerde birden durmuyor. */}
+      <AltSekmeCubugu role={role} kurumTuru={kurumTuru} brans={brans} grupMu={grupKocu}
+        kademe={menuKademesi} okulRehberi={okulRehberi} aktifBolum={aktifBolum} rozetler={menuRozetleri} />
+      {/* Çubuk sabit konumlu: içeriğin son satırı altında kalmasın. */}
+      <div aria-hidden="true" className="lg:hidden print:hidden" style={{ height: "var(--mobile-nav-height)" }} />
     </div>
   );
 }
