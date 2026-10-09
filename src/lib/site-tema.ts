@@ -1,20 +1,28 @@
-// Site teması — admin paneli "Site ayarları" bölümünden seçilebilen 7 sabit
-// tema (2026-09-06 genişletme: önceden sadece zemin rengi seçilebiliyordu;
-// artık tema zemin + kutu içi + kenarlık + font renklerinin tamamını kapsıyor).
+// Site teması — admin paneli "Site ayarları" bölümünden seçilebilen İKİ tema
+// (2026-09-06 genişletme: önceden sadece zemin rengi seçilebiliyordu; artık
+// tema zemin + kutu içi + kenarlık + font renklerinin tamamını kapsıyor).
+//
+// 09.10.2026: palet 7 temadan 2'ye indirildi (kullanıcı kararı: "fazlalık
+// temaları kaldır, zaten ikisi kullanılıyor"). Silinenler: Boğaziçi Mavisi,
+// Uludağ Yeşili, ODTÜ, İstanbul, Ege — veritabanında seçili olan tema
+// "gece-siyahi" idi (kontrol edildi), bu yüzden hiçbir ayar kırılmadı.
+// Kalan ikisi YAPISAL olarak gerekli: gece modu VARSAYILAN_TEMA'yı,
+// gündüz modu tek açık temayı (acik: true) kullanıyor. Eski bir kimlik
+// kayıtlıysa temaBul zaten varsayılana düşürüyor.
 // Değer app_ayarlari tablosunda "site_arka_plan_rengi" anahtarıyla saklanır
 // (anahtar adı ve tablo korunuyor — yeni tablo/migration gerekmez; eski hex
 // kayıtlar otomatik olarak varsayılan "gece-siyahi" temasına düşer, bkz.
 // temaBul). Select politikası herkese açık, yazma service-role/admin.
 //
-// Tema ilhamı: dokumanlar/tema/ornek_1.jpeg (Windows 7 Aero — Boğaziçi
-// Mavisi) ve ornek_2.jpeg (Vista/7 aurora — Uludağ Yeşili). Kalan üç tema
-// üniversite isimleriyle motivasyon amaçlıdır (ODTÜ, İstanbul, Ege).
-// ODTÜ kullanıcı onayıyla yumuşatılmış kızıl/bozkır tonlarındadır.
+// Gece Siyahı koyu zemin prensibini (Bulgu 11) taşır; Pamukkale bunun
+// bilinçli istisnasıdır ve yalnızca gündüz modunda devreye girer. İkisi de
+// el ile tayin edilmiş kontrast uyumlu renk çiftleri kullanır — font TİPİ
+// hiç değişmez (Montserrat), sadece renk değişkenleri temaya göre eşlenir.
 //
-// Her tema koyu zemin prensibini korur (Bulgu 11: site tek koyu temada
-// çalışır) ve el ile tayin edilmiş kontrast uyumlu renk çiftleri taşır —
-// font TİPİ hiç değişmez (Montserrat), sadece renk değişkenleri temaya
-// göre eşelenir.
+// YENİ RENK/EFEKT EKLERKEN: değeri sabit yazma, jeton kullan. İki tema
+// birbirinin zıddı olduğu için (koyu zemin / beyaz panel) sabit bir renk
+// birinde mutlaka yanlış düşer — ör. beyaz bir "üstten ışık" Pamukkale'nin
+// beyaz panelinde görünmez (bkz. globals.css'teki data-tema koşulu).
 export const SITE_TEMA_ANAHTAR = "site_arka_plan_rengi";
 
 export interface SiteTemasi {
@@ -70,86 +78,6 @@ export const SITE_TEMA_PALETI: SiteTemasi[] = [
       markaMavi: "#c2e9f8", markaKirmizi: "#c2e9f8", markaKirmiziVurgu: "#78c9e8",
     },
     logoHueRotate: 167,
-  },
-  {
-    id: "bogazici-mavisi",
-    ad: "Boğaziçi Mavisi",
-    aciklama: "Windows 7 Aero'nun cam mavisi",
-    degisken: {
-      background: "#0a1a32", foreground: "#e3f1ff",
-      bg0: "#0a1a32", bg1: "#10254a", bg1Alt: "#16305c",
-      border: "#234a77", borderStrong: "#346596",
-      text: "#e3f1ff", textMuted: "#9cc3e8",
-      mint: "#aee0ff", mintOn: "#083a6b", mintBg: "rgba(174, 224, 255, 0.18)",
-      seafoam: "#8fd0ff", shellBg: "#071124",
-      navBg: "linear-gradient(135deg, #0a1a32 0%, #17365e 50%, #0a1a32 100%)",
-      markaMavi: "#aee0ff", markaKirmizi: "#aee0ff", markaKirmiziVurgu: "#8fd0ff",
-    },
-    logoHueRotate: 173,
-  },
-  {
-    id: "uludag-yesili",
-    ad: "Uludağ Yeşili",
-    aciklama: "Windows Vista aurorasının yeşili",
-    degisken: {
-      background: "#081c12", foreground: "#d9f7e5",
-      bg0: "#081c12", bg1: "#0e2a1c", bg1Alt: "#143626",
-      border: "#1f4933", borderStrong: "#2d6245",
-      text: "#d9f7e5", textMuted: "#94d4b1",
-      mint: "#aef2cd", mintOn: "#0b4a2c", mintBg: "rgba(174, 242, 205, 0.16)",
-      seafoam: "#8fe6b4", shellBg: "#060f0a",
-      navBg: "linear-gradient(135deg, #081c12 0%, #10301f 50%, #081c12 100%)",
-      markaMavi: "#aef2cd", markaKirmizi: "#aef2cd", markaKirmiziVurgu: "#8fe6b4",
-    },
-    logoHueRotate: 117,
-  },
-  {
-    id: "odtu",
-    ad: "ODTÜ",
-    aciklama: "Yumuşatılmış kızıl — bozkır akşamı",
-    degisken: {
-      background: "#1c0d0f", foreground: "#ffe9e2",
-      bg0: "#1c0d0f", bg1: "#2b1417", bg1Alt: "#381a1e",
-      border: "#4b2529", borderStrong: "#63343a",
-      text: "#ffe9e2", textMuted: "#e2a89b",
-      mint: "#ffc7bb", mintOn: "#5c1712", mintBg: "rgba(255, 199, 187, 0.16)",
-      seafoam: "#f0a095", shellBg: "#14090a",
-      navBg: "linear-gradient(135deg, #1c0d0f 0%, #331517 50%, #1c0d0f 100%)",
-      markaMavi: "#ffc7bb", markaKirmizi: "#ffc7bb", markaKirmiziVurgu: "#f0a095",
-    },
-    logoHueRotate: 319,
-  },
-  {
-    id: "istanbul",
-    ad: "İstanbul",
-    aciklama: "Sarı-lacivert çınar gölgesi",
-    degisken: {
-      background: "#0b0f2a", foreground: "#e8eaff",
-      bg0: "#0b0f2a", bg1: "#12184a", bg1Alt: "#1a2260",
-      border: "#29336d", borderStrong: "#3c4b91",
-      text: "#e8eaff", textMuted: "#aab0e6",
-      mint: "#ffd766", mintOn: "#4a3800", mintBg: "rgba(255, 215, 102, 0.16)",
-      seafoam: "#aab0e6", shellBg: "#080b22",
-      navBg: "linear-gradient(135deg, #0b0f2a 0%, #1a2058 50%, #0b0f2a 100%)",
-      markaMavi: "#e8eaff", markaKirmizi: "#ffd766", markaKirmiziVurgu: "#ffd766",
-    },
-    logoHueRotate: 205,
-  },
-  {
-    id: "ege",
-    ad: "Ege",
-    aciklama: "Ege Denizi'nin turkuazı",
-    degisken: {
-      background: "#062226", foreground: "#d4f7fa",
-      bg0: "#062226", bg1: "#0a3238", bg1Alt: "#0f3f47",
-      border: "#1b4f57", borderStrong: "#2a6972",
-      text: "#d4f7fa", textMuted: "#88cbd2",
-      mint: "#8ff0f5", mintOn: "#074a52", mintBg: "rgba(143, 240, 245, 0.16)",
-      seafoam: "#5fe0e8", shellBg: "#041618",
-      navBg: "linear-gradient(135deg, #062226 0%, #0d3a40 50%, #062226 100%)",
-      markaMavi: "#8ff0f5", markaKirmizi: "#8ff0f5", markaKirmiziVurgu: "#5fe0e8",
-    },
-    logoHueRotate: 152,
   },
   {
     id: "pamukkale",
