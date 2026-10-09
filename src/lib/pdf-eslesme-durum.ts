@@ -56,3 +56,34 @@ export function pdfEslesmeDurumEtiketi(g: DurumGirdisi): PdfEslesmeDurumEtiketi 
 export function eslestirilebilirMi(g: DurumGirdisi): boolean {
   return g.durum === "bekliyor" && g.dersSonucSayisi > 0;
 }
+
+// YANLIŞ EŞLEŞME ŞÜPHESİ (08.10.2026, canlı 4K yüklemesinde bulundu).
+//
+// Ad eşleşmesi tek bir öğrenciye oturduğunda PDF'teki öğrenci numarası HİÇ
+// doğrulanmıyordu (numaraVeAdIleBul yalnızca ad eşleşmesi BOŞ dönerse
+// çağrılıyor). Gerçek sonuç: PDF'te iki "MEHMET ŞAHİN" vardı (341/12-C ve
+// 325/12-D); kurumdaki 325 numaralı öğrenciye ADAŞININ netleri yazıldı,
+// doğru satır kuyrukta kaldı. Aynı yüklemede 12-D'li bir öğrencinin sonucu
+// 11-B'li bir adaşına gitti.
+//
+// Numara TEK BAŞINA ölçüt olamaz: iki sistemin numaraları her zaman
+// örtüşmüyor (aynı yüklemede 43 eşleşmenin 39'unda tutuyordu; tutmayan
+// üçü doğru eşleşmeydi). Sınıf da tek başına ölçüt olamaz: yayınevi
+// sınıfı bilinmeyen öğrencileri "12-XX" kovasına koyuyor.
+//
+// Bu yüzden otomatik yazma yalnızca İKİSİ BİRDEN çeliştiğinde durduruluyor;
+// satır yöneticinin inceleme kuyruğunda kalır. Ölçüm: bu kural aynı
+// yüklemedeki iki hatalı eşleşmeyi de yakalıyor, 41 doğru eşleşmenin
+// hiçbirine dokunmuyor.
+export function yanlisEslesmeSuphesi(
+  pdf: { ogrenciNo?: number | null; sinif?: string | null },
+  ogrenci: { okulNo?: string | null; sinif?: string | null },
+): boolean {
+  const pdfNo = pdf.ogrenciNo != null && pdf.ogrenciNo > 0 ? String(pdf.ogrenciNo) : null;
+  const sistemNo = ogrenci.okulNo?.trim() || null;
+  const pdfSinif = pdf.sinif?.trim() || null;
+  const sistemSinif = ogrenci.sinif?.trim() || null;
+  // Dört bilgiden biri bile eksikse karşılaştırma yapılamaz — eskisi gibi yaz.
+  if (!pdfNo || !sistemNo || !pdfSinif || !sistemSinif) return false;
+  return pdfNo !== sistemNo && pdfSinif !== sistemSinif;
+}

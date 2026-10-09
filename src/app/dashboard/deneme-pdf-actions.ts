@@ -10,6 +10,7 @@ import { requireDenemeYuklemeYetkisi } from "@/lib/dershane-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAnthropicClient } from "@/lib/anthropic";
 import { adNormalize } from "@/lib/validators";
+import { yanlisEslesmeSuphesi } from "@/lib/pdf-eslesme-durum";
 import { adlarBenzerMi, gucluAdIleBul, numaraVeAdIleBul } from "@/lib/ad-benzerligi";
 import { dersSoruSayisi } from "@/lib/types";
 import type { DenemeTuru } from "@/lib/types";
@@ -30,6 +31,10 @@ interface PdfOgrenciSonucu {
   // PDF'teki "Ö.No" — yalnızca deterministik (sınıf/okul listesi) yollarda
   // dolu; 0 ya da yoksa numara ile eşleştirme yapılmaz.
   ogrenci_no?: number;
+  // PDF'teki sınıf ("12-C"). SATIR BAZINDA tutuluyor: adNorm anahtarlı
+  // pdfSinifMap adaşlarda tek değer saklayabildiği için yanlış eşleşmeyi
+  // ayırt edemiyor (bkz. yanlisEslesmeSuphesi).
+  sinif?: string;
 }
 
 interface PdfAyristirmaCozumu {
@@ -324,6 +329,22 @@ async function sonuclariEslestirVeKaydet(params: {
       continue;
     }
 
+    // Ad tek bir ogrenciye oturdu ama PDF'teki numara DA sinif DA tutmuyorsa
+    // bu muhtemelen bir adas; otomatik yazma, yoneticiye birak.
+    if (eslesenler.length === 1 && eslesenOnKayitlar.length === 0
+        && yanlisEslesmeSuphesi(
+          { ogrenciNo: satir.ogrenci_no, sinif: satir.sinif },
+          { okulNo: eslesenler[0].okulNo, sinif: eslesenler[0].sinif },
+        )) {
+      console.warn(
+        "Yanlış eşleşme şüphesi: numara ve sınıf birlikte tutmuyor, otomatik yazılmadı —",
+        satir.ad_soyad, "PDF no:", satir.ogrenci_no, "sınıf:", satir.sinif,
+        "| hesap no:", eslesenler[0].okulNo, "sınıf:", eslesenler[0].sinif,
+      );
+      if (kuyrugaYazildi) incelemeBekleyen++;
+      continue;
+    }
+
     if (eslesenler.length === 1 && eslesenOnKayitlar.length === 0) {
       const granulerDersSonuclari = granulerKarneMap.get(adNorm);
       const sonuc = await ogretmenDenemeSonucuKaydet(admin, {
@@ -453,7 +474,7 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
       const okunanlar: PdfOgrenciSonucu[] = [];
       for (const o of sinifListesi.ogrenciler) {
         const dersSonuclari = tytDerslerineIndirge(o.dersSonuclari, KARNE_DERS_TYT_ESLESTIRME);
-        if (dersSonuclari) okunanlar.push({ ad_soyad: o.isimHam, ders_sonuclari: dersSonuclari, ogrenci_no: o.ogrenciNo || undefined });
+        if (dersSonuclari) okunanlar.push({ ad_soyad: o.isimHam, ders_sonuclari: dersSonuclari, ogrenci_no: o.ogrenciNo || undefined, sinif: o.sinif });
         else okunamayanAdlar.push(o.isimHam);
       }
       ayristirilan = okunanlar;
@@ -498,7 +519,7 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
       const dersSonuclari = okulListesiBirlesikTyt
         ? o.dersSonuclari.map(({ ders, dogru, yanlis }) => ({ ders, dogru, yanlis }))
         : tytDerslerineIndirge(o.dersSonuclari, KARNE_DERS_TYT_ESLESTIRME);
-      if (dersSonuclari) okunanlar.push({ ad_soyad: o.isimHam, ders_sonuclari: dersSonuclari, ogrenci_no: o.ogrenciNo || undefined });
+      if (dersSonuclari) okunanlar.push({ ad_soyad: o.isimHam, ders_sonuclari: dersSonuclari, ogrenci_no: o.ogrenciNo || undefined, sinif: o.sinif });
       else okunamayanAdlar.push(o.isimHam);
     }
     // Hangi dersin boş bırakıldığı belirsiz satırlar — PDF'te karne varsa
