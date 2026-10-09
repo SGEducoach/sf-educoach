@@ -50,6 +50,28 @@ describe("sutunAdlariniCoz", () => {
   test("tanınmayan ders adı varsa sayfa tanınmaz", () => {
     expect(sutunAdlariniCoz("Edebiyat Tarih-2 Toplam")).toBeNull();
   });
+
+  // GERÇEK 4K/Okulizyon PDF'i (08.10.2026): pdfjs "(Seçmeli)" ile
+  // "Matematik-1" arasına boşluk KOYMUYOR. Eski sürüm burada kısa "Felsefe"ye
+  // kayıp sonraki adımda çıkmaza giriyor ve 108 öğrencilik PDF tamamen
+  // okunamıyordu.
+  test("bitişik yazılmış ders adları da bölünür (4K/Okulizyon)", () => {
+    expect(sutunAdlariniCoz("Türkçe Tarih-1 Coğrafya-1 Felsefe Din Kül. ve Ahl. Bil. Felsefe (Seçmeli)Matematik-1 Geometri Fizik Kimya Biyoloji Toplam TYT"))
+      .toEqual(["Türkçe", "Tarih-1", "Coğrafya-1", "Felsefe", "Din Kül. ve Ahl. Bil.", "Felsefe (Seçmeli)", "Matematik-1", "Geometri", "Fizik", "Kimya", "Biyoloji", "Toplam"]);
+  });
+
+  // Geri izlemenin asıl sınavı: kısa ad ("Felsefe") uzun adın ("Felsefe
+  // (Seçmeli)") önüne geçerse kalan çözülemez; çözücü GERİ DÖNMELİ.
+  test("kısa ad uzun adın önüne geçerse geri dönülür", () => {
+    expect(sutunAdlariniCoz("Felsefe (Seçmeli)Matematik-1 Toplam"))
+      .toEqual(["Felsefe (Seçmeli)", "Matematik-1", "Toplam"]);
+    expect(sutunAdlariniCoz("Felsefe Matematik-1 Toplam"))
+      .toEqual(["Felsefe", "Matematik-1", "Toplam"]);
+  });
+
+  test("Toplam'a ulaşılamayan başlık reddedilir", () => {
+    expect(sutunAdlariniCoz("Türkçe Matematik-1 Geometri")).toBeNull();
+  });
 });
 
 describe("sinifListesiSayfalariniCoz", () => {

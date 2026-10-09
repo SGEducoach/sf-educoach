@@ -139,7 +139,7 @@ export function DershaneDenemePdfFormu({ schoolId, yalnizcaExcel = false }: { sc
               {/* Kullanıcı isteği (27.09.2026): biçimler yayınevi adıyla anılsın. */}
               <option value="okul">Limit — okul net listesi</option>
               <option value="maarif">Maarif — okul net listesi</option>
-              <option value="sinif">Orbital — sınıf net listeleri</option>
+              <option value="sinif">Orbital / 4K — sınıf net listeleri</option>
               <option value="sirali">Özdebir — kurum sıralı listesi</option>
               <option value="claude">Diğer biçim (yapay zekâ ile okunur)</option>
             </select>

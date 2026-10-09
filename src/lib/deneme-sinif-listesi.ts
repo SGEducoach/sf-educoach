@@ -62,17 +62,34 @@ const SUTUN_ADLARI = [
   "Türkçe", "Felsefe", "Geometri", "Fizik", "Kimya", "Biyoloji", "Toplam",
 ].sort((a, b) => b.length - a.length);
 
-export function sutunAdlariniCoz(metin: string): string[] | null {
-  const adlar: string[] = [];
-  let kalan = metin.replace(/\s+/g, " ").trim();
-  while (kalan) {
-    const ad = SUTUN_ADLARI.find((a) => kalan.startsWith(a) && (kalan.length === a.length || kalan[a.length] === " "));
-    if (!ad) return null;
-    adlar.push(ad);
-    kalan = kalan.slice(ad.length).trim();
-    if (ad === "Toplam") break;
+// Adlar GERİ İZLEMELİ okunur ve araya boşluk ŞART DEĞİLDİR.
+//
+// NEDEN (4K/Okulizyon PDF'i, 08.10.2026): pdfjs bu şablonda iki başlığı
+// bitişik veriyor — "... Din Kül. ve Ahl. Bil. Felsefe (Seçmeli)Matematik-1
+// Geometri ...". Eski sürüm addan sonra boşluk arıyordu, bu yüzden
+// "Felsefe (Seçmeli)" reddedilip yerine kısa "Felsefe" alınıyor, ardından
+// "(Seçmeli)..." ile başlayan ad bulunamayıp TÜM sayfa "Sütun adları
+// tanınmadı" ile düşüyordu. (Okul listesi yolundaki DERS_BASLIGI_ESLESTIRME
+// deseni bu bitişikliği zaten \s* ile tolere ediyordu.)
+//
+// Boşluk şartını kaldırmak tek başına yetmez: kısa ad uzun adın önüne
+// geçerse ("Felsefe" yerine "Felsefe (Seçmeli)") sonraki adımda çıkmaza
+// girilir. Bu yüzden adaylar uzundan kısaya denenir ve kalan çözülemezse
+// bir önceki seçime GERİ DÖNÜLÜR.
+function adlariCoz(kalan: string): string[] | null {
+  for (const ad of SUTUN_ADLARI) {
+    if (!kalan.startsWith(ad)) continue;
+    // "Toplam" son sütun; sonrasındaki "TYT", "Puan" gibi başlıklar okunmaz.
+    if (ad === "Toplam") return [ad];
+    const geri = adlariCoz(kalan.slice(ad.length).replace(/^\s+/, ""));
+    if (geri) return [ad, ...geri];
   }
-  return adlar.length >= 2 && adlar.at(-1) === "Toplam" ? adlar : null;
+  return null; // "Toplam"a ulaşılamadı
+}
+
+export function sutunAdlariniCoz(metin: string): string[] | null {
+  const adlar = adlariCoz(metin.replace(/\s+/g, " ").trim());
+  return adlar && adlar.length >= 2 ? adlar : null;
 }
 
 function satirlaraGrupla(ogeler: GenisMetin[]): GenisMetin[][] {

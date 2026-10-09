@@ -554,7 +554,7 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
   // Belirli bir biçim seçildiyse ve okunamadıysa Claude'a gitmeden söyle.
   if (ayristirilan === null && bicim !== "otomatik" && bicim !== "claude") {
     const ad = {
-      sinif: "Orbital — sınıf net listeleri",
+      sinif: "Orbital / 4K — sınıf net listeleri",
       okul: "Limit — okul net listesi",
       maarif: "Maarif — okul net listesi",
       sirali: "Özdebir — kurum sıralı listesi",
