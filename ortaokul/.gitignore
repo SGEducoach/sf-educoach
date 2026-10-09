@@ -4,3 +4,6 @@
 
 # Üretilen kılavuz sürümlensin (betikten yeniden üretilebilir ama teslim edilen belge).
 !SeFu_Ortaokul_Paneli_Kurum_Kilavuzu.pdf
+
+# Excel kilit dosyalari (dosya acikken olusur, depoya girmemeli).
+~$*
