@@ -4,6 +4,7 @@ import { etkinlikBransiMi } from "@/lib/etkinlik";
 
 export type DashboardBolumu =
   | "mesajlar"
+  | "sinif-analizi"
   | "ozet"
   | "gorevler"
   | "planlar"
@@ -118,8 +119,18 @@ const VELI_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Pano", ikon: "takvim" },
 ];
 
+// Sınıf Analizi (kullanıcı kararı 09.10.2026) — toplu sınıf görünümü.
+// Sınıf öğretmeni KENDİ sınıfını, okul rehberi sorumlu olduğu düzeyleri,
+// dershane rehberi ve müdür tüm kurumu sınıf filtresiyle görür. Branş
+// öğretmeninde menüde durur ama içeride "sınıf öğretmeni içindir" der —
+// Konu Haritası ile aynı desen (kapsam veriye bağlı, menü role bağlı).
+const SINIF_ANALIZI_MENU_OGESI: DashboardMenuOgesi = {
+  bolum: "sinif-analizi", href: "/dashboard?bolum=sinif-analizi", etiket: "Sınıf Analizi", ikon: "ogrenci",
+};
+
 const OGRETMEN_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "ozet", href: "/dashboard", etiket: "Sınıflarım", ikon: "ana-sayfa" },
+  { bolum: "sinif-analizi", href: "/dashboard?bolum=sinif-analizi", etiket: "Sınıf Analizi", ikon: "ogrenci" },
   { bolum: "gorevler", href: "/dashboard/gorevler", etiket: "Ödev ver", ikon: "gorev" },
   { bolum: "onaylar", href: "/dashboard/onaylar", etiket: "Bekleyen onaylar", ikon: "onay" },
   { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Konu Haritası", ikon: "ai" },
@@ -152,6 +163,7 @@ const MUDUR_MENUSU: DashboardMenuOgesi[] = [
   // ban/sil gibi müdahale butonu yok) — bu yüzden ayrı bir ekran
   // açmak yerine etiket buna göre güncellendi.
   { bolum: "ozet", href: "/dashboard?bolum=ozet", etiket: "Öğrenciler", ikon: "ogrenci" },
+  SINIF_ANALIZI_MENU_OGESI,
   // 2026-08-25 kullanıcı isteği: "dershane ve okul müdürü öğretmenlerin
   // programlarını görsün" — okul müdürü salt-okunur (bkz. dashboard/page.tsx
   // OgretmenIcerik yorumu; dershane müdürü zaten kendi ayrı panelinde
@@ -252,6 +264,7 @@ const ADMIN_MENUSU: DashboardMenuOgesi[] = ADMIN_MENU_YAPISI.flatMap((k) => (men
 const REHBER_OGRETMEN_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "kurum-performansi", href: "/dashboard/kurum-performansi", etiket: "Kurum Performansı", ikon: "ana-sayfa" },
   { bolum: "ozet", href: "/dashboard?bolum=ozet", etiket: "Öğrenciler", ikon: "ogrenci" },
+  SINIF_ANALIZI_MENU_OGESI,
   { bolum: "ogretmenler", href: "/dashboard/ogretmenler", etiket: "Öğretmenler ve Programlar", ikon: "ogretmen" },
   { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Rehber Öğretmen Duyurusu", ikon: "duyuru" },
   { bolum: "rehberlik", href: "/dashboard/rehberlik", etiket: "Bireysel Mesaj", ikon: "rehberlik" },
@@ -383,7 +396,7 @@ export function dashboardMenuYapisi(
 }
 
 export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
-  "gorevler", "planlar", "veri-girisi", "konu-hakimiyeti", "analiz", "yapay-zeka", "tg-denemeleri",
+  "sinif-analizi", "gorevler", "planlar", "veri-girisi", "konu-hakimiyeti", "analiz", "yapay-zeka", "tg-denemeleri",
   "duyurular", "talepler", "onaylar", "dersler", "ortaokul-dersler", "ortaokul-yardim", "ortaokul-calisma", "ortaokul-yeterlilik", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler", "rehberlik", "etkinlikler", "profil", "takvim", "yarismalar", "ogrenci-takibi",
 ]);
 // Yazılı analizinin ayrı sayfası yok (kullanıcı kararı 11.09.2026: yalnızca

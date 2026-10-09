@@ -70,6 +70,8 @@ import { DenemeSuresiSonaErdiEkrani } from "@/components/DenemeSuresiSonaErdiEkr
 import { RehberlikPaneli } from "@/components/dashboard/RehberlikPaneli";
 import { rehberlikUyeligiGetir } from "@/lib/rehberlik-servisi";
 import { rehberKapsamListesiGetir } from "@/lib/rehber-kapsam-listesi";
+import { SinifAnaliziPanel } from "@/components/dashboard/SinifAnaliziPanel";
+import { sinifAnaliziGetir } from "@/lib/sinif-analizi-verisi";
 import { RehberKapsamListesi } from "@/components/dashboard/RehberKapsamListesi";
 import { gorusmeleriGetir } from "@/app/dashboard/gorusme-actions";
 import { RehberGorusmeleri } from "@/components/dashboard/RehberGorusmeleri";
@@ -1106,6 +1108,48 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
     : sinifListesi[0]?.id ?? null;
   const gorunecekSinifId = secilenSinifErisilebilir || varsayilanSinifId;
   const kendiSinifiMi = gorunecekSinifId === teacher.class_id;
+
+  // SINIF ANALİZİ (kullanıcı kararı 09.10.2026) — toplu sınıf görünümü.
+  // Kapsam yukarıdaki sinifListesi'nden geliyor: okul rehberi sorumlu olduğu
+  // düzeyleri, dershane rehberi ve müdür tüm kurumu görüyor. SINIF ÖĞRETMENİ
+  // ise yalnız KENDİ sınıfını — branş öğretmeninin ders verdiği sınıflar
+  // (erisilebilirSinifIdleri) bilinçli olarak kapsama ALINMIYOR; istenen rol
+  // "sınıf öğretmeni" ve öğretmene gereğinden geniş liste göstermek bu
+  // projede daha önce sorun olmuştu.
+  if (aktifBolum === "sinif-analizi") {
+    const sinifOgretmeniMi = role === "ogretmen" && !rehberOgretmenMi;
+    if (sinifOgretmeniMi && !teacher.class_id) {
+      return (
+        <div className="sfec-fade rounded-3xl p-6 text-center" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+          <p style={{ color: TEXT_MUTED }} className="text-sm">
+            Bu bölüm sınıf öğretmenleri içindir. Bir sınıfın öğretmeni olarak tanımlı değilsiniz.
+          </p>
+        </div>
+      );
+    }
+    const analizSiniflari = sinifOgretmeniMi
+      ? sinifListesi.filter((s) => s.id === teacher.class_id)
+      : sinifListesi;
+    const analiz = await sinifAnaliziGetir(createAdminClient(), {
+      schoolId: teacher.school_id,
+      sinifIdleri: analizSiniflari.map((s) => s.id),
+    });
+    const kapsamEtiketi = sinifOgretmeniMi
+      ? "Sınıfınız"
+      : okulRehberi
+        ? `Sorumlu olduğunuz düzeyler: ${rehberSeviyeleri.join(", ")}`
+        : "Tüm kurum";
+    return (
+      <SinifAnaliziPanel
+        ogrenciler={analiz.ogrenciler}
+        denemeSecenekleri={analiz.denemeSecenekleri}
+        kayipNesil={analiz.kayipNesil}
+        siniflar={analizSiniflari}
+        sinifSecilebilir={!sinifOgretmeniMi}
+        kapsamEtiketi={kapsamEtiketi}
+      />
+    );
+  }
 
   // Öğrencinin soru çözümü, o sınıf ve derse atanmış branş öğretmeni varsa
   // yalnız o öğretmenin; yoksa sınıf öğretmeninin onayına düşer. Branş
