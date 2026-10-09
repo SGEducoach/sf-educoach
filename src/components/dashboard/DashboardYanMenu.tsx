@@ -121,13 +121,13 @@ export function DashboardYanMenu({ role, kurumTuru, brans, grupMu = false, kadem
     >
       <nav aria-label="Dashboard bölümleri"
         className={`sfec-dashboard-sidebar flex h-full min-h-0 flex-col gap-1.5 overflow-y-auto overscroll-contain rounded-3xl ${dar ? "p-2" : "p-4"}`}
-        style={{ background: BG1, border: `1px solid ${BORDER}` }}>
+        style={{ border: `1px solid ${BORDER}` }}>
 
         <button type="button" onClick={genisligiDegistir}
           aria-label={dar ? "Menüyü genişlet" : "Menüyü daralt"}
           aria-expanded={!dar}
-          className={`sfec-btn flex min-h-11 items-center rounded-2xl text-[11px] font-extrabold ${dar ? "justify-center" : "gap-2 px-3"}`}
-          style={{ color: TEXT_MUTED }}>
+          className={`sfec-btn flex min-h-11 items-center rounded-2xl text-[10px] font-semibold uppercase ${dar ? "justify-center" : "gap-2 px-3"}`}
+          style={{ color: TEXT_MUTED, letterSpacing: "0.09em" }}>
           {dar ? <ChevronsRight size={16} aria-hidden="true" /> : <><ChevronsLeft size={16} aria-hidden="true" /><span>Daralt</span></>}
         </button>
 
@@ -161,7 +161,7 @@ export function DashboardYanMenu({ role, kurumTuru, brans, grupMu = false, kadem
                   className="sfec-btn flex min-h-[52px] w-full flex-col items-center justify-center gap-1 rounded-2xl px-1"
                   style={{ background: icindeAktif ? MINT_BG : "transparent", border: `1px solid ${icindeAktif ? MINT : "transparent"}`, color: TEXT }}>
                   <Ikon size={18} color={icindeAktif ? TEXT : TEXT_MUTED} aria-hidden="true" />
-                  <span className="w-full truncate text-center text-[10px] font-bold leading-tight">{kalem.baslik}</span>
+                  <span className="w-full text-center text-[10px] font-semibold leading-[1.15]" style={{ letterSpacing: "0.01em" }}>{kalem.baslik}</span>
                 </button>
               );
             }
@@ -205,7 +205,7 @@ export function DashboardYanMenu({ role, kurumTuru, brans, grupMu = false, kadem
                 className={`sfec-btn relative flex min-h-[52px] flex-col items-center justify-center gap-1 rounded-2xl px-1 ${tgBolumu ? "sfec-menu-tg" : ""}`}
                 style={{ background: aktif ? MINT_BG : "transparent", color: TEXT, border: `1px solid ${aktif ? MINT : "transparent"}` }}>
                 <Ikon size={18} color={aktif ? TEXT : TEXT_MUTED} aria-hidden="true" />
-                <span className="w-full truncate text-center text-[10px] font-bold leading-tight">{oge.etiket}</span>
+                <span className="w-full text-center text-[10px] font-semibold leading-[1.15]" style={{ letterSpacing: "0.01em" }}>{oge.etiket}</span>
                 {rozet > 0 && (
                   <span className="absolute right-1.5 top-1.5 min-w-[16px] rounded-full px-1 text-center text-[9px] font-extrabold"
                     style={{ background: MINT, color: BG1 }}>{rozet}</span>

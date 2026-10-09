@@ -89,7 +89,7 @@ export function AltSekmeCubugu({ role, kurumTuru, brans, grupMu = false, kademe,
         className="sfec-btn relative flex min-h-[52px] flex-col items-center justify-center gap-1 rounded-2xl px-1"
         style={{ background: aktif ? MINT_BG : "transparent", color: aktif ? TEXT : TEXT_MUTED }}>
         <Ikon size={19} aria-hidden="true" />
-        <span className="w-full truncate text-center text-[10px] font-bold leading-tight">{oge.etiket}</span>
+        <span className="w-full text-center text-[10px] font-semibold leading-[1.15]" style={{ letterSpacing: "0.01em" }}>{oge.etiket}</span>
         {rozet > 0 && (
           <span className="absolute right-1 top-1 min-w-[16px] rounded-full px-1 text-center text-[9px] font-extrabold"
             style={{ background: MINT, color: BG1 }}>{rozet}</span>
@@ -117,7 +117,7 @@ export function AltSekmeCubugu({ role, kurumTuru, brans, grupMu = false, kademe,
             className="sfec-btn relative flex min-h-[52px] flex-col items-center justify-center gap-1 rounded-2xl px-1"
             style={{ color: TEXT_MUTED }}>
             <Ellipsis size={19} aria-hidden="true" />
-            <span className="text-[10px] font-bold leading-tight">Daha</span>
+            <span className="text-[10px] font-semibold leading-[1.15]" style={{ letterSpacing: "0.01em" }}>Daha</span>
             {kalanRozetToplami > 0 && (
               <span className="absolute right-1 top-1 min-w-[16px] rounded-full px-1 text-center text-[9px] font-extrabold"
                 style={{ background: MINT, color: BG1 }}>{kalanRozetToplami}</span>

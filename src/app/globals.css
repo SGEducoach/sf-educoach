@@ -18,6 +18,9 @@
   --sfec-mint: #c2e9f8;
   --sfec-mint-on: #0b3b4d;
   --sfec-mint-bg: rgba(194, 233, 248, 0.18);
+  /* Cam yüzey zemini (backdrop-filter ile birlikte). Her temada ayrı
+     tanımlı — bkz. site-tema.ts panelCam. */
+  --sfec-panel-cam: rgba(23, 26, 30, 0.72);
   --sfec-seafoam: #78c9e8;
   --sfec-shell-bg: #0b0c0f;
   --sfec-panel-shadow: 0 16px 34px rgba(0, 0, 0, 0.45);
@@ -237,17 +240,40 @@ body {
 /* Cam YALNIZCA büyük yüzeylerde: yan menü, hero ve istatistik kartları.
    Her panele blur vermek hem pahalı hem de iç içe panellerde bulanıklık
    üst üste binip metni okunaksızlaştırıyor. */
-/* CAM (saydam yüzey) BİLİNÇLİ OLARAK YAPILMADI. Saydamlık gerekiyor, ama
-   temaya duyarlı saydam bir zemin color-mix() olmadan sade biçimde
-   yazılamıyor: derleyici color-mix()'i sadeleştirip opak renge indiriyor
-   (odak halkasında tarayıcıda ölçüldü). Saydamlık olmayınca backdrop-filter
-   hiçbir şey yapmaz; sahte bir cam göndermektense yüzey dili saç teli çizgi,
-   üstten ışık ve odak halkasıyla kuruluyor. Tema sistemine saydam bir panel
-   jetonu eklenirse (yedi paletin her birine) burası cama çevrilebilir. */
+/* CAM — saydam yüzey + arkasını bulanıklaştırma.
+   Önce yapılamamıştı: temaya duyarlı saydam zemin color-mix() olmadan
+   yazılamıyordu ve derleyici color-mix()'i opak renge indiriyordu. Palet
+   7 temadan 2'ye indirilince çözüm basitleşti — her temaya birer sabit
+   rgba jeton (--sfec-panel-cam) kondu.
+
+   YALNIZCA BÜYÜK YÜZEYLERDE. Her panele blur vermek hem pahalı hem de iç
+   içe panellerde bulanıklık üst üste binip metni okunaksızlaştırıyor. */
+.sfec-dashboard-sidebar,
+.sfec-dashboard-stat {
+  background: var(--sfec-panel-cam);
+  backdrop-filter: blur(16px) saturate(130%);
+}
+
 .sfec-dashboard-stat {
   min-height: 158px;
-  background: var(--sfec-bg1);
   border: 1px solid var(--sfec-border);
+}
+
+/* Bulanıklık desteklenmiyorsa ya da kullanıcı saydamlığı azaltmışsa düz
+   zemine düşülür — yoksa yazı okunaksız bir yüzeyin üstünde kalır. */
+@supports not (backdrop-filter: blur(1px)) {
+  .sfec-dashboard-sidebar,
+  .sfec-dashboard-stat {
+    background: var(--sfec-bg1);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .sfec-dashboard-sidebar,
+  .sfec-dashboard-stat {
+    background: var(--sfec-bg1);
+    backdrop-filter: none;
+  }
 }
 
 

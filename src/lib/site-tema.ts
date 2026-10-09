@@ -45,6 +45,10 @@ export interface SiteTemasi {
     mintOn: string;
     mintBg: string;
     seafoam: string;
+    // Saydam panel zemini — cam yüzeyler için (backdrop-filter ile birlikte).
+    // Sabit rgba olarak tutuluyor: color-mix() derleyicide sadeleşip opak
+    // renge iniyor (odak halkasında tarayıcıda ölçüldü).
+    panelCam: string;
     shellBg: string;
     navBg: string;
     markaMavi: string;
@@ -73,6 +77,7 @@ export const SITE_TEMA_PALETI: SiteTemasi[] = [
       border: "#24282e", borderStrong: "#343b44",
       text: "#c2e9f8", textMuted: "#8fc6d9",
       mint: "#c2e9f8", mintOn: "#0b3b4d", mintBg: "rgba(194, 233, 248, 0.18)",
+      panelCam: "rgba(23, 26, 30, 0.72)",
       seafoam: "#78c9e8", shellBg: "#0b0c0f",
       navBg: "linear-gradient(135deg, #08090b 0%, #181a1e 50%, #08090b 100%)",
       markaMavi: "#c2e9f8", markaKirmizi: "#c2e9f8", markaKirmiziVurgu: "#78c9e8",
@@ -93,6 +98,7 @@ export const SITE_TEMA_PALETI: SiteTemasi[] = [
       border: "#d2e0ec", borderStrong: "#b9ccdc",
       text: "#0a1e3d", textMuted: "#3d5a80",
       mint: "#1a365d", mintOn: "#f0f8ff", mintBg: "rgba(43, 90, 140, 0.14)",
+      panelCam: "rgba(255, 255, 255, 0.72)",
       seafoam: "#2b5a8c", shellBg: "#dcebf7",
       navBg: "linear-gradient(135deg, #eaf4fc 0%, #ffffff 50%, #eaf4fc 100%)",
       markaMavi: "#1a365d", markaKirmizi: "#1a365d", markaKirmiziVurgu: "#2b5a8c",
@@ -131,6 +137,7 @@ function temaBlogu(tema: SiteTemasi, secici: string): string {
     `--sfec-border:${d.border};--sfec-border-strong:${d.borderStrong};` +
     `--sfec-text:${d.text};--sfec-text-muted:${d.textMuted};` +
     `--sfec-mint:${d.mint};--sfec-mint-on:${d.mintOn};--sfec-mint-bg:${d.mintBg};` +
+    `--sfec-panel-cam:${d.panelCam};` +
     `--sfec-seafoam:${d.seafoam};--sfec-shell-bg:${d.shellBg};--sfec-nav-bg:${d.navBg};` +
     `--sfec-marka-mavi:${d.markaMavi};--sfec-marka-kirmizi:${d.markaKirmizi};--sfec-marka-kirmizi-vurgu:${d.markaKirmiziVurgu};}` +
     `${secici === ":root" ? "" : `${secici} `}.sfec-brand-logo{filter:${tema.logoFiltre ?? `brightness(0) saturate(100%) invert(89%) sepia(18%) saturate(749%) hue-rotate(${tema.logoHueRotate}deg) brightness(104%) contrast(95%)`};}`

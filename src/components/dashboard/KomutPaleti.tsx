@@ -118,8 +118,8 @@ export function KomutPaleti({ role, kurumTuru, brans, grupMu = false, kademe, ok
           style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}`, color: TEXT_MUTED }}>
           <Search size={15} aria-hidden="true" />
           <span className="flex-1">Bölüm ara</span>
-          <kbd className="rounded-md px-1.5 py-0.5 text-[10px] font-extrabold"
-            style={{ background: BG1, border: `1px solid ${BORDER}`, color: TEXT_MUTED }}>Ctrl K</kbd>
+          <kbd className="rounded-md px-1.5 py-0.5 text-[10px] font-semibold not-italic"
+            style={{ background: BG1, border: `1px solid ${BORDER}`, color: TEXT_MUTED, fontFamily: "inherit" }}>Ctrl K</kbd>
         </button>
       ) : (
         <button type="button" onClick={ac} aria-label="Bölüm ara"
@@ -175,9 +175,21 @@ export function KomutPaleti({ role, kurumTuru, brans, grupMu = false, kademe, ok
               ))}
             </div>
 
-            <div className="flex gap-4 px-4 py-2.5 text-[11px] font-semibold"
-              style={{ borderTop: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
-              <span>↑↓ gez</span><span>↵ aç</span><span>esc kapat</span>
+            {/* Tuş ipuçları düz metin değil, gerçek <kbd> rozetleri: "↑↓ gez"
+                gibi bitişik yazı küçük puntoda okunmuyor ve eski duruyor. */}
+            <div className="flex items-center gap-3 px-4 py-2.5"
+              style={{ borderTop: `1px solid ${BORDER}` }}>
+              {[
+                { tus: "↑↓", ne: "gez" },
+                { tus: "↵", ne: "aç" },
+                { tus: "esc", ne: "kapat" },
+              ].map(({ tus, ne }) => (
+                <span key={ne} className="flex items-center gap-1.5">
+                  <kbd className="rounded-md px-1.5 py-0.5 text-[10px] font-semibold not-italic"
+                    style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}`, color: TEXT, fontFamily: "inherit" }}>{tus}</kbd>
+                  <span className="text-[10px] font-medium uppercase" style={{ color: TEXT_MUTED, letterSpacing: "0.07em" }}>{ne}</span>
+                </span>
+              ))}
             </div>
           </div>
         </div>
