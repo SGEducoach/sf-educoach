@@ -77,7 +77,7 @@ export function SinifAnaliziPanel({
       <div className="sfec-fade flex flex-col gap-4">
         <Baslik kapsamEtiketi={kapsamEtiketi} ogrenciSayisi={ogrenciler.length} />
         {siniflar.length === 0 ? (
-          <Bos metin="Görebileceğiniz bir sınıf yok. Sınıf öğretmeniyseniz sınıfınızın tanımlı olduğundan emin olun." />
+          <Bos metin="Görebileceğiniz bir sınıf yok. Sınıf öğretmenliğiniz ya da bir derse atamanız tanımlı değil — yöneticinizle görüşün." />
         ) : (
           <div className="grid grid-cols-2 gap-3">
             {BOLUMLER.map((b) => (

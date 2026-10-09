@@ -1120,42 +1120,34 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   const kendiSinifiMi = gorunecekSinifId === teacher.class_id;
 
   // SINIF ANALİZİ (kullanıcı kararı 09.10.2026) — toplu sınıf görünümü.
-  // Kapsam yukarıdaki sinifListesi'nden geliyor: okul rehberi sorumlu olduğu
-  // düzeyleri, dershane rehberi ve müdür tüm kurumu görüyor. SINIF ÖĞRETMENİ
-  // ise yalnız KENDİ sınıfını — branş öğretmeninin ders verdiği sınıflar
-  // (erisilebilirSinifIdleri) bilinçli olarak kapsama ALINMIYOR; istenen rol
-  // "sınıf öğretmeni" ve öğretmene gereğinden geniş liste göstermek bu
-  // projede daha önce sorun olmuştu.
+  //
+  // Kapsam ayrıca HESAPLANMIYOR: yukarıdaki sinifListesi zaten role göre
+  // doğru daraltılmış durumda — okul rehberi sorumlu olduğu düzeyleri,
+  // dershane rehberi ve müdür tüm kurumu, öğretmen ise sınıf öğretmenliği
+  // yaptığı VE ders verdiği sınıfları görüyor.
+  //
+  // Branş öğretmeni başta kapsam dışıydı (spec "sınıf öğretmeni" diyordu);
+  // kullanıcı kararıyla 09.10.2026'da ders verdiği sınıflar da eklendi.
+  // Bu, daha önce şikâyet edilen "her öğretmende bütün öğrenciler" durumu
+  // DEĞİL: öğretmen yalnızca gerçekten girdiği sınıfları görüyor.
   if (aktifBolum === "sinif-analizi") {
-    const sinifOgretmeniMi = role === "ogretmen" && !rehberOgretmenMi;
-    if (sinifOgretmeniMi && !teacher.class_id) {
-      return (
-        <div className="sfec-fade rounded-3xl p-6 text-center" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-          <p style={{ color: TEXT_MUTED }} className="text-sm">
-            Bu bölüm sınıf öğretmenleri içindir. Bir sınıfın öğretmeni olarak tanımlı değilsiniz.
-          </p>
-        </div>
-      );
-    }
-    const analizSiniflari = sinifOgretmeniMi
-      ? sinifListesi.filter((s) => s.id === teacher.class_id)
-      : sinifListesi;
+    const analizSiniflari = sinifListesi;
     const analiz = await sinifAnaliziGetir(createAdminClient(), {
       schoolId: teacher.school_id,
       sinifIdleri: analizSiniflari.map((s) => s.id),
     });
-    const kapsamEtiketi = sinifOgretmeniMi
-      ? "Sınıfınız"
-      : okulRehberi
-        ? `Sorumlu olduğunuz düzeyler: ${rehberSeviyeleri.join(", ")}`
-        : "Tüm kurum";
+    const kapsamEtiketi = role === "mudur" || rehberOgretmenMi
+      ? okulRehberi ? `Sorumlu olduğunuz düzeyler: ${rehberSeviyeleri.join(", ")}` : "Tüm kurum"
+      : analizSiniflari.length === 1 ? "Sınıfınız" : "Girdiğiniz sınıflar";
     return (
       <SinifAnaliziPanel
         ogrenciler={analiz.ogrenciler}
         denemeSecenekleri={analiz.denemeSecenekleri}
         kayipNesil={analiz.kayipNesil}
         siniflar={analizSiniflari}
-        sinifSecilebilir={!sinifOgretmeniMi}
+        // Tek sınıfı olanda filtre anlamsız; birden çok sınıfa giren branş
+        // öğretmeni de artık süzebiliyor.
+        sinifSecilebilir={analizSiniflari.length > 1}
         kapsamEtiketi={kapsamEtiketi}
       />
     );
