@@ -100,6 +100,25 @@ export async function gorevVer(input: {
   return { error: null, ogrenciSayisi: studentIds.length };
 }
 
+// Görevi yalnız oluşturan öğretmen silebilir. Atamalar görevle birlikte
+// kaldırılır; bağlı öğrenci çalışma/deneme kayıtları veritabanında kalır.
+export async function verdigimGoreviSil(gorevId: string): Promise<{ error: string | null }> {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(gorevId)) {
+    return { error: "Geçersiz çalışma kimliği." };
+  }
+  const { supabase, user } = await requireUser();
+  const { data, error } = await supabase.from("gorevler")
+    .delete()
+    .eq("id", gorevId)
+    .eq("olusturan_ogretmen_id", user.id)
+    .select("id")
+    .maybeSingle();
+  if (error) return { error: "Çalışma silinemedi. Lütfen tekrar deneyin." };
+  if (!data) return { error: "Çalışma bulunamadı veya silme yetkiniz yok." };
+  revalidatePath("/dashboard");
+  return { error: null };
+}
+
 // Öğrenci kendi planını ekler — aynı Görevlerim takvimine, öğretmen
 // görevleriyle birlikte görünür (bkz. migration 0049). Öğretmen görevinden
 // farklı olarak saat aralığı ZORUNLU ve öğrencinin PROGRAMA EKLENMİŞ diğer

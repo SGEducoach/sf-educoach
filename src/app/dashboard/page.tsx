@@ -1237,7 +1237,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
         .select("id, tur, ders, konu, tarih, son_tarih, gorev_atamalari(id, student_id, durum, students(profiles!students_id_fkey(ad)))")
         .eq("olusturan_ogretmen_id", userId)
         .order("tarih", { ascending: false })
-        .limit(15)
+        .limit(1000)
     : { data: [] as VerdigimGorevRow[] };
   const verdigimGorevler = ((verdigimGorevlerHam as unknown as VerdigimGorevRow[]) ?? []).map((g) => ({
     id: g.id, tur: g.tur as "konu" | "soru" | "deneme", ders: g.ders, konu: g.konu, tarih: g.tarih, sonTarih: g.son_tarih,

@@ -13,7 +13,7 @@ import {
   veliTalepOnayla, veliTalepSil, sinifEkle, ogretmenDuyuruGonder, gonderilenDuyurularGetir,
   ogretmenDersEkle, ogretmenDersSil, ogrenciSinifTasi, ogrenciYurtDurumuGuncelle, soruCozumuOnayla,
 } from "@/app/dashboard/actions";
-import { gorevVer } from "@/app/dashboard/gorev-actions";
+import { gorevVer, verdigimGoreviSil } from "@/app/dashboard/gorev-actions";
 import { DuyuruFormu } from "@/components/dashboard/DuyuruFormu";
 import {
   BRANS_LISTESI, GOREV_DURUMU_ETIKET, GOREV_TURU_ETIKET,
@@ -59,8 +59,7 @@ interface BekleyenOnaySatiri {
 // Verdiğim Görevler (2026-08-25 kullanıcı isteği — "öğretmenin verdiği
 // görevleri takip ekranı yok" bulgusuna karşılık, "Bekleyen Onaylar"
 // sekmesine eklendi). Tamamlanma öğrencinin kendi veri girişiyle otomatik
-// işaretlendiğinden (bkz. gorev-actions.ts) burada bir onay BUTONU yok —
-// salt-okunur bir takip/durum tablosu.
+// işaretlenir; öğretmen kendi verdiği görevi buradan kaldırabilir.
 interface VerdigimGorevSatiri {
   id: string;
   tur: GorevTuru;
@@ -564,11 +563,34 @@ const DURUM_RENK: Record<GorevDurumu, { bg: string; renk: string }> = {
   tamamlanmadi: { bg: BLUSH_BG, renk: BLUSH },
 };
 
-// Son 15 görev, her biri altında öğrenci başına durum rozeti — tamamlama
-// öğrencinin kendi veri girişiyle otomatik işaretlendiğinden burada onay
-// butonu yok, sadece görünürlük (bkz. VerdigimGorevSatiri yorumu).
+// Son görevler, her biri altında öğrenci başına durum rozeti.
 function VerdigimGorevlerBolumu({ gorevler }: { gorevler: VerdigimGorevSatiri[] }) {
   const [acikId, setAcikId] = useState<string | null>(null);
+  const [gosterilenSayi, setGosterilenSayi] = useState(15);
+  const [silinenIdler, setSilinenIdler] = useState<Set<string>>(new Set());
+  const [silinenIslemId, setSilinenIslemId] = useState<string | null>(null);
+  const [silmeHatasi, setSilmeHatasi] = useState<string | null>(null);
+  const router = useRouter();
+
+  async function goreviSil(gorev: VerdigimGorevSatiri) {
+    if (!window.confirm(`${gorev.ders} çalışmasını ve öğrencilere yapılan atamalarını silmek istiyor musunuz? Öğrencilerin tamamladığı çalışma ve deneme kayıtları korunur.`)) return;
+    setSilmeHatasi(null);
+    setSilinenIslemId(gorev.id);
+    try {
+      const sonuc = await verdigimGoreviSil(gorev.id);
+      if (sonuc.error) setSilmeHatasi(sonuc.error);
+      else {
+        setSilinenIdler((onceki) => new Set([...onceki, gorev.id]));
+        router.refresh();
+      }
+    } catch {
+      setSilmeHatasi("Çalışma silinemedi. Lütfen tekrar deneyin.");
+    } finally {
+      setSilinenIslemId(null);
+    }
+  }
+
+  const gorunenGorevler = gorevler.filter((g) => !silinenIdler.has(g.id));
 
   return (
     <div className="sfec-section sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
@@ -578,17 +600,19 @@ function VerdigimGorevlerBolumu({ gorevler }: { gorevler: VerdigimGorevSatiri[] 
         </div>
         <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Verdiğim ödevler</span>
       </div>
-      {gorevler.length === 0 ? (
+      {silmeHatasi && <p role="alert" className="mb-3 text-sm" style={{ color: BLUSH }}>{silmeHatasi}</p>}
+      {gorunenGorevler.length === 0 ? (
         <p style={{ color: TEXT_MUTED }} className="py-4 text-center text-sm">Henüz ödev vermediniz.</p>
       ) : (
         <div className="sfec-liste">
-          {gorevler.map((g) => {
+          {gorunenGorevler.slice(0, gosterilenSayi).map((g) => {
             const acik = acikId === g.id;
             const tamamlanan = g.atamalar.filter((a) => a.durum === "tamamlandi").length;
             return (
               <div key={g.id} className="sfec-liste-satiri overflow-hidden">
+                <div className="flex items-center gap-1">
                 <button type="button" onClick={() => setAcikId(acik ? null : g.id)}
-                  className="sfec-btn flex w-full items-center justify-between gap-3 p-3.5 text-left">
+                  className="sfec-btn flex min-w-0 flex-1 items-center justify-between gap-3 p-3.5 text-left">
                   <div className="min-w-0">
                     <div style={{ color: TEXT }} className="text-sm font-bold">{GOREV_TURU_ETIKET[g.tur]} · {g.ders}</div>
                     <div style={{ color: TEXT_MUTED }} className="mt-0.5 text-xs">
@@ -602,6 +626,13 @@ function VerdigimGorevlerBolumu({ gorevler }: { gorevler: VerdigimGorevSatiri[] 
                     {acik ? <ChevronUp size={14} color={TEXT_MUTED} /> : <ChevronDown size={14} color={TEXT_MUTED} />}
                   </div>
                 </button>
+                <button type="button" disabled={silinenIslemId !== null} onClick={() => void goreviSil(g)}
+                  aria-label={`${g.ders} çalışmasını sil`}
+                  className="sfec-btn mr-2 shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-semibold disabled:opacity-50"
+                  style={{ color: BLUSH, border: `1px solid ${BORDER}` }}>
+                  {silinenIslemId === g.id ? "Siliniyor…" : "Sil"}
+                </button>
+                </div>
                 {acik && (
                   <div className="flex flex-wrap gap-1.5 border-t px-3.5 py-3" style={{ borderColor: BORDER }}>
                     {g.atamalar.map((a) => {
@@ -617,6 +648,13 @@ function VerdigimGorevlerBolumu({ gorevler }: { gorevler: VerdigimGorevSatiri[] 
               </div>
             );
           })}
+          {gorunenGorevler.length > gosterilenSayi && (
+            <button type="button" onClick={() => setGosterilenSayi((sayi) => sayi + 15)}
+              className="sfec-btn w-full rounded-xl px-3 py-2 text-sm font-semibold"
+              style={{ color: SKY, border: `1px solid ${BORDER}` }}>
+              Daha eski çalışmaları göster
+            </button>
+          )}
         </div>
       )}
     </div>

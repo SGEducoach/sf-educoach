@@ -10,6 +10,7 @@ import { TemaButonu } from "@/components/TemaSecici";
 import { YoneticiIletisimButonu } from "@/components/dashboard/YoneticiIletisimButonu";
 import type { KurumTuru, UserRole } from "@/lib/types";
 import { MobilMenu } from "@/components/dashboard/MobilMenu";
+import { ModeratorBolumAra } from "@/components/dashboard/ModeratorBolumAra";
 import { OturumZamanAsimi } from "@/components/OturumZamanAsimi";
 import { SeFuSlogan } from "@/components/SeFuWordmark";
 import type { DashboardBolumu } from "@/lib/dashboard-navigation";
@@ -83,6 +84,7 @@ export async function Header({ ad, role, kurumTuru, brans, grupMu = false, okunm
             {/* Geniş masaüstünde ikonlar doğrudan yan yana; mobil ve tablette
                 bölüm bağlantılarıyla birlikte hamburger menüde gösterilir. */}
             <div className="hidden lg:flex items-center gap-3">
+              <ModeratorBolumAra />
               <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.06)", border: `2px solid ${BORDER}` }}>
                 <span style={{ color: TEXT }} className="text-[12px] font-bold truncate max-w-[160px]">{ad}</span>
                 <span style={{ color: TEXT_MUTED }} className="text-[11px] shrink-0">· {gorunenRolEtiketi}</span>
