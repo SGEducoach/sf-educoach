@@ -56,6 +56,8 @@ import { ortaokulCalismalariGetir, ortaokulDersTemaSecenekleri, ortaokulKonuHavu
 import { bolumCoz } from "@/lib/ortaokul-bolum";
 import { OrtaokulCalismalarim } from "@/components/dashboard/OrtaokulCalismalarim";
 import { OrtaokulYeterlilik } from "@/components/dashboard/OrtaokulYeterlilik";
+import { OrtaokulCalismaOnaylari } from "@/components/dashboard/OrtaokulCalismaOnaylari";
+import { ortaokulBekleyenCalismalarGetir } from "@/lib/ortaokul-calisma-onay-sorgu";
 import { ORTAOKUL_SEVIYELERI, kademeBul } from "@/lib/kademe";
 import { yardimMesaji } from "@/lib/ortaokul-yardim";
 import { OrtaokulYardim } from "@/components/dashboard/OrtaokulYardim";
@@ -74,8 +76,6 @@ import { AltSekmeCubugu } from "@/components/dashboard/AltSekmeCubugu";
 import { SinifAnaliziPanel } from "@/components/dashboard/SinifAnaliziPanel";
 import { sinifAnaliziGetir } from "@/lib/sinif-analizi-verisi";
 import { RehberKapsamListesi } from "@/components/dashboard/RehberKapsamListesi";
-import { gorusmeleriGetir } from "@/app/dashboard/gorusme-actions";
-import { RehberGorusmeleri } from "@/components/dashboard/RehberGorusmeleri";
 import { rehberProgramAkibetleri } from "@/app/dashboard/rehber-program-actions";
 import { RehberProgramDestegi } from "@/components/dashboard/RehberProgramDestegi";
 import { ortaokulVeliRaporuGetir } from "@/lib/ortaokul-veli-raporu";
@@ -91,9 +91,6 @@ import { rehberOgrenciTakibiVerisiGetir } from "@/lib/dershane-rehber";
 import { OgrenciProfilim } from "@/components/dashboard/OgrenciProfilim";
 import { ogretmenAktifGunuKaydet, ogrenciProfilGoruntulemesiKaydet } from "@/lib/ogretmen-takip";
 import { bekleyenOgretmenBildirimleriniGonder } from "@/lib/ogretmen-bildirim";
-import { EtkinlikPaneli } from "@/components/dashboard/EtkinlikPaneli";
-import { etkinlikBransiMi } from "@/lib/etkinlik";
-import type { EtkinlikAtamasi, EtkinlikGrubu, EtkinlikOgrencisi } from "@/lib/etkinlik";
 
 // Görevlerim takvimi haftalık gösteriliyor — verilen tarihin (veya bugünün,
 // Türkiye saatine göre) içinde bulunduğu haftanın Pazartesi'sini döndürür.
@@ -464,20 +461,6 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
     );
   }
 
-  if (aktifBolum === "etkinlikler") {
-    const { data } = await supabase.from("etkinlik_calisma_atamalari")
-      .select("id,durum,cakisiyor,red_gerekcesi,etkinlik_calismalari(isim,tarih,baslangic_saat,bitis_saat,etkinlik_gruplari(isim))")
-      .eq("student_id", userId).order("created_at", { ascending: false });
-    type AtamaRow = { id:string; durum:EtkinlikAtamasi["durum"]; cakisiyor:boolean; red_gerekcesi:string|null; etkinlik_calismalari:{isim:string;tarih:string;baslangic_saat:string;bitis_saat:string;etkinlik_gruplari:{isim:string}|null}|null };
-    const atamalar = ((data as unknown as AtamaRow[]) ?? []).flatMap((a): EtkinlikAtamasi[] => a.etkinlik_calismalari ? [{
-      id:a.id, durum:a.durum, cakisiyor:a.cakisiyor, redGerekcesi:a.red_gerekcesi,
-      etkinlikIsmi:a.etkinlik_calismalari.isim, tarih:a.etkinlik_calismalari.tarih,
-      baslangicSaat:a.etkinlik_calismalari.baslangic_saat, bitisSaat:a.etkinlik_calismalari.bitis_saat,
-      grupIsmi:a.etkinlik_calismalari.etkinlik_gruplari?.isim ?? "Etkinlik",
-    }] : []);
-    return <EtkinlikPaneli mod="ogrenci" atamalar={atamalar} />;
-  }
-
   // Kullanıcı bulgusu (24.08.2026): "önce kutular geliyor içerik geç
   // geliyor" — bu fonksiyon önceden ~7 sorguyu SIRAYLA (her biri bir
   // öncekinin bitmesini bekleyerek) çalıştırıyordu, hiçbiri birbirine
@@ -768,6 +751,14 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
     );
   }
 
+  if (aktifBolum === "ortaokul-onaylar") {
+    if (role !== "ogretmen" || (kademe !== "ortaokul" && kademe !== "ikisi")) notFound();
+    const kayitlar = await ortaokulBekleyenCalismalarGetir(createAdminClient(), {
+      teacherId: userId, schoolId: teacher.school_id, kendiSinifId: teacher.class_id,
+    });
+    return <OrtaokulCalismaOnaylari kayitlar={kayitlar} bugun={bugununTarihiTR()} />;
+  }
+
   // Ortaokul "Konu Yeterliliği" — Maarif | LGS (migration 0132). Kararı
   // YALNIZ öğretmen verir; öğrencinin ekranında aynı bilgi salt okunur.
   // Bölüm menüde yalnız ortaokul kurumunda görünüyor; doğrudan adres yazanı
@@ -829,30 +820,6 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
     return <RehberOgrenciTakibi ogrenciler={ogrenciler} secilen={secilen} konuOnerileri={[...MUFREDAT_KONULARI, ...kurumKonuOnerileri(kurumKonulari)]} grupMu={grupMu} />;
   }
 
-  if (aktifBolum === "etkinlikler") {
-    if (role !== "ogretmen" || kurumTuru !== "okul" || !etkinlikBransiMi(brans)) {
-      return <div className="rounded-3xl p-6 text-center" style={{background:BG1,border:`2px solid ${BORDER}`}}><p style={{color:TEXT_MUTED}}>Bu bölüm yalnızca okullardaki Beden Eğitimi ve Müzik öğretmenlerine açıktır.</p></div>;
-    }
-    // Beden/Müzik öğretmenleri etkinlik için okulun tüm sınıflarından
-    // öğrenci seçebilir. Normal öğretmen RLS'i yalnız ders verdiği/sınıfı
-    // olan öğrencileri döndürdüğü için burada, yukarıdaki rol+branş+okul
-    // doğrulamasından sonra sunucu istemcisi kullanılır.
-    const admin = createAdminClient();
-    const { data: gruplarHam } = await admin.from("etkinlik_gruplari").select("id,isim").eq("teacher_id",userId).eq("school_id",teacher.school_id).order("created_at");
-    const grupIds = (gruplarHam ?? []).map((g) => g.id);
-    const [{data:siniflarHam},{data:ogrencilerHam},{data:uyelerHam}] = await Promise.all([
-      admin.from("classes").select("id,seviye,sube").eq("school_id",teacher.school_id),
-      admin.from("students").select("id,class_id,profiles!students_id_fkey(ad),classes(id,seviye,sube)").eq("school_id",teacher.school_id),
-      grupIds.length ? admin.from("etkinlik_grup_uyeleri").select("group_id,student_id").in("group_id", grupIds) : Promise.resolve({data:[]}),
-    ]);
-    type OgrRow={id:string;class_id:string;profiles:{ad:string}|null;classes:{id:string;seviye:string;sube:string}|null};
-    const ogrenciler:EtkinlikOgrencisi[]=((ogrencilerHam as unknown as OgrRow[])??[]).map(o=>({id:o.id,ad:o.profiles?.ad??"İsimsiz",sinifId:o.class_id,sinifAdi:o.classes?`${o.classes.seviye}-${o.classes.sube}`:"—"})).sort((a,b)=>a.ad.localeCompare(b.ad,"tr"));
-    const uyeMap=new Map<string,Set<string>>(); for(const u of (uyelerHam as {group_id:string;student_id:string}[]|null)??[]){if(!uyeMap.has(u.group_id))uyeMap.set(u.group_id,new Set());uyeMap.get(u.group_id)!.add(u.student_id)}
-    const gruplar:EtkinlikGrubu[]=((gruplarHam as {id:string;isim:string}[]|null)??[]).map(g=>({...g,uyeler:ogrenciler.filter(o=>uyeMap.get(g.id)?.has(o.id))}));
-    const siniflar=((siniflarHam as {id:string;seviye:string;sube:string}[]|null)??[]).sort(sinifSiraKarsilastir).map(s=>({id:s.id,ad:`${s.seviye}-${s.sube}`}));
-    return <EtkinlikPaneli mod="ogretmen" brans={brans} siniflar={siniflar} ogrenciler={ogrenciler} gruplar={gruplar}/>;
-  }
-
   // Rehber Öğretmen okulda yalnız atandığı sınıf düzeylerinin
   // öğrencilerine (sınıf öğretmenliği/branş dersi sınırı olmadan) mesaj
   // gönderebiliyor, tek tek veya toplu (bkz. RehberlikPaneli.tsx,
@@ -875,8 +842,6 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
     return <RehberKapsamListesi satirlar={satirlar} seviyeler={rehberSeviyeleri} />;
   }
 
-  // Faz 4 — görüşme kayıtları (migration 0145). GİZLİ: gizlilik RLS'te
-  // zorlanıyor, menüde gizlemek ve buradaki kontrol yalnızca ek katman.
   // Program desteği (migration 0146) — rehber, kapsamındaki öğrenciyle
   // Oto Program sihirbazını birlikte geçer. Yetki her işlemde SUNUCUDA
   // yeniden doğrulanıyor (programAktoru), buradaki kontrol ek katman.
@@ -903,27 +868,6 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
         ogrenciler={programYapilabilirler.map((s) => ({ id: s.ogrenciId, ad: s.ad, sinifAdi: s.sinifAdi }))}
         akibetler={programlar}
         ilkHafta={haftaninPazartesisi(bugununTarihiTR())}
-        seviyeler={rehberSeviyeleri}
-      />
-    );
-  }
-
-  if (aktifBolum === "gorusmeler") {
-    if (!okulRehberi) {
-      return (
-        <div className="sfec-fade rounded-3xl p-6 text-center" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-          <p style={{ color: TEXT_MUTED }} className="text-sm">Bu bölüm sadece Rehberlik Servisi üyelerine açıktır.</p>
-        </div>
-      );
-    }
-    const [{ kayitlar }, kapsamSatirlari] = await Promise.all([
-      gorusmeleriGetir(),
-      rehberKapsamListesiGetir(createAdminClient(), teacher.school_id, rehberSeviyeleri),
-    ]);
-    return (
-      <RehberGorusmeleri
-        ogrenciler={kapsamSatirlari.map((s) => ({ id: s.ogrenciId, ad: s.ad, sinifAdi: s.sinifAdi }))}
-        kayitlar={kayitlar}
         seviyeler={rehberSeviyeleri}
       />
     );

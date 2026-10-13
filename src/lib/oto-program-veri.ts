@@ -64,7 +64,7 @@ export async function otoProgramVerisiGetir(
   const donemSonu = gunEkle(baslangicTarihi, haftaSayisi * 7 - 1);
   const odevAltSiniri = baslangicTarihi > bugun ? baslangicTarihi : bugun;
 
-  const [hakimiyet, { data: sonProgramHam }, { data: programKalemleri }, { data: saatliOdevler }, { data: etkinlikler }, { data: saatsizOdevler }] = await Promise.all([
+  const [hakimiyet, { data: sonProgramHam }, { data: programKalemleri }, { data: saatliOdevler }, { data: saatsizOdevler }] = await Promise.all([
     konuHakimiyetiGetir(supabase, userId, seviye, o.ayt_alan, dokuzOnMu, dershaneMi),
     supabase.from("ogrenci_oto_programlari")
       .select("id, ayar, baslangic_tarihi, bitis_tarihi, kapsam")
@@ -85,12 +85,6 @@ export async function otoProgramVerisiGetir(
       .not("gorevler.baslangic_saat", "is", null)
       .gte("gorevler.tarih", baslangicTarihi)
       .lte("gorevler.tarih", donemSonu),
-    supabase.from("etkinlik_calisma_atamalari")
-      .select("etkinlik_calismalari!inner(tarih, baslangic_saat, bitis_saat)")
-      .eq("student_id", userId)
-      .eq("durum", "kabul")
-      .gte("etkinlik_calismalari.tarih", baslangicTarihi)
-      .lte("etkinlik_calismalari.tarih", donemSonu),
     supabase.from("gorev_atamalari")
       .select("id, gorevler!inner(tur, ders, konu, tarih, son_tarih, baslangic_saat, olusturan_ogretmen_id)")
       .eq("student_id", userId)
@@ -157,13 +151,6 @@ export async function otoProgramVerisiGetir(
     const bitis = saat(g?.bitis_saat);
     if (g && baslangic && bitis) doluAraliklar.push({ tarih: g.tarih, baslangic, bitis });
   }
-  for (const r of (etkinlikler ?? []) as unknown as SaatliSatir<"etkinlik_calismalari">[]) {
-    const e = tek(r.etkinlik_calismalari);
-    const baslangic = saat(e?.baslangic_saat);
-    const bitis = saat(e?.bitis_saat);
-    if (e && baslangic && bitis) doluAraliklar.push({ tarih: e.tarih, baslangic, bitis });
-  }
-
   type SaatsizSatir = { id: string; gorevler: { tur: BlokTuru; ders: string; konu: string | null; tarih: string; son_tarih: string } | { tur: BlokTuru; ders: string; konu: string | null; tarih: string; son_tarih: string }[] | null };
   const sabitGorevler: SabitGorev[] = ((saatsizOdevler ?? []) as unknown as SaatsizSatir[]).flatMap((r) => {
     const g = tek(r.gorevler);

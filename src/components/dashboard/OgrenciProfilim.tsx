@@ -1,18 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
 import { SifreDegistir } from "@/components/SifreDegistir";
 import { HesapBaglama } from "@/components/dashboard/HesapBaglama";
+import { OgrenciHedefDuzenleyici } from "@/components/dashboard/OgrenciHedefDuzenleyici";
 import { AYT_ALAN_ETIKET } from "@/lib/types";
 import type { AytAlan } from "@/lib/types";
 import { alanSorulurMu, hedefEtiketi } from "@/lib/kademe";
 import type { Kademe } from "@/lib/kademe";
 import { BG1, BORDER, TEXT, TEXT_MUTED } from "@/lib/theme";
 
-// Kullanıcı isteği (03.09.2026): "Öğrenci panelinde profilimi düzenle kısmı
-// gelecek. Sadece şifre değiştirebilecek. Numarasına vs dokunamaz."
-// Bu yüzden ekranda TEK yazılabilir alan şifredir (paylaşılan SifreDegistir
-// bileşeni — supabase.auth.updateUser'ı doğrudan tarayıcıdan çağırır).
-// Kimlik bilgileri yalnızca gösteriliyor; bunları değiştirmek okul
-// yönetiminin/adminin işi (bkz. yonetici KullaniciDetayYonetimi, moderatör).
+// Kimlik bilgileri salt-okunur; öğrenci yalnız hedefini ve şifresini değiştirir.
 //
 // Ortaokul (kullanıcı kararı 01.10.2026): YKS "alan" satırı HİÇ gösterilmez
 // — o seçim 11. sınıfta yapılıyor, 5. sınıf öğrencisinin ekranında yeri yok.
@@ -46,7 +42,6 @@ export async function OgrenciProfilim({ userId, ad, kademe }: { userId: string; 
     ...(alanVar
       ? [{ etiket: "Alan", deger: ogrenci?.ayt_alan ? AYT_ALAN_ETIKET[ogrenci.ayt_alan as AytAlan] : "—" }]
       : []),
-    { etiket: hedefEtiketi(kademe), deger: ogrenci?.hedef_bolum?.trim() ? ogrenci.hedef_bolum : "—" },
   ];
 
   return (
@@ -55,8 +50,8 @@ export async function OgrenciProfilim({ userId, ad, kademe }: { userId: string; 
         <h1 className="text-[15px] font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Profilim</h1>
         <p className="mt-2 text-xs leading-relaxed" style={{ color: TEXT_MUTED }}>
           {alanVar
-            ? "Buradan yalnızca şifrenizi değiştirebilirsiniz. Ad, numara, sınıf ve alan bilgilerinizde bir yanlışlık varsa okul/dershane yöneticinize başvurun."
-            : "Buradan yalnızca şifreni değiştirebilirsin. Adında, numaranda veya sınıfında bir yanlışlık varsa öğretmenine söyle."}
+            ? "Hedefinizi ve şifrenizi değiştirebilirsiniz. Ad, numara, sınıf veya alan bilgilerinizde yanlışlık varsa yöneticinize başvurun."
+            : "Hedefini ve şifreni değiştirebilirsin. Adında, numaranda veya sınıfında yanlışlık varsa öğretmenine söyle."}
         </p>
 
         <dl className="sfec-liste mt-4">
@@ -67,6 +62,7 @@ export async function OgrenciProfilim({ userId, ad, kademe }: { userId: string; 
             </div>
           ))}
         </dl>
+        <OgrenciHedefDuzenleyici ilkHedef={ogrenci?.hedef_bolum ?? ""} etiket={hedefEtiketi(kademe)} />
       </div>
 
       <HesapBaglama baglanti={{

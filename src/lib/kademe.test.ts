@@ -372,15 +372,13 @@ describe("ortaokul kurumunda rol menüleri", () => {
     }
   });
 
-  // O4 (08.10.2026): ortaokulda ONAY KAVRAMI YOK — "Bekleyen onaylar"
-  // ekranı soru_cozumleri'ni okuyor, ortaokul öğrencisi ise
-  // ortaokul_calismalar'a yazıyor ve o tabloda onaylandi_mi kolonu yok.
-  // Kalem ortaokul öğretmeninde daima boş kalıyordu.
-  test("ortaokul öğretmeninde Bekleyen onaylar YOK, lisede VAR", () => {
+  test("ortaokulun çalışma onayları, lisenin soru onaylarından ayrıdır", () => {
     const ortaokul = dashboardMenusu("ogretmen", "okul", "Matematik", false, "ortaokul").map((o) => o.bolum);
     const lise = dashboardMenusu("ogretmen", "okul", "Matematik", false, "lise").map((o) => o.bolum);
     expect(ortaokul).not.toContain("onaylar");
+    expect(ortaokul).toContain("ortaokul-onaylar");
     expect(lise).toContain("onaylar");
+    expect(lise).not.toContain("ortaokul-onaylar");
     // Ortaokul öğretmeni Ajandam'ı ve Ödev ver'i KAYBETMEMELİ (02.10.2026
     // regresyonunun tekrarı olmasın).
     expect(ortaokul).toContain("takvim");
@@ -414,9 +412,9 @@ describe("ortaokul kurumunda rol menüleri", () => {
     const eskiBransli = dashboardMenusu("ogretmen", "okul", REHBER_BRANSI, false, "lise").map((o) => o.bolum);
     // Kimlik branştan gelmiyor: servis üyesinin branşı "Matematik" olsa da
     // rehber menüsünü alıyor. Tek fark servise ÖZEL kalemler — "Kapsamım"
-    // (Adım 2) ve "Görüşme Kayıtları" (Faz 4); ikisi de rehberin atandığı
+    // (Adım 2); bu da rehberin atandığı
     // sinif_duzeyleri'ne dayanıyor, eski branş kimliğinde böyle bir kapsam yok.
-    const servisEOzel: string[] = ["kapsamim", "gorusmeler", "program-destegi"];
+    const servisEOzel: string[] = ["kapsamim", "program-destegi"];
     expect(servisUyesi.filter((b) => !servisEOzel.includes(b))).toEqual(eskiBransli);
     expect(servisUyesi).toContain("rehberlik");
     for (const b of servisEOzel) expect(eskiBransli).not.toContain(b);
@@ -447,19 +445,18 @@ describe("ortaokul kurumunda rol menüleri", () => {
     expect(menu).toContain("rehberlik");
   });
 
-  // Faz 4 (migration 0145) — görüşme kayıtları GİZLİ. Menüde gizlemek tek
-  // başına yeterli bir kontrol değil (gizlilik RLS'te), ama sızmaması gerek.
-  test("okul rehberi Görüşme Kayıtları kalemini alır", () => {
-    const menu = dashboardMenusu("ogretmen", "okul", "", false, "lise", true).map((o) => o.bolum);
-    expect(menu).toContain("gorusmeler");
-  });
-
-  test("Görüşme Kayıtları servis üyesi olmayana, müdüre ve dershaneye gösterilmez", () => {
+  test("Görüşme Kayıtları kaldırıldığı için hiçbir menüde görünmez", () => {
+    expect(dashboardMenusu("ogretmen", "okul", "", false, "lise", true).map((o) => o.bolum)).not.toContain("gorusmeler");
     expect(dashboardMenusu("ogretmen", "okul", "Matematik", false, "lise", false).map((o) => o.bolum)).not.toContain("gorusmeler");
     expect(dashboardMenusu("mudur", "okul", undefined, false, "lise").map((o) => o.bolum)).not.toContain("gorusmeler");
     expect(dashboardMenusu("ogretmen", "dershane", REHBER_BRANSI, false, null, false).map((o) => o.bolum)).not.toContain("gorusmeler");
     expect(dashboardMenusu("ogrenci", "okul", undefined, false, "lise").map((o) => o.bolum)).not.toContain("gorusmeler");
     expect(dashboardMenusu("veli").map((o) => o.bolum)).not.toContain("gorusmeler");
+  });
+
+  test("Etkinlikler ve Etkinlik Grupları öğrenci/öğretmen menüsünde yok", () => {
+    expect(dashboardMenusu("ogrenci", "okul", undefined, false, "lise").map((o) => o.bolum)).not.toContain("etkinlikler");
+    expect(dashboardMenusu("ogretmen", "okul", "Beden Eğitimi", false, "lise").map((o) => o.bolum)).not.toContain("etkinlikler");
   });
 
   // Program Desteği (migration 0146): rehber öğrenciyle Oto Program

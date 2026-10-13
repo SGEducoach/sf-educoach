@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { teslimEdilebilirEpostaMi } from "@/lib/validators";
@@ -79,4 +80,22 @@ export async function ogretmenEpostasiniTeyitEt(yeniEmail?: string): Promise<{ e
     detay: { email_degisti: email !== profil.email?.toLowerCase() },
   });
   return { error: null, email };
+}
+
+export async function ogrenciHedefiniGuncelle(hedefHam: string): Promise<{ error: string | null }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Oturum açmanız gerekiyor." };
+  const { data: profil } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  if (profil?.role !== "ogrenci") return { error: "Bu işlem yalnızca öğrencilere açıktır." };
+
+  const hedef = hedefHam.trim();
+  if (hedef.length > 120) return { error: "Hedef en fazla 120 karakter olabilir." };
+  const admin = createAdminClient();
+  const { data, error } = await admin.from("students").update({ hedef_bolum: hedef })
+    .eq("id", user.id).select("id").maybeSingle();
+  if (error || !data) return { error: "Hedef kaydedilemedi. Tekrar deneyin." };
+  revalidatePath("/dashboard/profil");
+  revalidatePath("/dashboard");
+  return { error: null };
 }

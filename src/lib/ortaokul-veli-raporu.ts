@@ -72,6 +72,7 @@ export async function ortaokulVeliRaporuGetir(
       .from("ortaokul_calismalar")
       .select("tur, tarih, sure_dakika, dogru, yanlis, bos, ortaokul_mufredat_dersleri(ad)")
       .eq("student_id", studentId)
+      .eq("onaylandi_mi", true)
       .gte("tarih", baslangic),
     supabase
       .from("gorev_atamalari")

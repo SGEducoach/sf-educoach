@@ -51,17 +51,39 @@ interface OgretmenSatiri {
   mudurMu: boolean;
 }
 export function AdminPanel({
-  okullar, gorunecekOkulId, siniflar, ogretmenListesi,
+  okullar, gorunecekOkulId, siniflar, ogretmenListesi, mod = "kurum",
 }: {
   okullar: OkulSatiri[];
   gorunecekOkulId: string | null;
   siniflar: SinifSatiri[];
   ogretmenListesi: OgretmenSatiri[];
+  mod?: "kurum" | "kullanici";
 }) {
   const router = useRouter();
   const gorunenOkul = okullar.find((o) => o.id === gorunecekOkulId);
   const [okulEkleAcik, setOkulEkleAcik] = useState(false);
   const [okulDuzenleAcik, setOkulDuzenleAcik] = useState(false);
+
+  if (mod === "kullanici") return (
+    <div className="flex flex-col gap-5 rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+      <div>
+        <h1 className="text-lg font-bold" style={{ color: TEXT }}>Kullanıcı ekle</h1>
+        <p className="text-xs" style={{ color: TEXT_MUTED }}>Önce kurumu seçin, ardından öğretmen veya öğrenci ekleyin. Kullanıcı çıkarmak için “Kullanıcı ara / çıkar” bölümüne geçin.</p>
+      </div>
+      <select value={gorunecekOkulId ?? ""} onChange={(e) => router.push(`/yonetici/kullanici-yonetimi?okul=${e.target.value}`)}
+        className="rounded-xl px-3 py-2 text-sm" style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
+        {okullar.map((o) => <option key={o.id} value={o.id}>{o.ad}</option>)}
+      </select>
+      {!gorunenOkul ? <p style={{ color: TEXT_MUTED }}>Önce bir kurum ekleyin.</p> : <>
+        {siniflar.length === 0 && <p className="text-xs" style={{ color: BLUSH }}>Öğrenci eklemek için önce Okullar bölümünde sınıf oluşturun.</p>}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <OgretmenEkleFormu schoolId={gorunenOkul.id} okullar={okullar} />
+          <OgrenciEkleFormu schoolId={gorunenOkul.id} siniflar={siniflar} />
+        </div>
+        <OgrenciTopluEkleFormu schoolId={gorunenOkul.id} siniflar={siniflar} />
+      </>}
+    </div>
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -152,13 +174,7 @@ export function AdminPanel({
 
             <OgretmenListesiKutusu ogretmenListesi={ogretmenListesi} siniflar={siniflar} />
 
-            <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <OgretmenEkleFormu schoolId={gorunenOkul.id} okullar={okullar} />
-              <OgrenciEkleFormu schoolId={gorunenOkul.id} siniflar={siniflar} />
-            </div>
-
             <div className="mt-3 flex flex-col gap-3">
-              <OgrenciTopluEkleFormu schoolId={gorunenOkul.id} siniflar={siniflar} />
               <DenemeTopluGirisFormu siniflar={siniflar} />
               {/* Kullanıcı isteği (29.09.2026): deneme yüklemenin asıl yeri
                   artık sol menüdeki "Deneme ve İçerik › Deneme Yükle"

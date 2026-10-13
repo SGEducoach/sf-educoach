@@ -13,9 +13,13 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { panelKademesi } from "@/lib/ortaokul-ayar";
 import { calismaGirdisiDogrula } from "@/lib/ortaokul-calisma";
 import type { CalismaGirdisi } from "@/lib/ortaokul-calisma";
+import { ortaokulCalismaOnayYetkisi, ortaokulDuzeltmeDogrula } from "@/lib/ortaokul-calisma-onay";
+import type { CalismaDuzeltmesi, DersAtamasi } from "@/lib/ortaokul-calisma-onay";
+import { bugununTarihiTR } from "@/lib/tarih";
 import { yeterlilikDurumuCoz, yeterlilikKararVerebilir } from "@/lib/ortaokul-yeterlilik";
 import { bolumCoz } from "@/lib/ortaokul-bolum";
 import { veriHatasiCevir } from "@/lib/veri-hata-mesaji";
@@ -53,6 +57,7 @@ export async function ortaokulCalismaEkle(girdi: CalismaGirdisi): Promise<{ erro
     dogru: t.dogru,
     yanlis: t.yanlis,
     bos: t.bos,
+    onaylandi_mi: false,
   });
   if (error) return { error: veriHatasiCevir(error.message) };
 
@@ -67,8 +72,73 @@ export async function ortaokulCalismaSil(kayitId: string): Promise<{ error: stri
   const { error, count } = await supabase
     .from("ortaokul_calismalar").delete({ count: "exact" }).eq("id", kayitId);
   if (error) return { error: veriHatasiCevir(error.message) };
-  if (!count) return { error: "Kayıt bulunamadı." };
+  if (!count) return { error: "Kayıt bulunamadı veya öğretmen tarafından onaylandı." };
   revalidatePath("/dashboard/ortaokul-calisma");
+  return { error: null };
+}
+
+// Öğretmen, kendi sınıfı veya atandığı dersin bekleyen kaydını onaylar.
+// Düzeltme varsa sayılar/süre/tarih ve önceki değer aynı atomik UPDATE'te
+// saklanır. İstemciden öğrenci ve kurum kimliği kabul edilmez.
+export async function ortaokulCalismaOnayla(
+  kayitId: string,
+  duzeltme?: CalismaDuzeltmesi,
+): Promise<{ error: string | null }> {
+  const { supabase, userId, rol } = await oturum();
+  if (rol !== "ogretmen") return { error: "Bu işlem yalnızca öğretmene açıktır." };
+  const { data: ogretmen } = await supabase.from("teachers")
+    .select("school_id, class_id").eq("id", userId).maybeSingle();
+  if (!ogretmen?.school_id) return { error: "Öğretmen kaydı bulunamadı." };
+
+  const admin = createAdminClient();
+  const { data: kayit } = await admin.from("ortaokul_calismalar")
+    .select("id, student_id, bolum, tur, ders_id, tarih, sure_dakika, dogru, yanlis, bos, onaylandi_mi")
+    .eq("id", kayitId).maybeSingle();
+  if (!kayit || kayit.onaylandi_mi) return { error: "Bekleyen kayıt bulunamadı." };
+
+  const [{ data: ogrenci }, { data: ders }] = await Promise.all([
+    admin.from("students").select("school_id, class_id").eq("id", kayit.student_id).maybeSingle(),
+    admin.from("ortaokul_mufredat_dersleri").select("ad").eq("id", kayit.ders_id).maybeSingle(),
+  ]);
+  if (!ogrenci || ogrenci.school_id !== ogretmen.school_id || !ogrenci.class_id || !ders?.ad) {
+    return { error: "Bu öğrencinin kaydına erişim yetkiniz yok." };
+  }
+  const { data: atamalar } = await admin.from("ogretmen_dersleri")
+    .select("teacher_id, class_id, ders").eq("class_id", ogrenci.class_id);
+  if (!ortaokulCalismaOnayYetkisi({
+    teacherId: userId, kendiSinifId: ogretmen.class_id,
+    ogrenciSinifId: ogrenci.class_id, dersAdi: ders.ad,
+    atamalar: (atamalar ?? []) as DersAtamasi[],
+  })) return { error: "Bu kayıt ilgili ders veya sınıf öğretmeninin onayını bekliyor." };
+
+  let alanlar: Record<string, unknown> = {};
+  let duzeltildi = false;
+  if (duzeltme !== undefined) {
+    const sonuc = ortaokulDuzeltmeDogrula(kayit.tur === "soru" ? "soru" : "konu", duzeltme, bugununTarihiTR());
+    if (sonuc.hata || !sonuc.temiz) return { error: sonuc.hata ?? "Düzeltme geçersiz." };
+    const t = sonuc.temiz;
+    duzeltildi = t.tarih !== kayit.tarih || t.sureDakika !== kayit.sure_dakika ||
+      t.dogru !== kayit.dogru || t.yanlis !== kayit.yanlis || t.bos !== kayit.bos;
+    if (duzeltildi) {
+      alanlar = {
+        tarih: t.tarih, sure_dakika: t.sureDakika,
+        dogru: t.dogru, yanlis: t.yanlis, bos: t.bos,
+        duzeltme_oncesi: {
+          tarih: kayit.tarih, sure_dakika: kayit.sure_dakika,
+          dogru: kayit.dogru, yanlis: kayit.yanlis, bos: kayit.bos,
+        },
+        duzelten_id: userId, duzeltilme_at: new Date().toISOString(),
+      };
+    }
+  }
+  const { data: guncellenen, error } = await admin.from("ortaokul_calismalar")
+    .update({ ...alanlar, onaylandi_mi: true, onaylayan_id: userId, onaylanma_at: new Date().toISOString() })
+    .eq("id", kayit.id).eq("onaylandi_mi", false).select("id").maybeSingle();
+  if (error) return { error: veriHatasiCevir(error.message) };
+  if (!guncellenen) return { error: "Kayıt başka bir öğretmen tarafından işlendi. Sayfayı yenileyin." };
+  revalidatePath("/dashboard/ortaokul-onaylar");
+  revalidatePath("/dashboard/ortaokul-calisma");
+  revalidatePath("/dashboard/ortaokul-yeterlilik");
   return { error: null };
 }
 

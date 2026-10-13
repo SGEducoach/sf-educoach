@@ -12,7 +12,7 @@ import type { TemaYeterliligi } from "@/lib/ortaokul-yeterlilik";
 import type { DersSecenegi } from "@/lib/ortaokul-bolum-sorgu";
 import { ortaokulCalismaEkle, ortaokulCalismaSil } from "@/app/dashboard/ortaokul-bolum-actions";
 import {
-  BG0, BG1, BG1_ALT, BLUSH, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED,
+  BG0, BG1, BG1_ALT, BLUSH, BORDER, BORDER_STRONG, BUTTER_BG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED,
 } from "@/lib/theme";
 
 // Ortaokul "Çalışmalarım" — Maarif | LGS (kullanıcı kararı 01.10.2026).
@@ -178,7 +178,7 @@ function CalismaEkleFormu({ bolum, dersler, bugun }: { bolum: OrtaokulBolum; der
       {hata && <p className="text-xs font-semibold" style={{ color: BLUSH }}>{hata}</p>}
       {eklendi && (
         <p className="rounded-2xl px-3 py-2 text-[11px] font-semibold" style={{ background: MINT_BG, color: TEXT }}>
-          Kaydedildi. İyi iş.
+          Kaydedildi. Öğretmeninin onayı bekleniyor.
         </p>
       )}
 
@@ -246,6 +246,9 @@ function KayitListesi({ kayitlar }: { kayitlar: CalismaKaydi[] }) {
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: MINT_BG, color: MINT }}>{k.dersAdi}</span>
               <span className="text-[10px] font-semibold" style={{ color: TEXT_MUTED }}>{k.tarih}</span>
+              <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: k.onaylandiMi ? MINT_BG : BUTTER_BG, color: k.onaylandiMi ? MINT : TEXT }}>
+                {k.onaylandiMi ? (k.duzeltildiMi ? "Öğretmen düzeltti ve onayladı" : "Onaylandı") : "Öğretmen onayı bekleniyor"}
+              </span>
             </div>
             <div className="mt-1 text-xs font-semibold" style={{ color: TEXT }}>
               {k.temaAdi ?? CALISMA_TURU_ETIKET[k.tur]}
@@ -258,7 +261,7 @@ function KayitListesi({ kayitlar }: { kayitlar: CalismaKaydi[] }) {
               {k.sureDakika !== null && <span className="flex items-center gap-1"><Clock size={11} /> {k.sureDakika} dk</span>}
             </div>
           </div>
-          <button type="button" disabled={pending} aria-label="Kaydı sil"
+          {!k.onaylandiMi && <button type="button" disabled={pending} aria-label="Bekleyen kaydı sil"
             onClick={() => {
               setHata(null);
               startTransition(async () => {
@@ -270,6 +273,7 @@ function KayitListesi({ kayitlar }: { kayitlar: CalismaKaydi[] }) {
             style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
             <Trash2 size={12} color={TEXT_MUTED} />
           </button>
+          }
         </div>
       ))}
     </section>

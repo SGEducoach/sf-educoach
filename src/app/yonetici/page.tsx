@@ -125,6 +125,13 @@ export default async function YoneticiPage({
             </>
           )}
           {aktifBolum === "kullanicilar" && <section className="sfec-section"><KullaniciArama /></section>}
+          {aktifBolum === "kullanici-yonetimi" && <section className="sfec-section"><AdminPanel
+            mod="kullanici"
+            okullar={okulListesi}
+            gorunecekOkulId={gorunecekOkulId}
+            siniflar={((siniflar ?? []) as { id: string; seviye: string; sube: string }[]).sort(sinifSiraKarsilastir)}
+            ogretmenListesi={ogretmenListesi}
+          /></section>}
           {aktifBolum === "ogrenci-aktivitesi" && (
             <section className="sfec-section">
               <OgrenciAktivitesi

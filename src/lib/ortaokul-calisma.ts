@@ -109,6 +109,8 @@ export interface CalismaKaydi {
   dogru: number | null;
   yanlis: number | null;
   bos: number | null;
+  onaylandiMi: boolean;
+  duzeltildiMi: boolean;
 }
 
 export interface CalismaOzeti {

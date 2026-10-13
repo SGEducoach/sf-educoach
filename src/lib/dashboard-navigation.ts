@@ -1,6 +1,5 @@
 import type { KurumTuru, UserRole } from "@/lib/types";
 import { REHBER_BRANSI } from "@/lib/rehberlik";
-import { etkinlikBransiMi } from "@/lib/etkinlik";
 
 export type DashboardBolumu =
   | "mesajlar"
@@ -14,7 +13,6 @@ export type DashboardBolumu =
   | "yapay-zeka"
   | "tg-denemeleri"
   | "kapsamim"
-  | "gorusmeler"
   | "program-destegi"
   | "duyurular"
   | "talepler"
@@ -25,13 +23,13 @@ export type DashboardBolumu =
   | "ogrenciler"
   | "denemeler"
   | "rehberlik"
-  | "etkinlikler"
   | "duyuru-gecmisi"
   | "takvim"
   | "yarismalar"
   | "ogrenci-takibi"
   // YÖNETİCİ (admin) paneline özel — bkz. ADMIN_MENUSU
   | "kullanicilar"
+  | "kullanici-yonetimi"
   | "google-analytics"
   | "pdf-eslesme"
   // Kullanıcı isteği (29.09.2026): deneme yükleme önemli bir iş ama
@@ -44,6 +42,7 @@ export type DashboardBolumu =
   | "ortaokul-yardim"
   // Ortaokul Maarif|LGS: ogrenci calisma kaydi ve ogretmen yeterlilik karari.
   | "ortaokul-calisma"
+  | "ortaokul-onaylar"
   | "ortaokul-yeterlilik"
   | "okullar"
   // Grup Koçluk (18.09.2026) — kurum dışı koç grupları.
@@ -84,9 +83,7 @@ const OGRENCI_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "analiz", href: "/dashboard/analiz", etiket: "Analiz / Rapor", ikon: "analiz" },
   { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Konu Haritası", ikon: "ai" },
   { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Pano", ikon: "takvim" },
-  // Kullanıcı isteği (03.09.2026): öğrenci kendi profilini görebilsin ama
-  // SADECE şifresini değiştirebilsin — okul no, sınıf, ad gibi kimlik
-  // bilgileri salt-okunur (bkz. OgrenciProfilim).
+  // Kimlik bilgileri salt-okunur; hedefini öğrenci düzenleyebilir.
   { bolum: "profil", href: "/dashboard/profil", etiket: "Profilim", ikon: "profil" },
 ];
 
@@ -111,6 +108,9 @@ const ORTAOKUL_OGRENCI_MENUSU: DashboardMenuOgesi[] = [
 
 const ORTAOKUL_YETERLILIK_MENU_OGESI: DashboardMenuOgesi = {
   bolum: "ortaokul-yeterlilik", href: "/dashboard/ortaokul-yeterlilik", etiket: "Konu Yeterliliği", ikon: "hakimiyet",
+};
+const ORTAOKUL_ONAYLAR_MENU_OGESI: DashboardMenuOgesi = {
+  bolum: "ortaokul-onaylar", href: "/dashboard/ortaokul-onaylar", etiket: "Çalışma onayları", ikon: "onay",
 };
 
 const VELI_MENUSU: DashboardMenuOgesi[] = [
@@ -218,11 +218,16 @@ const ADMIN_MENU_YAPISI: DashboardMenuKalemi[] = [
   { bolum: "ozet", href: "/yonetici", etiket: "Genel bakış", ikon: "ana-sayfa" },
   { bolum: "mesajlar", href: "/yonetici/mesajlar", etiket: "Mesajlar", ikon: "duyuru" },
   {
-    baslik: "Kurumlar ve Kullanıcılar", ikon: "okul", ogeler: [
+    baslik: "Kurumlar", ikon: "okul", ogeler: [
       { bolum: "okullar", href: "/yonetici/okullar", etiket: "Okullar", ikon: "okul" },
       { bolum: "grup-kocluk", href: "/yonetici/grup-kocluk", etiket: "Grup Koçluk", ikon: "grup" },
-      { bolum: "kullanicilar", href: "/yonetici/kullanicilar", etiket: "Kullanıcılar", ikon: "kullanici" },
       { bolum: "talepler", href: "/yonetici/talepler", etiket: "Veli talepleri", ikon: "talep" },
+    ],
+  },
+  {
+    baslik: "Kullanıcı ekle / çıkar", ikon: "kullanici", ogeler: [
+      { bolum: "kullanici-yonetimi", href: "/yonetici/kullanici-yonetimi", etiket: "Kullanıcı ekle", ikon: "kullanici" },
+      { bolum: "kullanicilar", href: "/yonetici/kullanicilar", etiket: "Kullanıcı ara / çıkar", ikon: "ogrenci" },
     ],
   },
   {
@@ -284,13 +289,6 @@ const KAPSAMIM_MENU_OGESI: DashboardMenuOgesi = {
   bolum: "kapsamim", href: "/dashboard?bolum=kapsamim", etiket: "Kapsamım", ikon: "ogrenci",
 };
 
-// Faz 4 (migration 0145) — rehberin asıl iş ürünü: görüşme kaydı. GİZLİ,
-// yalnız servis üyesi ve yalnız kendi kademesindeki öğrenciler için
-// (gizlilik RLS'te zorlanıyor, menüde gizlemek yeterli bir kontrol DEĞİL).
-const GORUSMELER_MENU_OGESI: DashboardMenuOgesi = {
-  bolum: "gorusmeler", href: "/dashboard?bolum=gorusmeler", etiket: "Görüşme Kayıtları", ikon: "rehberlik",
-};
-
 // Program desteği (migration 0146): rehber, kapsamındaki öğrenciyle oturup
 // Oto Program sihirbazını birlikte geçer. Program ÖĞRENCİNİN kalır; rehberin
 // etkinliği kısıtlamayla değil akıbet geri bildirimiyle korunuyor.
@@ -325,11 +323,8 @@ const GRUP_KOC_MENUSU: DashboardMenuOgesi[] = [
 // "yapay-zeka" = lise Konu Haritası (konu hâkimiyeti, TYT/AYT taksonomisi).
 // Ortaokulun karşılığı "Konu Yeterliliği" (Maarif|LGS, migration 0132) —
 // ikisini aynı menüde göstermek hem tekrar hem yanlış taksonomi olurdu.
-// "onaylar" (Bekleyen onaylar) ÖLÇÜLDÜ ve ortaokulda ÖLÜ bir kalem
-// (O4, 08.10.2026): o ekran `soru_cozumleri` tablosunu okuyor, ortaokul
-// öğrencisi ise `ortaokul_calismalar`'a yazıyor ve o tabloda
-// `onaylandi_mi` kolonu YOK — ortaokulda onay kavramı tasarımca yok.
-// Yani ortaokul öğretmeninde bu kalem daima boş kalıyordu.
+// Lise "onaylar" ekranı soru_cozumleri tablosunu okur. Ortaokulun ayrı
+// ortaokul-onaylar ekranı ortaokul_calismalar kayıtlarını inceler.
 export const ORTAOKULDA_GOSTERILMEYEN: DashboardBolumu[] = ["yapay-zeka", "onaylar"];
 
 function ortaokulaUyarla(menu: DashboardMenuOgesi[]): DashboardMenuOgesi[] {
@@ -365,18 +360,18 @@ export function dashboardMenusu(
     // dalını atlıyordu — ortaokul öğretmeni "Ajandam"ı KAYBETMİŞTİ. Ortaokul
     // bir okul kurumu, Ajandam ona da ait.
     const taban = kurumTuru === "okul" ? [...OGRETMEN_MENUSU, TAKVIM_MENU_OGESI] : [...OGRETMEN_MENUSU];
-    return [...ortaokulaUyarla(taban), ORTAOKUL_YETERLILIK_MENU_OGESI];
+    return [...ortaokulaUyarla(taban), ORTAOKUL_ONAYLAR_MENU_OGESI, ORTAOKUL_YETERLILIK_MENU_OGESI];
   }
-  if (role === "ogrenci") return kurumTuru === "okul" ? [...OGRENCI_MENUSU, { bolum:"etkinlikler", href:"/dashboard/etkinlikler", etiket:"Etkinlikler", ikon:"takvim" }] : OGRENCI_MENUSU;
+  if (role === "ogrenci") return OGRENCI_MENUSU;
   if (role === "veli") return VELI_MENUSU;
   if (role === "ogretmen" && rehber) {
     if (kurumTuru === "dershane") return DERSHANE_REHBER_MENUSU;
     // "Kapsamım" Kurum Performansı'nın HEMEN ARDINDAN gelir: triyaj girişi.
     return okulRehberi
-      ? [REHBER_OGRETMEN_MENUSU[0], KAPSAMIM_MENU_OGESI, GORUSMELER_MENU_OGESI, PROGRAM_DESTEGI_MENU_OGESI, ...REHBER_OGRETMEN_MENUSU.slice(1)]
+      ? [REHBER_OGRETMEN_MENUSU[0], KAPSAMIM_MENU_OGESI, PROGRAM_DESTEGI_MENU_OGESI, ...REHBER_OGRETMEN_MENUSU.slice(1)]
       : REHBER_OGRETMEN_MENUSU;
   }
-  if (role === "ogretmen") return kurumTuru === "okul" && etkinlikBransiMi(brans) ? [...OGRETMEN_MENUSU, TAKVIM_MENU_OGESI, { bolum:"etkinlikler", href:"/dashboard/etkinlikler", etiket:"Etkinlik Grupları", ikon:"takvim" }] : kurumTuru === "okul" ? [...OGRETMEN_MENUSU, TAKVIM_MENU_OGESI] : OGRETMEN_MENUSU;
+  if (role === "ogretmen") return kurumTuru === "okul" ? [...OGRETMEN_MENUSU, TAKVIM_MENU_OGESI] : OGRETMEN_MENUSU;
   if (role === "mudur") {
     if (kurumTuru === "dershane") return DERSHANE_MUDUR_MENUSU;
     const taban = [...MUDUR_MENUSU, TAKVIM_MENU_OGESI];
@@ -397,7 +392,7 @@ export function dashboardMenuYapisi(
 
 export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
   "sinif-analizi", "gorevler", "planlar", "veri-girisi", "konu-hakimiyeti", "analiz", "yapay-zeka", "tg-denemeleri",
-  "duyurular", "talepler", "onaylar", "dersler", "ortaokul-dersler", "ortaokul-yardim", "ortaokul-calisma", "ortaokul-yeterlilik", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler", "rehberlik", "etkinlikler", "profil", "takvim", "yarismalar", "ogrenci-takibi",
+  "duyurular", "talepler", "onaylar", "dersler", "ortaokul-dersler", "ortaokul-yardim", "ortaokul-calisma", "ortaokul-onaylar", "ortaokul-yeterlilik", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler", "rehberlik", "profil", "takvim", "yarismalar", "ogrenci-takibi",
 ]);
 // Yazılı analizinin ayrı sayfası yok (kullanıcı kararı 11.09.2026: yalnızca
 // öğretmene özel) — öğretmen Ajandam > Yazılı Analizi sekmesinden girer.
@@ -405,6 +400,6 @@ export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
 // /yonetici/[bolum] catch-all için.
 export const YONETICI_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
   "mesajlar",
-  "kullanicilar", "talepler", "deneme-yukle", "pdf-eslesme", "okullar", "grup-kocluk", "moderatorler", "icerik", "blog", "kurallar", "profil", "hata-bildirimleri",
+  "kullanicilar", "kullanici-yonetimi", "talepler", "deneme-yukle", "pdf-eslesme", "okullar", "grup-kocluk", "moderatorler", "icerik", "blog", "kurallar", "profil", "hata-bildirimleri",
   "duyuru-gecmisi", "islem-gecmisi", "ogrenci-aktivitesi", "site-ayarlari", "adminler",
 ]);

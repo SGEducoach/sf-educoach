@@ -136,7 +136,7 @@ export async function sinifTemaHaritasiGetir(
       .order("guncellenme_at", { ascending: true }),
     supabase.from("ortaokul_calismalar")
       .select("tema_id, student_id")
-      .in("student_id", ogrenciIdleri).in("tema_id", temaIdleri),
+      .in("student_id", ogrenciIdleri).in("tema_id", temaIdleri).eq("bolum", bolum).eq("onaylandi_mi", true),
   ]);
 
   const kararlar = ((kararlarHam.data ?? []) as { tema_id: string; student_id: string; durum: string | null }[])

@@ -36,18 +36,5 @@ export async function programaCakisiyorMu(
   );
   if (gorevCakisiyor) return { error: null, cakisiyor: true };
 
-  // Kabul edilmiş Beden Eğitimi/Müzik çalışmaları da öğrencinin programını
-  // kapatır. Böylece öğrenci daha sonra aynı saate kişisel plan ekleyemez.
-  const { data: etkinlikler, error: etkinlikHatasi } = await supabase
-    .from("etkinlik_calisma_atamalari")
-    .select("etkinlik_calismalari!inner(tarih,baslangic_saat,bitis_saat)")
-    .eq("student_id", studentId).eq("durum", "kabul")
-    .in("etkinlik_calismalari.tarih", [tarihEkle(tarih, -1), tarih, tarihEkle(tarih, 1)]);
-  if (etkinlikHatasi) return { error: etkinlikHatasi.message, cakisiyor: false };
-  type Etkinlik = { etkinlik_calismalari: { tarih: string; baslangic_saat: string; bitis_saat: string } | { tarih: string; baslangic_saat: string; bitis_saat: string }[] | null };
-  const etkinlikCakisiyor = ((etkinlikler ?? []) as unknown as Etkinlik[]).some((satir) => {
-    const kayit = Array.isArray(satir.etkinlik_calismalari) ? satir.etkinlik_calismalari[0] : satir.etkinlik_calismalari;
-    return !!kayit && tarihliSaatAraliklariCakisiyor(kayit.tarih, kayit.baslangic_saat, kayit.bitis_saat, tarih, baslangicSaat, bitisSaat);
-  });
-  return { error: null, cakisiyor: etkinlikCakisiyor };
+  return { error: null, cakisiyor: false };
 }

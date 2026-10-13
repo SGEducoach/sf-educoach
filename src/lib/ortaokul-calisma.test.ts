@@ -86,7 +86,8 @@ describe("calismaGirdisiDogrula — soru çözümü", () => {
 describe("calismaOzeti", () => {
   const kayit = (p: Partial<CalismaKaydi>): CalismaKaydi => ({
     id: "k", bolum: "maarif", tur: "konu", dersAdi: "Matematik", temaAdi: null, altBaslik: null,
-    tarih: "2026-10-01", sureDakika: null, dogru: null, yanlis: null, bos: null, ...p,
+    tarih: "2026-10-01", sureDakika: null, dogru: null, yanlis: null, bos: null,
+    onaylandiMi: true, duzeltildiMi: false, ...p,
   });
 
   test("süre ve soru toplanıyor", () => {

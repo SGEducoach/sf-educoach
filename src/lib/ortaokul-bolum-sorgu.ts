@@ -168,6 +168,7 @@ export interface CalismaVerisi {
 interface CalismaSatiri {
   id: string; bolum: OrtaokulBolum; tur: string; tarih: string; tema_id: string | null;
   alt_baslik: string | null;
+  onaylandi_mi: boolean; duzeltilme_at: string | null;
   sure_dakika: number | null; dogru: number | null; yanlis: number | null; bos: number | null;
   ortaokul_mufredat_dersleri: { ad: string } | null;
   ortaokul_mufredat_temalari: { ad: string | null; kod: string } | null;
@@ -182,7 +183,7 @@ export async function ortaokulCalismalariGetir(
 ): Promise<CalismaVerisi> {
   const { data } = await supabase
     .from("ortaokul_calismalar")
-    .select("id, bolum, tur, tarih, tema_id, alt_baslik, sure_dakika, dogru, yanlis, bos, ortaokul_mufredat_dersleri(ad), ortaokul_mufredat_temalari(ad, kod)")
+    .select("id, bolum, tur, tarih, tema_id, alt_baslik, sure_dakika, dogru, yanlis, bos, onaylandi_mi, duzeltilme_at, ortaokul_mufredat_dersleri(ad), ortaokul_mufredat_temalari(ad, kod)")
     .eq("student_id", studentId)
     .eq("bolum", bolum)
     .gte("tarih", baslangic)
@@ -211,9 +212,11 @@ export async function ortaokulCalismalariGetir(
     dogru: s.dogru,
     yanlis: s.yanlis,
     bos: s.bos,
+    onaylandiMi: s.onaylandi_mi,
+    duzeltildiMi: s.duzeltilme_at !== null,
   }));
 
-  return { kayitlar, ozet: calismaOzeti(kayitlar) };
+  return { kayitlar, ozet: calismaOzeti(kayitlar.filter((k) => k.onaylandiMi)) };
 }
 
 // ---- Yeterlilik kararları ----
