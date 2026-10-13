@@ -2,13 +2,15 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { ClipboardList, GraduationCap, LayoutGrid } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ClipboardList, GraduationCap, LayoutGrid, Pencil, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { BOLUM_ACIKLAMA, BOLUM_ETIKET, ORTAOKUL_BOLUMLERI } from "@/lib/ortaokul-bolum";
 import type { OrtaokulBolum } from "@/lib/ortaokul-bolum";
 import { YETERLILIK_DURUMLARI, YETERLILIK_ETIKET, destekGerekenler, yeterlilikOzeti } from "@/lib/ortaokul-yeterlilik";
 import type { TemaYeterliligi, YeterlilikDurumu } from "@/lib/ortaokul-yeterlilik";
-import type { DersSecenegi } from "@/lib/ortaokul-bolum-sorgu";
+import type { DersSecenegi, KonuSecenegi } from "@/lib/ortaokul-bolum-sorgu";
 import { ortaokulYeterlilikKaydet } from "@/app/dashboard/ortaokul-bolum-actions";
+import { sinavaDogruKonuDuzenle, sinavaDogruKonuEkle } from "@/app/dashboard/ortaokul-sinava-dogru-actions";
 import { gorevVer } from "@/app/dashboard/gorev-actions";
 import {
   BG0, BG1, BG1_ALT, BLUSH, BORDER, BORDER_STRONG, BUTTER, BUTTER_BG, MINT, MINT_BG, MINT_ON,
@@ -132,6 +134,8 @@ export function OrtaokulYeterlilik({
         )}
       </div>
 
+      {bolum === "lgs" && seciliDers && <SinavaDogruKonuYonetimi ders={seciliDers} />}
+
       {destek.length > 0 && (
         <section className="rounded-3xl p-4" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
           <h2 className="text-sm font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Destek gereken konular</h2>
@@ -157,6 +161,112 @@ export function OrtaokulYeterlilik({
         </div>
       )}
     </div>
+  );
+}
+
+function SinavaDogruKonuYonetimi({ ders }: { ders: DersSecenegi }) {
+  const router = useRouter();
+  const [yeniAd, setYeniAd] = useState("");
+  const [duzenlenenId, setDuzenlenenId] = useState<string | null>(null);
+  const [duzenlenenAd, setDuzenlenenAd] = useState("");
+  const [silmeOnayi, setSilmeOnayi] = useState<string | null>(null);
+  const [hata, setHata] = useState<string | null>(null);
+  const [bilgi, setBilgi] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  function islem(eylem: () => Promise<{ error: string | null }>, basarili: string, sonra?: () => void) {
+    setHata(null); setBilgi(null);
+    startTransition(async () => {
+      const sonuc = await eylem();
+      if (sonuc.error) return setHata(sonuc.error);
+      setBilgi(basarili);
+      sonra?.();
+      router.refresh();
+    });
+  }
+
+  const gorunen = ders.temalar;
+  const gizli = ders.gizliTemalar ?? [];
+  function konuSatiri(konu: KonuSecenegi, gizliMi: boolean) {
+    return (
+      <li key={konu.id} className="rounded-2xl p-3" style={{ background: BG0, border: `1px solid ${BORDER}` }}>
+        {duzenlenenId === konu.id ? (
+          <form className="flex flex-wrap gap-2" onSubmit={(e) => {
+            e.preventDefault();
+            islem(() => sinavaDogruKonuDuzenle(konu.id, { ad: duzenlenenAd }), "Konu adı güncellendi.", () => setDuzenlenenId(null));
+          }}>
+            <input aria-label="Yeni konu adı" value={duzenlenenAd} maxLength={120}
+              onChange={(e) => setDuzenlenenAd(e.target.value)} disabled={pending}
+              className="min-w-[180px] flex-1 rounded-xl border px-3 py-2 text-sm" style={{ borderColor: BORDER_STRONG, color: TEXT }} />
+            <button type="submit" disabled={pending} className="rounded-xl px-3 py-2 text-xs font-bold" style={{ background: MINT_BG, color: TEXT }}>Kaydet</button>
+            <button type="button" onClick={() => setDuzenlenenId(null)} className="rounded-xl px-3 py-2 text-xs" style={{ color: TEXT_MUTED }}>Vazgeç</button>
+          </form>
+        ) : (
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <span className="text-sm font-semibold" style={{ color: TEXT }}>{konu.ad || konu.kod}</span>
+              <span className="ml-2 text-[10px]" style={{ color: TEXT_MUTED }}>{konu.kurumaOzel ? "Kurum konusu" : "Maarif kaynağı"}</span>
+              {konu.kaynakAd && konu.ad !== konu.kaynakAd && (
+                <p className="text-[10px]" style={{ color: TEXT_MUTED }}>Önceki kaynak adı: {konu.kaynakAd}</p>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              <button type="button" disabled={pending} onClick={() => { setDuzenlenenId(konu.id); setDuzenlenenAd(konu.ad ?? konu.kod); setSilmeOnayi(null); }}
+                className="inline-flex items-center gap-1 rounded-xl px-2 py-1 text-xs font-semibold" style={{ color: TEXT, border: `1px solid ${BORDER_STRONG}` }}>
+                <Pencil size={12} /> Değiştir
+              </button>
+              {gizliMi ? (
+                <button type="button" disabled={pending} onClick={() => islem(() => sinavaDogruKonuDuzenle(konu.id, { aktif: true }), "Konu yeniden gösteriliyor.")}
+                  className="inline-flex items-center gap-1 rounded-xl px-2 py-1 text-xs font-semibold" style={{ color: MINT, border: `1px solid ${BORDER_STRONG}` }}>
+                  <RotateCcw size={12} /> Geri getir
+                </button>
+              ) : silmeOnayi === konu.id ? (
+                <>
+                  <button type="button" disabled={pending} onClick={() => islem(() => sinavaDogruKonuDuzenle(konu.id, { aktif: false }), "Konu listeden kaldırıldı; eski kayıtlar saklandı.", () => setSilmeOnayi(null))}
+                    className="rounded-xl px-2 py-1 text-xs font-bold" style={{ color: BLUSH, border: `1px solid ${BLUSH}` }}>Kaldırmayı onayla</button>
+                  <button type="button" onClick={() => setSilmeOnayi(null)} className="rounded-xl px-2 py-1 text-xs" style={{ color: TEXT_MUTED }}>Vazgeç</button>
+                </>
+              ) : (
+                <button type="button" disabled={pending} onClick={() => { setSilmeOnayi(konu.id); setDuzenlenenId(null); }}
+                  className="inline-flex items-center gap-1 rounded-xl px-2 py-1 text-xs font-semibold" style={{ color: BLUSH, border: `1px solid ${BORDER_STRONG}` }}>
+                  <Trash2 size={12} /> Kaldır
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </li>
+    );
+  }
+
+  return (
+    <details className="rounded-3xl p-4" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+      <summary className="cursor-pointer text-sm font-bold" style={{ color: TEXT }}>Sınava Doğru · Konuları düzenle ({ders.ad})</summary>
+      <p className="mt-2 text-xs" style={{ color: TEXT_MUTED }}>
+        Eklediğiniz ve değiştirdiğiniz konular kurumunuzun öğretmen ve öğrencilerine görünür. Kaldırılan konuların eski kayıtları saklanır. Maarif listesi değişmez.
+      </p>
+      <form className="mt-3 flex flex-wrap gap-2" onSubmit={(e) => {
+        e.preventDefault();
+        islem(() => sinavaDogruKonuEkle(ders.id, yeniAd), "Yeni konu eklendi.", () => setYeniAd(""));
+      }}>
+        <input aria-label="Eklenecek konu adı" placeholder="Yeni konu adı" value={yeniAd} maxLength={120}
+          onChange={(e) => setYeniAd(e.target.value)} disabled={pending}
+          className="min-w-[180px] flex-1 rounded-xl border px-3 py-2 text-sm" style={{ borderColor: BORDER_STRONG, color: TEXT }} />
+        <button type="submit" disabled={pending || yeniAd.trim().length < 2}
+          className="inline-flex items-center gap-1 rounded-xl px-3 py-2 text-xs font-bold disabled:opacity-50" style={{ background: MINT, color: MINT_ON }}>
+          <Plus size={13} /> Konu ekle
+        </button>
+      </form>
+      {hata && <p role="alert" className="mt-2 text-xs font-semibold" style={{ color: BLUSH }}>{hata}</p>}
+      {bilgi && <p role="status" className="mt-2 text-xs font-semibold" style={{ color: MINT }}>{bilgi}</p>}
+      <ul className="mt-3 flex flex-col gap-2">{gorunen.map((konu) => konuSatiri(konu, false))}</ul>
+      {gizli.length > 0 && (
+        <details className="mt-3">
+          <summary className="cursor-pointer text-xs font-semibold" style={{ color: TEXT_MUTED }}>Kaldırılan konular ({gizli.length})</summary>
+          <ul className="mt-2 flex flex-col gap-2">{gizli.map((konu) => konuSatiri(konu, true))}</ul>
+        </details>
+      )}
+    </details>
   );
 }
 

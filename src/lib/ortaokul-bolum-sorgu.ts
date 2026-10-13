@@ -18,7 +18,16 @@ import { ortaokulDersKarsilastir } from "@/lib/ortaokul-ders-sirasi";
 export interface DersSecenegi {
   id: string;
   ad: string;
-  temalar: { id: string; ad: string | null; kod: string }[];
+  temalar: KonuSecenegi[];
+  gizliTemalar?: KonuSecenegi[];
+}
+
+export interface KonuSecenegi {
+  id: string;
+  ad: string | null;
+  kod: string;
+  kaynakAd?: string | null;
+  kurumaOzel?: boolean;
 }
 
 // Öğrencinin sınıfındaki dersler + temaları (çalışma kaydı ve yeterlilik
@@ -26,6 +35,8 @@ export interface DersSecenegi {
 export async function ortaokulDersTemaSecenekleri(
   supabase: SupabaseClient,
   sinifSeviyesi: string | null | undefined,
+  schoolId?: string | null,
+  bolum: OrtaokulBolum = "maarif",
 ): Promise<DersSecenegi[]> {
   const seviye = seviyeNormalize(sinifSeviyesi);
   if (!seviye) return [];
@@ -36,28 +47,45 @@ export async function ortaokulDersTemaSecenekleri(
 
   const { data: dersler } = await supabase
     .from("ortaokul_mufredat_dersleri")
-    .select("id, ad, sira, ortaokul_mufredat_temalari(id, ad, kod, sira)")
+    .select("id, ad, sira")
     .eq("surum_id", surum.id)
     .eq("sinif_seviyesi", seviye);
 
-  type Satir = {
-    id: string; ad: string; sira: number;
-    ortaokul_mufredat_temalari: { id: string; ad: string | null; kod: string; sira: number }[] | null;
-  };
+  type Satir = { id: string; ad: string; sira: number };
+  type Tema = { id: string; ders_id: string; ad: string | null; kod: string; sira: number; school_id: string | null };
+  type Duzenleme = { tema_id: string; ad: string | null; aktif: boolean };
+  const dersSatirlari = (dersler ?? []) as Satir[];
+  if (dersSatirlari.length === 0) return [];
+  const { data: temaData } = await supabase.from("ortaokul_mufredat_temalari")
+    .select("id, ders_id, ad, kod, sira, school_id")
+    .in("ders_id", dersSatirlari.map((d) => d.id));
+  const temalar = ((temaData ?? []) as Tema[]).filter((t) => t.school_id === null || (bolum === "lgs" && t.school_id === schoolId));
+  const { data: duzenlemeData } = schoolId && bolum === "lgs" && temalar.length > 0
+    ? await supabase.from("ortaokul_sinava_dogru_konu_duzenlemeleri")
+      .select("tema_id, ad, aktif").eq("school_id", schoolId)
+      .in("tema_id", temalar.map((t) => t.id))
+    : { data: [] };
+  const duzenlemeler = new Map(((duzenlemeData ?? []) as Duzenleme[]).map((d) => [d.tema_id, d]));
 
   // Ders sırası KULLANICI KARARINDAN gelir (Türkçe, Matematik, Fen, Sosyal,
   // İngilizce, Din) — mufredat tablosundaki `sira` kolonu değerleri eşit
   // olduğu için eskiden alfabetik sıralanıyordu ve Din başta, Türkçe sonda
   // çıkıyordu (bkz. ortaokul-ders-sirasi.ts).
-  return ((dersler ?? []) as unknown as Satir[])
+  return dersSatirlari
     .sort((a, b) => ortaokulDersKarsilastir(a.ad, b.ad))
-    .map((d) => ({
-      id: d.id,
-      ad: d.ad,
-      temalar: [...(d.ortaokul_mufredat_temalari ?? [])]
-        .sort((a, b) => a.sira - b.sira)
-        .map((t) => ({ id: t.id, ad: t.ad, kod: t.kod })),
-    }));
+    .map((d) => {
+      const satirlar = temalar.filter((t) => t.ders_id === d.id)
+        .sort((a, b) => a.sira - b.sira || a.kod.localeCompare(b.kod, "tr"));
+      const konu = (t: Tema): KonuSecenegi => ({
+        id: t.id, ad: duzenlemeler.get(t.id)?.ad ?? t.ad, kod: t.kod,
+        kaynakAd: t.ad, kurumaOzel: t.school_id !== null,
+      });
+      return {
+        id: d.id, ad: d.ad,
+        temalar: satirlar.filter((t) => duzenlemeler.get(t.id)?.aktif !== false).map(konu),
+        gizliTemalar: bolum === "lgs" ? satirlar.filter((t) => duzenlemeler.get(t.id)?.aktif === false).map(konu) : [],
+      };
+    });
 }
 
 // Öğretmenin "Ödev ver" formu için ortaokul konu havuzu.
@@ -114,7 +142,7 @@ export interface CalismaVerisi {
 }
 
 interface CalismaSatiri {
-  id: string; bolum: OrtaokulBolum; tur: string; tarih: string;
+  id: string; bolum: OrtaokulBolum; tur: string; tarih: string; tema_id: string | null;
   sure_dakika: number | null; dogru: number | null; yanlis: number | null; bos: number | null;
   ortaokul_mufredat_dersleri: { ad: string } | null;
   ortaokul_mufredat_temalari: { ad: string | null; kod: string } | null;
@@ -125,15 +153,23 @@ export async function ortaokulCalismalariGetir(
   studentId: string,
   bolum: OrtaokulBolum,
   baslangic: string,
+  schoolId?: string | null,
 ): Promise<CalismaVerisi> {
   const { data } = await supabase
     .from("ortaokul_calismalar")
-    .select("id, bolum, tur, tarih, sure_dakika, dogru, yanlis, bos, ortaokul_mufredat_dersleri(ad), ortaokul_mufredat_temalari(ad, kod)")
+    .select("id, bolum, tur, tarih, tema_id, sure_dakika, dogru, yanlis, bos, ortaokul_mufredat_dersleri(ad), ortaokul_mufredat_temalari(ad, kod)")
     .eq("student_id", studentId)
     .eq("bolum", bolum)
     .gte("tarih", baslangic)
     .order("tarih", { ascending: false })
     .order("created_at", { ascending: false });
+
+  const temaIdleri = [...new Set(((data ?? []) as unknown as CalismaSatiri[]).map((s) => s.tema_id).filter((id): id is string => !!id))];
+  const { data: duzenlemeData } = schoolId && bolum === "lgs" && temaIdleri.length > 0
+    ? await supabase.from("ortaokul_sinava_dogru_konu_duzenlemeleri")
+      .select("tema_id, ad").eq("school_id", schoolId).in("tema_id", temaIdleri)
+    : { data: [] };
+  const adlar = new Map(((duzenlemeData ?? []) as { tema_id: string; ad: string | null }[]).map((d) => [d.tema_id, d.ad]));
 
   // Gömülü ilişki çalışma anında NESNE döner (bkz. proje notu).
   const kayitlar: CalismaKaydi[] = ((data ?? []) as unknown as CalismaSatiri[]).map((s) => ({
@@ -142,7 +178,7 @@ export async function ortaokulCalismalariGetir(
     tur: s.tur === "soru" ? "soru" : "konu",
     dersAdi: s.ortaokul_mufredat_dersleri?.ad ?? "Ders",
     temaAdi: s.ortaokul_mufredat_temalari
-      ? (s.ortaokul_mufredat_temalari.ad?.trim() ? s.ortaokul_mufredat_temalari.ad : s.ortaokul_mufredat_temalari.kod)
+      ? (adlar.get(s.tema_id ?? "") || s.ortaokul_mufredat_temalari.ad?.trim() || s.ortaokul_mufredat_temalari.kod)
       : null,
     tarih: s.tarih,
     sureDakika: s.sure_dakika,

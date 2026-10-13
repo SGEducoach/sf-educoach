@@ -422,12 +422,14 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
   if (aktifBolum === "ortaokul-calisma") {
     if (kademe !== "ortaokul") notFound();
     const bolum = bolumCoz(seciliBolum);
-    const dersler = await ortaokulDersTemaSecenekleri(supabase, sinifSeviyesi);
+    const { data: ogrenciKurumu } = await supabase.from("students")
+      .select("school_id").eq("id", userId).maybeSingle();
+    const dersler = await ortaokulDersTemaSecenekleri(supabase, sinifSeviyesi, ogrenciKurumu?.school_id, bolum);
     const secili = dersler.find((d) => d.id === seciliDersId) ?? dersler[0] ?? null;
     const bugunTarih = bugununTarihiTR();
     const [calisma, yeterlilik] = await Promise.all([
       // Son 30 gün: ekran "bu dönem ne yaptım" sorusuna yanıt veriyor.
-      ortaokulCalismalariGetir(supabase, userId, bolum, tarihEkle(bugunTarih, -30)),
+      ortaokulCalismalariGetir(supabase, userId, bolum, tarihEkle(bugunTarih, -30), ogrenciKurumu?.school_id),
       secili ? ortaokulYeterlilikGetir(supabase, userId, secili, bolum) : Promise.resolve([]),
     ]);
     return (
@@ -1548,7 +1550,7 @@ async function OrtaokulYeterlilikIcerik({
       .sort(sinifSiraKarsilastir)
       .map((s) => ({ id: s.id, ad: `${s.seviye}-${s.sube}`, seviye: s.seviye }));
     const seciliSinif = siniflar.find((s) => s.id === seciliSinifId) ?? siniflar[0] ?? null;
-    const haritaDersleri = await ortaokulDersTemaSecenekleri(supabase, seciliSinif?.seviye);
+    const haritaDersleri = await ortaokulDersTemaSecenekleri(supabase, seciliSinif?.seviye, schoolId, bolum);
     const haritaDersi = haritaDersleri.find((d) => d.id === seciliDersId) ?? haritaDersleri[0] ?? null;
     const harita = seciliSinif && haritaDersi
       ? await sinifTemaHaritasiGetir(supabase, schoolId, seciliSinif.id, haritaDersi, bolum)
@@ -1607,7 +1609,7 @@ async function OrtaokulYeterlilikIcerik({
 
   // Dersler SEÇİLİ ÖĞRENCİNİN sınıf seviyesine göre (5. sınıfta 6 ders).
   const seviye = seciliOgrenci?.sinif?.split("-")[0] ?? null;
-  const dersler = await ortaokulDersTemaSecenekleri(supabase, seviye);
+  const dersler = await ortaokulDersTemaSecenekleri(supabase, seviye, schoolId, bolum);
   const seciliDers = dersler.find((d) => d.id === seciliDersId) ?? dersler[0] ?? null;
   const satirlar = seciliOgrenci && seciliDers
     ? await ortaokulYeterlilikGetir(supabase, seciliOgrenci.id, seciliDers, bolum)

@@ -136,7 +136,7 @@ describe("bölümler", () => {
   test("iki bölüm ve etiketleri", () => {
     expect(ORTAOKUL_BOLUMLERI).toEqual(["maarif", "lgs"]);
     expect(BOLUM_ETIKET.maarif).toBe("Maarif");
-    expect(BOLUM_ETIKET.lgs).toBe("LGS");
+    expect(BOLUM_ETIKET.lgs).toBe("Sınava Doğru");
   });
 
   test("bölüm çözümü bilinmeyen değerde Maarif'e düşer", () => {

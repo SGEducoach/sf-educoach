@@ -15,13 +15,13 @@ export const ORTAOKUL_BOLUMLERI = ["maarif", "lgs"] as const satisfies readonly 
 
 export const BOLUM_ETIKET: Record<OrtaokulBolum, string> = {
   maarif: "Maarif",
-  lgs: "LGS",
+  lgs: "Sınava Doğru",
 };
 
 // Sekmenin altındaki tek satır: öğrenci hangi bakışta olduğunu anlasın.
 export const BOLUM_ACIKLAMA: Record<OrtaokulBolum, string> = {
   maarif: "Sınıf müfredatındaki konular.",
-  lgs: "LGS'ye hazırlık çalışmaları.",
+  lgs: "Sınava yönelik çalışmalar ve kurumunuzun konu listesi.",
 };
 
 export function bolumCoz(ham: string | null | undefined): OrtaokulBolum {
