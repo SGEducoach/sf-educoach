@@ -39,6 +39,7 @@ export async function ortaokulDersleriGetir(
   const { data: temalar } = await supabase
     .from("ortaokul_mufredat_temalari")
     .select("id, ders_id")
+    .is("school_id", null)
     .in("ders_id", dersIdleri);
   const temaListesi = (temalar ?? []) as { id: string; ders_id: string }[];
 
@@ -67,6 +68,7 @@ export async function ortaokulDersHaritasiGetir(
   const { data } = await supabase
     .from("ortaokul_mufredat_temalari")
     .select("id, kod, ad, tur, ders_saati, alt_basliklar, sira, ortaokul_mufredat_kazanimlari(id, kod, metin, sira)")
+    .is("school_id", null)
     .eq("ders_id", dersId);
   return temalariDuzenle((data ?? []) as unknown as HamTemaSatiri[]);
 }

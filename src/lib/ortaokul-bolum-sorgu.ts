@@ -28,6 +28,14 @@ export interface KonuSecenegi {
   kod: string;
   kaynakAd?: string | null;
   kurumaOzel?: boolean;
+  altBasliklar: AltBaslikSecenegi[];
+  gizliAltBasliklar?: AltBaslikSecenegi[];
+}
+
+export interface AltBaslikSecenegi {
+  id: string;
+  ad: string;
+  kurumaOzel: boolean;
 }
 
 // Öğrencinin sınıfındaki dersler + temaları (çalışma kaydı ve yeterlilik
@@ -52,12 +60,13 @@ export async function ortaokulDersTemaSecenekleri(
     .eq("sinif_seviyesi", seviye);
 
   type Satir = { id: string; ad: string; sira: number };
-  type Tema = { id: string; ders_id: string; ad: string | null; kod: string; sira: number; school_id: string | null };
+  type Tema = { id: string; ders_id: string; ad: string | null; kod: string; sira: number; school_id: string | null; alt_basliklar: string[] | null };
   type Duzenleme = { tema_id: string; ad: string | null; aktif: boolean };
+  type AltBaslik = { id: string; tema_id: string; ad: string; aktif: boolean; sira: number };
   const dersSatirlari = (dersler ?? []) as Satir[];
   if (dersSatirlari.length === 0) return [];
   const { data: temaData } = await supabase.from("ortaokul_mufredat_temalari")
-    .select("id, ders_id, ad, kod, sira, school_id")
+    .select("id, ders_id, ad, kod, sira, school_id, alt_basliklar")
     .in("ders_id", dersSatirlari.map((d) => d.id));
   const temalar = ((temaData ?? []) as Tema[]).filter((t) => t.school_id === null || (bolum === "lgs" && t.school_id === schoolId));
   const { data: duzenlemeData } = schoolId && bolum === "lgs" && temalar.length > 0
@@ -66,6 +75,12 @@ export async function ortaokulDersTemaSecenekleri(
       .in("tema_id", temalar.map((t) => t.id))
     : { data: [] };
   const duzenlemeler = new Map(((duzenlemeData ?? []) as Duzenleme[]).map((d) => [d.tema_id, d]));
+  const { data: altData } = schoolId && bolum === "lgs" && temalar.length > 0
+    ? await supabase.from("ortaokul_sinava_dogru_alt_basliklar")
+      .select("id, tema_id, ad, aktif, sira").eq("school_id", schoolId)
+      .in("tema_id", temalar.map((t) => t.id))
+    : { data: [] };
+  const kurumAltBasliklar = (altData ?? []) as AltBaslik[];
 
   // Ders sırası KULLANICI KARARINDAN gelir (Türkçe, Matematik, Fen, Sosyal,
   // İngilizce, Din) — mufredat tablosundaki `sira` kolonu değerleri eşit
@@ -76,10 +91,19 @@ export async function ortaokulDersTemaSecenekleri(
     .map((d) => {
       const satirlar = temalar.filter((t) => t.ders_id === d.id)
         .sort((a, b) => a.sira - b.sira || a.kod.localeCompare(b.kod, "tr"));
-      const konu = (t: Tema): KonuSecenegi => ({
-        id: t.id, ad: duzenlemeler.get(t.id)?.ad ?? t.ad, kod: t.kod,
-        kaynakAd: t.ad, kurumaOzel: t.school_id !== null,
-      });
+      const konu = (t: Tema): KonuSecenegi => {
+        const resmi = bolum === "lgs" ? (t.alt_basliklar ?? []).map((ad, i) => ({
+          id: `resmi-${i}`, ad, kurumaOzel: false,
+        })) : [];
+        const kurum = kurumAltBasliklar.filter((a) => a.tema_id === t.id)
+          .sort((a, b) => a.sira - b.sira || a.ad.localeCompare(b.ad, "tr"));
+        return {
+          id: t.id, ad: duzenlemeler.get(t.id)?.ad ?? t.ad, kod: t.kod,
+          kaynakAd: t.ad, kurumaOzel: t.school_id !== null,
+          altBasliklar: [...resmi, ...kurum.filter((a) => a.aktif).map((a) => ({ id: a.id, ad: a.ad, kurumaOzel: true }))],
+          gizliAltBasliklar: kurum.filter((a) => !a.aktif).map((a) => ({ id: a.id, ad: a.ad, kurumaOzel: true })),
+        };
+      };
       return {
         id: d.id, ad: d.ad,
         temalar: satirlar.filter((t) => duzenlemeler.get(t.id)?.aktif !== false).map(konu),
@@ -143,6 +167,7 @@ export interface CalismaVerisi {
 
 interface CalismaSatiri {
   id: string; bolum: OrtaokulBolum; tur: string; tarih: string; tema_id: string | null;
+  alt_baslik: string | null;
   sure_dakika: number | null; dogru: number | null; yanlis: number | null; bos: number | null;
   ortaokul_mufredat_dersleri: { ad: string } | null;
   ortaokul_mufredat_temalari: { ad: string | null; kod: string } | null;
@@ -157,7 +182,7 @@ export async function ortaokulCalismalariGetir(
 ): Promise<CalismaVerisi> {
   const { data } = await supabase
     .from("ortaokul_calismalar")
-    .select("id, bolum, tur, tarih, tema_id, sure_dakika, dogru, yanlis, bos, ortaokul_mufredat_dersleri(ad), ortaokul_mufredat_temalari(ad, kod)")
+    .select("id, bolum, tur, tarih, tema_id, alt_baslik, sure_dakika, dogru, yanlis, bos, ortaokul_mufredat_dersleri(ad), ortaokul_mufredat_temalari(ad, kod)")
     .eq("student_id", studentId)
     .eq("bolum", bolum)
     .gte("tarih", baslangic)
@@ -180,6 +205,7 @@ export async function ortaokulCalismalariGetir(
     temaAdi: s.ortaokul_mufredat_temalari
       ? (adlar.get(s.tema_id ?? "") || s.ortaokul_mufredat_temalari.ad?.trim() || s.ortaokul_mufredat_temalari.kod)
       : null,
+    altBaslik: s.alt_baslik,
     tarih: s.tarih,
     sureDakika: s.sure_dakika,
     dogru: s.dogru,

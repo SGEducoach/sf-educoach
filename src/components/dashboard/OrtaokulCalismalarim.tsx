@@ -77,6 +77,7 @@ function CalismaEkleFormu({ bolum, dersler, bugun }: { bolum: OrtaokulBolum; der
   const [tur, setTur] = useState<CalismaTuru>("konu");
   const [dersId, setDersId] = useState(dersler[0]?.id ?? "");
   const [temaId, setTemaId] = useState("");
+  const [altBaslik, setAltBaslik] = useState("");
   const [tarih, setTarih] = useState(bugun);
   const [sure, setSure] = useState("");
   const [dogru, setDogru] = useState("");
@@ -87,13 +88,14 @@ function CalismaEkleFormu({ bolum, dersler, bugun }: { bolum: OrtaokulBolum; der
   const [pending, startTransition] = useTransition();
 
   const ders = dersler.find((d) => d.id === dersId) ?? dersler[0];
+  const tema = ders?.temalar.find((t) => t.id === temaId);
   const girdiStili = { border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT };
 
   function kaydet() {
     setHata(null); setEklendi(false);
     startTransition(async () => {
       const res = await ortaokulCalismaEkle({
-        bolum, tur, dersId, temaId: temaId || null, tarih,
+        bolum, tur, dersId, temaId: temaId || null, altBaslik: altBaslik || null, tarih,
         sureDakika: sure ? Number(sure) : null,
         dogru: tur === "soru" && dogru ? Number(dogru) : null,
         yanlis: tur === "soru" && yanlis ? Number(yanlis) : null,
@@ -122,11 +124,11 @@ function CalismaEkleFormu({ bolum, dersler, bugun }: { bolum: OrtaokulBolum; der
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <select value={dersId} onChange={(e) => { setDersId(e.target.value); setTemaId(""); }}
+        <select value={dersId} onChange={(e) => { setDersId(e.target.value); setTemaId(""); setAltBaslik(""); }}
           aria-label="Ders" className="min-w-[150px] flex-1 rounded-xl px-3 py-2 text-sm outline-none" style={girdiStili}>
           {dersler.map((d) => <option key={d.id} value={d.id}>{d.ad}</option>)}
         </select>
-        <select value={temaId} onChange={(e) => setTemaId(e.target.value)}
+        <select value={temaId} onChange={(e) => { setTemaId(e.target.value); setAltBaslik(""); }}
           aria-label="Konu" className="min-w-[150px] flex-1 rounded-xl px-3 py-2 text-sm outline-none" style={girdiStili}>
           <option value="">Konu seçmek istemiyorum</option>
           {(ders?.temalar ?? []).map((t) => (
@@ -134,6 +136,17 @@ function CalismaEkleFormu({ bolum, dersler, bugun }: { bolum: OrtaokulBolum; der
           ))}
         </select>
       </div>
+
+      {bolum === "lgs" && (tema?.altBasliklar.length ?? 0) > 0 && (
+        <label className="flex flex-col gap-1">
+          <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: TEXT_MUTED }}>Alt başlık · istersen</span>
+          <select value={altBaslik} onChange={(e) => setAltBaslik(e.target.value)}
+            aria-label="Alt başlık" className="rounded-xl px-3 py-2 text-sm outline-none" style={girdiStili}>
+            <option value="">Ana konu genelinde çalıştım</option>
+            {tema?.altBasliklar.map((alt) => <option key={alt.id} value={alt.ad}>{alt.ad}</option>)}
+          </select>
+        </label>
+      )}
 
       <div className="flex flex-wrap gap-2">
         <label className="flex min-w-[130px] flex-1 flex-col gap-1">
@@ -237,6 +250,7 @@ function KayitListesi({ kayitlar }: { kayitlar: CalismaKaydi[] }) {
             <div className="mt-1 text-xs font-semibold" style={{ color: TEXT }}>
               {k.temaAdi ?? CALISMA_TURU_ETIKET[k.tur]}
             </div>
+            {k.altBaslik && <div className="mt-0.5 text-[11px]" style={{ color: TEXT_MUTED }}>↳ {k.altBaslik}</div>}
             <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11px]" style={{ color: TEXT_MUTED }}>
               {k.tur === "soru"
                 ? <span className="flex items-center gap-1"><PenLine size={11} /> {k.dogru ?? 0}D · {k.yanlis ?? 0}Y · {k.bos ?? 0}B</span>

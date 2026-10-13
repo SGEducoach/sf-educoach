@@ -73,3 +73,55 @@ export async function sinavaDogruKonuDuzenle(
   revalidatePath("/dashboard");
   return { error: null };
 }
+
+export async function sinavaDogruAltBaslikEkle(temaId: string, adGirdisi: string): Promise<Sonuc> {
+  const oturum = await ogretmenOturumu();
+  if (!oturum) return { error: "Bu işlem yalnızca kurum öğretmenine açıktır." };
+  if (!await temaDogrula(oturum, temaId)) return { error: "Bu ana konu kurumunuza ait değil." };
+  const ad = String(adGirdisi ?? "").trim();
+  if (ad.length < 2 || ad.length > 120) return { error: "Alt başlık 2–120 karakter olmalı." };
+
+  const [{ data: tema }, { data: kurumAltBasliklari }] = await Promise.all([
+    oturum.supabase.from("ortaokul_mufredat_temalari")
+      .select("alt_basliklar").eq("id", temaId).maybeSingle(),
+    oturum.supabase.from("ortaokul_sinava_dogru_alt_basliklar")
+      .select("ad").eq("school_id", oturum.schoolId).eq("tema_id", temaId).eq("aktif", true),
+  ]);
+  const varMi = [...(tema?.alt_basliklar ?? []), ...((kurumAltBasliklari ?? []) as { ad: string }[]).map((a) => a.ad)]
+    .some((mevcut) => mevcut.trim().toLocaleLowerCase("tr-TR") === ad.toLocaleLowerCase("tr-TR"));
+  if (varMi) return { error: "Bu alt başlık zaten var." };
+
+  const { error } = await oturum.supabase.from("ortaokul_sinava_dogru_alt_basliklar").insert({
+    school_id: oturum.schoolId, tema_id: temaId, ad,
+    olusturan_id: oturum.userId, guncelleyen_id: oturum.userId,
+  });
+  if (error) return { error: veriHatasiCevir(error.message) };
+  revalidatePath("/dashboard");
+  return { error: null };
+}
+
+export async function sinavaDogruAltBaslikDuzenle(
+  altBaslikId: string,
+  degisiklik: { ad?: string; aktif?: boolean },
+): Promise<Sonuc> {
+  const oturum = await ogretmenOturumu();
+  if (!oturum) return { error: "Bu işlem yalnızca kurum öğretmenine açıktır." };
+  if (degisiklik.ad === undefined && degisiklik.aktif === undefined) return { error: "Değişiklik belirtilmedi." };
+  const ad = degisiklik.ad === undefined ? undefined : String(degisiklik.ad).trim();
+  if (ad !== undefined && (ad.length < 2 || ad.length > 120)) return { error: "Alt başlık 2–120 karakter olmalı." };
+
+  const { data: altBaslik } = await oturum.supabase.from("ortaokul_sinava_dogru_alt_basliklar")
+    .select("id, tema_id").eq("id", altBaslikId).eq("school_id", oturum.schoolId).maybeSingle();
+  if (!altBaslik || !await temaDogrula(oturum, altBaslik.tema_id)) return { error: "Alt başlık kurumunuza ait değil." };
+
+  const { error } = await oturum.supabase.from("ortaokul_sinava_dogru_alt_basliklar")
+    .update({
+      ...(ad !== undefined ? { ad } : {}),
+      ...(degisiklik.aktif !== undefined ? { aktif: degisiklik.aktif } : {}),
+      guncelleyen_id: oturum.userId,
+    })
+    .eq("id", altBaslikId).eq("school_id", oturum.schoolId);
+  if (error) return { error: veriHatasiCevir(error.message) };
+  revalidatePath("/dashboard");
+  return { error: null };
+}

@@ -8,9 +8,12 @@ import { BOLUM_ACIKLAMA, BOLUM_ETIKET, ORTAOKUL_BOLUMLERI } from "@/lib/ortaokul
 import type { OrtaokulBolum } from "@/lib/ortaokul-bolum";
 import { YETERLILIK_DURUMLARI, YETERLILIK_ETIKET, destekGerekenler, yeterlilikOzeti } from "@/lib/ortaokul-yeterlilik";
 import type { TemaYeterliligi, YeterlilikDurumu } from "@/lib/ortaokul-yeterlilik";
-import type { DersSecenegi, KonuSecenegi } from "@/lib/ortaokul-bolum-sorgu";
+import type { AltBaslikSecenegi, DersSecenegi, KonuSecenegi } from "@/lib/ortaokul-bolum-sorgu";
 import { ortaokulYeterlilikKaydet } from "@/app/dashboard/ortaokul-bolum-actions";
-import { sinavaDogruKonuDuzenle, sinavaDogruKonuEkle } from "@/app/dashboard/ortaokul-sinava-dogru-actions";
+import {
+  sinavaDogruAltBaslikDuzenle, sinavaDogruAltBaslikEkle,
+  sinavaDogruKonuDuzenle, sinavaDogruKonuEkle,
+} from "@/app/dashboard/ortaokul-sinava-dogru-actions";
 import { gorevVer } from "@/app/dashboard/gorev-actions";
 import {
   BG0, BG1, BG1_ALT, BLUSH, BORDER, BORDER_STRONG, BUTTER, BUTTER_BG, MINT, MINT_BG, MINT_ON,
@@ -235,6 +238,7 @@ function SinavaDogruKonuYonetimi({ ders }: { ders: DersSecenegi }) {
             </div>
           </div>
         )}
+        {!gizliMi && <AltBaslikYonetimi konu={konu} />}
       </li>
     );
   }
@@ -266,6 +270,99 @@ function SinavaDogruKonuYonetimi({ ders }: { ders: DersSecenegi }) {
           <ul className="mt-2 flex flex-col gap-2">{gizli.map((konu) => konuSatiri(konu, true))}</ul>
         </details>
       )}
+    </details>
+  );
+}
+
+function AltBaslikYonetimi({ konu }: { konu: KonuSecenegi }) {
+  const router = useRouter();
+  const [yeniAd, setYeniAd] = useState("");
+  const [duzenlenenId, setDuzenlenenId] = useState<string | null>(null);
+  const [duzenlenenAd, setDuzenlenenAd] = useState("");
+  const [kaldirmaOnayi, setKaldirmaOnayi] = useState<string | null>(null);
+  const [hata, setHata] = useState<string | null>(null);
+  const [bilgi, setBilgi] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  function islem(eylem: () => Promise<{ error: string | null }>, basarili: string, sonra?: () => void) {
+    setHata(null); setBilgi(null);
+    startTransition(async () => {
+      const sonuc = await eylem();
+      if (sonuc.error) return setHata(sonuc.error);
+      setBilgi(basarili);
+      sonra?.();
+      router.refresh();
+    });
+  }
+
+  function satir(alt: AltBaslikSecenegi, gizliMi: boolean) {
+    return (
+      <li key={alt.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl px-3 py-2" style={{ background: BG1_ALT }}>
+        {duzenlenenId === alt.id ? (
+          <form className="flex w-full flex-wrap gap-2" onSubmit={(e) => {
+            e.preventDefault();
+            islem(() => sinavaDogruAltBaslikDuzenle(alt.id, { ad: duzenlenenAd }), "Alt başlık değiştirildi.", () => setDuzenlenenId(null));
+          }}>
+            <input aria-label="Değiştirilecek alt başlık" value={duzenlenenAd} maxLength={120} disabled={pending}
+              onChange={(e) => setDuzenlenenAd(e.target.value)}
+              className="min-w-[170px] flex-1 rounded-xl border px-3 py-2 text-xs" style={{ borderColor: BORDER_STRONG, color: TEXT }} />
+            <button type="submit" disabled={pending} className="rounded-xl px-3 py-1 text-xs font-bold" style={{ background: MINT_BG, color: TEXT }}>Kaydet</button>
+            <button type="button" onClick={() => setDuzenlenenId(null)} className="text-xs" style={{ color: TEXT_MUTED }}>Vazgeç</button>
+          </form>
+        ) : (
+          <>
+            <span className="text-xs" style={{ color: TEXT }}>{alt.ad}{!alt.kurumaOzel && <span className="ml-1 text-[10px]" style={{ color: TEXT_MUTED }}>(Maarif)</span>}</span>
+            {alt.kurumaOzel && (
+              <div className="flex flex-wrap gap-1.5">
+                <button type="button" disabled={pending} onClick={() => { setDuzenlenenId(alt.id); setDuzenlenenAd(alt.ad); setKaldirmaOnayi(null); }}
+                  className="rounded-lg px-2 py-1 text-[11px] font-semibold" style={{ color: TEXT, border: `1px solid ${BORDER_STRONG}` }}>Değiştir</button>
+                {gizliMi ? (
+                  <button type="button" disabled={pending} onClick={() => islem(() => sinavaDogruAltBaslikDuzenle(alt.id, { aktif: true }), "Alt başlık geri getirildi.")}
+                    className="rounded-lg px-2 py-1 text-[11px] font-semibold" style={{ color: MINT, border: `1px solid ${BORDER_STRONG}` }}>Geri getir</button>
+                ) : kaldirmaOnayi === alt.id ? (
+                  <>
+                    <button type="button" disabled={pending} onClick={() => islem(() => sinavaDogruAltBaslikDuzenle(alt.id, { aktif: false }), "Alt başlık kaldırıldı; eski çalışmalar saklandı.", () => setKaldirmaOnayi(null))}
+                      className="rounded-lg px-2 py-1 text-[11px] font-bold" style={{ color: BLUSH, border: `1px solid ${BLUSH}` }}>Onayla</button>
+                    <button type="button" onClick={() => setKaldirmaOnayi(null)} className="text-[11px]" style={{ color: TEXT_MUTED }}>Vazgeç</button>
+                  </>
+                ) : (
+                  <button type="button" disabled={pending} onClick={() => { setKaldirmaOnayi(alt.id); setDuzenlenenId(null); }}
+                    className="rounded-lg px-2 py-1 text-[11px] font-semibold" style={{ color: BLUSH, border: `1px solid ${BORDER_STRONG}` }}>Kaldır</button>
+                )}
+              </div>
+            )}
+          </>
+        )}
+      </li>
+    );
+  }
+
+  const gizli = konu.gizliAltBasliklar ?? [];
+  return (
+    <details className="mt-2 rounded-xl px-3 py-2" style={{ background: BG1 }}>
+      <summary className="cursor-pointer text-xs font-semibold" style={{ color: MINT }}>
+        Alt başlıklar ({konu.altBasliklar.length}) · ekle
+      </summary>
+      <p className="mt-1 text-[11px]" style={{ color: TEXT_MUTED }}>
+        Hazırlık kitabındaki ayrıntılı konuları bu ana başlığın altına yazın. Maarif alt başlıkları korunur.
+      </p>
+      <form className="mt-2 flex flex-wrap gap-2" onSubmit={(e) => {
+        e.preventDefault();
+        islem(() => sinavaDogruAltBaslikEkle(konu.id, yeniAd), "Alt başlık eklendi.", () => setYeniAd(""));
+      }}>
+        <input aria-label="Eklenecek alt başlık" placeholder="Örn. Kesirlerde toplama" value={yeniAd} maxLength={120} disabled={pending}
+          onChange={(e) => setYeniAd(e.target.value)}
+          className="min-w-[170px] flex-1 rounded-xl border px-3 py-2 text-xs" style={{ borderColor: BORDER_STRONG, color: TEXT }} />
+        <button type="submit" disabled={pending || yeniAd.trim().length < 2}
+          className="rounded-xl px-3 py-2 text-xs font-bold disabled:opacity-50" style={{ background: MINT_BG, color: TEXT }}>Alt başlık ekle</button>
+      </form>
+      {hata && <p role="alert" className="mt-2 text-xs" style={{ color: BLUSH }}>{hata}</p>}
+      {bilgi && <p role="status" className="mt-2 text-xs" style={{ color: MINT }}>{bilgi}</p>}
+      <ul className="mt-2 flex flex-col gap-1">{konu.altBasliklar.map((alt) => satir(alt, false))}</ul>
+      {gizli.length > 0 && <details className="mt-2">
+        <summary className="cursor-pointer text-[11px]" style={{ color: TEXT_MUTED }}>Kaldırılan alt başlıklar ({gizli.length})</summary>
+        <ul className="mt-2 flex flex-col gap-1">{gizli.map((alt) => satir(alt, true))}</ul>
+      </details>}
     </details>
   );
 }

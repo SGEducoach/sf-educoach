@@ -36,6 +36,13 @@ describe("calismaGirdisiDogrula — konu çalışması", () => {
     expect(calismaGirdisiDogrula(girdi({ temaId: "t1" })).temiz?.temaId).toBe("t1");
   });
 
+  test("alt başlık yalnız Sınava Doğru ve ana konu altında seçilir", () => {
+    expect(calismaGirdisiDogrula(girdi({ bolum: "lgs", temaId: "t1", altBaslik: "Kesirlerde toplama" })).temiz?.altBaslik)
+      .toBe("Kesirlerde toplama");
+    expect(calismaGirdisiDogrula(girdi({ temaId: "t1", altBaslik: "Kesirlerde toplama" })).gecerli).toBe(false);
+    expect(calismaGirdisiDogrula(girdi({ bolum: "lgs", temaId: null, altBaslik: "Kesirlerde toplama" })).gecerli).toBe(false);
+  });
+
   test("bozuk tarih reddedilir", () => {
     expect(calismaGirdisiDogrula(girdi({ tarih: "01.10.2026" })).gecerli).toBe(false);
     expect(calismaGirdisiDogrula(girdi({ tarih: "" })).gecerli).toBe(false);
@@ -78,7 +85,7 @@ describe("calismaGirdisiDogrula — soru çözümü", () => {
 
 describe("calismaOzeti", () => {
   const kayit = (p: Partial<CalismaKaydi>): CalismaKaydi => ({
-    id: "k", bolum: "maarif", tur: "konu", dersAdi: "Matematik", temaAdi: null,
+    id: "k", bolum: "maarif", tur: "konu", dersAdi: "Matematik", temaAdi: null, altBaslik: null,
     tarih: "2026-10-01", sureDakika: null, dogru: null, yanlis: null, bos: null, ...p,
   });
 

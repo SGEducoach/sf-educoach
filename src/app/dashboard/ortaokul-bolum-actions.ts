@@ -47,6 +47,7 @@ export async function ortaokulCalismaEkle(girdi: CalismaGirdisi): Promise<{ erro
     tur: t.tur,
     ders_id: t.dersId,
     tema_id: t.temaId,
+    alt_baslik: t.altBaslik,
     tarih: t.tarih,
     sure_dakika: t.sureDakika,
     dogru: t.dogru,

@@ -25,6 +25,7 @@ export interface CalismaGirdisi {
   tur: CalismaTuru;
   dersId: string;
   temaId?: string | null;
+  altBaslik?: string | null;
   tarih: string;
   sureDakika?: number | null;
   dogru?: number | null;
@@ -36,7 +37,7 @@ export interface CalismaDogrulama {
   gecerli: boolean;
   hata: string | null;
   temiz: {
-    bolum: OrtaokulBolum; tur: CalismaTuru; dersId: string; temaId: string | null;
+    bolum: OrtaokulBolum; tur: CalismaTuru; dersId: string; temaId: string | null; altBaslik: string | null;
     tarih: string; sureDakika: number | null;
     dogru: number | null; yanlis: number | null; bos: number | null;
   } | null;
@@ -55,6 +56,13 @@ export function calismaGirdisiDogrula(g: CalismaGirdisi): CalismaDogrulama {
 
   const sure = sayi(g.sureDakika);
   const tema = String(g.temaId ?? "").trim() || null;
+  const altBaslik = String(g.altBaslik ?? "").trim() || null;
+  if (altBaslik && (g.bolum !== "lgs" || !tema)) {
+    return { gecerli: false, hata: "Alt başlık için Sınava Doğru bölümü ve ana konu seç.", temiz: null };
+  }
+  if (altBaslik && (altBaslik.length < 2 || altBaslik.length > 200)) {
+    return { gecerli: false, hata: "Alt başlık 2–200 karakter olmalı.", temiz: null };
+  }
 
   if (g.tur === "konu") {
     if (sure <= 0) return { gecerli: false, hata: "Ne kadar çalıştığını yaz.", temiz: null };
@@ -63,7 +71,7 @@ export function calismaGirdisiDogrula(g: CalismaGirdisi): CalismaDogrulama {
     }
     return {
       gecerli: true, hata: null,
-      temiz: { bolum: g.bolum, tur: "konu", dersId: ders, temaId: tema, tarih: g.tarih, sureDakika: sure, dogru: null, yanlis: null, bos: null },
+      temiz: { bolum: g.bolum, tur: "konu", dersId: ders, temaId: tema, altBaslik, tarih: g.tarih, sureDakika: sure, dogru: null, yanlis: null, bos: null },
     };
   }
 
@@ -85,7 +93,7 @@ export function calismaGirdisiDogrula(g: CalismaGirdisi): CalismaDogrulama {
   }
   return {
     gecerli: true, hata: null,
-    temiz: { bolum: g.bolum, tur: "soru", dersId: ders, temaId: tema, tarih: g.tarih, sureDakika: sure || null, dogru, yanlis, bos },
+    temiz: { bolum: g.bolum, tur: "soru", dersId: ders, temaId: tema, altBaslik, tarih: g.tarih, sureDakika: sure || null, dogru, yanlis, bos },
   };
 }
 
@@ -95,6 +103,7 @@ export interface CalismaKaydi {
   tur: CalismaTuru;
   dersAdi: string;
   temaAdi: string | null;
+  altBaslik: string | null;
   tarih: string;
   sureDakika: number | null;
   dogru: number | null;
