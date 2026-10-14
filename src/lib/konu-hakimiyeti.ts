@@ -9,6 +9,8 @@ import type { AytAlan, HedefeYakinlik, OgrenmeSekli, TekrarDurumu } from "@/lib/
 import { oturumOrtalamasiHesapla, dogrulukOraniHesapla, bilesikMasterySkoruHesapla } from "@/lib/analiz-motoru";
 import type { MasteryKaynagi } from "@/lib/analiz-motoru";
 import { kazanimDersiniKanoniklestir } from "@/lib/kazanim-konu-oneri";
+import { beyanOlcumOnerisi, konuHedefiniBul, konuOlcumuYeterliMi } from "@/lib/konu-ad-eslesmesi";
+import type { KonuAdEslesmesi } from "@/lib/konu-ad-eslesmesi";
 
 type SupabaseC = Awaited<ReturnType<typeof createClient>>;
 
@@ -31,11 +33,15 @@ export interface KonuHakimiyetiSatiri {
   // Analiz Motoru Faz A1 (Katman 2) — konu_calismalar (oturum), soru_cozumleri
   // (ölçüm) ve ogrenci_konu_hakimiyeti (kalıcı beyan) sinyallerinin ağırlıklı
   // bileşimi, 0-100. Hiçbir sinyal yoksa null (bu konuya hiç dokunulmamış).
-  // Bkz. src/lib/analiz-motoru.ts. ŞİMDİLİK sadece EK/görünür bir bilgi —
-  // "hakim/toplam" yüzdesi hâlâ hakimiyetSeviyesi'ne dayanıyor (bkz. plan,
-  // "tartışmaya açık" — kullanıcı gerçek veriyle görüp karar verecek).
+  // Bkz. src/lib/analiz-motoru.ts. "hakim/toplam" yüzdesi hâlâ öğrencinin
+  // beyanına dayanır. Ekran skoru yalnız yeterli doğrudan ölçüm varken
+  // gösterir; mevcut planlama motorunun ham skoru değişmez.
   masterySkoru: number | null;
   masteryKaynaklari: MasteryKaynagi[];
+  olcumSoruSayisi: number;
+  olcumKayitSayisi: number;
+  olcumYeterli: boolean;
+  olcumOnerisi: "gozden_gecir" | "ilerleme" | null;
 }
 
 const BAYATLAMA_GUN_SINIRI = 90;
@@ -134,6 +140,28 @@ async function denemeKonuOlcumleriGetir(
   }
 }
 
+async function konuCalismalariniGetir(supabase: SupabaseC, studentId: string) {
+  const satirlar: { ders: string; konu: string; hedefe_yakinlik: HedefeYakinlik }[] = [];
+  for (let bas = 0; ; bas += 1000) {
+    const { data, error } = await supabase.from("konu_calismalar")
+      .select("ders, konu, hedefe_yakinlik").eq("student_id", studentId).order("id").range(bas, bas + 999);
+    if (error) return satirlar;
+    satirlar.push(...((data as typeof satirlar) ?? []));
+    if ((data ?? []).length < 1000) return satirlar;
+  }
+}
+
+async function soruCozumleriniGetir(supabase: SupabaseC, studentId: string) {
+  const satirlar: { ders: string; konu: string | null; dogru: number; yanlis: number }[] = [];
+  for (let bas = 0; ; bas += 1000) {
+    const { data, error } = await supabase.from("soru_cozumleri")
+      .select("ders, konu, dogru, yanlis").eq("student_id", studentId).order("id").range(bas, bas + 999);
+    if (error) return satirlar;
+    satirlar.push(...((data as typeof satirlar) ?? []));
+    if ((data ?? []).length < 1000) return satirlar;
+  }
+}
+
 export async function konuHakimiyetiGetir(
   supabase: SupabaseC,
   studentId: string,
@@ -209,45 +237,46 @@ export async function konuHakimiyetiGetir(
   // ve "ölçüm" (soru_cozumleri'ndeki gerçek dogru/yanlis oranı). İkisi de
   // TARİH SINIRI OLMADAN, öğrencinin o konudaki tüm geçmişini kapsar —
   // bkz. analiz-motoru.ts'teki formül gerekçesi.
-  const [{ data: oturumHam }, { data: olcumHam }, denemeOlcumleri] = await Promise.all([
-    supabase.from("konu_calismalar").select("ders, konu, hedefe_yakinlik").eq("student_id", studentId),
-    supabase.from("soru_cozumleri").select("ders, konu, dogru, yanlis").eq("student_id", studentId),
+  const [oturumHam, olcumHam, denemeOlcumleri, { data: adEslesmeleriHam }] = await Promise.all([
+    konuCalismalariniGetir(supabase, studentId),
+    soruCozumleriniGetir(supabase, studentId),
     denemeKonuOlcumleriGetir(supabase, studentId),
+    supabase.from("konu_ad_eslesmeleri").select("ders, kaynak_konu, hedef_konu"),
   ]);
+  const adEslesmeleri = (adEslesmeleriHam as KonuAdEslesmesi[] | null) ?? [];
   const oturumSeviyeleriMap = new Map<string, HedefeYakinlik[]>();
-  for (const r of (oturumHam as { ders: string; konu: string; hedefe_yakinlik: HedefeYakinlik }[]) ?? []) {
-    const anahtar = `${r.ders}|${r.konu}`;
+  for (const r of oturumHam) {
+    const hedef = konuHedefiniBul(r.ders, r.konu, yaprakListesi, adEslesmeleri).hedef;
+    if (!hedef) continue;
+    const anahtar = `${hedef.ders}|${hedef.konu}`;
     const liste = oturumSeviyeleriMap.get(anahtar) ?? [];
     liste.push(r.hedefe_yakinlik);
     oturumSeviyeleriMap.set(anahtar, liste);
   }
-  const olcumToplamMap = new Map<string, { dogru: number; yanlis: number }>();
-  for (const r of (olcumHam as { ders: string; konu: string; dogru: number; yanlis: number }[]) ?? []) {
+  const olcumToplamMap = new Map<string, { dogru: number; yanlis: number; kayitSayisi: number }>();
+  for (const r of olcumHam) {
     if (!r.konu) continue; // soru_cozumleri'nde konu zorunlu değil — boşsa katkı veremez
-    const anahtar = `${r.ders}|${r.konu}`;
-    const mevcut = olcumToplamMap.get(anahtar) ?? { dogru: 0, yanlis: 0 };
+    const hedef = konuHedefiniBul(r.ders, r.konu, yaprakListesi, adEslesmeleri).hedef;
+    if (!hedef) continue;
+    const anahtar = `${hedef.ders}|${hedef.konu}`;
+    const mevcut = olcumToplamMap.get(anahtar) ?? { dogru: 0, yanlis: 0, kayitSayisi: 0 };
     mevcut.dogru += r.dogru;
     mevcut.yanlis += r.yanlis;
+    if (r.dogru + r.yanlis > 0) mevcut.kayitSayisi++;
     olcumToplamMap.set(anahtar, mevcut);
   }
-  // Deneme karnelerinden gelen konu sonuçları (yönetici onaylı kazanım →
-  // konu eşleşmesi olanlar) da "ölçüm"e eklenir. Eşleşme bir üst konuya
-  // yapıldıysa o konunun tüm alt başlıklarına uygulanır.
-  const yapraklarByHedef = new Map<string, string[]>();
-  for (const l of yaprakListesi) {
-    for (const hedef of new Set([`${l.ders}|${l.konu}`, `${l.ders}|${l.ustKonu}`])) {
-      const liste = yapraklarByHedef.get(hedef) ?? [];
-      liste.push(`${l.ders}|${l.konu}`);
-      yapraklarByHedef.set(hedef, liste);
-    }
-  }
+  // Üst konu kazanımını bütün alt başlıklara dağıtmak, ölçülmemiş alt
+  // başlıklarda sahte bir hâkimiyet üretir. Yalnız doğrudan yaprak konuya
+  // eşlenen deneme sonuçları bu öneriye kanıt sayılır.
+  const yaprakAnahtarlari = new Set(yaprakListesi.map((l) => `${l.ders}|${l.konu}`));
   for (const o of denemeOlcumleri) {
-    for (const anahtar of yapraklarByHedef.get(`${o.ders}|${o.konu}`) ?? []) {
-      const mevcut = olcumToplamMap.get(anahtar) ?? { dogru: 0, yanlis: 0 };
-      mevcut.dogru += o.dogru;
-      mevcut.yanlis += o.yanlis;
-      olcumToplamMap.set(anahtar, mevcut);
-    }
+    const anahtar = `${o.ders}|${o.konu}`;
+    if (!yaprakAnahtarlari.has(anahtar)) continue;
+    const mevcut = olcumToplamMap.get(anahtar) ?? { dogru: 0, yanlis: 0, kayitSayisi: 0 };
+    mevcut.dogru += o.dogru;
+    mevcut.yanlis += o.yanlis;
+    if (o.dogru + o.yanlis > 0) mevcut.kayitSayisi++;
+    olcumToplamMap.set(anahtar, mevcut);
   }
 
   const simdi = Date.now();
@@ -261,7 +290,8 @@ export async function konuHakimiyetiGetir(
     const bayat = gunFarkiSonGuncelleme !== null && gunFarkiSonGuncelleme > BAYATLAMA_GUN_SINIRI;
 
     const olcumToplam = olcumToplamMap.get(anahtar);
-    const { skor: masterySkoru, kaynaklar: masteryKaynaklari } = bilesikMasterySkoruHesapla({
+    const olcumYeterli = olcumToplam ? konuOlcumuYeterliMi(olcumToplam.dogru, olcumToplam.yanlis, olcumToplam.kayitSayisi) : false;
+    const { skor, kaynaklar: masteryKaynaklari } = bilesikMasterySkoruHesapla({
       olcumDogrulukOrani: olcumToplam ? dogrulukOraniHesapla(olcumToplam.dogru, olcumToplam.yanlis) : null,
       kaliciBeyan: h?.hakimiyet_seviyesi ?? null,
       oturumOrtalamasi: oturumOrtalamasiHesapla(oturumSeviyeleriMap.get(anahtar) ?? []),
@@ -275,8 +305,14 @@ export async function konuHakimiyetiGetir(
       tekrarDurumu: h?.tekrar_durumu ?? null,
       guncellenmeTarihi,
       bayat,
-      masterySkoru,
+      masterySkoru: skor,
       masteryKaynaklari,
+      olcumSoruSayisi: (olcumToplam?.dogru ?? 0) + (olcumToplam?.yanlis ?? 0),
+      olcumKayitSayisi: olcumToplam?.kayitSayisi ?? 0,
+      olcumYeterli,
+      olcumOnerisi: olcumToplam
+        ? beyanOlcumOnerisi(h?.hakimiyet_seviyesi ?? null, olcumToplam.dogru, olcumToplam.yanlis, olcumToplam.kayitSayisi)
+        : null,
     };
   });
 }

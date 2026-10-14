@@ -85,7 +85,7 @@ export function KonuHakimiyetiEkrani({ satirlar, tamGorunum, aytAlan }: { satirl
           <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Konu Hakimiyeti</span>
         </div>
         <p style={{ color: TEXT_MUTED }} className="text-xs mb-4">
-          Geçmişten güncele bütün konuları gez, her biri için ne kadar hakim olduğunu işaretle — bir çalışma oturumu girmiş olman gerekmez.
+          Geçmişten güncele bütün konuları gez, her biri için ne kadar hakim olduğunu işaretle. Yüzde, senin işaretlediğin konuları gösterir; yeterli soru kanıtı varsa ayrıca sistemin hesapladığı skor görünür. Skor beyanını değiştirmez.
         </p>
 
         {tamGorunum && (
@@ -258,10 +258,21 @@ function KonuSatiri({ satir }: { satir: KonuHakimiyetiSatiri }) {
       <button type="button" onClick={() => setAcik((a) => !a)} className="sfec-btn w-full flex items-center justify-between gap-2 text-left">
         <span style={{ color: TEXT }} className="text-xs font-semibold">{satir.konu}</span>
         <span className="flex items-center gap-1.5 shrink-0">
-          {satir.masterySkoru !== null && (
+          {satir.olcumYeterli && satir.masterySkoru !== null && (
             <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: SKY_BG, color: SKY }}
-              title={`Analiz Motoru skoru — ${satir.masteryKaynaklari.join(", ")} sinyaline dayanıyor (taslak, tartışmaya açık)`}>
-              Skor {satir.masterySkoru}
+              title={`${satir.olcumSoruSayisi} cevaplanmış soru, ${satir.olcumKayitSayisi} kayıt. Skor; ölçüm, beyan ve çalışma değerlendirmesini birleştirir.`}>
+              Veri skoru {satir.masterySkoru}
+            </span>
+          )}
+          {!satir.olcumYeterli && satir.masteryKaynaklari.length > 0 && (
+            <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: BUTTER_BG, color: BUTTER }}
+              title="Skor için en az 10 cevaplanmış soru ve 2 ayrı ölçüm kaydı gerekir.">
+              Veri yetersiz
+            </span>
+          )}
+          {satir.olcumOnerisi && (
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: PEACH_BG, color: PEACH }}>
+              {satir.olcumOnerisi === "gozden_gecir" ? "Beyanını gözden geçir" : "İlerlemeni gözden geçir"}
             </span>
           )}
           {satir.hakimiyetSeviyesi ? (
@@ -283,6 +294,12 @@ function KonuSatiri({ satir }: { satir: KonuHakimiyetiSatiri }) {
 
       {acik && (
         <div className="mt-3 flex flex-col gap-3 pb-1">
+          {satir.olcumOnerisi && <p className="rounded-xl p-2 text-xs" style={{ background: SKY_BG, color: TEXT }}>
+            {satir.olcumOnerisi === "gozden_gecir"
+              ? `“Yeterli” demiştin; ${satir.olcumSoruSayisi} cevaplanmış sorudaki sonuçların tekrar çalışmanın yararlı olabileceğini gösteriyor.`
+              : `“Yetersiz” demiştin; ${satir.olcumSoruSayisi} cevaplanmış sorudaki sonuçların ilerleme gösteriyor olabilir.`}
+            {" "}Bu yalnızca öneridir; hâkimiyet seçimini sen değiştirebilirsin.
+          </p>}
           <SecenekSecici baslik="Hakimiyet" value={hakimiyet} onChange={setHakimiyet}
             secenekler={[["uzak", "Yetersiz"], ["belirsiz", "Orta"], ["yakin", "Yeterli"]]} />
 

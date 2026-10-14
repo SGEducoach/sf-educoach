@@ -11,6 +11,8 @@ import { ModeratorlerListesi } from "@/components/yonetici/ModeratorlerListesi";
 import { PlatformIstatistikleri } from "@/components/yonetici/PlatformIstatistikleri";
 import { KonuAnlatimYonetimi } from "@/components/yonetici/KonuAnlatimYonetimi";
 import { MufredatHiyerarsiYonetimi } from "@/components/yonetici/MufredatHiyerarsiYonetimi";
+import { KonuAdEslesmeYonetimi } from "@/components/yonetici/KonuAdEslesmeYonetimi";
+import { konuAdIncelemeVerisiGetir } from "@/app/yonetici/konu-ad-eslesme-actions";
 import { NobetProgramYukleme } from "@/components/yonetici/NobetProgramYukleme";
 import { DenemeYuklemeSayfasi } from "@/components/yonetici/DenemeYuklemeSayfasi";
 import { GrupKoclukYonetimi } from "@/components/yonetici/GrupKoclukYonetimi";
@@ -100,6 +102,7 @@ export default async function YoneticiPage({
     ? await anaSayfaAyarlariGetir()
     : { ayarlar: { baslik: "", govde: "", sliderGecisSaniye: 6 }, gorseller: [] };
   const anaSayfaDuyurulari = aktifBolum === "site-ayarlari" ? await anaSayfaDuyurulariniGetir(supabase) : [];
+  const konuAdInceleme = aktifBolum === "icerik" ? await konuAdIncelemeVerisiGetir() : null;
 
   // Kullanıcı isteği (26.08.2026): admin de dahil olmak üzere yanlış giriş
   // denemesi bildirimi alıyor (bkz. api/giris/route.ts) — Mesajlarım kutusu
@@ -176,6 +179,7 @@ export default async function YoneticiPage({
             <section className="sfec-section flex flex-col gap-5">
               <KonuAnlatimYonetimi />
               <MufredatHiyerarsiYonetimi />
+              {konuAdInceleme && <KonuAdEslesmeYonetimi {...konuAdInceleme} />}
             </section>
           )}
           {aktifBolum === "blog" && <section className="sfec-section"><BlogYonetimi /></section>}
