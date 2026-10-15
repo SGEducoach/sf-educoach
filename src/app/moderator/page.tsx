@@ -35,8 +35,9 @@ export default async function ModeratorPage({ searchParams }: { searchParams: Pr
   }
 
   const veri = await moderatorKullanicilariGetir(adminGoruntuluyor ? params.okul : undefined);
-  const dershane = veri.kurumTuru === "dershane";
-  const bolum = moderatorBolumuCoz(params.bolum, dershane);
+  // Deneme yükleme ve eşleştirme dershane ve okul moderatöründe (okul 16.10.2026).
+  const denemeAcik = veri.kurumTuru === "dershane" || veri.kurumTuru === "okul";
+  const bolum = moderatorBolumuCoz(params.bolum, denemeAcik);
   const adminOkulId = adminGoruntuluyor ? params.okul : undefined;
 
   return (
@@ -46,7 +47,7 @@ export default async function ModeratorPage({ searchParams }: { searchParams: Pr
         geriDonusEtiketi={adminGoruntuluyor ? "Yönetim paneline dön" : "Ana sayfaya dön"}
       />
       <main id="ana-icerik" className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 px-4 py-7 pb-24 sm:px-6">
-        <ModeratorNavigasyonu aktif={bolum} dershane={dershane} adminOkulId={adminOkulId} />
+        <ModeratorNavigasyonu aktif={bolum} denemeAcik={denemeAcik} adminOkulId={adminOkulId} />
 
         {(bolum === "ogrenciler" || bolum === "ogretmenler" || bolum === "siniflar" || bolum === "kurum") && (
           <ModeratorPanel {...veri} bolum={bolum} schoolId={adminOkulId} />

@@ -15,13 +15,13 @@ export { moderatorBolumuCoz } from "@/lib/moderator-bolumleri";
 //
 // Panel bölümleri /moderator?bolum=... ile açılır (tek sayfa, tek yetki
 // kontrolü); Konu Haritası, Kurum Konuları ve Profilim kendi sayfalarında.
-// Deneme bölümleri yalnızca dershanede var (PDF yükleme yetkisi müdürle aynı
-// kapsamda: okul ve Grup Koçluk kurumları hariç).
+// Deneme bölümleri dershane ve okul moderatöründe var (okul 16.10.2026,
+// kolej: "yönetici ya da kurum moderatörü işleyecek"); Grup Koçluk hariç.
 type Oge = { id: ModeratorMenuOgesi; href: string; etiket: string; Icon: LucideIcon };
 
-export function ModeratorNavigasyonu({ aktif, dershane, adminOkulId }: {
+export function ModeratorNavigasyonu({ aktif, denemeAcik, adminOkulId }: {
   aktif: ModeratorMenuOgesi;
-  dershane: boolean;
+  denemeAcik: boolean;
   // Admin başka bir kurumun panelini görüntülerken (/moderator?okul=...):
   // linkler okul parametresini taşır; moderatörün kişisel sayfaları gizlenir.
   adminOkulId?: string;
@@ -44,7 +44,7 @@ export function ModeratorNavigasyonu({ aktif, dershane, adminOkulId }: {
         { id: "kurum", href: panel("kurum"), etiket: "Kurum bilgileri", Icon: Building2 },
       ],
     },
-    ...(dershane ? [{
+    ...(denemeAcik ? [{
       baslik: "Denemeler",
       ogeler: [
         { id: "deneme-yukle" as const, href: panel("deneme-yukle"), etiket: "Deneme yükle", Icon: FileUp },

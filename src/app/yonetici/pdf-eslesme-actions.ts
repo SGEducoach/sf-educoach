@@ -11,7 +11,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { dershaneModeratorKurumu } from "@/lib/dershane-auth";
+import { denemeModeratorKurumu } from "@/lib/dershane-auth";
 import { ogretmenDenemeSonucuKaydet, yayineviAyniMi } from "@/lib/deneme-sonucu-kaydet";
 import { adlarBenzerMi } from "@/lib/ad-benzerligi";
 import { adNormalize } from "@/lib/validators";
@@ -19,8 +19,8 @@ import { eslestirilebilirMi, pdfEslesmeDurumEtiketi } from "@/lib/pdf-eslesme-du
 import type { PdfEslesmeDurumEtiketi, PdfEslesmeDurumu } from "@/lib/pdf-eslesme-durum";
 import type { DenemeTuru } from "@/lib/types";
 
-// Yetki: yönetici bütün kurumları görür (kurumFiltresi null); dershane
-// moderatörü (kullanıcı isteği 03.10.2026) yalnızca KENDİ kurumunun
+// Yetki: yönetici bütün kurumları görür (kurumFiltresi null); kurum
+// (dershane ya da okul) moderatörü (kullanıcı isteği 03.10.2026) yalnızca KENDİ kurumunun
 // satırlarını görür ve eşleştirir — kurum her zaman sunucuda
 // school_moderators kaydından okunur, istemciden gelen id'ye güvenilmez.
 async function requireEslesmeYetkisi(): Promise<{ user: { id: string }; admin: ReturnType<typeof createAdminClient>; kurumFiltresi: string | null }> {
@@ -29,7 +29,7 @@ async function requireEslesmeYetkisi(): Promise<{ user: { id: string }; admin: R
   if (!user) redirect("/login");
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
   if (profile?.role === "admin") return { user, admin: createAdminClient(), kurumFiltresi: null };
-  const moderator = await dershaneModeratorKurumu();
+  const moderator = await denemeModeratorKurumu();
   if (!moderator) redirect("/dashboard");
   return { user, admin: moderator.admin, kurumFiltresi: moderator.schoolId };
 }

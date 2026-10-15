@@ -5,8 +5,10 @@ export const MODERATOR_PANEL_BOLUMLERI = ["ogrenciler", "ogretmenler", "siniflar
 export type ModeratorPanelBolumu = (typeof MODERATOR_PANEL_BOLUMLERI)[number];
 export type ModeratorMenuOgesi = ModeratorPanelBolumu | "konu-haritasi" | "kurum-konulari" | "profil";
 
-export function moderatorBolumuCoz(ham: string | undefined, dershane: boolean): ModeratorPanelBolumu {
+// denemeAcik: kurumda deneme yükleme/eşleştirme bölümleri var mı (dershane
+// ve okul; 16.10.2026'ya kadar yalnız dershane).
+export function moderatorBolumuCoz(ham: string | undefined, denemeAcik: boolean): ModeratorPanelBolumu {
   const bolum = (MODERATOR_PANEL_BOLUMLERI as readonly string[]).includes(ham ?? "") ? ham as ModeratorPanelBolumu : "ogrenciler";
-  if (!dershane && (bolum === "deneme-yukle" || bolum === "pdf-eslesme")) return "ogrenciler";
+  if (!denemeAcik && (bolum === "deneme-yukle" || bolum === "pdf-eslesme")) return "ogrenciler";
   return bolum;
 }

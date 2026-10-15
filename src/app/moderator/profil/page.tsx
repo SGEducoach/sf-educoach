@@ -23,7 +23,7 @@ export default async function ModeratorProfilPage() {
     <div className="flex min-h-screen flex-col">
       <Header ad={profil.ad} role={profil.role as UserRole} moderatorMu rolEtiketi="Moderatör" mobilNavigasyon={false} />
       <main id="ana-icerik" className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 px-4 py-7 pb-24 sm:px-6">
-        <ModeratorNavigasyonu aktif="profil" dershane={(yetki.schools as unknown as { tur: string } | null)?.tur === "dershane"} />
+        <ModeratorNavigasyonu aktif="profil" denemeAcik={["dershane", "okul"].includes((yetki.schools as unknown as { tur: string } | null)?.tur ?? "")} />
         <ModeratorProfilim />
       </main>
     </div>

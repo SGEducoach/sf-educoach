@@ -22,7 +22,7 @@ export default async function ModeratorKurumKonulariPage() {
     <div className="flex min-h-screen flex-col">
       <Header ad={profil.ad} role={profil.role as UserRole} moderatorMu rolEtiketi="Moderatör" mobilNavigasyon={false} />
       <main id="ana-icerik" className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-5 px-4 py-7 pb-24 sm:px-6">
-        <ModeratorNavigasyonu aktif="kurum-konulari" dershane={(yetki.schools as unknown as { tur: string } | null)?.tur === "dershane"} />
+        <ModeratorNavigasyonu aktif="kurum-konulari" denemeAcik={["dershane", "okul"].includes((yetki.schools as unknown as { tur: string } | null)?.tur ?? "")} />
         <ModeratorKurumKonulari baslangic={veri.konular} ortakBaslangic={veri.ortakKonular} ilkHata={veri.error} />
       </main>
     </div>

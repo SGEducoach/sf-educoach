@@ -25,7 +25,7 @@ export default async function ModeratorKonuHaritasiPage() {
     <div className="flex min-h-screen flex-col">
       <Header ad={profil.ad} role={profil.role as UserRole} moderatorMu rolEtiketi="Moderatör" mobilNavigasyon={false} />
       <main className="mx-auto flex w-full max-w-[100rem] flex-1 flex-col gap-5 px-4 py-7 pb-24 sm:px-6">
-        <ModeratorNavigasyonu aktif="konu-haritasi" dershane={(yetki.schools as unknown as { tur: string } | null)?.tur === "dershane"} />
+        <ModeratorNavigasyonu aktif="konu-haritasi" denemeAcik={["dershane", "okul"].includes((yetki.schools as unknown as { tur: string } | null)?.tur ?? "")} />
         <KonuHaritasiRaporu mod="rapor" satirlar={satirlar} kapsamEtiketi="Kurumunuz" hata={error} />
       </main>
     </div>
