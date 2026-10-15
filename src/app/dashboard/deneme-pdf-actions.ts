@@ -572,16 +572,28 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
     }
   }
 
-  // Belirli bir biçim seçildiyse ve okunamadıysa Claude'a gitmeden söyle.
-  if (ayristirilan === null && bicim !== "otomatik" && bicim !== "claude") {
+  // YAPAY ZEKÂYA SESSİZCE DÜŞÜLMEZ (kullanıcı kararı 15.10.2026).
+  //
+  // Önceden "Otomatik tanı" seçiliyken deterministik okuyucuların hiçbiri
+  // tutmazsa Claude devreye giriyordu — kullanıcıya sorulmadan, ücretli.
+  // Canlı veride son altı yüklemenin DÖRDÜ bu yoldan geçmişti; her biri
+  // PDF'i 20 öğrencilik gruplar hâlinde, her istekte BAŞTAN göndererek
+  // okuyor (132 öğrenci = 7 istek × tüm PDF). Kullanıcının bildirimi:
+  // "okumayı kendimiz yapıyorduk, o devrede olmasın."
+  //
+  // Artık Claude YALNIZCA kullanıcı listeden açıkça seçerse çalışıyor.
+  // Otomatik tanı hiçbir biçime oturmazsa para harcamadan durup söylüyor.
+  if (ayristirilan === null && bicim !== "claude") {
     const ad = {
       sinif: "Orbital / 4K — sınıf net listeleri",
       okul: "Limit — okul net listesi",
       maarif: "Maarif — okul net listesi",
       sirali: "Özdebir — kurum sıralı listesi",
-    }[bicim];
+    }[bicim as Exclude<PdfBicimi, "otomatik" | "claude">];
     return {
-      error: `PDF "${ad}" biçiminde okunamadı. Başka bir biçim ya da "Otomatik tanı" seçip tekrar deneyin.`,
+      error: bicim === "otomatik"
+        ? "PDF bilinen biçimlerin hiçbirine uymadı. Yayınevinin biçimi henüz tanımlı değil — PDF'i geliştiriciye iletin. Bu seferlik yapay zekâyla okutmak isterseniz biçim listesinden \"Diğer biçim\"i seçin (ücretlidir)."
+        : `PDF "${ad}" biçiminde okunamadı. Başka bir biçim seçip tekrar deneyin.`,
       ...BOS_SONUC,
     };
   }
