@@ -4,14 +4,13 @@ import { useMemo, useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip,
-  ResponsiveContainer, BarChart, Bar, Legend, PieChart, Pie, Cell,
+  ResponsiveContainer, BarChart, Bar, Legend,
 } from "recharts";
 import { Clock, Target, TrendingUp, TrendingDown, Minus, Printer, Gauge, Lightbulb, Flag, ShieldAlert, CalendarPlus, Timer } from "lucide-react";
 import type { AnalizVerisi, RaporDonemi } from "@/lib/analiz";
 import { RAPOR_DONEMI_ETIKET } from "@/lib/analiz";
 import { HEDEFE_YAKINLIK_ETIKET } from "@/lib/types";
 import type { AytAlan, HedefeYakinlik } from "@/lib/types";
-import { satirTytdeGosterilsinMi, satirAytdeGosterilsinMi } from "@/lib/konu-hakimiyeti";
 import type { KonuHakimiyetiSatiri } from "@/lib/konu-hakimiyeti";
 import { oncelikSiralamasiOlustur, icgoruMetinleriOlustur, riskSkoruHesapla } from "@/lib/analiz-motoru";
 import type { TrendSonucu, HizDogrulukKategorisi, MakasTeshisi, OncelikSatiri, RiskDuzeyi, RiskSonucu } from "@/lib/analiz-motoru";
@@ -43,11 +42,10 @@ function IstatKart({ icon: Icon, etiket, deger, altYazi, renk, bg }: {
     </div>
   );
 }
-
 const HEDEF_RENK: Record<HedefeYakinlik, string> = { yakin: MINT, belirsiz: BUTTER, uzak: BLUSH };
 
 export function AnalizPaneli({
-  veri, ogrenciAdi, konuHakimiyetiSatirlari = [], konuHakimiyetiTamGorunum = false, konuHakimiyetiAytAlan = "SAY", hedefDuzenlenebilir = false,
+  veri, ogrenciAdi, konuHakimiyetiSatirlari = [], hedefDuzenlenebilir = false,
   ogretmenGorunumu = false, kohortKarsilastirma = [],
 }: {
   veri: AnalizVerisi; ogrenciAdi?: string; konuHakimiyetiSatirlari?: KonuHakimiyetiSatiri[]; konuHakimiyetiTamGorunum?: boolean; konuHakimiyetiAytAlan?: AytAlan;
@@ -276,7 +274,6 @@ export function AnalizPaneli({
           )}
         </div>
 
-        <KonuHakimiyetKarti satirlar={konuHakimiyetiSatirlari} tamGorunum={konuHakimiyetiTamGorunum} aytAlan={konuHakimiyetiAytAlan} />
 
         <HizDogrulukKarti satirlar={veri.dersHizDogruluk} />
 
@@ -369,7 +366,6 @@ function OgretmenGorunumuKarti({ risk, kohort }: { risk: RiskSonucu; kohort: Koh
     </div>
   );
 }
-
 // Analiz Motoru Faz A3 — Katman 8+9'un vitrin bileşeni. "Yapay Zeka
 // Analizi" vaadinin (bkz. plan, silinmiş YapayZekaAnaliziPromosu.tsx)
 // fiilî karşılığı — ama tamamen kural bazlı, hiçbir LLM çağrısı yok.
@@ -639,85 +635,6 @@ function SinavSaatiKarti({ projeksiyon, yetisme }: {
               </div>
             </div>
           )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Konu Hakimiyeti kartı — genel (tüm dersler) veya tek bir ders seçilip
-// donut grafiğinde o kapsamın hakim/toplam oranı gösterilir. Görsel dil
-// KonuHakimiyetiEkrani.tsx'teki donutla birebir aynı (bkz. o dosya).
-function KonuHakimiyetKarti({ satirlar, tamGorunum, aytAlan }: { satirlar: KonuHakimiyetiSatiri[]; tamGorunum: boolean; aytAlan: AytAlan }) {
-  // Tam görünüm (12. sınıf/dershane) — önce TYT/AYT, sonra o kapsamdaki
-  // ders seçilir (bkz. KonuHakimiyetiEkrani.tsx'teki aynı mantık).
-  const [seciliSinav, setSeciliSinav] = useState<"TYT" | "AYT">("TYT");
-  const [seciliDers, setSeciliDers] = useState<string>("genel");
-  const sinavaGoreSatirlar = !tamGorunum
-    ? satirlar
-    : satirlar.filter((s) => (seciliSinav === "TYT" ? satirTytdeGosterilsinMi(s) : satirAytdeGosterilsinMi(s, aytAlan)));
-  const dersler = useMemo(() => Array.from(new Set(sinavaGoreSatirlar.map((s) => s.ders))).sort((a, b) => a.localeCompare(b, "tr")), [sinavaGoreSatirlar]);
-  const gorunenSatirlar = seciliDers === "genel" ? sinavaGoreSatirlar : sinavaGoreSatirlar.filter((s) => s.ders === seciliDers);
-  const hakimSayisi = gorunenSatirlar.filter((s) => s.hakimiyetSeviyesi === "yakin").length;
-  const toplam = gorunenSatirlar.length;
-  const yuzde = toplam > 0 ? Math.round((hakimSayisi / toplam) * 100) : 0;
-  const donutVeri = toplam > 0
-    ? [{ name: "hakim", value: hakimSayisi }, { name: "diger", value: toplam - hakimSayisi }]
-    : [{ name: "bos", value: 1 }];
-
-  function sinavDegistir(s: "TYT" | "AYT") {
-    setSeciliSinav(s);
-    setSeciliDers("genel");
-  }
-
-  return (
-    <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-      <div className="flex items-center justify-between gap-2 mb-3 flex-wrap print:hidden">
-        <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Konu Hakimiyeti</span>
-        {tamGorunum && (
-          <div className="flex gap-1 p-1 rounded-full" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
-            {(["TYT", "AYT"] as const).map((s) => (
-              <button key={s} type="button" onClick={() => sinavDegistir(s)}
-                className="sfec-btn text-[11px] font-bold px-3 py-1 rounded-full"
-                style={{ background: seciliSinav === s ? MINT : "transparent", color: seciliSinav === s ? MINT_ON : TEXT_MUTED }}>
-                {s}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-      <div className="flex items-center justify-end mb-4 print:hidden">
-        {dersler.length > 0 && (
-          <select value={seciliDers} onChange={(e) => setSeciliDers(e.target.value)}
-            className="text-xs font-semibold px-2.5 py-1.5 rounded-xl outline-none"
-            style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
-            <option value="genel">Genel</option>
-            {dersler.map((d) => <option key={d} value={d}>{d}</option>)}
-          </select>
-        )}
-      </div>
-      <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold mb-4 hidden print:block">Konu Hakimiyeti</span>
-      {toplam === 0 ? (
-        <BosDurum />
-      ) : (
-        <div className="flex items-center gap-6 flex-wrap">
-          <div className="relative shrink-0" style={{ width: 130, height: 130 }}>
-            <PieChart width={130} height={130}>
-              <Pie data={donutVeri} dataKey="value" cx="50%" cy="50%" innerRadius={44} outerRadius={60}
-                startAngle={90} endAngle={-270} stroke="none" isAnimationActive={false}>
-                <Cell fill={MINT} />
-                <Cell fill={BORDER} />
-              </Pie>
-            </PieChart>
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-extrabold">%{yuzde}</span>
-              <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold">{hakimSayisi}/{toplam}</span>
-            </div>
-          </div>
-          <div className="flex flex-col gap-1.5 text-xs" style={{ color: TEXT_MUTED }}>
-            <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: MINT }} /> Hakim olunan konular</div>
-            <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: BORDER, border: `1px solid ${BORDER_STRONG}` }} /> Henüz hakim olunmayan / işaretlenmemiş</div>
-          </div>
         </div>
       )}
     </div>

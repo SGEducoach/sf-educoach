@@ -8,6 +8,7 @@ import { GOREV_DURUMU_ETIKET, GOREV_TURU_ETIKET } from "@/lib/types";
 import type { GorevDurumu, GorevTuru } from "@/lib/types";
 import { bugununTarihiTR } from "@/lib/tarih";
 import { REHBER_GERIYE_DONUK_GUN } from "@/lib/rehberlik";
+import { konuSinavi, konuSinifi } from "@/lib/mufredat-konulari";
 import { GorevVerBolumu } from "@/components/dashboard/OgretmenPanel";
 import { DenemeForm, KonuCalismaForm, SoruCozumuForm } from "@/components/dashboard/OgrenciVeriGirisi";
 import { PlanEkleModal } from "@/components/dashboard/Gorevlerim";
@@ -45,13 +46,15 @@ function saatEtiketi(saat: string | null) {
 export function RehberOgrenciTakibi({ ogrenciler, secilen, konuOnerileri, grupMu = false }: {
   ogrenciler: RehberOgrenci[];
   secilen: RehberSecilenOgrenci | null;
-  konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
+  konuOnerileri: { ders: string; konu: string; seviye?: string | null; ustKonu?: string }[];
   // Grup koçunda metinler "dershane" yerine "grup" der (denetim 27.09.2026).
   grupMu?: boolean;
 }) {
   const router = useRouter();
   const [sekme, setSekme] = useState<Sekme>(secilen ? "veri" : "odev");
   const [veriSekmesi, setVeriSekmesi] = useState<VeriSekmesi>("konu");
+  const [konuSinaviSecimi, setKonuSinaviSecimi] = useState<"TYT" | "AYT">("TYT");
+  const [konuSinifiSecimi, setKonuSinifiSecimi] = useState("tum");
   const [basari, setBasari] = useState<string | null>(null);
   const [hata, setHata] = useState<string | null>(null);
   const [planTarihi, setPlanTarihi] = useState(bugununTarihiTR);
@@ -59,6 +62,12 @@ export function RehberOgrenciTakibi({ ogrenciler, secilen, konuOnerileri, grupMu
   const [pending, startTransition] = useTransition();
 
   const gorevOgrencileri = ogrenciler.map((o) => ({ id: o.id, ad: `${o.ad} · ${o.sinifAdi}`, okul_no: o.okulNo, yurtOgrencisi: false }));
+  const secilenSinif = Number(secilen?.sinifSeviyesi);
+  const etkinSinav = secilenSinif < 11 ? "TYT" : konuSinaviSecimi;
+  const calismaKonulari = konuOnerileri.filter((k) =>
+    konuSinavi({ ders: k.ders, seviye: k.seviye ?? "9. Sınıf" }) === etkinSinav
+    && (konuSinifiSecimi === "tum" || konuSinifi(k.seviye ?? "") === Number(konuSinifiSecimi)));
+  const calismaDersleri = [...new Set(calismaKonulari.map((k) => k.ders))];
 
   function ogrenciSec(id: string) {
     setBasari(null);
@@ -163,9 +172,24 @@ export function RehberOgrenciTakibi({ ogrenciler, secilen, konuOnerileri, grupMu
                   );
                 })}
               </div>
+              {veriSekmesi === "konu" && secilenSinif >= 11 && <div className="flex gap-2">
+                {(["TYT", "AYT"] as const).map((sinav) => <button key={sinav} type="button"
+                  onClick={() => { setKonuSinaviSecimi(sinav); setKonuSinifiSecimi("tum"); }}
+                  className="sfec-btn rounded-full px-4 py-2 text-xs font-bold"
+                  style={{ background: konuSinaviSecimi === sinav ? MINT : BG0, color: konuSinaviSecimi === sinav ? MINT_ON : TEXT_MUTED }}>
+                  {sinav}{sinav === "AYT" ? ` · ${secilen.aytAlan}` : " · Ortak"}
+                </button>)}
+              </div>}
+              {veriSekmesi === "konu" && secilenSinif < 12 && <select aria-label="Konu sınıfı"
+                value={konuSinifiSecimi} onChange={(e) => setKonuSinifiSecimi(e.target.value)}
+                className="rounded-xl px-3 py-2 text-xs" style={{ background: BG0, color: TEXT, border: `2px solid ${BORDER}` }}>
+                <option value="tum">Tüm uygun sınıflar</option>
+                {Array.from({ length: Math.max(0, secilenSinif - 8) }, (_, i) => String(i + 9))
+                  .map((sinif) => <option key={sinif} value={sinif}>{sinif}. sınıf</option>)}
+              </select>}
               {veriSekmesi === "konu" && (
-                <KonuCalismaForm key={`konu-${secilen.id}`} rehberOgrenciId={secilen.id} dersListesi={secilen.dersListesi} konuOnerileri={konuOnerileri}
-                  sinifSeviyesi={secilen.sinifSeviyesi} mufredatAltKonulari={secilen.mufredatAltKonulari} gerekYokListesi={secilen.gerekYokListesi}
+                <KonuCalismaForm key={`konu-${secilen.id}-${konuSinaviSecimi}-${konuSinifiSecimi}`} rehberOgrenciId={secilen.id} dersListesi={calismaDersleri} konuOnerileri={calismaKonulari}
+                  sinifSeviyesi={null} mufredatAltKonulari={secilen.mufredatAltKonulari} gerekYokListesi={secilen.gerekYokListesi}
                   onBasari={(m) => basariGoster(`${secilen.ad}: ${m}`)} />
               )}
               {veriSekmesi === "soru" && (

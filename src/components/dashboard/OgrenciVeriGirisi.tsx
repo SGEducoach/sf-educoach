@@ -10,6 +10,7 @@ import {
   SURE_UST_SINIR, SORU_SAYISI_UST_SINIR, GOREV_GERIYE_DONUK_GUN, KATEGORI_GERIYE_DONUK_SINIR, dokuzOnSinifMi, maarifHiyerarsiSinifMi,
 } from "@/lib/types";
 import { soruKonuOnerileri } from "@/lib/konu-oneri-listesi";
+import { konuSinavi, konuSinifi } from "@/lib/mufredat-konulari";
 import {
   BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, SKY, SKY_BG, TEXT, TEXT_MUTED, BLUSH,
 } from "@/lib/theme";
@@ -272,14 +273,17 @@ export function OgrenciVeriGirisi({ aytAlan, konuOnerileri, sinifSeviyesi, konuS
 
   const sinifNo = Number(sinifSeviyesi);
   const sinifFiltresiAktif = Number.isInteger(sinifNo) && sinifNo >= 9 && sinifNo <= 12;
-  const [konuSinifi, setKonuSinifi] = useState(sinifSeviyesi ?? "12");
+  const [konuSinifiSecimi, setKonuSinifiSecimi] = useState("tum");
+  const [konuSinaviSecimi, setKonuSinaviSecimi] = useState<"TYT" | "AYT">("TYT");
   const filtreliKonuOnerileri = sinifFiltresiAktif
     ? konuOnerileri.filter((k) => {
-      const no = /^(\d+)\. Sınıf$/.exec(k.seviye ?? "");
-      // Sınıf etiketi bulunmayan ortak TYT ve serbest konular korunur.
-      return !no || Number(no[1]) === Number(konuSinifi);
+      const no = konuSinifi(k.seviye ?? "");
+      return konuSinifiSecimi === "tum" || no === null || no === Number(konuSinifiSecimi);
     })
     : konuOnerileri;
+  const konuCalismaOnerileri = filtreliKonuOnerileri.filter((k) =>
+    konuSinavi({ ders: k.ders, seviye: k.seviye ?? "9. Sınıf" }) === konuSinaviSecimi);
+  const calismaDersleri = [...new Set(konuCalismaOnerileri.map((k) => k.ders))];
 
   const dokuzOnMu = dokuzOnSinifMi(sinifSeviyesi);
   // 9-10. sınıfta AYT alanı ayrımı yok — TYT_DERSLERI zaten Fen/Sosyal'i
@@ -323,15 +327,25 @@ export function OgrenciVeriGirisi({ aytAlan, konuOnerileri, sinifSeviyesi, konuS
           })}
         </div>
 
-        {sinifFiltresiAktif && sekme !== "deneme" && <label className="mb-4 flex flex-col gap-1 sm:max-w-xs">
+        {sekme === "konu" && sinifNo >= 11 && <div className="mb-4 flex gap-2" aria-label="Konu sınavı">
+          {(["TYT", "AYT"] as const).map((sinav) => <button key={sinav} type="button"
+            onClick={() => { setKonuSinaviSecimi(sinav); setKonuSinifiSecimi("tum"); }}
+            className="sfec-btn rounded-full px-4 py-2 text-xs font-bold"
+            style={{ background: konuSinaviSecimi === sinav ? MINT : BG0, color: konuSinaviSecimi === sinav ? MINT_ON : TEXT_MUTED }}>
+            {sinav}{sinav === "AYT" ? ` · ${aytAlan}` : " · Ortak"}
+          </button>)}
+        </div>}
+        {sekme === "konu" && sinifNo < 11 && <p className="mb-4 text-xs font-bold" style={{ color: MINT }}>TYT · Ortak konular</p>}
+        {sinifFiltresiAktif && sekme !== "deneme" && (sekme !== "konu" || sinifNo < 12) && <label className="mb-4 flex flex-col gap-1 sm:max-w-xs">
           <Etiket>Konu sınıfı</Etiket>
-          <Secim value={konuSinifi} onChange={(e) => setKonuSinifi(e.target.value)}>
+          <Secim value={konuSinifiSecimi} onChange={(e) => setKonuSinifiSecimi(e.target.value)}>
+            <option value="tum">Tüm uygun sınıflar</option>
             {Array.from({ length: sinifNo - 8 }, (_, i) => String(9 + i)).map((s) => <option key={s} value={s}>{s}. sınıf{s === sinifSeviyesi ? " (Mevcut sınıfım)" : ""}</option>)}
           </Secim>
-          <span className="text-[10px]" style={{ color: TEXT_MUTED }}>Önceki sınıfların konularını da seçebilirsin. Sınıfı değiştirdiğinde açık formdaki girişler sıfırlanır.</span>
+          <span className="text-[10px]" style={{ color: TEXT_MUTED }}>Sınıfı değiştirdiğinde açık formdaki girişler sıfırlanır.</span>
         </label>}
-        {sekme === "konu" && <KonuCalismaForm key={`konu-${konuSinifi}`} dersListesi={dersListesi} konuOnerileri={filtreliKonuOnerileri} konuSayaclari={konuSayaclari} sinifSeviyesi={sinifFiltresiAktif ? konuSinifi : sinifSeviyesi} mufredatAltKonulari={mufredatAltKonulari} gerekYokListesi={gerekYokListesi} onBasari={basariGoster} />}
-        {sekme === "soru" && <SoruCozumuForm key={`soru-${konuSinifi}`} dersListesi={dersListesi} konuOnerileri={filtreliKonuOnerileri} onBasari={basariGoster} />}
+        {sekme === "konu" && <KonuCalismaForm key={`konu-${konuSinifiSecimi}-${konuSinaviSecimi}`} dersListesi={calismaDersleri} konuOnerileri={konuCalismaOnerileri} konuSayaclari={konuSayaclari} sinifSeviyesi={null} mufredatAltKonulari={mufredatAltKonulari} gerekYokListesi={gerekYokListesi} onBasari={basariGoster} />}
+        {sekme === "soru" && <SoruCozumuForm key={`soru-${konuSinifiSecimi}`} dersListesi={dersListesi} konuOnerileri={filtreliKonuOnerileri} onBasari={basariGoster} />}
         {sekme === "deneme" && <DenemeForm aytAlan={aytAlan} sinifSeviyesi={sinifSeviyesi} onBasari={basariGoster} />}
       </div>
 
@@ -344,7 +358,7 @@ export function OgrenciVeriGirisi({ aytAlan, konuOnerileri, sinifSeviyesi, konuS
 // (ve input'u temizleyip yeni aramaya hazır bırakan) özel öneri listesi —
 // native <datalist>'in yerine (konumu/davranışı kontrol edilemiyordu).
 function KonuOneriDropdown({ oneriler, aktif, onSec }: {
-  oneriler: { konu: string; seviye?: string | null }[]; aktif: boolean; onSec: (konu: string) => void;
+  oneriler: { konu: string; seviye?: string | null; ustKonu?: string }[]; aktif: boolean; onSec: (konu: string) => void;
 }) {
   if (!aktif || oneriler.length === 0) return null;
   return (
@@ -354,7 +368,7 @@ function KonuOneriDropdown({ oneriler, aktif, onSec }: {
         <button key={o.konu} type="button" onMouseDown={(e) => { e.preventDefault(); onSec(o.konu); }}
           className="sfec-btn w-full flex items-center justify-between gap-2 text-left px-3 py-2 text-xs font-semibold"
           style={{ color: TEXT }}>
-          <span>{o.konu}</span>
+          <span>{o.ustKonu && <span className="block text-[10px] font-normal" style={{ color: TEXT_MUTED }}>{o.ustKonu} altında</span>}{o.konu}</span>
           {o.seviye && <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: SKY_BG, color: SKY }}>{o.seviye}</span>}
         </button>
       ))}
@@ -429,9 +443,8 @@ export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, sin
     ? (mufredatAltKonulari ?? []).filter((a) => a.ders === ders && a.ustKonu === ustBaslik)
     : [];
 
-  // Konu seçilince kutuya yazılır ve üstte rozet gösterilir; "Konuyu oku"ya
-  // basılınca kutu temizlenir (okuma o an açık), oku kapatılınca ise seçili
-  // konu (ve rozet) tamamen sıfırlanır — yeni bir arama için hazır olunur.
+  // Konu seçilince kutuya yazılır ve üstte rozet gösterilir. Anlatım açıkken
+  // seçim korunur; kayıt yalnızca listeden seçilen konu ile yapılabilir.
   function konuSec(secilenKonu: string) {
     setKonu(secilenKonu);
     setAramaMetni(secilenKonu);
@@ -468,7 +481,6 @@ export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, sin
       return;
     }
 
-    if (!hiyerarsiAktif) setAramaMetni("");
     if (anlatim || anlatimYukleniyor) return;
     setAnlatimYukleniyor(true);
     setAnlatimHata(null);
@@ -500,7 +512,12 @@ export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, sin
 
   function submit(formData: FormData) {
     setHata(null);
-    if (!konu.trim()) return setHata("Konu seçin veya yazın.");
+    const gecerliSecim = hiyerarsiAktif
+      ? ustBasliklar.some((u) => u.konu === ustBaslik) && (altBasliklar.length > 0
+        ? altBasliklar.some((a) => a.altBaslik === konu)
+        : konu === ustBaslik)
+      : konuOnerileri.some((o) => o.ders === ders && o.konu === konu) && aramaMetni === konu;
+    if (!gecerliSecim) return setHata("Listeden bir konu seçin.");
     if (!yayinevi.trim()) return setHata("Yayınevi girin (MEB veya okul kitabıysa öyle yazabilirsin).");
     formData.set("ders", ders);
     formData.set("konu", konu);
@@ -573,10 +590,10 @@ export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, sin
             )}
           </div>
           <div className="flex gap-2">
-            <Girdi placeholder="örn. Türev - Zincir Kuralı" value={aramaMetni} autoComplete="off"
+            <Girdi placeholder="Konu ara ve listeden seç" value={aramaMetni} autoComplete="off"
               onFocus={() => setOneriAcik(true)}
               onBlur={() => setTimeout(() => setOneriAcik(false), 120)}
-              onChange={(e) => { setAramaMetni(e.target.value); setKonu(e.target.value); setOneriAcik(true); setAnlatim(null); setAnlatimSeviye(null); }}
+              onChange={(e) => { setAramaMetni(e.target.value); setKonu(""); setOneriAcik(true); setAnlatim(null); setAnlatimSeviye(null); }}
               disabled={!ders} />
             <button type="button" onClick={konuyuOku} disabled={!ders || !konu.trim()}
               className="sfec-btn shrink-0 flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"

@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAnthropicClient } from "@/lib/anthropic";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
+import { konuCalismaKonusuGecerliMi } from "@/lib/konu-calisma-secimi";
 import { KONU_ANLATIMI_SISTEM_PROMPTU, icerikTemizle } from "@/lib/konu-anlatimi";
 import { SURE_UST_SINIR, SORU_SAYISI_UST_SINIR, GOREV_GERIYE_DONUK_GUN, KATEGORI_GERIYE_DONUK_SINIR, TAKIP_SORUSU, dersSoruSayisi } from "@/lib/types";
 import type { DenemeTuru, DenemeZorlugu, HedefeYakinlik, TakipCevabi, VerimlilikDuzeyi } from "@/lib/types";
@@ -190,6 +191,11 @@ export async function konuCalismaEkle(formData: FormData) {
     const mesaj = await manipulasyonliHataMesaji(user.id, `konuCalismaEkle: sureDakika=${sureDakika}`,
       `Süre en fazla ${SURE_UST_SINIR} dakika olabilir (tek oturum için) — haftalık/günlük toplamı buraya girme.`);
     return { error: mesaj, verimlilikSorulsunMu: false };
+  }
+
+  const { data: ogrenci } = await supabase.from("students").select("school_id").eq("id", user.id).maybeSingle();
+  if (!ogrenci?.school_id || !await konuCalismaKonusuGecerliMi(supabase, ogrenci.school_id, ders, konu, user.id)) {
+    return { error: "Lütfen konu listesinden geçerli bir konu seçin.", verimlilikSorulsunMu: false };
   }
 
   const { error } = await supabase.from("konu_calismalar").insert({

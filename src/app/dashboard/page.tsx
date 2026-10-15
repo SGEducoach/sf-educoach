@@ -29,7 +29,7 @@ import { ogrencininZayifKonulariGetir, konuHaritasiGetir } from "@/lib/konu-rapo
 import { konuHakimiyetiGetir, konuHakimiyetiOzetiGetir, tamGorunumMu, gerekYokHaritasiGetir } from "@/lib/konu-hakimiyeti";
 import { KonuHakimiyetiEkrani } from "@/components/dashboard/KonuHakimiyetiEkrani";
 import { AYT_ALAN_ETIKET, sinifSiraKarsilastir, dokuzOnSinifMi, TYT_DERSLERI, AYT_DERSLERI } from "@/lib/types";
-import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
+import { MUFREDAT_KONULARI, konuOgrenciyeUygunMu, konuSeviyesi } from "@/lib/mufredat-konulari";
 import { kurumAltKonulariGetir, kurumHiyerarsiKonulari, kurumKonuOnerileri } from "@/lib/kurum-alt-konulari";
 import type { AytAlan, KurumTuru, UserRole } from "@/lib/types";
 import { BG1, BG1_ALT, BORDER, BORDER_STRONG, TEXT, TEXT_MUTED, MINT, MINT_BG, BUTTER, BUTTER_BG } from "@/lib/theme";
@@ -473,7 +473,6 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
   const [
     { data: student },
     analiz,
-    { data: konuOnerileriHam },
     { data: tamamlananKonularHam },
     zayifKonular,
     gerekYokSeti,
@@ -483,11 +482,6 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
     (aktifBolum === "ozet" || aktifBolum === "analiz")
       ? analizVerisiGetir(supabase, userId, donem)
       : Promise.resolve(null),
-    // Konu girişi sırasında öneri (datalist): resmî müfredat listesi (188
-    // konu, sınıf etiketli) + öğrencilerin serbest girip daha önce
-    // ürettirdiği ek konular — böylece hem baştan kapsamlı hem zamanla
-    // organik olarak büyüyor.
-    supabase.from("konu_anlatimlari").select("ders, konu, seviye").order("konu"),
     // Konu tamamlama sayacı (§1, yenilikler_1.txt): payda = müfredattaki
     // ders başına konu sayısı (MUFREDAT_KONULARI), pay = öğrencinin
     // "hakimim" (hedefe_yakinlik='yakin') işaretlediği FARKLI konu sayısı
@@ -555,14 +549,7 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
     );
   }
 
-  const uretilenKonular = (konuOnerileriHam as { ders: string; konu: string; seviye: string | null }[]) ?? [];
   const kurumKonulari = await kurumAltKonulariGetir(supabase, s.school_id);
-  const konuOneriAnahtarlari = new Set(MUFREDAT_KONULARI.map((k) => `${k.ders}|${k.konu}`));
-  const konuOnerileri = [
-    ...MUFREDAT_KONULARI,
-    ...uretilenKonular.filter((k) => !konuOneriAnahtarlari.has(`${k.ders}|${k.konu}`)),
-    ...kurumKonuOnerileri(kurumKonulari).filter((k) => !konuOneriAnahtarlari.has(`${k.ders}|${k.konu}`)),
-  ];
 
   const tamamlananSet = new Set<string>();
   for (const r of (tamamlananKonularHam as { ders: string; konu: string }[] | null) ?? []) {
@@ -584,12 +571,25 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
   // kalıyor — ama küçük ve dar kapsamlı bir sorgu, toplam süreye
   // önceki haliyle kıyasla ihmal edilebilir bir katkısı var.
   let mufredatAltKonulari: { ders: string; ustKonu: string; altBaslik: string }[] = [];
-  // 12. sınıf öğrencisi de filtreyle 9–11. sınıf alt konularına dönebilir.
-  if (aktifBolum === "veri-girisi" && ["9", "10", "11", "12"].includes(s.classes?.seviye ?? "")) {
+  if (["9", "10", "11", "12"].includes(s.classes?.seviye ?? "")) {
     const { data: altKonularHam } = await supabase.from("mufredat_alt_konular").select("ders, ust_konu, alt_baslik").order("sira");
     mufredatAltKonulari = ((altKonularHam as { ders: string; ust_konu: string; alt_baslik: string }[]) ?? [])
       .map((r) => ({ ders: r.ders, ustKonu: r.ust_konu, altBaslik: r.alt_baslik }))
       .concat(kurumHiyerarsiKonulari(kurumKonulari));
+  }
+
+  const anaKonular = MUFREDAT_KONULARI.filter((k) => konuOgrenciyeUygunMu(k, s.classes?.seviye ?? null, s.ayt_alan))
+    .map((k) => ({ ...k, seviye: konuSeviyesi(k.seviye) }));
+  const anaKonuMap = new Map(MUFREDAT_KONULARI.map((k) => [`${k.ders}|${k.konu}`, k]));
+  const konuOnerileri: { ders: string; konu: string; seviye: string; ustKonu?: string }[] = [...anaKonular];
+  const gorulenKonular = new Set(konuOnerileri.map((k) => `${k.ders}|${k.konu}`));
+  for (const alt of mufredatAltKonulari) {
+    const ust = anaKonuMap.get(`${alt.ders}|${alt.ustKonu}`);
+    if (!ust || !konuOgrenciyeUygunMu(ust, s.classes?.seviye ?? null, s.ayt_alan)) continue;
+    const anahtar = `${alt.ders}|${alt.altBaslik}`;
+    if (gorulenKonular.has(anahtar)) continue;
+    konuOnerileri.push({ ders: alt.ders, konu: alt.altBaslik, seviye: konuSeviyesi(ust.seviye), ustKonu: alt.ustKonu });
+    gorulenKonular.add(anahtar);
   }
 
   const dokuzOnMu = dokuzOnSinifMi(s.classes?.seviye ?? null);
@@ -818,8 +818,24 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
         </div>
       );
     }
-    const { ogrenciler, secilen, kurumKonulari } = await rehberOgrenciTakibiVerisiGetir(teacher.school_id, secilenOgrenciId);
-    return <RehberOgrenciTakibi ogrenciler={ogrenciler} secilen={secilen} konuOnerileri={[...MUFREDAT_KONULARI, ...kurumKonuOnerileri(kurumKonulari)]} grupMu={grupMu} />;
+    const { ogrenciler, secilen } = await rehberOgrenciTakibiVerisiGetir(teacher.school_id, secilenOgrenciId);
+    const konuOnerileri: { ders: string; konu: string; seviye: string; ustKonu?: string }[] = secilen
+      ? MUFREDAT_KONULARI.filter((k) => konuOgrenciyeUygunMu(k, secilen.sinifSeviyesi, secilen.aytAlan))
+        .map((k) => ({ ...k, seviye: konuSeviyesi(k.seviye) }))
+      : [];
+    if (secilen) {
+      const anaKonular = new Map(MUFREDAT_KONULARI.map((k) => [`${k.ders}|${k.konu}`, k]));
+      const gorulen = new Set(konuOnerileri.map((k) => `${k.ders}|${k.konu}`));
+      for (const alt of secilen.mufredatAltKonulari) {
+        const ust = anaKonular.get(`${alt.ders}|${alt.ustKonu}`);
+        if (!ust || !konuOgrenciyeUygunMu(ust, secilen.sinifSeviyesi, secilen.aytAlan)) continue;
+        const anahtar = `${alt.ders}|${alt.altBaslik}`;
+        if (gorulen.has(anahtar)) continue;
+        konuOnerileri.push({ ders: alt.ders, konu: alt.altBaslik, seviye: konuSeviyesi(ust.seviye), ustKonu: alt.ustKonu });
+        gorulen.add(anahtar);
+      }
+    }
+    return <RehberOgrenciTakibi ogrenciler={ogrenciler} secilen={secilen} konuOnerileri={konuOnerileri} grupMu={grupMu} />;
   }
 
   // Rehber Öğretmen okulda yalnız atandığı sınıf düzeylerinin

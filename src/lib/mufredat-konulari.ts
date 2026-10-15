@@ -10,7 +10,7 @@
 // adımı olmadan çalışır) tek kaynaktan okunuyor.
 import konular from "./mufredat-konulari.json";
 import type { AytAlan } from "./types";
-import { TYT_DERSLERI, AYT_DERSLERI } from "./types";
+import { TYT_DERSLERI, AYT_DERSLERI, AYT_MUFREDAT_DERSLERI } from "./types";
 
 export interface MufredatKonusu {
   ders: string;
@@ -19,6 +19,38 @@ export interface MufredatKonusu {
 }
 
 export const MUFREDAT_KONULARI: MufredatKonusu[] = konular;
+
+// Konu adı kayıtların anahtarıdır; sınav ve sınıf kapsamı yalnız seviye
+// etiketinden türetilir. Hazırlık konuları 9. sınıfın parçasıdır.
+export function konuSinifi(seviye: string): number | null {
+  if (seviye === "Hazırlık") return 9;
+  const eslesme = /^(\d+)\. Sınıf$/.exec(seviye);
+  return eslesme ? Number(eslesme[1]) : null;
+}
+
+export function konuSeviyesi(seviye: string): string {
+  return seviye === "Hazırlık" ? "9. Sınıf" : seviye;
+}
+
+export function konuSinavi(konu: Pick<MufredatKonusu, "ders" | "seviye">): "TYT" | "AYT" {
+  if (konu.seviye === "AYT" || konu.ders === "Edebiyat") return "AYT";
+  if (konu.seviye === "TYT" || konu.ders === "Türkçe") return "TYT";
+  return (konuSinifi(konu.seviye) ?? 9) >= 11 ? "AYT" : "TYT";
+}
+
+export function konuOgrenciyeUygunMu(
+  konu: Pick<MufredatKonusu, "ders" | "seviye">,
+  sinifSeviyesi: string | null,
+  aytAlan: AytAlan,
+): boolean {
+  const ogrenciSinifi = Number(sinifSeviyesi);
+  const sinif = Number.isInteger(ogrenciSinifi) && ogrenciSinifi >= 9 && ogrenciSinifi <= 12
+    ? ogrenciSinifi : 12;
+  const konuSinif = konuSinifi(konu.seviye);
+  if (konuSinif !== null && konuSinif > sinif) return false;
+  if (konu.seviye === "AYT" && sinif < 12) return false;
+  return konuSinavi(konu) === "TYT" || (sinif >= 11 && AYT_MUFREDAT_DERSLERI[aytAlan].includes(konu.ders));
+}
 
 const TUM_ALANLAR: AytAlan[] = ["SAY", "EA", "SOZ"];
 

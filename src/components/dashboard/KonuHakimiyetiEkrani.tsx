@@ -5,7 +5,6 @@
 // hedefe_yakinlik'ten bağımsız, bkz. src/lib/konu-hakimiyeti.ts).
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { PieChart, Pie, Cell } from "recharts";
 import { ChevronDown, ChevronUp, ListChecks, Layers } from "lucide-react";
 import {
   HAKIMIYET_SEVIYESI_ETIKET, OGRENME_SEKLI_ETIKET, OGRENME_SEKLI_LISTESI, TEKRAR_DURUMU_ETIKET,
@@ -29,9 +28,10 @@ export function KonuHakimiyetiEkrani({ satirlar, tamGorunum, aytAlan }: { satirl
   // (9-10-11. sınıf, dershane değil) bu seçici hiç gösterilmiyor, sınav
   // filtresi de uygulanmıyor (satirlar zaten kendi kademesine göre geliyor).
   const [seciliSinav, setSeciliSinav] = useState<"TYT" | "AYT">("TYT");
-  const sinavaGoreSatirlar = !tamGorunum
-    ? satirlar
-    : satirlar.filter((s) => (seciliSinav === "TYT" ? satirTytdeGosterilsinMi(s) : satirAytdeGosterilsinMi(s, aytAlan)));
+  void tamGorunum;
+  const aytVar = satirlar.some((s) => satirAytdeGosterilsinMi(s, aytAlan));
+  const sinavaGoreSatirlar = satirlar.filter((s) =>
+    seciliSinav === "TYT" ? satirTytdeGosterilsinMi(s) : satirAytdeGosterilsinMi(s, aytAlan));
 
   const dersler = useMemo(() => Array.from(new Set(sinavaGoreSatirlar.map((s) => s.ders))), [sinavaGoreSatirlar]);
   const [seciliDers, setSeciliDers] = useState<string>("tum");
@@ -46,9 +46,6 @@ export function KonuHakimiyetiEkrani({ satirlar, tamGorunum, aytAlan }: { satirl
 
   const gorunenSatirlar = sinavaGoreSatirlar.filter((s) => (seciliDers === "tum" || s.ders === seciliDers)
     && (seciliSeviye === "tum" || s.seviye === seciliSeviye));
-  const hakimSayisi = gorunenSatirlar.filter((s) => s.hakimiyetSeviyesi === "yakin").length;
-  const toplam = gorunenSatirlar.length;
-  const yuzde = toplam > 0 ? Math.round((hakimSayisi / toplam) * 100) : 0;
 
   const ustBasliklar = useMemo(() => {
     const map = new Map<string, { ders: string; ustKonu: string; satirlar: KonuHakimiyetiSatiri[] }>();
@@ -71,10 +68,6 @@ export function KonuHakimiyetiEkrani({ satirlar, tamGorunum, aytAlan }: { satirl
       .map((x) => x.g);
   }, [gorunenSatirlar]);
 
-  const donutVeri = toplam > 0
-    ? [{ name: "hakim", value: hakimSayisi }, { name: "digger", value: toplam - hakimSayisi }]
-    : [{ name: "bos", value: 1 }];
-
   return (
     <div className="flex flex-col gap-5">
       <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
@@ -85,10 +78,10 @@ export function KonuHakimiyetiEkrani({ satirlar, tamGorunum, aytAlan }: { satirl
           <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Konu Hakimiyeti</span>
         </div>
         <p style={{ color: TEXT_MUTED }} className="text-xs mb-4">
-          Geçmişten güncele bütün konuları gez, her biri için ne kadar hakim olduğunu işaretle. Yüzde, senin işaretlediğin konuları gösterir; yeterli soru kanıtı varsa ayrıca sistemin hesapladığı skor görünür. Skor beyanını değiştirmez.
+          Konuları TYT ve alanına uygun AYT listelerinde görüp hâkimiyetini işaretleyebilirsin.
         </p>
 
-        {tamGorunum && (
+        {aytVar && (
           <div className="flex gap-1 p-1 rounded-full w-fit mb-3" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
             {(["TYT", "AYT"] as const).map((s) => (
               <button key={s} type="button" onClick={() => sinavDegistir(s)}
@@ -99,6 +92,7 @@ export function KonuHakimiyetiEkrani({ satirlar, tamGorunum, aytAlan }: { satirl
             ))}
           </div>
         )}
+        {!aytVar && <p className="mb-3 text-xs font-bold" style={{ color: MINT }}>TYT · Ortak konular</p>}
         <select value={seciliDers} onChange={(e) => { setSeciliDers(e.target.value); setSeciliSeviye("tum"); }}
           className="text-sm px-3 py-2 rounded-xl outline-none w-full sm:w-auto mb-4"
           style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
@@ -113,32 +107,9 @@ export function KonuHakimiyetiEkrani({ satirlar, tamGorunum, aytAlan }: { satirl
         </select>
         {seciliDers !== "tum" && seciliSeviye !== "tum" ? (
           <KapsamOnayi key={`${seciliDers}|${seciliSeviye}|${seciliSinav}`} ders={seciliDers} seviye={seciliSeviye}
-            satirlar={satirlar.filter((s) => s.ders === seciliDers && s.seviye === seciliSeviye)} eksikSecimi />
+            satirlar={sinavaGoreSatirlar.filter((s) => s.ders === seciliDers && s.seviye === seciliSeviye)} eksikSecimi />
         ) : <p className="mb-4 text-xs" style={{ color: TEXT_MUTED }}>“Eksik konularımı seç” için önce bir ders ve sınıf seçin. Üst başlıkları ayrıca onaylayabilirsiniz.</p>}
 
-        <div className="flex items-center gap-6 flex-wrap">
-          <div className="relative shrink-0" style={{ width: 130, height: 130 }}>
-            <PieChart width={130} height={130}>
-              <Pie data={donutVeri} dataKey="value" cx="50%" cy="50%" innerRadius={44} outerRadius={60}
-                startAngle={90} endAngle={-270} stroke="none" isAnimationActive={false}>
-                {toplam > 0 ? (
-                  <>
-                    <Cell fill={MINT} />
-                    <Cell fill={BORDER} />
-                  </>
-                ) : <Cell fill={BORDER} />}
-              </Pie>
-            </PieChart>
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-xl font-extrabold">%{yuzde}</span>
-              <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold">{hakimSayisi}/{toplam}</span>
-            </div>
-          </div>
-          <div className="flex flex-col gap-1.5 text-xs" style={{ color: TEXT_MUTED }}>
-            <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: MINT }} /> Hakim olunan konular</div>
-            <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: BORDER, border: `1px solid ${BORDER_STRONG}` }} /> Henüz hakim olunmayan / işaretlenmemiş</div>
-          </div>
-        </div>
       </div>
 
       <div className="flex flex-col gap-2">

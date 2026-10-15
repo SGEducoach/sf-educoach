@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { REHBER_BRANSI } from "@/lib/rehberlik";
 import { gerekYokHaritasiGetir } from "@/lib/konu-hakimiyeti";
-import { TYT_DERSLERI, AYT_DERSLERI, dokuzOnSinifMi, maarifHiyerarsiSinifMi } from "@/lib/types";
+import { TYT_DERSLERI, AYT_DERSLERI, dokuzOnSinifMi } from "@/lib/types";
 import type { AytAlan } from "@/lib/types";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
 import { kurumAltKonulariGetir, kurumHiyerarsiKonulari, type KurumAltKonusu } from "@/lib/kurum-alt-konulari";
@@ -123,9 +123,7 @@ export async function rehberOgrenciTakibiVerisiGetir(
 
   const [gerekYok, { data: altKonularHam }, { data: programHam }] = await Promise.all([
     gerekYokHaritasiGetir(admin, ham.id),
-    maarifHiyerarsiSinifMi(seviye)
-      ? admin.from("mufredat_alt_konular").select("ders, ust_konu, alt_baslik").order("sira")
-      : Promise.resolve({ data: [] }),
+    admin.from("mufredat_alt_konular").select("ders, ust_konu, alt_baslik").order("sira"),
     admin
       .from("gorev_atamalari")
       .select("id, durum, rehber_yerlestirdi, ogrenci_tarih, ogrenci_baslangic_saat, ogrenci_bitis_saat, gorevler!inner(tur, ders, konu)")

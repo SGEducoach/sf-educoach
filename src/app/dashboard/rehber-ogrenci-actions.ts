@@ -9,6 +9,7 @@ import { SURE_UST_SINIR, SORU_SAYISI_UST_SINIR, TAKIP_SORUSU, dersSoruSayisi } f
 import type { DenemeTuru, DenemeZorlugu, GorevTuru, HedefeYakinlik, TakipCevabi } from "@/lib/types";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
 import { veriHatasiCevir } from "@/lib/veri-hata-mesaji";
+import { konuCalismaKonusuGecerliMi } from "@/lib/konu-calisma-secimi";
 
 // Dershane rehberlik servisi (kullanıcı isteği 13.09.2026) — rehber öğretmen
 // öğrenci adına ödev verir, program yapar, veri girer. Kullanıcı kararları:
@@ -197,6 +198,9 @@ export async function rehberKonuCalismaEkle(ogrenciId: string, formData: FormDat
 
   const yetki = await dershaneRehberYetkisi([ogrenciId]);
   if (yetki.error !== null) return veriSonucu(yetki.error);
+  if (!await konuCalismaKonusuGecerliMi(yetki.admin, yetki.schoolId, ders, konu, ogrenciId)) {
+    return veriSonucu("Lütfen konu listesinden geçerli bir konu seçin.");
+  }
 
   const { error } = await yetki.admin.from("konu_calismalar").insert({
     student_id: ogrenciId, ders, konu, sure_dakika: sureDakika, hedefe_yakinlik: hedefeYakinlik,

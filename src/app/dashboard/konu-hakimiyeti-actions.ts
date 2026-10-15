@@ -74,6 +74,10 @@ export async function konuHakimiyetiKaydet(input: {
   if (!ders || !konu) return { error: "Ders/konu geçersiz." };
   const hataVarMi = girdiDogrula(input);
   if (hataVarMi) return { error: hataVarMi };
+  const { satirlar: kapsam } = await konuHakimiyetiOzetiGetir(supabase, user.id);
+  if (!kapsam.some((s) => s.ders === ders && s.konu === konu)) {
+    return { error: "Bu konu sınıfınızın ve alanınızın listesinde yok." };
+  }
 
   const { error } = await supabase.from("ogrenci_konu_hakimiyeti").upsert(
     {
@@ -102,6 +106,10 @@ export async function konuHakimiyetiTopluKaydet(input: {
   if (!ders || konular.length === 0) return { error: "Ders/konu listesi geçersiz." };
   const hataVarMi = girdiDogrula(input);
   if (hataVarMi) return { error: hataVarMi };
+  const { satirlar: kapsam } = await konuHakimiyetiOzetiGetir(supabase, user.id);
+  if (konular.some((konu) => !kapsam.some((s) => s.ders === ders && s.konu === konu))) {
+    return { error: "Seçilen konulardan biri sınıfınızın ve alanınızın listesinde yok." };
+  }
 
   const simdi = new Date().toISOString();
   const satirlar = konular.map((konu) => ({
