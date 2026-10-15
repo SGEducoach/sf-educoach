@@ -480,7 +480,9 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
     { data: gorevAtamalariHam },
   ] = await Promise.all([
     supabase.from("students").select("school_id, okul_no, ayt_alan, hedef_bolum, schools(ad, tur), classes(seviye, sube)").eq("id", userId).single(),
-    analizVerisiGetir(supabase, userId, donem),
+    (aktifBolum === "ozet" || aktifBolum === "analiz")
+      ? analizVerisiGetir(supabase, userId, donem)
+      : Promise.resolve(null),
     // Konu girişi sırasında öneri (datalist): resmî müfredat listesi (188
     // konu, sınıf etiketli) + öğrencilerin serbest girip daha önce
     // ürettirdiği ek konular — böylece hem baştan kapsamlı hem zamanla
@@ -675,9 +677,9 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
             </div>
           </section>
           <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 print:hidden" aria-label="Haftalık öğrenci özeti">
-            <OzetIstatistikKarti Icon={CalendarCheck2} etiket="Konu çalışma" deger={`${analiz.buHaftaKonuDakika} dk`} aciklama="Bu hafta" />
-            <OzetIstatistikKarti Icon={ListChecks} etiket="Çözülen soru" deger={String(analiz.buHaftaSoru)} aciklama="Bu hafta" />
-            <OzetIstatistikKarti Icon={Target} etiket="Son deneme neti" deger={analiz.sonDenemeNet === null ? "—" : String(analiz.sonDenemeNet)} aciklama="En güncel sonuç" />
+            <OzetIstatistikKarti Icon={CalendarCheck2} etiket="Konu çalışma" deger={`${analiz!.buHaftaKonuDakika} dk`} aciklama="Bu hafta" />
+            <OzetIstatistikKarti Icon={ListChecks} etiket="Çözülen soru" deger={String(analiz!.buHaftaSoru)} aciklama="Bu hafta" />
+            <OzetIstatistikKarti Icon={Target} etiket="Son deneme neti" deger={analiz!.sonDenemeNet === null ? "—" : String(analiz!.sonDenemeNet)} aciklama="En güncel sonuç" />
             <OzetIstatistikKarti Icon={BarChart3} etiket="Bekleyen ödev" deger={String(gorevlerimListesi.filter((g) => g.kaynak === "gorev" && g.durum === "bekliyor").length)} aciklama="Bu hafta" />
           </section>
         </>
@@ -716,7 +718,7 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
 
       {aktifBolum === "analiz" && <div>
         <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-lg font-bold mb-3 print:hidden">Analiz / Rapor</h2>
-        <AnalizPaneli veri={analiz} ogrenciAdi={ad} konuHakimiyetiSatirlari={konuHakimiyetiSatirlari} konuHakimiyetiTamGorunum={konuHakimiyetiTamGorunum} konuHakimiyetiAytAlan={s.ayt_alan} hedefDuzenlenebilir />
+        <AnalizPaneli veri={analiz!} ogrenciAdi={ad} konuHakimiyetiSatirlari={konuHakimiyetiSatirlari} konuHakimiyetiTamGorunum={konuHakimiyetiTamGorunum} konuHakimiyetiAytAlan={s.ayt_alan} hedefDuzenlenebilir />
         {denemeKarneleri.length > 0 && <div className="mt-4"><DenemeKarnesi karneler={denemeKarneleri} /></div>}
         {denemeKonu && <div className="mt-4"><DenemeKonuAnalizi ozet={denemeKonu.ozet} kapsam="ogrenci" hata={denemeKonu.error} /></div>}
       </div>}

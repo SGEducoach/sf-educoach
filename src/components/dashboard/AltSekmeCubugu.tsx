@@ -85,7 +85,7 @@ export function AltSekmeCubugu({ role, kurumTuru, brans, grupMu = false, kademe,
     const aktif = oge.bolum === aktifBolum;
     const rozet = rozetler?.[oge.bolum] ?? 0;
     return (
-      <Link key={oge.href} href={oge.href} aria-current={aktif ? "page" : undefined}
+      <Link key={oge.href} href={oge.href} prefetch={false} aria-current={aktif ? "page" : undefined}
         className="sfec-btn relative flex min-h-[52px] flex-col items-center justify-center gap-1 rounded-2xl px-1"
         style={{ background: aktif ? MINT_BG : "transparent", color: aktif ? TEXT : TEXT_MUTED }}>
         <Ikon size={19} aria-hidden="true" />
@@ -150,7 +150,7 @@ export function AltSekmeCubugu({ role, kurumTuru, brans, grupMu = false, kademe,
                 const aktif = oge.bolum === aktifBolum;
                 const rozet = rozetler?.[oge.bolum] ?? 0;
                 return (
-                  <Link key={oge.href} href={oge.href} onClick={() => setDahaAcik(false)}
+                  <Link key={oge.href} href={oge.href} prefetch={false} onClick={() => setDahaAcik(false)}
                     aria-current={aktif ? "page" : undefined}
                     className="sfec-btn flex min-h-12 items-center gap-3 rounded-2xl px-3 text-sm font-bold"
                     style={{ background: aktif ? MINT_BG : BG1_ALT, color: TEXT, border: `1px solid ${aktif ? MINT : BORDER}` }}>

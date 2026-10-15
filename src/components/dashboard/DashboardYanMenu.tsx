@@ -105,7 +105,7 @@ export function DashboardYanMenu({ role, kurumTuru, brans, grupMu = false, kadem
                     {kalem.ogeler.map((oge) => {
                       const aktif = oge.bolum === aktifBolum;
                       return (
-                        <Link key={oge.href} href={oge.href} aria-current={aktif ? "page" : undefined}
+                        <Link key={oge.href} href={oge.href} prefetch={false} aria-current={aktif ? "page" : undefined}
                           className="sfec-btn flex items-center rounded-xl px-3 py-2 text-[13px] font-semibold"
                           style={{ background: aktif ? MINT_BG : "transparent", color: aktif ? TEXT : TEXT_MUTED, border: `1px solid ${aktif ? MINT : "transparent"}` }}>
                           {oge.etiket}
@@ -124,7 +124,7 @@ export function DashboardYanMenu({ role, kurumTuru, brans, grupMu = false, kadem
           const rozet = rozetler?.[oge.bolum] ?? 0;
 
           return (
-            <Link key={oge.href} href={oge.href} aria-current={aktif ? "page" : undefined}
+            <Link key={oge.href} href={oge.href} prefetch={false} aria-current={aktif ? "page" : undefined}
               className={`sfec-btn flex min-h-12 items-center gap-3 rounded-2xl px-3.5 py-3 text-sm font-bold ${tgBolumu ? "sfec-menu-tg" : ""}`}
               style={{ background: aktif ? MINT_BG : "transparent", color: TEXT, border: `1px solid ${aktif ? MINT : "transparent"}` }}>
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl" style={{ background: aktif ? BG1 : "transparent" }}>
