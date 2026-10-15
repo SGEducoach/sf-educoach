@@ -68,3 +68,7 @@ next-env.d.ts
 
 # Koke dusen tek dosyalik disa aktarimlar (artifact/gorsellestirme ciktilari).
 /sinif-analizi-kart-temalari-paylasim.html
+
+# Bagimlilik klasorleri (kok disindakiler de).
+node_modules/
+**/node_modules/
