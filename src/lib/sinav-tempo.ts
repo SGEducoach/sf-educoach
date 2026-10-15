@@ -21,6 +21,8 @@ export const SINAV_SURESI_DAKIKA: Record<DenemeTuru, number> = {
   AYT: 180,
   // Branş denemesinin resmî bir süresi yok; 120 soruyla TYT yapısına en yakın.
   BRANS: 165,
+  // LGS: sözel oturum 75 + sayısal oturum 80 dakika.
+  LGS: 155,
 };
 
 const TYT_TEMPO: Record<string, number> = {

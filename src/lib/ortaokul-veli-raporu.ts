@@ -44,7 +44,18 @@ export interface TemaKarari {
   aciklama: string | null;
 }
 
+// LGS denemesi (16.10.2026, kolej): kurumun yüklediği sonuçlar. Net
+// ortaokul formülüyle (D − Y/3).
+export interface LgsDenemesi {
+  tarih: string;
+  yayinevi: string | null;
+  toplamNet: number;
+  dersler: { ders: string; dogru: number; yanlis: number; net: number }[];
+}
+
 export interface OrtaokulVeliRaporu {
+  // Son LGS denemeleri, en yeni önce (en fazla 6).
+  denemeler: LgsDenemesi[];
   pencereGun: number;
   toplamDakika: number;
   konuCalismasi: number;
@@ -67,7 +78,7 @@ export async function ortaokulVeliRaporuGetir(
 ): Promise<OrtaokulVeliRaporu> {
   const baslangic = tarihEkle(bugununTarihiTR(), -(PENCERE_GUN - 1));
 
-  const [calismalar, gorevler, yeterlilikler] = await Promise.all([
+  const [calismalar, gorevler, yeterlilikler, denemeHam] = await Promise.all([
     supabase
       .from("ortaokul_calismalar")
       .select("tur, tarih, sure_dakika, dogru, yanlis, bos, ortaokul_mufredat_dersleri(ad)")
@@ -84,7 +95,23 @@ export async function ortaokulVeliRaporuGetir(
       .eq("student_id", studentId)
       .order("guncellenme_at", { ascending: false })
       .limit(40),
+    supabase
+      .from("denemeler")
+      .select("tarih, yayinevi, deneme_ders_sonuclari(ders, dogru, yanlis)")
+      .eq("student_id", studentId)
+      .eq("tur", "LGS")
+      .order("tarih", { ascending: false })
+      .limit(6),
   ]);
+
+  type DenemeRow = { tarih: string; yayinevi: string | null; deneme_ders_sonuclari: { ders: string; dogru: number; yanlis: number }[] | null };
+  const denemeler: LgsDenemesi[] = ((denemeHam.data ?? []) as unknown as DenemeRow[]).map((d) => {
+    const dersler = (d.deneme_ders_sonuclari ?? []).map((s) => ({ ...s, net: netHesapla(s.dogru, s.yanlis, "ortaokul") }));
+    return {
+      tarih: d.tarih, yayinevi: d.yayinevi, dersler,
+      toplamNet: Math.round(dersler.reduce((t, s) => t + s.net, 0) * 100) / 100,
+    };
+  });
 
   // Gömülü ilişki çalışma anında NESNE döner, tipte dizi görünür (proje notu).
   const tekil = <T,>(v: T | T[] | null): T | null => (Array.isArray(v) ? v[0] ?? null : v);
@@ -149,6 +176,7 @@ export async function ortaokulVeliRaporuGetir(
   const dersler = [...dersMap.values()].sort((a, b) => b.dakika - a.dakika);
 
   return {
+    denemeler,
     pencereGun: PENCERE_GUN,
     toplamDakika,
     konuCalismasi,
@@ -158,6 +186,6 @@ export async function ortaokulVeliRaporuGetir(
     gorevTamamlanan,
     gorevBekleyen,
     kararlar,
-    veriVarMi: dersler.length > 0 || gorevSatirlari.length > 0 || kararlar.length > 0,
+    veriVarMi: dersler.length > 0 || gorevSatirlari.length > 0 || kararlar.length > 0 || denemeler.length > 0,
   };
 }

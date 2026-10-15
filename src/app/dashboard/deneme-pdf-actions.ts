@@ -419,7 +419,13 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
   if (!dosya) return { error: "PDF dosyası seçilmedi.", ...BOS_SONUC };
   if (!yayinevi) return { error: "Yayınevi gerekli.", ...BOS_SONUC };
   if (!/^\d{4}-\d{2}-\d{2}$/.test(tarih)) return { error: "Uygulama tarihi gerekli.", ...BOS_SONUC };
-  if (!["TYT", "AYT", "BRANS"].includes(tur)) return { error: "Tür seçin.", ...BOS_SONUC };
+  if (!["TYT", "AYT", "BRANS", "LGS"].includes(tur)) return { error: "Tür seçin.", ...BOS_SONUC };
+  // LGS (16.10.2026, kolej): yapay zekâsız okuyucular henüz LGS biçimini
+  // tanımıyor ve kullanıcı kararı yapay zekâyla okunmaması. Okuyucu,
+  // kolejin örnek PDF'leriyle eklenecek; o zamana kadar Excel şablonu.
+  if (tur === "LGS") {
+    return { error: "LGS sonuç listesi PDF'ten henüz okunamıyor. Şimdilik \"Excel yükle\" sekmesindeki LGS şablonunu kullanın.", ...BOS_SONUC };
+  }
   // Kullanıcı isteği (27.09.2026): yükleyen PDF biçimini seçebilir. Seçilen
   // biçim tanınmazsa sessizce Claude'a gidilmez, neden okunamadığı söylenir.
   const bicim = String(formData.get("bicim") ?? "otomatik") as PdfBicimi;
@@ -961,7 +967,7 @@ export async function denemeExcelIceriAktar(formData: FormData): Promise<{
   if (!dosya) return { error: "Excel dosyası seçilmedi.", ...BOS_SONUC };
   if (!yayinevi) return { error: "Yayınevi gerekli.", ...BOS_SONUC };
   if (!/^\d{4}-\d{2}-\d{2}$/.test(tarih)) return { error: "Uygulama tarihi gerekli.", ...BOS_SONUC };
-  if (!["TYT", "AYT", "BRANS"].includes(tur)) return { error: "Tür seçin.", ...BOS_SONUC };
+  if (!["TYT", "AYT", "BRANS", "LGS"].includes(tur)) return { error: "Tür seçin.", ...BOS_SONUC };
 
   const dersler = gecerliDersler(tur);
   const izinliDersler = new Set(dersler);
@@ -978,6 +984,8 @@ export async function denemeExcelIceriAktar(formData: FormData): Promise<{
 
   const basliklar = (sheet.getRow(1).values as unknown[]) ?? [];
   let adSoyadKolonu = -1;
+  // İsteğe bağlı "Öğrenci No" kolonu (16.10.2026): eski şablonlarda yok.
+  let ogrenciNoKolonu = -1;
   const dersKolonlari: { ders: string; dogruKolon: number; yanlisKolon: number }[] = [];
   const dogruKolonlari = new Map<string, number>();
   const yanlisKolonlari = new Map<string, number>();
@@ -985,6 +993,7 @@ export async function denemeExcelIceriAktar(formData: FormData): Promise<{
     const baslik = excelHucreDegeri(deger);
     if (!baslik) return;
     if (adSoyadKolonu === -1 && baslik.toLocaleLowerCase("tr-TR") === "ad soyad") { adSoyadKolonu = kolonIndex; return; }
+    if (ogrenciNoKolonu === -1 && baslik.toLocaleLowerCase("tr-TR") === "öğrenci no") { ogrenciNoKolonu = kolonIndex; return; }
     const dogruEslesme = baslik.match(/^(.*)\s+Doğru$/i);
     const yanlisEslesme = baslik.match(/^(.*)\s+Yanlış$/i);
     if (dogruEslesme && izinliDersler.has(dogruEslesme[1].trim())) dogruKolonlari.set(dogruEslesme[1].trim(), kolonIndex);
@@ -1029,7 +1038,11 @@ export async function denemeExcelIceriAktar(formData: FormData): Promise<{
     }
 
     if (dersSonuclari.length === 0) { okunamayanAdlar.push(adSoyad); return; }
-    ayristirilan.push({ ad_soyad: adSoyad, ders_sonuclari: dersSonuclari });
+    const ogrenciNo = ogrenciNoKolonu === -1 ? null : excelSayiDegeri(row.getCell(ogrenciNoKolonu).value);
+    ayristirilan.push({
+      ad_soyad: adSoyad, ders_sonuclari: dersSonuclari,
+      ogrenci_no: ogrenciNo !== null && Number.isInteger(ogrenciNo) && ogrenciNo > 0 ? ogrenciNo : undefined,
+    });
   });
 
   if (ayristirilan.length === 0) {

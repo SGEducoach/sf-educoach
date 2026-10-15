@@ -17,7 +17,7 @@ export function DershaneDenemePdfFormu({ schoolId, yalnizcaExcel = false }: { sc
   const [mod, setMod] = useState<"pdf" | "excel">(schoolId || yalnizcaExcel ? "excel" : "pdf");
   const [yayinevi, setYayinevi] = useState("");
   const [tarih, setTarih] = useState("");
-  const [tur, setTur] = useState<"TYT" | "AYT" | "BRANS">("TYT");
+  const [tur, setTur] = useState<"TYT" | "AYT" | "BRANS" | "LGS">("TYT");
   const [bicim, setBicim] = useState<"otomatik" | "okul" | "maarif" | "sinif" | "sirali" | "claude">("otomatik");
   const [hata, setHata] = useState<string | null>(null);
   const [sonuc, setSonuc] = useState<{
@@ -128,7 +128,13 @@ export function DershaneDenemePdfFormu({ schoolId, yalnizcaExcel = false }: { sc
             <option value="TYT">TYT</option>
             <option value="AYT">AYT</option>
             <option value="BRANS">Branş Denemesi (9-10. sınıf)</option>
+            <option value="LGS">LGS (ortaokul)</option>
           </select>
+          {tur === "LGS" && mod === "pdf" && (
+            <span className="text-[11px]" style={{ color: TEXT_MUTED }}>
+              LGS sonuç listesi PDF&apos;ten henüz okunmuyor; &quot;Excel yükle&quot; sekmesindeki LGS şablonunu kullanın.
+            </span>
+          )}
         </label>
         {mod === "pdf" && (
           <label className="flex flex-col gap-1">

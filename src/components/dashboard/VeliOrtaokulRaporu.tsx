@@ -67,6 +67,36 @@ export function VeliOrtaokulRaporu({ rapor, ogrenciAdi }: { rapor: OrtaokulVeliR
         />
       </div>
 
+      {rapor.denemeler.length > 0 && (
+        <section className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+          <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="mb-1 block text-[15px] font-bold">
+            LGS denemeleri
+          </span>
+          <p className="mb-3 text-xs" style={{ color: TEXT_MUTED }}>
+            Okulun yüklediği deneme sonuçları. 90 soru; 3 yanlış 1 doğruyu götürür.
+          </p>
+          <div className="flex flex-col gap-2">
+            {rapor.denemeler.map((d, i) => (
+              <div key={`${d.tarih}-${i}`} className="rounded-2xl p-3" style={{ background: BG1_ALT }}>
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <span className="text-sm font-semibold" style={{ color: TEXT }}>
+                    {d.tarih.split("-").reverse().join(".")}{d.yayinevi ? <span className="text-[11px] font-normal" style={{ color: TEXT_MUTED }}> · {d.yayinevi}</span> : null}
+                  </span>
+                  <span className="text-sm font-bold" style={{ color: MINT }}>{d.toplamNet} net</span>
+                </div>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {d.dersler.map((s) => (
+                    <span key={s.ders} className="rounded-full px-2.5 py-0.5 text-[11px]" style={{ color: TEXT, border: `1px solid ${BORDER_STRONG}` }}>
+                      {s.ders.replace("T.C. İnkılap Tarihi ve Atatürkçülük", "İnkılap Tarihi").replace("Din Kültürü ve Ahlak Bilgisi", "Din Kültürü")}: {s.net} <span style={{ color: TEXT_MUTED }}>({s.dogru}D {s.yanlis}Y)</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {rapor.dersler.length > 0 && (
         <section className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
           <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="mb-1 block text-[15px] font-bold">

@@ -20,14 +20,17 @@ export async function GET(request: NextRequest) {
   }
 
   const turParam = request.nextUrl.searchParams.get("tur");
-  const tur = (["TYT", "AYT", "BRANS"].includes(turParam ?? "") ? turParam : "TYT") as DenemeTuru;
+  const tur = (["TYT", "AYT", "BRANS", "LGS"].includes(turParam ?? "") ? turParam : "TYT") as DenemeTuru;
   const dersler = gecerliDersler(tur);
 
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet("Deneme Sonuçları");
 
+  // "Öğrenci No" (16.10.2026, kolej) isteğe bağlı: doluysa ad farklı yazılmış
+  // olsa da numara + benzer ad ile otomatik eşleşir (bkz. numaraVeAdIleBul).
   const columns: { header: string; key: string; width: number }[] = [
     { header: "Ad Soyad", key: "adSoyad", width: 26 },
+    { header: "Öğrenci No", key: "ogrenciNo", width: 12 },
   ];
   for (const ders of dersler) {
     columns.push({ header: `${ders} Doğru`, key: `${ders}_dogru`, width: 14 });

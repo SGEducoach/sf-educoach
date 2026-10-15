@@ -1,4 +1,4 @@
-import { TYT_DERSLERI, AYT_DERSLERI, BRANS_DENEMESI_DERSLERI } from "@/lib/types";
+import { TYT_DERSLERI, AYT_DERSLERI, BRANS_DENEMESI_DERSLERI, LGS_DERSLERI } from "@/lib/types";
 import type { DenemeTuru } from "@/lib/types";
 
 // Bir deneme türü için geçerli ders adları — hem PDF hem Excel toplu sonuç
@@ -9,5 +9,6 @@ import type { DenemeTuru } from "@/lib/types";
 export function gecerliDersler(tur: DenemeTuru): string[] {
   if (tur === "TYT") return [...TYT_DERSLERI];
   if (tur === "BRANS") return [...BRANS_DENEMESI_DERSLERI];
+  if (tur === "LGS") return [...LGS_DERSLERI];
   return [...new Set(Object.values(AYT_DERSLERI).flat())];
 }

@@ -7,7 +7,9 @@ export type HedefeYakinlik = "yakin" | "belirsiz" | "uzak";
 export type VerimlilikDuzeyi = "cok_dusuk" | "dusuk" | "orta" | "iyi" | "cok_iyi";
 // BRANS = Branş Denemesi — 9 ve 10. sınıf öğrencilerinde TYT/AYT yerine
 // kullanılıyor (bkz. 9_10_sinif_ekleme_senaryosu.pdf, "Ürün kararı").
-export type DenemeTuru = "TYT" | "AYT" | "BRANS";
+// LGS (16.10.2026, kolej): ortaokul denemesi. Veritabanı türünde 0147'den
+// beri var; net formülü D − Y/3 (bkz. netHesapla, YANLIS_KATSAYISI).
+export type DenemeTuru = "TYT" | "AYT" | "BRANS" | "LGS";
 export type DenemeZorlugu = "kolay" | "orta" | "zor";
 // Sınıf seviyeleri TEK kaynakta. Ortaokul paneli öncesinde 9-12 kodun altı
 // ayrı yerinde elle yazılıydı; 5-8 eklenince hepsi ıskalanacaktı.
@@ -336,9 +338,26 @@ const BRANS_SORU_SAYISI: Record<string, number> = {
   "Tarih": 10, "Coğrafya": 10, "Felsefe": 5, "Din Kültürü": 5,
 };
 
+// LGS (MEB, 90 soru): sözel oturum Türkçe 20, İnkılap 10, Din 10,
+// İngilizce 10; sayısal oturum Matematik 20, Fen 20. Ders adları ortaokul
+// müfredatındaki adlarla (ortaokul_mufredat_dersleri.ad) birebir aynı.
+export const LGS_DERSLERI = [
+  "Türkçe", "Matematik", "Fen Bilimleri", "T.C. İnkılap Tarihi ve Atatürkçülük", "Din Kültürü ve Ahlak Bilgisi", "İngilizce",
+] as const;
+
+const LGS_SORU_SAYISI: Record<string, number> = {
+  "Türkçe": 20, "Matematik": 20, "Fen Bilimleri": 20,
+  "T.C. İnkılap Tarihi ve Atatürkçülük": 10, "Din Kültürü ve Ahlak Bilgisi": 10, "İngilizce": 10,
+};
+
 export function dersSoruSayisi(tur: DenemeTuru, ders: string): number | undefined {
-  const kaynak = tur === "TYT" ? TYT_SORU_SAYISI : tur === "AYT" ? AYT_SORU_SAYISI : BRANS_SORU_SAYISI;
+  const kaynak = tur === "TYT" ? TYT_SORU_SAYISI : tur === "AYT" ? AYT_SORU_SAYISI : tur === "LGS" ? LGS_SORU_SAYISI : BRANS_SORU_SAYISI;
   return kaynak[ders];
+}
+
+// Deneme türünün net formülü: LGS ortaokul (D − Y/3), diğerleri lise.
+export function denemeNetKademesi(tur: DenemeTuru | string): NetKademesi {
+  return tur === "LGS" ? "ortaokul" : "lise";
 }
 
 // Net formülü KADEMEYE GÖRE DEĞİŞİR (kullanıcı kararı 08.10.2026):
