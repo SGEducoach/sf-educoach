@@ -82,7 +82,11 @@ export async function sinifAnaliziGetir(
     classes: { id: string; seviye: string; sube: string } | { id: string; seviye: string; sube: string }[] | null;
   };
 
-  const temel = ((ogrencilerHam ?? []) as unknown as OgrenciRow[]).map((o) => {
+  // İlkokul (1-4) öğrencisi sisteme girmediği için aktiflik ve çalışma
+  // ölçüleri ona anlamsız; analiz dışında (16.10.2026). Gelişim Raporu'nda izlenir.
+  const ogrenciSatirlari = ((ogrencilerHam ?? []) as unknown as OgrenciRow[])
+    .filter((o) => kademeBul(tekil(o.classes)?.seviye) !== "ilkokul");
+  const temel = ogrenciSatirlari.map((o) => {
     const sinif = tekil(o.classes);
     return {
       ogrenciId: o.id,

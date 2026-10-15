@@ -25,6 +25,7 @@ import type { KurumKademesi, KurumTuru } from "@/lib/types";
 import { telefonSanitize, okulNoSanitize, TELEFON_IPUCU } from "@/lib/validators";
 import { ogrenciKaydiEslestir } from "@/lib/ogrenci-eslestirme";
 import { KurumSilmeButonu } from "@/components/yonetici/KurumSilmeButonu";
+import { VeliDavetKodlari } from "@/components/dashboard/IlkokulGelisimGirisi";
 
 interface OkulSatiri {
   id: string;
@@ -658,9 +659,14 @@ function SinifRozeti({ sinif }: { sinif: SinifSatiri }) {
 
 // Satır formatı esnek: "Ad Soyad, Okul No", "Ad Soyad<TAB>Okul No" veya
 // sondaki rakam grubu okul no sayılarak "Ad Soyad Okul No" da kabul edilir.
-function satirAyristir(satir: string): { ad: string; okulNo: string } | null {
-  const virgullu = satir.split(/\t|,/).map((p) => p.trim()).filter(Boolean);
-  if (virgullu.length >= 2) return { ad: virgullu[0], okulNo: virgullu[1] };
+// Kolej kurulumu (16.10.2026): isteğe bağlı 3. ve 4. sütun veli adı ve veli
+// telefonu ("Ad Soyad, Okul No, Veli Adı, Veli Telefonu").
+type TopluSatir = { ad: string; okulNo: string; veliAd?: string; veliTelefon?: string };
+function satirAyristir(satir: string): TopluSatir | null {
+  const virgullu = satir.split(/\t|,|;/).map((p) => p.trim());
+  if (virgullu.filter(Boolean).length >= 2 && virgullu[0] && virgullu[1]) {
+    return { ad: virgullu[0], okulNo: virgullu[1], veliAd: virgullu[2] || undefined, veliTelefon: virgullu[3] || undefined };
+  }
 
   const kelimeler = satir.trim().split(/\s+/).filter(Boolean);
   if (kelimeler.length >= 2) {
@@ -680,7 +686,7 @@ function OgrenciTopluEkleFormu({ schoolId, siniflar }: { schoolId: string; sinif
   const [pending, startTransition] = useTransition();
 
   const satirlar = metin.split("\n").map((s) => s.trim()).filter(Boolean).map(satirAyristir);
-  const gecerliSatirlar = satirlar.filter((s): s is { ad: string; okulNo: string } => s !== null);
+  const gecerliSatirlar = satirlar.filter((s): s is TopluSatir => s !== null);
   const hatalıSayisi = satirlar.length - gecerliSatirlar.length;
   const dokuzOnMu = dokuzOnSinifMi(siniflar.find((s) => s.id === classId)?.seviye);
   // O2 (08.10.2026): bu form ortaokulu HIC tanimiyordu — yalniz dokuzOnMu
@@ -715,7 +721,10 @@ function OgrenciTopluEkleFormu({ schoolId, siniflar }: { schoolId: string; sinif
         <ClipboardList size={13} color={MINT} />
         <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[13px] font-bold">Toplu öğrenci ekle</span>
       </div>
-      <p style={{ color: TEXT_MUTED }} className="text-[11px]">Her satıra bir öğrenci: &quot;Ad Soyad, Okul No&quot; (Excel&apos;den yapıştırınca da çalışır).</p>
+      <p style={{ color: TEXT_MUTED }} className="text-[11px]">
+        Her satıra bir öğrenci: &quot;Ad Soyad, Okul No&quot;, isteğe bağlı &quot;, Veli Adı, Veli Telefonu&quot; (Excel&apos;den yapıştırınca da çalışır).
+        {seciliKademe === "ilkokul" && " İlkokul öğrencileri giriş yapmaz; her biri için veli davet kodu üretilir."}
+      </p>
 
       <div className="flex gap-2 flex-wrap">
         <select value={classId} onChange={(e) => setClassId(e.target.value)}
@@ -762,15 +771,44 @@ function OgrenciTopluEkleFormu({ schoolId, siniflar }: { schoolId: string; sinif
             {sonuclar.map((s, i) => (
               <div key={i} className="text-[11px] flex items-center justify-between gap-2" style={{ color: s.hata ? BLUSH : TEXT_MUTED }}>
                 <span>{s.ad} · #{s.okulNo}</span>
-                <span className="font-mono">{s.hata ?? s.sifre}</span>
+                <span className="font-mono">
+                  {s.hata ?? (s.sifre ?? "giriş yok")}
+                  {!s.hata && s.veliKodu && <> · veli kodu <strong style={{ color: TEXT }}>{s.veliKodu}</strong></>}
+                </span>
               </div>
             ))}
           </div>
-          <p style={{ color: TEXT_MUTED }} className="text-[10px] mt-1">Şifreler bir kerelik gösterildi, kaydedin — tekrar gösterilmeyecek.</p>
+          <div className="flex flex-wrap items-center gap-2 mt-1">
+            <button type="button" onClick={() => topluSonucCsvIndir(sonuclar, siniflar.find((s) => s.id === classId))}
+              className="sfec-btn text-[11px] font-bold px-3 py-1.5 rounded-lg" style={{ background: "rgba(255,255,255,0.06)", color: TEXT, border: `1px solid ${BORDER_STRONG}` }}>
+              Listeyi indir (Excel)
+            </button>
+            <p style={{ color: TEXT_MUTED }} className="text-[10px]">Şifreler ve veli kodları bir kerelik gösterildi, listeyi indirin — tekrar gösterilmeyecek.</p>
+          </div>
         </div>
       )}
+
+      {/* Sınıftaki mevcut öğrencilerin velileri için kod listesi (16.10.2026). */}
+      {classId && <VeliDavetKodlari classId={classId} sinifAdi={(() => { const s = siniflar.find((x) => x.id === classId); return s ? `${s.seviye}-${s.sube}` : ""; })()} />}
     </div>
   );
+}
+
+// Toplu eklemenin sonucu (şifre ve veli kodu) Excel'de açılabilen dosya
+// olarak; başındaki BOM Türkçe karakterlerin doğru görünmesi için.
+function topluSonucCsvIndir(sonuclar: TopluOgrenciSonuc[], sinif?: SinifSatiri) {
+  const kacir = (v: string) => `"${v.replace(/"/g, '""')}"`;
+  const sinifAdi = sinif ? `${sinif.seviye}-${sinif.sube}` : "";
+  const satirlar = [
+    ["Sınıf", "Öğrenci", "Öğrenci No", "Öğrenci Şifresi", "Veli Davet Kodu", "Durum"].map(kacir).join(";"),
+    ...sonuclar.map((s) => [sinifAdi, s.ad, s.okulNo, s.sifre ?? (s.hata ? "" : "giriş yok"), s.veliKodu ?? "", s.hata ?? "eklendi"].map(kacir).join(";")),
+  ];
+  const url = URL.createObjectURL(new Blob(["﻿" + satirlar.join("\r\n")], { type: "text/csv;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `ogrenci-listesi-${sinifAdi || "sinif"}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 function bugununTarihi(): string {

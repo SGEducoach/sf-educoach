@@ -967,7 +967,8 @@ function DerslerimBolumu({ dersler, siniflar, dersProgramiSatirlari, okulNobetle
   // sınıf değişince seçim kendiliğinden geçerli listeye oturaklansın.
   const bransSecenekleri = panelBransListesi(
     dershaneMi ? "dershane" : "okul",
-    kademeBul(siniflar.find((s) => s.id === sinifId)?.seviye),
+    // İlkokul sınıfı ortaokul branş listesini kullanır (Sınıf Öğretmeni orada).
+    ((k) => (k === "ilkokul" ? "ortaokul" : k))(kademeBul(siniflar.find((s) => s.id === sinifId)?.seviye)),
   );
   const ders = bransSecenekleri.includes(secilenDers) ? secilenDers : bransSecenekleri[0];
 

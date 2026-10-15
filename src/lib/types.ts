@@ -11,7 +11,8 @@ export type DenemeTuru = "TYT" | "AYT" | "BRANS";
 export type DenemeZorlugu = "kolay" | "orta" | "zor";
 // Sınıf seviyeleri TEK kaynakta. Ortaokul paneli öncesinde 9-12 kodun altı
 // ayrı yerinde elle yazılıydı; 5-8 eklenince hepsi ıskalanacaktı.
-export const SINIF_SEVIYELERI = ["5", "6", "7", "8", "9", "10", "11", "12"] as const;
+// 1-4 ilkokul (16.10.2026, migration 0157): ortaokul kurumunun içinde.
+export const SINIF_SEVIYELERI = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"] as const;
 export type SinifSeviyesi = (typeof SINIF_SEVIYELERI)[number];
 
 // Kurumun barındırdığı kademe (schools.kademe, migration 0128) — sınıf

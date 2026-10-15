@@ -7,6 +7,7 @@ import { pushGonderProfile } from "@/lib/push-send";
 import { bildirimGonder } from "@/lib/bildirim-gonder";
 import { geciciSifreyiEtkinlestir } from "@/lib/gecici-sifre";
 import { grupKoduNormalize } from "@/lib/grup-kocluk";
+import { ilkokulMu } from "@/lib/kademe";
 import type { UserRole } from "@/lib/types";
 
 const PENCERE_MS = 15 * 60 * 1000;
@@ -50,6 +51,16 @@ async function yanlisGirisBildirimGonder(admin: ReturnType<typeof createAdminCli
   const govde = `${tarih.toLocaleString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })} tarihinde hesabınıza yanlış şifre ile giriş denemesi yapıldı. Bu siz değilseniz şifrenizi değiştirmenizi öneririz.`;
   await pushGonderProfile(admin, hedefProfil.id, baslik, govde);
   await bildirimGonder(admin, hedefProfil.id, "yanlis_giris", baslik, govde);
+}
+
+// İlkokul öğrencisi (1-4. sınıf) giriş yapmaz (16.10.2026). Kural sınıf
+// seviyesinden türetiliyor, ayrı bir bayrak tutulmuyor (bkz. kademe.ts).
+async function ilkokulOgrencisiMi(admin: ReturnType<typeof createAdminClient>, userId: string): Promise<boolean> {
+  const { data } = await admin.from("students").select("classes(seviye)").eq("id", userId).maybeSingle();
+  // Gömülü ilişki çalışma anında nesne döner, tipte dizi görünür (proje notu).
+  const sinif = (data as unknown as { classes: { seviye: string } | { seviye: string }[] | null } | null)?.classes;
+  const seviye = Array.isArray(sinif) ? sinif[0]?.seviye : sinif?.seviye;
+  return ilkokulMu(seviye);
 }
 
 function istemciIp(request: NextRequest) {
@@ -135,6 +146,7 @@ export async function POST(request: NextRequest) {
   let askidaMi = false;
   let denemeSuresiDoldu = false;
   let grupDonduruldu = false;
+  let ilkokulOgrencisi = false;
   if (!error) {
     const { data: { user } } = await supabase.auth.getUser();
     const { data: profile } = user ? await admin.from("profiles").select("role, aktif").eq("id", user.id).maybeSingle() : { data: null };
@@ -150,6 +162,12 @@ export async function POST(request: NextRequest) {
       await supabase.auth.signOut();
       askidaMi = true;
       error = new Error("Hesap askıda");
+    } else if (user && profile?.role === "ogrenci" && await ilkokulOgrencisiMi(admin, user.id)) {
+      // İlkokul (16.10.2026, migration 0157): 1-4. sınıf öğrencisi sisteme
+      // girmez; kaydı veli ve kurum için var. Şifre doğru olsa da reddedilir.
+      await supabase.auth.signOut();
+      ilkokulOgrencisi = true;
+      error = new Error("İlkokul öğrencisi");
     } else if (user && profile && profile.role !== "admin") {
       // Dershane 1 haftalık deneme süresi (bkz. deneme-suresi.ts,
       // migration 0065) — SADECE dershane rolleri, okul hiç etkilenmez.
@@ -177,6 +195,10 @@ export async function POST(request: NextRequest) {
 
   if (grupDonduruldu) {
     return NextResponse.json({ error: GRUP_DONDURULDU_MESAJI }, { status: 403 });
+  }
+
+  if (ilkokulOgrencisi) {
+    return NextResponse.json({ error: "İlkokul öğrencileri sisteme giriş yapmaz. Gelişim raporunu veli hesabından izleyebilirsiniz." }, { status: 403 });
   }
 
   if (askidaMi) {

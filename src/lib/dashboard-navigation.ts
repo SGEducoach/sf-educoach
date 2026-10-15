@@ -44,6 +44,8 @@ export type DashboardBolumu =
   | "ortaokul-calisma"
   | "ortaokul-onaylar"
   | "ortaokul-yeterlilik"
+  // İlkokul (16.10.2026): 1-4. sınıfların aylık gelişim raporu.
+  | "ilkokul-gelisim"
   | "okullar"
   // Grup Koçluk (18.09.2026) — kurum dışı koç grupları.
   | "grup-kocluk"
@@ -111,6 +113,13 @@ const ORTAOKUL_YETERLILIK_MENU_OGESI: DashboardMenuOgesi = {
 };
 const ORTAOKUL_ONAYLAR_MENU_OGESI: DashboardMenuOgesi = {
   bolum: "ortaokul-onaylar", href: "/dashboard/ortaokul-onaylar", etiket: "Çalışma onayları", ikon: "onay",
+};
+
+// İlkokul gelişim raporu (16.10.2026): ilkokul yalnız "ortaokul" kademeli
+// kurumda var. Sınıf öğretmeni, rehberlik servisi ve müdür görür; içeride
+// kişinin yazabildiği kalemler açılır (bkz. ilkokul-gelisim.ts).
+const ILKOKUL_GELISIM_MENU_OGESI: DashboardMenuOgesi = {
+  bolum: "ilkokul-gelisim", href: "/dashboard/ilkokul-gelisim", etiket: "Gelişim Raporu", ikon: "hakimiyet",
 };
 
 const VELI_MENUSU: DashboardMenuOgesi[] = [
@@ -360,22 +369,25 @@ export function dashboardMenusu(
     // dalını atlıyordu — ortaokul öğretmeni "Ajandam"ı KAYBETMİŞTİ. Ortaokul
     // bir okul kurumu, Ajandam ona da ait.
     const taban = kurumTuru === "okul" ? [...OGRETMEN_MENUSU, TAKVIM_MENU_OGESI] : [...OGRETMEN_MENUSU];
-    return [...ortaokulaUyarla(taban), ORTAOKUL_ONAYLAR_MENU_OGESI, ORTAOKUL_YETERLILIK_MENU_OGESI];
+    const ortaokulMenusu = [...ortaokulaUyarla(taban), ORTAOKUL_ONAYLAR_MENU_OGESI, ORTAOKUL_YETERLILIK_MENU_OGESI];
+    return kademe === "ortaokul" ? [...ortaokulMenusu, ILKOKUL_GELISIM_MENU_OGESI] : ortaokulMenusu;
   }
   if (role === "ogrenci") return OGRENCI_MENUSU;
   if (role === "veli") return VELI_MENUSU;
   if (role === "ogretmen" && rehber) {
     if (kurumTuru === "dershane") return DERSHANE_REHBER_MENUSU;
     // "Kapsamım" Kurum Performansı'nın HEMEN ARDINDAN gelir: triyaj girişi.
-    return okulRehberi
+    const rehberMenusu = okulRehberi
       ? [REHBER_OGRETMEN_MENUSU[0], KAPSAMIM_MENU_OGESI, PROGRAM_DESTEGI_MENU_OGESI, ...REHBER_OGRETMEN_MENUSU.slice(1)]
       : REHBER_OGRETMEN_MENUSU;
+    // İlkokulun "Rehberlik" kalemini rehberlik servisi işaretler.
+    return okulRehberi && kademe === "ortaokul" ? [...rehberMenusu, ILKOKUL_GELISIM_MENU_OGESI] : rehberMenusu;
   }
   if (role === "ogretmen") return kurumTuru === "okul" ? [...OGRETMEN_MENUSU, TAKVIM_MENU_OGESI] : OGRETMEN_MENUSU;
   if (role === "mudur") {
     if (kurumTuru === "dershane") return DERSHANE_MUDUR_MENUSU;
     const taban = [...MUDUR_MENUSU, TAKVIM_MENU_OGESI];
-    return kademe === "ortaokul" ? ortaokulaUyarla(taban) : taban;
+    return kademe === "ortaokul" ? [...ortaokulaUyarla(taban), ILKOKUL_GELISIM_MENU_OGESI] : taban;
   }
   if (role === "admin") return ADMIN_MENUSU;
   return [];
@@ -392,7 +404,7 @@ export function dashboardMenuYapisi(
 
 export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
   "sinif-analizi", "gorevler", "planlar", "veri-girisi", "konu-hakimiyeti", "analiz", "yapay-zeka", "tg-denemeleri",
-  "duyurular", "talepler", "onaylar", "dersler", "ortaokul-dersler", "ortaokul-yardim", "ortaokul-calisma", "ortaokul-onaylar", "ortaokul-yeterlilik", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler", "rehberlik", "profil", "takvim", "yarismalar", "ogrenci-takibi",
+  "duyurular", "talepler", "onaylar", "dersler", "ortaokul-dersler", "ortaokul-yardim", "ortaokul-calisma", "ortaokul-onaylar", "ortaokul-yeterlilik", "ilkokul-gelisim", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler", "rehberlik", "profil", "takvim", "yarismalar", "ogrenci-takibi",
 ]);
 // Yazılı analizinin ayrı sayfası yok (kullanıcı kararı 11.09.2026: yalnızca
 // öğretmene özel) — öğretmen Ajandam > Yazılı Analizi sekmesinden girer.

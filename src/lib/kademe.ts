@@ -12,8 +12,12 @@ import type { KurumKademesi, KurumTuru } from "@/lib/types";
 // bulunabiliyor (çok yaygın), dolayısıyla kademe kurumun değil SINIFIN
 // özelliğidir ve `classes.seviye`den türetilir. Türetme tek yerde, burada.
 
-export type Kademe = "ortaokul" | "lise";
+// İlkokul (kullanıcı kararı 16.10.2026): ayrı bir kurum kademesi değil,
+// "ortaokul" kademesindeki kurumun 1-4. sınıfları. İlkokul öğrencisi
+// sisteme girmez; veli ve kurum izler (bkz. ilkokul-gelisim.ts).
+export type Kademe = "ilkokul" | "ortaokul" | "lise";
 
+export const ILKOKUL_SEVIYELERI = ["1", "2", "3", "4"] as const;
 export const ORTAOKUL_SEVIYELERI = ["5", "6", "7", "8"] as const;
 export const LISE_SEVIYELERI = ["9", "10", "11", "12"] as const;
 
@@ -35,13 +39,18 @@ export function seviyeNormalize(seviye: string | null | undefined): string | nul
 export function kademeBul(seviye: string | null | undefined): Kademe | null {
   const n = seviyeNormalize(seviye);
   if (n === null) return null;
+  if ((ILKOKUL_SEVIYELERI as readonly string[]).includes(n)) return "ilkokul";
   if ((ORTAOKUL_SEVIYELERI as readonly string[]).includes(n)) return "ortaokul";
   if ((LISE_SEVIYELERI as readonly string[]).includes(n)) return "lise";
-  return null; // 1-4. sınıf: ilkokul, panel kapsamında değil
+  return null;
 }
 
 export function ortaokulMu(seviye: string | null | undefined): boolean {
   return kademeBul(seviye) === "ortaokul";
+}
+
+export function ilkokulMu(seviye: string | null | undefined): boolean {
+  return kademeBul(seviye) === "ilkokul";
 }
 
 export function lgsSinifiMi(seviye: string | null | undefined): boolean {
@@ -49,6 +58,7 @@ export function lgsSinifiMi(seviye: string | null | undefined): boolean {
 }
 
 export const KADEME_ETIKET: Record<Kademe, string> = {
+  ilkokul: "İlkokul",
   ortaokul: "Ortaokul",
   lise: "Lise",
 };
@@ -64,6 +74,8 @@ export const KADEME_ETIKET: Record<Kademe, string> = {
 // Beden Eğitimi, Müzik) için metinler İKİ LİSTEDE DE BİREBİR AYNI olmalı —
 // aksi hâlde aynı öğretmen iki ayrı branş gibi görünür.
 export const ORTAOKUL_BRANSLARI = [
+  // İlkokul (16.10.2026): 1-4. sınıfları sınıf öğretmeni okutur.
+  "Sınıf Öğretmeni",
   // Lisede branş "Türk Dili ve Edebiyatı"; ortaokulda ÖĞRETMEN BRANŞI
   // "Türkçe"dir (kullanıcı kararı 01.10.2026). Lise adı bu listede YOK.
   "Türkçe",
@@ -89,7 +101,7 @@ export const ORTAOKUL_BRANSLARI = [
 ] as const;
 
 export function bransListesi(kademe: Kademe | null | undefined): readonly string[] {
-  return kademe === "ortaokul" ? ORTAOKUL_BRANSLARI : BRANS_LISTESI;
+  return kademe === "ortaokul" || kademe === "ilkokul" ? ORTAOKUL_BRANSLARI : BRANS_LISTESI;
 }
 
 // Formların kullandığı liste: kurum türü (okul/dershane) VE kademe birlikte.
@@ -115,16 +127,17 @@ export function panelBransListesi(
 
 // Kurumun kademesine göre açılabilecek sınıf seviyeleri (schools.kademe,
 // migration 0128). Yönetici "ortaokul" seçmedikçe 5-8 hiç görünmez —
-// yanlışlıkla ortaokul sınıfı açılmasın.
+// yanlışlıkla ortaokul sınıfı açılmasın. İlkokul (1-4) ortaokul kademesinin
+// içinde (kullanıcı kararı 16.10.2026, migration 0157).
 export function kurumSeviyeleri(kademe: KurumKademesi | null | undefined): readonly string[] {
-  if (kademe === "ortaokul") return ORTAOKUL_SEVIYELERI;
+  if (kademe === "ortaokul") return [...ILKOKUL_SEVIYELERI, ...ORTAOKUL_SEVIYELERI];
   if (kademe === "ikisi") return [...ORTAOKUL_SEVIYELERI, ...LISE_SEVIYELERI];
   return LISE_SEVIYELERI;
 }
 
 export const KURUM_KADEMESI_ETIKET: Record<KurumKademesi, string> = {
   lise: "Lise (9-12)",
-  ortaokul: "Ortaokul (5-8)",
+  ortaokul: "İlkokul + Ortaokul (1-8)",
   ikisi: "Ortaokul + Lise (5-12)",
 };
 
@@ -146,7 +159,7 @@ export function seviyeEtiketi(seviye: string): string {
 }
 
 export function alanSorulurMu(kademe: Kademe | KurumKademesi | null | undefined): boolean {
-  return kademe !== "ortaokul";
+  return kademe !== "ortaokul" && kademe !== "ilkokul";
 }
 
 export function hedefEtiketi(kademe: Kademe | KurumKademesi | null | undefined): string {
@@ -174,7 +187,7 @@ export type KurumSecimi = "ortaokul" | "lise" | "ikisi" | "dershane";
 export const KURUM_SECIMI_SIRASI = ["ortaokul", "lise", "ikisi", "dershane"] as const satisfies readonly KurumSecimi[];
 
 export const KURUM_SECIMI_ETIKET: Record<KurumSecimi, string> = {
-  ortaokul: "Ortaokul (5-8)",
+  ortaokul: "İlkokul + Ortaokul (1-8)",
   lise: "Lise (9-12)",
   ikisi: "Ortaokul + Lise",
   dershane: "Dershane",
@@ -182,7 +195,7 @@ export const KURUM_SECIMI_ETIKET: Record<KurumSecimi, string> = {
 
 // Seçimin ne anlama geldiğini yöneticiye tek satırla söyler.
 export const KURUM_SECIMI_ACIKLAMA: Record<KurumSecimi, string> = {
-  ortaokul: "Sınıf eklerken yalnız 5-8 seçenekleri çıkar.",
+  ortaokul: "Sınıf eklerken 1-8 çıkar. 1-4. sınıf öğrencileri giriş yapmaz; onları veli ve kurum izler.",
   lise: "Sınıf eklerken yalnız 9-12 seçenekleri çıkar.",
   ikisi: "Aynı kurumda ortaokul ve lise varsa: sınıf eklerken 5-12 birlikte çıkar.",
   dershane: "Dershane: kurum yönetimi ve deneme yükleme açık, sınıflar 9-12.",

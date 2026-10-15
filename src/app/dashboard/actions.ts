@@ -23,6 +23,9 @@ import { SINIF_SEVIYELERI } from "@/lib/types";
 import type { KurumKademesi, SinifSeviyesi } from "@/lib/types";
 import { REHBER_BRANSI, REHBERLIK_DUYURU_BASLIGI } from "@/lib/rehberlik";
 import { rehberlikUyeligiGetir } from "@/lib/rehberlik-servisi";
+import { ilkokulMu } from "@/lib/kademe";
+import { veliTelefonuTemizle } from "@/lib/ilkokul-gelisim";
+import { veliDavetiOlustur } from "@/lib/veli-davet";
 
 const DUYURU_MAKS_UZUNLUK = 500;
 
@@ -559,13 +562,17 @@ export async function dershaneSinifEkle(input: { seviye: "9" | "10" | "11" | "12
 export interface TopluOgrenciSonuc {
   ad: string;
   okulNo: string;
+  // İlkokul öğrencisinde null: giriş yapmaz, şifresi kimseye verilmez.
   sifre: string | null;
   hata: string | null;
+  // Veli adı verildiyse ya da sınıf ilkokulsa 30 gün geçerli veli davet kodu.
+  veliKodu?: string | null;
 }
 
 export async function ogrencileriTopluEkle(input: {
   schoolId: string; classId: string; aytAlan: "SAY" | "EA" | "SOZ" | null;
-  satirlar: { ad: string; okulNo: string }[];
+  // Veli adı ve telefonu isteğe bağlı (16.10.2026, kolej kurulumu).
+  satirlar: { ad: string; okulNo: string; veliAd?: string; veliTelefon?: string }[];
 }): Promise<{ error: string | null; sonuclar: TopluOgrenciSonuc[] }> {
   const { supabase, user, admin } = await requireAdmin();
   if (!admin) return { error: "Bu işlem için yönetici yetkisi gerekiyor.", sonuclar: [] };
@@ -579,6 +586,8 @@ export async function ogrencileriTopluEkle(input: {
   // Tüm satırlar aynı yönetici işlemine ait — tek jeton yeterli
   // (trigger jetonu 15 dakika geçerli sayıyor, bkz. migration 0096).
   const jeton = await yoneticiEklemeJetonu(admin, user.id);
+  const { data: hedefSinif } = await admin.from("classes").select("seviye").eq("id", input.classId).maybeSingle();
+  const ilkokulSinifi = ilkokulMu(hedefSinif?.seviye as string | undefined);
 
   // Auth admin API'sinin eşzamanlı isteklerde oran sınırına takılmaması için
   // satırlar sırayla (paralel değil) işleniyor — sınıf boyutu (~20-35)
@@ -593,11 +602,13 @@ export async function ogrencileriTopluEkle(input: {
 
     const sifre = rastgeleSifre();
     const email = `${crypto.randomUUID()}@ogrenci.sgeducoach.internal`;
+    const veliTelefon = veliTelefonuTemizle(satir.veliTelefon);
     const { data: created, error } = await admin.auth.admin.createUser({
       email, password: sifre, email_confirm: true,
       user_metadata: {
         role: "ogrenci", ad, telefon: null, school_id: input.schoolId, class_id: input.classId,
-        okul_no: okulNo, ayt_alan: input.aytAlan, hedef_bolum: "",
+        okul_no: okulNo, ayt_alan: ilkokulSinifi ? null : input.aytAlan, hedef_bolum: "",
+        veli_telefon: veliTelefon,
         admin_ekledi: true, // izinli öğrenci listesi kontrolünden muaf (bkz. migration 0026)
         yonetici_jetonu: jeton, // resmî liste kontrolünden muaf (bkz. migration 0096)
       },
@@ -606,8 +617,17 @@ export async function ogrencileriTopluEkle(input: {
       sonuclar.push({ ad, okulNo, sifre: null, hata: manuelEklemeHatasi(error.message) });
       continue;
     }
-    void created;
-    sonuclar.push({ ad, okulNo, sifre, hata: null });
+    // İlkokul öğrencisi giriş yapmaz; veliyi bağlamak için kod üretilir.
+    // Diğer sınıflarda veli adı verildiyse yine kod üretilir.
+    let veliKodu: string | null = null;
+    const veliAd = satir.veliAd ? adNormalize(satir.veliAd) : "";
+    if (created.user && (ilkokulSinifi || veliAd)) {
+      const davet = await veliDavetiOlustur(admin, {
+        studentId: created.user.id, veliAd: veliAd || `${ad} Velisi`, veliTelefon, olusturanId: user.id,
+      });
+      veliKodu = "error" in davet ? null : davet.kod;
+    }
+    sonuclar.push({ ad, okulNo, sifre: ilkokulSinifi ? null : sifre, hata: null, veliKodu });
     basariliSayisi++;
   }
 

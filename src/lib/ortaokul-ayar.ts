@@ -24,7 +24,7 @@ export async function panelKademesi(
   supabase: SupabaseClient,
   role: string,
   sinifSeviyesi: string | null | undefined,
-): Promise<Kademe | null> {
+): Promise<Extract<Kademe, "ortaokul"> | null> {
   if (role !== "ogrenci") return null;
   const kademe = kademeBul(sinifSeviyesi);
   if (kademe !== "ortaokul") return null;

@@ -26,8 +26,8 @@ describe("kademeBul", () => {
     for (const s of ["5", "6", "7", "8"]) expect(kademeBul(s), s).toBe("ortaokul");
     for (const s of ["9", "10", "11", "12"]) expect(kademeBul(s), s).toBe("lise");
   });
-  test("ilkokul ve tanımsız seviyeler kademesiz", () => {
-    for (const s of ["1", "2", "3", "4"]) expect(kademeBul(s), s).toBeNull();
+  test("1-4 ilkokul (16.10.2026), tanımsız seviyeler kademesiz", () => {
+    for (const s of ["1", "2", "3", "4"]) expect(kademeBul(s), s).toBe("ilkokul");
     expect(kademeBul("Mezun")).toBeNull();
     expect(kademeBul(null)).toBeNull();
   });
@@ -168,8 +168,8 @@ describe("kurum seçimi ve sınıf seviyeleri", () => {
     }
   });
 
-  test("ortaokulda 9-12 hiç görünmez", () => {
-    expect(kurumSeviyeleri("ortaokul")).toEqual(["5", "6", "7", "8"]);
+  test("ortaokulda 1-8 (ilkokul dahil), 9-12 hiç görünmez", () => {
+    expect(kurumSeviyeleri("ortaokul")).toEqual(["1", "2", "3", "4", "5", "6", "7", "8"]);
     for (const s of ["9", "10", "11", "12"]) {
       expect(kurumSeviyeleri("ortaokul"), s).not.toContain(s);
     }
