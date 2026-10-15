@@ -1,5 +1,6 @@
 import webpush from "web-push";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { ilkokulMu } from "@/lib/kademe";
 
 export type DuyuruAliciTuru = "hepsi" | "ogrenci" | "veli";
 
@@ -81,13 +82,22 @@ export async function duyuruGonder(
 ): Promise<{ ogrenciSayisi: number; veliSayisi: number }> {
   if (ogrenciIdleri.length === 0) return { ogrenciSayisi: 0, veliSayisi: 0 };
 
-  const { data: veliBaglantilari } = await admin
-    .from("parent_students")
-    .select("parent_id")
-    .in("student_id", ogrenciIdleri);
-  const veliIdSeti = new Set((veliBaglantilari ?? []).map((v) => v.parent_id as string));
-  let ogrenciAlicilari = aliciTuru === "veli" ? [] : ogrenciIdleri;
-  let veliAlicilari = aliciTuru === "ogrenci" ? new Set<string>() : veliIdSeti;
+  const [{ data: veliBaglantilari }, { data: sinifSatirlari }] = await Promise.all([
+    admin.from("parent_students").select("parent_id, student_id").in("student_id", ogrenciIdleri),
+    admin.from("students").select("id, classes(seviye)").in("id", ogrenciIdleri),
+  ]);
+  // İlkokul (16.10.2026): 1-4. sınıf öğrencisi sisteme girmez. Ona giden
+  // duyuru ve rehberlik mesajı, alıcı "yalnız öğrenci" seçilmiş olsa bile
+  // velisine gider; öğrencinin kendisine yazılmaz.
+  type SinifSatiri = { id: string; classes: { seviye: string } | { seviye: string }[] | null };
+  const ilkokulOgrencileri = new Set(((sinifSatirlari ?? []) as unknown as SinifSatiri[])
+    .filter((s) => ilkokulMu(Array.isArray(s.classes) ? s.classes[0]?.seviye : s.classes?.seviye))
+    .map((s) => s.id));
+  const baglantilar = (veliBaglantilari ?? []) as { parent_id: string; student_id: string }[];
+  const veliIdSeti = new Set(baglantilar.map((v) => v.parent_id));
+  const ilkokulVelileri = new Set(baglantilar.filter((v) => ilkokulOgrencileri.has(v.student_id)).map((v) => v.parent_id));
+  let ogrenciAlicilari = aliciTuru === "veli" ? [] : ogrenciIdleri.filter((id) => !ilkokulOgrencileri.has(id));
+  let veliAlicilari = aliciTuru === "ogrenci" ? ilkokulVelileri : veliIdSeti;
 
   // Kategoriye göre kapatmış olanları alıcı listesinden çıkar (kullanıcı
   // isteği, 26.08.2026 — bkz. migration 0077).

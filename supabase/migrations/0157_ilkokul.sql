@@ -84,5 +84,46 @@ create policy "ilkokul_gelisim_notlari_select" on public.ilkokul_gelisim_notlari
   or public.has_student_access(student_id)
 );
 
+-- 5) Sosyal etkinlik: sınıf öğretmeni (ya da müdür/moderatör) sınıfın
+-- etkinliğini ve katılanları girer; veli çocuğunun katıldıklarını görür.
+-- Okullardaki etkinlik grupları modülü (0091) Beden Eğitimi/Müzik
+-- öğretmenine özel ve katılımı öğrencinin kendisi onaylıyor; ilkokul
+-- öğrencisi giriş yapmadığı için ayrı ve sade bir kayıt.
+create table if not exists public.ilkokul_etkinlikleri (
+  id uuid primary key default gen_random_uuid(),
+  school_id uuid not null references public.schools(id) on delete cascade,
+  class_id uuid not null references public.classes(id) on delete cascade,
+  ad text not null check (char_length(ad) between 2 and 150),
+  tarih date not null,
+  aciklama text check (aciklama is null or char_length(aciklama) <= 600),
+  olusturan_id uuid references public.profiles(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+create index if not exists ilkokul_etkinlikleri_sinif_idx on public.ilkokul_etkinlikleri (class_id, tarih desc);
+
+create table if not exists public.ilkokul_etkinlik_katilimlari (
+  etkinlik_id uuid not null references public.ilkokul_etkinlikleri(id) on delete cascade,
+  student_id uuid not null references public.students(id) on delete cascade,
+  primary key (etkinlik_id, student_id)
+);
+create index if not exists ilkokul_etkinlik_katilimlari_ogrenci_idx on public.ilkokul_etkinlik_katilimlari (student_id);
+
+alter table public.ilkokul_etkinlikleri enable row level security;
+alter table public.ilkokul_etkinlik_katilimlari enable row level security;
+
+drop policy if exists "ilkokul_etkinlikleri_select" on public.ilkokul_etkinlikleri;
+create policy "ilkokul_etkinlikleri_select" on public.ilkokul_etkinlikleri for select using (
+  public.kurumu_gorebilir(school_id)
+  or exists (
+    select 1 from public.ilkokul_etkinlik_katilimlari k
+    where k.etkinlik_id = id and public.has_student_access(k.student_id)
+  )
+);
+
+drop policy if exists "ilkokul_etkinlik_katilimlari_select" on public.ilkokul_etkinlik_katilimlari;
+create policy "ilkokul_etkinlik_katilimlari_select" on public.ilkokul_etkinlik_katilimlari for select using (
+  public.kurum_ogrencisini_gorebilir(student_id) or public.has_student_access(student_id)
+);
+
 comment on table public.ilkokul_gelisim is
   'Ilkokul (1-4) aylik gelisim raporu, migration 0157. Yazma yalniz sunucu islemleriyle (src/app/dashboard/ilkokul-actions.ts).';

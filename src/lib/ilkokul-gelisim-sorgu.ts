@@ -90,18 +90,50 @@ export async function ilkokulSinifRaporuGetir(admin: Istemci, classId: string, a
   };
 }
 
+export interface IlkokulEtkinligi {
+  id: string;
+  ad: string;
+  tarih: string;
+  aciklama: string | null;
+  katilimcilar: string[];
+}
+
+// Sınıfın seçili aydaki etkinlikleri (öğretmen ekranı; service-role).
+export async function ilkokulSinifEtkinlikleriGetir(admin: Istemci, classId: string, ay: string): Promise<IlkokulEtkinligi[]> {
+  const [y, a] = ay.split("-").map(Number);
+  const sonraki = a === 12 ? `${y + 1}-01-01` : `${y}-${String(a + 1).padStart(2, "0")}-01`;
+  const { data } = await admin.from("ilkokul_etkinlikleri")
+    .select("id, ad, tarih, aciklama, ilkokul_etkinlik_katilimlari(student_id)")
+    .eq("class_id", classId).gte("tarih", ay).lt("tarih", sonraki).order("tarih", { ascending: false });
+  type Satir = { id: string; ad: string; tarih: string; aciklama: string | null; ilkokul_etkinlik_katilimlari: { student_id: string }[] | null };
+  return ((data ?? []) as unknown as Satir[]).map((e) => ({
+    id: e.id, ad: e.ad, tarih: e.tarih, aciklama: e.aciklama,
+    katilimcilar: (e.ilkokul_etkinlik_katilimlari ?? []).map((k) => k.student_id),
+  }));
+}
+
 export interface IlkokulOgrenciRaporu {
   kayitlar: GelisimKaydi[];
   notlar: { ay: string; tur: GelisimNotTuru; metin: string }[];
+  // Çocuğun katıldığı son etkinlikler (en yeni önce).
+  etkinlikler: { ad: string; tarih: string; aciklama: string | null }[];
 }
 
 // Tek öğrencinin son aylarının raporu — veli ve öğretmen öğrenci sayfası.
 export async function ilkokulOgrenciRaporuGetir(client: Istemci, studentId: string, ayLimiti = 6): Promise<IlkokulOgrenciRaporu> {
-  const [{ data: kayitHam }, { data: notHam }] = await Promise.all([
+  const [{ data: kayitHam }, { data: notHam }, { data: etkinlikHam }] = await Promise.all([
     client.from("ilkokul_gelisim").select("ay, kalem, duzey").eq("student_id", studentId).order("ay", { ascending: false }).limit(ayLimiti * 10),
     client.from("ilkokul_gelisim_notlari").select("ay, tur, metin").eq("student_id", studentId).order("ay", { ascending: false }).limit(ayLimiti * 2),
+    client.from("ilkokul_etkinlik_katilimlari").select("ilkokul_etkinlikleri(ad, tarih, aciklama)").eq("student_id", studentId),
   ]);
+  type EtkinlikSatiri = { ilkokul_etkinlikleri: { ad: string; tarih: string; aciklama: string | null } | { ad: string; tarih: string; aciklama: string | null }[] | null };
+  const etkinlikler = ((etkinlikHam ?? []) as unknown as EtkinlikSatiri[])
+    .map((s) => (Array.isArray(s.ilkokul_etkinlikleri) ? s.ilkokul_etkinlikleri[0] : s.ilkokul_etkinlikleri))
+    .filter((e): e is { ad: string; tarih: string; aciklama: string | null } => !!e)
+    .sort((a, b) => b.tarih.localeCompare(a.tarih))
+    .slice(0, 10);
   return {
+    etkinlikler,
     kayitlar: ((kayitHam ?? []) as { ay: string; kalem: string; duzey: string }[])
       .filter((k) => gelisimKalemiMi(k.kalem) && gelisimDuzeyiMi(k.duzey))
       .map((k) => ({ ay: k.ay, kalem: k.kalem, duzey: k.duzey }) as GelisimKaydi),

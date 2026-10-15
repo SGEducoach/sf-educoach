@@ -9,6 +9,7 @@ import { requireUser } from "@/lib/dershane-auth";
 import { ilkokulMu } from "@/lib/kademe";
 import { ilkokulSiniflariGetir } from "@/lib/ilkokul-gelisim-sorgu";
 import { veliDavetiOlustur } from "@/lib/veli-davet";
+import { duyuruGonder } from "@/lib/push-send";
 import { ayAnahtari, gelisimDuzeyiMi, gelisimKalemiMi, kalemiYazabilirMi, notuYazabilirMi } from "@/lib/ilkokul-gelisim";
 import type { GelisimDuzeyi, GelisimKalemi, GelisimNotTuru, GelisimYetkisi } from "@/lib/ilkokul-gelisim";
 
@@ -87,6 +88,72 @@ export async function ilkokulGelisimKaydet(girdi: {
 
   revalidatePath("/dashboard/ilkokul-gelisim");
   return { error: null, kaydedilen: yazilacak.length + silinecek.length + notYaz.length + notSil.length };
+}
+
+// ---- Sosyal etkinlik ----
+
+// Sınıf öğretmeni ya da müdür/moderatör sınıfın etkinliğini ve katılanları
+// girer; istenirse katılanların velilerine duyuru olarak da gider.
+export async function ilkokulEtkinlikEkle(girdi: {
+  classId: string;
+  ad: string;
+  tarih: string;
+  aciklama?: string;
+  katilimcilar: string[];
+  veliyeDuyur: boolean;
+}): Promise<{ error: string | null }> {
+  const { user } = await requireUser();
+  const admin = createAdminClient();
+  const yetkiler = await sinifYetkisi(admin, user.id, girdi.classId);
+  if (!yetkiler.includes("sinif_ogretmeni") && !yetkiler.includes("yonetim")) {
+    return { error: "Etkinliği yalnız sınıf öğretmeni ya da okul yönetimi girebilir." };
+  }
+  const ad = girdi.ad.trim().replace(/\s+/g, " ");
+  if (ad.length < 2 || ad.length > 150) return { error: "Etkinlik adı 2-150 karakter olmalı." };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(girdi.tarih)) return { error: "Geçerli bir tarih seçin." };
+  const aciklama = (girdi.aciklama ?? "").trim().slice(0, 600) || null;
+
+  const { data: sinif } = await admin.from("classes").select("school_id").eq("id", girdi.classId).maybeSingle();
+  if (!sinif) return { error: "Sınıf bulunamadı." };
+  const { data: ogrenciler } = await admin.from("students").select("id").eq("class_id", girdi.classId);
+  const sinifOgrencileri = new Set(((ogrenciler ?? []) as { id: string }[]).map((o) => o.id));
+  const katilimcilar = [...new Set(girdi.katilimcilar)].filter((id) => sinifOgrencileri.has(id));
+  if (katilimcilar.length === 0) return { error: "En az bir katılan öğrenci seçin." };
+
+  const { data: etkinlik, error } = await admin.from("ilkokul_etkinlikleri")
+    .insert({ school_id: sinif.school_id, class_id: girdi.classId, ad, tarih: girdi.tarih, aciklama, olusturan_id: user.id })
+    .select("id").single();
+  if (error || !etkinlik) return { error: error?.message ?? "Etkinlik kaydedilemedi." };
+  const { error: katilimHatasi } = await admin.from("ilkokul_etkinlik_katilimlari")
+    .insert(katilimcilar.map((student_id) => ({ etkinlik_id: etkinlik.id, student_id })));
+  if (katilimHatasi) {
+    await admin.from("ilkokul_etkinlikleri").delete().eq("id", etkinlik.id);
+    return { error: katilimHatasi.message };
+  }
+
+  if (girdi.veliyeDuyur) {
+    const { data: profil } = await admin.from("profiles").select("ad").eq("id", user.id).maybeSingle();
+    const tarihTR = girdi.tarih.split("-").reverse().join(".");
+    await duyuruGonder(admin, katilimcilar, `Sosyal etkinlik: ${ad}`,
+      `${tarihTR} tarihli "${ad}" etkinliğine çocuğunuz katıldı.${aciklama ? ` ${aciklama}` : ""}`,
+      user.id, "veli", "ogretmen_mesaji",
+      { schoolId: sinif.school_id, gonderenRol: "ogretmen", gonderenAdi: profil?.ad ?? undefined, hedef: `${katilimcilar.length} öğrencinin velisi · Sosyal etkinlik` });
+  }
+  revalidatePath("/dashboard/ilkokul-gelisim");
+  return { error: null };
+}
+
+export async function ilkokulEtkinlikSil(etkinlikId: string): Promise<{ error: string | null }> {
+  const { user } = await requireUser();
+  const admin = createAdminClient();
+  const { data: etkinlik } = await admin.from("ilkokul_etkinlikleri").select("class_id").eq("id", etkinlikId).maybeSingle();
+  if (!etkinlik) return { error: "Etkinlik bulunamadı." };
+  const yetkiler = await sinifYetkisi(admin, user.id, etkinlik.class_id as string);
+  if (!yetkiler.includes("sinif_ogretmeni") && !yetkiler.includes("yonetim")) return { error: "Bu etkinliği silme yetkiniz yok." };
+  const { error } = await admin.from("ilkokul_etkinlikleri").delete().eq("id", etkinlikId);
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard/ilkokul-gelisim");
+  return { error: null };
 }
 
 // ---- Veli davet kodu ----

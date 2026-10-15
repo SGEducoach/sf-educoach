@@ -54,6 +54,22 @@ export function IlkokulGelisimRaporu({ rapor, ogrenciAdi }: { rapor: IlkokulOgre
         </div>
       )}
 
+      {rapor.etkinlikler.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <p className="text-[11px] font-bold uppercase tracking-wide" style={{ color: TEXT_MUTED }}>Katıldığı sosyal etkinlikler</p>
+          <ul className="flex flex-col gap-1.5">
+            {rapor.etkinlikler.map((e, i) => (
+              <li key={`${e.tarih}-${i}`} className="rounded-2xl px-4 py-2.5" style={{ background: BG0, border: `1px solid ${BORDER_STRONG}` }}>
+                <p className="text-sm font-semibold" style={{ color: TEXT }}>
+                  {e.ad} <span className="text-xs font-normal" style={{ color: TEXT_MUTED }}>· {e.tarih.split("-").reverse().join(".")}</span>
+                </p>
+                {e.aciklama && <p className="text-xs" style={{ color: TEXT_MUTED }}>{e.aciklama}</p>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {sonAyNotlari.length > 0 && (
         <div className="flex flex-col gap-2">
           {sonAyNotlari.map((n) => (

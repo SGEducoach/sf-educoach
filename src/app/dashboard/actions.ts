@@ -686,7 +686,8 @@ export async function ogretmenDuyuruGonder(mesaj: string, kapsam?: string, alici
   let hedefEtiketi = "";
 
   if (profile.role === "mudur" || rehberMi) {
-    if (["9", "10", "11", "12"].includes(kapsam ?? "")) {
+    // Sınıf düzeyi kapsamı (ilkokul ve ortaokul düzeyleri de, 16.10.2026).
+    if ((SINIF_SEVIYELERI as readonly string[]).includes(kapsam ?? "")) {
       if (okulRehberi && !rehberSeviyeleri.includes(kapsam!)) return { error: "Bu sınıf düzeyi sorumluluğunuzda değil.", ...bosSonuc };
       const { data: ogrenciler } = await admin
         .from("students").select("id, classes!inner(seviye)")

@@ -90,7 +90,8 @@ import { grupBekleyenIsSayilari, grupOgrencileriGetir, grupVelileriGetir } from 
 import { rehberOgrenciTakibiVerisiGetir } from "@/lib/dershane-rehber";
 import { OgrenciProfilim } from "@/components/dashboard/OgrenciProfilim";
 import { ogretmenAktifGunuKaydet, ogrenciProfilGoruntulemesiKaydet } from "@/lib/ogretmen-takip";
-import { ilkokulOgrenciRaporuGetir, ilkokulSinifRaporuGetir, ilkokulSiniflariGetir } from "@/lib/ilkokul-gelisim-sorgu";
+import { ilkokulOgrenciRaporuGetir, ilkokulSinifEtkinlikleriGetir, ilkokulSinifRaporuGetir, ilkokulSiniflariGetir } from "@/lib/ilkokul-gelisim-sorgu";
+import { IlkokulEtkinlikleri } from "@/components/dashboard/IlkokulEtkinlikleri";
 import { ayAnahtari } from "@/lib/ilkokul-gelisim";
 import { IlkokulGelisimGirisi } from "@/components/dashboard/IlkokulGelisimGirisi";
 import { IlkokulGelisimRaporu } from "@/components/dashboard/IlkokulGelisimRaporu";
@@ -783,12 +784,20 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
     }
     const secili = siniflar.find((s) => s.id === secilenSinifId) ?? siniflar[0];
     const ay = ayAnahtari(secilenAy ?? "") ?? ayAnahtari(bugununTarihiTR())!;
-    const rapor = await ilkokulSinifRaporuGetir(yonetici, secili.id, ay);
+    const [rapor, etkinlikler] = await Promise.all([
+      ilkokulSinifRaporuGetir(yonetici, secili.id, ay),
+      ilkokulSinifEtkinlikleriGetir(yonetici, secili.id, ay),
+    ]);
     return (
-      <IlkokulGelisimGirisi key={`${secili.id}-${ay}`}
-        siniflar={siniflar.map((s) => ({ id: s.id, ad: `${s.seviye}-${s.sube}` }))}
-        seciliSinifId={secili.id} ay={ay} yetkiler={secili.yetkiler}
-        ogrenciler={rapor.ogrenciler} kayitlar={rapor.kayitlar} oncekiAyKayitlari={rapor.oncekiAyKayitlari} notlar={rapor.notlar} />
+      <div className="flex flex-col gap-4">
+        <IlkokulGelisimGirisi key={`${secili.id}-${ay}`}
+          siniflar={siniflar.map((s) => ({ id: s.id, ad: `${s.seviye}-${s.sube}` }))}
+          seciliSinifId={secili.id} ay={ay} yetkiler={secili.yetkiler}
+          ogrenciler={rapor.ogrenciler} kayitlar={rapor.kayitlar} oncekiAyKayitlari={rapor.oncekiAyKayitlari} notlar={rapor.notlar} />
+        <IlkokulEtkinlikleri key={`etkinlik-${secili.id}-${ay}`} classId={secili.id} ay={ay} bugun={bugununTarihiTR()}
+          ogrenciler={rapor.ogrenciler} etkinlikler={etkinlikler}
+          duzenleyebilir={secili.yetkiler.includes("sinif_ogretmeni") || secili.yetkiler.includes("yonetim")} />
+      </div>
     );
   }
 
