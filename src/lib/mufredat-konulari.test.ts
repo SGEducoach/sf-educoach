@@ -2,6 +2,10 @@ import { describe, expect, test } from "vitest";
 import { MUFREDAT_KONULARI, konuOgrenciyeUygunMu, konuSinavi } from "./mufredat-konulari";
 
 describe("ortak konu kapsamı", () => {
+  test("taslak Türkçe Maarif dersi ortak listede yer almaz", () => {
+    expect(MUFREDAT_KONULARI.some((k) => k.ders === "Türkçe (Maarif)")).toBe(false);
+    expect(MUFREDAT_KONULARI.some((k) => k.ders === "Türkçe" && k.seviye === "TYT")).toBe(true);
+  });
   test("Hazırlık adları korunup 9. sınıfa taşınır", () => {
     const konu = MUFREDAT_KONULARI.find((k) => k.konu === "Doğrusal İlişkiler ve Problemler");
     expect(konu?.seviye).toBe("9. Sınıf");

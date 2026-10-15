@@ -64,6 +64,7 @@ async function mufredatAdaylari(admin: ReturnType<typeof createAdminClient>): Pr
   };
   for (const k of MUFREDAT_KONULARI) ekle(k.ders, { konu: k.konu, etiket: k.konu });
   for (const a of (altKonular as { ders: string; ust_konu: string; alt_baslik: string }[]) ?? []) {
+    if (a.ders === "Türkçe (Maarif)") continue; // Eski taslak eşleştirme listesinde görünmez.
     ekle(a.ders, { konu: a.alt_baslik, etiket: `${a.ust_konu} › ${a.alt_baslik}` });
   }
   return adaylar;

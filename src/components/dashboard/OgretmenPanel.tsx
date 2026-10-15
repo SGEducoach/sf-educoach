@@ -1151,10 +1151,10 @@ export function GorevVerBolumu({ ogrenciler, konuOnerileri, topluSiniflar = [], 
   const topluGonderimMumkun = uygunTopluSiniflar.length > 1 && ders !== "Genel";
   const topluGonderimAktif = tumSiniflaraGonder && topluGonderimMumkun;
   const hedefSeviyeler = new Set((topluGonderimAktif ? uygunTopluSiniflar.map((sinif) => sinif.sinifAdi.match(/^\d+/)?.[0]) : [sinifSeviyesi]).filter((seviye): seviye is string => !!seviye));
-  // Öğretmen branşı lisede tek adla tutuluyor; konu havuzu ise TYT Türkçe,
-  // sınıf bazlı Türkçe (Maarif) ve AYT Edebiyat olarak ayrılıyor.
+  // Öğretmen branşı lisede tek adla tutuluyor; konu havuzu TYT Türkçe ve
+  // AYT Edebiyat başlıklarından oluşuyor.
   const turkDiliDersiMi = !ortaokulMu && (ders === "Türk Dili ve Edebiyatı" || ders === "Türkçe" || ders === "Edebiyat");
-  const dersAdlari = turkDiliDersiMi ? new Set(["Türkçe", "Türkçe (Maarif)", "Edebiyat"]) : new Set([ders]);
+  const dersAdlari = turkDiliDersiMi ? new Set(["Türkçe", "Edebiyat"]) : new Set([ders]);
   const dersKonulari = konuOnerileri.filter((k) => {
     if (!dersAdlari.has(k.ders)) return false;
     if (hedefSeviyeler.size === 0 || !k.seviye || k.seviye === "TYT" || k.seviye === "AYT") return true;
