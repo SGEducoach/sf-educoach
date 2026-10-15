@@ -116,7 +116,7 @@ create policy "ilkokul_etkinlikleri_select" on public.ilkokul_etkinlikleri for s
   public.kurumu_gorebilir(school_id)
   or exists (
     select 1 from public.ilkokul_etkinlik_katilimlari k
-    where k.etkinlik_id = id and public.has_student_access(k.student_id)
+    where k.etkinlik_id = ilkokul_etkinlikleri.id and public.has_student_access(k.student_id)
   )
 );
 
