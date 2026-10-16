@@ -54,6 +54,22 @@ export interface KdAdlandirma {
   adEslesmeleri: readonly KonuAdEslesmesi[];
 }
 
+// Karnenin soru soru cevaplarından çıkarılan "bu kazanım hangi sorular"
+// bilgisi (kazanim-soru-cikarimi.ts). ders: deneme_kazanim_sonuclari'ndeki
+// hâliyle (Branş başlığı dahil) — konu çözümü denemeKonusu ile aynı.
+export interface KdSoruBilgisi {
+  denemeEtiketi: string;
+  tarih: string;
+  ders: string;
+  kazanimMetni: string;
+  test: string;
+  kitapcik: string | null;
+  sorular: number[];
+  kesin: boolean;
+}
+
+export interface KdKonuSorusu { denemeEtiketi: string; tarih: string; test: string; kitapcik: string | null; sorular: number[]; kesin: boolean }
+
 export interface KdOgrenciSkoru { id: string; ad: string; sinif: string | null; classId: string | null; skor: number }
 
 export interface KdKonu {
@@ -68,6 +84,8 @@ export interface KdKonu {
   beyan: { uzak: number; belirsiz: number; yakin: number } | null;
   oturumSayisi: number;
   gidisat: { ilk: number; son: number; ilkTarih: string; sonTarih: string } | null;
+  // Son denemelerde bu konuya düşen sorular (en yeni önce); yoksa boş.
+  sorular: KdKonuSorusu[];
 }
 
 export interface KdDers { ders: string; ortalama: number; konuSayisi: number; zayifKonuSayisi: number; ogrenciSayisi: number }
@@ -150,6 +168,7 @@ export function konuDurumuHesapla(girdi: {
   beyanlar: KdBeyanSatiri[];
   oturumlar: KdOturumSatiri[];
   adlandirma: KdAdlandirma;
+  soruBilgileri?: KdSoruBilgisi[];
   simdi?: number;
 }): KonuDurumuVerisi {
   const ogrenciMap = new Map(girdi.ogrenciler.map((o) => [o.id, o]));
@@ -217,6 +236,19 @@ export function konuDurumuHesapla(girdi: {
     b.oturumSayisi++;
   }
 
+  const konuSorulari = new Map<string, KdKonuSorusu[]>();
+  for (const s of girdi.soruBilgileri ?? []) {
+    const k = denemeKonusu(s.ders, s.kazanimMetni, girdi.adlandirma);
+    const anahtar = konuAnahtari(k.ders, k.konu);
+    if (!konular.has(anahtar)) continue;
+    const liste = konuSorulari.get(anahtar) ?? [];
+    const ayni = liste.find((x) => x.denemeEtiketi === s.denemeEtiketi && x.test === s.test && x.kitapcik === s.kitapcik);
+    // Aynı konuya eşlenen birden çok kazanım aynı testte: sorular birleşir.
+    if (ayni) { ayni.sorular = [...new Set([...ayni.sorular, ...s.sorular])].sort((a, c) => a - c); ayni.kesin = ayni.kesin && s.kesin; }
+    else liste.push({ denemeEtiketi: s.denemeEtiketi, tarih: s.tarih, test: s.test, kitapcik: s.kitapcik, sorular: [...s.sorular], kesin: s.kesin });
+    konuSorulari.set(anahtar, liste);
+  }
+
   const veriliOgrenciler = new Set<string>();
   const sonuclar: KdKonu[] = [];
   const dersSkorlari = new Map<string, Map<string, number[]>>();
@@ -259,6 +291,7 @@ export function konuDurumuHesapla(girdi: {
       beyan: beyanToplam > 0 ? b.beyan : null,
       oturumSayisi: b.oturumSayisi,
       gidisat,
+      sorular: (konuSorulari.get(anahtar) ?? []).sort((a, c) => c.tarih.localeCompare(a.tarih) || (a.kitapcik ?? "").localeCompare(c.kitapcik ?? "")),
     });
     const dersOgrencileri = dersSkorlari.get(b.ders) ?? new Map<string, number[]>();
     for (const s of skorlar) dersOgrencileri.set(s.id, [...(dersOgrencileri.get(s.id) ?? []), s.skor]);

@@ -1000,8 +1000,13 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       dersAtamalari: ((kdDersAtamalari ?? []) as { class_id: string; ders: string }[]).map((d) => ({ classId: d.class_id, ders: d.ders })),
       brans,
     });
+    // Görev kısayolu (Faz 2): yalnız öğretmenin görev verebildiği sınıflar —
+    // gorev_atamalari_insert_own kuralıyla aynı (sınıf öğretmenliği + ders ataması).
+    const gorevSiniflari = role === "ogretmen"
+      ? [...new Set([teacher.class_id, ...((kdDersAtamalari ?? []) as { class_id: string }[]).map((d) => d.class_id)].filter((id): id is string => !!id))]
+      : [];
     return (
-      <KonuDurumuBolumu schoolId={teacher.school_id} kapsamlar={kapsamlar} seciliAnahtar={secilenKapsam}
+      <KonuDurumuBolumu schoolId={teacher.school_id} kapsamlar={kapsamlar} seciliAnahtar={secilenKapsam} gorevSiniflari={gorevSiniflari}
         bosMesaj={okulRehberi
           ? "Rehberlik servisinde size henüz bir sınıf seviyesi atanmamış."
           : "Bu görünüm sınıf öğretmenleri ve YKS derslerinden birine giren öğretmenler içindir; size atanmış bir sınıf ya da ders bulunamadı."} />

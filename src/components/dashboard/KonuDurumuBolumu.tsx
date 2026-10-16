@@ -5,12 +5,15 @@ import { KonuDurumuEkrani } from "@/components/dashboard/KonuDurumuEkrani";
 // Konu Durumu'nun sunucu tarafı: seçili kapsamı (URL ?kapsam=) sunucuda
 // kurulmuş listeden bulur, yoksa ilkini kullanır; veriyi çekip ekrana verir.
 // Kapsam listesi çağıranın yetkisinden kurulduğu için service-role güvenli.
-export async function KonuDurumuBolumu({ schoolId, kapsamlar, seciliAnahtar, ogrenciLinki = true, bosMesaj }: {
+// gorevSiniflari: öğretmenin görev verebildiği sınıflar (Faz 2 kısayolu);
+// görev yine öğretmenin kendi oturumuyla ve RLS altında yazılır.
+export async function KonuDurumuBolumu({ schoolId, kapsamlar, seciliAnahtar, ogrenciLinki = true, bosMesaj, gorevSiniflari }: {
   schoolId: string;
   kapsamlar: KonuDurumuKapsami[];
   seciliAnahtar?: string | null;
   ogrenciLinki?: boolean;
   bosMesaj?: string;
+  gorevSiniflari?: string[];
 }) {
   const secili = kapsamlar.find((k) => k.anahtar === seciliAnahtar) ?? kapsamlar[0];
   const secenekler = kapsamlar.map(({ anahtar, etiket }) => ({ anahtar, etiket }));
@@ -20,6 +23,6 @@ export async function KonuDurumuBolumu({ schoolId, kapsamlar, seciliAnahtar, ogr
   const { veri, error } = await konuDurumuGetir(createAdminClient(), schoolId, secili);
   return (
     <KonuDurumuEkrani key={secili.anahtar} veri={veri} hata={error} kapsamlar={secenekler} seciliAnahtar={secili.anahtar}
-      ogrenciLinki={ogrenciLinki} bosMesaj={bosMesaj} />
+      ogrenciLinki={ogrenciLinki} bosMesaj={bosMesaj} gorevSiniflari={gorevSiniflari} />
   );
 }

@@ -12,9 +12,12 @@ import { sinifSiraKarsilastir } from "@/lib/types";
 import type { HedefeYakinlik } from "@/lib/types";
 import {
   bransinMufredatDersleri, konuDurumuHesapla,
-  type KdBeyanSatiri, type KdDenemeSatiri, type KdOgrenci, type KdOturumSatiri, type KdSoruSatiri, type KonuDurumuVerisi,
+  type KdBeyanSatiri, type KdDenemeSatiri, type KdOgrenci, type KdOturumSatiri, type KdSoruBilgisi, type KdSoruSatiri, type KonuDurumuVerisi,
 } from "@/lib/konu-durumu";
 import type { KonuAdEslesmesi, KonuHedefi } from "@/lib/konu-ad-eslesmesi";
+import { bransKazanimBasligi, bransKazanimBasligiMi } from "@/lib/kazanim-konu-oneri";
+import { kazanimSorulariniCikar, type OgrenciKarneVerisi } from "@/lib/kazanim-soru-cikarimi";
+import type { KarneDersOrtalamasi, KarneTestCevaplari } from "@/lib/karne-birinci-sayfa";
 
 export interface KonuDurumuKapsami {
   anahtar: string;
@@ -116,6 +119,82 @@ function tarihGoster(tarih: string): string {
   return `${g}.${a}.${y}`;
 }
 
+// Faz 2 — "bu konu denemede hangi sorulardı". Karnenin soru soru cevapları
+// (deneme_karne_ozetleri) ile konu D/Y sayıları karşılaştırılır
+// (kazanim-soru-cikarimi.ts). Çıkarım kombinatoryal olduğu için sınırlı:
+// kapsamdaki son SORU_DENEME_SAYISI deneme, her birinde en fazla
+// SORU_OGRENCI_SAYISI öğrencinin karnesi. Hata olursa sessizce boş döner —
+// soru numarası yardımcı bilgi, ekranın geri kalanını etkilemez.
+const SORU_DENEME_SAYISI = 3;
+const SORU_OGRENCI_SAYISI = 40;
+
+async function sonDenemelerinSorulari(
+  admin: SupabaseClient,
+  denemeSatirlari: { id: string; tarih: string; tur: string; yayinevi: string | null }[],
+  kazanimSatirlari: { deneme_id: string; ders: string; kazanim_metni: string; soru: number; dogru: number; yanlis: number }[],
+): Promise<KdSoruBilgisi[]> {
+  try {
+    // Yalnız soru soru cevabı olan karneler işe yarar (SDS ve Maarif
+    // karnelerinde cevap tablosu yok); "son 3" bunların arasından seçilir.
+    const kazanimliIdler = [...new Set(kazanimSatirlari.map((k) => k.deneme_id))];
+    const cevapliDenemeler = new Set((await parcaParcaCek<{ deneme_id: string }>(kazanimliIdler, (p, bas, son) => admin.from("deneme_karne_ozetleri")
+      .select("deneme_id").in("deneme_id", p).neq("cevaplar", "[]").order("deneme_id").range(bas, son))).map((k) => k.deneme_id));
+    const gruplar = new Map<string, { tarih: string; etiket: string; idler: string[] }>();
+    for (const d of [...denemeSatirlari].sort((a, c) => c.tarih.localeCompare(a.tarih))) {
+      if (!cevapliDenemeler.has(d.id)) continue;
+      const yayinevi = (d.yayinevi ?? "").trim();
+      const anahtar = `${d.tarih}|${d.tur}|${yayinevi.toLocaleUpperCase("tr-TR")}`;
+      if (!gruplar.has(anahtar)) {
+        if (gruplar.size >= SORU_DENEME_SAYISI) continue;
+        gruplar.set(anahtar, { tarih: d.tarih, etiket: `${tarihGoster(d.tarih)} · ${d.tur === "BRANS" ? "Branş" : d.tur} · ${yayinevi}`, idler: [] });
+      }
+      const g = gruplar.get(anahtar)!;
+      if (g.idler.length < SORU_OGRENCI_SAYISI) g.idler.push(d.id);
+    }
+    const idler = [...gruplar.values()].flatMap((g) => g.idler);
+    if (idler.length === 0) return [];
+    type KarneRow = { deneme_id: string; ders_ortalamalari: KarneDersOrtalamasi[] | null; cevaplar: KarneTestCevaplari[] | null };
+    const karneler = new Map((await parcaParcaCek<KarneRow>(idler, (p, bas, son) => admin.from("deneme_karne_ozetleri")
+      .select("deneme_id, ders_ortalamalari, cevaplar").in("deneme_id", p).order("deneme_id").range(bas, son))).map((k) => [k.deneme_id, k]));
+    const kazanimlar = new Map<string, typeof kazanimSatirlari>();
+    for (const k of kazanimSatirlari) if (karneler.has(k.deneme_id)) kazanimlar.set(k.deneme_id, [...(kazanimlar.get(k.deneme_id) ?? []), k]);
+
+    const sonuc: KdSoruBilgisi[] = [];
+    for (const g of gruplar.values()) {
+      // Branş denemesi kazanımları "<Ders>_Branş_Deneme" diye yazılıyor; karnenin
+      // ders tablosu ise "Tarih-1" gibi asıl adı taşıyor. Çıkarım karne adıyla
+      // yapılır, sonuç yeniden kayıttaki ada çevrilir.
+      const kayitAdi = new Map<string, string>();
+      const ogrenciler: OgrenciKarneVerisi[] = [];
+      for (const id of g.idler) {
+        const karne = karneler.get(id);
+        if (!karne?.ders_ortalamalari?.length || !karne.cevaplar?.length) continue;
+        const bransAdi = new Map(karne.ders_ortalamalari.map((d) => [bransKazanimBasligi(d.ders), d.ders]));
+        ogrenciler.push({
+          ogrenciId: id, dersler: karne.ders_ortalamalari, testler: karne.cevaplar,
+          kazanimlar: (kazanimlar.get(id) ?? []).map((k) => {
+            const karneAdi = bransKazanimBasligiMi(k.ders) ? (bransAdi.get(k.ders) ?? k.ders) : k.ders;
+            kayitAdi.set(karneAdi, k.ders);
+            return { ders: karneAdi, kazanimMetni: k.kazanim_metni, soru: k.soru, dogru: k.dogru, yanlis: k.yanlis };
+          }),
+        });
+      }
+      if (ogrenciler.length === 0) continue;
+      for (const s of kazanimSorulariniCikar(ogrenciler)) {
+        if (s.sorular.length === 0) continue;
+        sonuc.push({
+          denemeEtiketi: g.etiket, tarih: g.tarih, ders: kayitAdi.get(s.ders) ?? s.ders, kazanimMetni: s.kazanimMetni,
+          test: s.test, kitapcik: s.kitapcik, sorular: s.sorular, kesin: s.kesin,
+        });
+      }
+    }
+    return sonuc;
+  } catch (e) {
+    console.warn("[konu-durumu] soru numaraları çıkarılamadı:", e instanceof Error ? e.message : e);
+    return [];
+  }
+}
+
 export async function konuDurumuGetir(
   admin: SupabaseClient,
   schoolId: string,
@@ -173,9 +252,12 @@ export async function konuDurumuGetir(
     const hedefler: KonuHedefi[] = MUFREDAT_KONULARI.map((k) => ({ ders: k.ders, konu: k.konu, ustKonu: k.konu }));
     for (const a of [...altKonular, ...kurumAltKonulari]) hedefler.push({ ders: a.ders, konu: a.alt_baslik, ustKonu: a.ust_konu });
 
+    const soruBilgileri = await sonDenemelerinSorulari(admin, denemeSatirlari, kazanimSatirlari);
+
     const veri = konuDurumuHesapla({
       ogrenciler,
       denemeler,
+      soruBilgileri,
       sorular: soruSatirlari.map((r): KdSoruSatiri => ({ studentId: r.student_id, ders: r.ders, konu: r.konu, dogru: r.dogru, yanlis: r.yanlis })),
       beyanlar: beyanSatirlari.map((r): KdBeyanSatiri => ({ studentId: r.student_id, ders: r.ders, konu: r.konu, seviye: r.hakimiyet_seviyesi, guncellenme: r.guncellenme_tarihi })),
       oturumlar: oturumSatirlari.map((r): KdOturumSatiri => ({ studentId: r.student_id, ders: r.ders, konu: r.konu, seviye: r.hedefe_yakinlik })),

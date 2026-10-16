@@ -4,16 +4,24 @@
 // Sadelik önce: tek ölçü (konu puanı, 0-100), tek renk dili, ayrıntı yalnız
 // konuya tıklanınca. Hesap sunucuda (konu-durumu.ts), burada yalnız gösterim
 // ve ders süzgeci.
-import { useMemo, useState, useTransition } from "react";
+import { createContext, useContext, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ChevronDown, ChevronUp, Compass, TrendingDown, TrendingUp } from "lucide-react";
+import { ChevronDown, ChevronUp, ClipboardCheck, Compass, TrendingDown, TrendingUp } from "lucide-react";
 import {
-  BG1, BG1_ALT, BORDER, BORDER_STRONG, BLUSH, BLUSH_BG, BUTTER, BUTTER_BG, MINT, MINT_BG, SKY, SKY_BG, TEXT, TEXT_MUTED,
+  BG1, BG1_ALT, BORDER, BORDER_STRONG, BLUSH, BLUSH_BG, BUTTER, BUTTER_BG, MINT, MINT_BG, MINT_ON, SKY, SKY_BG, TEXT, TEXT_MUTED,
 } from "@/lib/theme";
-import { ZORLANMA_ESIGI, oncelikliKonular, tabanDers, type KdKonu, type KonuDurumuVerisi } from "@/lib/konu-durumu";
+import { gorevVer } from "@/app/dashboard/gorev-actions";
+import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
+import {
+  ZORLANMA_ESIGI, oncelikliKonular, tabanDers, type KdKonu, type KdKonuSorusu, type KdOgrenciSkoru, type KonuDurumuVerisi,
+} from "@/lib/konu-durumu";
 
 const TUMU = "";
+
+// Öğretmenin görev verebildiği sınıflar (sınıf öğretmenliği + ders atamaları).
+// Boşsa görev kısayolu hiç gösterilmez (müdür, rehber, yönetici, moderatör).
+const GorevSiniflari = createContext<Set<string>>(new Set());
 
 function puanRengi(puan: number): { renk: string; zemin: string } {
   if (puan < ZORLANMA_ESIGI) return { renk: BLUSH, zemin: BLUSH_BG };
@@ -76,6 +84,8 @@ function KonuSatiri({ konu, dersGoster, ogrenciLinki }: { konu: KdKonu; dersGost
 }
 
 function KonuDetayi({ konu, ogrenciLinki }: { konu: KdKonu; ogrenciLinki: boolean }) {
+  const gorevSiniflari = useContext(GorevSiniflari);
+  const atanabilir = konu.zorlananlar.filter((o) => o.classId !== null && gorevSiniflari.has(o.classId));
   const kaynaklar: string[] = [];
   if (konu.deneme) kaynaklar.push(`Deneme: %${konu.deneme.basari} başarı (${konu.deneme.soru} soru · ${konu.deneme.dogru} D · ${konu.deneme.yanlis} Y · ${konu.deneme.bos} B, ${konu.deneme.denemeSayisi} deneme)`);
   if (konu.soruCozumu) kaynaklar.push(`Soru çözümü: %${konu.soruCozumu.basari} doğru (${konu.soruCozumu.dogru} D · ${konu.soruCozumu.yanlis} Y)`);
@@ -108,6 +118,134 @@ function KonuDetayi({ konu, ogrenciLinki }: { konu: KdKonu; ogrenciLinki: boolea
           {kaynaklar.map((k) => <li key={k}>{k}</li>)}
         </ul>
       </div>
+      {konu.sorular.length > 0 && <DenemeSorulari sorular={konu.sorular} />}
+      {atanabilir.length > 0 && <GorevKisayolu konu={konu} ogrenciler={atanabilir} />}
+    </div>
+  );
+}
+
+// "Sorular 3-5, 8" gibi ardışık aralıkları kısaltır.
+function soruAraligi(sorular: number[]): string {
+  const parcalar: string[] = [];
+  for (let i = 0; i < sorular.length; i++) {
+    let j = i;
+    while (j + 1 < sorular.length && sorular[j + 1] === sorular[j] + 1) j++;
+    parcalar.push(j > i ? `${sorular[i]}–${sorular[j]}` : String(sorular[i]));
+    i = j;
+  }
+  return parcalar.join(", ");
+}
+
+// Faz 2 — konunun son denemelerde hangi sorular olduğu (karnenin soru soru
+// cevaplarından çıkarım; yalnız cevap tablosu olan karnelerde var).
+function DenemeSorulari({ sorular }: { sorular: KdKonuSorusu[] }) {
+  const gruplar = new Map<string, KdKonuSorusu[]>();
+  for (const s of sorular) {
+    const anahtar = `${s.denemeEtiketi}|${s.test}`;
+    gruplar.set(anahtar, [...(gruplar.get(anahtar) ?? []), s]);
+  }
+  return (
+    <div>
+      <div style={{ color: TEXT_MUTED }} className="mb-1 text-[10px] font-bold uppercase tracking-wide">Denemedeki soruları</div>
+      <ul className="flex flex-col gap-0.5 text-[11px]" style={{ color: TEXT, margin: 0, padding: 0, listStyle: "none" }}>
+        {[...gruplar.values()].map((g) => (
+          <li key={`${g[0].denemeEtiketi}|${g[0].test}`}>
+            <span style={{ color: TEXT_MUTED }}>{g[0].denemeEtiketi} · {g[0].test.replace(/^(TYT|AYT)\s+/, "")} testi: </span>
+            {g.map((s, i) => (
+              <span key={s.kitapcik ?? i} style={{ color: s.kesin ? TEXT : TEXT_MUTED }} className={s.kesin ? "font-semibold" : ""}>
+                {i > 0 ? " · " : ""}{s.kitapcik ? `${s.kitapcik} kitapçığı ` : ""}{s.kesin ? `soru ${soruAraligi(s.sorular)}` : `olası sorular ${soruAraligi(s.sorular)}`}
+              </span>
+            ))}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+// Faz 2 — "Bu öğrencilere görev ver". Mevcut görev sistemi (gorevVer) ders
+// ve konu dolu çağrılır. Yalnız öğretmenin görev verebildiği sınıflardaki
+// öğrenciler listelenir (sınıf öğretmenliği ya da ders ataması; veritabanı
+// kuralı gorev_atamalari_insert_own ile aynı).
+function GorevKisayolu({ konu, ogrenciler }: { konu: KdKonu; ogrenciler: KdOgrenciSkoru[] }) {
+  const [acik, setAcik] = useState(false);
+  const [tur, setTur] = useState<"soru" | "konu">("soru");
+  const [hedef, setHedef] = useState("20");
+  const [sonTarih, setSonTarih] = useState(() => tarihEkle(bugununTarihiTR(), 7));
+  const [secili, setSecili] = useState<Set<string>>(() => new Set(ogrenciler.map((o) => o.id)));
+  const [mesaj, setMesaj] = useState<{ hata: boolean; metin: string } | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  if (!acik) {
+    return (
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="button" onClick={() => { setAcik(true); setMesaj(null); }}
+          className="sfec-btn inline-flex w-fit items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold" style={{ background: MINT, color: MINT_ON }}>
+          <ClipboardCheck size={13} aria-hidden="true" /> Bu {ogrenciler.length} öğrenciye görev ver
+        </button>
+        {mesaj && !mesaj.hata && <span className="text-[11px] font-semibold" style={{ color: MINT }}>{mesaj.metin}</span>}
+      </div>
+    );
+  }
+
+  function gonder() {
+    const bugun = bugununTarihiTR();
+    const sayi = Number(hedef);
+    if (secili.size === 0) return setMesaj({ hata: true, metin: "En az bir öğrenci seçin." });
+    if (!Number.isFinite(sayi) || sayi <= 0) return setMesaj({ hata: true, metin: tur === "soru" ? "Soru sayısı girin." : "Süre girin." });
+    startTransition(async () => {
+      const r = await gorevVer({
+        studentIds: [...secili], tur, ders: tabanDers(konu.ders), konu: konu.konu,
+        hedefSoruSayisi: tur === "soru" ? sayi : undefined, hedefDakika: tur === "konu" ? sayi : undefined,
+        tarih: bugun, sonTarih: sonTarih >= bugun ? sonTarih : bugun,
+      });
+      if (r.error) setMesaj({ hata: true, metin: r.error });
+      else { setMesaj({ hata: false, metin: `${r.ogrenciSayisi} öğrenciye görev verildi.` }); setAcik(false); }
+    });
+  }
+
+  const girdi = { background: BG1, color: TEXT, border: `2px solid ${BORDER_STRONG}` };
+  return (
+    <div className="flex flex-col gap-2.5 rounded-2xl p-3" style={{ background: BG1, border: `2px solid ${BORDER_STRONG}` }}>
+      <div style={{ color: TEXT }} className="text-xs font-bold">Görev: {tabanDers(konu.ders)} · {konu.konu}</div>
+      <div className="flex flex-wrap gap-1.5">
+        {ogrenciler.map((o) => (
+          <label key={o.id} className="inline-flex cursor-pointer items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold"
+            style={{ border: `1px solid ${BORDER_STRONG}`, color: secili.has(o.id) ? TEXT : TEXT_MUTED }}>
+            <input type="checkbox" checked={secili.has(o.id)}
+              onChange={(e) => setSecili((s) => { const y = new Set(s); if (e.target.checked) y.add(o.id); else y.delete(o.id); return y; })} />
+            {o.ad}
+          </label>
+        ))}
+      </div>
+      <div className="flex flex-wrap items-end gap-2">
+        <label className="flex flex-col gap-1">
+          <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Görev türü</span>
+          <select value={tur} onChange={(e) => { const t = e.target.value as "soru" | "konu"; setTur(t); setHedef(t === "soru" ? "20" : "40"); }}
+            className="rounded-xl px-2.5 py-1.5 text-xs font-semibold outline-none" style={girdi}>
+            <option value="soru">Soru çözümü</option>
+            <option value="konu">Konu çalışma</option>
+          </select>
+        </label>
+        <label className="flex w-24 flex-col gap-1">
+          <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">{tur === "soru" ? "Soru sayısı" : "Süre (dk)"}</span>
+          <input type="number" min={1} value={hedef} onChange={(e) => setHedef(e.target.value)}
+            className="rounded-xl px-2.5 py-1.5 text-xs font-semibold outline-none" style={girdi} />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Son tarih</span>
+          <input type="date" value={sonTarih} onChange={(e) => setSonTarih(e.target.value)}
+            className="rounded-xl px-2.5 py-1.5 text-xs font-semibold outline-none" style={girdi} />
+        </label>
+        <button type="button" onClick={gonder} disabled={pending}
+          className="sfec-btn rounded-xl px-3 py-2 text-xs font-bold disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
+          {pending ? "Veriliyor…" : `Görevi ver (${secili.size})`}
+        </button>
+        <button type="button" onClick={() => setAcik(false)} className="sfec-btn rounded-xl px-3 py-2 text-xs font-bold" style={{ color: TEXT_MUTED }}>
+          Vazgeç
+        </button>
+      </div>
+      {mesaj && <div className="text-[11px] font-semibold" style={{ color: mesaj.hata ? BLUSH : MINT }}>{mesaj.metin}</div>}
     </div>
   );
 }
@@ -138,7 +276,20 @@ function DersBolumu({ ders, ortalama, konular, zayifKonuSayisi, ogrenciSayisi, o
   );
 }
 
-export function KonuDurumuEkrani({ veri, hata, kapsamlar, seciliAnahtar, ogrenciLinki = true, bosMesaj }: {
+export function KonuDurumuEkrani({ gorevSiniflari = [], ...props }: {
+  veri: KonuDurumuVerisi | null;
+  hata?: string | null;
+  kapsamlar: { anahtar: string; etiket: string }[];
+  seciliAnahtar: string;
+  ogrenciLinki?: boolean;
+  bosMesaj?: string;
+  gorevSiniflari?: string[];
+}) {
+  const siniflar = useMemo(() => new Set(gorevSiniflari), [gorevSiniflari]);
+  return <GorevSiniflari.Provider value={siniflar}><KonuDurumuIcerik {...props} /></GorevSiniflari.Provider>;
+}
+
+function KonuDurumuIcerik({ veri, hata, kapsamlar, seciliAnahtar, ogrenciLinki = true, bosMesaj }: {
   veri: KonuDurumuVerisi | null;
   hata?: string | null;
   kapsamlar: { anahtar: string; etiket: string }[];

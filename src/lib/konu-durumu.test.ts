@@ -93,6 +93,20 @@ describe("konuDurumuHesapla", () => {
     expect(v.konular[0].beyan).toEqual({ uzak: 1, belirsiz: 0, yakin: 0 });
   });
 
+  test("soru numaraları konuya bağlanır; aynı konuya eşlenen kazanımlar aynı testte birleşir", () => {
+    const etiket = "10.10.2026 · TYT · X";
+    const v = konuDurumuHesapla({
+      ...bos, ogrenciler: [ogr("a")], adlandirma: AD,
+      denemeler: [deneme("a", {})],
+      soruBilgileri: [
+        { denemeEtiketi: etiket, tarih: "2026-10-10", ders: "Türkçe", kazanimMetni: "Paragrafta ana düşünce", test: "TYT Türkçe", kitapcik: "A", sorular: [12, 13], kesin: true },
+        { denemeEtiketi: etiket, tarih: "2026-10-10", ders: "Türkçe", kazanimMetni: "Paragrafta ana düşünce", test: "TYT Türkçe", kitapcik: "A", sorular: [14], kesin: true },
+        { denemeEtiketi: etiket, tarih: "2026-10-10", ders: "Türkçe", kazanimMetni: "Kapsamda olmayan konu", test: "TYT Türkçe", kitapcik: "A", sorular: [1], kesin: true },
+      ],
+    });
+    expect(v.konular[0].sorular).toEqual([{ denemeEtiketi: etiket, tarih: "2026-10-10", test: "TYT Türkçe", kitapcik: "A", sorular: [12, 13, 14], kesin: true }]);
+  });
+
   test("oncelikliKonular küçük kapsamda tek zorlananı da alır", () => {
     const v = konuDurumuHesapla({ ...bos, ogrenciler: [ogr("a")], adlandirma: AD, denemeler: [deneme("a", { dogru: 0, yanlis: 4 })] });
     expect(oncelikliKonular(v.konular, 1)).toHaveLength(1);
