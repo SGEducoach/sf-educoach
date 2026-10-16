@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { MUFREDAT_KONULARI } from "./mufredat-konulari";
-import { kazanimDersiniKanoniklestir, konuOnerileri, konuOnerisi, type KonuAdayi } from "./kazanim-konu-oneri";
+import { bransKazanimBasligi, bransKazanimBasligiMi, kazanimDersiniKanoniklestir, konuOnerileri, konuOnerisi, type KonuAdayi } from "./kazanim-konu-oneri";
 
 function adaylar(ders: string): KonuAdayi[] {
   return MUFREDAT_KONULARI.filter((k) => k.ders === ders).map((k) => ({ konu: k.konu, etiket: k.konu }));
@@ -14,6 +14,23 @@ describe("kazanimDersiniKanoniklestir", () => {
 
   test("müfredatta olmayan ders → null", () => {
     expect(kazanimDersiniKanoniklestir("TYT Sosyal")).toBeNull();
+  });
+
+  test("Branş denemesi başlığı müfredata hiç bağlanmaz", () => {
+    expect(kazanimDersiniKanoniklestir("Türkçe_Branş_Deneme")).toBeNull();
+    expect(kazanimDersiniKanoniklestir("Tarih_Branş_Deneme")).toBeNull();
+  });
+});
+
+describe("bransKazanimBasligi", () => {
+  test.each([
+    ["Türkçe", "Türkçe_Branş_Deneme"], ["Tarih-1", "Tarih_Branş_Deneme"], ["Matematik-1", "Matematik_Branş_Deneme"],
+    ["Din Kül. ve Ahl. Bil.", "Din Kültürü_Branş_Deneme"], ["Felsefe (Seçmeli)", "Felsefe_Branş_Deneme"],
+    ["Türkçe_Branş_Deneme", "Türkçe_Branş_Deneme"],
+  ])("%s → %s", (ham, beklenen) => expect(bransKazanimBasligi(ham)).toBe(beklenen));
+  test("başlık tanınır", () => {
+    expect(bransKazanimBasligiMi("Fizik_Branş_Deneme")).toBe(true);
+    expect(bransKazanimBasligiMi("Fizik")).toBe(false);
   });
 });
 

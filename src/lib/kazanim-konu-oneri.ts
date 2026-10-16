@@ -18,9 +18,30 @@ const OZEL_DERSLER: Record<string, string> = {
 };
 
 export function kazanimDersiniKanoniklestir(ders: string): string | null {
+  if (bransKazanimBasligiMi(ders)) return null; // müfredata hiç bağlanmaz, aşağıya bkz.
   const sade = ders.trim().replace(/\s*\(Se[çc]meli\)$/i, "").replace(/-\d+$/, "");
   const kanonik = OZEL_DERSLER[sade] ?? sade;
   return MUFREDAT_DERSLERI.has(kanonik) ? kanonik : null;
+}
+
+// Kullanıcı kararı (17.10.2026): Branş denemesi (9-10. sınıf SDS vb.)
+// karnesindeki kazanımlar müfredat konusuna EŞLEŞTİRİLMEZ; "<Ders>_Branş_Deneme"
+// başlığıyla ayrı yazılır. Bu başlık müfredat dersi olmadığından konu
+// hakimiyetine, konu çalışmaya ve yönetici eşleştirme ekranına hiç girmez;
+// yalnızca deneme konu analizinde ve deneme yüklemelerinde görünür. Her yeni
+// denemede gelen yeni kazanım metni de kendiliğinden bu başlığa düşer.
+export const BRANS_KAZANIM_EKI = "_Branş_Deneme";
+
+export function bransKazanimBasligiMi(ders: string): boolean {
+  return ders.trim().endsWith(BRANS_KAZANIM_EKI);
+}
+
+// "Türkçe" → "Türkçe_Branş_Deneme", "Tarih-1" → "Tarih_Branş_Deneme",
+// "Din Kül. ve Ahl. Bil." → "Din Kültürü_Branş_Deneme".
+export function bransKazanimBasligi(ders: string): string {
+  if (bransKazanimBasligiMi(ders)) return ders.trim();
+  const sade = ders.trim().replace(/\s*\(Se[çc]meli\)$/i, "").replace(/-\d+$/, "");
+  return `${OZEL_DERSLER[sade] ?? sade}${BRANS_KAZANIM_EKI}`;
 }
 
 // Kazanım cümlelerindeki anlam taşımayan fiil/bağlaçlar.

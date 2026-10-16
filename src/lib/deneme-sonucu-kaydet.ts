@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { adNormalize } from "@/lib/validators";
 import type { DenemeTuru } from "@/lib/types";
 import type { KarneBirinciSayfa } from "@/lib/karne-birinci-sayfa";
+import { bransKazanimBasligi } from "@/lib/kazanim-konu-oneri";
 
 export interface DenemeDersSonucu {
   ders: string;
@@ -193,7 +194,8 @@ export async function ogretmenDenemeSonucuKaydet(
       const { error: kazanimHatasi } = await admin.from("deneme_kazanim_sonuclari").insert(
         input.kazanimSonuclari.map((k) => ({
           deneme_id: denemeId,
-          ders: k.ders,
+          // Branş denemesi kazanımları müfredata bağlanmaz (bkz. kazanim-konu-oneri.ts).
+          ders: input.tur === "BRANS" ? bransKazanimBasligi(k.ders) : k.ders,
           kazanim_metni: k.kazanimMetni,
           soru: k.soru,
           dogru: k.dogru,
