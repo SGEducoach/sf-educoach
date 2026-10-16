@@ -661,17 +661,20 @@ function SinifRozeti({ sinif }: { sinif: SinifSatiri }) {
 // sondaki rakam grubu okul no sayılarak "Ad Soyad Okul No" da kabul edilir.
 // Kolej kurulumu (16.10.2026): isteğe bağlı 3. ve 4. sütun veli adı ve veli
 // telefonu ("Ad Soyad, Okul No, Veli Adı, Veli Telefonu").
+// Numara boş bırakılabilir (16.10.2026): "Ad Soyad" tek başına ya da
+// "Ad Soyad,,Veli Adı,Telefon" — numarayı sunucu kurumun son numarasından verir.
 type TopluSatir = { ad: string; okulNo: string; veliAd?: string; veliTelefon?: string };
 function satirAyristir(satir: string): TopluSatir | null {
-  const virgullu = satir.split(/\t|,|;/).map((p) => p.trim());
-  if (virgullu.filter(Boolean).length >= 2 && virgullu[0] && virgullu[1]) {
-    return { ad: virgullu[0], okulNo: virgullu[1], veliAd: virgullu[2] || undefined, veliTelefon: virgullu[3] || undefined };
+  const parcalar = satir.split(/\t|,|;/).map((p) => p.trim());
+  if (parcalar.length >= 2 && parcalar[0]) {
+    return { ad: parcalar[0], okulNo: parcalar[1], veliAd: parcalar[2] || undefined, veliTelefon: parcalar[3] || undefined };
   }
 
   const kelimeler = satir.trim().split(/\s+/).filter(Boolean);
   if (kelimeler.length >= 2) {
     const son = kelimeler[kelimeler.length - 1];
-    if (/^\d+$/.test(son)) return { ad: kelimeler.slice(0, -1).join(" "), okulNo: son };
+    if (/^\d+$/.test(son)) return kelimeler.length >= 3 ? { ad: kelimeler.slice(0, -1).join(" "), okulNo: son } : null;
+    return { ad: kelimeler.join(" "), okulNo: "" };
   }
   return null;
 }
@@ -681,6 +684,7 @@ function OgrenciTopluEkleFormu({ schoolId, siniflar }: { schoolId: string; sinif
   const [classId, setClassId] = useState("");
   const [aytAlan, setAytAlan] = useState<AytAlan>("SAY");
   const [metin, setMetin] = useState("");
+  const [otomatikNumara, setOtomatikNumara] = useState(false);
   const [hata, setHata] = useState<string | null>(null);
   const [sonuclar, setSonuclar] = useState<TopluOgrenciSonuc[] | null>(null);
   const [pending, startTransition] = useTransition();
@@ -698,7 +702,7 @@ function OgrenciTopluEkleFormu({ schoolId, siniflar }: { schoolId: string; sinif
     if (!classId) return setHata("Sınıf seçin.");
     if (gecerliSatirlar.length === 0) return setHata("Ayrıştırılabilir satır bulunamadı.");
     startTransition(async () => {
-      const res = await ogrencileriTopluEkle({ schoolId, classId, aytAlan: alanSorulurMu(seciliKademe) ? aytAlan : null, satirlar: gecerliSatirlar });
+      const res = await ogrencileriTopluEkle({ schoolId, classId, aytAlan: alanSorulurMu(seciliKademe) ? aytAlan : null, satirlar: gecerliSatirlar, otomatikNumara });
       if (res.error) return setHata(res.error);
       setSonuclar(res.sonuclar);
       setMetin("");
@@ -723,6 +727,7 @@ function OgrenciTopluEkleFormu({ schoolId, siniflar }: { schoolId: string; sinif
       </div>
       <p style={{ color: TEXT_MUTED }} className="text-[11px]">
         Her satıra bir öğrenci: &quot;Ad Soyad, Okul No&quot;, isteğe bağlı &quot;, Veli Adı, Veli Telefonu&quot; (Excel&apos;den yapıştırınca da çalışır).
+        Numara boş bırakılırsa kurumdaki son numaradan devam edilir.
         {seciliKademe === "ilkokul" && " İlkokul öğrencileri giriş yapmaz; her biri için veli davet kodu üretilir."}
       </p>
 
@@ -742,6 +747,11 @@ function OgrenciTopluEkleFormu({ schoolId, siniflar }: { schoolId: string; sinif
 
       <textarea value={metin} onChange={(e) => setMetin(e.target.value)} rows={6} placeholder={"Ahmet Yılmaz, 1234\nAyşe Kaya, 1235"}
         className="text-xs px-3 py-2.5 rounded-xl outline-none resize-y font-mono" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
+
+      <label className="flex items-center gap-2 text-[11px]" style={{ color: TEXT }}>
+        <input type="checkbox" checked={otomatikNumara} onChange={(e) => setOtomatikNumara(e.target.checked)} />
+        Numaraları otomatik ver (listedeki numaralar yok sayılır, kurumdaki son numaradan devam edilir)
+      </label>
 
       {metin.trim() && (
         <span style={{ color: TEXT_MUTED }} className="text-[11px]">

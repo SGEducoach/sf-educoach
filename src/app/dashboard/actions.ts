@@ -578,7 +578,10 @@ export interface TopluOgrenciSonuc {
 export async function ogrencileriTopluEkle(input: {
   schoolId: string; classId: string; aytAlan: "SAY" | "EA" | "SOZ" | null;
   // Veli adı ve telefonu isteğe bağlı (16.10.2026, kolej kurulumu).
+  // okulNo boşsa numara otomatik verilir.
   satirlar: { ad: string; okulNo: string; veliAd?: string; veliTelefon?: string }[];
+  // true: listedeki numaralar yok sayılır, kurumun son numarasından devam edilir.
+  otomatikNumara?: boolean;
 }): Promise<{ error: string | null; sonuclar: TopluOgrenciSonuc[] }> {
   const { supabase, user, admin } = await requireAdmin();
   if (!admin) return { error: "Bu işlem için yönetici yetkisi gerekiyor.", sonuclar: [] };
@@ -595,14 +598,39 @@ export async function ogrencileriTopluEkle(input: {
   const { data: hedefSinif } = await admin.from("classes").select("seviye").eq("id", input.classId).maybeSingle();
   const ilkokulSinifi = ilkokulMu(hedefSinif?.seviye as string | undefined);
 
+  // Kullanıcı bildirimi (16.10.2026): numarası kurumda zaten kayıtlı satırlar
+  // veritabanından genel bir hatayla ("Hesap oluşturulamadı") dönüyordu.
+  // Numaralar artık kaydetmeden ÖNCE kontrol ediliyor; çakışmada numarayı
+  // kimin kullandığı söyleniyor. Numarası boş satırlara (ya da otomatik
+  // numara seçildiyse hepsine) kurumdaki en büyük numaradan devam edilir.
+  const { data: mevcutOgrenciler } = await admin.from("students")
+    .select("okul_no, profiles!students_id_fkey(ad), classes(seviye, sube)").eq("school_id", input.schoolId);
+  type MevcutSatir = { okul_no: string; profiles: { ad: string } | { ad: string }[] | null; classes: { seviye: string; sube: string } | { seviye: string; sube: string }[] | null };
+  const kullanilan = new Map<string, string>();
+  for (const m of (mevcutOgrenciler ?? []) as unknown as MevcutSatir[]) {
+    const p = Array.isArray(m.profiles) ? m.profiles[0] : m.profiles;
+    const c = Array.isArray(m.classes) ? m.classes[0] : m.classes;
+    kullanilan.set(m.okul_no, `${p?.ad ?? "bir öğrenci"}${c ? `, ${c.seviye}-${c.sube}` : ""}`);
+  }
+  let siradakiNo = Math.max(0, ...[...kullanilan.keys()].filter((n) => /^\d+$/.test(n)).map(Number)) + 1;
+  const numaraVer = () => {
+    while (kullanilan.has(String(siradakiNo))) siradakiNo++;
+    return String(siradakiNo++);
+  };
+
   // Auth admin API'sinin eşzamanlı isteklerde oran sınırına takılmaması için
   // satırlar sırayla (paralel değil) işleniyor — sınıf boyutu (~20-35)
   // için birkaç saniye sürer, kabul edilebilir.
   for (const satir of input.satirlar) {
     const ad = adNormalize(satir.ad);
-    const okulNo = satir.okulNo.trim();
+    const okulNo = input.otomatikNumara || !satir.okulNo.trim() ? numaraVer() : satir.okulNo.trim();
     if (!ad || !okulNoGecerliMi(okulNo)) {
       sonuclar.push({ ad, okulNo, sifre: null, hata: "Ad/okul no geçersiz." });
+      continue;
+    }
+    const sahibi = kullanilan.get(okulNo);
+    if (sahibi) {
+      sonuclar.push({ ad, okulNo, sifre: null, hata: `${okulNo} numarası kurumda kayıtlı (${sahibi}).` });
       continue;
     }
 
@@ -623,6 +651,8 @@ export async function ogrencileriTopluEkle(input: {
       sonuclar.push({ ad, okulNo, sifre: null, hata: manuelEklemeHatasi(error.message) });
       continue;
     }
+    // Listede aynı numara ikinci kez geçerse o satır çakışma olarak döner.
+    kullanilan.set(okulNo, ad);
     // İlkokul öğrencisi giriş yapmaz; veliyi bağlamak için kod üretilir.
     // Diğer sınıflarda veli adı verildiyse yine kod üretilir.
     let veliKodu: string | null = null;
