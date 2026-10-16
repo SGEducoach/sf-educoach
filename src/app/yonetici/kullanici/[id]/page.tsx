@@ -7,6 +7,11 @@ import { analizVerisiGetir } from "@/lib/analiz";
 import type { RaporDonemi } from "@/lib/analiz";
 import { kohortKarsilastirmasiGetir } from "@/lib/analiz-kohort";
 import { konuHakimiyetiOzetiGetir } from "@/lib/konu-hakimiyeti";
+import { kademeBul } from "@/lib/kademe";
+import { ortaokulVeliRaporuGetir } from "@/lib/ortaokul-veli-raporu";
+import { VeliOrtaokulRaporu } from "@/components/dashboard/VeliOrtaokulRaporu";
+import { ilkokulOgrenciRaporuGetir } from "@/lib/ilkokul-gelisim-sorgu";
+import { IlkokulGelisimRaporu } from "@/components/dashboard/IlkokulGelisimRaporu";
 import { AnalizPaneli } from "@/components/dashboard/AnalizPaneli";
 import { Header } from "@/components/dashboard/Header";
 import { DashboardYanMenu } from "@/components/dashboard/DashboardYanMenu";
@@ -119,24 +124,40 @@ async function OgrenciSayfasi({ admin, userId, ad, donem }: { admin: AdminClient
     admin.from("denemeler").select("id, tarih, tur").eq("student_id", userId).order("tarih", { ascending: false }),
   ]);
   if (!ogrenci) return <BosKart metin="Öğrenci profili bulunamadı." />;
-  const [analiz, konuHakimiyetiOzeti, kohort] = await Promise.all([
-    analizVerisiGetir(admin as Parameters<typeof analizVerisiGetir>[0], userId, donem),
-    konuHakimiyetiOzetiGetir(admin as Parameters<typeof konuHakimiyetiOzetiGetir>[0], userId),
-    kohortKarsilastirmasiGetir(admin as Parameters<typeof kohortKarsilastirmasiGetir>[0], userId),
-  ]);
   const okul = ogrenci.schools as unknown as { ad: string; tur: KurumTuru } | null;
   const sinif = ogrenci.classes as unknown as { seviye: string; sube: string } | null;
+  // HATA (16.10.2026): ortaokul ve ilkokul öğrencisinde de YKS analizi ve
+  // konu hakimiyeti çalışıyordu; YKS alanı boş olduğu için sayfa çöküyordu.
+  // Kademeye göre ilgili rapor gösteriliyor (dashboard'daki öğretmen
+  // görünümüyle aynı ayrım).
+  const kademe = kademeBul(sinif?.seviye);
+  const istemci = admin as Parameters<typeof analizVerisiGetir>[0];
+  const [yksVerisi, ortaokulRaporu, ilkokulRaporu] = await Promise.all([
+    kademe === "ortaokul" || kademe === "ilkokul"
+      ? Promise.resolve(null)
+      : Promise.all([
+          analizVerisiGetir(istemci, userId, donem),
+          konuHakimiyetiOzetiGetir(istemci, userId),
+          kohortKarsilastirmasiGetir(istemci, userId),
+        ]),
+    kademe === "ortaokul" ? ortaokulVeliRaporuGetir(istemci, userId) : Promise.resolve(null),
+    kademe === "ilkokul" ? ilkokulOgrenciRaporuGetir(istemci, userId) : Promise.resolve(null),
+  ]);
   return <>
     <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       <Bilgi icon={School} etiket="Okul" deger={okul?.ad ?? "—"} />
       <Bilgi icon={Users} etiket="Sınıf" deger={sinif ? `${sinif.seviye}-${sinif.sube}` : "—"} />
       <Bilgi icon={UserRound} etiket={okul?.tur === "dershane" ? "Kullanıcı adı" : "Okul no"} deger={ogrenci.okul_no} />
-      <Bilgi icon={CheckCircle2} etiket="Hedef" deger={ogrenci.hedef_bolum ? ogrenci.hedef_bolum.toLocaleUpperCase("tr-TR") : "—"} />
+      <Bilgi icon={CheckCircle2} etiket={kademe === "ortaokul" ? "Hedef meslek" : "Hedef"} deger={ogrenci.hedef_bolum ? ogrenci.hedef_bolum.toLocaleUpperCase("tr-TR") : "—"} />
     </section>
     <OgrenciSonIslemleri studentId={userId} />
-    <AnalizPaneli veri={analiz} ogrenciAdi={ad}
-      konuHakimiyetiSatirlari={konuHakimiyetiOzeti.satirlar} konuHakimiyetiTamGorunum={konuHakimiyetiOzeti.tamGorunum}
-      konuHakimiyetiAytAlan={konuHakimiyetiOzeti.aytAlan} ogretmenGorunumu kohortKarsilastirma={kohort} />
+    {ilkokulRaporu && <IlkokulGelisimRaporu rapor={ilkokulRaporu} ogrenciAdi={ad} />}
+    {ortaokulRaporu && <VeliOrtaokulRaporu rapor={ortaokulRaporu} ogrenciAdi={ad} />}
+    {yksVerisi && (
+      <AnalizPaneli veri={yksVerisi[0]} ogrenciAdi={ad}
+        konuHakimiyetiSatirlari={yksVerisi[1].satirlar} konuHakimiyetiTamGorunum={yksVerisi[1].tamGorunum}
+        konuHakimiyetiAytAlan={yksVerisi[1].aytAlan} ogretmenGorunumu kohortKarsilastirma={yksVerisi[2]} />
+    )}
     <OgrenciVeriKayitlari gruplar={[
       { baslik: "Konu çalışmaları", kayitlar: (konular ?? []).map((r) => ({ id: r.id, tur: "konu" as const, metin: `${r.tarih} · ${r.ders} · ${r.konu} · ${r.sure_dakika} dk` })) },
       { baslik: "Soru çözümleri", kayitlar: (sorular ?? []).map((r) => ({ id: r.id, tur: "soru" as const, metin: `${r.tarih} · ${r.ders} · ${r.dogru}D/${r.yanlis}Y · ${r.sure_dakika} dk` })) },

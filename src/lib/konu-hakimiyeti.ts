@@ -72,7 +72,7 @@ export function satirTytdeGosterilsinMi(satir: KonuHakimiyetiSatiri): boolean {
 // (bkz. types.ts) dersin bu alanın GERÇEK AYT kapsamında olup olmadığı
 // kontrol ediliyor.
 export function satirAytdeGosterilsinMi(satir: KonuHakimiyetiSatiri, aytAlan: AytAlan): boolean {
-  return konuSinavi(satir) === "AYT" && AYT_MUFREDAT_DERSLERI[aytAlan].includes(satir.ders);
+  return konuSinavi(satir) === "AYT" && (AYT_MUFREDAT_DERSLERI[aytAlan] ?? []).includes(satir.ders);
 }
 
 // Deneme konu sonuçlarını (deneme_kazanim_sonuclari) yönetici onaylı
@@ -275,13 +275,16 @@ export async function konuHakimiyetiOzetiGetir(
     .select("ayt_alan, classes(seviye), schools(tur)")
     .eq("id", studentId)
     .single();
-  type Row = { ayt_alan: AytAlan; classes: { seviye: string } | null; schools: { tur: string } | null };
+  type Row = { ayt_alan: AytAlan | null; classes: { seviye: string } | null; schools: { tur: string } | null };
   const s = data as unknown as Row | null;
   if (!s) return { satirlar: [], tamGorunum: false, aytAlan: "SAY" };
+  // Ortaokul ve ilkokulda YKS alanı boş (0148, 0157); boş alan konu
+  // listesinde çökme yapıyordu (16.10.2026). Varsayılan SAY.
+  const aytAlan: AytAlan = s.ayt_alan ?? "SAY";
   const dokuzOnMu = dokuzOnSinifMi(s.classes?.seviye ?? null);
   const dershaneMi = s.schools?.tur === "dershane";
-  const satirlar = await konuHakimiyetiGetir(supabase, studentId, s.classes?.seviye ?? null, s.ayt_alan, dokuzOnMu, dershaneMi);
-  return { satirlar, tamGorunum: tamGorunumMu(s.classes?.seviye ?? null, dershaneMi), aytAlan: s.ayt_alan };
+  const satirlar = await konuHakimiyetiGetir(supabase, studentId, s.classes?.seviye ?? null, aytAlan, dokuzOnMu, dershaneMi);
+  return { satirlar, tamGorunum: tamGorunumMu(s.classes?.seviye ?? null, dershaneMi), aytAlan };
 }
 
 // "Gerek yok" onayı (Faz H3, Plan Yap + Konu Çalışma girişi) için —

@@ -49,7 +49,8 @@ export function konuOgrenciyeUygunMu(
   const konuSinif = konuSinifi(konu.seviye);
   if (konuSinif !== null && konuSinif > sinif) return false;
   if (konu.seviye === "AYT" && sinif < 12) return false;
-  return konuSinavi(konu) === "TYT" || (sinif >= 11 && AYT_MUFREDAT_DERSLERI[aytAlan].includes(konu.ders));
+  // `?? []`: YKS alanı boş öğrenci (ortaokul/ilkokul) çökme yapmasın (16.10.2026).
+  return konuSinavi(konu) === "TYT" || (sinif >= 11 && (AYT_MUFREDAT_DERSLERI[aytAlan] ?? []).includes(konu.ders));
 }
 
 const TUM_ALANLAR: AytAlan[] = ["SAY", "EA", "SOZ"];
