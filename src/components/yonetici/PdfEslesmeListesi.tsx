@@ -141,10 +141,16 @@ function PdfEslesmeSatiri({ bekleyen, buOturumdaYerlesen, yerlesti }: {
   const [sinif, setSinif] = useState(TUM_SINIFLAR);
   const [mesaj, setMesaj] = useState<string | null>(null);
   const [yerlesenleriGoster, setYerlesenleriGoster] = useState(false);
+  // Liste denemeye giren seviyeyle açılır; gerekirse bütün kurum (ör. 9.
+  // sınıf PDF'inde 10-A öğrencisi).
+  const [tumKurum, setTumKurum] = useState(false);
 
-  async function ogrencileriYukle() {
-    if (ogrenciler) return;
-    const sonuc = await pdfEslesmeOgrencileriGetir(bekleyen.schoolId, { tarih: bekleyen.tarih, tur: bekleyen.tur, yayinevi: bekleyen.yayinevi });
+  async function ogrencileriYukle(zorla = false, butunKurum = tumKurum) {
+    if (ogrenciler && !zorla) return;
+    const sonuc = await pdfEslesmeOgrencileriGetir(
+      bekleyen.schoolId, { tarih: bekleyen.tarih, tur: bekleyen.tur, yayinevi: bekleyen.yayinevi },
+      butunKurum ? null : bekleyen.sinifSeviyesi,
+    );
     setOgrenciler(sonuc.ogrenciler);
   }
 
@@ -234,7 +240,7 @@ function PdfEslesmeSatiri({ bekleyen, buOturumdaYerlesen, yerlesti }: {
       </div>
 
       {bekleyen.eslestirilebilir && <div className="mt-3 flex flex-wrap items-center gap-2">
-        <select value={sinif} onChange={(e) => { setSinif(e.target.value); setSecilenId(""); }} onFocus={ogrencileriYukle}
+        <select value={sinif} onChange={(e) => { setSinif(e.target.value); setSecilenId(""); }} onFocus={() => ogrencileriYukle()}
           aria-label="Sınıfa göre süz"
           className="text-xs px-3 py-2 rounded-xl outline-none"
           style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
@@ -243,13 +249,13 @@ function PdfEslesmeSatiri({ bekleyen, buOturumdaYerlesen, yerlesti }: {
           {sinifsizVar && <option value={SINIFSIZ}>Sınıfsız</option>}
         </select>
         <input
-          value={arama} onFocus={ogrencileriYukle}
+          value={arama} onFocus={() => ogrencileriYukle()}
           onChange={(e) => { setArama(e.target.value); ogrencileriYukle(); }}
           placeholder="Öğrenci ara..."
           className="text-xs px-3 py-2 rounded-xl outline-none flex-1 min-w-[160px]"
           style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}
         />
-        <select value={secilenId} onChange={(e) => setSecilenId(e.target.value)} onFocus={ogrencileriYukle}
+        <select value={secilenId} onChange={(e) => setSecilenId(e.target.value)} onFocus={() => ogrencileriYukle()}
           className="text-xs px-3 py-2 rounded-xl outline-none min-w-[160px]"
           style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
           <option value="">{ogrenciler ? `Öğrenci seçin (${filtrelenmis.length})` : "Yükleniyor..."}</option>
@@ -277,6 +283,15 @@ function PdfEslesmeSatiri({ bekleyen, buOturumdaYerlesen, yerlesti }: {
           <Check size={12} /> Ata
         </button>
       </div>}
+      {bekleyen.eslestirilebilir && bekleyen.sinifSeviyesi && (
+        <label className="mt-2 flex items-center gap-1.5 text-[11px]" style={{ color: TEXT_MUTED }}>
+          <input type="checkbox" checked={tumKurum} onChange={(e) => {
+            setTumKurum(e.target.checked); setSecilenId(""); setSinif(TUM_SINIFLAR);
+            void ogrencileriYukle(true, e.target.checked);
+          }} />
+          Liste yalnız {bekleyen.sinifSeviyesi}. sınıflarla açılıyor — bütün kurumu göster
+        </label>
+      )}
       {bekleyen.eslestirilebilir && yerlesmisSayisi > 0 && (
         <label className="mt-2 flex items-center gap-1.5 text-[11px]" style={{ color: TEXT_MUTED }}>
           <input type="checkbox" checked={yerlesenleriGoster} onChange={(e) => { setYerlesenleriGoster(e.target.checked); setSecilenId(""); }} />

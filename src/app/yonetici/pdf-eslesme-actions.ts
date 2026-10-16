@@ -56,6 +56,9 @@ export interface PdfEslesmeBekleyeni {
   // ayırt etmenin TEK yolu — ad ve netler yan yana aynı görünebiliyor.
   ogrenciNo: number | null;
   eslestirilebilir: boolean;
+  // Öğrenci arama listesinin açıldığı seviye (yükleyenin belirttiği ya da
+  // denemede eşleşenlerden tahmin); null = bütün kurum.
+  sinifSeviyesi: string | null;
 }
 
 // Kullanıcı isteği (17.10.2026): ekran listesiz açılır. Önce yalnızca
@@ -117,13 +120,21 @@ export async function pdfEslesmeBekleyenleriGetir(secim: PdfEslesmeSecimi): Prom
   const { admin, kurumFiltresi } = await requireEslesmeYetkisi();
   if (kurumFiltresi && kurumFiltresi !== secim.schoolId) return { error: "Bu kurumun satırlarını görme yetkiniz yok.", bekleyenler: [] };
   const tumSatirlar: unknown[] = [];
+  const temelSutunlar = "id, ad_soyad_ham, ders_sonuclari, ogrenci_no, yayinevi, tarih, tur, school_id, durum, atanan_student_id, created_at, schools(ad)";
+  // sinif_seviyesi migration 0158'le geldi; uygulanmadıysa sütunsuz okunur.
+  let sutunlar = `${temelSutunlar}, sinif_seviyesi`;
   for (let bas = 0; ; bas += SAYFA) {
-    const { data, error } = await admin
+    const sorgu = () => admin
       .from("pdf_deneme_eslesme_bekleyenler")
-      .select("id, ad_soyad_ham, ders_sonuclari, ogrenci_no, yayinevi, tarih, tur, school_id, durum, atanan_student_id, created_at, schools(ad)")
+      .select(sutunlar)
       .eq("school_id", secim.schoolId).eq("tarih", secim.tarih).eq("tur", secim.tur).eq("yayinevi", secim.yayinevi)
       .order("created_at", { ascending: false }).order("id")
       .range(bas, bas + SAYFA - 1);
+    let { data, error } = await sorgu();
+    if (error && /sinif_seviyesi/.test(error.message) && sutunlar !== temelSutunlar) {
+      sutunlar = temelSutunlar;
+      ({ data, error } = await sorgu());
+    }
     if (error) return { error: error.message, bekleyenler: [] };
     tumSatirlar.push(...(data ?? []));
     if ((data ?? []).length < SAYFA) break;
@@ -135,6 +146,7 @@ export async function pdfEslesmeBekleyenleriGetir(secim: PdfEslesmeSecimi): Prom
     yayinevi: string; tarih: string; tur: string; school_id: string; created_at: string;
     durum: PdfEslesmeDurumu; atanan_student_id: string | null;
     schools: { ad: string } | null;
+    sinif_seviyesi?: string | null;
   };
   const satirlar = tumSatirlar as Row[];
   const schoolIds = [...new Set(satirlar.map((r) => r.school_id))];
@@ -147,9 +159,18 @@ export async function pdfEslesmeBekleyenleriGetir(secim: PdfEslesmeSecimi): Prom
       ? admin.from("students").select("school_id, profiles!students_id_fkey(ad)").in("school_id", schoolIds)
       : Promise.resolve({ data: [] }),
     atananIds.length > 0
-      ? admin.from("students").select("id, profiles!students_id_fkey(ad)").in("id", atananIds)
+      ? admin.from("students").select("id, profiles!students_id_fkey(ad), classes(seviye)").in("id", atananIds)
       : Promise.resolve({ data: [] }),
   ]);
+  // Yükleyen seviye belirtmediyse (eski satırlar, karışık): bu denemede zaten
+  // eşleşmiş öğrencilerin en az %70'i aynı seviyedeyse o seviye kullanılır.
+  const seviyeSayaci = new Map<string, number>();
+  for (const o of (atananlar ?? []) as unknown as { classes: { seviye: string } | null }[]) {
+    if (o.classes?.seviye) seviyeSayaci.set(o.classes.seviye, (seviyeSayaci.get(o.classes.seviye) ?? 0) + 1);
+  }
+  const toplamAtanan = [...seviyeSayaci.values()].reduce((t, n) => t + n, 0);
+  const baskinSeviye = [...seviyeSayaci.entries()].sort((a, b) => b[1] - a[1])[0];
+  const tahminiSeviye = baskinSeviye && baskinSeviye[1] / toplamAtanan >= 0.7 ? baskinSeviye[0] : null;
   const onKayitAnahtarlari = new Set((onKayitlar ?? []).map((o) => `${o.school_id}|${adNormalize(String(o.ad))}`));
   const okulAdlari = new Map<string, string[]>();
   for (const o of (okulOgrencileri ?? []) as unknown as { school_id: string; profiles: { ad: string } | null }[]) {
@@ -178,6 +199,7 @@ export async function pdfEslesmeBekleyenleriGetir(secim: PdfEslesmeSecimi): Prom
       atananOgrenciAdi: r.atanan_student_id ? (atananAdlari.get(r.atanan_student_id) ?? "Bilinmiyor") : null,
       durumEtiketi: pdfEslesmeDurumEtiketi(girdi),
       eslestirilebilir: eslestirilebilirMi(girdi),
+      sinifSeviyesi: r.sinif_seviyesi ?? tahminiSeviye,
     };
   });
   return { error: null, bekleyenler };
@@ -193,6 +215,8 @@ export interface PdfEslesmeOgrencisi { id: string; ad: string; sinif: string | n
 export async function pdfEslesmeOgrencileriGetir(
   schoolId: string,
   deneme?: { tarih: string; tur: string; yayinevi: string },
+  // Kullanıcı isteği (17.10.2026): bütün kurum yerine denemeye giren seviye.
+  sinifSeviyesi?: string | null,
 ): Promise<{ error: string | null; ogrenciler: PdfEslesmeOgrencisi[] }> {
   const { admin, kurumFiltresi } = await requireEslesmeYetkisi();
   if (kurumFiltresi && kurumFiltresi !== schoolId) return { error: "Bu kurumun öğrencilerini görme yetkiniz yok.", ogrenciler: [] };
@@ -200,7 +224,8 @@ export async function pdfEslesmeOgrencileriGetir(
     .select("id, profiles!students_id_fkey(ad), classes(seviye, sube)").eq("school_id", schoolId);
   if (error) return { error: error.message, ogrenciler: [] };
   type Row = { id: string; profiles: { ad: string } | null; classes: { seviye: string; sube: string } | null };
-  const satirlar = ((data ?? []) as unknown as Row[]).filter((o) => o.profiles);
+  const satirlar = ((data ?? []) as unknown as Row[])
+    .filter((o) => o.profiles && (!sinifSeviyesi || o.classes?.seviye === sinifSeviyesi));
 
   const yerlesenler = new Set<string>();
   if (deneme && satirlar.length > 0) {

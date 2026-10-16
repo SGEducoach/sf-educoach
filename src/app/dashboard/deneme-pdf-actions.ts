@@ -222,8 +222,18 @@ async function sonuclariEslestirVeKaydet(params: {
   karneOzetMap?: Map<string, KarneBirinciSayfa>;
   okunamayanAdlar?: string[];
   pdfMuafiyeti?: boolean;
+  // Yükleyenin belirttiği sınıf seviyesi (null = karışık); kuyruk satırına
+  // yazılır, eşleştirme ekranında öğrenci listesini daraltır (migration 0158).
+  sinifSeviyesi?: string | null;
 }): Promise<{ otomatikEslesen: number; kayitBekleyen: number; incelemeBekleyen: number }> {
   const { admin, userId, schoolId, yayinevi, tarih, tur, ayristirilan, ogrenciler, onKayitlar } = params;
+  const sinifSeviyesi = params.sinifSeviyesi ?? null;
+  // Migration 0158 uygulanmadan önce sütun yok: o durumda satır seviyesiz
+  // yazılır, yükleme bozulmaz.
+  let seviyeSutunuVar = true;
+  const seviyeAlani = () => (seviyeSutunuVar ? { sinif_seviyesi: sinifSeviyesi } : {});
+  const sutunYokHatasi = (e: { code?: string; message?: string } | null) =>
+    !!e && (e.code === "42703" || e.code === "PGRST204" || /sinif_seviyesi/.test(e.message ?? ""));
   const sinifMap = params.sinifMap ?? new Map<string, string>();
   const granulerKarneMap = params.granulerKarneMap ?? new Map<string, DenemeDersSonucu[]>();
   const kazanimMap = params.kazanimMap ?? new Map<string, DenemeKazanimSonucu[]>();
@@ -261,14 +271,16 @@ async function sonuclariEslestirVeKaydet(params: {
     }
 
     if (mevcut) {
-      const { error } = await admin.from("pdf_deneme_eslesme_bekleyenler")
-        .update({ ders_sonuclari: satir.ders_sonuclari, olusturan_mudur_id: userId })
+      const guncelle = () => admin.from("pdf_deneme_eslesme_bekleyenler")
+        .update({ ders_sonuclari: satir.ders_sonuclari, olusturan_mudur_id: userId, ...seviyeAlani() })
         .eq("id", mevcut.id);
+      let { error } = await guncelle();
+      if (sutunYokHatasi(error) && seviyeSutunuVar) { seviyeSutunuVar = false; ({ error } = await guncelle()); }
       if (error) console.error("Deneme sonucu eşleştirme kuyruğu güncellenemedi:", error);
       return !error;
     }
 
-    const { error } = await admin.from("pdf_deneme_eslesme_bekleyenler").insert({
+    const ekle = () => admin.from("pdf_deneme_eslesme_bekleyenler").insert({
       school_id: schoolId,
       ad_soyad_ham: satir.ad_soyad,
       ders_sonuclari: satir.ders_sonuclari,
@@ -277,7 +289,10 @@ async function sonuclariEslestirVeKaydet(params: {
       tarih,
       tur,
       olusturan_mudur_id: userId,
+      ...seviyeAlani(),
     });
+    let { error } = await ekle();
+    if (sutunYokHatasi(error) && seviyeSutunuVar) { seviyeSutunuVar = false; ({ error } = await ekle()); }
     if (error) console.error("Deneme sonucu eşleştirme kuyruğuna yazılamadı:", error);
     return !error;
   }
@@ -393,6 +408,13 @@ async function sonuclariEslestirVeKaydet(params: {
   return { otomatikEslesen, kayitBekleyen, incelemeBekleyen };
 }
 
+// Formdaki "Denemeye giren sınıf seviyesi" (boş = karışık). Geçersizse undefined.
+function sinifSeviyesiOku(formData: FormData): string | null | undefined {
+  const ham = String(formData.get("sinifSeviyesi") ?? "").trim();
+  if (!ham) return null;
+  return /^(?:[1-9]|1[0-2])$/.test(ham) ? ham : undefined;
+}
+
 export async function denemePdfIceriAktar(formData: FormData): Promise<{
   error: string | null;
   toplam: number;
@@ -415,6 +437,8 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
   const yayinevi = String(formData.get("yayinevi") ?? "").trim();
   const tarih = String(formData.get("tarih") ?? "").trim();
   const tur = String(formData.get("tur") ?? "") as DenemeTuru;
+  const sinifSeviyesi = sinifSeviyesiOku(formData);
+  if (sinifSeviyesi === undefined) return { error: "Sınıf seviyesi geçersiz.", ...BOS_SONUC };
 
   if (!dosya) return { error: "PDF dosyası seçilmedi.", ...BOS_SONUC };
   if (!yayinevi) return { error: "Yayınevi gerekli.", ...BOS_SONUC };
@@ -902,7 +926,7 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
   const { otomatikEslesen, kayitBekleyen, incelemeBekleyen } = await sonuclariEslestirVeKaydet({
     admin: adminClient, userId: user.id, schoolId, yayinevi: kayitYayinevi, tarih, tur,
     ayristirilan, ogrenciler, onKayitlar,
-    sinifMap: pdfSinifMap, granulerKarneMap, kazanimMap, karneOzetMap, okunamayanAdlar,
+    sinifMap: pdfSinifMap, granulerKarneMap, kazanimMap, karneOzetMap, okunamayanAdlar, sinifSeviyesi,
     pdfMuafiyeti: true,
   });
 
@@ -963,6 +987,8 @@ export async function denemeExcelIceriAktar(formData: FormData): Promise<{
   const yayinevi = String(formData.get("yayinevi") ?? "").trim();
   const tarih = String(formData.get("tarih") ?? "").trim();
   const tur = String(formData.get("tur") ?? "") as DenemeTuru;
+  const sinifSeviyesi = sinifSeviyesiOku(formData);
+  if (sinifSeviyesi === undefined) return { error: "Sınıf seviyesi geçersiz.", ...BOS_SONUC };
 
   if (!dosya) return { error: "Excel dosyası seçilmedi.", ...BOS_SONUC };
   if (!yayinevi) return { error: "Yayınevi gerekli.", ...BOS_SONUC };
@@ -1061,7 +1087,7 @@ export async function denemeExcelIceriAktar(formData: FormData): Promise<{
 
   const { otomatikEslesen, kayitBekleyen, incelemeBekleyen } = await sonuclariEslestirVeKaydet({
     admin, userId: user.id, schoolId, yayinevi, tarih, tur,
-    ayristirilan, ogrenciler, onKayitlar,
+    ayristirilan, ogrenciler, onKayitlar, sinifSeviyesi,
   });
 
   revalidatePath("/dashboard");

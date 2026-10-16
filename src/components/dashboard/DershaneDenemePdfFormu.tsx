@@ -19,6 +19,10 @@ export function DershaneDenemePdfFormu({ schoolId, yalnizcaExcel = false }: { sc
   const [tarih, setTarih] = useState("");
   const [tur, setTur] = useState<"TYT" | "AYT" | "BRANS" | "LGS">("TYT");
   const [bicim, setBicim] = useState<"otomatik" | "okul" | "maarif" | "sinif" | "sirali" | "claude">("otomatik");
+  // Kullanıcı isteği (17.10.2026): denemeye giren sınıf seviyesi sorulur;
+  // eşleştirme ekranında öğrenci arama listesi bu seviyeyle açılır.
+  const [seviye, setSeviye] = useState("");
+  const seviyeSecenekleri = tur === "LGS" ? ["5", "6", "7", "8"] : tur === "BRANS" ? ["9", "10"] : ["9", "10", "11", "12"];
   const [hata, setHata] = useState<string | null>(null);
   const [sonuc, setSonuc] = useState<{
     toplam: number;
@@ -37,12 +41,14 @@ export function DershaneDenemePdfFormu({ schoolId, yalnizcaExcel = false }: { sc
     if (!dosya) return setHata(mod === "pdf" ? "Bir PDF dosyası seçin." : "Bir Excel (.xlsx) dosyası seçin.");
     if (!yayinevi.trim()) return setHata("Yayınevi gerekli.");
     if (!tarih) return setHata("Uygulama tarihi gerekli.");
+    if (!seviye) return setHata("Denemeye giren sınıf seviyesini seçin.");
 
     const formData = new FormData();
     formData.set("dosya", dosya);
     formData.set("yayinevi", yayinevi.trim());
     formData.set("tarih", tarih);
     formData.set("tur", tur);
+    formData.set("sinifSeviyesi", seviye === "karisik" ? "" : seviye);
     if (mod === "pdf") formData.set("bicim", bicim);
     if (schoolId) formData.set("schoolId", schoolId);
 
@@ -123,7 +129,7 @@ export function DershaneDenemePdfFormu({ schoolId, yalnizcaExcel = false }: { sc
         </div>
         <label className="flex flex-col gap-1">
           <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Tür</span>
-          <select value={tur} onChange={(e) => setTur(e.target.value as typeof tur)}
+          <select value={tur} onChange={(e) => { setTur(e.target.value as typeof tur); setSeviye(""); }}
             className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
             <option value="TYT">TYT</option>
             <option value="AYT">AYT</option>
@@ -135,6 +141,18 @@ export function DershaneDenemePdfFormu({ schoolId, yalnizcaExcel = false }: { sc
               LGS sonuç listesi PDF&apos;ten henüz okunmuyor; &quot;Excel yükle&quot; sekmesindeki LGS şablonunu kullanın.
             </span>
           )}
+        </label>
+        <label className="flex flex-col gap-1">
+          <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Denemeye giren sınıf seviyesi</span>
+          <select required value={seviye} onChange={(e) => setSeviye(e.target.value)}
+            className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+            <option value="">Seçin</option>
+            {seviyeSecenekleri.map((s) => <option key={s} value={s}>{s}. sınıf</option>)}
+            <option value="karisik">Karışık (birden çok seviye)</option>
+          </select>
+          <span className="text-[11px]" style={{ color: TEXT_MUTED }}>
+            Eşleştirmede öğrenci arama listesi yalnız bu seviyeyle açılır.
+          </span>
         </label>
         {mod === "pdf" && (
           <label className="flex flex-col gap-1">
