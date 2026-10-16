@@ -20,12 +20,12 @@
 // yonetici/kullanici/[id]/page.tsx) import edilmeli, öğrencinin/velinin
 // kendi görünümünden ASLA çağrılmamalı.
 import type { createClient } from "@/lib/supabase/server";
-import { netHesapla } from "@/lib/types";
+import { netHesapla, dokuzOnSinifMi } from "@/lib/types";
 import { persentilHesapla } from "@/lib/analiz-motoru";
 import type { PersentilSonucu } from "@/lib/analiz-motoru";
 
 export interface KohortKarsilastirmaSatiri {
-  tur: "TYT" | "AYT";
+  tur: "TYT" | "AYT" | "BRANS";
   kendiNet: number;
   persentil: PersentilSonucu;
 }
@@ -34,9 +34,12 @@ export async function kohortKarsilastirmasiGetir(
   supabase: Awaited<ReturnType<typeof createClient>>,
   studentId: string,
 ): Promise<KohortKarsilastirmaSatiri[]> {
-  const { data: ogrenciRow } = await supabase.from("students").select("class_id").eq("id", studentId).maybeSingle();
-  const classId = (ogrenciRow as { class_id: string | null } | null)?.class_id ?? null;
+  const { data: ogrenciRow } = await supabase.from("students").select("class_id, classes(seviye)").eq("id", studentId).maybeSingle();
+  const ogrenci = ogrenciRow as unknown as { class_id: string | null; classes: { seviye: string } | null } | null;
+  const classId = ogrenci?.class_id ?? null;
   if (!classId) return [];
+  // 9-10. sınıf yalnız Branş denemesiyle karşılaştırılır (bkz. analiz.ts denemeKapsami).
+  const turler = dokuzOnSinifMi(ogrenci?.classes?.seviye) ? (["BRANS"] as const) : (["TYT", "AYT"] as const);
 
   const { data: sinifOgrencileri } = await supabase.from("students").select("id").eq("class_id", classId);
   const sinifIdleri = ((sinifOgrencileri ?? []) as { id: string }[]).map((s) => s.id);
@@ -51,7 +54,7 @@ export async function kohortKarsilastirmasiGetir(
     .in("student_id", sinifIdleri)
     .order("tarih");
 
-  type Row = { student_id: string; tarih: string; tur: "TYT" | "AYT"; deneme_ders_sonuclari: { dogru: number; yanlis: number }[] };
+  type Row = { student_id: string; tarih: string; tur: string; deneme_ders_sonuclari: { dogru: number; yanlis: number }[] };
   const liste = (denemeler as unknown as Row[]) ?? [];
 
   // Her (student_id, tur) için EN SON net — liste zaten tarihe göre artan
@@ -64,7 +67,7 @@ export async function kohortKarsilastirmasiGetir(
   }
 
   const sonuc: KohortKarsilastirmaSatiri[] = [];
-  for (const tur of ["TYT", "AYT"] as const) {
+  for (const tur of turler) {
     const kendiNet = sonNetMap.get(`${studentId}|${tur}`);
     if (kendiNet === undefined) continue; // öğrencinin bu türde hiç denemesi yok — karşılaştırılacak bir şey yok
     const digerDegerler: number[] = [];

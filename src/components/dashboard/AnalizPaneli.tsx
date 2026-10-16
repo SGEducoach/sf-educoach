@@ -66,6 +66,8 @@ export function AnalizPaneli({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const denemeChartData = veri.denemeTrend.map((d) => ({ tarih: tarihFormat(d.tarih), [d.tur]: d.net }));
+  // 9-10. sınıf: tek Branş çizgisi, TYT/AYT hedef girişi yok (bkz. analiz.ts).
+  const bransKapsami = veri.denemeKapsami === "brans";
   const toplamKonuDakika = veri.konuCalismaGunluk.reduce((toplam, kayit) => toplam + kayit.dakika, 0);
   const toplamSoruSayisi = veri.soruCozumuGunluk.reduce((toplam, kayit) => toplam + kayit.soru, 0);
 
@@ -176,7 +178,7 @@ export function AnalizPaneli({
       {ogretmenGorunumu && <OgretmenGorunumuKarti risk={riskSonucu} kohort={kohortKarsilastirma} />}
 
       <IcgorulerKarti icgoruler={icgoruler} oncelikSiralamasi={hicVeriYok ? [] : oncelikSiralamasi.slice(0, 3)}
-        hedefNetTyt={veri.hedefNetTyt} hedefNetAyt={veri.hedefNetAyt} duzenlenebilir={hedefDuzenlenebilir} />
+        hedefNetTyt={veri.hedefNetTyt} hedefNetAyt={veri.hedefNetAyt} duzenlenebilir={hedefDuzenlenebilir && !bransKapsami} />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <IstatKart icon={Clock} etiket="Toplam konu çalışması" deger={`${toplamKonuDakika} dk`} renk={BUTTER} bg={BUTTER_BG} />
@@ -200,8 +202,12 @@ export function AnalizPaneli({
                 <YAxis tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={false} tickLine={false} />
                 <RTooltip cursor={false} contentStyle={{ fontSize: 12, borderRadius: 12, border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT }} labelStyle={{ color: TEXT_MUTED }} itemStyle={{ color: TEXT }} />
                 <Legend wrapperStyle={{ fontSize: 11, color: TEXT_MUTED }} />
-                <Line type="monotone" dataKey="TYT" stroke={SKY} strokeWidth={2.25} dot={{ r: 3.5, fill: SKY, strokeWidth: 2, stroke: BG1 }} connectNulls />
-                <Line type="monotone" dataKey="AYT" stroke={MINT} strokeWidth={2.25} dot={{ r: 3.5, fill: MINT, strokeWidth: 2, stroke: BG1 }} connectNulls />
+                {bransKapsami ? (
+                  <Line type="monotone" dataKey="BRANS" name="Branş" stroke={SKY} strokeWidth={2.25} dot={{ r: 3.5, fill: SKY, strokeWidth: 2, stroke: BG1 }} connectNulls />
+                ) : <>
+                  <Line type="monotone" dataKey="TYT" stroke={SKY} strokeWidth={2.25} dot={{ r: 3.5, fill: SKY, strokeWidth: 2, stroke: BG1 }} connectNulls />
+                  <Line type="monotone" dataKey="AYT" stroke={MINT} strokeWidth={2.25} dot={{ r: 3.5, fill: MINT, strokeWidth: 2, stroke: BG1 }} connectNulls />
+                </>}
               </LineChart>
             </ResponsiveContainer>
           )}
@@ -277,7 +283,7 @@ export function AnalizPaneli({
 
         <HizDogrulukKarti satirlar={veri.dersHizDogruluk} />
 
-        <SinavSaatiKarti projeksiyon={veri.sinavProjeksiyonu} yetisme={veri.dersYetisme} />
+        <SinavSaatiKarti projeksiyon={veri.sinavProjeksiyonu} yetisme={veri.dersYetisme} bransKapsami={bransKapsami} />
       </div>
 
       </>}
@@ -355,7 +361,7 @@ function OgretmenGorunumuKarti({ risk, kohort }: { risk: RiskSonucu; kohort: Koh
           <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Sınıf içi karşılaştırma</span>
           {kohort.map((k) => (
             <div key={k.tur} className="text-xs" style={{ color: TEXT }}>
-              <span className="font-semibold">{k.tur}</span> · son net {k.kendiNet}
+              <span className="font-semibold">{k.tur === "BRANS" ? "Branş" : k.tur}</span> · son net {k.kendiNet}
               {k.persentil.persentil !== null
                 ? <> — sınıfının <span className="font-semibold">%{k.persentil.persentil}</span>&apos;inin üzerinde ({k.persentil.kohortBuyuklugu} sınıf arkadaşıyla karşılaştırıldı)</>
                 : <span style={{ color: TEXT_MUTED }}> — karşılaştırma için sınıfta yeterli veri yok</span>}
@@ -574,9 +580,10 @@ const MAKAS_BG: Record<MakasTeshisi, string> = {
   "yetisemiyor": BUTTER_BG, "bos-yuksek": SKY_BG, "bilgi": BLUSH_BG, "sinavda-dusus": SKY_BG, "saglam": MINT_BG,
 };
 
-function SinavSaatiKarti({ projeksiyon, yetisme }: {
+function SinavSaatiKarti({ projeksiyon, yetisme, bransKapsami }: {
   projeksiyon: AnalizVerisi["sinavProjeksiyonu"];
   yetisme: AnalizVerisi["dersYetisme"];
+  bransKapsami: boolean;
 }) {
   return (
     <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
@@ -587,7 +594,7 @@ function SinavSaatiKarti({ projeksiyon, yetisme }: {
         <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Sınav Saati</span>
       </div>
       <p style={{ color: TEXT_MUTED }} className="text-xs mb-4">
-        TYT 120 soru / 165 dakika. Üstteki hesap kendi çalışma temponla yapılır. Boş oranı tek başına süre sorunu anlamına gelmez; süre yorumu yalnızca ayrı bir zaman kanıtı varsa yapılır.
+        {bransKapsami ? "Branş denemesi" : "TYT"} 120 soru / 165 dakika. Üstteki hesap kendi çalışma temponla yapılır. Boş oranı tek başına süre sorunu anlamına gelmez; süre yorumu yalnızca ayrı bir zaman kanıtı varsa yapılır.
       </p>
 
       {projeksiyon === null && yetisme.length === 0 ? (

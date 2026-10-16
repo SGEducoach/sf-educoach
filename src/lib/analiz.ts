@@ -1,7 +1,7 @@
 import type { createClient } from "@/lib/supabase/server";
 import { netHesapla } from "@/lib/types";
 import type { DenemeTuru, HedefeYakinlik, VerimlilikDuzeyi } from "@/lib/types";
-import { TYT_DERSLERI, dersSoruSayisi } from "@/lib/types";
+import { TYT_DERSLERI, BRANS_DENEMESI_DERSLERI, dersSoruSayisi, dokuzOnSinifMi } from "@/lib/types";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
 import { trendHesapla, hizDogrulukKategorisiBelirle, hedefProjeksiyonuHesapla, makasTeshisiBelirle } from "@/lib/analiz-motoru";
 import type { TrendSonucu, HizDogrulukKategorisi, RegresyonNoktasi, HedefProjeksiyonuSonucu, MakasTeshisi } from "@/lib/analiz-motoru";
@@ -26,7 +26,11 @@ export const RAPOR_DONEMI_ETIKET: Record<RaporDonemi, string> = {
 };
 
 export interface AnalizVerisi {
-  denemeTrend: { tarih: string; net: number; tur: "TYT" | "AYT" }[];
+  // Kullanıcı kararı (17.10.2026): 9 ve 10. sınıfların deneme grafiği ve
+  // analizi yalnızca Branş denemesine dayanır; TYT/AYT ve onların hedef
+  // netleri bu öğrencilerde hiç kullanılmaz. 11-12 ("yks") eskisi gibi.
+  denemeKapsami: "brans" | "yks";
+  denemeTrend: { tarih: string; net: number; tur: DenemeTuru }[];
   konuCalismaGunluk: { tarih: string; dakika: number }[];
   soruCozumuGunluk: { tarih: string; soru: number }[];
   dersNetOrtalama: { ders: string; net: number }[];
@@ -100,7 +104,7 @@ export async function analizVerisiGetir(
   let verimlilikQuery = supabase.from("haftalik_verimlilikler").select("created_at, duzey").eq("student_id", studentId).order("created_at");
   // Faz A4 — hedef net, tarih aralığı filtresi UYGULANMAZ (profil alanı,
   // aktivite kaydı değil).
-  const hedefQuery = supabase.from("students").select("hedef_net_tyt, hedef_net_ayt").eq("id", studentId).single();
+  const hedefQuery = supabase.from("students").select("hedef_net_tyt, hedef_net_ayt, classes(seviye)").eq("id", studentId).single();
   // Faz A5, Katman 7 girdisi — en son aktivite tarihi, donem filtresinden
   // BAĞIMSIZ (hedefQuery ile aynı gerekçe): "Haftalık" rapor görünümünde
   // bir öğrencinin son 7 günde veri girmemiş olması, denemeTrend/konuCalisma/
@@ -141,19 +145,23 @@ export async function analizVerisiGetir(
   type KonuRow = { tarih: string; sure_dakika: number; hedefe_yakinlik: HedefeYakinlik };
   type SoruRow = { tarih: string; sure_dakika: number; ders: string; dogru: number; yanlis: number; bos: number };
 
-  const denemeListesi = (denemeler as unknown as DenemeRow[]) ?? [];
+  const hedefRow = hedefSatiri as unknown as { hedef_net_tyt: number | null; hedef_net_ayt: number | null; classes: { seviye: string } | null } | null;
+  const denemeKapsami: AnalizVerisi["denemeKapsami"] = dokuzOnSinifMi(hedefRow?.classes?.seviye) ? "brans" : "yks";
+  // 9-10'da yalnız Branş denemeleri; eskiden girilmiş TYT/AYT kayıtları
+  // grafiğe, trende ve yetişme analizine karışmaz (silinmez, yalnız görünmez).
+  const denemeListesi = ((denemeler as unknown as DenemeRow[]) ?? [])
+    .filter((d) => denemeKapsami === "yks" || d.tur === "BRANS");
   const konuListesi = (konular as unknown as KonuRow[]) ?? [];
   const soruListesi = (sorular as unknown as SoruRow[]) ?? [];
   const verimlilikListesi = (verimlilikler as unknown as { created_at: string; duzey: VerimlilikDuzeyi }[]) ?? [];
-  const hedefRow = hedefSatiri as { hedef_net_tyt: number | null; hedef_net_ayt: number | null } | null;
-  const hedefNetTyt = hedefRow?.hedef_net_tyt ?? null;
-  const hedefNetAyt = hedefRow?.hedef_net_ayt ?? null;
+  const hedefNetTyt = denemeKapsami === "brans" ? null : hedefRow?.hedef_net_tyt ?? null;
+  const hedefNetAyt = denemeKapsami === "brans" ? null : hedefRow?.hedef_net_ayt ?? null;
 
   const denemeTrend = denemeListesi.map((d) => ({
     tarih: d.tarih,
-    // BRANS denemeleri eskiden olduğu gibi ham geçiyor: TYT/AYT projeksiyon
-    // filtrelerinin hiçbirine girmiyor (bkz. denemeTrendYonuTur).
-    tur: d.tur as "TYT" | "AYT",
+    // 11-12'de BRANS denemeleri TYT/AYT projeksiyon filtrelerinin hiçbirine
+    // girmiyor (bkz. denemeTrendYonuTur).
+    tur: d.tur,
     net: Math.round(d.deneme_ders_sonuclari.reduce((t, s) => t + netHesapla(s.dogru, s.yanlis), 0) * 100) / 100,
   }));
 
@@ -341,8 +349,8 @@ export async function analizVerisiGetir(
   // 165 dakikalık bütçenin projeksiyonu. AYT alan bilgisi bu katmana
   // gelmediği için şimdilik yalnızca 120 soruluk sınav (TYT/Branş).
   const projeksiyon = sinavProjeksiyonu(
-    "TYT",
-    TYT_DERSLERI,
+    denemeKapsami === "brans" ? "BRANS" : "TYT",
+    denemeKapsami === "brans" ? BRANS_DENEMESI_DERSLERI : TYT_DERSLERI,
     dersHizDogruluk.map((d) => ({ ders: d.ders, ortSureDakika: d.ortSureDakika, soru: 0 })),
   );
 
@@ -375,6 +383,7 @@ export async function analizVerisiGetir(
     .reduce((t, c) => t + c.soru, 0);
 
   return {
+    denemeKapsami,
     denemeTrend,
     konuCalismaGunluk,
     soruCozumuGunluk,
