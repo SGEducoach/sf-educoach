@@ -1,6 +1,20 @@
 import { describe, expect, test } from "vitest";
-import { eslestirilebilirMi, pdfEslesmeDurumEtiketi, yanlisEslesmeSuphesi } from "./pdf-eslesme-durum";
+import {
+  eslestirilebilirMi, pdfEslesmeDenemeAnahtari, pdfEslesmeDenemeAnahtariniCoz, pdfEslesmeDurumEtiketi, yanlisEslesmeSuphesi,
+} from "./pdf-eslesme-durum";
 import type { DurumGirdisi } from "./pdf-eslesme-durum";
+
+describe("pdfEslesmeDenemeAnahtari", () => {
+  test("gidiş-dönüş, yayınevinde | olsa da", () => {
+    const s = { schoolId: "abc", tarih: "2026-10-16", tur: "BRANS", yayinevi: "BES|SDS" };
+    expect(pdfEslesmeDenemeAnahtariniCoz(pdfEslesmeDenemeAnahtari(s))).toEqual(s);
+  });
+  test("bozuk anahtar → null", () => {
+    expect(pdfEslesmeDenemeAnahtariniCoz(undefined)).toBeNull();
+    expect(pdfEslesmeDenemeAnahtariniCoz("abc|16.10.2026|BRANS|X")).toBeNull();
+    expect(pdfEslesmeDenemeAnahtariniCoz("abc|2026-10-16|BRANS")).toBeNull();
+  });
+});
 
 function girdi(p: Partial<DurumGirdisi> = {}): DurumGirdisi {
   return { durum: "bekliyor", dersSonucSayisi: 9, onKayittaVarMi: false, benzeyenOgrenciSayisi: 1, ...p };

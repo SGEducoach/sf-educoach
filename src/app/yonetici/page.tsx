@@ -56,7 +56,7 @@ import { sinifSiraKarsilastir } from "@/lib/types";
 export default async function YoneticiPage({
   searchParams,
 }: {
-  searchParams: Promise<{ okul?: string; bolum?: string; kurum?: string; donem?: string }>;
+  searchParams: Promise<{ okul?: string; bolum?: string; kurum?: string; donem?: string; deneme?: string }>;
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -144,7 +144,7 @@ export default async function YoneticiPage({
           )}
           {aktifBolum === "mesajlar" && <section className="sfec-section"><YoneticiMesajlar /></section>}
           {aktifBolum === "talepler" && <VeliTalepleri />}
-          {aktifBolum === "pdf-eslesme" && <section className="sfec-section flex flex-col gap-4"><PdfEslesmeYonetimi /><KazanimEslesmeYonetimi /></section>}
+          {aktifBolum === "pdf-eslesme" && <section className="sfec-section flex flex-col gap-4"><PdfEslesmeYonetimi denemeAnahtari={params.deneme} /><KazanimEslesmeYonetimi /></section>}
           {aktifBolum === "deneme-yukle" && (
             <section className="sfec-section"><DenemeYuklemeSayfasi
               okullar={okulListesi.map((o) => ({ id: o.id, ad: o.ad, tur: o.tur }))}

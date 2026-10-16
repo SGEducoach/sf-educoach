@@ -10,6 +10,19 @@
 
 export type PdfEslesmeDurumu = "bekliyor" | "atandi" | "reddedildi";
 
+// Eşleştirme ekranında seçili deneme URL'de (?deneme=...) bu anahtarla
+// taşınır; atama sonrası sayfa yenilenince seçim korunur.
+export function pdfEslesmeDenemeAnahtari(s: { schoolId: string; tarih: string; tur: string; yayinevi: string }): string {
+  return [s.schoolId, s.tarih, s.tur, s.yayinevi].join("|");
+}
+
+export function pdfEslesmeDenemeAnahtariniCoz(anahtar: string | undefined | null): { schoolId: string; tarih: string; tur: string; yayinevi: string } | null {
+  if (!anahtar) return null;
+  const [schoolId, tarih, tur, ...yayineviParcalari] = anahtar.split("|");
+  if (!schoolId || !/^\d{4}-\d{2}-\d{2}$/.test(tarih ?? "") || !tur || yayineviParcalari.length === 0) return null;
+  return { schoolId, tarih, tur, yayinevi: yayineviParcalari.join("|") };
+}
+
 export type PdfEslesmeDurumEtiketi =
   | "Eşleştirildi"
   | "Reddedildi"

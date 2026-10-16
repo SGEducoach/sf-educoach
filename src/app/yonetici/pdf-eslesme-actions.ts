@@ -15,7 +15,7 @@ import { denemeModeratorKurumu } from "@/lib/dershane-auth";
 import { ogretmenDenemeSonucuKaydet, yayineviAyniMi } from "@/lib/deneme-sonucu-kaydet";
 import { adlarBenzerMi } from "@/lib/ad-benzerligi";
 import { adNormalize } from "@/lib/validators";
-import { eslestirilebilirMi, pdfEslesmeDurumEtiketi } from "@/lib/pdf-eslesme-durum";
+import { eslestirilebilirMi, pdfEslesmeDenemeAnahtari, pdfEslesmeDurumEtiketi } from "@/lib/pdf-eslesme-durum";
 import type { PdfEslesmeDurumEtiketi, PdfEslesmeDurumu } from "@/lib/pdf-eslesme-durum";
 import type { DenemeTuru } from "@/lib/types";
 
@@ -58,22 +58,76 @@ export interface PdfEslesmeBekleyeni {
   eslestirilebilir: boolean;
 }
 
-// Ekran tek seferde bu kadar satır çekiyor. Kuyruk artık PDF'teki BÜTÜN
-// adları tuttuğu için yükleme başına 100+ satır birikiyor; sınırsız çekmek
-// sayfayı da sorguyu da şişirir. En yeniler önce geliyor, süzgeçler bunun
-// üstünde çalışıyor.
-const EKRAN_SATIR_SINIRI = 500;
+// Kullanıcı isteği (17.10.2026): ekran listesiz açılır. Önce yalnızca
+// denemelerin özeti (kurum + tarih + tür + yayınevi, satır sayılarıyla)
+// gelir; bir deneme seçilince YALNIZCA o denemenin satırları, sınırsız
+// çekilir. Eskiden ekran son 500 satırı çekiyordu ve büyük yüklemelerde
+// eski denemeler listeden düşüyordu.
+export interface PdfEslesmeDenemesi {
+  anahtar: string; // pdfEslesmeDenemeAnahtari
+  schoolId: string;
+  okulAdi: string;
+  tarih: string;
+  tur: string;
+  yayinevi: string;
+  toplam: number;
+  bekleyen: number;
+  sonYukleme: string;
+}
 
-export async function pdfEslesmeBekleyenleriGetir(): Promise<{ error: string | null; bekleyenler: PdfEslesmeBekleyeni[]; kirpildi: boolean }> {
+export interface PdfEslesmeSecimi { schoolId: string; tarih: string; tur: string; yayinevi: string }
+
+const SAYFA = 1000;
+
+export async function pdfEslesmeDenemeleriGetir(kurumId?: string): Promise<{ error: string | null; denemeler: PdfEslesmeDenemesi[] }> {
   const { admin, kurumFiltresi } = await requireEslesmeYetkisi();
-  let sorgu = admin
-    .from("pdf_deneme_eslesme_bekleyenler")
-    .select("id, ad_soyad_ham, ders_sonuclari, ogrenci_no, yayinevi, tarih, tur, school_id, durum, atanan_student_id, created_at, schools(ad)");
-  if (kurumFiltresi) sorgu = sorgu.eq("school_id", kurumFiltresi);
-  const { data, error } = await sorgu
-    .order("created_at", { ascending: false })
-    .limit(EKRAN_SATIR_SINIRI + 1);
-  if (error) return { error: error.message, bekleyenler: [], kirpildi: false };
+  const kurum = kurumFiltresi ?? kurumId ?? null;
+  type OzetRow = { school_id: string; tarih: string; tur: string; yayinevi: string; durum: PdfEslesmeDurumu; created_at: string };
+  const satirlar: OzetRow[] = [];
+  for (let bas = 0; ; bas += SAYFA) {
+    let sorgu = admin.from("pdf_deneme_eslesme_bekleyenler").select("school_id, tarih, tur, yayinevi, durum, created_at");
+    if (kurum) sorgu = sorgu.eq("school_id", kurum);
+    const { data, error } = await sorgu.order("id").range(bas, bas + SAYFA - 1);
+    if (error) return { error: error.message, denemeler: [] };
+    satirlar.push(...((data ?? []) as OzetRow[]));
+    if ((data ?? []).length < SAYFA) break;
+  }
+  const gruplar = new Map<string, PdfEslesmeDenemesi>();
+  for (const r of satirlar) {
+    const secim = { schoolId: r.school_id, tarih: r.tarih, tur: r.tur, yayinevi: r.yayinevi };
+    const anahtar = pdfEslesmeDenemeAnahtari(secim);
+    const g = gruplar.get(anahtar) ?? { anahtar, ...secim, okulAdi: "", toplam: 0, bekleyen: 0, sonYukleme: r.created_at };
+    g.toplam++;
+    if (r.durum === "bekliyor") g.bekleyen++;
+    if (r.created_at > g.sonYukleme) g.sonYukleme = r.created_at;
+    gruplar.set(anahtar, g);
+  }
+  const okulIdleri = [...new Set(satirlar.map((r) => r.school_id))];
+  const { data: okullar } = okulIdleri.length > 0
+    ? await admin.from("schools").select("id, ad").in("id", okulIdleri)
+    : { data: [] };
+  const okulAdi = new Map(((okullar ?? []) as { id: string; ad: string }[]).map((o) => [o.id, o.ad]));
+  const denemeler = [...gruplar.values()]
+    .map((g) => ({ ...g, okulAdi: okulAdi.get(g.schoolId) ?? "Bilinmiyor" }))
+    .sort((a, b) => b.sonYukleme.localeCompare(a.sonYukleme));
+  return { error: null, denemeler };
+}
+
+export async function pdfEslesmeBekleyenleriGetir(secim: PdfEslesmeSecimi): Promise<{ error: string | null; bekleyenler: PdfEslesmeBekleyeni[] }> {
+  const { admin, kurumFiltresi } = await requireEslesmeYetkisi();
+  if (kurumFiltresi && kurumFiltresi !== secim.schoolId) return { error: "Bu kurumun satırlarını görme yetkiniz yok.", bekleyenler: [] };
+  const tumSatirlar: unknown[] = [];
+  for (let bas = 0; ; bas += SAYFA) {
+    const { data, error } = await admin
+      .from("pdf_deneme_eslesme_bekleyenler")
+      .select("id, ad_soyad_ham, ders_sonuclari, ogrenci_no, yayinevi, tarih, tur, school_id, durum, atanan_student_id, created_at, schools(ad)")
+      .eq("school_id", secim.schoolId).eq("tarih", secim.tarih).eq("tur", secim.tur).eq("yayinevi", secim.yayinevi)
+      .order("created_at", { ascending: false }).order("id")
+      .range(bas, bas + SAYFA - 1);
+    if (error) return { error: error.message, bekleyenler: [] };
+    tumSatirlar.push(...(data ?? []));
+    if ((data ?? []).length < SAYFA) break;
+  }
 
   type Row = {
     id: string; ad_soyad_ham: string; ders_sonuclari: { ders: string; dogru: number; yanlis: number }[];
@@ -82,9 +136,7 @@ export async function pdfEslesmeBekleyenleriGetir(): Promise<{ error: string | n
     durum: PdfEslesmeDurumu; atanan_student_id: string | null;
     schools: { ad: string } | null;
   };
-  const tumSatirlar = (data ?? []) as unknown as Row[];
-  const kirpildi = tumSatirlar.length > EKRAN_SATIR_SINIRI;
-  const satirlar = kirpildi ? tumSatirlar.slice(0, EKRAN_SATIR_SINIRI) : tumSatirlar;
+  const satirlar = tumSatirlar as Row[];
   const schoolIds = [...new Set(satirlar.map((r) => r.school_id))];
   const atananIds = [...new Set(satirlar.map((r) => r.atanan_student_id).filter((id): id is string => !!id))];
   const [{ data: onKayitlar }, { data: okulOgrencileri }, { data: atananlar }] = await Promise.all([
@@ -128,7 +180,7 @@ export async function pdfEslesmeBekleyenleriGetir(): Promise<{ error: string | n
       eslestirilebilir: eslestirilebilirMi(girdi),
     };
   });
-  return { error: null, bekleyenler, kirpildi };
+  return { error: null, bekleyenler };
 }
 
 export interface PdfEslesmeOgrencisi { id: string; ad: string; sinif: string | null; yerlestirildi: boolean }

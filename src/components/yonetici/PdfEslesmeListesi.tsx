@@ -1,11 +1,11 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Check, Undo2, X } from "lucide-react";
 import {
   pdfEslesmeAta, pdfEslesmeAtamayiGeriAl, pdfEslesmeOgrencileriGetir, pdfEslesmeReddet,
-  type PdfEslesmeBekleyeni, type PdfEslesmeOgrencisi,
+  type PdfEslesmeBekleyeni, type PdfEslesmeDenemesi, type PdfEslesmeOgrencisi,
 } from "@/app/yonetici/pdf-eslesme-actions";
 import { adlarBenzerMi, adlarOlasiBenzer } from "@/lib/ad-benzerligi";
 import { BG0, BG1_ALT, BORDER, BORDER_STRONG, BLUSH, BUTTER, MINT, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
@@ -25,69 +25,77 @@ function denemeAnahtari(b: PdfEslesmeBekleyeni) {
 
 const TUMU = "";
 
-function denemeEtiketi(b: PdfEslesmeBekleyeni) {
-  return `${new Date(b.tarih + "T00:00:00").toLocaleDateString("tr-TR")} · ${b.tur} · ${b.yayinevi}`;
+function denemeEtiketi(d: PdfEslesmeDenemesi, kurumGoster: boolean) {
+  const tarih = new Date(d.tarih + "T00:00:00").toLocaleDateString("tr-TR");
+  const bekleyen = d.bekleyen > 0 ? `${d.bekleyen} bekleyen / ${d.toplam}` : `${d.toplam} satır, bekleyen yok`;
+  return `${kurumGoster ? `${d.okulAdi} · ` : ""}${tarih} · ${d.tur} · ${d.yayinevi} (${bekleyen})`;
 }
 
-// Kullanıcı isteği (29.09.2026): "dershane eşleştirme yapmadığı için liste
-// kabarık duruyor" — tek bir kurumun tek bir denemesi 77 satırla listeyi
-// kaplıyordu. Kurum ve deneme (tarih + tür + yayınevi) süzgeçleri, yanlarında
-// bekleyen satır sayısıyla.
-export function PdfEslesmeListesi({ bekleyenler }: { bekleyenler: PdfEslesmeBekleyeni[] }) {
-  const [buOturumdaYerlesen, setBuOturumdaYerlesen] = useState<Set<string>>(new Set());
-  const [kurum, setKurum] = useState(TUMU);
-  const [deneme, setDeneme] = useState(TUMU);
-  const [durum, setDurum] = useState(TUMU);
+// Kullanıcı isteği (17.10.2026): eşleştirme ekranı listesiz açılır, önce
+// deneme seçilir. Seçim URL'ye (?deneme=) yazılır; sunucu yalnız o denemenin
+// satırlarını sınırsız getirir.
+export function PdfEslesmeDenemeSecici({ denemeler, seciliAnahtar }: { denemeler: PdfEslesmeDenemesi[]; seciliAnahtar: string }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [kurum, setKurum] = useState(() => denemeler.find((d) => d.anahtar === seciliAnahtar)?.schoolId ?? TUMU);
+  const [pending, startTransition] = useTransition();
 
   const kurumlar = useMemo(() => {
-    const sayac = new Map<string, { id: string; ad: string; adet: number }>();
-    for (const b of bekleyenler) {
-      const mevcut = sayac.get(b.schoolId) ?? { id: b.schoolId, ad: b.okulAdi, adet: 0 };
-      mevcut.adet++;
-      sayac.set(b.schoolId, mevcut);
+    const sayac = new Map<string, { id: string; ad: string; bekleyen: number }>();
+    for (const d of denemeler) {
+      const mevcut = sayac.get(d.schoolId) ?? { id: d.schoolId, ad: d.okulAdi, bekleyen: 0 };
+      mevcut.bekleyen += d.bekleyen;
+      sayac.set(d.schoolId, mevcut);
     }
-    return [...sayac.values()].sort((a, b) => b.adet - a.adet || a.ad.localeCompare(b.ad, "tr"));
-  }, [bekleyenler]);
+    return [...sayac.values()].sort((a, b) => a.ad.localeCompare(b.ad, "tr"));
+  }, [denemeler]);
+  const kurumDenemeleri = denemeler.filter((d) => kurum === TUMU || d.schoolId === kurum);
 
-  // Deneme listesi seçili kuruma göre daralır: olmayan bir seçim ekranda kalmasın.
-  const denemeler = useMemo(() => {
-    const sayac = new Map<string, { anahtar: string; etiket: string; tarih: string; adet: number }>();
-    for (const b of bekleyenler) {
-      if (kurum !== TUMU && b.schoolId !== kurum) continue;
-      const anahtar = `${b.tarih}|${b.tur}|${b.yayinevi}`;
-      const mevcut = sayac.get(anahtar) ?? { anahtar, etiket: denemeEtiketi(b), tarih: b.tarih, adet: 0 };
-      mevcut.adet++;
-      sayac.set(anahtar, mevcut);
-    }
-    return [...sayac.values()].sort((a, b) => b.tarih.localeCompare(a.tarih));
-  }, [bekleyenler, kurum]);
+  function denemeSec(anahtar: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (anahtar) params.set("deneme", anahtar); else params.delete("deneme");
+    startTransition(() => router.push(`${pathname}?${params.toString()}`, { scroll: false }));
+  }
 
-  const gorunen = bekleyenler.filter((b) =>
-    (kurum === TUMU || b.schoolId === kurum) &&
-    (deneme === TUMU || `${b.tarih}|${b.tur}|${b.yayinevi}` === deneme) &&
-    (durum === TUMU || b.durumEtiketi === durum));
+  const secimStili = { background: BG0, color: TEXT, border: `2px solid ${BORDER_STRONG}` };
+  return (
+    <div className="flex flex-wrap items-end gap-2 rounded-2xl p-3" style={{ background: BG1_ALT, border: `1px solid ${BORDER}` }}>
+      {kurumlar.length > 1 && (
+        <label className="flex min-w-[180px] flex-1 flex-col gap-1">
+          <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Kurum</span>
+          <select value={kurum} onChange={(e) => { setKurum(e.target.value); if (seciliAnahtar) denemeSec(""); }}
+            className="rounded-xl px-3 py-2 text-xs font-semibold outline-none" style={secimStili}>
+            <option value={TUMU}>Tüm kurumlar</option>
+            {kurumlar.map((k) => <option key={k.id} value={k.id}>{k.ad}{k.bekleyen > 0 ? ` (${k.bekleyen} bekleyen)` : ""}</option>)}
+          </select>
+        </label>
+      )}
+      <label className="flex min-w-[240px] flex-[2] flex-col gap-1">
+        <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Deneme</span>
+        <select value={seciliAnahtar} onChange={(e) => denemeSec(e.target.value)} disabled={pending}
+          className="rounded-xl px-3 py-2 text-xs font-semibold outline-none" style={secimStili}>
+          <option value="">Deneme seçin ({kurumDenemeleri.length})</option>
+          {kurumDenemeleri.map((d) => <option key={d.anahtar} value={d.anahtar}>{denemeEtiketi(d, kurum === TUMU && kurumlar.length > 1)}</option>)}
+        </select>
+      </label>
+      {pending && <span className="self-center text-[11px] font-semibold" style={{ color: TEXT_MUTED }}>Yükleniyor...</span>}
+    </div>
+  );
+}
+
+// Seçili denemenin bütün satırları; yalnız durum süzgeci kaldı.
+export function PdfEslesmeListesi({ bekleyenler }: { bekleyenler: PdfEslesmeBekleyeni[] }) {
+  const [buOturumdaYerlesen, setBuOturumdaYerlesen] = useState<Set<string>>(new Set());
+  const [durum, setDurum] = useState(TUMU);
+
+  const gorunen = bekleyenler.filter((b) => durum === TUMU || b.durumEtiketi === durum);
 
   const secimStili = { background: BG0, color: TEXT, border: `2px solid ${BORDER_STRONG}` };
 
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-end gap-2 rounded-2xl p-3" style={{ background: BG1_ALT, border: `1px solid ${BORDER}` }}>
-        <label className="flex min-w-[180px] flex-1 flex-col gap-1">
-          <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Kurum</span>
-          <select value={kurum} onChange={(e) => { setKurum(e.target.value); setDeneme(TUMU); }}
-            className="rounded-xl px-3 py-2 text-xs font-semibold outline-none" style={secimStili}>
-            <option value={TUMU}>Tüm kurumlar ({bekleyenler.length})</option>
-            {kurumlar.map((k) => <option key={k.id} value={k.id}>{k.ad} ({k.adet})</option>)}
-          </select>
-        </label>
-        <label className="flex min-w-[200px] flex-1 flex-col gap-1">
-          <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Deneme</span>
-          <select value={deneme} onChange={(e) => setDeneme(e.target.value)}
-            className="rounded-xl px-3 py-2 text-xs font-semibold outline-none" style={secimStili}>
-            <option value={TUMU}>Tüm denemeler</option>
-            {denemeler.map((d) => <option key={d.anahtar} value={d.anahtar}>{d.etiket} ({d.adet})</option>)}
-          </select>
-        </label>
         <label className="flex min-w-[190px] flex-1 flex-col gap-1">
           <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Durum</span>
           <select value={durum} onChange={(e) => setDurum(e.target.value)}
@@ -98,8 +106,8 @@ export function PdfEslesmeListesi({ bekleyenler }: { bekleyenler: PdfEslesmeBekl
             ))}
           </select>
         </label>
-        {(kurum !== TUMU || deneme !== TUMU || durum !== TUMU) && (
-          <button type="button" onClick={() => { setKurum(TUMU); setDeneme(TUMU); setDurum(TUMU); }}
+        {durum !== TUMU && (
+          <button type="button" onClick={() => setDurum(TUMU)}
             className="sfec-btn rounded-xl px-3 py-2 text-xs font-bold" style={{ color: TEXT_MUTED }}>
             Süzgeci temizle
           </button>

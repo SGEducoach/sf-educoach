@@ -19,7 +19,7 @@ import { TEXT, TEXT_MUTED } from "@/lib/theme";
 // ?bolum=<...>: menüde seçili bölüm (kullanıcı isteği 03.10.2026, bkz.
 // ModeratorNavigasyonu). Bilinmeyen değer "Öğrenciler"e düşer; deneme
 // bölümleri yalnızca dershanede açılır.
-export default async function ModeratorPage({ searchParams }: { searchParams: Promise<{ okul?: string; bolum?: string }> }) {
+export default async function ModeratorPage({ searchParams }: { searchParams: Promise<{ okul?: string; bolum?: string; deneme?: string }> }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
@@ -70,7 +70,7 @@ export default async function ModeratorPage({ searchParams }: { searchParams: Pr
           </section>
         )}
 
-        {bolum === "pdf-eslesme" && <PdfEslesmeYonetimi kurumId={adminOkulId} />}
+        {bolum === "pdf-eslesme" && <PdfEslesmeYonetimi kurumId={adminOkulId} denemeAnahtari={params.deneme} />}
       </main>
     </div>
   );
