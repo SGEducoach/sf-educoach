@@ -1048,7 +1048,11 @@ function DerslerimBolumu({ dersler, siniflar, dersProgramiSatirlari, okulNobetle
 // eskisi gibi lise seviyeleri gelir.
 export function SinifEkleFormu({ schoolId, kademe }: { schoolId: string; kademe?: KurumKademesi }) {
   const seviyeler = kurumSeviyeleri(kademe);
-  const [seviye, setSeviye] = useState<SinifSeviyesi>(seviyeler[0] as SinifSeviyesi);
+  const [seciliSeviye, setSeviye] = useState<SinifSeviyesi>(seviyeler[0] as SinifSeviyesi);
+  // HATA (16.10.2026): kurum değişince seçim eski kurumun düzeyinde ("9")
+  // kalıyordu; listede 1-8 görünürken arkada 9 gönderiliyor, ortaokulda 9-A
+  // açılıyordu. Seçim listede yoksa ilk geçerli düzey kullanılır.
+  const seviye = (seviyeler.includes(seciliSeviye) ? seciliSeviye : seviyeler[0]) as SinifSeviyesi;
   const [sube, setSube] = useState("");
   const [hata, setHata] = useState<string | null>(null);
   const [basari, setBasari] = useState<string | null>(null);

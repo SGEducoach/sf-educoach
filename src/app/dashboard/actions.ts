@@ -23,7 +23,7 @@ import { SINIF_SEVIYELERI } from "@/lib/types";
 import type { KurumKademesi, SinifSeviyesi } from "@/lib/types";
 import { REHBER_BRANSI, REHBERLIK_DUYURU_BASLIGI } from "@/lib/rehberlik";
 import { rehberlikUyeligiGetir } from "@/lib/rehberlik-servisi";
-import { ilkokulMu } from "@/lib/kademe";
+import { ilkokulMu, kurumSeviyeleri } from "@/lib/kademe";
 import { veliTelefonuTemizle } from "@/lib/ilkokul-gelisim";
 import { veliDavetiOlustur } from "@/lib/veli-davet";
 
@@ -99,6 +99,12 @@ async function auditLogYaz(
 export async function sinifEkle(schoolId: string, seviye: SinifSeviyesi, sube: string) {
   const { supabase, user } = await requireUser();
   if (!(SINIF_SEVIYELERI as readonly string[]).includes(seviye)) return { error: "Geçersiz sınıf seviyesi." };
+  // Düzey kurumun kademesine uymalı (16.10.2026): ortaokul kurumunda 9-12,
+  // lise kurumunda 1-8 açılmaz. Önce yalnız arayüz süzüyordu.
+  const { data: kurum } = await supabase.from("schools").select("kademe").eq("id", schoolId).maybeSingle();
+  if (!kurumSeviyeleri(kurum?.kademe as KurumKademesi | null | undefined).includes(seviye)) {
+    return { error: `${seviye}. sınıf bu kurumun kademesinde yok.` };
+  }
   const subeBuyuk = sube.trim().toUpperCase();
   const { error } = await supabase.from("classes").insert({
     school_id: schoolId, seviye, sube: subeBuyuk,

@@ -153,7 +153,7 @@ export function AdminPanel({
           <p style={{ color: TEXT_MUTED }} className="text-sm py-4 text-center">Henüz kayıtlı okul yok.</p>
         ) : (
           <>
-            <SinifEkleFormu schoolId={gorunenOkul.id} kademe={gorunenOkul.kademe} />
+            <SinifEkleFormu key={gorunenOkul.id} schoolId={gorunenOkul.id} kademe={gorunenOkul.kademe} />
 
             {/* Kullanıcı isteği (27.08.2026): "yeni eklenen kurum ilk iş
                 olarak sınıflarını oluştursun" — sınıf yoksa sessizce

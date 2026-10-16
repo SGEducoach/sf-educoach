@@ -311,7 +311,9 @@ function KurumBilgileriDuzenleyici({ schoolId, onMesaj }: { schoolId?: string; o
 // üst bileşenin listesine (id dahil) geri veriyor.
 function SinifEkleFormuModerator({ schoolId, kademe, onEklendi }: { schoolId?: string; kademe?: KurumKademesi | null; onEklendi: () => void }) {
   const seviyeler = kurumSeviyeleri(kademe) as SinifSeviyesi[];
-  const [seviye, setSeviye] = useState<SinifSeviyesi>(seviyeler.includes("9") ? "9" : seviyeler[0]);
+  const [seciliSeviye, setSeviye] = useState<SinifSeviyesi>(seviyeler.includes("9") ? "9" : seviyeler[0]);
+  // Seçim kurumun düzeylerinde yoksa ilk geçerli düzey (16.10.2026, 9-A hatası).
+  const seviye = seviyeler.includes(seciliSeviye) ? seciliSeviye : seviyeler[0];
   const [sube, setSube] = useState("");
   const [hata, setHata] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();

@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { adNormalize, hedefBolumNormalize, ogrenciGirisKimligiHatasi, rastgeleSifre, sifreGecerliMi, telefonGecerliMi, teslimEdilebilirEpostaMi } from "@/lib/validators";
 import type { AytAlan, KurumKademesi, KurumTuru, SinifSeviyesi, UserRole } from "@/lib/types";
+import { kurumSeviyeleri } from "@/lib/kademe";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
 import type { OgrenciYonetimKaydi, OgrenciKayitTuru } from "@/app/yonetici/actions";
 
@@ -354,6 +355,11 @@ export async function moderatorOkulSiniflari(targetSchoolId?: string): Promise<{
 export async function moderatorSinifEkle(seviye: SinifSeviyesi, sube: string, targetSchoolId?: string) {
   const { user, admin, schoolId } = await requireModerator(targetSchoolId);
   if (!(SINIF_SEVIYELERI as readonly string[]).includes(seviye)) return { error: "Geçersiz sınıf seviyesi." };
+  // Düzey kurumun kademesine uymalı (16.10.2026, ortaokulda açılan 9-A hatası).
+  const { data: kurum } = await admin.from("schools").select("kademe").eq("id", schoolId).maybeSingle();
+  if (!kurumSeviyeleri(kurum?.kademe as KurumKademesi | null | undefined).includes(seviye)) {
+    return { error: `${seviye}. sınıf bu kurumun kademesinde yok.` };
+  }
   const subeBuyuk = sube.trim().toUpperCase();
   if (!subeBuyuk) return { error: "Şube adı girin." };
   const { error } = await admin.from("classes").insert({ school_id: schoolId, seviye, sube: subeBuyuk });
