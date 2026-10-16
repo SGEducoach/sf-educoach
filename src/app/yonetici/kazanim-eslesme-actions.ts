@@ -47,6 +47,10 @@ export interface KazanimEslesmeSatiri {
   // Karnedeki soru soru cevaplardan çıkarılan soru numaraları (kullanıcı
   // isteği 25.09.2026) — bkz. kazanim-soru-cikarimi.ts.
   sorular: KazanimSoruBilgisi[];
+  // Kullanıcı isteği (17.10.2026): eşleştirme talebinin hangi denemeden
+  // geldiği yazsın. En yeni deneme önce; ogrenci = o denemede bu kazanımın
+  // geldiği öğrenci sayısı.
+  denemeler: { etiket: string; tarih: string; ogrenci: number }[];
 }
 
 export interface KazanimEslesmeVerisi {
@@ -84,21 +88,30 @@ async function sayfaSayfaCek<T>(sorgu: (bas: number, son: number) => PromiseLike
 
 // Karnesi (deneme_karne_ozetleri) olan denemelerde her konunun hangi soru(lar)
 // olduğunu çıkarır. Anahtar: "<müfredat dersi>|<kazanım metni>".
+type DenemeBilgisi = { student_id: string; tarih: string; tur: string; yayinevi: string | null };
+
+async function denemeBilgileriniGetir(admin: ReturnType<typeof createAdminClient>, denemeIdleri: string[]): Promise<Map<string, DenemeBilgisi>> {
+  const denemeBilgisi = new Map<string, DenemeBilgisi>();
+  for (let i = 0; i < denemeIdleri.length; i += 150) {
+    const { data } = await admin.from("denemeler").select("id, student_id, tarih, tur, yayinevi").in("id", denemeIdleri.slice(i, i + 150));
+    for (const d of (data as (DenemeBilgisi & { id: string })[]) ?? []) denemeBilgisi.set(d.id, d);
+  }
+  return denemeBilgisi;
+}
+
+function denemeEtiketi(d: DenemeBilgisi): string {
+  const [y, a, g] = d.tarih.split("-");
+  return `${g}.${a}.${y} · ${d.tur} · ${d.yayinevi ?? ""}`;
+}
+
 async function soruBilgileriniCikar(
-  admin: ReturnType<typeof createAdminClient>, kazanimlar: KazanimRow[],
+  admin: ReturnType<typeof createAdminClient>, kazanimlar: KazanimRow[], denemeBilgisi: Map<string, DenemeBilgisi>,
 ): Promise<Map<string, KazanimSoruBilgisi[]>> {
   const sonuc = new Map<string, KazanimSoruBilgisi[]>();
   const { error, satirlar: karneler } = await sayfaSayfaCek<{ deneme_id: string; ders_ortalamalari: KarneDersOrtalamasi[]; cevaplar: KarneTestCevaplari[] }>(
     (bas, son) => admin.from("deneme_karne_ozetleri").select("deneme_id, ders_ortalamalari, cevaplar").order("deneme_id").range(bas, son));
   if (error || karneler.length === 0) return sonuc; // migration yoksa ya da karne yoksa soru bilgisi yok
   const karneMap = new Map(karneler.map((k) => [k.deneme_id, k]));
-
-  const denemeIdleri = [...karneMap.keys()];
-  const denemeBilgisi = new Map<string, { student_id: string; tarih: string; tur: string; yayinevi: string | null }>();
-  for (let i = 0; i < denemeIdleri.length; i += 150) {
-    const { data } = await admin.from("denemeler").select("id, student_id, tarih, tur, yayinevi").in("id", denemeIdleri.slice(i, i + 150));
-    for (const d of (data as { id: string; student_id: string; tarih: string; tur: string; yayinevi: string | null }[]) ?? []) denemeBilgisi.set(d.id, d);
-  }
 
   // Aynı deneme (tarih + tür + yayınevi) altındaki öğrencileri grupla.
   const gruplar = new Map<string, { etiket: string; ogrenciler: Map<string, OgrenciKarneVerisi> }>();
@@ -107,8 +120,7 @@ async function soruBilgileriniCikar(
     const d = denemeBilgisi.get(k.deneme_id);
     if (!karne || !d) continue;
     const grupAnahtari = `${d.tarih}|${d.tur}|${(d.yayinevi ?? "").toLocaleUpperCase("tr-TR")}`;
-    const [y, a, g] = d.tarih.split("-");
-    const grup = gruplar.get(grupAnahtari) ?? { etiket: `${g}.${a}.${y} · ${d.tur} · ${d.yayinevi ?? ""}`, ogrenciler: new Map() };
+    const grup = gruplar.get(grupAnahtari) ?? { etiket: denemeEtiketi(d), ogrenciler: new Map() };
     const ogr = grup.ogrenciler.get(k.deneme_id)
       ?? { ogrenciId: d.student_id, dersler: karne.ders_ortalamalari ?? [], testler: karne.cevaplar ?? [], kazanimlar: [] };
     ogr.kazanimlar.push({ ders: k.ders, kazanimMetni: k.kazanim_metni, soru: k.soru, dogru: k.dogru, yanlis: k.yanlis });
@@ -141,7 +153,23 @@ export async function kazanimEslesmeVerisiGetir(): Promise<KazanimEslesmeVerisi>
     mevcut.satirSayisi++;
     sayac.set(anahtar, mevcut);
   }
-  const soruBilgileri = await soruBilgileriniCikar(admin, kazanimlar);
+  const denemeBilgisi = await denemeBilgileriniGetir(admin, [...new Set(kazanimlar.map((k) => k.deneme_id))]);
+  const soruBilgileri = await soruBilgileriniCikar(admin, kazanimlar, denemeBilgisi);
+
+  // Her kazanımın geldiği denemeler (tarih + tür + yayınevi), öğrenci sayısıyla.
+  const kaynakDenemeler = new Map<string, Map<string, { etiket: string; tarih: string; ogrenciler: Set<string> }>>();
+  for (const r of kazanimlar) {
+    const ders = kazanimDersiniKanoniklestir(r.ders);
+    const d = denemeBilgisi.get(r.deneme_id);
+    if (!ders || !d) continue;
+    const anahtar = `${ders}|${r.kazanim_metni}`;
+    const denemeler = kaynakDenemeler.get(anahtar) ?? new Map();
+    const grupAnahtari = `${d.tarih}|${d.tur}|${(d.yayinevi ?? "").toLocaleUpperCase("tr-TR")}`;
+    const grup = denemeler.get(grupAnahtari) ?? { etiket: denemeEtiketi(d), tarih: d.tarih, ogrenciler: new Set<string>() };
+    grup.ogrenciler.add(d.student_id);
+    denemeler.set(grupAnahtari, grup);
+    kaynakDenemeler.set(anahtar, denemeler);
+  }
 
   const [{ data: eslesmeler, error: eslesmeHatasi }, adaylar] = await Promise.all([
     admin.from("kazanim_konu_eslesmeleri").select("ders, kazanim_metni, konu"),
@@ -157,6 +185,9 @@ export async function kazanimEslesmeVerisiGetir(): Promise<KazanimEslesmeVerisi>
     oneri: konuOnerisi(s.kazanimMetni, adaylar[s.ders] ?? []),
     zayifOneriler: konuOnerileri(s.kazanimMetni, adaylar[s.ders] ?? []),
     sorular: soruBilgileri.get(anahtar) ?? [],
+    denemeler: [...(kaynakDenemeler.get(anahtar)?.values() ?? [])]
+      .map((g) => ({ etiket: g.etiket, tarih: g.tarih, ogrenci: g.ogrenciler.size }))
+      .sort((a, b) => b.tarih.localeCompare(a.tarih)),
   }))
     // Önce eşleştirilmemişler, sonra ders ve sık geçen önce.
     .sort((a, b) => Number(a.mevcutKonu !== null) - Number(b.mevcutKonu !== null)

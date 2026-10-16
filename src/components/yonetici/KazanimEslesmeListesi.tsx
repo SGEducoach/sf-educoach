@@ -118,6 +118,15 @@ export function KazanimEslesmeListesi({ veri }: { veri: KazanimEslesmeVerisi }) 
               <div style={{ color: TEXT }} className="text-sm font-semibold">{s.kazanimMetni}</div>
               <div style={{ color: TEXT_MUTED }} className="text-[11px] shrink-0">{s.ders} · {s.satirSayisi} sonuç</div>
             </div>
+            {s.denemeler.length > 0 && (
+              <div className="mt-1 text-[11px]" style={{ color: TEXT_MUTED }}>
+                Geldiği deneme:{" "}
+                {s.denemeler.slice(0, 3).map((d, i) => (
+                  <span key={d.etiket}>{i > 0 ? " · " : ""}<span style={{ color: TEXT }} className="font-semibold">{d.etiket}</span> ({d.ogrenci} öğrenci)</span>
+                ))}
+                {s.denemeler.length > 3 && <span title={s.denemeler.slice(3).map((d) => d.etiket).join("\n")}> ve {s.denemeler.length - 3} deneme daha</span>}
+              </div>
+            )}
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <select value={secili} onChange={(e) => setSecimler((m) => ({ ...m, [anahtar]: e.target.value }))}
                 aria-label={`${s.kazanimMetni} için müfredat konusu`}
