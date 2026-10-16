@@ -6,7 +6,7 @@ export function YonetimNavigasyonu({ tur, aktif }: { tur: "yonetici" | "moderato
   const kok = tur === "yonetici" ? "/yonetici" : "/moderator";
   const ogeler = [
     { id: "panel" as const, href: kok, etiket: tur === "yonetici" ? "Yönetim paneli" : "Moderatör paneli", Icon: LayoutDashboard },
-    { id: "konu-haritasi" as const, href: `${kok}/konu-haritasi`, etiket: "Konu Haritası", Icon: BarChart2 },
+    { id: "konu-haritasi" as const, href: `${kok}/konu-haritasi`, etiket: "Konu Durumu", Icon: BarChart2 },
     ...(tur === "moderator" ? [{ id: "kurum-konulari" as const, href: `${kok}/kurum-konulari`, etiket: "Kurum Konuları", Icon: ListTree }] : []),
     { id: "profil" as const, href: `${kok}/profil`, etiket: "Profilim", Icon: CircleUserRound },
   ];

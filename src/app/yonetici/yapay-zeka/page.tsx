@@ -3,15 +3,15 @@ import { School } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Header } from "@/components/dashboard/Header";
 import { DashboardYanMenu } from "@/components/dashboard/DashboardYanMenu";
-import { KonuHaritasiRaporu } from "@/components/dashboard/KonuHaritasiRaporu";
-import { konuHaritasiGetir } from "@/lib/konu-raporu";
+import { KonuDurumuBolumu } from "@/components/dashboard/KonuDurumuBolumu";
+import { konuDurumuKapsamlari } from "@/lib/konu-durumu-verisi";
 import { BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
 
-// Konu bilme/bilmeme göstergesi (Faz K3) — admin görünümü. /yonetici/rozetler
+// Konu Durumu (17.10.2026, eski Konu Haritası) — admin görünümü. /yonetici/rozetler
 // ile birebir aynı "okul seç" iskeleti (bkz. o dosya) — platform geneli
 // karşılaştırma bu turda yok (kapsam dışı, plan), tek seferde tek okul.
 export default async function YoneticiYapayZekaPage({ searchParams }: {
-  searchParams: Promise<{ okul?: string }>;
+  searchParams: Promise<{ okul?: string; kapsam?: string }>;
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -23,10 +23,10 @@ export default async function YoneticiYapayZekaPage({ searchParams }: {
   const { data: okullar } = await supabase.from("schools").select("id, ad").eq("aktif", true).order("ad");
   const okulListesi = (okullar ?? []) as { id: string; ad: string }[];
   const okulId = okulListesi.some((okul) => okul.id === params.okul) ? params.okul! : okulListesi[0]?.id;
-  const { satirlar, error } = okulId
-    ? await konuHaritasiGetir(supabase, { schoolId: okulId })
-    : { satirlar: [], error: null };
-  const okulAdi = okulListesi.find((o) => o.id === okulId)?.ad ?? "Kurum";
+  const { data: siniflar } = okulId
+    ? await supabase.from("classes").select("id, seviye, sube").eq("school_id", okulId)
+    : { data: [] };
+  const kapsamlar = konuDurumuKapsamlari({ tur: "okul-geneli", siniflar: (siniflar ?? []) as { id: string; seviye: string; sube: string }[] });
 
   return (
     <div className="sfec-dashboard-shell min-h-dvh w-full flex-1 flex flex-col">
@@ -37,7 +37,7 @@ export default async function YoneticiYapayZekaPage({ searchParams }: {
           <section className="rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
             <div className="mb-4 flex items-center gap-2">
               <School size={18} color={MINT} />
-              <div><h1 className="font-bold" style={{ color: TEXT }}>Kurum seçimi</h1><p className="text-xs" style={{ color: TEXT_MUTED }}>Konu Haritası tek kurum sınırında gösterilir.</p></div>
+              <div><h1 className="font-bold" style={{ color: TEXT }}>Kurum seçimi</h1><p className="text-xs" style={{ color: TEXT_MUTED }}>Konu Durumu tek kurum sınırında gösterilir.</p></div>
             </div>
             <form action="/yonetici/yapay-zeka" method="get" className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
               <select name="okul" defaultValue={okulId} className="rounded-xl px-3 py-3 text-sm font-semibold outline-none" style={{ color: TEXT, background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
@@ -47,7 +47,7 @@ export default async function YoneticiYapayZekaPage({ searchParams }: {
             </form>
           </section>
           {okulId
-            ? <KonuHaritasiRaporu mod="rapor" satirlar={satirlar} kapsamEtiketi={okulAdi} hata={error} />
+            ? <KonuDurumuBolumu key={okulId} schoolId={okulId} kapsamlar={kapsamlar} seciliAnahtar={params.kapsam} ogrenciLinki={false} />
             : <div className="rounded-3xl p-6 text-sm" style={{ color: TEXT_MUTED, background: BG1, border: `2px solid ${BORDER}` }}>Aktif kurum bulunamadı.</div>}
         </main>
       </div>

@@ -15,9 +15,8 @@ import { DenemeKarnesi } from "@/components/dashboard/DenemeKarnesi";
 import { denemeKarneleriGetir } from "@/lib/deneme-karnesi-verisi";
 
 // Deneme konu analizinde gösterilecek en fazla son deneme sayısı (tarih +
-// tür + yayınevi). Sınıf/okul geneli için daha az — sorgu hacmi büyüyor.
+// tür + yayınevi). Sınıf/okul geneli artık Konu Durumu'nda (konu-durumu.ts).
 const OGRENCI_DENEME_SAYISI = 12;
-const GRUP_DENEME_SAYISI = 6;
 import { HosgeldinPopuplari } from "@/components/dashboard/HosgeldinPopuplari";
 import { OgretmenEpostaUyarisi } from "@/components/dashboard/OgretmenEpostaUyarisi";
 import { ZorunluSifreDegisikligiKapisi } from "@/components/dashboard/ZorunluSifreDegisikligiKapisi";
@@ -25,7 +24,9 @@ import { GrupOgrenciAktivasyonu } from "@/components/dashboard/GrupOgrenciAktiva
 import { analizVerisiGetir } from "@/lib/analiz";
 import type { RaporDonemi } from "@/lib/analiz";
 import { kohortKarsilastirmasiGetir } from "@/lib/analiz-kohort";
-import { ogrencininZayifKonulariGetir, konuHaritasiGetir } from "@/lib/konu-raporu";
+import { ogrencininZayifKonulariGetir } from "@/lib/konu-raporu";
+import { konuDurumuKapsamlari } from "@/lib/konu-durumu-verisi";
+import { KonuDurumuBolumu } from "@/components/dashboard/KonuDurumuBolumu";
 import { konuHakimiyetiGetir, konuHakimiyetiOzetiGetir, tamGorunumMu, gerekYokHaritasiGetir } from "@/lib/konu-hakimiyeti";
 import { KonuHakimiyetiEkrani } from "@/components/dashboard/KonuHakimiyetiEkrani";
 import { AYT_ALAN_ETIKET, sinifSiraKarsilastir, dokuzOnSinifMi, TYT_DERSLERI, AYT_DERSLERI } from "@/lib/types";
@@ -114,7 +115,7 @@ function haftaninPazartesisi(tarihISO?: string): string {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sinif?: string; ogrenci?: string; ogretmen?: string; donem?: string; okul?: string; hafta?: string; ders?: string; konu?: string; kisim?: string; bolum?: string; gecmis?: string; ay?: string }>;
+  searchParams: Promise<{ sinif?: string; ogrenci?: string; ogretmen?: string; donem?: string; okul?: string; hafta?: string; ders?: string; konu?: string; kisim?: string; bolum?: string; gecmis?: string; ay?: string; kapsam?: string }>;
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -323,7 +324,7 @@ export default async function DashboardPage({
             <>
               {role === "ogrenci" && <OgrenciIcerik userId={user.id} ad={profile.ad} donem={donem} haftaBaslangic={haftaninPazartesisi(params.hafta)} aktifBolum={aktifBolum} gecmisHafta={Number(params.gecmis ?? 0)} seciliDersId={params.ders} seciliKonu={params.konu} seciliBolum={params.kisim} kademe={ogrenciKademesi} sinifSeviyesi={ogrenciSinifSeviyesi} />}
               {(role === "ogretmen" || role === "mudur") && (
-                <OgretmenIcerik userId={user.id} role={role} kurumTuru={kurumTuru} brans={brans} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} secilenOgretmenId={params.ogretmen} donem={donem} aktifBolum={aktifBolum} seciliDersId={params.ders} seciliBolum={params.kisim} kademe={menuKademesi} yurtlu={kurum?.yurtlu === true} grupMu={grupKocu} secilenAy={params.ay} />
+                <OgretmenIcerik userId={user.id} role={role} kurumTuru={kurumTuru} brans={brans} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} secilenOgretmenId={params.ogretmen} donem={donem} aktifBolum={aktifBolum} seciliDersId={params.ders} seciliBolum={params.kisim} kademe={menuKademesi} yurtlu={kurum?.yurtlu === true} grupMu={grupKocu} secilenAy={params.ay} secilenKapsam={params.kapsam} />
               )}
               {role === "veli" && <VeliIcerik userId={user.id} ad={profile.ad} secilenOgrenciId={params.ogrenci} donem={donem} aktifBolum={aktifBolum} />}
             </>
@@ -738,10 +739,12 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
   );
 }
 
-async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, secilenOgrenciId, secilenOgretmenId, donem, aktifBolum, seciliDersId, seciliBolum, kademe, yurtlu = false, grupMu = false, secilenAy }: {
+async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, secilenOgrenciId, secilenOgretmenId, donem, aktifBolum, seciliDersId, seciliBolum, kademe, yurtlu = false, grupMu = false, secilenAy, secilenKapsam }: {
   userId: string; role: "ogretmen" | "mudur"; kurumTuru?: KurumTuru; brans?: string; secilenSinifId?: string; secilenOgrenciId?: string; secilenOgretmenId?: string; donem: RaporDonemi; aktifBolum: DashboardBolumu;
   // İlkokul Gelişim Raporu'nun ayı (?ay=2026-10).
   secilenAy?: string;
+  // Konu Durumu'nun seçili kapsamı (?kapsam=).
+  secilenKapsam?: string;
   // Ortaokul Konu Yeterliliği ekranının seçimleri (?ders=, ?kisim=).
   seciliDersId?: string; seciliBolum?: string;
   // Kurumun kademesi: ortaokulda ödev formunun konu havuzu değişiyor.
@@ -977,43 +980,31 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
     return <section className="sfec-section"><DershaneAnaSayfa veri={veri} /></section>;
   }
 
-  // Konu bilme/bilmeme göstergesi (Faz K3) — müdür (okul) OKULUN geneline,
-  // öğretmen sadece kendi sınıfına (kendiSinifiMi ile aynı gerekçe: branş
-  // öğretmeninin sınıf öğretmeni OLMADIĞI bir sınıfa dair veri sızmasın)
-  // bakar. Dershane müdürü ayrı bileşende (DershaneMudurPaneli) ele alınıyor.
-  // Rehber Öğretmen'in sınıf öğretmenliği (homeroom) yok; lise okul rehberi
-  // için deneme kapsamı atandığı düzeylerin öğrencileriyle sınırlanır.
+  // KONU DURUMU (kullanıcı kararı 17.10.2026) — eski Konu Haritası'nın
+  // yerine. Kapsam sunucuda kurulur (konuDurumuKapsamlari):
+  //  - müdür ve dershane rehberi/grup koçu: tüm okul + sınıflar
+  //  - okul rehberi: atandığı seviyeler
+  //  - öğretmen: sınıf öğretmeni olduğu sınıf (bütün dersler) + ders verdiği
+  //    sınıflar (yalnız o ders); ikisi de yoksa kendi branş dersi tüm okulda.
+  // Dershane müdürü ayrı bileşende (DershaneMudurPaneli) ele alınıyor.
   if (aktifBolum === "yapay-zeka" && !(role === "mudur" && kurumTuru === "dershane")) {
-    if (role === "mudur" || rehberOgretmenMi) {
-      const [{ satirlar, error }, denemeKonu] = await Promise.all([
-        konuHaritasiGetir(supabase, { schoolId: teacher.school_id }),
-        grupDenemeKonuAnaliziGetir(okulOkumaClient, okulRehberi
-          ? { schoolId: teacher.school_id, seviyeler: rehberSeviyeleri }
-          : { schoolId: teacher.school_id }),
-      ]);
-      return (
-        <div className="flex flex-col gap-4">
-          <KonuHaritasiRaporu mod="rapor" satirlar={satirlar} kapsamEtiketi="Okulunuz" hata={error} />
-          <DenemeKonuAnalizi ozet={denemeKonu.ozet} kapsam="grup" kapsamEtiketi="Okulunuz" hata={denemeKonu.error} />
-        </div>
-      );
-    }
-    if (!teacher.class_id) {
-      return (
-        <div className="sfec-fade rounded-3xl p-6 text-center" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-          <p style={{ color: TEXT_MUTED }} className="text-sm">Bu rapor sadece bir sınıfın öğretmeni içindir.</p>
-        </div>
-      );
-    }
-    const [{ satirlar, error }, denemeKonu] = await Promise.all([
-      konuHaritasiGetir(supabase, { classId: teacher.class_id }),
-      grupDenemeKonuAnaliziGetir(supabase, { classId: teacher.class_id }),
+    const [{ data: kdSiniflar }, { data: kdDersAtamalari }] = await Promise.all([
+      okulOkumaClient.from("classes").select("id, seviye, sube").eq("school_id", teacher.school_id),
+      supabase.from("ogretmen_dersleri").select("class_id, ders").eq("teacher_id", userId),
     ]);
+    const kapsamlar = konuDurumuKapsamlari({
+      tur: role === "mudur" || (rehberOgretmenMi && !okulRehberi) ? "okul-geneli" : okulRehberi ? "okul-rehberi" : "ogretmen",
+      siniflar: (kdSiniflar ?? []) as { id: string; seviye: string; sube: string }[],
+      rehberSeviyeleri,
+      sinifId: teacher.class_id,
+      dersAtamalari: ((kdDersAtamalari ?? []) as { class_id: string; ders: string }[]).map((d) => ({ classId: d.class_id, ders: d.ders })),
+      brans,
+    });
     return (
-      <div className="flex flex-col gap-4">
-        <KonuHaritasiRaporu mod="rapor" satirlar={satirlar} kapsamEtiketi="Sınıfınız" hata={error} />
-        <DenemeKonuAnalizi ozet={denemeKonu.ozet} kapsam="grup" kapsamEtiketi="Sınıfınız" hata={denemeKonu.error} />
-      </div>
+      <KonuDurumuBolumu schoolId={teacher.school_id} kapsamlar={kapsamlar} seciliAnahtar={secilenKapsam}
+        bosMesaj={okulRehberi
+          ? "Rehberlik servisinde size henüz bir sınıf seviyesi atanmamış."
+          : "Bu görünüm sınıf öğretmenleri ve YKS derslerinden birine giren öğretmenler içindir; size atanmış bir sınıf ya da ders bulunamadı."} />
     );
   }
 
@@ -1124,6 +1115,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
         siniflar={((dershaneSiniflari ?? []) as { id: string; seviye: string; sube: string }[]).sort(sinifSiraKarsilastir)}
         aktifBolum={aktifBolum}
         schoolId={teacher.school_id}
+        secilenKapsam={secilenKapsam}
       />
     );
   }
@@ -1481,25 +1473,6 @@ async function VeliIcerik({ userId, ad, secilenOgrenciId, donem, aktifBolum }: {
       )}
     </div>
   );
-}
-
-// Sınıf ya da okul genelinde deneme konu analizi — önce kapsamdaki
-// öğrenciler, sonra son GRUP_DENEME_SAYISI denemenin konu dökümü.
-async function grupDenemeKonuAnaliziGetir(
-  client: Awaited<ReturnType<typeof createClient>>,
-  kapsam: { schoolId: string; seviyeler?: string[] } | { classId: string },
-) {
-  if ("schoolId" in kapsam && kapsam.seviyeler?.length === 0) return { error: null, ozet: { denemeler: [], tumu: [], denemeBazli: {} } };
-  if ("schoolId" in kapsam && kapsam.seviyeler) {
-    const { data, error } = await client.from("students").select("id, classes!inner(seviye)")
-      .eq("school_id", kapsam.schoolId).in("classes.seviye", kapsam.seviyeler);
-    if (error) return { error: error.message, ozet: { denemeler: [], tumu: [], denemeBazli: {} } };
-    return denemeKonuAnaliziGetir(client, ((data ?? []) as { id: string }[]).map((o) => o.id), GRUP_DENEME_SAYISI);
-  }
-  const sorgu = client.from("students").select("id");
-  const { data, error } = "schoolId" in kapsam ? await sorgu.eq("school_id", kapsam.schoolId) : await sorgu.eq("class_id", kapsam.classId);
-  if (error) return { error: error.message, ozet: { denemeler: [], tumu: [], denemeBazli: {} } };
-  return denemeKonuAnaliziGetir(client, ((data ?? []) as { id: string }[]).map((o) => o.id), GRUP_DENEME_SAYISI);
 }
 
 // Veli için Analiz/Rapor sekmesi — analiz verisi + Konu Hakimiyeti özetini

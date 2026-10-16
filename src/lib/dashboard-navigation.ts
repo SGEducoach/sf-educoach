@@ -83,7 +83,7 @@ const OGRENCI_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "veri-girisi", href: "/dashboard/veri-girisi", etiket: "Veri girişi", ikon: "veri" },
   { bolum: "konu-hakimiyeti", href: "/dashboard/konu-hakimiyeti", etiket: "Konu Hakimiyeti", ikon: "hakimiyet" },
   { bolum: "analiz", href: "/dashboard/analiz", etiket: "Analiz / Rapor", ikon: "analiz" },
-  { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Konu Haritası", ikon: "ai" },
+  { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Konu Durumu", ikon: "ai" },
   { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Pano", ikon: "takvim" },
   // Kimlik bilgileri salt-okunur; hedefini öğrenci düzenleyebilir.
   { bolum: "profil", href: "/dashboard/profil", etiket: "Profilim", ikon: "profil" },
@@ -142,7 +142,7 @@ const OGRETMEN_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "sinif-analizi", href: "/dashboard?bolum=sinif-analizi", etiket: "Sınıf Analizi", ikon: "ogrenci" },
   { bolum: "gorevler", href: "/dashboard/gorevler", etiket: "Ödev ver", ikon: "gorev" },
   { bolum: "onaylar", href: "/dashboard/onaylar", etiket: "Bekleyen onaylar", ikon: "onay" },
-  { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Konu Haritası", ikon: "ai" },
+  { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Konu Durumu", ikon: "ai" },
   { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Duyurular", ikon: "duyuru" },
   { bolum: "talepler", href: "/dashboard/talepler", etiket: "Veli talepleri", ikon: "talep" },
   { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Pano", ikon: "takvim" },
@@ -178,7 +178,7 @@ const MUDUR_MENUSU: DashboardMenuOgesi[] = [
   // OgretmenIcerik yorumu; dershane müdürü zaten kendi ayrı panelinde
   // düzenleyebiliyordu).
   { bolum: "ogretmenler", href: "/dashboard/ogretmenler", etiket: "Öğretmenler", ikon: "ogretmen" },
-  { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Konu Haritası", ikon: "ai" },
+  { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Konu Durumu", ikon: "ai" },
   { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Duyurular", ikon: "duyuru" },
   { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Pano", ikon: "takvim" },
 ];
@@ -196,7 +196,7 @@ const DERSHANE_MUDUR_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "ogretmenler", href: "/dashboard/ogretmenler", etiket: "Öğretmenler", ikon: "ogretmen" },
   { bolum: "ogrenciler", href: "/dashboard/ogrenciler", etiket: "Öğrenciler", ikon: "ogrenci" },
   { bolum: "denemeler", href: "/dashboard/denemeler", etiket: "Denemeler", ikon: "deneme" },
-  { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Konu Haritası", ikon: "ai" },
+  { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Konu Durumu", ikon: "ai" },
   { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Duyurular", ikon: "duyuru" },
   { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Pano", ikon: "takvim" },
 ];
@@ -244,7 +244,7 @@ const ADMIN_MENU_YAPISI: DashboardMenuKalemi[] = [
       { bolum: "deneme-yukle", href: "/yonetici/deneme-yukle", etiket: "Deneme Yükle", ikon: "deneme" },
       { bolum: "pdf-eslesme", href: "/yonetici/pdf-eslesme", etiket: "PDF Eşleştirme", ikon: "eslestir" },
       { bolum: "icerik", href: "/yonetici/icerik", etiket: "Konu özetleri", ikon: "icerik" },
-      { bolum: "yapay-zeka", href: "/yonetici/yapay-zeka", etiket: "Konu Haritası", ikon: "ai" },
+      { bolum: "yapay-zeka", href: "/yonetici/yapay-zeka", etiket: "Konu Durumu", ikon: "ai" },
       { bolum: "blog", href: "/yonetici/blog", etiket: "Blog", ikon: "blog" },
     ],
   },
@@ -320,7 +320,7 @@ const GRUP_KOC_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "ozet", href: "/dashboard", etiket: "Grubum", ikon: "grup" },
   { bolum: "ogrenci-takibi", href: "/dashboard/ogrenci-takibi", etiket: "Öğrenci Takibi", ikon: "gorev" },
   { bolum: "denemeler", href: "/dashboard/denemeler", etiket: "Denemeler", ikon: "deneme" },
-  { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Grubun Konu Haritası", ikon: "ai" },
+  { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Grubun Konu Durumu", ikon: "ai" },
   { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Grup Duyurusu", ikon: "duyuru" },
   { bolum: "rehberlik", href: "/dashboard/rehberlik", etiket: "Bireysel Mesaj", ikon: "rehberlik" },
   { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Pano", ikon: "takvim" },

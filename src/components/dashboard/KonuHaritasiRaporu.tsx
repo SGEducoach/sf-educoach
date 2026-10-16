@@ -1,34 +1,22 @@
 "use client";
 
-// Konu bilme/bilmeme göstergesi — "Konu Haritası" (Faz K3). Tek bileşen,
-// iki modda kullanılıyor:
-//  - "kendi": öğrencinin kendi zayıf konuları (eski ZayifKonular.tsx'in
-//    mantığı — dosya geri gelmiyor ama davranışı burada yaşıyor).
-//  - "rapor": sınıf/kurum bazlı agrege rapor (öğretmen/müdür-moderatör/
-//    admin) — YapayZekaAnaliziPromosu'nun render edildiği yerlerin
-//    yerini alıyor (kullanıcı kararı, bkz. plan).
-// Bu SADECE deterministik/SQL istatistik — gerçek "yapay zeka" yorumu
-// ayrı, sonraki bir faz (kapsam dışı, bkz. plan).
+// Öğrencinin kendi zayıf konuları ("Konuları biliyor muyum?" kartı, Faz K3;
+// eski ZayifKonular.tsx'in mantığı). Sınıf/kurum geneli rapor 17.10.2026'da
+// Konu Durumu'na taşındı (KonuDurumuEkrani.tsx).
 import { useState } from "react";
-import { BarChart2, BookOpen, ChevronDown, ChevronUp, Loader2, Users } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import {
-  BG1, BG1_ALT, BORDER, BORDER_STRONG, PEACH, PEACH_BG, MINT, BUTTER, SKY, SKY_BG, TEXT, TEXT_MUTED, BLUSH,
+  BG1, BG1_ALT, BORDER, BORDER_STRONG, PEACH, PEACH_BG, SKY, SKY_BG, TEXT, TEXT_MUTED, BLUSH,
 } from "@/lib/theme";
 import { konuAnlatimiGetir } from "@/app/dashboard/veri-actions";
-import { TAKIP_CEVABI_ETIKET } from "@/lib/types";
-import type { OgrenciZayifKonu, KonuHaritasiSatiri } from "@/lib/konu-raporu";
+import type { OgrenciZayifKonu } from "@/lib/konu-raporu";
 
 function BosDurum({ mesaj }: { mesaj: string }) {
   return <p style={{ color: TEXT_MUTED }} className="text-sm py-6 text-center">{mesaj}</p>;
 }
 
-export function KonuHaritasiRaporu(
-  props:
-    | { mod: "kendi"; konular: OgrenciZayifKonu[] }
-    | { mod: "rapor"; satirlar: KonuHaritasiSatiri[]; kapsamEtiketi: string; hata?: string | null },
-) {
-  if (props.mod === "kendi") return <KendiZayifKonulari konular={props.konular} />;
-  return <ScopeRaporu satirlar={props.satirlar} kapsamEtiketi={props.kapsamEtiketi} hata={props.hata} />;
+export function KonuHaritasiRaporu(props: { mod: "kendi"; konular: OgrenciZayifKonu[] }) {
+  return <KendiZayifKonulari konular={props.konular} />;
 }
 
 // ============ Öğrencinin kendi görünümü ============
@@ -98,109 +86,6 @@ function KonuSatiri({ konu }: { konu: OgrenciZayifKonu }) {
             </div>
           )}
         </div>
-      )}
-    </div>
-  );
-}
-
-// ============ Sınıf/kurum bazlı agrege rapor ============
-
-// 2026-08-26 kullanıcı isteği: "konu haritasını ders bazlı filtrele" —
-// satırlar zaten tek seferde (en fazla 30 satır) çekiliyor, filtre
-// tamamen client-side; yeni bir sorguya gerek yok.
-function ScopeRaporu({ satirlar, kapsamEtiketi, hata }: { satirlar: KonuHaritasiSatiri[]; kapsamEtiketi: string; hata?: string | null }) {
-  const [dersFiltre, setDersFiltre] = useState("tumu");
-  const dersler = [...new Set(satirlar.map((s) => s.ders))].sort((a, b) => a.localeCompare(b, "tr"));
-  const gosterilenler = dersFiltre === "tumu" ? satirlar : satirlar.filter((s) => s.ders === dersFiltre);
-
-  return (
-    <div className="sfec-fade rounded-3xl p-6 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-      <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: PEACH_BG }}>
-            <BarChart2 size={13} color={PEACH} />
-          </div>
-          <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Konu Haritası</span>
-        </div>
-        {dersler.length > 1 && (
-          <select value={dersFiltre} onChange={(e) => setDersFiltre(e.target.value)}
-            className="text-xs font-bold px-3 py-1.5 rounded-full outline-none" style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
-            <option value="tumu">Tüm dersler</option>
-            {dersler.map((d) => <option key={d} value={d}>{d}</option>)}
-          </select>
-        )}
-      </div>
-      <p style={{ color: TEXT_MUTED }} className="text-xs mb-4">
-        {kapsamEtiketi} genelinde öğrencilerin en çok zorlandığı konular — &quot;Konuya hakimiyet&quot; alanında &quot;Yetersiz&quot; işaretlenme oranına göre sıralı. Sonuçlar isimsizdir; en az 3 öğrencinin veri girdiği konular gösterilir.
-      </p>
-      {hata ? (
-        <p style={{ color: BLUSH }} className="text-sm py-6 text-center">{hata}</p>
-      ) : satirlar.length === 0 ? (
-        <BosDurum mesaj="Henüz yeterli veri yok — en az 3 öğrencinin aynı konuda veri girmesi gerekiyor." />
-      ) : gosterilenler.length === 0 ? (
-        <BosDurum mesaj="Bu derste henüz yeterli veri yok." />
-      ) : (
-        <div className="flex flex-col gap-2">
-          {gosterilenler.map((s) => <KonuHaritasiSatirGorunumu key={`${s.ders}-${s.konu}`} satir={s} />)}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function KonuHaritasiSatirGorunumu({ satir }: { satir: KonuHaritasiSatiri }) {
-  const toplam = satir.uzakSayisi + satir.belirsizSayisi + satir.yakinSayisi;
-  const uzakYuzde = toplam > 0 ? Math.round((satir.uzakSayisi / toplam) * 100) : 0;
-  const belirsizYuzde = toplam > 0 ? Math.round((satir.belirsizSayisi / toplam) * 100) : 0;
-  const yakinYuzde = Math.max(0, 100 - uzakYuzde - belirsizYuzde);
-
-  // Faz H4 — öğrencinin BİZZAT beyan ettiği hakimiyet dağılımı (Konu
-  // Hakimiyeti), loglardan çıkarımın (yukarıdaki) yanına ikinci çubuk
-  // olarak ekleniyor. Beyan verisi olmayan bir konu için ikinci çubuk
-  // hiç gösterilmiyor.
-  const beyanToplam = satir.beyanUzakSayisi + satir.beyanBelirsizSayisi + satir.beyanYakinSayisi;
-  const beyanUzakYuzde = beyanToplam > 0 ? Math.round((satir.beyanUzakSayisi / beyanToplam) * 100) : 0;
-  const beyanBelirsizYuzde = beyanToplam > 0 ? Math.round((satir.beyanBelirsizSayisi / beyanToplam) * 100) : 0;
-  const beyanYakinYuzde = Math.max(0, 100 - beyanUzakYuzde - beyanBelirsizYuzde);
-
-  return (
-    <div className="rounded-2xl p-3.5" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
-      <div className="flex items-center justify-between gap-2 flex-wrap">
-        <div>
-          <span style={{ color: TEXT }} className="text-sm font-semibold">{satir.konu}</span>
-          <span style={{ color: TEXT_MUTED }} className="text-xs ml-1.5">· {satir.ders}</span>
-        </div>
-        <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: SKY_BG, color: SKY }}>
-          <Users size={10} /> {satir.ogrenciSayisi} öğrenci
-        </span>
-      </div>
-      {/* Yetersiz/Orta/Yeterli dağılım çubuğu — AnalizPaneli'ndeki hedefeYakinlikDagilimi
-          çubuklarıyla aynı görsel dil (bkz. AnalizPaneli.tsx). */}
-      <div style={{ color: TEXT_MUTED }} className="mt-2.5 text-[10px] font-semibold uppercase tracking-wide">Çalışma girişlerinden çıkarım</div>
-      <div className="mt-1 h-2 rounded-full overflow-hidden flex" style={{ background: BORDER }}>
-        {uzakYuzde > 0 && <div style={{ width: `${uzakYuzde}%`, background: PEACH }} />}
-        {belirsizYuzde > 0 && <div style={{ width: `${belirsizYuzde}%`, background: BUTTER }} />}
-        {yakinYuzde > 0 && <div style={{ width: `${yakinYuzde}%`, background: MINT }} />}
-      </div>
-      <div style={{ color: TEXT_MUTED }} className="mt-1.5 text-[11px]">
-        Yetersiz %{uzakYuzde} · Orta %{belirsizYuzde} · Yeterli %{yakinYuzde}
-        {satir.enSikUzakTakipCevabi && (
-          <> — &quot;Yetersiz&quot; diyenlerin çoğu: <strong style={{ color: TEXT }}>{TAKIP_CEVABI_ETIKET[satir.enSikUzakTakipCevabi]}</strong></>
-        )}
-      </div>
-
-      {beyanToplam > 0 && (
-        <>
-          <div style={{ color: TEXT_MUTED }} className="mt-3 text-[10px] font-semibold uppercase tracking-wide">Öğrencinin kendi beyanı (Konu Hakimiyeti)</div>
-          <div className="mt-1 h-2 rounded-full overflow-hidden flex" style={{ background: BORDER }}>
-            {beyanUzakYuzde > 0 && <div style={{ width: `${beyanUzakYuzde}%`, background: PEACH }} />}
-            {beyanBelirsizYuzde > 0 && <div style={{ width: `${beyanBelirsizYuzde}%`, background: BUTTER }} />}
-            {beyanYakinYuzde > 0 && <div style={{ width: `${beyanYakinYuzde}%`, background: MINT }} />}
-          </div>
-          <div style={{ color: TEXT_MUTED }} className="mt-1.5 text-[11px]">
-            Yetersiz %{beyanUzakYuzde} · Orta %{beyanBelirsizYuzde} · Yeterli %{beyanYakinYuzde}
-          </div>
-        </>
       )}
     </div>
   );

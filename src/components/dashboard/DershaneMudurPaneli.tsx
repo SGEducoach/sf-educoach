@@ -1,8 +1,8 @@
 import { moderatorKullanicilariGetir } from "@/app/moderator/actions";
 import { ogretmenDuyuruGonder, gonderilenDuyurularGetir } from "@/app/dashboard/actions";
 import { DuyuruFormu } from "@/components/dashboard/DuyuruFormu";
-import { KonuHaritasiRaporu } from "@/components/dashboard/KonuHaritasiRaporu";
-import { konuHaritasiGetir } from "@/lib/konu-raporu";
+import { KonuDurumuBolumu } from "@/components/dashboard/KonuDurumuBolumu";
+import { konuDurumuKapsamlari } from "@/lib/konu-durumu-verisi";
 import { dershaneAnaSayfaVerisiGetir } from "@/lib/dershane-ana-sayfa";
 import { DershaneAnaSayfa } from "@/components/dashboard/DershaneAnaSayfa";
 import { createClient } from "@/lib/supabase/server";
@@ -21,10 +21,12 @@ import { BG1, BORDER, TEXT_MUTED } from "@/lib/theme";
 // (Ana Sayfa — kademe bazlı performans, varsayılan sekme), öğretmenler,
 // öğrenciler, denemeler, tg-denemeleri (page.tsx üst seviyede, buraya hiç
 // düşmez), yapay-zeka, duyurular.
-export async function DershaneMudurPaneli({ siniflar, aktifBolum, schoolId }: {
+export async function DershaneMudurPaneli({ siniflar, aktifBolum, schoolId, secilenKapsam }: {
   siniflar: { id: string; seviye: string; sube: string }[];
   aktifBolum: DashboardBolumu;
   schoolId: string;
+  // Konu Durumu'nun seçili kapsamı (?kapsam=).
+  secilenKapsam?: string;
 }) {
   if (aktifBolum === "ozet") {
     const supabase = await createClient();
@@ -56,9 +58,9 @@ export async function DershaneMudurPaneli({ siniflar, aktifBolum, schoolId }: {
   }
 
   if (aktifBolum === "yapay-zeka") {
-    const supabase = await createClient();
-    const { satirlar, error } = await konuHaritasiGetir(supabase, { schoolId });
-    return <section className="min-h-full"><KonuHaritasiRaporu mod="rapor" satirlar={satirlar} kapsamEtiketi="Dershaneniz" hata={error} /></section>;
+    const kapsamlar = konuDurumuKapsamlari({ tur: "okul-geneli", siniflar });
+    kapsamlar[0].etiket = "Tüm dershane";
+    return <section className="min-h-full"><KonuDurumuBolumu schoolId={schoolId} kapsamlar={kapsamlar} seciliAnahtar={secilenKapsam} /></section>;
   }
 
   if (aktifBolum === "denemeler") {

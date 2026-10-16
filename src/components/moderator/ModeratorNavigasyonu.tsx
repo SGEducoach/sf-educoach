@@ -54,7 +54,7 @@ export function ModeratorNavigasyonu({ aktif, denemeAcik, adminOkulId }: {
     ...(!adminOkulId ? [{
       baslik: "Diğer",
       ogeler: [
-        { id: "konu-haritasi" as const, href: "/moderator/konu-haritasi", etiket: "Konu Haritası", Icon: BarChart2 },
+        { id: "konu-haritasi" as const, href: "/moderator/konu-haritasi", etiket: "Konu Durumu", Icon: BarChart2 },
         { id: "kurum-konulari" as const, href: "/moderator/kurum-konulari", etiket: "Kurum Konuları", Icon: ListTree },
         { id: "profil" as const, href: "/moderator/profil", etiket: "Profilim", Icon: CircleUserRound },
       ],
