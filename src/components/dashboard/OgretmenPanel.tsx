@@ -15,6 +15,8 @@ import {
 import { gorevVer, verdigimGoreviSil } from "@/app/dashboard/gorev-actions";
 import { DuyuruFormu } from "@/components/dashboard/DuyuruFormu";
 import { SinifKarti } from "@/components/dashboard/SinifKarti";
+import { MesajKartiOlusturucu } from "@/components/dashboard/MesajKartiOlusturucu";
+import type { MesajKartiGorevi } from "@/lib/mesaj-karti";
 import type { SinifKartOzeti } from "@/lib/sinif-kart-ozeti";
 import {
   BRANS_LISTESI, GOREV_DURUMU_ETIKET, GOREV_TURU_ETIKET, sinifSiraKarsilastir,
@@ -85,7 +87,7 @@ function ogrencilerOkulNoSirali(ogrenciler: OgrenciSatiri[]): OgrenciSatiri[] {
 
 export function OgretmenPanel({
   role, bekleyenTalepler, ogrenciler, sinifAdi, siniflar, atanabilirSiniflar, sinifSecildiMi = false, sinifKartOzetleri, gorunecekSinifId, kendiSinifId, kendiSinifiMi,
-  ogretmenDersleri, bekleyenOnaylar, verdigimGorevler, konuOnerileri, kademe, aktifBolum,
+  ogretmenDersleri, bekleyenOnaylar, verdigimGorevler, mesajKartiGorevleri, ogretmenAdi, konuOnerileri, kademe, aktifBolum,
   dersProgramiSatirlari, okulNobetleri, yurtNobetGorevleri, dershaneMi, yurtlu = false,
   nobetDevirOgretmenleri,
   okulOgretmenleri, secilenOgretmenId, secilenOgretmenProgrami, secilenOgretmenNobetleri, rehberOgretmenMi = false, grupMu = false,
@@ -118,6 +120,9 @@ export function OgretmenPanel({
   // Verdiğim Görevler (2026-08-25) — "Bekleyen Onaylar" sekmesinde, sadece
   // o bölümde kullanılıyor, diğer bölümlerde boş dizi gelir.
   verdigimGorevler?: VerdigimGorevSatiri[];
+  // Mesaj kartı için son 3 haftanın ödevleri ve öğretmenin adı (yalnız Ödev ver bölümünde).
+  mesajKartiGorevleri?: MesajKartiGorevi[];
+  ogretmenAdi?: string | null;
   konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
   // Kurumun kademesi: ortaokulda ödev formunun ders/konu havuzu ortaokul
   // müfredatından gelir (kullanıcı bildirimi 02.10.2026).
@@ -320,6 +325,11 @@ export function OgretmenPanel({
             {siniflar.map((s) => <option key={s.id} value={s.id}>{s.seviye}-{s.sube}{s.id === kendiSinifId ? " (sınıfınız)" : ""}</option>)}
           </select>
         </div>
+      )}
+
+      {/* Mesaj kartı (18.10.2026): verilen ödevlerden WhatsApp görseli; tarayıcıda çizilir, saklanmaz. */}
+      {aktifBolum === "gorevler" && role === "ogretmen" && mesajKartiGorevleri && (
+        <MesajKartiOlusturucu gorevler={mesajKartiGorevleri} ogretmenAdi={ogretmenAdi ?? null} />
       )}
 
       {aktifBolum === "gorevler" && role === "ogretmen" && (gorevVerilebilirMi || ogretmenDersleri.length > 0) && (ogrenciler.length > 0 || ogretmenDersleri.length > 0) && (

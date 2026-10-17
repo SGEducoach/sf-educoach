@@ -1281,6 +1281,38 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
     atamalar: (g.gorev_atamalari ?? []).map((a) => ({ id: a.id, durum: a.durum, ogrenciAd: a.students?.profiles?.ad ?? "İsimsiz" })),
   }));
 
+  // Mesaj kartı (kullanıcı isteği 18.10.2026): Ödev ver bölümünde öğretmenin
+  // son ödevlerinden WhatsApp kartı. Kart tarayıcıda çizilir, saklanmaz;
+  // burada yalnız son 3 haftada verilen ödevler ve sınıfları çekilir.
+  type KartGorevRow = {
+    id: string; tur: string; ders: string; konu: string | null; hedef_soru_sayisi: number | null; hedef_dakika: number | null;
+    tarih: string; son_tarih: string; aciklama: string | null;
+    gorev_atamalari: { students: { classes: { seviye: string; sube: string } | null } | null }[];
+  };
+  const [{ data: kartGorevleriHam }, { data: ogretmenProfili }] = aktifBolum === "gorevler" && role === "ogretmen"
+    ? await Promise.all([
+        supabase.from("gorevler")
+          .select("id, tur, ders, konu, hedef_soru_sayisi, hedef_dakika, tarih, son_tarih, aciklama, gorev_atamalari(students(classes(seviye, sube)))")
+          .eq("olusturan_ogretmen_id", userId)
+          .gte("tarih", tarihEkle(bugununTarihiTR(), -21))
+          .order("tarih", { ascending: false })
+          .limit(20),
+        supabase.from("profiles").select("ad").eq("id", userId).maybeSingle(),
+      ])
+    : [{ data: null }, { data: null }];
+  const mesajKartiGorevleri = ((kartGorevleriHam as unknown as KartGorevRow[]) ?? []).map((g) => {
+    const siniflar = new Map<string, { seviye: string; sube: string }>();
+    for (const a of g.gorev_atamalari ?? []) {
+      const c = a.students?.classes;
+      if (c) siniflar.set(`${c.seviye}-${c.sube}`, c);
+    }
+    return {
+      id: g.id, tur: g.tur as "konu" | "soru" | "deneme", ders: g.ders, konu: g.konu,
+      hedefSoru: g.hedef_soru_sayisi, hedefDakika: g.hedef_dakika, tarih: g.tarih, sonTarih: g.son_tarih, aciklama: g.aciklama,
+      siniflar: [...siniflar.values()].sort(sinifSiraKarsilastir).map((c) => `${c.seviye}-${c.sube}`),
+    };
+  });
+
   // Ders Programı + Yurt Nöbeti (2026-08-25 kullanıcı isteği) — sadece
   // "Derslerim" bölümünde gösterildiği için o zaman çekiliyor. Yurt Nöbeti
   // "okul için sadece" (kullanıcı kararı) — dershane'de bu path'e bir
@@ -1393,6 +1425,8 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       ogretmenDersleri={ogretmenDersleri}
       bekleyenOnaylar={bekleyenOnaylar}
       verdigimGorevler={verdigimGorevler}
+      mesajKartiGorevleri={mesajKartiGorevleri}
+      ogretmenAdi={(ogretmenProfili as { ad: string } | null)?.ad ?? null}
       konuOnerileri={ortaokulKonulari ?? [...MUFREDAT_KONULARI, ...kurumKonuOnerileri(ogretmenKurumKonulari)]}
       kademe={kademe}
       aktifBolum={aktifBolum}
