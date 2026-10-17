@@ -7,14 +7,15 @@
 import { createContext, useContext, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ChevronDown, ChevronUp, ClipboardCheck, Compass, TrendingDown, TrendingUp } from "lucide-react";
+import { ChevronDown, ChevronUp, ClipboardCheck, Compass, Printer, TrendingDown, TrendingUp } from "lucide-react";
 import {
   BG1, BG1_ALT, BORDER, BORDER_STRONG, BLUSH, BLUSH_BG, BUTTER, BUTTER_BG, MINT, MINT_BG, MINT_ON, SKY, SKY_BG, TEXT, TEXT_MUTED,
 } from "@/lib/theme";
 import { gorevVer } from "@/app/dashboard/gorev-actions";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
 import {
-  ZORLANMA_ESIGI, oncelikliKonular, tabanDers, type KdKonu, type KdKonuSorusu, type KdOgrenciSkoru, type KonuDurumuVerisi,
+  ZORLANMA_ESIGI, oncelikliKonular, tabanDers,
+  type KdHucre, type KdKarsilastirma, type KdKonu, type KdKonuSorusu, type KdOgrenciSkoru, type KonuDurumuVerisi,
 } from "@/lib/konu-durumu";
 
 const TUMU = "";
@@ -22,6 +23,12 @@ const TUMU = "";
 // Öğretmenin görev verebildiği sınıflar (sınıf öğretmenliği + ders atamaları).
 // Boşsa görev kısayolu hiç gösterilmez (müdür, rehber, yönetici, moderatör).
 const GorevSiniflari = createContext<Set<string>>(new Set());
+
+// Baskıda koyu temanın renkleri kâğıtta okunmuyor; data-ton ile globals.css
+// her tonu kâğıda uygun sabit renkle basar.
+function puanTonu(puan: number): "zayif" | "orta" | "iyi" {
+  return puan < ZORLANMA_ESIGI ? "zayif" : puan < 75 ? "orta" : "iyi";
+}
 
 function puanRengi(puan: number): { renk: string; zemin: string } {
   if (puan < ZORLANMA_ESIGI) return { renk: BLUSH, zemin: BLUSH_BG };
@@ -36,8 +43,8 @@ function tarihGoster(tarih: string): string {
 
 function PuanCubugu({ puan }: { puan: number }) {
   return (
-    <div className="h-2 w-full overflow-hidden rounded-full" style={{ background: BORDER }} aria-hidden="true">
-      <div className="h-full rounded-full" style={{ width: `${Math.max(3, puan)}%`, background: puanRengi(puan).renk }} />
+    <div className="kd-iz h-2 w-full overflow-hidden rounded-full" style={{ background: BORDER }} aria-hidden="true">
+      <div className="kd-renkli kd-dolgu h-full rounded-full" data-ton={puanTonu(puan)} style={{ width: `${Math.max(3, puan)}%`, background: puanRengi(puan).renk }} />
     </div>
   );
 }
@@ -68,7 +75,7 @@ function KonuSatiri({ konu, dersGoster, ogrenciLinki }: { konu: KdKonu; dersGost
         </span>
         <span className="order-3 col-span-2 flex items-center gap-2 sm:order-none sm:col-span-1">
           <PuanCubugu puan={konu.ortalama} />
-          <span style={{ color: renk }} className="w-9 shrink-0 text-right text-sm font-bold">%{konu.ortalama}</span>
+          <span style={{ color: renk }} data-ton={puanTonu(konu.ortalama)} className="kd-renkli w-9 shrink-0 text-right text-sm font-bold">%{konu.ortalama}</span>
         </span>
         <span className="order-2 flex items-center gap-2 justify-self-end sm:order-none">
           <span className="whitespace-nowrap text-[11px] font-semibold" style={{ color: zorlanan > 0 ? BLUSH : TEXT_MUTED }}>
@@ -76,7 +83,7 @@ function KonuSatiri({ konu, dersGoster, ogrenciLinki }: { konu: KdKonu; dersGost
           </span>
           <Gidisat konu={konu} />
         </span>
-        <span className="hidden sm:block">{acik ? <ChevronUp size={15} color={TEXT_MUTED} /> : <ChevronDown size={15} color={TEXT_MUTED} />}</span>
+        <span className="hidden sm:block print:hidden">{acik ? <ChevronUp size={15} color={TEXT_MUTED} /> : <ChevronDown size={15} color={TEXT_MUTED} />}</span>
       </button>
       {acik && <KonuDetayi konu={konu} ogrenciLinki={ogrenciLinki} />}
     </div>
@@ -262,14 +269,14 @@ function DersBolumu({ ders, ortalama, konular, zayifKonuSayisi, ogrenciSayisi, o
         <span className="min-w-0 flex-1">
           <span className="flex items-baseline justify-between gap-2">
             <span style={{ color: TEXT }} className="text-sm font-bold">{ders}</span>
-            <span style={{ color: renk }} className="text-sm font-bold">%{ortalama}</span>
+            <span style={{ color: renk }} data-ton={puanTonu(ortalama)} className="kd-renkli text-sm font-bold">%{ortalama}</span>
           </span>
           <span className="mt-1.5 block"><PuanCubugu puan={ortalama} /></span>
           <span style={{ color: TEXT_MUTED }} className="mt-1 block text-[11px]">
             {ogrenciSayisi} öğrenci · {konular.length} konu{zayifKonuSayisi > 0 ? ` · ${zayifKonuSayisi} konuda ortalama 50'nin altında` : ""}
           </span>
         </span>
-        {acik ? <ChevronUp size={16} color={TEXT_MUTED} /> : <ChevronDown size={16} color={TEXT_MUTED} />}
+        {acik ? <ChevronUp size={16} color={TEXT_MUTED} className="print:hidden" /> : <ChevronDown size={16} color={TEXT_MUTED} className="print:hidden" />}
       </button>
       {acik && <div className="pb-2">{konular.map((k) => <KonuSatiri key={k.anahtar} konu={k} dersGoster={false} ogrenciLinki={ogrenciLinki} />)}</div>}
     </div>
@@ -325,9 +332,16 @@ function KonuDurumuIcerik({ veri, hata, kapsamlar, seciliAnahtar, ogrenciLinki =
 
   const secimStili = { background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` };
 
+  const kapsamEtiketi = kapsamlar.find((k) => k.anahtar === seciliAnahtar)?.etiket;
+
   return (
-    <div className="sfec-fade flex flex-col gap-5 rounded-3xl p-5 sm:p-6 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    // sfec-konu-durumu: yazdırmada sayfanın geri kalanı gizlenir (globals.css).
+    <div className="sfec-konu-durumu sfec-fade flex flex-col gap-5 rounded-3xl p-5 sm:p-6" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+      <div className="hidden print:block">
+        <div className="text-lg font-bold">Konu Durumu{kapsamEtiketi ? ` — ${kapsamEtiketi}` : ""}{gecerliDers ? ` — ${gecerliDers}` : ""}</div>
+        <div className="text-xs">Oluşturulma: {tarihGoster(bugununTarihiTR())} · SeFu Koç</div>
+      </div>
+      <div className="flex flex-wrap items-start justify-between gap-3 print:hidden">
         <div className="flex items-start gap-2.5">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full" style={{ background: SKY_BG }}>
             <Compass size={15} color={SKY} aria-hidden="true" />
@@ -350,6 +364,12 @@ function KonuDurumuIcerik({ veri, hata, kapsamlar, seciliAnahtar, ogrenciLinki =
               <option value={TUMU}>Tüm dersler</option>
               {dersSecenekleri.map((d) => <option key={d} value={d}>{d}</option>)}
             </select>
+          )}
+          {veri && veri.konular.length > 0 && (
+            <button type="button" onClick={() => window.print()}
+              className="sfec-btn inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold" style={secimStili}>
+              <Printer size={13} aria-hidden="true" /> Yazdır / PDF
+            </button>
           )}
         </div>
       </div>
@@ -383,6 +403,8 @@ function KonuDurumuIcerik({ veri, hata, kapsamlar, seciliAnahtar, ogrenciLinki =
               : oncelikliler.map((k) => <KonuSatiri key={k.anahtar} konu={k} dersGoster ogrenciLinki={ogrenciLinki} />)}
           </section>
 
+          {veri.karsilastirma && <SinifKarsilastirmasi karsilastirma={veri.karsilastirma} ders={gecerliDers} />}
+
           <section aria-label="Ders ders" className="flex flex-col gap-2">
             <h3 style={{ color: TEXT }} className="text-sm font-bold">Ders ders</h3>
             {dersler.filter((d) => dersUyar(d.ders)).map((d) => (
@@ -398,6 +420,59 @@ function KonuDurumuIcerik({ veri, hata, kapsamlar, seciliAnahtar, ogrenciLinki =
         </>
       )}
     </div>
+  );
+}
+
+// Faz 3 — sınıflar arası karşılaştırma: satır konu, sütun sınıf, hücre o
+// sınıftaki öğrencilerin konu puanı ortalaması. İlk satır sınıfın genel
+// puanı. Ders süzgeci tabloyu da daraltır.
+function SinifKarsilastirmasi({ karsilastirma, ders }: { karsilastirma: KdKarsilastirma; ders: string }) {
+  const satirlar = karsilastirma.satirlar.filter((s) => !ders || tabanDers(s.ders) === ders).slice(0, 12);
+  const genel = karsilastirma.genel[ders] ?? karsilastirma.genel[""];
+  if (satirlar.length === 0) return null;
+  const hucre = (h: KdHucre | { ortalama: number; ogrenciSayisi: number } | null, sinif: string, kalin = false) => {
+    if (!h) return <td key={sinif} className="px-1 py-1.5 text-center" style={{ color: TEXT_MUTED }}>—</td>;
+    const { renk, zemin } = puanRengi(h.ortalama);
+    const zorlanan = "zorlanan" in h ? `, ${h.zorlanan} zorlanıyor` : "";
+    return (
+      <td key={sinif} data-ton={puanTonu(h.ortalama)} className={`kd-renkli kd-hucre rounded-md px-1 py-1.5 text-center ${kalin ? "font-extrabold" : "font-bold"}`}
+        style={{ background: zemin, color: renk }} title={`${sinif}: %${h.ortalama} · ${h.ogrenciSayisi} öğrenci${zorlanan}`}>
+        %{h.ortalama}
+      </td>
+    );
+  };
+  return (
+    <section aria-label="Sınıflar arası karşılaştırma">
+      <h3 style={{ color: TEXT }} className="text-sm font-bold">Sınıflar arası karşılaştırma</h3>
+      <p style={{ color: TEXT_MUTED }} className="mb-2 text-[11px]">
+        Her hücre o sınıftaki öğrencilerin konu puanı ortalaması; üzerine gelince öğrenci ve zorlanan sayısı görünür. Konular en çok öğrencinin zorlandığına göre sıralı.
+      </p>
+      <div className="overflow-x-auto">
+        <table className="w-full border-separate text-[11px]" style={{ borderSpacing: 3 }}>
+          <thead>
+            <tr>
+              <th className="sticky left-0 z-10 min-w-[9rem] px-1 text-left font-semibold" style={{ background: BG1, color: TEXT_MUTED }}>Konu</th>
+              {karsilastirma.siniflar.map((s) => <th key={s.classId} className="px-1 text-center font-bold" style={{ color: TEXT }}>{s.sinif}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td className="sticky left-0 z-10 px-1 py-1.5 font-bold" style={{ background: BG1, color: TEXT }}>Genel{ders ? ` (${ders})` : ""}</td>
+              {karsilastirma.siniflar.map((s, i) => hucre(genel?.[i] ?? null, s.sinif, true))}
+            </tr>
+            {satirlar.map((satir) => (
+              <tr key={satir.anahtar}>
+                <td className="sticky left-0 z-10 max-w-[16rem] px-1 py-1" style={{ background: BG1 }}>
+                  <span style={{ color: TEXT }} className="line-clamp-2 font-semibold" title={satir.konu}>{satir.konu}</span>
+                  <span style={{ color: TEXT_MUTED }} className="block text-[10px]">{satir.ders} · {satir.zorlanan} zorlanıyor</span>
+                </td>
+                {karsilastirma.siniflar.map((s, i) => hucre(satir.hucreler[i], s.sinif))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
 

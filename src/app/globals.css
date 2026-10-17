@@ -682,7 +682,7 @@ input[type="file"]:active::-webkit-file-upload-button {
    kalanı gizlenir; kartlar mürekkep dostu (beyaz zemin, ince çizgi). */
 @media print {
   body:has(.sfec-giris-kartlari) * { visibility: hidden; }
-  .sfec-giris-kartlari, .sfec-giris-kartlari * { visibility: visible; }
+  body .sfec-giris-kartlari, body .sfec-giris-kartlari * { visibility: visible; }
   .sfec-giris-kartlari {
     position: absolute; top: 0; left: 0; width: 100%;
     display: grid !important; grid-template-columns: 1fr 1fr; gap: 6mm;
@@ -692,4 +692,37 @@ input[type="file"]:active::-webkit-file-upload-button {
     border: 1px solid #111 !important; break-inside: avoid; padding: 4mm;
   }
   .sfec-giris-kartlari span, .sfec-giris-kartlari div { color: #111 !important; }
+}
+
+/* Konu Durumu (Faz 3, 17.10.2026): "Yazdır / PDF" yalnız bu kartı basar;
+   menüler gizlenir, zemin beyaz. Puan çubukları, yüzdeler ve karşılaştırma
+   hücreleri (.kd-renkli) rengini korur; açık konu detayları da basılır. */
+@media print {
+  /* "body" öneki şart: body:has(.x) * kuralının önceliği (0,1,1) — yalnız
+     .x yazılırsa kart da gizli kalıyordu. */
+  body:has(.sfec-konu-durumu) * { visibility: hidden; }
+  body .sfec-konu-durumu, body .sfec-konu-durumu * { visibility: visible; }
+  .sfec-konu-durumu {
+    position: absolute; top: 0; left: 0; width: 100%;
+    padding: 0 !important; border: none !important; animation: none !important;
+    background: #fff !important;
+  }
+  .sfec-konu-durumu *:not(.kd-renkli) {
+    background-color: transparent !important; color: #111 !important;
+    border-color: #ccc !important; box-shadow: none !important;
+  }
+  .sfec-konu-durumu .kd-renkli, .sfec-konu-durumu .kd-iz { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  /* Koyu temanın açık yeşili kâğıtta okunmuyor: üç ton sabit renkle. */
+  .sfec-konu-durumu .kd-iz { background: #e5e7eb !important; }
+  .sfec-konu-durumu [data-ton="zayif"] { color: #be123c !important; }
+  .sfec-konu-durumu [data-ton="orta"] { color: #a16207 !important; }
+  .sfec-konu-durumu [data-ton="iyi"] { color: #15803d !important; }
+  .sfec-konu-durumu .kd-dolgu[data-ton="zayif"] { background: #e11d48 !important; }
+  .sfec-konu-durumu .kd-dolgu[data-ton="orta"] { background: #ca8a04 !important; }
+  .sfec-konu-durumu .kd-dolgu[data-ton="iyi"] { background: #16a34a !important; }
+  .sfec-konu-durumu .kd-hucre[data-ton="zayif"] { background: #ffe4e6 !important; }
+  .sfec-konu-durumu .kd-hucre[data-ton="orta"] { background: #fef3c7 !important; }
+  .sfec-konu-durumu .kd-hucre[data-ton="iyi"] { background: #dcfce7 !important; }
+  .sfec-konu-durumu tr { break-inside: avoid; }
+  .sfec-konu-durumu .overflow-x-auto { overflow: visible !important; }
 }

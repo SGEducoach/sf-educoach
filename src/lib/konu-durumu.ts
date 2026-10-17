@@ -90,6 +90,19 @@ export interface KdKonu {
 
 export interface KdDers { ders: string; ortalama: number; konuSayisi: number; zayifKonuSayisi: number; ogrenciSayisi: number }
 
+export interface KdHucre { ortalama: number; ogrenciSayisi: number; zorlanan: number }
+
+// Faz 3 — sınıflar arası karşılaştırma (okul / seviye kapsamında, en az iki
+// sınıfın verisi varsa). Bütün konu × sınıf tablosu istemciye gitmez: genelde
+// ve her (taban) derste en çok öğrencinin zorlandığı KARSILASTIRMA_SATIRI konu.
+export interface KdKarsilastirma {
+  siniflar: { classId: string; sinif: string }[];
+  satirlar: { anahtar: string; ders: string; konu: string; zorlanan: number; hucreler: (KdHucre | null)[] }[];
+  // Sınıfın genel puanı: öğrencilerin (o dersteki / bütün) konu ortalamalarının
+  // ortalaması. Anahtar "" = bütün dersler, aksi hâlde taban ders.
+  genel: Record<string, ({ ortalama: number; ogrenciSayisi: number } | null)[]>;
+}
+
 export interface KonuDurumuVerisi {
   konular: KdKonu[];
   oncelikliler: KdKonu[];
@@ -97,7 +110,18 @@ export interface KonuDurumuVerisi {
   ogrenciSayisi: number;
   veriliOgrenciSayisi: number;
   sonDeneme: { tarih: string; etiket: string } | null;
+  karsilastirma: KdKarsilastirma | null;
 }
+
+const KARSILASTIRMA_SATIRI = 12;
+
+function sinifSirasi(a: string, b: string): number {
+  const [as, ash] = a.split("-");
+  const [bs, bsh] = b.split("-");
+  return (Number(as) || 0) - (Number(bs) || 0) || (ash ?? "").localeCompare(bsh ?? "", "tr");
+}
+
+const ortala = (l: number[]) => l.reduce((t, s) => t + s, 0) / l.length;
 
 // "Türkçe (Branş)" → "Türkçe" (öğretmenin ders yetkisi taban derse bakar).
 export function tabanDers(ders: string): string {
@@ -252,6 +276,8 @@ export function konuDurumuHesapla(girdi: {
   const veriliOgrenciler = new Set<string>();
   const sonuclar: KdKonu[] = [];
   const dersSkorlari = new Map<string, Map<string, number[]>>();
+  const konuSiniflari = new Map<string, Map<string, number[]>>();
+  const ogrenciDersSkorlari = new Map<string, Map<string, number[]>>();
   for (const [anahtar, b] of konular) {
     const skorlar: KdOgrenciSkoru[] = [];
     for (const [studentId, o] of b.ogrenciler) {
@@ -296,6 +322,16 @@ export function konuDurumuHesapla(girdi: {
     const dersOgrencileri = dersSkorlari.get(b.ders) ?? new Map<string, number[]>();
     for (const s of skorlar) dersOgrencileri.set(s.id, [...(dersOgrencileri.get(s.id) ?? []), s.skor]);
     dersSkorlari.set(b.ders, dersOgrencileri);
+    // Karşılaştırma için sınıf dağılımı ve öğrencinin taban ders puanları.
+    const sinifDagilimi = new Map<string, number[]>();
+    for (const s of skorlar) {
+      if (!s.classId) continue;
+      sinifDagilimi.set(s.classId, [...(sinifDagilimi.get(s.classId) ?? []), s.skor]);
+      const ogrDers = ogrenciDersSkorlari.get(s.id) ?? new Map<string, number[]>();
+      for (const d of ["", tabanDers(b.ders)]) ogrDers.set(d, [...(ogrDers.get(d) ?? []), s.skor]);
+      ogrenciDersSkorlari.set(s.id, ogrDers);
+    }
+    konuSiniflari.set(anahtar, sinifDagilimi);
   }
 
   const oncelikliler = oncelikliKonular(sonuclar, veriliOgrenciler.size);
@@ -315,11 +351,58 @@ export function konuDurumuHesapla(girdi: {
     };
   }).sort((a, c) => a.ders.localeCompare(c.ders, "tr"));
 
+  const karsilastirma = karsilastirmaKur(sonuclar, konuSiniflari, ogrenciDersSkorlari, ogrenciMap);
+
   sonuclar.sort((a, c) => a.ders.localeCompare(c.ders, "tr") || a.ortalama - c.ortalama || c.ogrenciSayisi - a.ogrenciSayisi);
   return {
     konular: sonuclar, oncelikliler, dersler,
     ogrenciSayisi: girdi.ogrenciler.length, veriliOgrenciSayisi: veriliOgrenciler.size, sonDeneme,
+    karsilastirma,
   };
+}
+
+function karsilastirmaKur(
+  sonuclar: KdKonu[],
+  konuSiniflari: Map<string, Map<string, number[]>>,
+  ogrenciDersSkorlari: Map<string, Map<string, number[]>>,
+  ogrenciMap: Map<string, KdOgrenci>,
+): KdKarsilastirma | null {
+  const sinifAdlari = new Map<string, string>();
+  for (const id of ogrenciDersSkorlari.keys()) {
+    const o = ogrenciMap.get(id);
+    if (o?.classId && o.sinif) sinifAdlari.set(o.classId, o.sinif);
+  }
+  if (sinifAdlari.size < 2) return null;
+  const siniflar = [...sinifAdlari.entries()].map(([classId, sinif]) => ({ classId, sinif })).sort((a, c) => sinifSirasi(a.sinif, c.sinif));
+
+  const sirali = [...sonuclar].sort((a, c) => c.zorlananlar.length - a.zorlananlar.length || a.ortalama - c.ortalama);
+  const secilen = new Set(sirali.slice(0, KARSILASTIRMA_SATIRI).map((k) => k.anahtar));
+  for (const d of new Set(sonuclar.map((k) => tabanDers(k.ders)))) {
+    sirali.filter((k) => tabanDers(k.ders) === d).slice(0, KARSILASTIRMA_SATIRI).forEach((k) => secilen.add(k.anahtar));
+  }
+  const satirlar = sirali.filter((k) => secilen.has(k.anahtar)).map((k) => ({
+    anahtar: k.anahtar, ders: k.ders, konu: k.konu, zorlanan: k.zorlananlar.length,
+    hucreler: siniflar.map(({ classId }) => {
+      const l = konuSiniflari.get(k.anahtar)?.get(classId);
+      return l?.length ? { ortalama: Math.round(ortala(l)), ogrenciSayisi: l.length, zorlanan: l.filter((s) => s < ZORLANMA_ESIGI).length } : null;
+    }),
+  }));
+
+  // Öğrenci başına eşit ağırlıklı sınıf genel puanı (ders puanıyla aynı mantık).
+  const genel: KdKarsilastirma["genel"] = {};
+  const anahtarlar = new Set<string>([""]);
+  for (const m of ogrenciDersSkorlari.values()) for (const d of m.keys()) anahtarlar.add(d);
+  for (const d of anahtarlar) {
+    genel[d] = siniflar.map(({ classId }) => {
+      const ogrOrt: number[] = [];
+      for (const [id, m] of ogrenciDersSkorlari) {
+        const l = m.get(d);
+        if (l?.length && ogrenciMap.get(id)?.classId === classId) ogrOrt.push(ortala(l));
+      }
+      return ogrOrt.length ? { ortalama: Math.round(ortala(ogrOrt)), ogrenciSayisi: ogrOrt.length } : null;
+    });
+  }
+  return { siniflar, satirlar, genel };
 }
 
 // "Öncelikli" = en çok öğrencinin zorlandığı konular; eşitlikte ortalaması

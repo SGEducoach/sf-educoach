@@ -107,6 +107,28 @@ describe("konuDurumuHesapla", () => {
     expect(v.konular[0].sorular).toEqual([{ denemeEtiketi: etiket, tarih: "2026-10-10", test: "TYT Türkçe", kitapcik: "A", sorular: [12, 13, 14], kesin: true }]);
   });
 
+  test("sınıflar arası karşılaştırma: tek sınıfta yok, iki sınıfta sınıf sırasıyla hücreler", () => {
+    const tekSinif = konuDurumuHesapla({ ...bos, ogrenciler: [ogr("a")], adlandirma: AD, denemeler: [deneme("a", {})] });
+    expect(tekSinif.karsilastirma).toBeNull();
+
+    const ogrenciler: KdOgrenci[] = [
+      { ...ogr("a"), classId: "c2", sinif: "10-B" }, { ...ogr("b"), classId: "c2", sinif: "10-B" },
+      { ...ogr("c"), classId: "c1", sinif: "9-A" },
+    ];
+    const v = konuDurumuHesapla({
+      ...bos, ogrenciler, adlandirma: AD,
+      denemeler: [deneme("a", { dogru: 0, yanlis: 4 }), deneme("b", { dogru: 2, yanlis: 2 }), deneme("c", { dogru: 4, yanlis: 0 })],
+    });
+    const k = v.karsilastirma!;
+    expect(k.siniflar.map((s) => s.sinif)).toEqual(["9-A", "10-B"]); // 9 < 10, sayısal sıra
+    expect(k.satirlar[0].hucreler).toEqual([
+      { ortalama: 100, ogrenciSayisi: 1, zorlanan: 0 },
+      { ortalama: 25, ogrenciSayisi: 2, zorlanan: 1 },
+    ]);
+    expect(k.genel[""]).toEqual([{ ortalama: 100, ogrenciSayisi: 1 }, { ortalama: 25, ogrenciSayisi: 2 }]);
+    expect(k.genel["Türkçe"]).toEqual(k.genel[""]);
+  });
+
   test("oncelikliKonular küçük kapsamda tek zorlananı da alır", () => {
     const v = konuDurumuHesapla({ ...bos, ogrenciler: [ogr("a")], adlandirma: AD, denemeler: [deneme("a", { dogru: 0, yanlis: 4 })] });
     expect(oncelikliKonular(v.konular, 1)).toHaveLength(1);
