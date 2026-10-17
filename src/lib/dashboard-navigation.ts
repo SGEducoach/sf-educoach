@@ -122,6 +122,19 @@ const ILKOKUL_GELISIM_MENU_OGESI: DashboardMenuOgesi = {
   bolum: "ilkokul-gelisim", href: "/dashboard/ilkokul-gelisim", etiket: "Gelişim Raporu", ikon: "hakimiyet",
 };
 
+// İlkokul sınıf öğretmeni (kullanıcı kararı 18.10.2026): tek sınıfı var ve
+// öğrencileri sisteme girmiyor; ödev, onay, sınıf analizi ve konu
+// yeterliliği ona boş ekran. Ana sayfası "Sınıfım" panosu (bkz.
+// IlkokulSinifimPanosu), menüsü yalnız işine yarayan kalemler.
+export const SINIF_OGRETMENI_BRANSI = "Sınıf Öğretmeni";
+const ILKOKUL_SINIF_OGRETMENI_MENUSU: DashboardMenuOgesi[] = [
+  { bolum: "ozet", href: "/dashboard", etiket: "Sınıfım", ikon: "ana-sayfa" },
+  ILKOKUL_GELISIM_MENU_OGESI,
+  { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Duyurular", ikon: "duyuru" },
+  { bolum: "talepler", href: "/dashboard/talepler", etiket: "Veli talepleri", ikon: "talep" },
+  { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Pano", ikon: "takvim" },
+];
+
 const VELI_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "ozet", href: "/dashboard", etiket: "Çocuklarım", ikon: "ana-sayfa" },
   { bolum: "analiz", href: "/dashboard/analiz", etiket: "Analiz / Rapor", ikon: "analiz" },
@@ -364,6 +377,9 @@ export function dashboardMenusu(
   if (role === "ogrenci" && kademe === "ortaokul") return ORTAOKUL_OGRENCI_MENUSU;
   // Ortaokul ogretmeni: Maarif|LGS yeterlilik karari ekrani (kullanici karari
   // 01.10.2026). Lise menusu aynen korunuyor, yalniz bir kalem EKLENIYOR.
+  if (role === "ogretmen" && kademe === "ortaokul" && brans === SINIF_OGRETMENI_BRANSI && !rehber) {
+    return kurumTuru === "okul" ? [...ILKOKUL_SINIF_OGRETMENI_MENUSU, TAKVIM_MENU_OGESI] : ILKOKUL_SINIF_OGRETMENI_MENUSU;
+  }
   if (role === "ogretmen" && (kademe === "ortaokul" || kademe === "ikisi") && !rehber) {
     // DÜZELTME (02.10.2026): bu dal önce erken dönüyordu ve aşağıdaki okul
     // dalını atlıyordu — ortaokul öğretmeni "Ajandam"ı KAYBETMİŞTİ. Ortaokul

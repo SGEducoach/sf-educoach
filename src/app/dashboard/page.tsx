@@ -44,7 +44,7 @@ import { GecikmisIslerKarti } from "@/components/dashboard/GecikmisIslerKarti";
 import { DashboardYanMenu } from "@/components/dashboard/DashboardYanMenu";
 import { TgDenemeleri } from "@/components/dashboard/TgDenemeleri";
 import { tgDenemeIlanlariGetir } from "@/lib/tg-deneme-ilanlari";
-import { dashboardMenusu, rehberlikBirimiMi } from "@/lib/dashboard-navigation";
+import { SINIF_OGRETMENI_BRANSI, dashboardMenusu, rehberlikBirimiMi } from "@/lib/dashboard-navigation";
 import { ortaokulAktifMi, panelKademesi } from "@/lib/ortaokul-ayar";
 import { ortaokulDersleriGetir, ortaokulDersHaritasiGetir } from "@/lib/ortaokul-mufredat-sorgu";
 import { OrtaokulDerslerim } from "@/components/dashboard/OrtaokulDerslerim";
@@ -60,7 +60,7 @@ import { OrtaokulCalismalarim } from "@/components/dashboard/OrtaokulCalismalari
 import { OrtaokulYeterlilik } from "@/components/dashboard/OrtaokulYeterlilik";
 import { OrtaokulCalismaOnaylari } from "@/components/dashboard/OrtaokulCalismaOnaylari";
 import { ortaokulBekleyenCalismalarGetir } from "@/lib/ortaokul-calisma-onay-sorgu";
-import { ORTAOKUL_SEVIYELERI, kademeBul } from "@/lib/kademe";
+import { ORTAOKUL_SEVIYELERI, ilkokulMu, kademeBul } from "@/lib/kademe";
 import { yardimMesaji } from "@/lib/ortaokul-yardim";
 import { OrtaokulYardim } from "@/components/dashboard/OrtaokulYardim";
 import type { DashboardBolumu } from "@/lib/dashboard-navigation";
@@ -94,7 +94,9 @@ import { OgrenciProfilim } from "@/components/dashboard/OgrenciProfilim";
 import { ogretmenAktifGunuKaydet, ogrenciProfilGoruntulemesiKaydet } from "@/lib/ogretmen-takip";
 import { ilkokulOgrenciRaporuGetir, ilkokulSinifEtkinlikleriGetir, ilkokulSinifRaporuGetir, ilkokulSiniflariGetir } from "@/lib/ilkokul-gelisim-sorgu";
 import { IlkokulEtkinlikleri } from "@/components/dashboard/IlkokulEtkinlikleri";
-import { ayAnahtari } from "@/lib/ilkokul-gelisim";
+import { ayAnahtari, ayEtiketi } from "@/lib/ilkokul-gelisim";
+import { sinifimOzeti } from "@/lib/ilkokul-sinifim";
+import { IlkokulSinifimPanosu } from "@/components/dashboard/IlkokulSinifimPanosu";
 import { IlkokulGelisimGirisi } from "@/components/dashboard/IlkokulGelisimGirisi";
 import { IlkokulGelisimRaporu } from "@/components/dashboard/IlkokulGelisimRaporu";
 import { bekleyenOgretmenBildirimleriniGonder } from "@/lib/ogretmen-bildirim";
@@ -803,6 +805,44 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
           duzenleyebilir={secili.yetkiler.includes("sinif_ogretmeni") || secili.yetkiler.includes("yonetim")} />
       </div>
     );
+  }
+
+  // İlkokul sınıf öğretmeninin "Sınıfım" panosu (kullanıcı kararı 18.10.2026):
+  // tek sınıfının bu ayki gelişim raporu, etkinlikleri, veli bağlantısı ve
+  // öğrenci listesi. Öğrenci seçilince aşağıdaki öğrenci sayfası açılır.
+  if (aktifBolum === "ozet" && role === "ogretmen" && kademe === "ortaokul" && brans === SINIF_OGRETMENI_BRANSI && !secilenOgrenciId) {
+    if (!teacher.class_id) {
+      return (
+        <div className="sfec-fade rounded-3xl p-6 text-center" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+          <p style={{ color: TEXT_MUTED }} className="text-sm">Size henüz bir sınıf atanmamış. Kurum yöneticiniz sınıfınızı atadığında panonuz burada açılır.</p>
+        </div>
+      );
+    }
+    const yonetici = createAdminClient();
+    const { data: sinif } = await yonetici.from("classes").select("id, seviye, sube").eq("id", teacher.class_id).maybeSingle();
+    if (sinif && ilkokulMu(sinif.seviye)) {
+      const bugun = bugununTarihiTR();
+      const ay = ayAnahtari(bugun)!;
+      const [rapor, etkinlikler] = await Promise.all([
+        ilkokulSinifRaporuGetir(yonetici, sinif.id, ay),
+        ilkokulSinifEtkinlikleriGetir(yonetici, sinif.id, ay),
+      ]);
+      const idler = rapor.ogrenciler.map((o) => o.id);
+      const [{ data: veliBaglari }, { count: bekleyenVeliTalebi }] = await Promise.all([
+        idler.length > 0 ? yonetici.from("parent_students").select("student_id").in("student_id", idler) : Promise.resolve({ data: [] }),
+        idler.length > 0
+          ? yonetici.from("veli_link_requests").select("id", { count: "exact", head: true }).in("student_id", idler).eq("durum", "bekliyor")
+          : Promise.resolve({ count: 0 }),
+      ]);
+      const ozet = sinifimOzeti({
+        rapor, etkinlikler, bugun,
+        veliBagliIdler: new Set(((veliBaglari ?? []) as { student_id: string }[]).map((v) => v.student_id)),
+      });
+      return (
+        <IlkokulSinifimPanosu sinifId={sinif.id} sinifAdi={`${sinif.seviye}-${sinif.sube}`} ayEtiketi={ayEtiketi(ay)}
+          ozet={ozet} bekleyenVeliTalebi={bekleyenVeliTalebi ?? 0} />
+      );
+    }
   }
 
   if (aktifBolum === "ortaokul-onaylar") {

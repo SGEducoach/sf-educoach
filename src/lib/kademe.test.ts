@@ -393,6 +393,16 @@ describe("ortaokul kurumunda rol menüleri", () => {
     expect(dashboardMenusu("mudur", "okul", undefined, false, "ortaokul").map((o) => o.bolum)).toContain("takvim");
   });
 
+  test("ilkokul sınıf öğretmeni: Sınıfım panosu ve sade menü", () => {
+    const menu = dashboardMenusu("ogretmen", "okul", "Sınıf Öğretmeni", false, "ortaokul");
+    expect(menu[0]).toMatchObject({ bolum: "ozet", etiket: "Sınıfım" });
+    expect(menu.map((o) => o.bolum)).toEqual(["ozet", "ilkokul-gelisim", "duyurular", "talepler", "tg-denemeleri", "takvim"]);
+    // Branşlı ortaokul öğretmeni eski menüsünü korur.
+    const brans = dashboardMenusu("ogretmen", "okul", "Türkçe", false, "ortaokul");
+    expect(brans[0].etiket).toBe("Sınıflarım");
+    expect(brans.map((o) => o.bolum)).toContain("gorevler");
+  });
+
   test("dershane müdürü kademeden etkilenmiyor", () => {
     const a = dashboardMenusu("mudur", "dershane", undefined, false, "ortaokul").map((o) => o.bolum);
     const b = dashboardMenusu("mudur", "dershane", undefined, false, "lise").map((o) => o.bolum);
