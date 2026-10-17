@@ -11,7 +11,7 @@ import { UserPlus, Check, Users, Eye, Plus, X, BookMarked, BedDouble, ClipboardC
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, PEACH, PEACH_BG, SKY, SKY_BG, TEXT, TEXT_MUTED, BLUSH, BLUSH_BG } from "@/lib/theme";
 import {
   veliTalepOnayla, veliTalepSil, sinifEkle, ogretmenDuyuruGonder, gonderilenDuyurularGetir,
-  ogretmenDersEkle, ogretmenDersSil, ogrenciSinifTasi, ogrenciYurtDurumuGuncelle, soruCozumuOnayla,
+  ogretmenDersEkle, ogretmenDersSil, ogrenciSinifTasi, ogrenciYurtDurumuGuncelle, soruCozumuOnayla, soruCozumleriniTopluOnayla,
 } from "@/app/dashboard/actions";
 import { gorevVer, verdigimGoreviSil } from "@/app/dashboard/gorev-actions";
 import { DuyuruFormu } from "@/components/dashboard/DuyuruFormu";
@@ -666,6 +666,8 @@ function BekleyenOnaylarBolumu({ onaylar }: { onaylar: BekleyenOnaySatiri[] }) {
   const [onaylanıyorId, setOnaylanıyorId] = useState<string | null>(null);
   const [acikOgrenciId, setAcikOgrenciId] = useState<string | null>(null);
   const [hata, setHata] = useState<string | null>(null);
+  const [bilgi, setBilgi] = useState<string | null>(null);
+  const [topluOnaylaniyor, setTopluOnaylaniyor] = useState(false);
   const [, startTransition] = useTransition();
 
   function onayla(id: string) {
@@ -686,7 +688,27 @@ function BekleyenOnaylarBolumu({ onaylar }: { onaylar: BekleyenOnaySatiri[] }) {
     gruplar.set(o.studentId, grup);
   }
   const ogrenciListesi = Array.from(gruplar.entries()).map(([studentId, g]) => ({ studentId, ...g }));
-  const toplamBekleyen = onaylar.filter((o) => !onaylanan.has(o.id)).length;
+  const bekleyenIdler = onaylar.filter((o) => !onaylanan.has(o.id)).map((o) => o.id);
+  const toplamBekleyen = bekleyenIdler.length;
+
+  // Kullanıcı isteği (18.10.2026): tek tıkla hepsini onayla. Sunucu her
+  // kaydı aynı yetki kuralıyla denetler; yetkisizler atlanır ve bildirilir.
+  function hepsiniOnayla() {
+    if (toplamBekleyen === 0) return;
+    if (!window.confirm(`${toplamBekleyen} soru çözümü kaydının hepsi onaylansın mı?`)) return;
+    setHata(null);
+    setBilgi(null);
+    setTopluOnaylaniyor(true);
+    startTransition(async () => {
+      const res = await soruCozumleriniTopluOnayla(bekleyenIdler);
+      setTopluOnaylaniyor(false);
+      if (res.error) { setHata(res.error); return; }
+      setOnaylanan((s) => new Set([...s, ...res.onaylananIdler]));
+      setBilgi(res.atlanan > 0
+        ? `${res.onaylananIdler.length} kayıt onaylandı; ${res.atlanan} kayıt ilgili branş ya da sınıf öğretmeninin onayını beklediği için atlandı.`
+        : `${res.onaylananIdler.length} kayıt onaylandı.`);
+    });
+  }
 
   return (
     <div className="sfec-section sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
@@ -698,8 +720,16 @@ function BekleyenOnaylarBolumu({ onaylar }: { onaylar: BekleyenOnaySatiri[] }) {
         {toplamBekleyen > 0 && (
           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: SKY_BG, color: SKY }}>{toplamBekleyen}</span>
         )}
+        {toplamBekleyen > 1 && (
+          <button type="button" onClick={hepsiniOnayla} disabled={topluOnaylaniyor}
+            className="sfec-btn ml-auto flex items-center gap-1 rounded-lg px-3 py-1.5 text-[11px] font-bold disabled:opacity-60"
+            style={{ background: MINT, color: MINT_ON }}>
+            <Check size={12} aria-hidden="true" /> {topluOnaylaniyor ? "Onaylanıyor…" : `Hepsini onayla (${toplamBekleyen})`}
+          </button>
+        )}
       </div>
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold mb-3">{hata}</div>}
+      {bilgi && <div style={{ color: MINT }} className="text-xs font-semibold mb-3">{bilgi}</div>}
       {ogrenciListesi.length === 0 ? (
         <p style={{ color: TEXT_MUTED }} className="text-sm py-4 text-center">Onay bekleyen soru çözümü yok.</p>
       ) : (

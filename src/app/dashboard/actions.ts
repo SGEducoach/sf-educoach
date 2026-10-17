@@ -905,26 +905,63 @@ export async function ogrenciYurtDurumuGuncelle(studentId: string, yurtOgrencisi
 // Admin istemcisi yalnız ayrıntılı yetki doğrulamasından sonra kullanılır;
 // böylece eski, sadece sınıf öğretmenine izin veren RLS kuralı branş
 // öğretmenini yanlışlıkla engellemez.
+// Uzun kimlik listesi sorgu adresini aşmasın diye 150'lik parçalar.
+function parcalara(idler: string[], boyut = 150): string[][] {
+  const sonuc: string[][] = [];
+  for (let i = 0; i < idler.length; i += boyut) sonuc.push(idler.slice(i, i + boyut));
+  return sonuc;
+}
+
+// Tek ve toplu onayın ortak yetki kuralı: kayıtları ve öğrencilerini çeker,
+// her kayıt için onaylayabilir mi kararını ve (değilse) nedenini döner.
+async function soruOnayYetkileri(
+  admin: ReturnType<typeof createAdminClient>,
+  ogretmen: { id: string; class_id: string | null; school_id: string },
+  ids: string[],
+): Promise<Map<string, { yetkili: true } | { yetkili: false; neden: string } | { zatenOnayli: true }>> {
+  const sonuc = new Map<string, { yetkili: true } | { yetkili: false; neden: string } | { zatenOnayli: true }>();
+  type Soru = { id: string; student_id: string; ders: string; kaynak: string; onaylandi_mi: boolean };
+  const soruListesi: Soru[] = [];
+  for (const parca of parcalara(ids)) {
+    const { data } = await admin.from("soru_cozumleri").select("id, student_id, ders, kaynak, onaylandi_mi").in("id", parca);
+    soruListesi.push(...((data ?? []) as Soru[]).filter((s) => s.kaynak === "ogrenci"));
+  }
+  const ogrenciMap = new Map<string, { id: string; class_id: string | null; school_id: string }>();
+  for (const parca of parcalara([...new Set(soruListesi.map((s) => s.student_id))])) {
+    const { data } = await admin.from("students").select("id, class_id, school_id").in("id", parca);
+    for (const o of (data ?? []) as { id: string; class_id: string | null; school_id: string }[]) ogrenciMap.set(o.id, o);
+  }
+  const sinifIdleri = [...new Set([...ogrenciMap.values()].map((o) => o.class_id).filter((id): id is string => !!id))];
+  const { data: dersAtamalari } = sinifIdleri.length > 0
+    ? await admin.from("ogretmen_dersleri").select("class_id, teacher_id, ders").in("class_id", sinifIdleri)
+    : { data: [] };
+  const dersAnahtari = (deger: string) => deger.trim().toLocaleLowerCase("tr-TR").replace(/\s+/g, " ");
+  for (const soru of soruListesi) {
+    if (soru.onaylandi_mi) { sonuc.set(soru.id, { zatenOnayli: true }); continue; }
+    const ogrenci = ogrenciMap.get(soru.student_id);
+    if (!ogrenci || ogrenci.school_id !== ogretmen.school_id) { sonuc.set(soru.id, { yetkili: false, neden: "Bu öğrenci için onay yetkiniz yok." }); continue; }
+    const ilgiliBransOgretmenleri = ((dersAtamalari ?? []) as { class_id: string; teacher_id: string; ders: string }[])
+      .filter((atama) => atama.class_id === ogrenci.class_id && dersAnahtari(atama.ders) === dersAnahtari(soru.ders));
+    const yetkili = ilgiliBransOgretmenleri.length > 0
+      ? ilgiliBransOgretmenleri.some((atama) => atama.teacher_id === ogretmen.id)
+      : ogretmen.class_id === ogrenci.class_id;
+    sonuc.set(soru.id, yetkili ? { yetkili: true } : {
+      yetkili: false,
+      neden: ilgiliBransOgretmenleri.length > 0 ? "Bu kayıt ilgili branş öğretmeninin onayını bekliyor." : "Bu kayıt yalnızca sınıf öğretmeni tarafından onaylanabilir.",
+    });
+  }
+  return sonuc;
+}
+
 export async function soruCozumuOnayla(id: string) {
   const { supabase, user } = await requireUser();
   const admin = createAdminClient();
-  const [{ data: teacher }, { data: soru }] = await Promise.all([
-    supabase.from("teachers").select("class_id, school_id").eq("id", user.id).maybeSingle(),
-    admin.from("soru_cozumleri").select("id, student_id, ders, kaynak, onaylandi_mi").eq("id", id).maybeSingle(),
-  ]);
+  const { data: teacher } = await supabase.from("teachers").select("class_id, school_id").eq("id", user.id).maybeSingle();
   if (!teacher) return { error: "Öğretmen kaydı bulunamadı." };
-  if (!soru || soru.kaynak !== "ogrenci") return { error: "Onaylanacak öğrenci kaydı bulunamadı." };
-  if (soru.onaylandi_mi) return { error: null };
-
-  const { data: ogrenci } = await admin.from("students").select("class_id, school_id").eq("id", soru.student_id).maybeSingle();
-  if (!ogrenci || ogrenci.school_id !== teacher.school_id) return { error: "Bu öğrenci için onay yetkiniz yok." };
-  const { data: dersAtamalari } = await admin.from("ogretmen_dersleri").select("teacher_id, ders").eq("class_id", ogrenci.class_id);
-  const dersAnahtari = (deger: string) => deger.trim().toLocaleLowerCase("tr-TR").replace(/\s+/g, " ");
-  const ilgiliBransOgretmenleri = (dersAtamalari ?? []).filter((atama) => dersAnahtari(atama.ders) === dersAnahtari(soru.ders));
-  const yetkili = ilgiliBransOgretmenleri.length > 0
-    ? ilgiliBransOgretmenleri.some((atama) => atama.teacher_id === user.id)
-    : teacher.class_id === ogrenci.class_id;
-  if (!yetkili) return { error: ilgiliBransOgretmenleri.length > 0 ? "Bu kayıt ilgili branş öğretmeninin onayını bekliyor." : "Bu kayıt yalnızca sınıf öğretmeni tarafından onaylanabilir." };
+  const karar = (await soruOnayYetkileri(admin, { id: user.id, ...teacher }, [id])).get(id);
+  if (!karar) return { error: "Onaylanacak öğrenci kaydı bulunamadı." };
+  if ("zatenOnayli" in karar) return { error: null };
+  if (!karar.yetkili) return { error: karar.neden };
 
   const { error } = await admin.from("soru_cozumleri")
     .update({ onaylandi_mi: true, onaylayan_id: user.id, onaylanma_at: new Date().toISOString() })
@@ -933,6 +970,34 @@ export async function soruCozumuOnayla(id: string) {
   if (error) return { error: error.message };
   revalidatePath("/dashboard");
   return { error: null };
+}
+
+// Kullanıcı isteği (18.10.2026): bekleyen onaylarda "Hepsini onayla". Aynı
+// yetki kuralı kayıt kayıt uygulanır; yetkisiz kayıtlar atlanır ve sayısı
+// döner, yetkili olanlar tek sorguda onaylanır.
+export async function soruCozumleriniTopluOnayla(ids: string[]): Promise<{ error: string | null; onaylananIdler: string[]; atlanan: number }> {
+  const { supabase, user } = await requireUser();
+  const tekil = [...new Set(ids)];
+  if (tekil.length === 0) return { error: null, onaylananIdler: [], atlanan: 0 };
+  const admin = createAdminClient();
+  const { data: teacher } = await supabase.from("teachers").select("class_id, school_id").eq("id", user.id).maybeSingle();
+  if (!teacher) return { error: "Öğretmen kaydı bulunamadı.", onaylananIdler: [], atlanan: 0 };
+  const kararlar = await soruOnayYetkileri(admin, { id: user.id, ...teacher }, tekil);
+  const yetkili = tekil.filter((id) => { const k = kararlar.get(id); return !!k && "yetkili" in k && k.yetkili; });
+  const zatenOnayli = tekil.filter((id) => { const k = kararlar.get(id); return !!k && "zatenOnayli" in k; });
+  if (yetkili.length > 0) {
+    const simdi = new Date().toISOString();
+    for (const parca of parcalara(yetkili)) {
+      const { error } = await admin.from("soru_cozumleri")
+        .update({ onaylandi_mi: true, onaylayan_id: user.id, onaylanma_at: simdi })
+        .in("id", parca)
+        .eq("onaylandi_mi", false);
+      if (error) return { error: error.message, onaylananIdler: [], atlanan: 0 };
+    }
+    await auditLogYaz(supabase, user.id, "soru_cozumu_toplu_onay", { adet: yetkili.length });
+  }
+  revalidatePath("/dashboard");
+  return { error: null, onaylananIdler: [...yetkili, ...zatenOnayli], atlanan: tekil.length - yetkili.length - zatenOnayli.length };
 }
 
 // Bir öğretmen/müdürün kendi gönderdiği duyuruların geçmişi — RLS'te
