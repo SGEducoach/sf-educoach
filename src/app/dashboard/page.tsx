@@ -26,6 +26,7 @@ import type { RaporDonemi } from "@/lib/analiz";
 import { kohortKarsilastirmasiGetir } from "@/lib/analiz-kohort";
 import { ogrencininZayifKonulariGetir } from "@/lib/konu-raporu";
 import { konuDurumuKapsamlari } from "@/lib/konu-durumu-verisi";
+import { sinifKartOzetleriGetir } from "@/lib/sinif-kart-ozeti";
 import { KonuDurumuBolumu } from "@/components/dashboard/KonuDurumuBolumu";
 import { konuHakimiyetiGetir, konuHakimiyetiOzetiGetir, tamGorunumMu, gerekYokHaritasiGetir } from "@/lib/konu-hakimiyeti";
 import { KonuHakimiyetiEkrani } from "@/components/dashboard/KonuHakimiyetiEkrani";
@@ -1182,6 +1183,13 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
     );
   }
 
+  // Sınıflarım kartlarının özeti (öğrenci, son 7 gün veri giren, bekleyen
+  // onay) — yalnız kart ekranı görünecekken çekilir (OgretmenPanel'deki
+  // sinifKartlariGoster koşuluyla aynı).
+  const sinifKartOzetleri = role === "ogretmen" && aktifBolum === "ozet" && !secilenSinifId && sinifListesi.length > 1
+    ? await sinifKartOzetleriGetir(createAdminClient(), { sinifIdleri: sinifListesi.map((s) => s.id), ogretmenId: userId, ogretmenSinifId: teacher.class_id })
+    : undefined;
+
   // Öğrencinin soru çözümü, o sınıf ve derse atanmış branş öğretmeni varsa
   // yalnız o öğretmenin; yoksa sınıf öğretmeninin onayına düşer. Branş
   // öğretmeni sınıf öğretmeni olmasa da kendi dersinin kayıtlarını görebilir.
@@ -1378,6 +1386,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       siniflar={sinifListesi}
       atanabilirSiniflar={tumSiniflar}
       sinifSecildiMi={!!secilenSinifId}
+      sinifKartOzetleri={sinifKartOzetleri}
       gorunecekSinifId={gorunecekSinifId}
       kendiSinifId={teacher.class_id}
       kendiSinifiMi={kendiSinifiMi}

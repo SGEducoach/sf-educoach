@@ -6,7 +6,6 @@ import { ortaokulDersKarsilastir } from "@/lib/ortaokul-ders-sirasi";
 import type { KurumKademesi } from "@/lib/types";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { UserPlus, Check, Users, Eye, Plus, X, BookMarked, BedDouble, ClipboardCheck, ListChecks, ArrowRightLeft, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, CalendarPlus } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, PEACH, PEACH_BG, SKY, SKY_BG, TEXT, TEXT_MUTED, BLUSH, BLUSH_BG } from "@/lib/theme";
 import {
@@ -15,6 +14,8 @@ import {
 } from "@/app/dashboard/actions";
 import { gorevVer, verdigimGoreviSil } from "@/app/dashboard/gorev-actions";
 import { DuyuruFormu } from "@/components/dashboard/DuyuruFormu";
+import { SinifKarti } from "@/components/dashboard/SinifKarti";
+import type { SinifKartOzeti } from "@/lib/sinif-kart-ozeti";
 import {
   BRANS_LISTESI, GOREV_DURUMU_ETIKET, GOREV_TURU_ETIKET,
   type GorevDurumu, type GorevTuru, type SinifSeviyesi, type VeliLinkRequest,
@@ -83,7 +84,7 @@ function ogrencilerOkulNoSirali(ogrenciler: OgrenciSatiri[]): OgrenciSatiri[] {
 }
 
 export function OgretmenPanel({
-  role, bekleyenTalepler, ogrenciler, sinifAdi, siniflar, atanabilirSiniflar, sinifSecildiMi = false, gorunecekSinifId, kendiSinifId, kendiSinifiMi,
+  role, bekleyenTalepler, ogrenciler, sinifAdi, siniflar, atanabilirSiniflar, sinifSecildiMi = false, sinifKartOzetleri, gorunecekSinifId, kendiSinifId, kendiSinifiMi,
   ogretmenDersleri, bekleyenOnaylar, verdigimGorevler, konuOnerileri, kademe, aktifBolum,
   dersProgramiSatirlari, okulNobetleri, yurtNobetGorevleri, dershaneMi, yurtlu = false,
   nobetDevirOgretmenleri,
@@ -107,6 +108,8 @@ export function OgretmenPanel({
   // öğrenci listesi yerine sınıf kartları gösterilir (kullanıcı isteği
   // 08.10.2026: "liste kalabalığı giderilir").
   sinifSecildiMi?: boolean;
+  // Sınıflarım kartlarının sınıf başına özeti (bkz. sinif-kart-ozeti.ts).
+  sinifKartOzetleri?: Record<string, SinifKartOzeti>;
   gorunecekSinifId: string | null;
   kendiSinifId: string | null;
   kendiSinifiMi: boolean;
@@ -340,37 +343,26 @@ export function OgretmenPanel({
       {aktifBolum === "planlar" && secilenOgrenciId && <OgrenciAylikProgrami ogrenciAdi={secilenOgrenciAdi} program={secilenOgrenciProgrami} sinifId={gorunecekSinifId} />}
 
       {/* Sınıf kartları — öğretmen panele ilk girdiğinde (henüz sınıf
-          seçmemişken) öğrenci listesi yerine bunlar çıkar. Kalabalık liste
-          yerine iki sütunlu, ayrı pencereli kartlar; solda SeFu amblemi
-          (yazısız sürüm, kullanıcı kararı), sağda sınıf adı.
+          seçmemişken) öğrenci listesi yerine bunlar çıkar. Kullanıcı kararı
+          (18.10.2026): "Nabız + Seviye tonu" harmanı — seviye renkli zemin,
+          SeFu filigranı, son 7 günde veri giren öğrenci halkası ve bekleyen
+          onay (bkz. SinifKarti.tsx). Kendi sınıfı ilk sırada.
           Müdür bilinçli olarak DIŞARIDA: onun akışı değiştirilmedi. */}
       {aktifBolum === "ozet" && sinifKartlariGoster && (
         <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-          <div className="mb-4 flex items-center gap-2">
+          <div className="mb-4 flex flex-wrap items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-full" style={{ background: MINT_BG }}>
               <Users size={13} color={MINT} />
             </div>
             <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Sınıflarım</span>
             <span className="text-xs" style={{ color: TEXT_MUTED }}>· {siniflar.length} sınıf</span>
+            {sinifKartOzetleri && (
+              <span className="ml-auto text-[11px]" style={{ color: TEXT_MUTED }}>Halka: son 7 günde veri giren öğrenci oranı</span>
+            )}
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            {siniflar.map((s) => (
-              <Link
-                key={s.id}
-                href={`/dashboard?bolum=ozet&sinif=${s.id}`}
-                className="sfec-btn flex items-center gap-3 rounded-3xl p-4"
-                style={{ background: BG1_ALT, border: `2px solid ${s.id === kendiSinifId ? MINT : BORDER_STRONG}` }}
-              >
-                <Image src="/icon-192.png" alt="" width={40} height={40} className="h-10 w-10 shrink-0 rounded-xl" />
-                <span className="min-w-0 flex-1 text-right">
-                  <span className="block truncate text-lg font-extrabold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>
-                    {s.seviye}-{s.sube}
-                  </span>
-                  {s.id === kendiSinifId && (
-                    <span className="block text-[10px] font-bold" style={{ color: MINT }}>sınıfınız</span>
-                  )}
-                </span>
-              </Link>
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-3">
+            {[...siniflar].sort((a, b) => Number(b.id === kendiSinifId) - Number(a.id === kendiSinifId)).map((s) => (
+              <SinifKarti key={s.id} id={s.id} seviye={s.seviye} sube={s.sube} benim={s.id === kendiSinifId} ozet={sinifKartOzetleri?.[s.id]} />
             ))}
           </div>
         </div>

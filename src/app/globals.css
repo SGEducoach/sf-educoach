@@ -694,6 +694,41 @@ input[type="file"]:active::-webkit-file-upload-button {
   .sfec-giris-kartlari span, .sfec-giris-kartlari div { color: #111 !important; }
 }
 
+/* Sınıflarım kartı (18.10.2026, "Nabız + Seviye tonu" harmanı): seviyeye
+   göre renk (SeFu amblemindeki turkuaz ve lacivertten), amblem filigranı,
+   üzerine gelince kart yükselir ve amblem döner. İki temada aynı. */
+.sfec-sinif-karti {
+  position: relative; overflow: hidden; isolation: isolate; display: grid; grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start; gap: 6px 10px; min-height: 124px; padding: 14px 14px 12px; border-radius: 22px; color: #fff;
+  text-decoration: none; transition: transform .25s ease, box-shadow .25s ease;
+}
+.sfec-sinif-karti::after {
+  content: ""; position: absolute; right: -22px; bottom: -26px; width: 112px; height: 112px; z-index: -1;
+  background: url("/icon-192.png") center / contain no-repeat; opacity: .15; filter: grayscale(1) brightness(3);
+  transition: transform .35s ease, opacity .35s ease;
+}
+.sfec-sinif-karti[data-seviye="9"]  { background: linear-gradient(150deg, #2a9fb0, #17606d); }
+.sfec-sinif-karti[data-seviye="10"] { background: linear-gradient(150deg, #2779a7, #144a6e); }
+.sfec-sinif-karti[data-seviye="11"] { background: linear-gradient(150deg, #23527f, #0e2e4f); }
+.sfec-sinif-karti[data-seviye="12"] { background: linear-gradient(150deg, #374b6a, #161f33); }
+/* Lisenin dışındaki seviyeler (1-8, mezun) için nötr lacivert. */
+.sfec-sinif-karti:not([data-seviye="9"]):not([data-seviye="10"]):not([data-seviye="11"]):not([data-seviye="12"]) { background: linear-gradient(150deg, #2d6f8f, #123049); }
+.sfec-sinif-karti__ad { font-family: var(--font-baloo); font-size: 1.85rem; font-weight: 900; letter-spacing: -.03em; line-height: 1; }
+.sfec-sinif-karti__benim {
+  display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,.22);
+  font-size: .6rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase;
+}
+.sfec-sinif-karti__halka { width: 50px; height: 50px; }
+.sfec-sinif-karti__alt { grid-column: 1 / -1; align-self: end; display: flex; justify-content: space-between; gap: 6px; font-size: .72rem; font-weight: 700; }
+.sfec-sinif-karti__alt > span:first-child { opacity: .92; }
+.sfec-sinif-karti__onay { background: #fff; color: #b4233f; border-radius: 999px; padding: 1px 8px; font-weight: 800; }
+@media (hover: hover) {
+  .sfec-sinif-karti:hover { transform: translateY(-3px); box-shadow: 0 16px 30px -16px rgba(0,0,0,.55); }
+  .sfec-sinif-karti:hover::after { transform: scale(1.12) rotate(-6deg); opacity: .26; }
+}
+.sfec-sinif-karti:focus-visible { outline: 3px solid var(--sfec-seafoam); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .sfec-sinif-karti, .sfec-sinif-karti::after { transition: none; } }
+
 /* Konu Durumu (Faz 3, 17.10.2026): "Yazdır / PDF" yalnız bu kartı basar;
    menüler gizlenir, zemin beyaz. Puan çubukları, yüzdeler ve karşılaştırma
    hücreleri (.kd-renkli) rengini korur; açık konu detayları da basılır. */
