@@ -72,6 +72,11 @@ export function konuDurumuKapsamlari(girdi: {
       kapsamlar.push({ anahtar, etiket: `${sinifAdi(s)} · ${a.ders}`, classIds: [s.id], seviyeler: null, dersler });
     }
   }
+  // Sıra her zaman seviye (sayısal) + şube (alfabetik); kendi sınıfı öne
+  // alınmaz, etiketinden tanınır (kullanıcı kararı 18.10.2026). Aynı sınıfta
+  // birden çok ders varsa ders adına göre.
+  const sira = new Map(siniflar.map((s, i) => [s.id, i]));
+  kapsamlar.sort((a, c) => (sira.get(a.classIds![0]) ?? 0) - (sira.get(c.classIds![0]) ?? 0) || a.etiket.localeCompare(c.etiket, "tr"));
   if (kapsamlar.length > 0) return kapsamlar;
   const bransDersleri = bransinMufredatDersleri(girdi.brans);
   if (bransDersleri.length === 0) return [];

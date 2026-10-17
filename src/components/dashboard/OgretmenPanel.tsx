@@ -17,7 +17,7 @@ import { DuyuruFormu } from "@/components/dashboard/DuyuruFormu";
 import { SinifKarti } from "@/components/dashboard/SinifKarti";
 import type { SinifKartOzeti } from "@/lib/sinif-kart-ozeti";
 import {
-  BRANS_LISTESI, GOREV_DURUMU_ETIKET, GOREV_TURU_ETIKET,
+  BRANS_LISTESI, GOREV_DURUMU_ETIKET, GOREV_TURU_ETIKET, sinifSiraKarsilastir,
   type GorevDurumu, type GorevTuru, type SinifSeviyesi, type VeliLinkRequest,
 } from "@/lib/types";
 import { bugununTarihiTR } from "@/lib/tarih";
@@ -346,7 +346,9 @@ export function OgretmenPanel({
           seçmemişken) öğrenci listesi yerine bunlar çıkar. Kullanıcı kararı
           (18.10.2026): "Nabız + Seviye tonu" harmanı — seviye renkli zemin,
           SeFu filigranı, son 7 günde veri giren öğrenci halkası ve bekleyen
-          onay (bkz. SinifKarti.tsx). Kendi sınıfı ilk sırada.
+          onay (bkz. SinifKarti.tsx). Sıra her zaman seviye (sayısal) +
+          şube (alfabetik); kendi sınıfı yalnız etiketle ayrılır, öne alınmaz
+          (kullanıcı kararı 18.10.2026).
           Müdür bilinçli olarak DIŞARIDA: onun akışı değiştirilmedi. */}
       {aktifBolum === "ozet" && sinifKartlariGoster && (
         <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
@@ -361,7 +363,7 @@ export function OgretmenPanel({
             )}
           </div>
           <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-3">
-            {[...siniflar].sort((a, b) => Number(b.id === kendiSinifId) - Number(a.id === kendiSinifId)).map((s) => (
+            {[...siniflar].sort(sinifSiraKarsilastir).map((s) => (
               <SinifKarti key={s.id} id={s.id} seviye={s.seviye} sube={s.sube} benim={s.id === kendiSinifId} ozet={sinifKartOzetleri?.[s.id]} />
             ))}
           </div>

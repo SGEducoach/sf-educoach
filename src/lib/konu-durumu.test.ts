@@ -143,6 +143,12 @@ describe("kapsam ve branş", () => {
     expect(k.map((x) => [x.etiket, x.dersler])).toEqual([["10-A (sınıfım)", null], ["11-B · Matematik", ["Matematik"]]]);
   });
 
+  test("kapsam sırası seviye + şube; kendi sınıfı öne alınmaz", () => {
+    const s = [{ id: "a", seviye: "9", sube: "A" }, { id: "b", seviye: "10", sube: "B" }, { id: "c", seviye: "12", sube: "C" }];
+    const k = konuDurumuKapsamlari({ tur: "ogretmen", siniflar: s, sinifId: "c", dersAtamalari: [{ classId: "b", ders: "Matematik" }, { classId: "a", ders: "Fizik" }] });
+    expect(k.map((x) => x.etiket)).toEqual(["9-A · Fizik", "10-B · Matematik", "12-C (sınıfım)"]);
+  });
+
   test("sınıfı ve ataması olmayan branş öğretmeni kendi dersini tüm okulda görür", () => {
     const k = konuDurumuKapsamlari({ tur: "ogretmen", siniflar, brans: "Türk Dili ve Edebiyatı" });
     expect(k[0]).toMatchObject({ anahtar: "okul", classIds: null, dersler: ["Türkçe", "Edebiyat"] });
