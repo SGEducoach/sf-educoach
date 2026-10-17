@@ -9,7 +9,7 @@ import { Download, MessageSquareShare, Share2, X } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, BLUSH, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
 import { bugununTarihiTR } from "@/lib/tarih";
 import {
-  MESAJ_KARTI_EN_FAZLA, VARSAYILAN_VURGU_BASLIGI, VARSAYILAN_VURGU_METNI, kartTarihi, mesajKartiIcerigi,
+  MESAJ_KARTI_EN_FAZLA, OGRETMEN_NOTU_BASLIGI, OGRETMEN_NOTU_EN_FAZLA, kartTarihi, mesajKartiIcerigi,
   type MesajKartiGorevi, type MesajKartiIcerigi,
 } from "@/lib/mesaj-karti";
 
@@ -61,7 +61,7 @@ const OLCULER: Olcu[] = [
   { etiket: 17, baslik: 29, hap: 19, no: 64, ic: 20, aralik: 12 },
 ];
 
-export async function mesajKartiCiz(canvas: HTMLCanvasElement, icerik: MesajKartiIcerigi, vurgu: { baslik: string; metin: string }, aile: string, logo: HTMLImageElement | null) {
+export async function mesajKartiCiz(canvas: HTMLCanvasElement, icerik: MesajKartiIcerigi, ogretmenNotu: string, aile: string, logo: HTMLImageElement | null) {
   canvas.width = G;
   canvas.height = Y;
   const ctx = canvas.getContext("2d") as Ctx;
@@ -108,7 +108,7 @@ export async function mesajKartiCiz(canvas: HTMLCanvasElement, icerik: MesajKart
   }
   harfAraligi(0);
 
-  // Alt bilgi ve vurgu kutusu (yukarı doğru yerleşir)
+  // Alt bilgi ve öğretmen notu kutusu (yukarı doğru yerleşir)
   ctx.font = font(700, 24);
   ctx.fillStyle = R.soluk;
   ctx.fillText(icerik.altSol, KENAR, Y - 52);
@@ -116,15 +116,17 @@ export async function mesajKartiCiz(canvas: HTMLCanvasElement, icerik: MesajKart
   ctx.fillText("www.sefukoc.com", G - KENAR, Y - 52);
   ctx.textAlign = "left";
 
+  // Not boşsa kutu çizilmez; ödev kartları o alanı da kullanır.
+  const notMetni = ogretmenNotu.trim();
   const kutuIcGenislik = G - 2 * KENAR - 80;
   ctx.font = font(600, 27);
-  const vurguSatirlari = satirlaraBol(ctx, vurgu.metin, kutuIcGenislik, 5);
-  const kutuYukseklik = 36 + 44 + 14 + vurguSatirlari.length * 38 + 30;
+  const notSatirlari = notMetni ? satirlaraBol(ctx, notMetni, kutuIcGenislik, 5) : [];
+  const kutuYukseklik = notMetni ? 36 + 44 + 14 + notSatirlari.length * 38 + 30 : 0;
   const kutuUst = Y - 52 - 48 - kutuYukseklik;
 
   // Ödev kartları: sığana kadar ölçü küçülür
   const listeUst = 392;
-  const listeAlt = kutuUst - 28;
+  const listeAlt = notMetni ? kutuUst - 28 : Y - 52 - 60;
   const icX = KENAR + 38;
   let secilen = OLCULER[OLCULER.length - 1];
   type Yerlesim = { y: number; h: number; basliklar: string[]; haplar: { metin: string; tarih: boolean; x: number; y: number; w: number }[] };
@@ -207,30 +209,21 @@ export async function mesajKartiCiz(canvas: HTMLCanvasElement, icerik: MesajKart
     }
   });
 
-  // Vurgu kutusu
+  // Öğretmen notu kutusu (yalnız not yazıldıysa)
+  if (!notMetni) return;
   ctx.fillStyle = R.lacivert;
   yuvarlakDikdortgen(ctx, KENAR, kutuUst, G - 2 * KENAR, kutuYukseklik, 34);
   ctx.fill();
+  const kutuX = KENAR + 40;
+  const by = kutuUst + 36 + 36;
   ctx.font = font(900, 40);
   harfAraligi(-0.5);
-  const kutuX = KENAR + 40;
-  const vurguBasligi = vurgu.baslik.trim() || VARSAYILAN_VURGU_BASLIGI;
-  // "her gün" geçiyorsa turkuaz vurgu, yoksa düz beyaz.
-  const parca = /her gün/i.exec(vurguBasligi);
-  let bx = kutuX;
-  const by = kutuUst + 36 + 36;
-  const yaz = (metin: string, renk: string) => { ctx.fillStyle = renk; ctx.fillText(metin, bx, by); bx += ctx.measureText(metin).width; };
-  if (parca) {
-    yaz(vurguBasligi.slice(0, parca.index), "#fff");
-    yaz(parca[0], R.acikTurkuaz);
-    yaz(vurguBasligi.slice(parca.index + parca[0].length), "#fff");
-  } else {
-    yaz(vurguBasligi, "#fff");
-  }
+  ctx.fillStyle = R.acikTurkuaz;
+  ctx.fillText(OGRETMEN_NOTU_BASLIGI, kutuX, by);
   harfAraligi(0);
   ctx.font = font(600, 27);
   ctx.fillStyle = R.kutuYazi;
-  vurguSatirlari.forEach((s, i) => ctx.fillText(s, kutuX, by + 14 + 38 * (i + 1)));
+  notSatirlari.forEach((s, i) => ctx.fillText(s, kutuX, by + 14 + 38 * (i + 1)));
 }
 
 function varsayilanSecim(gorevler: MesajKartiGorevi[]): string[] {
@@ -247,8 +240,8 @@ function gorevSatiri(g: MesajKartiGorevi): string {
 export function MesajKartiOlusturucu({ gorevler, ogretmenAdi }: { gorevler: MesajKartiGorevi[]; ogretmenAdi: string | null }) {
   const [acik, setAcik] = useState(false);
   const [secili, setSecili] = useState<string[]>(() => varsayilanSecim(gorevler));
-  const [vurguBasligi, setVurguBasligi] = useState(VARSAYILAN_VURGU_BASLIGI);
-  const [vurguMetni, setVurguMetni] = useState(VARSAYILAN_VURGU_METNI);
+  // Öğretmen notu kart oluşturulurken o an yazılır; her açılışta boş başlar.
+  const [ogretmenNotu, setOgretmenNotu] = useState("");
   const [onizleme, setOnizleme] = useState<string | null>(null);
   const [mesaj, setMesaj] = useState<string | null>(null);
   const [paylasilabilir, setPaylasilabilir] = useState(false);
@@ -272,11 +265,11 @@ export function MesajKartiOlusturucu({ gorevler, ogretmenAdi }: { gorevler: Mesa
       try { await Promise.all([document.fonts.load(`900 40px ${aile}`), document.fonts.load(`600 27px ${aile}`), document.fonts.load(`800 24px ${aile}`)]); } catch { /* yedek yazı tipiyle sürer */ }
       const canvas = canvasRef.current ?? document.createElement("canvas");
       canvasRef.current = canvas;
-      await mesajKartiCiz(canvas, icerik, { baslik: vurguBasligi, metin: vurguMetni }, aile, logoRef.current);
+      await mesajKartiCiz(canvas, icerik, ogretmenNotu, aile, logoRef.current);
       if (!iptal) setOnizleme(canvas.toDataURL("image/png"));
     }, 150);
     return () => { iptal = true; window.clearTimeout(zamanlayici); };
-  }, [acik, icerik, vurguBasligi, vurguMetni, seciliGorevler.length]);
+  }, [acik, icerik, ogretmenNotu, seciliGorevler.length]);
 
   function kapat() {
     setAcik(false);
@@ -325,6 +318,7 @@ export function MesajKartiOlusturucu({ gorevler, ogretmenAdi }: { gorevler: Mesa
   function ac() {
     setMesaj(null);
     setSecili(varsayilanSecim(gorevler));
+    setOgretmenNotu("");
     setAcik(true);
     const deneme = new File([new Blob()], "k.png", { type: "image/png" });
     setPaylasilabilir(typeof navigator !== "undefined" && !!navigator.canShare?.({ files: [deneme] }));
@@ -378,13 +372,13 @@ export function MesajKartiOlusturucu({ gorevler, ogretmenAdi }: { gorevler: Mesa
               })}
             </fieldset>
             <label className="flex flex-col gap-1">
-              <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: TEXT_MUTED }}>Alt kutunun başlığı</span>
-              <input id="mesaj-karti-vurgu-baslik" value={vurguBasligi} maxLength={40} onChange={(e) => setVurguBasligi(e.target.value)}
-                className="rounded-xl px-3 py-2 text-xs font-semibold outline-none" style={girdi} />
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: TEXT_MUTED }}>Alt kutunun metni</span>
-              <textarea id="mesaj-karti-vurgu-metin" value={vurguMetni} maxLength={260} rows={4} onChange={(e) => setVurguMetni(e.target.value)}
+              <span className="flex items-baseline justify-between text-[10px] font-semibold uppercase tracking-wide" style={{ color: TEXT_MUTED }}>
+                {OGRETMEN_NOTU_BASLIGI}
+                <span className="normal-case tracking-normal">{ogretmenNotu.length}/{OGRETMEN_NOTU_EN_FAZLA}</span>
+              </span>
+              <textarea id="mesaj-karti-ogretmen-notu" value={ogretmenNotu} maxLength={OGRETMEN_NOTU_EN_FAZLA} rows={4}
+                onChange={(e) => setOgretmenNotu(e.target.value)}
+                placeholder="Öğrencilere bu kartla iletmek istediğiniz notu yazın. Boş bırakırsanız kartta not kutusu olmaz."
                 className="rounded-xl px-3 py-2 text-xs outline-none" style={girdi} />
             </label>
             <div className="flex flex-wrap gap-2">

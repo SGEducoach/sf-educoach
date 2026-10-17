@@ -36,9 +36,10 @@ export interface MesajKartiIcerigi {
 }
 
 export const MESAJ_KARTI_EN_FAZLA = 4;
-export const VARSAYILAN_VURGU_BASLIGI = "Sistemi her gün kullanın";
-export const VARSAYILAN_VURGU_METNI =
-  "Çözdüğünüz her soruyu ve çalıştığınız her konuyu aynı gün sefukoc.com'a işleyin. Ödevleriniz görevler listenizde duruyor. Sisteme işlenmeyen çalışmayı göremiyorum ve size geri bildirim veremiyorum.";
+// Alt kutu (kullanıcı kararı 18.10.2026): başlık sabit, metni öğretmen kartı
+// oluştururken o an yazar; boşsa kutu çizilmez.
+export const OGRETMEN_NOTU_BASLIGI = "Öğretmen notu";
+export const OGRETMEN_NOTU_EN_FAZLA = 260;
 
 const TUR_ETIKETI: Record<MesajKartiGorevi["tur"], string> = { soru: "Soru çözümü", konu: "Konu çalışma", deneme: "Deneme" };
 
