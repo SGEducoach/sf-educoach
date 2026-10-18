@@ -158,19 +158,21 @@ export const DUYURU_SABLONLARI: DuyuruSablonu[] = [
     }),
   },
   {
-    anahtar: "seminer", ad: "Rehberlik semineri", renk: "#7d3c98", foto: "seminer.jpg",
+    // Kullanıcı isteği (18.10.2026): "Rehberlik semineri" yerine genel
+    // Rehberlik Servisi duyurusu — seminer, görüşme, tercih danışmanlığı vb.
+    anahtar: "rehberlik", ad: "Rehberlik servisi", renk: "#7d3c98", foto: "seminer.jpg",
     alanlar: [
-      { anahtar: "konu", etiket: "Konu", tur: "metin", ornek: "Sınav kaygısıyla baş etme" },
-      { anahtar: "konusmaci", etiket: "Konuşmacı", tur: "metin" },
-      { anahtar: "kapsam", etiket: "Kimler", tur: "metin", ornek: "Öğrenciler ve velileri" },
+      { anahtar: "konu", etiket: "Konu", tur: "metin", ornek: "Sınav kaygısıyla baş etme semineri" },
+      { anahtar: "kapsam", etiket: "Kimler", tur: "metin", ornek: "12. sınıf öğrencileri ve velileri" },
       { anahtar: "tarih", etiket: "Tarih", tur: "tarih" },
       { anahtar: "saat", etiket: "Saat", tur: "saat" },
-      { anahtar: "yer", etiket: "Yer", tur: "metin" },
+      { anahtar: "yer", etiket: "Yer", tur: "metin", varsayilan: "Rehberlik servisi" },
+      { anahtar: "aciklama", etiket: "Açıklama", tur: "uzun", ornek: "Randevu ve sorularınız için rehberlik servisimize başvurabilirsiniz." },
     ],
     icerik: (d) => ({
-      baslik: "Rehberlik Semineri", altBaslik: yokSaBos(d.konu),
-      satirlar: satirlar(["Konuşmacı", d.konusmaci], ["Kimler", d.kapsam], ["Tarih", d.tarih, kartTarihi], ["Saat", d.saat], ["Yer", d.yer]),
-      aciklamaBasligi: null, aciklama: null, girisGerekli: false,
+      baslik: "Rehberlik Servisi", altBaslik: yokSaBos(d.konu),
+      satirlar: satirlar(["Kimler", d.kapsam], ["Tarih", d.tarih, kartTarihi], ["Saat", d.saat], ["Yer", d.yer]),
+      aciklamaBasligi: null, aciklama: yokSaBos(d.aciklama), girisGerekli: false,
     }),
   },
   {
