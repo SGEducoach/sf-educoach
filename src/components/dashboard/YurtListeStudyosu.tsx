@@ -13,7 +13,7 @@ import { bugununTarihiTR } from "@/lib/tarih";
 import { kartTarihi } from "@/lib/whatsapp-duyuru";
 import { sinifSiraKarsilastir } from "@/lib/types";
 import {
-  YURT_LISTE_SAYFA_SATIRI, YURT_SABLONLARI, grupEtiketi, ogretmeninGrubu, yurtBilgiSatirlari, yurtSayfalari, yurtVarsayilanlari,
+  YURT_LISTE_SAYFA_SATIRI, YURT_SABLONLARI, grupEtiketi, ogretmeninGrubu, yurtBilgiSatirlari, yurtKartImzasi, yurtSayfalari, yurtVarsayilanlari,
   type OgrenciCinsiyeti, type OgretmenCinsiyeti, type YurtOgrencisi, type YurtSablonu,
 } from "@/lib/yurt-listesi";
 import { yurtListesiCiz } from "@/components/dashboard/whatsapp-kart-cizim";
@@ -84,7 +84,8 @@ export function YurtListeDuzenleyici({ sablon, etkin, kurumAdi, logo: kurumLogos
       kurumAdi, logo, foto: fotoImg, baslik: etkin.baslik ?? sablon.ad, grupEtiketi: grupEtiketi(grubum ?? "kiz"),
       bilgi: yurtBilgiSatirlari(sablon.anahtar, degerler), notEtiketi: sablon.notEtiketi, bosMesaj: sablon.bosMesaj,
       satirlar: s.map((o, j) => ({ no: i * YURT_LISTE_SAYFA_SATIRI + j + 1, ad: o.ad, okulNo: o.okulNo ?? "", sinif: o.sinif ?? "", not: secili[o.anahtar] ?? "" })),
-      sayfa: i + 1, toplamSayfa: sayfalar.length, toplamOgrenci: secilenler.length, hazirlayan: yurt.hazirlayan, renk: sablon.renk, aile,
+      sayfa: i + 1, toplamSayfa: sayfalar.length, toplamOgrenci: secilenler.length,
+      imza: yurtKartImzasi(sablon.anahtar, baslangic?.hazirlayanAdi ?? yurt.hazirlayan, degerler.ekOgretmen), renk: sablon.renk, aile,
     });
     return canvas;
   }
@@ -151,6 +152,13 @@ export function YurtListeDuzenleyici({ sablon, etkin, kurumAdi, logo: kurumLogos
             );
           })}
         </div>
+        {sablon.anahtar === "aksam-yoklamasi" && (
+          <Alan id="yurt-ek-nobetci" etiket="Yanındaki diğer nöbetçi öğretmen (isteğe bağlı)">
+            <input id="yurt-ek-nobetci" type="text" value={degerler.ekOgretmen ?? ""} maxLength={80}
+              onChange={(e) => setDegerler((d) => ({ ...d, ekOgretmen: e.target.value }))}
+              placeholder="Adı ve soyadı" className="w-full rounded-xl px-3 py-2 text-xs font-semibold outline-none" style={girdiStili} />
+          </Alan>
+        )}
 
         <div className="rounded-2xl p-3" style={{ background: BG1_ALT }}>
           <div className="mb-2 flex flex-wrap items-center gap-2">

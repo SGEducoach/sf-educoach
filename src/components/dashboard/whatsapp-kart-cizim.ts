@@ -377,7 +377,7 @@ export interface YurtListesiCizimi {
   sayfa: number;
   toplamSayfa: number;
   toplamOgrenci: number;
-  hazirlayan: string;
+  imza: string;
   renk: string;
   aile: string;
 }
@@ -537,5 +537,6 @@ export function yurtListesiCiz(canvas: HTMLCanvasElement, c: YurtListesiCizimi) 
 
   ctx.fillStyle = SOLUK;
   ctx.font = font(700, 22);
-  ctx.fillText(satirla(ctx, `Hazırlayan: ${c.hazirlayan}`, KART_G - 2 * KENAR, 1)[0] ?? "", KENAR, KART_Y - 54);
+  const imzaSatirlari = satirla(ctx, c.imza, KART_G - 2 * KENAR, 2);
+  imzaSatirlari.forEach((satir, i) => ctx.fillText(satir, KENAR, KART_Y - 54 - (imzaSatirlari.length - 1 - i) * 28));
 }
