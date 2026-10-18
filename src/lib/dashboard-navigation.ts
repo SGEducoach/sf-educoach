@@ -391,6 +391,17 @@ const BELLETMEN_MENUSU: DashboardMenuOgesi[] = [
 const YURT_OGRENCILERI_MENU_OGESI: DashboardMenuOgesi = {
   bolum: "yurt-ogrencileri", href: "/dashboard/yurt-ogrencileri", etiket: "Yurt Öğrencileri", ikon: "ogrenci",
 };
+// Yalnız yurt sorumlusu müdür yardımcısı (sınıf düzeyi yok; kullanıcı isteği
+// 18.10.2026): sınıf analizi, öğrenciler ve konu durumu yok; yurt
+// öğrencileri, yalnız yurdu ilgilendiren duyurular ve belletmen başvuruları.
+const YURT_MUDUR_YARDIMCISI_MENUSU: DashboardMenuOgesi[] = [
+  YURT_OGRENCILERI_MENU_OGESI,
+  { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Duyurular", ikon: "duyuru" },
+  { bolum: "belletmen-basvurulari", href: "/dashboard/belletmen-basvurulari", etiket: "Belletmen Başvuruları", ikon: "kullanici" },
+];
+
+// yalnizYurt: yurt sorumlusu ve hiç sınıf düzeyi atanmamış müdür yardımcısı.
+export type IdareMenusu = { yurt: boolean; yalnizYurt?: boolean };
 
 export function dashboardMenusu(
   role: UserRole,
@@ -402,13 +413,16 @@ export function dashboardMenusu(
   kademe?: "ortaokul" | "lise" | "ikisi" | null,
   okulRehberi = false,
   // İdare panelindeki müdür yardımcısı (bkz. src/lib/mudur-yardimcisi.ts).
-  idare: { yurt: boolean } | null = null,
+  idare: IdareMenusu | null = null,
 ): DashboardMenuOgesi[] {
   const rehber = rehberlikBirimiMi(brans, okulRehberi);
   if (role === "ogretmen" && belletmenMi(brans)) return BELLETMEN_MENUSU;
+  if (role === "ogretmen" && idare?.yalnizYurt) {
+    return kurumTuru === "okul" ? [...YURT_MUDUR_YARDIMCISI_MENUSU, TAKVIM_MENU_OGESI] : YURT_MUDUR_YARDIMCISI_MENUSU;
+  }
   if (role === "ogretmen" && idare) {
     const taban = [...MUDUR_YARDIMCISI_MENUSU];
-    if (idare.yurt) taban.splice(1, 0, YURT_OGRENCILERI_MENU_OGESI);
+    if (idare.yurt) taban.splice(1, 0, YURT_OGRENCILERI_MENU_OGESI, { bolum: "belletmen-basvurulari", href: "/dashboard/belletmen-basvurulari", etiket: "Belletmen Başvuruları", ikon: "kullanici" });
     if (kurumTuru === "okul") taban.push(TAKVIM_MENU_OGESI);
     return kademe === "ortaokul" ? ortaokulaUyarla(taban) : taban;
   }
@@ -453,7 +467,7 @@ export function dashboardMenuYapisi(
   role: UserRole, kurumTuru?: KurumTuru, brans?: string, grupMu = false,
   kademe?: "ortaokul" | "lise" | "ikisi" | null,
   okulRehberi = false,
-  idare: { yurt: boolean } | null = null,
+  idare: IdareMenusu | null = null,
 ): DashboardMenuKalemi[] {
   return role === "admin" ? ADMIN_MENU_YAPISI : dashboardMenusu(role, kurumTuru, brans, grupMu, kademe, okulRehberi, idare);
 }

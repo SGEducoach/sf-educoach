@@ -730,10 +730,20 @@ export async function ogretmenDuyuruGonder(mesaj: string, kapsam?: string, alici
   const okulRehberi = rehberlikUyeligi !== null;
   const rehberMi = profile.role === "ogretmen" && !idare && (okulRehberi || teacher.brans === REHBER_BRANSI);
   const rehberSeviyeleri = rehberlikUyeligi?.sinifDuzeyleri ?? [];
-  if (okulRehberi && rehberSeviyeleri.length === 0) return { error: "Henüz sorumlu olduğunuz sınıf düzeyi atanmadı.", ...bosSonuc };
+  // Yurt sorumlusu müdür yardımcısı yurt öğrencilerine (ve velilerine) duyuru
+  // gönderir (kullanıcı isteği 18.10.2026); yalnız yurt sorumlusunun tek kapsamı bu.
+  const yurtKapsami = !!idare?.yurt && kapsam === "yurt";
+  if (okulRehberi && rehberSeviyeleri.length === 0 && !yurtKapsami) {
+    return { error: idare?.yurt ? "Yalnız yurt öğrencilerine duyuru gönderebilirsiniz." : "Henüz sorumlu olduğunuz sınıf düzeyi atanmadı.", ...bosSonuc };
+  }
   let hedefEtiketi = "";
 
-  if (profile.role === "mudur" || rehberMi || idare) {
+  if (yurtKapsami) {
+    const { data: ogrenciler } = await admin.from("students").select("id").eq("school_id", teacher.school_id).eq("yurt_ogrencisi", true);
+    ogrenciIdleri = (ogrenciler ?? []).map((o) => o.id);
+    baslik = "Yurt yönetiminden duyuru";
+    hedefEtiketi = "Yurt öğrencileri";
+  } else if (profile.role === "mudur" || rehberMi || idare) {
     // Sınıf düzeyi kapsamı (ilkokul ve ortaokul düzeyleri de, 16.10.2026).
     if ((SINIF_SEVIYELERI as readonly string[]).includes(kapsam ?? "")) {
       if (okulRehberi && !rehberSeviyeleri.includes(kapsam!)) return { error: "Bu sınıf düzeyi sorumluluğunuzda değil.", ...bosSonuc };

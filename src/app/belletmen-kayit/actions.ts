@@ -6,6 +6,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { KURUM_DISI_BELLETMEN_BRANSI } from "@/lib/belletmen";
 import { sifreGecerliMi, telefonGecerliMi, telefonSanitize } from "@/lib/validators";
+import { bildirimGonder } from "@/lib/bildirim-gonder";
+import { yurtSorumlulari } from "@/lib/mudur-yardimcisi";
 
 const EPOSTA = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -51,5 +53,9 @@ export async function belletmenBasvurusuGonder(formData: FormData): Promise<{ er
     return { error: "Başvuru şu an alınamıyor (sistem güncellemesi bekleniyor). Lütfen daha sonra tekrar deneyin." };
   }
   await admin.from("admin_audit_log").insert({ actor_id: id, eylem: "belletmen_basvurusu", detay: { school_id: kurum.id } });
+  // Başvuru kurumun yurt sorumlusu müdür yardımcısına da gider (18.10.2026).
+  const sorumlular = await yurtSorumlulari(admin, kurum.id);
+  await Promise.all(sorumlular.map((s) => bildirimGonder(admin, s, "sistem", "Yeni belletmen başvurusu",
+    `${ad} kurum dışı belletmen olarak başvurdu. Belletmen Başvuruları bölümünden onaylayabilir ya da reddedebilirsiniz.`)));
   return { error: null };
 }

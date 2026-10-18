@@ -103,6 +103,7 @@ import { WhatsappDuyuruStudyosu } from "@/components/dashboard/WhatsappDuyuruStu
 import { DuyuruTuruSekmeleri } from "@/components/dashboard/DuyuruTuruSekmeleri";
 import { yurtVerisiGetir } from "@/lib/yurt-listesi-verisi";
 import { YurtOgrencileriListesi } from "@/components/dashboard/YurtOgrencileriListesi";
+import { BelletmenBasvurulari } from "@/components/yonetici/BelletmenBasvurulari";
 import { YurtNobetlerimKutusu } from "@/components/dashboard/NobetDevirPaneli";
 import { belletmenMi } from "@/lib/belletmen";
 import { sablonAyarlariGetir } from "@/lib/whatsapp-sablon-ayarlari-verisi";
@@ -188,7 +189,9 @@ export default async function DashboardPage({
   ]);
   // Müdür yardımcısı üyeliği varsa panel geçişi gösterilir; İdare paneli çerezle seçilir.
   const idareUyeligi = mudurYardimcisiUyelik && idareCerezi === "idare" ? mudurYardimcisiUyelik : null;
-  const idareMenusu = idareUyeligi ? { yurt: idareUyeligi.yurt } : null;
+  const idareMenusu = idareUyeligi
+    ? { yurt: idareUyeligi.yurt, yalnizYurt: idareUyeligi.yurt && idareUyeligi.sinifDuzeyleri.length === 0 }
+    : null;
 
   // Dershane 1 haftalık deneme süresi (2026-08-25 kullanıcı isteği, bkz.
   // migration 0065) — SADECE dershane rolleri, okul hiç etkilenmez. Zaten
@@ -244,6 +247,7 @@ export default async function DashboardPage({
   const ogrenciSinifSeviyesi = Array.isArray(ogrenciSinifKaydi) ? ogrenciSinifKaydi[0]?.seviye : ogrenciSinifKaydi?.seviye;
   const grupAlanSorulur = !dokuzOnSinifMi(ogrenciSinifSeviyesi);
   const varsayilanBolum: DashboardBolumu = role === "ogretmen" && belletmenMi(brans) ? "yoklama"
+    : idareMenusu?.yalnizYurt ? "yurt-ogrencileri"
     : !grupKocu && ((role === "mudur" && kurumTuru !== "dershane") || rehberlikBirimi || idareMenusu)
     ? "kurum-performansi" : "ozet";
   const aktifBolum = (params.bolum ?? varsayilanBolum) as DashboardBolumu;
@@ -291,7 +295,10 @@ export default async function DashboardPage({
     || kurum?.kademe === "ortaokul";
 
   const ogrenciProgramiGizliRotasi = role === "ogretmen" && aktifBolum === "planlar" && !!params.ogrenci;
-  if (!dashboardMenusu(role, kurumTuru, brans, grupKocu, menuKademesi, okulRehberi, idareMenusu).some((oge) => oge.bolum === aktifBolum) && !ogrenciProgramiGizliRotasi) redirect("/dashboard");
+  // Yalnız yurt sorumlusu müdür yardımcısı yurt öğrencisinin profilini açar
+  // (Yurt Öğrencileri listesinden); öğrenci listesi menüsünde yok.
+  const yurtOgrenciProfili = !!idareMenusu?.yalnizYurt && aktifBolum === "ozet" && !!params.ogrenci;
+  if (!dashboardMenusu(role, kurumTuru, brans, grupKocu, menuKademesi, okulRehberi, idareMenusu).some((oge) => oge.bolum === aktifBolum) && !ogrenciProgramiGizliRotasi && !yurtOgrenciProfili) redirect("/dashboard");
   // Yazılı analizi dürüstlük engeli: öğretmenin panele girdiği günler sayılır
   // (bkz. src/lib/ogretmen-takip.ts, yazili-erisim.ts).
   if (role === "ogretmen") ogretmenAktifGunuKaydet(user.id);
@@ -1101,13 +1108,19 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   // (kullanıcı isteği 18.10.2026, bkz. YurtListeStudyosu).
   // Yurt sorumlusu müdür yardımcısı: yurt öğrencilerinin gözlemcisi
   // (kullanıcı kararı 18.10.2026); kız/erkek iki grubu da görür.
+  if (aktifBolum === "belletmen-basvurulari") {
+    if (!idare?.yurt) redirect("/dashboard");
+    return <BelletmenBasvurulari />;
+  }
   if (aktifBolum === "yurt-ogrencileri") {
     if (!idare?.yurt) redirect("/dashboard");
     const yurtVerisi = await yurtVerisiGetir(createAdminClient(), teacher.school_id, userId, true);
     return <YurtOgrencileriListesi ogrenciler={yurtVerisi.ogrenciler} />;
   }
 
-  const genelWhatsapp = role === "mudur" || rehberOgretmenMi;
+  // Yalnız yurt sorumlusu müdür yardımcısı yalnız yurt kartlarını hazırlar.
+  const yalnizYurtIdaresi = !!idare?.yurt && idare.sinifDuzeyleri.length === 0;
+  const genelWhatsapp = (role === "mudur" || rehberOgretmenMi) && !yalnizYurtIdaresi;
   if (aktifBolum === "duyurular" && duyuruTuru === "whatsapp" && (genelWhatsapp || yurtlu)) {
     const admin = createAdminClient();
     const [yurtVerisi, { ayarlar: sablonAyarlari }] = await Promise.all([
@@ -1216,6 +1229,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       classes: { seviye: string; sube: string } | null;
     };
     const o = ogrenci as unknown as OgrenciRow | null;
+    if (idare?.yurt && idare.sinifDuzeyleri.length === 0 && !o?.yurt_ogrencisi) redirect("/dashboard/yurt-ogrencileri");
 
     // Yurt sorumlusu müdür yardımcısı yurt öğrencilerini düzeyden bağımsız izler.
     if (o && (!okulRehberi || (o.classes && rehberSeviyeleri.includes(o.classes.seviye)) || (idare?.yurt && o.yurt_ogrencisi))) {
@@ -1627,6 +1641,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       secilenOgretmenNobetleri={secilenOgretmenNobetleri}
       rehberOgretmenMi={rehberOgretmenMi}
       idareModu={!!idare}
+      idareYurt={idare?.yurt ? (idare.sinifDuzeyleri.length === 0 ? "yalniz" : "ek") : undefined}
       grupMu={grupMu}
       secilenOgrenciId={secilenOgrenciId}
       secilenOgrenciProgrami={secilenOgrenciProgrami}

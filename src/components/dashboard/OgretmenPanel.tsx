@@ -92,7 +92,7 @@ export function OgretmenPanel({
   ogretmenDersleri, bekleyenOnaylar, verdigimGorevler, mesajKartiGorevleri, ogretmenAdi, konuOnerileri, kademe, aktifBolum,
   dersProgramiSatirlari, okulNobetleri, yurtNobetGorevleri, dershaneMi, yurtlu = false,
   nobetDevirOgretmenleri,
-  okulOgretmenleri, secilenOgretmenId, secilenOgretmenProgrami, secilenOgretmenNobetleri, rehberOgretmenMi = false, idareModu = false, grupMu = false,
+  okulOgretmenleri, secilenOgretmenId, secilenOgretmenProgrami, secilenOgretmenNobetleri, rehberOgretmenMi = false, idareModu = false, idareYurt, grupMu = false,
   secilenOgrenciId, secilenOgrenciProgrami,
   secilenOgrenciAdi,
 }: {
@@ -152,6 +152,9 @@ export function OgretmenPanel({
   rehberOgretmenMi?: boolean;
   // İdare panelindeki müdür yardımcısı (migration 0163): kapsamı sorumlu olduğu sınıflar.
   idareModu?: boolean;
+  // Yurt sorumlusu müdür yardımcısı: "ek" = sınıf düzeylerine ek olarak yurt,
+  // "yalniz" = yalnız yurt (duyuru yalnız yurt öğrencilerine).
+  idareYurt?: "ek" | "yalniz";
   // Grup Koçluk koçu (kurum dışı koç): metinler "okul/sınıf" yerine "grup"
   // diliyle gösterilir (denetim, 27.09.2026).
   grupMu?: boolean;
@@ -211,7 +214,10 @@ export function OgretmenPanel({
   const duyuruMumkunMu = role === "mudur" || rehberOgretmenMi || !!kendiSinifId;
   // Müdür kapsamı seçebiliyor: tüm okul / seviye / belirli şube. Öğretmende
   // kapsam sabit (kendi sınıfı) olduğu için seçici hiç gösterilmiyor.
-  const duyuruKapsamSecenekleri = grupMu
+  const yurtKapsami = { deger: "yurt", etiket: "Yurt öğrencileri" };
+  const duyuruKapsamSecenekleri = idareYurt === "yalniz"
+    ? [yurtKapsami]
+    : grupMu
     ? [
         { deger: "okul", etiket: "Tüm grup" },
         ...siniflar.map((s) => ({ deger: s.id, etiket: `Sadece ${s.seviye}. sınıflar` })),
@@ -223,6 +229,7 @@ export function OgretmenPanel({
           ? [...new Set(siniflar.map((s) => s.seviye))]
           : ["9", "10", "11", "12"]).map((seviye) => ({ deger: seviye, etiket: `${seviye}. Sınıflar` })),
         ...siniflar.map((s) => ({ deger: s.id, etiket: `Sadece ${s.seviye}-${s.sube}` })),
+        ...(idareYurt === "ek" ? [yurtKapsami] : []),
       ]
     : undefined;
 
@@ -249,9 +256,11 @@ export function OgretmenPanel({
         <section id="duyurular" className="sfec-section">
           {(role === "mudur" || rehberOgretmenMi || yurtlu) && <DuyuruTuruSekmeleri secili="site" />}
           <DuyuruFormu
-          baslik={grupMu ? "Grubuna duyuru gönder" : idareModu ? "Okul Yönetimi Duyurusu Gönder" : rehberOgretmenMi ? "Rehber Öğretmen duyurusu gönder" : role === "mudur" ? "Okula duyuru gönder" : "Sınıfınıza duyuru gönder"}
+          baslik={grupMu ? "Grubuna duyuru gönder" : idareYurt === "yalniz" ? "Yurt Öğrencilerine Duyuru Gönder" : idareModu ? "Okul Yönetimi Duyurusu Gönder" : rehberOgretmenMi ? "Rehber Öğretmen duyurusu gönder" : role === "mudur" ? "Okula duyuru gönder" : "Sınıfınıza duyuru gönder"}
           aciklama={grupMu
             ? "Duyuru tüm gruba ya da seçtiğiniz sınıf düzeyine gider; öğrenciye, veliye ya da ikisine birden gönderebilirsiniz."
+            : idareYurt === "yalniz"
+            ? "Duyuru yalnız yurt öğrencilerine gider; öğrenciye, veliye ya da ikisine birden gönderebilirsiniz."
             : role === "mudur" || rehberOgretmenMi
             ? "Okul veya sınıf kapsamını ve duyurunun öğrenciye, veliye ya da ikisine birden gideceğini seçebilirsiniz."
             : "Kendi sınıfınız için duyurunun öğrenciye, veliye ya da ikisine birden gideceğini seçebilirsiniz."}

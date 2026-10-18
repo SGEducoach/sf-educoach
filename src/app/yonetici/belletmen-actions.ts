@@ -1,33 +1,40 @@
 "use server";
 
-// Kurum dışı belletmen başvuruları (Faz 4, migration 0165): admin onaylar
-// ya da reddeder. Onayla hesap açılır (profiles.aktif = true) ve belletmen
-// kurumda göreve başlar.
+// Kurum dışı belletmen başvuruları (Faz 4, migration 0165): admin ya da
+// kurumun yurt sorumlusu müdür yardımcısı (yalnız kendi okulu; kullanıcı
+// isteği 18.10.2026) onaylar veya reddeder. Onayla hesap açılır
+// (profiles.aktif = true) ve belletmen kurumda göreve başlar.
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { bildirimGonder } from "@/lib/bildirim-gonder";
+import { mudurYardimcisiUyeligiGetir } from "@/lib/mudur-yardimcisi";
 
 export interface BelletmenBasvurusu {
   id: string; ad: string; email: string; telefon: string | null; okul: string; cinsiyet: "kadin" | "erkek";
   durum: "bekliyor" | "onaylandi" | "reddedildi"; createdAt: string;
 }
 
-async function requireAdmin() {
+// okulId null = admin (bütün kurumlar); dolu = yurt sorumlusu müdür yardımcısı.
+async function requireYetkili() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/yonetici");
+  if (!user) redirect("/");
+  const admin = createAdminClient();
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  if (profile?.role !== "admin") redirect("/");
-  return { user, admin: createAdminClient() };
+  if (profile?.role === "admin") return { user, admin, okulId: null as string | null };
+  const uyelik = profile?.role === "ogretmen" ? await mudurYardimcisiUyeligiGetir(admin, user.id) : null;
+  if (!uyelik?.yurt) redirect("/");
+  return { user, admin, okulId: uyelik.schoolId as string | null };
 }
 
 export async function belletmenBasvurulariGetir(): Promise<{ error: string | null; basvurular: BelletmenBasvurusu[] }> {
-  const { admin } = await requireAdmin();
-  const { data, error } = await admin.from("kurum_disi_belletmenler")
-    .select("profile_id, cinsiyet, telefon, durum, created_at, schools(ad), profiles!kurum_disi_belletmenler_profile_id_fkey(ad, email)")
-    .order("created_at", { ascending: false }).limit(200);
+  const { admin, okulId } = await requireYetkili();
+  let sorgu = admin.from("kurum_disi_belletmenler")
+    .select("profile_id, cinsiyet, telefon, durum, created_at, schools(ad), profiles!kurum_disi_belletmenler_profile_id_fkey(ad, email)");
+  if (okulId) sorgu = sorgu.eq("school_id", okulId);
+  const { data, error } = await sorgu.order("created_at", { ascending: false }).limit(200);
   if (error) return { error: "Başvurular okunamadı (veritabanı güncellemesi bekleniyor olabilir).", basvurular: [] };
   type Row = { profile_id: string; cinsiyet: "kadin" | "erkek"; telefon: string | null; durum: BelletmenBasvurusu["durum"]; created_at: string;
     schools: { ad: string } | { ad: string }[] | null; profiles: { ad: string; email: string } | { ad: string; email: string }[] | null };
@@ -42,10 +49,10 @@ export async function belletmenBasvurulariGetir(): Promise<{ error: string | nul
 }
 
 export async function belletmenKarari(profileId: string, karar: "onaylandi" | "reddedildi"): Promise<{ error: string | null }> {
-  const { user, admin } = await requireAdmin();
+  const { user, admin, okulId } = await requireYetkili();
   if (!/^[0-9a-f-]{36}$/i.test(profileId) || (karar !== "onaylandi" && karar !== "reddedildi")) return { error: "Geçersiz istek." };
-  const { data: kayit } = await admin.from("kurum_disi_belletmenler").select("profile_id").eq("profile_id", profileId).maybeSingle();
-  if (!kayit) return { error: "Başvuru bulunamadı." };
+  const { data: kayit } = await admin.from("kurum_disi_belletmenler").select("profile_id, school_id").eq("profile_id", profileId).maybeSingle();
+  if (!kayit || (okulId && kayit.school_id !== okulId)) return { error: "Başvuru bulunamadı." };
   const [{ error: e1 }, { error: e2 }] = await Promise.all([
     admin.from("kurum_disi_belletmenler").update({ durum: karar, karar_veren_id: user.id, karar_at: new Date().toISOString() }).eq("profile_id", profileId),
     admin.from("profiles").update({ aktif: karar === "onaylandi" }).eq("id", profileId),
@@ -55,6 +62,6 @@ export async function belletmenKarari(profileId: string, karar: "onaylandi" | "r
     await bildirimGonder(admin, profileId, "sistem", "Belletmen başvurunuz onaylandı", "Hoş geldiniz. Panelinizde yoklama listesi ve nöbet bilgileriniz yer alıyor.");
   }
   await admin.from("admin_audit_log").insert({ actor_id: user.id, eylem: "belletmen_karari", detay: { profile_id: profileId, karar } });
-  revalidatePath("/yonetici", "layout");
+  revalidatePath(okulId ? "/dashboard" : "/yonetici", "layout");
   return { error: null };
 }
