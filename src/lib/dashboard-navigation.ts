@@ -25,6 +25,7 @@ export type DashboardBolumu =
   | "rehberlik"
   | "duyuru-gecmisi"
   | "whatsapp-yonetimi"
+  | "yurt-ogrencileri"
   | "takvim"
   | "yarismalar"
   | "ogrenci-takibi"
@@ -365,6 +366,21 @@ export function rehberlikBirimiMi(brans?: string, okulRehberi?: boolean): boolea
   return okulRehberi === true || brans === REHBER_BRANSI;
 }
 
+// Müdür yardımcısı paneli (kullanıcı kararı 18.10.2026, migration 0163):
+// müdür panelinin sorumlu olunan sınıflarla sınırlı hali + WhatsApp mesaj
+// kartları (Duyurular). Yurt sorumlusuna "Yurt Öğrencileri" eklenir.
+const MUDUR_YARDIMCISI_MENUSU: DashboardMenuOgesi[] = [
+  { bolum: "kurum-performansi", href: "/dashboard/kurum-performansi", etiket: "Ana Sayfa", ikon: "ana-sayfa" },
+  { bolum: "ozet", href: "/dashboard?bolum=ozet", etiket: "Öğrenciler", ikon: "ogrenci" },
+  SINIF_ANALIZI_MENU_OGESI,
+  { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Konu Durumu", ikon: "ai" },
+  { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Duyurular", ikon: "duyuru" },
+  { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Pano", ikon: "takvim" },
+];
+const YURT_OGRENCILERI_MENU_OGESI: DashboardMenuOgesi = {
+  bolum: "yurt-ogrencileri", href: "/dashboard/yurt-ogrencileri", etiket: "Yurt Öğrencileri", ikon: "ogrenci",
+};
+
 export function dashboardMenusu(
   role: UserRole,
   kurumTuru?: KurumTuru,
@@ -374,8 +390,16 @@ export function dashboardMenusu(
   // geçilmezse (bayrak kapalıysa çağıran taraf geçmez) hiçbir şey değişmez.
   kademe?: "ortaokul" | "lise" | "ikisi" | null,
   okulRehberi = false,
+  // İdare panelindeki müdür yardımcısı (bkz. src/lib/mudur-yardimcisi.ts).
+  idare: { yurt: boolean } | null = null,
 ): DashboardMenuOgesi[] {
   const rehber = rehberlikBirimiMi(brans, okulRehberi);
+  if (role === "ogretmen" && idare) {
+    const taban = [...MUDUR_YARDIMCISI_MENUSU];
+    if (idare.yurt) taban.splice(1, 0, YURT_OGRENCILERI_MENU_OGESI);
+    if (kurumTuru === "okul") taban.push(TAKVIM_MENU_OGESI);
+    return kademe === "ortaokul" ? ortaokulaUyarla(taban) : taban;
+  }
   if (role === "ogretmen" && grupMu) return GRUP_KOC_MENUSU;
   if (role === "ogrenci" && kademe === "ortaokul") return ORTAOKUL_OGRENCI_MENUSU;
   // Ortaokul ogretmeni: Maarif|LGS yeterlilik karari ekrani (kullanici karari
@@ -417,11 +441,13 @@ export function dashboardMenuYapisi(
   role: UserRole, kurumTuru?: KurumTuru, brans?: string, grupMu = false,
   kademe?: "ortaokul" | "lise" | "ikisi" | null,
   okulRehberi = false,
+  idare: { yurt: boolean } | null = null,
 ): DashboardMenuKalemi[] {
-  return role === "admin" ? ADMIN_MENU_YAPISI : dashboardMenusu(role, kurumTuru, brans, grupMu, kademe, okulRehberi);
+  return role === "admin" ? ADMIN_MENU_YAPISI : dashboardMenusu(role, kurumTuru, brans, grupMu, kademe, okulRehberi, idare);
 }
 
 export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
+  "yurt-ogrencileri",
   "sinif-analizi", "gorevler", "planlar", "veri-girisi", "konu-hakimiyeti", "analiz", "yapay-zeka", "tg-denemeleri",
   "duyurular", "talepler", "onaylar", "dersler", "ortaokul-dersler", "ortaokul-yardim", "ortaokul-calisma", "ortaokul-onaylar", "ortaokul-yeterlilik", "ilkokul-gelisim", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler", "rehberlik", "profil", "takvim", "yarismalar", "ogrenci-takibi",
 ]);

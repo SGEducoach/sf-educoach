@@ -2,6 +2,7 @@ import { moderatorKullanicilariGetir } from "@/app/moderator/actions";
 import { ogretmenDuyuruGonder, gonderilenDuyurularGetir } from "@/app/dashboard/actions";
 import { DuyuruFormu } from "@/components/dashboard/DuyuruFormu";
 import { DuyuruTuruSekmeleri } from "@/components/dashboard/DuyuruTuruSekmeleri";
+import { MudurYardimcisiAtamalari } from "@/components/yonetici/MudurYardimcisiAtamalari";
 import { KonuDurumuBolumu } from "@/components/dashboard/KonuDurumuBolumu";
 import { konuDurumuKapsamlari } from "@/lib/konu-durumu-verisi";
 import { dershaneAnaSayfaVerisiGetir } from "@/lib/dershane-ana-sayfa";
@@ -103,6 +104,7 @@ export async function DershaneMudurPaneli({ siniflar, aktifBolum, schoolId, seci
           <DershaneSinifEkleFormu />
         </div>
       )}
+      {kategori === "ogretmen" && <MudurYardimcisiAtamalari />}
       {kategori === "ogretmen"
         ? <DershaneOgretmenEkleFormu siniflar={siniflar} />
         : (

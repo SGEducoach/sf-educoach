@@ -45,6 +45,7 @@ import type { DashboardBolumu } from "@/lib/dashboard-navigation";
 import { sinifSiraKarsilastir } from "@/lib/types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { WhatsappYonetimi } from "@/components/yonetici/WhatsappYonetimi";
+import { MudurYardimcisiAtamalari } from "@/components/yonetici/MudurYardimcisiAtamalari";
 import { sablonAyarlariGetir } from "@/lib/whatsapp-sablon-ayarlari-verisi";
 import { TUM_SABLONLAR } from "@/lib/whatsapp-sablon-ayarlari";
 
@@ -166,6 +167,9 @@ export default async function YoneticiPage({
           )}
           {aktifBolum === "okullar" && gorunecekOkulId && okulListesi.some((o) => o.id === gorunecekOkulId && o.tur === "okul") && (
             <section className="sfec-section"><RehberSinifAtamalari schoolId={gorunecekOkulId} /></section>
+          )}
+          {aktifBolum === "okullar" && gorunecekOkulId && (
+            <section className="sfec-section"><MudurYardimcisiAtamalari schoolId={gorunecekOkulId} /></section>
           )}
           {/* Ders programı + nöbet listesi PDF yükleme (kullanıcı isteği
               17.09.2026) — seçili okul için, AdminPanel'in altında. */}

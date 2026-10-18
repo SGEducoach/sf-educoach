@@ -59,13 +59,14 @@ export function paletKalemleriniSuz(kalemler: PaletKalemi[], sorgu: string): Pal
     .map((x) => x.k);
 }
 
-export function KomutPaleti({ role, kurumTuru, brans, grupMu = false, kademe, okulRehberi = false, tetikleyiciStili = "tus" }: {
+export function KomutPaleti({ role, kurumTuru, brans, grupMu = false, kademe, okulRehberi = false, idare = null, tetikleyiciStili = "tus" }: {
   role: UserRole;
   kurumTuru?: KurumTuru;
   brans?: string;
   grupMu?: boolean;
   kademe?: "ortaokul" | "lise" | "ikisi" | null;
   okulRehberi?: boolean;
+  idare?: { yurt: boolean } | null;
   /** "tus": masaüstü arama kutusu · "ikon": mobil başlıktaki ikon düğmesi. */
   tetikleyiciStili?: "tus" | "ikon";
 }) {
@@ -75,9 +76,9 @@ export function KomutPaleti({ role, kurumTuru, brans, grupMu = false, kademe, ok
   const [secili, setSecili] = useState(0);
 
   const kalemler = useMemo<PaletKalemi[]>(
-    () => dashboardMenusu(role, kurumTuru, brans, grupMu, kademe, okulRehberi)
+    () => dashboardMenusu(role, kurumTuru, brans, grupMu, kademe, okulRehberi, idare)
       .map((o) => ({ bolum: o.bolum, etiket: o.etiket, href: o.href })),
-    [role, kurumTuru, brans, grupMu, kademe, okulRehberi],
+    [role, kurumTuru, brans, grupMu, kademe, okulRehberi, idare],
   );
   const sonuclar = useMemo(() => paletKalemleriniSuz(kalemler, sorgu), [kalemler, sorgu]);
 

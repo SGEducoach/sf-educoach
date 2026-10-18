@@ -65,18 +65,19 @@ export function sekmeleriBol(menu: DashboardMenuOgesi[], aktifBolum: DashboardBo
   return { gorunen, kalan };
 }
 
-export function AltSekmeCubugu({ role, kurumTuru, brans, grupMu = false, kademe, okulRehberi = false, aktifBolum, rozetler }: {
+export function AltSekmeCubugu({ role, kurumTuru, brans, grupMu = false, kademe, okulRehberi = false, aktifBolum, rozetler, idare = null }: {
   role: UserRole;
   kurumTuru?: KurumTuru;
   brans?: string;
   grupMu?: boolean;
   kademe?: "ortaokul" | "lise" | "ikisi" | null;
   okulRehberi?: boolean;
+  idare?: { yurt: boolean } | null;
   aktifBolum: DashboardBolumu;
   rozetler?: Partial<Record<DashboardBolumu, number>>;
 }) {
   const [dahaAcik, setDahaAcik] = useState(false);
-  const menu = dashboardMenusu(role, kurumTuru, brans, grupMu, kademe, okulRehberi);
+  const menu = dashboardMenusu(role, kurumTuru, brans, grupMu, kademe, okulRehberi, idare);
   if (menu.length === 0) return null;
   const { gorunen, kalan } = sekmeleriBol(menu, aktifBolum);
 

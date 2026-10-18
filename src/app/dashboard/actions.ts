@@ -23,6 +23,8 @@ import { SINIF_SEVIYELERI } from "@/lib/types";
 import type { KurumKademesi, SinifSeviyesi } from "@/lib/types";
 import { REHBER_BRANSI, REHBERLIK_DUYURU_BASLIGI } from "@/lib/rehberlik";
 import { rehberlikUyeligiGetir } from "@/lib/rehberlik-servisi";
+import { IDARE_CEREZI, idarePaneliUyeligi } from "@/lib/mudur-yardimcisi";
+import { cookies } from "next/headers";
 import { ilkokulMu, kurumSeviyeleri } from "@/lib/kademe";
 import { veliTelefonuTemizle } from "@/lib/ilkokul-gelisim";
 import { veliDavetiOlustur } from "@/lib/veli-davet";
@@ -714,14 +716,19 @@ export async function ogretmenDuyuruGonder(mesaj: string, kapsam?: string, alici
   // Okul rehberinin kimliği ve kapsamı Rehberlik Servisi'nden (migration
   // 0144) — kurumun kademesine artık bakılmıyor, üyelik yeter. Dershane
   // rehberi kimliğini hâlâ branştan alıyor, onun kapsam sınırı yok.
-  const rehberlikUyeligi = profile.role === "ogretmen" ? await rehberlikUyeligiGetir(admin, user.id) : null;
+  // İdare panelindeki müdür yardımcısı (migration 0163) sorumlu olduğu sınıf
+  // düzeylerine "Okul yönetiminden" duyuru gönderir; kapsamı rehberinki gibi.
+  const idare = profile.role === "ogretmen" ? await idarePaneliUyeligi(admin, user.id, (await cookies()).get(IDARE_CEREZI)?.value) : null;
+  const rehberlikUyeligi = idare
+    ? { sinifDuzeyleri: idare.sinifDuzeyleri }
+    : profile.role === "ogretmen" ? await rehberlikUyeligiGetir(admin, user.id) : null;
   const okulRehberi = rehberlikUyeligi !== null;
-  const rehberMi = profile.role === "ogretmen" && (okulRehberi || teacher.brans === REHBER_BRANSI);
+  const rehberMi = profile.role === "ogretmen" && !idare && (okulRehberi || teacher.brans === REHBER_BRANSI);
   const rehberSeviyeleri = rehberlikUyeligi?.sinifDuzeyleri ?? [];
   if (okulRehberi && rehberSeviyeleri.length === 0) return { error: "Henüz sorumlu olduğunuz sınıf düzeyi atanmadı.", ...bosSonuc };
   let hedefEtiketi = "";
 
-  if (profile.role === "mudur" || rehberMi) {
+  if (profile.role === "mudur" || rehberMi || idare) {
     // Sınıf düzeyi kapsamı (ilkokul ve ortaokul düzeyleri de, 16.10.2026).
     if ((SINIF_SEVIYELERI as readonly string[]).includes(kapsam ?? "")) {
       if (okulRehberi && !rehberSeviyeleri.includes(kapsam!)) return { error: "Bu sınıf düzeyi sorumluluğunuzda değil.", ...bosSonuc };

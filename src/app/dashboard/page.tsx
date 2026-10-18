@@ -73,6 +73,8 @@ import { DershaneAnaSayfa } from "@/components/dashboard/DershaneAnaSayfa";
 import { DenemeSuresiSonaErdiEkrani } from "@/components/DenemeSuresiSonaErdiEkrani";
 import { RehberlikPaneli } from "@/components/dashboard/RehberlikPaneli";
 import { rehberlikUyeligiGetir } from "@/lib/rehberlik-servisi";
+import { IDARE_CEREZI, IDARE_UNVANI, mudurYardimcisiUyeligiGetir, type MudurYardimcisiUyeligi } from "@/lib/mudur-yardimcisi";
+import { cookies } from "next/headers";
 import { rehberKapsamListesiGetir } from "@/lib/rehber-kapsam-listesi";
 import { AltSekmeCubugu } from "@/components/dashboard/AltSekmeCubugu";
 import { SinifAnaliziPanel } from "@/components/dashboard/SinifAnaliziPanel";
@@ -100,6 +102,7 @@ import { IlkokulSinifimPanosu } from "@/components/dashboard/IlkokulSinifimPanos
 import { WhatsappDuyuruStudyosu } from "@/components/dashboard/WhatsappDuyuruStudyosu";
 import { DuyuruTuruSekmeleri } from "@/components/dashboard/DuyuruTuruSekmeleri";
 import { yurtVerisiGetir } from "@/lib/yurt-listesi-verisi";
+import { YurtOgrencileriListesi } from "@/components/dashboard/YurtOgrencileriListesi";
 import { sablonAyarlariGetir } from "@/lib/whatsapp-sablon-ayarlari-verisi";
 import { etkinSablonlar } from "@/lib/whatsapp-sablon-ayarlari";
 import { IlkokulGelisimGirisi } from "@/components/dashboard/IlkokulGelisimGirisi";
@@ -157,7 +160,10 @@ export default async function DashboardPage({
   // TTFB'ye art arda ekleniyorlardı, şimdi Promise.all ile aynı anda
   // gidiyorlar. Dershane deneme süresi kontrolü kurumTuru'na BAĞLI
   // olduğundan bilinçli olarak hâlâ sonrasında, ayrı bekleniyor.
-  const [kurum, { data: ogretmenBransHam }, { data: moderatorYetkisi }, { count: okunmamisMesajSayisiHam }, rehberlikUyeligi] = await Promise.all([
+  // Müdür yardımcısı İdare panelinde mi (migration 0163): çerez tercihi +
+  // geçerli üyelik. İdare panelinde menü ve kapsam müdür yardımcısınındır.
+  const idareCerezi = (await cookies()).get(IDARE_CEREZI)?.value;
+  const [kurum, { data: ogretmenBransHam }, { data: moderatorYetkisi }, { count: okunmamisMesajSayisiHam }, rehberlikUyeligi, mudurYardimcisiUyelik] = await Promise.all([
     kullaniciKurumuGetir(supabase, user.id, role),
     role === "ogretmen"
       ? supabase.from("teachers").select("brans").eq("id", user.id).maybeSingle()
@@ -174,7 +180,13 @@ export default async function DashboardPage({
     role === "ogretmen"
       ? rehberlikUyeligiGetir(supabase, user.id)
       : Promise.resolve(null),
+    role === "ogretmen"
+      ? mudurYardimcisiUyeligiGetir(supabase, user.id)
+      : Promise.resolve(null),
   ]);
+  // Müdür yardımcısı üyeliği varsa panel geçişi gösterilir; İdare paneli çerezle seçilir.
+  const idareUyeligi = mudurYardimcisiUyelik && idareCerezi === "idare" ? mudurYardimcisiUyelik : null;
+  const idareMenusu = idareUyeligi ? { yurt: idareUyeligi.yurt } : null;
 
   // Dershane 1 haftalık deneme süresi (2026-08-25 kullanıcı isteği, bkz.
   // migration 0065) — SADECE dershane rolleri, okul hiç etkilenmez. Zaten
@@ -229,7 +241,7 @@ export default async function DashboardPage({
   // Gömülü ilişki çalışma anında NESNE döner, tipte dizi görünür (proje notu).
   const ogrenciSinifSeviyesi = Array.isArray(ogrenciSinifKaydi) ? ogrenciSinifKaydi[0]?.seviye : ogrenciSinifKaydi?.seviye;
   const grupAlanSorulur = !dokuzOnSinifMi(ogrenciSinifSeviyesi);
-  const varsayilanBolum: DashboardBolumu = !grupKocu && ((role === "mudur" && kurumTuru !== "dershane") || rehberlikBirimi)
+  const varsayilanBolum: DashboardBolumu = !grupKocu && ((role === "mudur" && kurumTuru !== "dershane") || rehberlikBirimi || idareMenusu)
     ? "kurum-performansi" : "ozet";
   const aktifBolum = (params.bolum ?? varsayilanBolum) as DashboardBolumu;
   // Ortaokul paneli (Faz 1): yalnızca özellik bayrağı AÇIKKEN ve öğrenci
@@ -276,7 +288,7 @@ export default async function DashboardPage({
     || kurum?.kademe === "ortaokul";
 
   const ogrenciProgramiGizliRotasi = role === "ogretmen" && aktifBolum === "planlar" && !!params.ogrenci;
-  if (!dashboardMenusu(role, kurumTuru, brans, grupKocu, menuKademesi, okulRehberi).some((oge) => oge.bolum === aktifBolum) && !ogrenciProgramiGizliRotasi) redirect("/dashboard");
+  if (!dashboardMenusu(role, kurumTuru, brans, grupKocu, menuKademesi, okulRehberi, idareMenusu).some((oge) => oge.bolum === aktifBolum) && !ogrenciProgramiGizliRotasi) redirect("/dashboard");
   // Yazılı analizi dürüstlük engeli: öğretmenin panele girdiği günler sayılır
   // (bkz. src/lib/ogretmen-takip.ts, yazili-erisim.ts).
   if (role === "ogretmen") ogretmenAktifGunuKaydet(user.id);
@@ -298,11 +310,21 @@ export default async function DashboardPage({
           örtük bir uygulama detayı. Bu yüzden müdürde her zaman "Müdür"
           gösterilir, "Moderatör" etiketi öğretmen+moderatör kombinasyonuna
           özel kalır. */}
-      <Header ad={profile.ad} role={role} kurumTuru={kurumTuru} brans={brans} grupMu={grupKocu} okunmamisMesajSayisi={okunmamisMesajSayisi} moderatorMu={!!moderatorYetkisi} rolEtiketi={moderatorYetkisi && role !== "mudur" ? "Moderatör" : undefined} aktifBolum={aktifBolum} rozetler={menuRozetleri} kademe={menuKademesi} mobilNavigasyon={false} />
+      <Header ad={profile.ad} role={role} kurumTuru={kurumTuru} brans={brans} grupMu={grupKocu} okunmamisMesajSayisi={okunmamisMesajSayisi} moderatorMu={!!moderatorYetkisi} rolEtiketi={idareMenusu ? IDARE_UNVANI : moderatorYetkisi && role !== "mudur" ? "Moderatör" : undefined} aktifBolum={aktifBolum} rozetler={menuRozetleri} kademe={menuKademesi} mobilNavigasyon={false} />
       {grupAktivasyonu
         ? <GrupOgrenciAktivasyonu ad={profile.ad} alanSorulur={grupAlanSorulur} />
         : <ZorunluSifreDegisikligiKapisi gecici={profile.gecici_sifre} />}
       <OgretmenEpostaUyarisi email={profile.email} goster={ogretmenEpostaUyarisi} />
+      {/* Müdür yardımcısı: öğretmen paneli ↔ İdare paneli (migration 0163).
+          Düz <a>: önceden yükleme çerezi yanlışlıkla değiştirmesin. */}
+      {mudurYardimcisiUyelik && (
+        <div className="mx-auto flex w-full max-w-[100rem] justify-end px-4 pt-3 sm:px-6 print:hidden">
+          <a href={`/dashboard/panel?mod=${idareUyeligi ? "ogretmen" : "idare"}`}
+            className="sfec-btn rounded-full px-4 py-1.5 text-xs font-bold" style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
+            {idareUyeligi ? "Öğretmen Paneline Geç" : "Müdür Yardımcısı Paneline Geç"}
+          </a>
+        </div>
+      )}
       {/* Faz 8: süresi dolan grupta öğrenci ve veli salt okunur (koçun kendi uyarısı Grubum'da). */}
       {kurum?.grupMu && kurum.suresiDoldu && (role === "ogrenci" || role === "veli") && (
         <div className="mx-auto w-full max-w-[100rem] px-4 pt-4 sm:px-6">
@@ -313,7 +335,7 @@ export default async function DashboardPage({
       )}
       <HosgeldinPopuplari role={role} />
       <div className="mx-auto flex min-h-[calc(100dvh-6.75rem)] w-full max-w-[100rem] flex-1 items-stretch gap-6 px-4 py-6 sm:px-6 lg:py-7">
-        <DashboardYanMenu role={role} kurumTuru={kurumTuru} brans={brans} grupMu={grupKocu} kademe={menuKademesi} aktifBolum={aktifBolum} rozetler={menuRozetleri} okulRehberi={okulRehberi} />
+        <DashboardYanMenu role={role} kurumTuru={kurumTuru} brans={brans} grupMu={grupKocu} kademe={menuKademesi} aktifBolum={aktifBolum} rozetler={menuRozetleri} okulRehberi={okulRehberi} idare={idareMenusu} />
         <main id="ana-icerik" className="sfec-dashboard-main min-h-[calc(100dvh-10.25rem)] min-w-0 w-full flex-1 flex flex-col gap-6">
           {/* Kullanıcı isteği (03.09.2026): Duyuru Geçmişi artık YALNIZCA admin
               panelinde (bkz. duyuru-gecmisi-actions.ts) — müdür menüsünden ve
@@ -332,7 +354,7 @@ export default async function DashboardPage({
             <>
               {role === "ogrenci" && <OgrenciIcerik userId={user.id} ad={profile.ad} donem={donem} haftaBaslangic={haftaninPazartesisi(params.hafta)} aktifBolum={aktifBolum} gecmisHafta={Number(params.gecmis ?? 0)} seciliDersId={params.ders} seciliKonu={params.konu} seciliBolum={params.kisim} kademe={ogrenciKademesi} sinifSeviyesi={ogrenciSinifSeviyesi} />}
               {(role === "ogretmen" || role === "mudur") && (
-                <OgretmenIcerik userId={user.id} role={role} kurumTuru={kurumTuru} brans={brans} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} secilenOgretmenId={params.ogretmen} donem={donem} aktifBolum={aktifBolum} seciliDersId={params.ders} seciliBolum={params.kisim} kademe={menuKademesi} yurtlu={kurum?.yurtlu === true} grupMu={grupKocu} secilenAy={params.ay} secilenKapsam={params.kapsam} duyuruTuru={params.tur} />
+                <OgretmenIcerik userId={user.id} role={role} kurumTuru={kurumTuru} brans={brans} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} secilenOgretmenId={params.ogretmen} donem={donem} aktifBolum={aktifBolum} seciliDersId={params.ders} seciliBolum={params.kisim} kademe={menuKademesi} yurtlu={kurum?.yurtlu === true} grupMu={grupKocu} secilenAy={params.ay} secilenKapsam={params.kapsam} duyuruTuru={params.tur} idare={idareUyeligi} />
               )}
               {role === "veli" && <VeliIcerik userId={user.id} ad={profile.ad} secilenOgrenciId={params.ogrenci} donem={donem} aktifBolum={aktifBolum} />}
             </>
@@ -345,7 +367,7 @@ export default async function DashboardPage({
           geçildiği için hamburgerde yalnızca hesap/mesaj kaldı, gezinme iki
           yerde birden durmuyor. */}
       <AltSekmeCubugu role={role} kurumTuru={kurumTuru} brans={brans} grupMu={grupKocu}
-        kademe={menuKademesi} okulRehberi={okulRehberi} aktifBolum={aktifBolum} rozetler={menuRozetleri} />
+        kademe={menuKademesi} okulRehberi={okulRehberi} idare={idareMenusu} aktifBolum={aktifBolum} rozetler={menuRozetleri} />
       {/* Çubuk sabit konumlu: içeriğin son satırı altında kalmasın. */}
       <div aria-hidden="true" className="lg:hidden print:hidden" style={{ height: "var(--mobile-nav-height)" }} />
     </div>
@@ -747,7 +769,10 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
   );
 }
 
-async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, secilenOgrenciId, secilenOgretmenId, donem, aktifBolum, seciliDersId, seciliBolum, kademe, yurtlu = false, grupMu = false, secilenAy, secilenKapsam, duyuruTuru }: {
+async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, secilenOgrenciId, secilenOgretmenId, donem, aktifBolum, seciliDersId, seciliBolum, kademe, yurtlu = false, grupMu = false, secilenAy, secilenKapsam, duyuruTuru, idare = null }: {
+  // İdare panelindeki müdür yardımcısı (migration 0163): kapsamı rehberinki
+  // gibi sınıf düzeyleriyle sınırlı; aşağıda rehber kapsam akışına bağlanır.
+  idare?: MudurYardimcisiUyeligi | null;
   userId: string; role: "ogretmen" | "mudur"; kurumTuru?: KurumTuru; brans?: string; secilenSinifId?: string; secilenOgrenciId?: string; secilenOgretmenId?: string; donem: RaporDonemi; aktifBolum: DashboardBolumu;
   // İlkokul Gelişim Raporu'nun ayı (?ay=2026-10).
   secilenAy?: string;
@@ -767,10 +792,15 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   const supabase = await createClient();
   // rehber_sinif_duzeyleri ARTIK OKUNMUYOR — tek kaynak rehberlik_servisi
   // (migration 0144, teachers'taki kolon terk edildi).
-  const [{ data: teacher }, rehberlikUyeligi] = await Promise.all([
+  const [{ data: teacher }, gercekRehberlikUyeligi] = await Promise.all([
     supabase.from("teachers").select("school_id, class_id").eq("id", userId).single(),
-    rehberlikUyeligiGetir(supabase, userId),
+    idare ? Promise.resolve(null) : rehberlikUyeligiGetir(supabase, userId),
   ]);
+  // Müdür yardımcısı, kapsam bakımından rehberle aynı yolu kullanır: sorumlu
+  // sınıf düzeyleri; veri service-role ile, kapsam filtresiyle okunur.
+  const rehberlikUyeligi = idare
+    ? { schoolId: idare.schoolId, sinifDuzeyleri: idare.sinifDuzeyleri, unvan: IDARE_UNVANI }
+    : gercekRehberlikUyeligi;
 
   if (!teacher) {
     return (
@@ -1024,11 +1054,19 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   // Okul rehberi yalnız atandığı düzeylerin öğrencilerini görür.
   // Yurtlu kurumda her öğretmen yurt listesi kartlarını da hazırlar
   // (kullanıcı isteği 18.10.2026, bkz. YurtListeStudyosu).
+  // Yurt sorumlusu müdür yardımcısı: yurt öğrencilerinin gözlemcisi
+  // (kullanıcı kararı 18.10.2026); kız/erkek iki grubu da görür.
+  if (aktifBolum === "yurt-ogrencileri") {
+    if (!idare?.yurt) redirect("/dashboard");
+    const yurtVerisi = await yurtVerisiGetir(createAdminClient(), teacher.school_id, userId, true);
+    return <YurtOgrencileriListesi ogrenciler={yurtVerisi.ogrenciler} />;
+  }
+
   const genelWhatsapp = role === "mudur" || rehberOgretmenMi;
   if (aktifBolum === "duyurular" && duyuruTuru === "whatsapp" && (genelWhatsapp || yurtlu)) {
     const admin = createAdminClient();
     const [yurtVerisi, { ayarlar: sablonAyarlari }] = await Promise.all([
-      yurtlu ? yurtVerisiGetir(admin, teacher.school_id, userId, role === "mudur") : Promise.resolve(null),
+      yurtlu ? yurtVerisiGetir(admin, teacher.school_id, userId, role === "mudur" || !!idare?.yurt) : Promise.resolve(null),
       sablonAyarlariGetir(admin),
     ]);
     // logo_url 0159 ile geldi; sütun yoksa yalnız ad okunur.
@@ -1070,7 +1108,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   // kurum türünden bağımsız (sadece school_id alıyor), olduğu gibi
   // yeniden kullanıldı. Sadece okul müdürü (dershane müdürü zaten kendi
   // ayrı panelinde, "ozet" bölümünde, aynı bileşeni kullanıyor).
-  if (aktifBolum === "kurum-performansi" && (role === "mudur" || rehberOgretmenMi) && kurumTuru !== "dershane") {
+  if (aktifBolum === "kurum-performansi" && (role === "mudur" || rehberOgretmenMi) && (kurumTuru !== "dershane" || idare)) {
     const veri = await dershaneAnaSayfaVerisiGetir(okulOkumaClient, teacher.school_id, okulRehberi ? rehberSeviyeleri : undefined);
     return <section className="sfec-section"><DershaneAnaSayfa veri={veri} /></section>;
   }
@@ -1113,7 +1151,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   if (secilenOgrenciId && aktifBolum !== "planlar") {
     const { data: ogrenci } = await okulOkumaClient
       .from("students")
-      .select("id, okul_no, profiles!students_id_fkey(ad), schools(ad, tur), classes(seviye, sube)")
+      .select("id, okul_no, yurt_ogrencisi, profiles!students_id_fkey(ad), schools(ad, tur), classes(seviye, sube)")
       .eq("id", secilenOgrenciId)
       .eq("school_id", teacher.school_id)
       .single();
@@ -1121,13 +1159,15 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
     type OgrenciRow = {
       id: string;
       okul_no: string | null;
+      yurt_ogrencisi: boolean | null;
       profiles: { ad: string } | null;
       schools: { ad: string; tur: KurumTuru } | null;
       classes: { seviye: string; sube: string } | null;
     };
     const o = ogrenci as unknown as OgrenciRow | null;
 
-    if (o && (!okulRehberi || (o.classes && rehberSeviyeleri.includes(o.classes.seviye)))) {
+    // Yurt sorumlusu müdür yardımcısı yurt öğrencilerini düzeyden bağımsız izler.
+    if (o && (!okulRehberi || (o.classes && rehberSeviyeleri.includes(o.classes.seviye)) || (idare?.yurt && o.yurt_ogrencisi))) {
       // Yazılı analizi dürüstlük engeli: öğrenci öğretmenin okulunda doğrulanıp
       // profili gösterildiği için görüntüleme sayılır (bkz. ogretmen-takip.ts).
       if (role === "ogretmen") ogrenciProfilGoruntulemesiKaydet(userId, secilenOgrenciId);
@@ -1535,6 +1575,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       secilenOgretmenProgrami={secilenOgretmenProgrami}
       secilenOgretmenNobetleri={secilenOgretmenNobetleri}
       rehberOgretmenMi={rehberOgretmenMi}
+      idareModu={!!idare}
       grupMu={grupMu}
       secilenOgrenciId={secilenOgrenciId}
       secilenOgrenciProgrami={secilenOgrenciProgrami}

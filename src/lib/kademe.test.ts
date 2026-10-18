@@ -505,3 +505,19 @@ describe("ortaokul kurumunda rol menüleri", () => {
     expect(menu).toContain("rehberlik");
   });
 });
+
+describe("müdür yardımcısı (İdare paneli)", () => {
+  test("müdür benzeri menü; rehber ve öğretmen kalemleri yok", () => {
+    const menu = dashboardMenusu("ogretmen", "okul", "Matematik", false, "lise", false, { yurt: false }).map((o) => o.bolum);
+    expect(menu).toEqual(["kurum-performansi", "ozet", "sinif-analizi", "yapay-zeka", "duyurular", "tg-denemeleri", "takvim"]);
+    expect(menu).not.toContain("gorevler");
+    expect(menu).not.toContain("rehberlik");
+  });
+  test("yurt sorumlusuna Yurt Öğrencileri eklenir; dershanede Ajandam yok", () => {
+    expect(dashboardMenusu("ogretmen", "okul", "Matematik", false, "lise", false, { yurt: true }).map((o) => o.bolum)).toContain("yurt-ogrencileri");
+    expect(dashboardMenusu("ogretmen", "dershane", "Matematik", false, null, false, { yurt: false }).map((o) => o.bolum)).not.toContain("takvim");
+  });
+  test("İdare paneli dışındaki öğretmen menüsü değişmez", () => {
+    expect(dashboardMenusu("ogretmen", "okul", "Matematik", false, "lise").map((o) => o.bolum)).toContain("gorevler");
+  });
+});

@@ -45,7 +45,7 @@ const IKONLAR: Record<DashboardIkonu, typeof Home> = {
   rehberlik: HeartHandshake,
 };
 
-export function DashboardYanMenu({ role, kurumTuru, brans, grupMu = false, kademe, aktifBolum, rozetler, okulRehberi = false }: {
+export function DashboardYanMenu({ role, kurumTuru, brans, grupMu = false, kademe, aktifBolum, rozetler, okulRehberi = false, idare = null }: {
   role: UserRole; kurumTuru?: KurumTuru; brans?: string; grupMu?: boolean; aktifBolum: DashboardBolumu;
   // Ortaokul paneli (Faz 1): yalnız bayrak acikken ve ortaokul sinifinda dolu gelir.
   kademe?: "ortaokul" | "lise" | "ikisi" | null;
@@ -53,8 +53,9 @@ export function DashboardYanMenu({ role, kurumTuru, brans, grupMu = false, kadem
   // talebini ekrana girmeden görsün.
   rozetler?: Partial<Record<DashboardBolumu, number>>;
   okulRehberi?: boolean;
+  idare?: { yurt: boolean } | null;
 }) {
-  const menu = dashboardMenuYapisi(role, kurumTuru, brans, grupMu, kademe, okulRehberi);
+  const menu = dashboardMenuYapisi(role, kurumTuru, brans, grupMu, kademe, okulRehberi, idare);
   const [acikGrup, setAcikGrup] = useState<string | null>(
     () => menu.filter(menuGrubuMu).find((kalem) => kalem.ogeler.some((oge) => oge.bolum === aktifBolum))?.baslik ?? null,
   );
@@ -76,7 +77,7 @@ export function DashboardYanMenu({ role, kurumTuru, brans, grupMu = false, kadem
         style={{ border: `1px solid ${BORDER}` }}>
         {role === "admin" && <div className="pb-2">
           <KomutPaleti role={role} kurumTuru={kurumTuru} brans={brans} grupMu={grupMu} kademe={kademe}
-            okulRehberi={okulRehberi} />
+            okulRehberi={okulRehberi} idare={idare} />
         </div>}
 
         <div className="px-3 pt-1 pb-4 mb-2" style={{ borderBottom: `1px solid ${BORDER}` }}>

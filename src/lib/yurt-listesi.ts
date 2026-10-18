@@ -93,6 +93,7 @@ export interface KayitliOgrenciSatiri { id: string; ad: string; okul_no: string 
 
 export interface YurtOgrencisi {
   anahtar: string;            // "r:<resmi id>" ya da "s:<öğrenci id>" — cinsiyet kaydı buna yazılır
+  ogrenciId: string | null;   // sisteme kayıtlıysa öğrenci kimliği (profil bağlantısı)
   ad: string;
   okulNo: string | null;
   sinif: string | null;
@@ -116,14 +117,14 @@ export function yurtOgrencileriniBirlestir(resmi: ResmiYurtSatiri[], kayitli: Ka
     if (k) kullanilan.add(k.id);
     if (!(k ? k.yurt_ogrencisi : r.yurt_ogrencisi)) continue;
     sonuc.push({
-      anahtar: `r:${r.id}`, ad: k?.ad?.trim() || adBaslik(r.ad_soyad), okulNo: r.okul_no,
+      anahtar: `r:${r.id}`, ogrenciId: k?.id ?? null, ad: k?.ad?.trim() || adBaslik(r.ad_soyad), okulNo: r.okul_no,
       sinif: k?.sinif ?? null, seviye: k?.seviye ?? null, sube: k?.sube ?? null, kayitli: !!k,
       cinsiyet: cinsiyetOku(r.cinsiyet) ?? cinsiyetOku(k?.cinsiyet),
     });
   }
   for (const k of kayitli) {
     if (kullanilan.has(k.id) || !k.yurt_ogrencisi) continue;
-    sonuc.push({ anahtar: `s:${k.id}`, ad: k.ad.trim(), okulNo: k.okul_no, sinif: k.sinif, seviye: k.seviye, sube: k.sube, kayitli: true, cinsiyet: cinsiyetOku(k.cinsiyet) });
+    sonuc.push({ anahtar: `s:${k.id}`, ogrenciId: k.id, ad: k.ad.trim(), okulNo: k.okul_no, sinif: k.sinif, seviye: k.seviye, sube: k.sube, kayitli: true, cinsiyet: cinsiyetOku(k.cinsiyet) });
   }
   return sonuc.sort((a, b) => a.ad.localeCompare(b.ad, "tr"));
 }

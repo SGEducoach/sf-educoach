@@ -15,6 +15,7 @@ import {
 import { gorevVer, verdigimGoreviSil } from "@/app/dashboard/gorev-actions";
 import { DuyuruFormu } from "@/components/dashboard/DuyuruFormu";
 import { DuyuruTuruSekmeleri } from "@/components/dashboard/DuyuruTuruSekmeleri";
+import { MudurYardimcisiAtamalari } from "@/components/yonetici/MudurYardimcisiAtamalari";
 import { SinifKarti } from "@/components/dashboard/SinifKarti";
 import { MesajKartiOlusturucu } from "@/components/dashboard/MesajKartiOlusturucu";
 import type { MesajKartiGorevi } from "@/lib/mesaj-karti";
@@ -91,7 +92,7 @@ export function OgretmenPanel({
   ogretmenDersleri, bekleyenOnaylar, verdigimGorevler, mesajKartiGorevleri, ogretmenAdi, konuOnerileri, kademe, aktifBolum,
   dersProgramiSatirlari, okulNobetleri, yurtNobetGorevleri, dershaneMi, yurtlu = false,
   nobetDevirOgretmenleri,
-  okulOgretmenleri, secilenOgretmenId, secilenOgretmenProgrami, secilenOgretmenNobetleri, rehberOgretmenMi = false, grupMu = false,
+  okulOgretmenleri, secilenOgretmenId, secilenOgretmenProgrami, secilenOgretmenNobetleri, rehberOgretmenMi = false, idareModu = false, grupMu = false,
   secilenOgrenciId, secilenOgrenciProgrami,
   secilenOgrenciAdi,
 }: {
@@ -149,6 +150,8 @@ export function OgretmenPanel({
   secilenOgretmenProgrami?: DersProgramiSatiri[];
   secilenOgretmenNobetleri?: OkulNobeti[];
   rehberOgretmenMi?: boolean;
+  // İdare panelindeki müdür yardımcısı (migration 0163): kapsamı sorumlu olduğu sınıflar.
+  idareModu?: boolean;
   // Grup Koçluk koçu (kurum dışı koç): metinler "okul/sınıf" yerine "grup"
   // diliyle gösterilir (denetim, 27.09.2026).
   grupMu?: boolean;
@@ -215,8 +218,8 @@ export function OgretmenPanel({
       ]
     : role === "mudur" || rehberOgretmenMi
     ? [
-        { deger: "okul", etiket: rehberOgretmenMi && !dershaneMi && (kademe === "lise" || kademe === "ikisi") ? "Sorumlu olduğum sınıflar" : "Tüm okul" },
-        ...(rehberOgretmenMi && !dershaneMi && (kademe === "lise" || kademe === "ikisi")
+        { deger: "okul", etiket: idareModu || (rehberOgretmenMi && !dershaneMi && (kademe === "lise" || kademe === "ikisi")) ? "Sorumlu olduğum sınıflar" : "Tüm okul" },
+        ...(idareModu || (rehberOgretmenMi && !dershaneMi && (kademe === "lise" || kademe === "ikisi"))
           ? [...new Set(siniflar.map((s) => s.seviye))]
           : ["9", "10", "11", "12"]).map((seviye) => ({ deger: seviye, etiket: `${seviye}. Sınıflar` })),
         ...siniflar.map((s) => ({ deger: s.id, etiket: `Sadece ${s.seviye}-${s.sube}` })),
@@ -235,7 +238,7 @@ export function OgretmenPanel({
               <span className="sfec-hosgeldin-kapi h-7 w-7" aria-hidden="true" />
             </span>
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: TEXT_MUTED }}>{grupMu ? "Koç paneli" : rehberOgretmenMi ? "Rehber öğretmen paneli" : "Eğitimci paneli"}</div>
+              <div className="text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: TEXT_MUTED }}>{grupMu ? "Koç paneli" : idareModu ? "Müdür yardımcısı paneli" : rehberOgretmenMi ? "Rehber öğretmen paneli" : "Eğitimci paneli"}</div>
               <h1 className="mt-0.5 text-xl font-extrabold sm:text-2xl" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Hoş geldin hocam</h1>
             </div>
           </div>
@@ -246,7 +249,7 @@ export function OgretmenPanel({
         <section id="duyurular" className="sfec-section">
           {(role === "mudur" || rehberOgretmenMi || yurtlu) && <DuyuruTuruSekmeleri secili="site" />}
           <DuyuruFormu
-          baslik={grupMu ? "Grubuna duyuru gönder" : rehberOgretmenMi ? "Rehber Öğretmen duyurusu gönder" : role === "mudur" ? "Okula duyuru gönder" : "Sınıfınıza duyuru gönder"}
+          baslik={grupMu ? "Grubuna duyuru gönder" : idareModu ? "Okul Yönetimi Duyurusu Gönder" : rehberOgretmenMi ? "Rehber Öğretmen duyurusu gönder" : role === "mudur" ? "Okula duyuru gönder" : "Sınıfınıza duyuru gönder"}
           aciklama={grupMu
             ? "Duyuru tüm gruba ya da seçtiğiniz sınıf düzeyine gider; öğrenciye, veliye ya da ikisine birden gönderebilirsiniz."
             : role === "mudur" || rehberOgretmenMi
@@ -343,6 +346,7 @@ export function OgretmenPanel({
 
       {(aktifBolum === "takvim" || aktifBolum === "dersler") && <AjandamBolumu atanabilirSiniflar={atanabilirSiniflar} role={role} dersler={ogretmenDersleri} siniflar={siniflar} dersProgramiSatirlari={dersProgramiSatirlari ?? []} okulNobetleri={okulNobetleri ?? []} yurtNobetGorevleri={yurtNobetGorevleri ?? []} nobetDevirOgretmenleri={nobetDevirOgretmenleri ?? []} dershaneMi={!!dershaneMi} yurtlu={yurtlu} />}
 
+      {aktifBolum === "ogretmenler" && role === "mudur" && <MudurYardimcisiAtamalari />}
       {aktifBolum === "ogretmenler" && (role === "mudur" || rehberOgretmenMi) && (
         <OgretmenProgramlariBolumu
           ogretmenler={okulOgretmenleri ?? []}
