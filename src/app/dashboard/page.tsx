@@ -106,7 +106,7 @@ import { YurtOgrencileriListesi } from "@/components/dashboard/YurtOgrencileriLi
 import { YurtNobetlerimKutusu } from "@/components/dashboard/NobetDevirPaneli";
 import { belletmenMi } from "@/lib/belletmen";
 import { sablonAyarlariGetir } from "@/lib/whatsapp-sablon-ayarlari-verisi";
-import { etkinSablonlar } from "@/lib/whatsapp-sablon-ayarlari";
+import { etkinSablonlar, kurumaUygunSablonlar, ucretliKurumMu } from "@/lib/whatsapp-sablon-ayarlari";
 import { IlkokulGelisimGirisi } from "@/components/dashboard/IlkokulGelisimGirisi";
 import { IlkokulGelisimRaporu } from "@/components/dashboard/IlkokulGelisimRaporu";
 import { bekleyenOgretmenBildirimleriniGonder } from "@/lib/ogretmen-bildirim";
@@ -1114,11 +1114,17 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       yurtlu ? yurtVerisiGetir(admin, teacher.school_id, userId, role === "mudur" || !!idare?.yurt) : Promise.resolve(null),
       sablonAyarlariGetir(admin),
     ]);
-    // logo_url 0159 ile geldi; sütun yoksa yalnız ad okunur.
-    const kurumIlk = await admin.from("schools").select("ad, logo_url").eq("id", teacher.school_id).maybeSingle();
-    const kurum = (kurumIlk.error
-      ? (await admin.from("schools").select("ad").eq("id", teacher.school_id).maybeSingle()).data
-      : kurumIlk.data) as { ad: string; logo_url?: string | null } | null;
+    // logo_url 0159, ozel 0166 ile geldi; sütun yoksa bir öncekine düşülür.
+    type DuyuruKurumu = { ad: string; logo_url?: string | null; ozel?: boolean | null };
+    const kurumOku = async (): Promise<DuyuruKurumu | null> => {
+      for (const sutunlar of ["ad, logo_url, ozel", "ad, logo_url", "ad"]) {
+        const r = await admin.from("schools").select(sutunlar).eq("id", teacher.school_id).maybeSingle();
+        if (!r.error) return r.data as unknown as DuyuruKurumu | null;
+      }
+      return null;
+    };
+    const kurum = await kurumOku();
+    const sablonlar = kurumaUygunSablonlar(etkinSablonlar(sablonAyarlari), ucretliKurumMu({ tur: kurumTuru ?? "okul", ozel: kurum?.ozel }));
     const { data: ogrenciler } = !genelWhatsapp || (okulRehberi && rehberSeviyeleri.length === 0)
       ? { data: [] }
       : okulRehberi
@@ -1142,7 +1148,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       <section className="sfec-section">
         <DuyuruTuruSekmeleri secili="whatsapp" />
         <WhatsappDuyuruStudyosu kurumAdi={kurum?.ad ?? "Kurumumuz"} logoAdresi={kurum?.logo_url ?? null}
-          logoDegistirebilir={role === "mudur"} ogrenciler={ogrenciListesi} genelDuyurular={genelWhatsapp} yurt={yurtVerisi} sablonlar={etkinSablonlar(sablonAyarlari)} />
+          logoDegistirebilir={role === "mudur"} ogrenciler={ogrenciListesi} genelDuyurular={genelWhatsapp} yurt={yurtVerisi} sablonlar={sablonlar} />
       </section>
     );
   }

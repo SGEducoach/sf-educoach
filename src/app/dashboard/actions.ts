@@ -124,7 +124,7 @@ export async function sinifEkle(schoolId: string, seviye: SinifSeviyesi, sube: s
 // Ekleme/düzenleme RLS'te (schools_insert_admin / schools_update_admin,
 // bkz. migration 0020) is_admin()'e bağlı — buradaki kontrol sadece daha
 // anlaşılır bir hata mesajı göstermek için.
-export async function okulEkle(input: { ad: string; tur: "okul" | "dershane"; okulKodu: string; kademe?: KurumKademesi; yurtlu?: boolean }) {
+export async function okulEkle(input: { ad: string; tur: "okul" | "dershane"; okulKodu: string; kademe?: KurumKademesi; yurtlu?: boolean; ozel?: boolean }) {
   const { supabase, user } = await requireUser();
   const ad = input.ad.trim();
   const okulKodu = input.okulKodu.trim();
@@ -135,13 +135,16 @@ export async function okulEkle(input: { ad: string; tur: "okul" | "dershane"; ok
   // Dershanede yurt kavramı yok: tür dershane ise yurtlu daima false
   // (kullanıcı isteği 02.10.2026, migration 0133).
   const yurtlu = input.tur === "okul" && input.yurtlu === true;
-  const { data, error } = await supabase.from("schools").insert({ ad, tur: input.tur, okul_kodu: okulKodu, kademe, yurtlu }).select("id").single();
+  // Özel okul (migration 0166): ücret ve kayıt duyuru kartları açılır.
+  // Yalnız işaretliyse gönderilir; sütun varsayılanı false.
+  const ozel = input.tur === "okul" && input.ozel === true;
+  const { data, error } = await supabase.from("schools").insert({ ad, tur: input.tur, okul_kodu: okulKodu, kademe, yurtlu, ...(ozel ? { ozel } : {}) }).select("id").single();
   if (error) {
     if (error.code === "23505") return { error: "Bu okul kodu zaten kullanılıyor.", id: null };
     if (error.message?.includes("row-level security")) return { error: "Bu işlem için yönetici yetkisi gerekiyor.", id: null };
     return { error: error.message, id: null };
   }
-  await auditLogYaz(supabase, user.id, "okul_ekle", { school_id: data.id, ad, okul_kodu: okulKodu, kademe, yurtlu });
+  await auditLogYaz(supabase, user.id, "okul_ekle", { school_id: data.id, ad, okul_kodu: okulKodu, kademe, yurtlu, ozel });
   revalidatePath("/yonetici");
   // Kullanıcı isteği (27.08.2026): "yeni eklenen kurum ilk iş olarak
   // sınıflarını oluştursun" — id geri döndürülüyor ki AdminPanel yeni
@@ -149,7 +152,7 @@ export async function okulEkle(input: { ad: string; tur: "okul" | "dershane"; ok
   return { error: null, id: data.id };
 }
 
-export async function okulDuzenle(id: string, input: { ad: string; okulKodu: string; tur?: "okul" | "dershane"; kademe?: KurumKademesi; yurtlu?: boolean }) {
+export async function okulDuzenle(id: string, input: { ad: string; okulKodu: string; tur?: "okul" | "dershane"; kademe?: KurumKademesi; yurtlu?: boolean; ozel?: boolean }) {
   const { supabase, user } = await requireUser();
   const ad = input.ad.trim();
   const okulKodu = input.okulKodu.trim();
@@ -164,12 +167,14 @@ export async function okulDuzenle(id: string, input: { ad: string; okulKodu: str
   // Yurtlu alanı yalnız okul türünde anlamlı; dershaneye çevrilen kurumda
   // kapatılıyor ki yurt arayüzleri orada hiç görünmesin.
   if (input.yurtlu !== undefined) guncelleme.yurtlu = input.tur === "dershane" ? false : input.yurtlu;
+  // Özel okul işareti (migration 0166) yalnız değiştiğinde gönderilir.
+  if (input.ozel !== undefined) guncelleme.ozel = input.ozel;
   const { error } = await supabase.from("schools").update(guncelleme).eq("id", id);
   if (error) {
     if (error.code === "23505") return { error: "Bu okul kodu zaten kullanılıyor." };
     return { error: "Bu işlem için yönetici yetkisi gerekiyor." };
   }
-  await auditLogYaz(supabase, user.id, "okul_duzenle", { school_id: id, ad, okul_kodu: okulKodu, tur: input.tur, kademe: input.kademe, yurtlu: input.yurtlu });
+  await auditLogYaz(supabase, user.id, "okul_duzenle", { school_id: id, ad, okul_kodu: okulKodu, tur: input.tur, kademe: input.kademe, yurtlu: input.yurtlu, ozel: input.ozel });
   revalidatePath("/yonetici");
   return { error: null };
 }

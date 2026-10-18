@@ -68,3 +68,15 @@ export function etkinSablonlar(ayarlar: SablonAyari[]): EtkinSablonlar {
   const harita = new Map(ayarlar.map((a) => [a.anahtar, a]));
   return Object.fromEntries(TUM_SABLONLAR.map((t) => [t.anahtar, etkinSablon(t.anahtar, harita.get(t.anahtar))]));
 }
+
+// Ücret ve kayıt kartları dershane ile özel okula özgü (kullanıcı kararı
+// 18.10.2026, migration 0166); devlet okulunda gizlenir.
+export const UCRETLI_KURUM_SABLONLARI = ["ucret-hatirlatma", "kayit"];
+
+export const ucretliKurumMu = (kurum: { tur: string; ozel?: boolean | null }) => kurum.tur !== "okul" || kurum.ozel === true;
+
+export function kurumaUygunSablonlar(sablonlar: EtkinSablonlar, ucretliKurum: boolean): EtkinSablonlar {
+  if (ucretliKurum) return sablonlar;
+  return Object.fromEntries(Object.entries(sablonlar).map(([anahtar, s]) =>
+    [anahtar, UCRETLI_KURUM_SABLONLARI.includes(anahtar) ? { ...s, gizli: true } : s]));
+}

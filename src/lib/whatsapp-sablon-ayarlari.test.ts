@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { TUM_SABLONLAR, etkinSablon, etkinSablonlar } from "./whatsapp-sablon-ayarlari";
+import { TUM_SABLONLAR, UCRETLI_KURUM_SABLONLARI, etkinSablon, etkinSablonlar, kurumaUygunSablonlar, ucretliKurumMu } from "./whatsapp-sablon-ayarlari";
 
 describe("whatsapp şablon ayarları", () => {
   test("bütün şablonlar tanımlı ve anahtarlar tekil", () => {
@@ -28,5 +28,18 @@ describe("whatsapp şablon ayarları", () => {
 
   test("toplu harita her şablonu içerir", () => {
     expect(Object.keys(etkinSablonlar([])).length).toBe(TUM_SABLONLAR.length);
+  });
+
+  test("ücret ve kayıt kartları yalnız dershane ve özel okulda görünür", () => {
+    expect(UCRETLI_KURUM_SABLONLARI.every((a) => TUM_SABLONLAR.some((t) => t.anahtar === a))).toBe(true);
+    expect(ucretliKurumMu({ tur: "dershane" })).toBe(true);
+    expect(ucretliKurumMu({ tur: "okul", ozel: true })).toBe(true);
+    expect(ucretliKurumMu({ tur: "okul", ozel: false })).toBe(false);
+    expect(ucretliKurumMu({ tur: "okul" })).toBe(false);
+    const devlet = kurumaUygunSablonlar(etkinSablonlar([]), false);
+    expect(devlet["ucret-hatirlatma"].gizli).toBe(true);
+    expect(devlet["kayit"].gizli).toBe(true);
+    expect(devlet["veli-toplantisi"].gizli).toBe(false);
+    expect(kurumaUygunSablonlar(etkinSablonlar([]), true)["ucret-hatirlatma"].gizli).toBe(false);
   });
 });

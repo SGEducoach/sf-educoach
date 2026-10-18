@@ -79,8 +79,11 @@ export default async function YoneticiPage({
   const aktifBolum = (params.bolum ?? "ozet") as DashboardBolumu;
   if (!dashboardMenusu("admin").some((oge) => oge.bolum === aktifBolum)) redirect("/yonetici");
 
-  const { data: okullar } = await supabase.from("schools").select("id, ad, okul_kodu, tur, aktif, kademe, yurtlu").is("grup_kapasitesi", null).order("ad");
-  const okulListesi = (okullar ?? []) as { id: string; ad: string; okul_kodu: string; tur: "okul" | "dershane"; aktif: boolean; kademe?: KurumKademesi; yurtlu?: boolean }[];
+  // ozel 0166 ile geldi; sütun yoksa onsuz okunur.
+  const okulSorgusu = (sutunlar: string) => supabase.from("schools").select(sutunlar).is("grup_kapasitesi", null).order("ad");
+  const okulIlk = await okulSorgusu("id, ad, okul_kodu, tur, aktif, kademe, yurtlu, ozel");
+  const okullar = okulIlk.error ? (await okulSorgusu("id, ad, okul_kodu, tur, aktif, kademe, yurtlu")).data : okulIlk.data;
+  const okulListesi = (okullar ?? []) as unknown as { id: string; ad: string; okul_kodu: string; tur: "okul" | "dershane"; aktif: boolean; kademe?: KurumKademesi; yurtlu?: boolean; ozel?: boolean }[];
   const gorunecekOkulId = params.okul || okulListesi[0]?.id || null;
 
   const [{ data: siniflar }, { data: ogretmenler }] = await Promise.all([
