@@ -98,6 +98,7 @@ import { ayAnahtari, ayEtiketi } from "@/lib/ilkokul-gelisim";
 import { sinifimOzeti } from "@/lib/ilkokul-sinifim";
 import { IlkokulSinifimPanosu } from "@/components/dashboard/IlkokulSinifimPanosu";
 import { WhatsappDuyuruStudyosu } from "@/components/dashboard/WhatsappDuyuruStudyosu";
+import { DuyuruTuruSekmeleri } from "@/components/dashboard/DuyuruTuruSekmeleri";
 import { IlkokulGelisimGirisi } from "@/components/dashboard/IlkokulGelisimGirisi";
 import { IlkokulGelisimRaporu } from "@/components/dashboard/IlkokulGelisimRaporu";
 import { bekleyenOgretmenBildirimleriniGonder } from "@/lib/ogretmen-bildirim";
@@ -119,7 +120,7 @@ function haftaninPazartesisi(tarihISO?: string): string {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sinif?: string; ogrenci?: string; ogretmen?: string; donem?: string; okul?: string; hafta?: string; ders?: string; konu?: string; kisim?: string; bolum?: string; gecmis?: string; ay?: string; kapsam?: string }>;
+  searchParams: Promise<{ sinif?: string; ogrenci?: string; ogretmen?: string; donem?: string; okul?: string; hafta?: string; ders?: string; konu?: string; kisim?: string; bolum?: string; gecmis?: string; ay?: string; kapsam?: string; tur?: string }>;
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -328,7 +329,7 @@ export default async function DashboardPage({
             <>
               {role === "ogrenci" && <OgrenciIcerik userId={user.id} ad={profile.ad} donem={donem} haftaBaslangic={haftaninPazartesisi(params.hafta)} aktifBolum={aktifBolum} gecmisHafta={Number(params.gecmis ?? 0)} seciliDersId={params.ders} seciliKonu={params.konu} seciliBolum={params.kisim} kademe={ogrenciKademesi} sinifSeviyesi={ogrenciSinifSeviyesi} />}
               {(role === "ogretmen" || role === "mudur") && (
-                <OgretmenIcerik userId={user.id} role={role} kurumTuru={kurumTuru} brans={brans} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} secilenOgretmenId={params.ogretmen} donem={donem} aktifBolum={aktifBolum} seciliDersId={params.ders} seciliBolum={params.kisim} kademe={menuKademesi} yurtlu={kurum?.yurtlu === true} grupMu={grupKocu} secilenAy={params.ay} secilenKapsam={params.kapsam} />
+                <OgretmenIcerik userId={user.id} role={role} kurumTuru={kurumTuru} brans={brans} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} secilenOgretmenId={params.ogretmen} donem={donem} aktifBolum={aktifBolum} seciliDersId={params.ders} seciliBolum={params.kisim} kademe={menuKademesi} yurtlu={kurum?.yurtlu === true} grupMu={grupKocu} secilenAy={params.ay} secilenKapsam={params.kapsam} duyuruTuru={params.tur} />
               )}
               {role === "veli" && <VeliIcerik userId={user.id} ad={profile.ad} secilenOgrenciId={params.ogrenci} donem={donem} aktifBolum={aktifBolum} />}
             </>
@@ -743,12 +744,14 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
   );
 }
 
-async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, secilenOgrenciId, secilenOgretmenId, donem, aktifBolum, seciliDersId, seciliBolum, kademe, yurtlu = false, grupMu = false, secilenAy, secilenKapsam }: {
+async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, secilenOgrenciId, secilenOgretmenId, donem, aktifBolum, seciliDersId, seciliBolum, kademe, yurtlu = false, grupMu = false, secilenAy, secilenKapsam, duyuruTuru }: {
   userId: string; role: "ogretmen" | "mudur"; kurumTuru?: KurumTuru; brans?: string; secilenSinifId?: string; secilenOgrenciId?: string; secilenOgretmenId?: string; donem: RaporDonemi; aktifBolum: DashboardBolumu;
   // İlkokul Gelişim Raporu'nun ayı (?ay=2026-10).
   secilenAy?: string;
   // Konu Durumu'nun seçili kapsamı (?kapsam=).
   secilenKapsam?: string;
+  // Duyurular'da WhatsApp sekmesi (?tur=whatsapp).
+  duyuruTuru?: string;
   // Ortaokul Konu Yeterliliği ekranının seçimleri (?ders=, ?kisim=).
   seciliDersId?: string; seciliBolum?: string;
   // Kurumun kademesi: ortaokulda ödev formunun konu havuzu değişiyor.
@@ -1012,16 +1015,11 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   }
 
   // WhatsApp duyuru stüdyosu (kullanıcı isteği 18.10.2026) — müdür ve
-  // rehber. Dershane müdürü de buraya düşer: bu dal DershaneMudurPaneli'nden
-  // önce. Okul rehberi yalnız atandığı düzeylerin öğrencilerini görür.
-  if (aktifBolum === "whatsapp-duyurulari") {
-    if (role !== "mudur" && !rehberOgretmenMi) {
-      return (
-        <div className="sfec-fade rounded-3xl p-6 text-center" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-          <p style={{ color: TEXT_MUTED }} className="text-sm">Bu bölüm müdür ve rehber öğretmenlere açıktır.</p>
-        </div>
-      );
-    }
+  // rehber; Duyurular'ın ikinci sekmesi (?tur=whatsapp, bkz.
+  // DuyuruTuruSekmeleri). Dershane müdürü de buraya düşer: bu dal
+  // DershaneMudurPaneli'nden önce. Yetkisi olmayan site içi sekmeye düşer.
+  // Okul rehberi yalnız atandığı düzeylerin öğrencilerini görür.
+  if (aktifBolum === "duyurular" && duyuruTuru === "whatsapp" && (role === "mudur" || rehberOgretmenMi)) {
     const admin = createAdminClient();
     // logo_url 0159 ile geldi; sütun yoksa yalnız ad okunur.
     const kurumIlk = await admin.from("schools").select("ad, logo_url").eq("id", teacher.school_id).maybeSingle();
@@ -1048,8 +1046,11 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
         ? sinifSiraKarsilastir({ seviye: a.seviye, sube: a.sube }, { seviye: b.seviye, sube: b.sube })
         : (a.seviye ? -1 : b.seviye ? 1 : 0)) || a.ad.localeCompare(b.ad, "tr"));
     return (
-      <WhatsappDuyuruStudyosu kurumAdi={kurum?.ad ?? "Kurumumuz"} logoAdresi={kurum?.logo_url ?? null}
-        logoDegistirebilir={role === "mudur"} ogrenciler={ogrenciListesi} />
+      <section className="sfec-section">
+        <DuyuruTuruSekmeleri secili="whatsapp" />
+        <WhatsappDuyuruStudyosu kurumAdi={kurum?.ad ?? "Kurumumuz"} logoAdresi={kurum?.logo_url ?? null}
+          logoDegistirebilir={role === "mudur"} ogrenciler={ogrenciListesi} />
+      </section>
     );
   }
 

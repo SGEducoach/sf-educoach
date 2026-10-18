@@ -14,6 +14,7 @@ import {
 } from "@/app/dashboard/actions";
 import { gorevVer, verdigimGoreviSil } from "@/app/dashboard/gorev-actions";
 import { DuyuruFormu } from "@/components/dashboard/DuyuruFormu";
+import { DuyuruTuruSekmeleri } from "@/components/dashboard/DuyuruTuruSekmeleri";
 import { SinifKarti } from "@/components/dashboard/SinifKarti";
 import { MesajKartiOlusturucu } from "@/components/dashboard/MesajKartiOlusturucu";
 import type { MesajKartiGorevi } from "@/lib/mesaj-karti";
@@ -242,7 +243,9 @@ export function OgretmenPanel({
       )}
 
       {aktifBolum === "duyurular" && duyuruMumkunMu && (
-        <section id="duyurular" className="sfec-section"><DuyuruFormu
+        <section id="duyurular" className="sfec-section">
+          {(role === "mudur" || rehberOgretmenMi) && <DuyuruTuruSekmeleri secili="site" />}
+          <DuyuruFormu
           baslik={grupMu ? "Grubuna duyuru gönder" : rehberOgretmenMi ? "Rehber Öğretmen duyurusu gönder" : role === "mudur" ? "Okula duyuru gönder" : "Sınıfınıza duyuru gönder"}
           aciklama={grupMu
             ? "Duyuru tüm gruba ya da seçtiğiniz sınıf düzeyine gider; öğrenciye, veliye ya da ikisine birden gönderebilirsiniz."

@@ -15,7 +15,6 @@ export type DashboardBolumu =
   | "kapsamim"
   | "program-destegi"
   | "duyurular"
-  | "whatsapp-duyurulari"
   | "talepler"
   | "onaylar"
   | "dersler"
@@ -147,13 +146,6 @@ const VELI_MENUSU: DashboardMenuOgesi[] = [
 // dershane rehberi ve müdür tüm kurumu sınıf filtresiyle görür. Branş
 // öğretmeninde menüde durur ama içeride "sınıf öğretmeni içindir" der —
 // Konu Haritası ile aynı desen (kapsam veriye bağlı, menü role bağlı).
-// WhatsApp duyuru kartları (kullanıcı isteği 18.10.2026): müdür ve rehber
-// öğretmen kurumun yuvarlak logosuyla hazır duyuru kartları oluşturur
-// (bkz. WhatsappDuyuruStudyosu). Kartlar tarayıcıda çizilir, saklanmaz.
-const WHATSAPP_DUYURU_MENU_OGESI: DashboardMenuOgesi = {
-  bolum: "whatsapp-duyurulari", href: "/dashboard/whatsapp-duyurulari", etiket: "WhatsApp Duyuruları", ikon: "duyuru",
-};
-
 const SINIF_ANALIZI_MENU_OGESI: DashboardMenuOgesi = {
   bolum: "sinif-analizi", href: "/dashboard?bolum=sinif-analizi", etiket: "Sınıf Analizi", ikon: "ogrenci",
 };
@@ -201,7 +193,6 @@ const MUDUR_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "ogretmenler", href: "/dashboard/ogretmenler", etiket: "Öğretmenler", ikon: "ogretmen" },
   { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Konu Durumu", ikon: "ai" },
   { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Duyurular", ikon: "duyuru" },
-  WHATSAPP_DUYURU_MENU_OGESI,
   { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Pano", ikon: "takvim" },
 ];
 
@@ -220,7 +211,6 @@ const DERSHANE_MUDUR_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "denemeler", href: "/dashboard/denemeler", etiket: "Denemeler", ikon: "deneme" },
   { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Konu Durumu", ikon: "ai" },
   { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Duyurular", ikon: "duyuru" },
-  WHATSAPP_DUYURU_MENU_OGESI,
   { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Pano", ikon: "takvim" },
 ];
 
@@ -304,7 +294,6 @@ const REHBER_OGRETMEN_MENUSU: DashboardMenuOgesi[] = [
   SINIF_ANALIZI_MENU_OGESI,
   { bolum: "ogretmenler", href: "/dashboard/ogretmenler", etiket: "Öğretmenler ve Programlar", ikon: "ogretmen" },
   { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Rehber Öğretmen Duyurusu", ikon: "duyuru" },
-  WHATSAPP_DUYURU_MENU_OGESI,
   { bolum: "rehberlik", href: "/dashboard/rehberlik", etiket: "Bireysel Mesaj", ikon: "rehberlik" },
   { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Pano", ikon: "takvim" },
   TAKVIM_MENU_OGESI,
@@ -431,7 +420,7 @@ export function dashboardMenuYapisi(
 
 export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
   "sinif-analizi", "gorevler", "planlar", "veri-girisi", "konu-hakimiyeti", "analiz", "yapay-zeka", "tg-denemeleri",
-  "duyurular", "whatsapp-duyurulari", "talepler", "onaylar", "dersler", "ortaokul-dersler", "ortaokul-yardim", "ortaokul-calisma", "ortaokul-onaylar", "ortaokul-yeterlilik", "ilkokul-gelisim", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler", "rehberlik", "profil", "takvim", "yarismalar", "ogrenci-takibi",
+  "duyurular", "talepler", "onaylar", "dersler", "ortaokul-dersler", "ortaokul-yardim", "ortaokul-calisma", "ortaokul-onaylar", "ortaokul-yeterlilik", "ilkokul-gelisim", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler", "rehberlik", "profil", "takvim", "yarismalar", "ogrenci-takibi",
 ]);
 // Yazılı analizinin ayrı sayfası yok (kullanıcı kararı 11.09.2026: yalnızca
 // öğretmene özel) — öğretmen Ajandam > Yazılı Analizi sekmesinden girer.

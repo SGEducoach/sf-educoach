@@ -1,6 +1,7 @@
 import { moderatorKullanicilariGetir } from "@/app/moderator/actions";
 import { ogretmenDuyuruGonder, gonderilenDuyurularGetir } from "@/app/dashboard/actions";
 import { DuyuruFormu } from "@/components/dashboard/DuyuruFormu";
+import { DuyuruTuruSekmeleri } from "@/components/dashboard/DuyuruTuruSekmeleri";
 import { KonuDurumuBolumu } from "@/components/dashboard/KonuDurumuBolumu";
 import { konuDurumuKapsamlari } from "@/lib/konu-durumu-verisi";
 import { dershaneAnaSayfaVerisiGetir } from "@/lib/dershane-ana-sayfa";
@@ -45,6 +46,7 @@ export async function DershaneMudurPaneli({ siniflar, aktifBolum, schoolId, seci
     ];
     return (
       <section id="duyurular" className="sfec-section">
+        <DuyuruTuruSekmeleri secili="site" />
         <DuyuruFormu
           baslik="Dershaneye duyuru gönder"
           aciklama="Dershane veya sınıf kapsamını ve duyurunun öğrenciye, veliye ya da ikisine birden gideceğini seçebilirsiniz."

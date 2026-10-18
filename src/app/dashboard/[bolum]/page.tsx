@@ -7,7 +7,8 @@ export default async function DashboardBolumPage({ params, searchParams }: {
   params: Promise<{ bolum: string }>;
   // `konu`: Derslerim'deki bir konudan "Yardım İste"ye geçilirken taşınıyor.
   // `ay`: İlkokul Gelişim Raporu'nun ayı (2026-10). `kapsam`: Konu Durumu.
-  searchParams: Promise<{ sinif?: string; ogrenci?: string; ogretmen?: string; donem?: string; okul?: string; hafta?: string; ders?: string; konu?: string; kisim?: string; ay?: string; kapsam?: string }>;
+  // `tur`: Duyurular'da "whatsapp" sekmesi.
+  searchParams: Promise<{ sinif?: string; ogrenci?: string; ogretmen?: string; donem?: string; okul?: string; hafta?: string; ders?: string; konu?: string; kisim?: string; ay?: string; kapsam?: string; tur?: string }>;
 }) {
   const [{ bolum }, mevcutArama] = await Promise.all([params, searchParams]);
   if (!DASHBOARD_ROUTE_BOLUMLERI.has(bolum as DashboardBolumu)) notFound();
