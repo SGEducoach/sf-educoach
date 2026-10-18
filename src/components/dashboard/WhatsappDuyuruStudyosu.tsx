@@ -139,26 +139,42 @@ export function WhatsappDuyuruStudyosu({ kurumAdi, logoAdresi, logoDegistirebili
         {mesaj && <p className="w-full text-xs font-semibold" style={{ color: mesaj.hata ? BLUSH : MINT }}>{mesaj.metin}</p>}
       </section>
 
-      <section aria-label="Duyuru türü" className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-7">
-        {[...DUYURU_SABLONLARI.map((s) => ({ anahtar: s.anahtar, ad: s.ad, foto: s.foto, renk: s.renk })),
-          { anahtar: DEVAMSIZLIK, ad: "Devamsızlık bildirimi", foto: DEVAMSIZLIK_FOTO, renk: DEVAMSIZLIK_RENK }].map((s) => {
-          const secili = s.anahtar === sablonAnahtari;
-          return (
-            <button key={s.anahtar} type="button" onClick={() => setSablonAnahtari(s.anahtar)} aria-pressed={secili}
-              className="sfec-btn group relative flex h-20 flex-col justify-end overflow-hidden rounded-2xl p-2 text-left sm:h-24 sm:p-2.5"
-              style={{ background: s.renk, outline: secili ? `3px solid ${MINT}` : "none", outlineOffset: 2 }}>
-              <span aria-hidden="true" className="absolute inset-0 bg-cover bg-center opacity-55 transition-opacity group-hover:opacity-70" style={{ backgroundImage: `url(${FOTO_KOKU}${s.foto})` }} />
-              <span aria-hidden="true" className="absolute inset-0" style={{ background: `linear-gradient(180deg, transparent 20%, ${s.renk} 95%)` }} />
-              <span className="relative text-[11px] font-bold leading-tight text-white sm:text-[12px]">{s.ad}</span>
-            </button>
-          );
-        })}
-      </section>
+      {/* Şablonlar kenarda (kullanıcı isteği 18.10.2026); dar ekranda üstte yatay kayan şerit. */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+        <nav aria-label="Duyuru türü"
+          className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 max-lg:[contain:inline-size] lg:sticky lg:top-4 lg:mx-0 lg:w-60 lg:shrink-0 lg:overflow-visible lg:p-0">
+          <div className="contents lg:flex lg:w-full lg:flex-col lg:gap-1 lg:rounded-3xl lg:p-2" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+            <span className="hidden px-2 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wide lg:block" style={{ color: TEXT_MUTED }}>Duyurular</span>
+            {DUYURU_SABLONLARI.map((s) => (
+              <SablonDugmesi key={s.anahtar} ad={s.ad} foto={s.foto} renk={s.renk} secili={s.anahtar === sablonAnahtari} sec={() => setSablonAnahtari(s.anahtar)} />
+            ))}
+            <span className="hidden px-2 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wide lg:block" style={{ color: TEXT_MUTED }}>Veli bildirimi</span>
+            <SablonDugmesi ad="Devamsızlık bildirimi" foto={DEVAMSIZLIK_FOTO} renk={DEVAMSIZLIK_RENK}
+              secili={sablonAnahtari === DEVAMSIZLIK} sec={() => setSablonAnahtari(DEVAMSIZLIK)} />
+          </div>
+        </nav>
 
-      {sablon
-        ? <DuyuruDuzenleyici key={sablon.anahtar} sablon={sablon} kurumAdi={kurumAdi} logo={logo} telefon={telefon} paylasilabilir={paylasilabilir} />
-        : <DevamsizlikDuzenleyici kurumAdi={kurumAdi} logo={logo} telefon={telefon} paylasilabilir={paylasilabilir} ogrenciler={ogrenciler} />}
+        <div className="min-w-0 flex-1">
+          {sablon
+            ? <DuyuruDuzenleyici key={sablon.anahtar} sablon={sablon} kurumAdi={kurumAdi} logo={logo} telefon={telefon} paylasilabilir={paylasilabilir} />
+            : <DevamsizlikDuzenleyici kurumAdi={kurumAdi} logo={logo} telefon={telefon} paylasilabilir={paylasilabilir} ogrenciler={ogrenciler} />}
+        </div>
+      </div>
     </div>
+  );
+}
+
+function SablonDugmesi({ ad, foto, renk, secili, sec }: { ad: string; foto: string; renk: string; secili: boolean; sec: () => void }) {
+  return (
+    <button type="button" onClick={sec} aria-pressed={secili}
+      className="sfec-btn flex shrink-0 items-center gap-2.5 rounded-2xl py-1.5 pl-1.5 pr-3 text-left lg:w-full lg:pr-2"
+      style={secili ? { background: MINT_BG, outline: `2px solid ${MINT}`, outlineOffset: -2 } : { background: BG1_ALT }}>
+      <span aria-hidden="true" className="relative h-9 w-11 shrink-0 overflow-hidden rounded-xl" style={{ background: renk }}>
+        <span className="absolute inset-0 bg-cover bg-center opacity-80" style={{ backgroundImage: `url(${FOTO_KOKU}${foto})` }} />
+        <span className="absolute inset-x-0 bottom-0 h-1.5" style={{ background: renk }} />
+      </span>
+      <span className="whitespace-nowrap text-xs font-bold leading-tight lg:whitespace-normal" style={{ color: secili ? TEXT : TEXT_MUTED }}>{ad}</span>
+    </button>
   );
 }
 
@@ -241,7 +257,7 @@ function DuyuruDuzenleyici({ sablon, kurumAdi, logo, telefon, paylasilabilir }: 
   }
 
   return (
-    <section className="sfec-fade grid gap-4 rounded-3xl p-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+    <section className="sfec-fade grid gap-4 rounded-3xl p-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <div className="flex min-w-0 flex-col gap-3">
         <h3 className="text-sm font-bold" style={{ color: TEXT }}>{sablon.ad}</h3>
         {sablon.girisGerekli && (
@@ -377,7 +393,7 @@ function DevamsizlikDuzenleyici({ kurumAdi, logo, telefon, paylasilabilir, ogren
     : { background: BG1_ALT, color: TEXT, border: `1px solid ${BORDER_STRONG}` };
 
   return (
-    <section className="sfec-fade grid gap-4 rounded-3xl p-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+    <section className="sfec-fade grid gap-4 rounded-3xl p-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <div className="flex min-w-0 flex-col gap-3">
         <div className="flex items-center gap-2">
           <UserX size={15} color={BLUSH} aria-hidden="true" />
