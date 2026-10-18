@@ -19,12 +19,13 @@ import { kurumLogosuYukle } from "@/app/dashboard/kurum-logo-actions";
 import {
   Alan, FotoSecici, Onizleme, SablonDugmesi, dosyaAdiTemizle, girdiStili, gorselYukle, indirVeyaPaylas, useFotoSecimi, yaziTipi,
 } from "@/components/dashboard/whatsapp-ortak";
-import { CinsiyetBilgileri, YurtListeDuzenleyici, type YurtVerisi } from "@/components/dashboard/YurtListeStudyosu";
+import { CinsiyetBilgileri, GelenYoklamalar, YurtListeDuzenleyici, type YoklamaBaslangici, type YurtVerisi } from "@/components/dashboard/YurtListeStudyosu";
 import { YURT_SABLONLARI } from "@/lib/yurt-listesi";
 import { etkinSablonlar, type EtkinSablon, type EtkinSablonlar } from "@/lib/whatsapp-sablon-ayarlari";
 
 const DEVAMSIZLIK = "devamsizlik";
 const CINSIYET = "cinsiyet-bilgileri";
+const GELEN = "gelen-yoklamalar";
 
 export interface StudyoOgrencisi { id: string; ad: string; sinif: string | null; seviye: string | null; sube: string | null }
 
@@ -40,7 +41,10 @@ export function WhatsappDuyuruStudyosu({ kurumAdi, logoAdresi, logoDegistirebili
   const ilkAnahtar = [...(genelDuyurular ? [...DUYURU_SABLONLARI.map((s) => s.anahtar), DEVAMSIZLIK] : []), ...(yurt ? YURT_SABLONLARI.map((s) => s.anahtar) : [])]
     .find(gorunur) ?? (yurt?.mudurMu ? CINSIYET : DEVAMSIZLIK);
   const [logo, setLogo] = useState<string | null>(logoAdresi);
-  const [sablonAnahtari, setSablonAnahtari] = useState<string>(ilkAnahtar);
+  const [sablonAnahtari, setSablonAnahtariHam] = useState<string>(ilkAnahtar);
+  // Müdür yardımcısının açtığı gelen yoklama (Faz 3); şablon değişince düşer.
+  const [yoklama, setYoklama] = useState<{ id: string; baslangic: YoklamaBaslangici } | null>(null);
+  const setSablonAnahtari = (a: string) => { setYoklama(null); setSablonAnahtariHam(a); };
   const [telefon, setTelefon] = useState("");
   const [paylasilabilir, setPaylasilabilir] = useState(false);
   const [mesaj, setMesaj] = useState<{ hata: boolean; metin: string } | null>(null);
@@ -138,19 +142,27 @@ export function WhatsappDuyuruStudyosu({ kurumAdi, logoAdresi, logoDegistirebili
               {YURT_SABLONLARI.filter((s) => gorunur(s.anahtar)).map((s) => (
                 <SablonDugmesi key={s.anahtar} ad={sablonlar[s.anahtar].ad} foto={sablonlar[s.anahtar].fotolar[0] ?? ""} renk={s.renk} secili={s.anahtar === sablonAnahtari} sec={() => setSablonAnahtari(s.anahtar)} />
               ))}
-              {yurt.mudurMu && (
+              {yurt.mudurMu && (<>
+                <SablonDugmesi ad="Gelen Yoklamalar" foto="aksam-yoklamasi.jpg" renk="#0f7a5c"
+                  secili={sablonAnahtari === GELEN} sec={() => setSablonAnahtari(GELEN)} />
                 <SablonDugmesi ad="Cinsiyet Bilgileri" foto="aksam-yoklamasi.jpg" renk="#5b6b82"
                   secili={sablonAnahtari === CINSIYET} sec={() => setSablonAnahtari(CINSIYET)} />
-              )}
+              </>)}
             </>)}
           </div>
         </nav>
 
         <div className="min-w-0 flex-1">
           {yurt && yurtSablonu
-            ? <YurtListeDuzenleyici key={yurtSablonu.anahtar} sablon={yurtSablonu} etkin={sablonlar[yurtSablonu.anahtar]} kurumAdi={kurumAdi} logo={logo} yurt={yurt} paylasilabilir={paylasilabilir} />
+            ? <YurtListeDuzenleyici key={`${yurtSablonu.anahtar}-${yoklama?.id ?? ""}`} sablon={yurtSablonu} etkin={sablonlar[yurtSablonu.anahtar]} kurumAdi={kurumAdi} logo={logo} yurt={yurt} paylasilabilir={paylasilabilir}
+                baslangic={yoklama?.baslangic ?? null} />
             : yurt && sablonAnahtari === CINSIYET
             ? <CinsiyetBilgileri yurt={yurt} />
+            : yurt && sablonAnahtari === GELEN
+            ? <GelenYoklamalar onAc={(y) => {
+                setSablonAnahtariHam(y.tur);
+                setYoklama({ id: y.id, baslangic: { grup: y.grup, degerler: y.alanlar, hazirlayanAdi: y.hazirlayanAdi, secili: Object.fromEntries(y.ogrenciler.map((o) => [o.anahtar, o.not])) } });
+              }} />
             : sablon
             ? <DuyuruDuzenleyici key={sablon.anahtar} sablon={sablon} etkin={sablonlar[sablon.anahtar]} kurumAdi={kurumAdi} logo={logo} telefon={telefon} paylasilabilir={paylasilabilir} />
             : <DevamsizlikDuzenleyici etkin={sablonlar[DEVAMSIZLIK]} kurumAdi={kurumAdi} logo={logo} telefon={telefon} paylasilabilir={paylasilabilir} ogrenciler={ogrenciler} />}

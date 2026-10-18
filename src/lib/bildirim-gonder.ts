@@ -5,7 +5,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 // yazılıyor (bkz. migration 0079) — duyurular/duyuru_aliciler ("Mesajlarım")
 // ile KARIŞTIRILMIYOR, o tablo öğretmen/müdür serbest metin mesajları için
 // kalmaya devam ediyor. İlk kullanım: yanlış giriş denemesi uyarısı.
-export type BildirimTuru = "yanlis_giris" | "sistem";
+// "yoklama": yurt yoklaması müdür yardımcısına gönderildi (migration 0164).
+export type BildirimTuru = "yanlis_giris" | "sistem" | "yoklama";
 
 export async function bildirimGonder(
   admin: SupabaseClient,
@@ -14,5 +15,7 @@ export async function bildirimGonder(
   baslik: string,
   mesaj: string,
 ) {
-  await admin.from("bildirimler").insert({ profile_id: profileId, tur, baslik, mesaj });
+  const { error } = await admin.from("bildirimler").insert({ profile_id: profileId, tur, baslik, mesaj });
+  // Tür kısıtı henüz güncellenmediyse bildirim kaybolmasın: genel türle yazılır.
+  if (error && tur !== "sistem") await admin.from("bildirimler").insert({ profile_id: profileId, tur: "sistem", baslik, mesaj });
 }

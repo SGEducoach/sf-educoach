@@ -7,17 +7,19 @@
 // bilgisini girer. Logo kurumun logosu (yatay ise çerçevesiz); yoksa
 // kurumun baş harfleri. Kart saklanmaz.
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { Download, Share2, Users } from "lucide-react";
+import { Download, Inbox, Send, Share2, Users } from "lucide-react";
 import { BG1, BG1_ALT, BORDER, BORDER_STRONG, BLUSH, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
 import { bugununTarihiTR } from "@/lib/tarih";
+import { kartTarihi } from "@/lib/whatsapp-duyuru";
 import { sinifSiraKarsilastir } from "@/lib/types";
 import {
-  YURT_LISTE_SAYFA_SATIRI, grupEtiketi, ogretmeninGrubu, yurtBilgiSatirlari, yurtSayfalari, yurtVarsayilanlari,
+  YURT_LISTE_SAYFA_SATIRI, YURT_SABLONLARI, grupEtiketi, ogretmeninGrubu, yurtBilgiSatirlari, yurtSayfalari, yurtVarsayilanlari,
   type OgrenciCinsiyeti, type OgretmenCinsiyeti, type YurtOgrencisi, type YurtSablonu,
 } from "@/lib/yurt-listesi";
 import { yurtListesiCiz } from "@/components/dashboard/whatsapp-kart-cizim";
 import { Alan, FotoSecici, Onizleme, girdiStili, gorselYukle, indirVeyaPaylas, useFotoSecimi, yaziTipi } from "@/components/dashboard/whatsapp-ortak";
 import { cinsiyetKaydet } from "@/app/dashboard/yurt-cinsiyet-actions";
+import { gelenYoklamalar, yoklamaGonder, type GelenYoklama } from "@/app/dashboard/yoklama-actions";
 import type { EtkinSablon } from "@/lib/whatsapp-sablon-ayarlari";
 
 export interface YurtOgretmeni { id: string; ad: string; brans: string | null; cinsiyet: OgretmenCinsiyeti | null }
@@ -35,18 +37,23 @@ const kucukBaslik = "text-[10px] font-semibold uppercase tracking-wide";
 const sinifSirala = (a: YurtOgrencisi, b: YurtOgrencisi) =>
   (a.seviye && b.seviye && a.sube && b.sube ? sinifSiraKarsilastir({ seviye: a.seviye, sube: a.sube }, { seviye: b.seviye, sube: b.sube }) : 0) || a.ad.localeCompare(b.ad, "tr");
 
-export function YurtListeDuzenleyici({ sablon, etkin, kurumAdi, logo: kurumLogosu, yurt, paylasilabilir }: {
+// baslangic: müdür yardımcısının açtığı gelen yoklama (Faz 3) — form ondan dolar.
+export interface YoklamaBaslangici { grup: OgrenciCinsiyeti; degerler: Record<string, string>; secili: Record<string, string>; hazirlayanAdi: string }
+
+export function YurtListeDuzenleyici({ sablon, etkin, kurumAdi, logo: kurumLogosu, yurt, paylasilabilir, baslangic = null }: {
   sablon: YurtSablonu; etkin: EtkinSablon; kurumAdi: string; logo: string | null; yurt: YurtVerisi; paylasilabilir: boolean;
+  baslangic?: YoklamaBaslangici | null;
 }) {
   const kendiGrubum = ogretmeninGrubu(yurt.benimCinsiyetim);
-  const [grup, setGrup] = useState<OgrenciCinsiyeti>(kendiGrubum ?? "kiz");
-  const [degerler, setDegerler] = useState<Record<string, string>>(() => yurtVarsayilanlari(sablon, bugununTarihiTR()));
+  const [grup, setGrup] = useState<OgrenciCinsiyeti>(baslangic?.grup ?? kendiGrubum ?? "kiz");
+  const [degerler, setDegerler] = useState<Record<string, string>>(() => ({ ...yurtVarsayilanlari(sablon, bugununTarihiTR()), ...(baslangic?.degerler ?? {}) }));
   const [arama, setArama] = useState("");
-  const [secili, setSecili] = useState<Record<string, string>>({}); // anahtar → not
+  const [secili, setSecili] = useState<Record<string, string>>(baslangic?.secili ?? {}); // anahtar → not
   const foto = useFotoSecimi(etkin.fotolar);
   const [sayfa, setSayfa] = useState(0);
   const [onizleme, setOnizleme] = useState<string | null>(null);
   const [durum, setDurum] = useState<string | null>(null);
+  const [gonderiliyor, startGonder] = useTransition();
 
   const grubum = yurt.mudurMu ? grup : kendiGrubum;
   const gruptakiler = useMemo(() => yurt.ogrenciler.filter((o) => o.cinsiyet === grubum), [yurt.ogrenciler, grubum]);
@@ -56,6 +63,17 @@ export function YurtListeDuzenleyici({ sablon, etkin, kurumAdi, logo: kurumLogos
   const secilenler = useMemo(() => gruptakiler.filter((o) => o.anahtar in secili).sort(sinifSirala), [gruptakiler, secili]);
   const sayfalar = useMemo(() => yurtSayfalari(secilenler), [secilenler]);
   const gecerliSayfa = Math.min(sayfa, sayfalar.length - 1);
+
+  // Öğretmen yoklamayı yurt sorumlusu müdür yardımcısına gönderir (Faz 3).
+  const mudurYardimcisinaGonder = () => {
+    if (!grubum) return;
+    const ogrenciler = secilenler.map((o) => ({ anahtar: o.anahtar, ad: o.ad, okulNo: o.okulNo ?? "", sinif: o.sinif ?? "", not: secili[o.anahtar] ?? "" }));
+    setDurum(null);
+    startGonder(async () => {
+      const r = await yoklamaGonder({ tur: sablon.anahtar, grup: grubum, alanlar: degerler, ogrenciler });
+      setDurum(r.error ?? `Müdür yardımcısına gönderildi${r.aliciSayisi > 1 ? ` (${r.aliciSayisi} kişi)` : ""}.`);
+    });
+  };
 
   async function ciz(i: number): Promise<HTMLCanvasElement> {
     const canvas = document.createElement("canvas");
@@ -116,6 +134,11 @@ export function YurtListeDuzenleyici({ sablon, etkin, kurumAdi, logo: kurumLogos
           )}
         </div>
 
+        {baslangic && (
+          <p className="rounded-xl px-3 py-2 text-[11px] font-semibold" style={{ background: MINT_BG, color: TEXT }}>
+            {baslangic.hazirlayanAdi} öğretmenin gönderdiği liste açıldı. Eklemeniz gereken öğrenci varsa işaretleyin, sonra kartı paylaşın.
+          </p>
+        )}
         <div className="grid gap-3 sm:grid-cols-2">
           {sablon.alanlar.map((a) => {
             const id = `yurt-${sablon.anahtar}-${a.anahtar}`;
@@ -196,6 +219,13 @@ export function YurtListeDuzenleyici({ sablon, etkin, kurumAdi, logo: kurumLogos
             <button key={`o${i}`} type="button" onClick={() => setSayfa(i)} className="rounded-lg px-2 py-1 text-[11px] font-bold"
               style={i === gecerliSayfa ? { background: MINT_BG, color: TEXT } : { color: TEXT_MUTED }}>Önizle {i + 1}</button>
           ))}
+          {/* Öğretmen isterse WhatsApp'ta paylaşır, isterse müdür yardımcısına gönderir. */}
+          {!yurt.mudurMu && (
+            <button type="button" onClick={mudurYardimcisinaGonder} disabled={gonderiliyor}
+              className="sfec-btn inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold disabled:opacity-50" style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${MINT}` }}>
+              <Send size={13} aria-hidden="true" /> {gonderiliyor ? "Gönderiliyor…" : "Müdür Yardımcısına Gönder"}
+            </button>
+          )}
         </div>
         {secilenler.length === 0 && <p className="text-[11px]" style={{ color: TEXT_MUTED }}>Kimse seçilmezse kartta &quot;{sablon.bosMesaj}&quot; yazar.</p>}
         {durum && <p className="text-xs font-semibold" style={{ color: MINT }}>{durum}</p>}
@@ -316,6 +346,56 @@ export function CinsiyetBilgileri({ yurt }: { yurt: YurtVerisi }) {
           ))}
         </div>
       </div>
+    </section>
+  );
+}
+
+// Yurt sorumlusu müdür yardımcısı / müdür: öğretmenlerin gönderdiği son 7
+// günün yoklamaları (Faz 3). "Aç" listeyi düzenleyiciye yükler; müdür
+// yardımcısı ekleme yapıp kartı kendisi paylaşır.
+export function GelenYoklamalar({ onAc }: { onAc: (y: GelenYoklama) => void }) {
+  const [veri, setVeri] = useState<{ error: string | null; yoklamalar: GelenYoklama[] } | null>(null);
+
+  useEffect(() => {
+    let iptal = false;
+    void gelenYoklamalar()
+      .then((v) => { if (!iptal) setVeri(v); })
+      .catch(() => { if (!iptal) setVeri({ error: "Gelen yoklamalar yüklenemedi.", yoklamalar: [] }); });
+    return () => { iptal = true; };
+  }, []);
+
+  const gunler = new Map<string, GelenYoklama[]>();
+  for (const y of veri?.yoklamalar ?? []) gunler.set(y.tarih, [...(gunler.get(y.tarih) ?? []), y]);
+
+  return (
+    <section className="sfec-fade flex flex-col gap-4 rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+      <div className="flex items-center gap-2">
+        <Inbox size={15} color={MINT} aria-hidden="true" />
+        <h3 className="text-sm font-bold" style={{ color: TEXT }}>Gelen Yoklamalar</h3>
+      </div>
+      <p className="text-[11px]" style={{ color: TEXT_MUTED }}>Öğretmenlerin gönderdiği son 7 günün listeleri. Açtığınız listeye ekleme yapıp kartı kendiniz paylaşabilirsiniz.</p>
+      {!veri && <p className="text-xs" style={{ color: TEXT_MUTED }}>Yükleniyor…</p>}
+      {veri?.error && <p className="text-xs font-semibold" style={{ color: BLUSH }}>{veri.error}</p>}
+      {veri && !veri.error && veri.yoklamalar.length === 0 && <p className="text-xs" style={{ color: TEXT_MUTED }}>Henüz gelen yoklama yok.</p>}
+      {[...gunler.entries()].map(([tarih, liste]) => (
+        <div key={tarih} className="flex flex-col gap-1.5">
+          <div className={kucukBaslik} style={{ color: TEXT_MUTED }}>{kartTarihi(tarih)}</div>
+          {liste.map((y) => {
+            const s = YURT_SABLONLARI.find((x) => x.anahtar === y.tur);
+            return (
+              <div key={y.id} className="flex flex-wrap items-center gap-2 rounded-xl px-3 py-2" style={{ background: BG1_ALT }}>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-xs font-bold" style={{ color: TEXT }}>{s?.ad ?? y.tur} · {grupEtiketi(y.grup)}</div>
+                  <div className="text-[11px]" style={{ color: TEXT_MUTED }}>
+                    {y.hazirlayanAdi} · {new Date(y.createdAt).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })} · {y.ogrenciler.length ? `${y.ogrenciler.length} öğrenci` : "eksik yok"}
+                  </div>
+                </div>
+                <button type="button" onClick={() => onAc(y)} className="sfec-btn rounded-lg px-3 py-1.5 text-[11px] font-bold" style={{ background: MINT, color: MINT_ON }}>Aç</button>
+              </div>
+            );
+          })}
+        </div>
+      ))}
     </section>
   );
 }
