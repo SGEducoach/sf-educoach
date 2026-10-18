@@ -456,12 +456,6 @@ export function yurtListesiCiz(canvas: HTMLCanvasElement, c: YurtListesiCizimi) 
     ctx.textAlign = "right";
     ctx.fillText(`${c.toplamOgrenci} öğrenci${c.toplamSayfa > 1 ? ` · kart ${c.sayfa}/${c.toplamSayfa}` : ""}`, KART_G - KENAR, y - 6);
     ctx.textAlign = "left";
-    ctx.fillStyle = SOLUK;
-    ctx.font = font(600, 17);
-    const satirYuk = (KART_Y - 100 - (y + 8)) / Math.max(BLOK_SATIRI, Math.ceil(c.satirlar.length / 3));
-    ctx.fillText(Math.min(54, satirYuk) >= 42
-      ? `Ad altında: okul no · sınıf · ${c.notEtiketi.toLocaleLowerCase("tr-TR")}`
-      : `Ad — ${c.notEtiketi.toLocaleLowerCase("tr-TR")}`, KENAR, y - 6);
     y += 8;
   }
   if (c.satirlar.length === 0) {
@@ -495,16 +489,49 @@ export function yurtListesiCiz(canvas: HTMLCanvasElement, c: YurtListesiCizimi) 
     ctx.textAlign = "right";
     ctx.fillText(String(s.no), x + 34, tabanY);
     ctx.textAlign = "left";
+    // Ad hiç kesilmez (kullanıcı isteği): sığmazsa yazı küçülür.
+    const genislik = BLOK_G - 50;
+    const sigdir = (metin: string, b: number, agirlik: number, enAz: number) => {
+      let p = b;
+      ctx.font = font(agirlik, p);
+      while (ctx.measureText(metin).width > genislik && p > enAz) { p -= 0.5; ctx.font = font(agirlik, p); }
+      return ctx.measureText(metin).width <= genislik;
+    };
     ctx.fillStyle = KOYU;
-    ctx.font = font(800, boy);
     if (iki) {
-      ctx.fillText(satirla(ctx, s.ad, BLOK_G - 52, 1)[0] ?? "", x + 44, tabanY);
       const alt = [s.okulNo ? `No ${s.okulNo}` : "", s.sinif, s.not].filter(Boolean).join(" · ");
-      ctx.fillStyle = s.not ? c.renk : SOLUK;
-      ctx.font = font(600, 15);
-      ctx.fillText(satirla(ctx, alt || "—", BLOK_G - 52, 1)[0] ?? "", x + 44, sy + 44);
+      if (sigdir(s.ad, boy, 800, 14)) {
+        ctx.fillText(s.ad, x + 42, tabanY);
+        ctx.fillStyle = s.not ? c.renk : SOLUK;
+        ctx.font = font(600, 15);
+        ctx.fillText(satirla(ctx, alt || "—", genislik, 1)[0] ?? "", x + 42, sy + 44);
+      } else {
+        // Çok uzun ad iki satıra bölünür; alt bilgi yanına küçük yazılır.
+        // İki satırın en geniş olanını en dar yapan bölme noktası seçilir.
+        const sozler = s.ad.split(" ");
+        ctx.font = font(800, 16);
+        let bolum = Math.max(1, sozler.length - 1);
+        let enIyi = Infinity;
+        for (let k = 1; k < sozler.length; k++) {
+          const g = Math.max(ctx.measureText(sozler.slice(0, k).join(" ")).width, ctx.measureText(sozler.slice(k).join(" ")).width);
+          if (g < enIyi) { enIyi = g; bolum = k; }
+        }
+        const ust = sozler.slice(0, bolum).join(" ");
+        const altAd = sozler.slice(bolum).join(" ");
+        sigdir(ust, 16, 800, 11);
+        ctx.fillText(ust, x + 42, sy + Math.min(20, SATIR_Y * 0.4));
+        sigdir(altAd, 16, 800, 11);
+        ctx.fillText(altAd, x + 42, sy + Math.min(39, SATIR_Y * 0.78));
+        const adG = ctx.measureText(altAd).width;
+        ctx.fillStyle = s.not ? c.renk : SOLUK;
+        ctx.font = font(600, 13);
+        const kalan = genislik - adG - 10;
+        if (kalan > 40) ctx.fillText(satirla(ctx, alt, kalan, 1)[0] ?? "", x + 42 + adG + 10, sy + Math.min(39, SATIR_Y * 0.78));
+      }
     } else {
-      ctx.fillText(satirla(ctx, s.not ? `${s.ad} — ${s.not}` : s.ad, BLOK_G - 52, 1)[0] ?? "", x + 44, tabanY);
+      const birlikte = s.not ? `${s.ad} — ${s.not}` : s.ad;
+      if (!sigdir(birlikte, boy, 800, 12)) sigdir(s.ad, boy, 800, 10);
+      ctx.fillText(ctx.measureText(birlikte).width <= genislik ? birlikte : s.ad, x + 42, tabanY);
     }
   });
 
