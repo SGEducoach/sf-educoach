@@ -3,7 +3,8 @@
 // cinsiyet sütunları migration 0161 ile geldi; yoksa cinsiyetsiz okunur.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
-  yurtOgrencileriniBirlestir, type KayitliOgrenciSatiri, type OgretmenCinsiyeti, type ResmiYurtSatiri,
+  tumOgrencileriBirlestir, yurtOgrencileriniBirlestir,
+  type DurumluOgrenci, type KayitliOgrenciSatiri, type OgretmenCinsiyeti, type ResmiYurtSatiri,
 } from "@/lib/yurt-listesi";
 import type { YurtVerisi } from "@/components/dashboard/YurtListeStudyosu";
 
@@ -20,7 +21,7 @@ async function hepsi<T>(sorgu: (bas: number, son: number) => PromiseLike<{ data:
 
 const ogretmenCinsiyeti = (c: unknown): OgretmenCinsiyeti | null => (c === "kadin" || c === "erkek" ? c : null);
 
-export async function yurtVerisiGetir(admin: SupabaseClient, schoolId: string, userId: string, mudurMu: boolean): Promise<YurtVerisi> {
+async function ogrenciKaynaklari(admin: SupabaseClient, schoolId: string) {
   const resmiSorgu = (sutunlar: string) => hepsi<ResmiYurtSatiri>((b, s) => admin.from("resmi_ogrenci_listesi").select(sutunlar).eq("school_id", schoolId).order("okul_no").range(b, s));
   const kayitSorgu = (sutunlar: string) => hepsi<{ id: string; okul_no: string | null; yurt_ogrencisi: boolean; cinsiyet?: string | null; profiles: { ad: string } | null; classes: { seviye: string; sube: string } | null }>(
     (b, s) => admin.from("students").select(sutunlar).eq("school_id", schoolId).order("id").range(b, s));
@@ -37,7 +38,17 @@ export async function yurtVerisiGetir(admin: SupabaseClient, schoolId: string, u
     sinif: k.classes ? `${k.classes.seviye}-${k.classes.sube}` : null, seviye: k.classes?.seviye ?? null, sube: k.classes?.sube ?? null,
     cinsiyet: k.cinsiyet ?? null,
   }));
+  return { resmi: resmi.satirlar, kayitli, cinsiyetHazir };
+}
 
+// Yurt durumu işaretleme ekranı: ön kayıt dahil bütün öğrenciler.
+export async function yurtDurumlariGetir(admin: SupabaseClient, schoolId: string): Promise<DurumluOgrenci[]> {
+  const { resmi, kayitli } = await ogrenciKaynaklari(admin, schoolId);
+  return tumOgrencileriBirlestir(resmi, kayitli);
+}
+
+export async function yurtVerisiGetir(admin: SupabaseClient, schoolId: string, userId: string, mudurMu: boolean): Promise<YurtVerisi> {
+  const { resmi, kayitli, cinsiyetHazir } = await ogrenciKaynaklari(admin, schoolId);
   const tSutun = cinsiyetHazir ? "id, brans, cinsiyet, profiles!teachers_id_fkey(ad)" : "id, brans, profiles!teachers_id_fkey(ad)";
   type OgretmenRow = { id: string; brans: string | null; cinsiyet?: string | null; profiles: { ad: string } | null };
   const [{ data: ben }, ogretmenler] = await Promise.all([
@@ -47,7 +58,7 @@ export async function yurtVerisiGetir(admin: SupabaseClient, schoolId: string, u
   const benimSatirim = ben as OgretmenRow | null;
 
   return {
-    ogrenciler: yurtOgrencileriniBirlestir(resmi.satirlar, kayitli),
+    ogrenciler: yurtOgrencileriniBirlestir(resmi, kayitli),
     ogretmenler: ogretmenler.satirlar
       .map((t) => ({ id: t.id, ad: t.profiles?.ad ?? "İsimsiz", brans: t.brans, cinsiyet: ogretmenCinsiyeti(t.cinsiyet) }))
       .sort((a, b) => a.ad.localeCompare(b.ad, "tr")),

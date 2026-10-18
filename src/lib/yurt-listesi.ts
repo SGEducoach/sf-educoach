@@ -109,22 +109,34 @@ const cinsiyetOku = (c: string | null | undefined): OgrenciCinsiyeti | null => (
 // güncel yurt durumu (öğretmen değiştirebiliyor) resmî listedekinin önüne
 // geçer; resmî listede olmayan kayıtlı yurt öğrencisi de eklenir.
 export function yurtOgrencileriniBirlestir(resmi: ResmiYurtSatiri[], kayitli: KayitliOgrenciSatiri[]): YurtOgrencisi[] {
+  return tumOgrencileriBirlestir(resmi, kayitli).filter((o) => o.yurt).map((o) => {
+    const kopya: Partial<DurumluOgrenci> = { ...o };
+    delete kopya.yurt;
+    return kopya as YurtOgrencisi;
+  });
+}
+
+// Yurt durumu işaretleme (kullanıcı isteği 18.10.2026): ön kayıt dahil bütün
+// öğrenciler, yurt öğrencisi olup olmadıklarıyla.
+export type DurumluOgrenci = YurtOgrencisi & { yurt: boolean };
+
+export function tumOgrencileriBirlestir(resmi: ResmiYurtSatiri[], kayitli: KayitliOgrenciSatiri[]): DurumluOgrenci[] {
   const kayitByNo = new Map(kayitli.filter((k) => k.okul_no).map((k) => [k.okul_no!, k]));
   const kullanilan = new Set<string>();
-  const sonuc: YurtOgrencisi[] = [];
+  const sonuc: DurumluOgrenci[] = [];
   for (const r of resmi) {
     const k = kayitByNo.get(r.okul_no);
     if (k) kullanilan.add(k.id);
-    if (!(k ? k.yurt_ogrencisi : r.yurt_ogrencisi)) continue;
     sonuc.push({
       anahtar: `r:${r.id}`, ogrenciId: k?.id ?? null, ad: k?.ad?.trim() || adBaslik(r.ad_soyad), okulNo: r.okul_no,
       sinif: k?.sinif ?? null, seviye: k?.seviye ?? null, sube: k?.sube ?? null, kayitli: !!k,
       cinsiyet: cinsiyetOku(r.cinsiyet) ?? cinsiyetOku(k?.cinsiyet),
+      yurt: k ? k.yurt_ogrencisi : r.yurt_ogrencisi,
     });
   }
   for (const k of kayitli) {
-    if (kullanilan.has(k.id) || !k.yurt_ogrencisi) continue;
-    sonuc.push({ anahtar: `s:${k.id}`, ogrenciId: k.id, ad: k.ad.trim(), okulNo: k.okul_no, sinif: k.sinif, seviye: k.seviye, sube: k.sube, kayitli: true, cinsiyet: cinsiyetOku(k.cinsiyet) });
+    if (kullanilan.has(k.id)) continue;
+    sonuc.push({ anahtar: `s:${k.id}`, ogrenciId: k.id, ad: k.ad.trim(), okulNo: k.okul_no, sinif: k.sinif, seviye: k.seviye, sube: k.sube, kayitli: true, cinsiyet: cinsiyetOku(k.cinsiyet), yurt: k.yurt_ogrencisi });
   }
   return sonuc.sort((a, b) => a.ad.localeCompare(b.ad, "tr"));
 }

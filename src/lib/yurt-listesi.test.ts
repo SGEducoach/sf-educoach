@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { adBaslik, ogretmeninGrubu, yurtBilgiSatirlari, yurtOgrencileriniBirlestir, yurtSayfalari, yurtSutunSatiri } from "./yurt-listesi";
+import { adBaslik, ogretmeninGrubu, tumOgrencileriBirlestir, yurtBilgiSatirlari, yurtOgrencileriniBirlestir, yurtSayfalari, yurtSutunSatiri } from "./yurt-listesi";
 
 describe("yurt öğrencileri", () => {
   const resmi = [
@@ -29,6 +29,15 @@ describe("yurt öğrencileri", () => {
   test("resmî listede olmayan kayıtlı yurt öğrencisi de eklenir, ada göre sıralı", () => {
     expect(liste.find((o) => o.okulNo === "999")?.anahtar).toBe("s:s5");
     expect(liste.map((o) => o.ad)).toEqual(["Ahmet Yılmaz", "Mert Öz", "Zeynep Çelik"]);
+    expect(liste[0]).not.toHaveProperty("yurt");
+  });
+
+  test("işaretleme listesi ön kayıt dahil herkesi yurt durumuyla verir", () => {
+    const tum = tumOgrencileriBirlestir(resmi, kayitli);
+    expect(tum).toHaveLength(5);
+    expect(tum.find((o) => o.okulNo === "103")).toMatchObject({ yurt: false, kayitli: true, anahtar: "r:r3" });
+    expect(tum.find((o) => o.okulNo === "104")).toMatchObject({ yurt: false, kayitli: false, anahtar: "r:r4" });
+    expect(tum.filter((o) => o.yurt).map((o) => o.anahtar)).toEqual(liste.map((o) => o.anahtar));
   });
 });
 

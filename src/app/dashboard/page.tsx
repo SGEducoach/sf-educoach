@@ -101,7 +101,7 @@ import { sinifimOzeti } from "@/lib/ilkokul-sinifim";
 import { IlkokulSinifimPanosu } from "@/components/dashboard/IlkokulSinifimPanosu";
 import { WhatsappDuyuruStudyosu } from "@/components/dashboard/WhatsappDuyuruStudyosu";
 import { DuyuruTuruSekmeleri } from "@/components/dashboard/DuyuruTuruSekmeleri";
-import { yurtVerisiGetir } from "@/lib/yurt-listesi-verisi";
+import { yurtDurumlariGetir, yurtVerisiGetir } from "@/lib/yurt-listesi-verisi";
 import { YurtOgrencileriListesi } from "@/components/dashboard/YurtOgrencileriListesi";
 import { BelletmenBasvurulari } from "@/components/yonetici/BelletmenBasvurulari";
 import { YurtNobetlerimKutusu } from "@/components/dashboard/NobetDevirPaneli";
@@ -1114,8 +1114,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   }
   if (aktifBolum === "yurt-ogrencileri") {
     if (!idare?.yurt) redirect("/dashboard");
-    const yurtVerisi = await yurtVerisiGetir(createAdminClient(), teacher.school_id, userId, true);
-    return <YurtOgrencileriListesi ogrenciler={yurtVerisi.ogrenciler} />;
+    return <YurtOgrencileriListesi ogrenciler={await yurtDurumlariGetir(createAdminClient(), teacher.school_id)} />;
   }
 
   // Yalnız yurt sorumlusu müdür yardımcısı yalnız yurt kartlarını hazırlar.

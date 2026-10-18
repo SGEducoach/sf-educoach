@@ -1,21 +1,33 @@
 "use client";
 
 // Yurt sorumlusu müdür yardımcısının yurt öğrencileri görünümü (kullanıcı
-// kararı 18.10.2026): resmî listeden (ön kayıt dahil) gelen bütün yurt
-// öğrencileri; sisteme kayıtlı olanın profiline (analiz, deneme) geçilir.
-import { useMemo, useState } from "react";
+// kararı 18.10.2026): resmî listeden (ön kayıt dahil) gelen öğrenciler;
+// sisteme kayıtlı yurt öğrencisinin profiline (analiz, deneme) geçilir.
+// Ön kayıtlılar dahil her öğrenci yurt öğrencisi olarak işaretlenir ya da
+// işareti kaldırılır (tek tek ya da seçerek toplu).
+import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { BedDouble } from "lucide-react";
-import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, TEXT, TEXT_MUTED } from "@/lib/theme";
+import { BG0, BG1, BG1_ALT, BLUSH, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
 import { sinifSiraKarsilastir } from "@/lib/types";
-import type { YurtOgrencisi } from "@/lib/yurt-listesi";
+import type { DurumluOgrenci } from "@/lib/yurt-listesi";
+import { yurtDurumuKaydet } from "@/app/dashboard/yurt-durumu-actions";
 
 const girdi = { background: BG0, color: TEXT, border: `2px solid ${BORDER_STRONG}` };
 
-export function YurtOgrencileriListesi({ ogrenciler }: { ogrenciler: YurtOgrencisi[] }) {
+export function YurtOgrencileriListesi({ ogrenciler }: { ogrenciler: DurumluOgrenci[] }) {
   const [arama, setArama] = useState("");
   const [cinsiyet, setCinsiyet] = useState<"" | "kiz" | "erkek" | "yok">("");
   const [sinif, setSinif] = useState("");
+  const [goster, setGoster] = useState<"yurt" | "degil" | "hepsi">("yurt");
+  // Kaydedilen değişiklikler sayfa yenilenmeden listeye yansır.
+  const [degisen, setDegisen] = useState<Record<string, boolean>>({});
+  const [secili, setSecili] = useState<Set<string>>(new Set());
+  const [hata, setHata] = useState<string | null>(null);
+  const [pending, start] = useTransition();
+
+  const tum = useMemo(() => ogrenciler.map((o) => (o.anahtar in degisen ? { ...o, yurt: degisen[o.anahtar] } : o)), [ogrenciler, degisen]);
+  const yurtlular = tum.filter((o) => o.yurt);
 
   const siniflar = useMemo(() => {
     const m = new Map<string, { seviye: string; sube: string }>();
@@ -24,13 +36,28 @@ export function YurtOgrencileriListesi({ ogrenciler }: { ogrenciler: YurtOgrenci
   }, [ogrenciler]);
 
   const k = arama.toLocaleLowerCase("tr-TR");
-  const liste = ogrenciler.filter((o) =>
-    (!k || o.ad.toLocaleLowerCase("tr-TR").includes(k) || (o.okulNo ?? "").includes(k))
+  const liste = tum.filter((o) =>
+    (goster === "hepsi" || (goster === "yurt" ? o.yurt : !o.yurt))
+    && (!k || o.ad.toLocaleLowerCase("tr-TR").includes(k) || (o.okulNo ?? "").includes(k))
     && (!sinif || o.sinif === sinif)
     && (!cinsiyet || (cinsiyet === "yok" ? !o.cinsiyet : o.cinsiyet === cinsiyet)));
-  const kiz = ogrenciler.filter((o) => o.cinsiyet === "kiz").length;
-  const erkek = ogrenciler.filter((o) => o.cinsiyet === "erkek").length;
-  const kayitli = ogrenciler.filter((o) => o.kayitli).length;
+  const kiz = yurtlular.filter((o) => o.cinsiyet === "kiz").length;
+  const erkek = yurtlular.filter((o) => o.cinsiyet === "erkek").length;
+  const kayitli = yurtlular.filter((o) => o.kayitli).length;
+
+  function kaydet(anahtarlar: string[], yurt: boolean) {
+    if (anahtarlar.length === 0) return;
+    setHata(null);
+    start(async () => {
+      const r = await yurtDurumuKaydet(anahtarlar, yurt);
+      if (r.error) return setHata(r.error);
+      setDegisen((d) => ({ ...d, ...Object.fromEntries(anahtarlar.map((a) => [a, yurt])) }));
+      setSecili(new Set());
+    });
+  }
+
+  const tumuSecili = liste.length > 0 && liste.every((o) => secili.has(o.anahtar));
+  const sec = (anahtar: string) => setSecili((s) => { const y = new Set(s); if (y.has(anahtar)) y.delete(anahtar); else y.add(anahtar); return y; });
 
   return (
     <section className="sfec-fade flex flex-col gap-4 rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
@@ -39,8 +66,20 @@ export function YurtOgrencileriListesi({ ogrenciler }: { ogrenciler: YurtOgrenci
         <h2 className="text-[15px] font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Yurt Öğrencileri</h2>
       </div>
       <div className="flex flex-wrap gap-2 text-xs">
-        {[["Toplam", ogrenciler.length], ["Kız", kiz], ["Erkek", erkek], ["Sisteme kayıtlı", kayitli], ["Ön kayıt", ogrenciler.length - kayitli]].map(([e, n]) => (
+        {[["Yurt öğrencisi", yurtlular.length], ["Kız", kiz], ["Erkek", erkek], ["Sisteme kayıtlı", kayitli], ["Ön kayıt", yurtlular.length - kayitli]].map(([e, n]) => (
           <span key={e} className="rounded-full px-3 py-1 font-semibold" style={{ background: BG1_ALT, color: TEXT }}>{e}: {n}</span>
+        ))}
+      </div>
+      <p className="text-[11px]" style={{ color: TEXT_MUTED }}>
+        Ön kayıtlılar dahil bütün öğrenciler listelenir. Yurt öğrencisi olanı işaretleyin, ayrılanın işaretini kaldırın; yoklama ve izin listeleri buna göre hazırlanır.
+      </p>
+      <div className="flex flex-wrap gap-1.5">
+        {([["yurt", "Yurt öğrencileri"], ["degil", "Yurt öğrencisi olmayanlar"], ["hepsi", "Tüm öğrenciler"]] as const).map(([d, e]) => (
+          <button key={d} type="button" onClick={() => { setGoster(d); setSecili(new Set()); }}
+            className="sfec-btn rounded-full px-3 py-1.5 text-xs font-bold"
+            style={{ background: goster === d ? MINT : BG0, color: goster === d ? MINT_ON : TEXT, border: `2px solid ${goster === d ? MINT : BORDER_STRONG}` }}>
+            {e}
+          </button>
         ))}
       </div>
       <div className="flex flex-wrap gap-2">
@@ -57,22 +96,40 @@ export function YurtOgrencileriListesi({ ogrenciler }: { ogrenciler: YurtOgrenci
           <option value="yok">Cinsiyeti girilmemiş</option>
         </select>
       </div>
+      {secili.size > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl px-3 py-2" style={{ background: BG1_ALT }}>
+          <span className="text-xs font-semibold" style={{ color: TEXT }}>{secili.size} öğrenci seçildi</span>
+          <button type="button" disabled={pending} onClick={() => kaydet([...secili], true)}
+            className="sfec-btn rounded-full px-3 py-1.5 text-xs font-bold disabled:opacity-50" style={{ background: MINT, color: MINT_ON }}>Yurt Öğrencisi Yap</button>
+          <button type="button" disabled={pending} onClick={() => kaydet([...secili], false)}
+            className="sfec-btn rounded-full px-3 py-1.5 text-xs font-bold disabled:opacity-50" style={{ color: BLUSH, border: `1px solid ${BORDER}` }}>Yurttan Çıkar</button>
+        </div>
+      )}
+      {hata && <p className="text-xs font-semibold" style={{ color: BLUSH }}>{hata}</p>}
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[520px] text-left text-xs">
+        <table className="w-full min-w-[600px] text-left text-xs">
           <thead>
             <tr style={{ color: TEXT_MUTED }}>
+              <th className="w-8 px-2 py-2">
+                <input type="checkbox" aria-label="Listedekilerin tümünü seç" checked={tumuSecili}
+                  onChange={() => setSecili(tumuSecili ? new Set() : new Set(liste.map((o) => o.anahtar)))} />
+              </th>
               <th className="px-2 py-2 font-semibold">Ad Soyad</th>
               <th className="px-2 py-2 font-semibold">Okul No</th>
               <th className="px-2 py-2 font-semibold">Sınıf</th>
               <th className="px-2 py-2 font-semibold">Cinsiyet</th>
-              <th className="px-2 py-2 font-semibold">Durum</th>
+              <th className="px-2 py-2 font-semibold">Kayıt</th>
+              <th className="px-2 py-2 font-semibold">Yurt</th>
             </tr>
           </thead>
           <tbody>
             {liste.map((o) => (
               <tr key={o.anahtar} style={{ borderTop: `1px solid ${BORDER}`, color: TEXT }}>
+                <td className="px-2 py-2">
+                  <input type="checkbox" aria-label={`${o.ad} seç`} checked={secili.has(o.anahtar)} onChange={() => sec(o.anahtar)} />
+                </td>
                 <td className="px-2 py-2 font-semibold">
-                  {o.ogrenciId
+                  {o.ogrenciId && o.yurt
                     ? <Link href={`/dashboard?bolum=ozet&ogrenci=${o.ogrenciId}`} className="underline-offset-2 hover:underline">{o.ad}</Link>
                     : o.ad}
                 </td>
@@ -80,6 +137,13 @@ export function YurtOgrencileriListesi({ ogrenciler }: { ogrenciler: YurtOgrenci
                 <td className="px-2 py-2">{o.sinif ?? "—"}</td>
                 <td className="px-2 py-2">{o.cinsiyet === "kiz" ? "Kız" : o.cinsiyet === "erkek" ? "Erkek" : "—"}</td>
                 <td className="px-2 py-2" style={{ color: o.kayitli ? MINT : TEXT_MUTED }}>{o.kayitli ? "Kayıtlı" : "Ön kayıt"}</td>
+                <td className="px-2 py-2">
+                  <button type="button" disabled={pending} onClick={() => kaydet([o.anahtar], !o.yurt)} aria-pressed={o.yurt}
+                    className="rounded-full px-2.5 py-1 text-[11px] font-bold disabled:opacity-50"
+                    style={o.yurt ? { background: MINT, color: MINT_ON } : { color: TEXT_MUTED, border: `1px solid ${BORDER_STRONG}` }}>
+                    {o.yurt ? "Yurt öğrencisi" : "Değil"}
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
