@@ -11,6 +11,7 @@ import { yurtNobetiPdfiniCoz } from "@/lib/yurt-nobeti-pdf";
 import type { NobetGorunumu, ProgramYuklemeOzeti, YurtNobetiYuklemeOzeti } from "@/lib/nobet-yukleme";
 import { ogretmeneBildirimGonder } from "@/lib/ogretmen-bildirim";
 import { PROGRAM_BILDIRIMI } from "@/lib/ogretmen-bildirim-sablon";
+import { mudurYardimcisiUyeligiGetir } from "@/lib/mudur-yardimcisi";
 
 // Ders programı ve nöbet listesi yükleme (kullanıcı isteği 17.09.2026) —
 // yönetici/müdür okulun MEB ders programı PDF'ini ve yurt (belletmen) nöbet
@@ -25,12 +26,12 @@ type Yetki =
   | { error: string; admin: null; schoolId: null }
   | { error: null; admin: AdminClient; schoolId: string };
 
-async function yuklemeYetkisi(okulId?: string | null): Promise<Yetki> {
+async function yuklemeYetkisi(okulId?: string | null, yalnizYurt = false): Promise<Yetki> {
   const hata = (error: string): Yetki => ({ error, admin: null, schoolId: null });
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return hata("Oturum açılmadı.");
-  const { data: profil } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
+  const { data: profil } = await supabase.from("profiles").select("role, aktif").eq("id", user.id).maybeSingle();
   const admin = createAdminClient();
 
   if (profil?.role === "admin") {
@@ -44,6 +45,16 @@ async function yuklemeYetkisi(okulId?: string | null): Promise<Yetki> {
     if (!ogretmen?.school_id) return hata("Kurum bilginiz bulunamadı.");
     if (okulId && okulId !== ogretmen.school_id) return hata("Yalnızca kendi kurumunuz için yükleme yapabilirsiniz.");
     return { error: null, admin, schoolId: ogretmen.school_id as string };
+  }
+  if (yalnizYurt && profil?.role === "ogretmen" && profil.aktif === true) {
+    const uyelik = await mudurYardimcisiUyeligiGetir(admin, user.id);
+    if (!uyelik?.yurt) return hata("Yurt sorumlusu müdür yardımcısı yetkisi gerekiyor.");
+    if (okulId && okulId !== uyelik.schoolId) return hata("Yalnızca kendi kurumunuzun yurt listesini yükleyebilirsiniz.");
+    const { data: ogretmen } = await admin.from("teachers").select("school_id").eq("id", user.id).maybeSingle();
+    if (ogretmen?.school_id !== uyelik.schoolId) return hata("Yurt sorumlusu kurum bilginiz doğrulanamadı.");
+    const { data: okul } = await admin.from("schools").select("yurtlu").eq("id", uyelik.schoolId).maybeSingle();
+    if (!okul?.yurtlu) return hata("Kurumunuzda yurt tanımlı değil.");
+    return { error: null, admin, schoolId: uyelik.schoolId };
   }
   return hata("Bu işlem için yönetici ya da müdür yetkisi gerekiyor.");
 }
@@ -211,11 +222,11 @@ export async function dersProgramiPdfYukle(formData: FormData): Promise<{ error:
 }
 
 export async function yurtNobetiPdfYukle(formData: FormData): Promise<{ error: string | null; ozet: YurtNobetiYuklemeOzeti | null }> {
-  const okuma = await pdfOkuAyikla(formData);
-  if (okuma.error !== null) return { error: okuma.error, ozet: null };
-  const yetki = await yuklemeYetkisi(String(formData.get("okulId") ?? "") || null);
+  const yetki = await yuklemeYetkisi(String(formData.get("okulId") ?? "") || null, true);
   if (yetki.error !== null) return { error: yetki.error, ozet: null };
   const { admin, schoolId } = yetki;
+  const okuma = await pdfOkuAyikla(formData);
+  if (okuma.error !== null) return { error: okuma.error, ozet: null };
   const bildir = String(formData.get("bildir") ?? "") === "evet";
 
   const cozum = yurtNobetiPdfiniCoz(okuma.ogeler);

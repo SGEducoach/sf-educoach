@@ -4,6 +4,9 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ogretmeneBildirimGonder } from "@/lib/ogretmen-bildirim";
+import { bildirimGonder } from "@/lib/bildirim-gonder";
+import { pushGonderProfile } from "@/lib/push-send";
+import { mudurYardimcisiUyeligiGetir, yurtSorumlulari } from "@/lib/mudur-yardimcisi";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
 
 type DevirBaglami =
@@ -40,7 +43,7 @@ async function devirBaglamiGetir(): Promise<DevirBaglami> {
   };
 }
 
-export async function nobetDevret(input: {
+export async function nobetTakasTalebiGonder(input: {
   nobetId: string;
   hedefOgretmenId: string;
 }): Promise<{ error: string | null; warning?: string }> {
@@ -83,41 +86,109 @@ export async function nobetDevret(input: {
   if (!nobet) return { error: "Yurt nöbeti bulunamadı veya artık size ait değil." };
   if (nobet.tarih < bugununTarihiTR()) return { error: "Tarihi geçmiş yurt nöbeti devredilemez." };
 
-  const { data: guncellenen, error } = await admin
-    .from("yurt_nobet_gorevleri")
-    .update({ teacher_id: input.hedefOgretmenId, ad_soyad: hedefAd })
-    .eq("id", input.nobetId)
-    .eq("school_id", schoolId)
-    .eq("teacher_id", userId)
-    .select("id")
-    .maybeSingle();
-  if (error) {
-    return { error: error.code === "23505" ? "Seçilen öğretmenin aynı tarihte zaten yurt nöbeti var." : error.message };
-  }
-  if (!guncellenen) return { error: "Yurt nöbeti başka bir işlemde değişti. Sayfayı yenileyip tekrar deneyin." };
+  const { data: hedefNobeti } = await admin.from("yurt_nobet_gorevleri")
+    .select("id").eq("school_id", schoolId).eq("teacher_id", input.hedefOgretmenId).eq("tarih", nobet.tarih).maybeSingle();
+  if (hedefNobeti) return { error: "Seçilen öğretmenin aynı tarihte zaten yurt nöbeti var." };
+  const sorumlular = (await yurtSorumlulari(admin, schoolId)).filter((id) => id !== userId);
+  if (sorumlular.length === 0) return { error: "Kurumda yurt sorumlusu müdür yardımcısı atanmamış." };
 
-  // Devir İşlem Geçmişi'ne yazılır: kimin kime hangi tarihi devrettiği
-  // yöneticiye sonradan görünsün (kullanıcıya verilen söz, 17.09.2026).
-  const { error: kayitHatasi } = await admin.from("admin_audit_log").insert({
-    actor_id: userId,
-    eylem: "yurt_nobeti_devret",
+  const { error } = await admin.from("yurt_nobet_takas_talepleri").insert({
+    school_id: schoolId, nobet_id: input.nobetId, tarih: nobet.tarih,
+    devreden_id: userId, devreden_adi: devredenAd,
+    devralan_id: input.hedefOgretmenId, devralan_adi: hedefAd,
+  });
+  if (error) return { error: error.code === "23505" ? "Bu nöbet için zaten bekleyen bir takas talebi var." : "Takas talebi kaydedilemedi. Veritabanı güncellemesini kontrol edin." };
+
+  await admin.from("admin_audit_log").insert({
+    actor_id: userId, eylem: "yurt_nobet_takas_talebi",
     detay: { school_id: schoolId, nobet_id: input.nobetId, tarih: nobet.tarih, devreden: devredenAd, devralan: hedefAd, devralan_id: input.hedefOgretmenId },
   });
-  if (kayitHatasi) console.error("Yurt nöbeti devri işlem kaydı yazılamadı:", kayitHatasi.message);
 
   const tarih = new Date(`${nobet.tarih}T12:00:00`).toLocaleDateString("tr-TR", {
     day: "numeric", month: "long", year: "numeric", weekday: "long",
   });
-  const mesaj = `${devredenAd}, ${tarih} tarihli yurt nöbetini size devretti.`;
-  const bildirim = await ogretmeneBildirimGonder(admin, input.hedefOgretmenId, "yurt_nobeti", "Yurt nöbeti devri", mesaj);
-  if (bildirim.error) console.error("Yurt nöbeti devri bildirimi gönderilemedi:", bildirim.error);
+  const mesaj = `${devredenAd}, ${tarih} tarihli yurt nöbetini ${hedefAd} öğretmene devretmek için onayınızı bekliyor.`;
+  await Promise.allSettled(sorumlular.map(async (id) => {
+    await bildirimGonder(admin, id, "sistem", "Yurt nöbeti takas talebi", mesaj);
+    await pushGonderProfile(admin, id, "Yurt nöbeti takas talebi", mesaj);
+  }));
 
   revalidatePath("/dashboard");
-  revalidatePath("/yonetici");
-  return {
-    error: null,
-    warning: bildirim.error ? "Devir tamamlandı ancak öğretmen bildirimi gönderilemedi." : undefined,
-  };
+  return { error: null };
+}
+
+export interface NobetTakasTalebi {
+  id: string; tarih: string; devredenAdi: string; devralanAdi: string;
+  durum: "bekliyor" | "onaylandi" | "reddedildi"; createdAt: string;
+}
+
+export async function nobetTaleplerimGetir(): Promise<{ error: string | null; talepler: NobetTakasTalebi[] }> {
+  const baglam = await devirBaglamiGetir();
+  if (baglam.error !== null) return { error: baglam.error, talepler: [] };
+  const { data, error } = await baglam.admin.from("yurt_nobet_takas_talepleri")
+    .select("id, tarih, devreden_adi, devralan_adi, durum, created_at")
+    .eq("school_id", baglam.schoolId).eq("devreden_id", baglam.userId)
+    .order("created_at", { ascending: false }).limit(20);
+  if (error) return { error: "Takas talepleri okunamadı.", talepler: [] };
+  return { error: null, talepler: (data ?? []).map((r) => ({
+    id: r.id, tarih: r.tarih, devredenAdi: r.devreden_adi, devralanAdi: r.devralan_adi,
+    durum: r.durum as NobetTakasTalebi["durum"], createdAt: r.created_at,
+  })) };
+}
+
+async function yurtOnayYetkisi() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const admin = createAdminClient();
+  const [{ data: profil }, { data: ogretmen }, uyelik] = await Promise.all([
+    admin.from("profiles").select("role, aktif").eq("id", user.id).maybeSingle(),
+    admin.from("teachers").select("school_id").eq("id", user.id).maybeSingle(),
+    mudurYardimcisiUyeligiGetir(admin, user.id),
+  ]);
+  if (profil?.role !== "ogretmen" || profil.aktif !== true || !uyelik?.yurt || ogretmen?.school_id !== uyelik.schoolId) return null;
+  return { admin, userId: user.id, schoolId: uyelik.schoolId };
+}
+
+export async function nobetTakasTalepleriGetir(): Promise<{ error: string | null; talepler: NobetTakasTalebi[] }> {
+  const yetki = await yurtOnayYetkisi();
+  if (!yetki) return { error: "Yurt sorumlusu müdür yardımcısı yetkisi gerekiyor.", talepler: [] };
+  const { data, error } = await yetki.admin.from("yurt_nobet_takas_talepleri")
+    .select("id, tarih, devreden_adi, devralan_adi, durum, created_at")
+    .eq("school_id", yetki.schoolId).eq("durum", "bekliyor")
+    .order("created_at", { ascending: true }).limit(100);
+  if (error) return { error: "Takas talepleri okunamadı (veritabanı güncellemesi bekleniyor olabilir).", talepler: [] };
+  return { error: null, talepler: (data ?? []).map((r) => ({
+    id: r.id, tarih: r.tarih, devredenAdi: r.devreden_adi, devralanAdi: r.devralan_adi,
+    durum: r.durum as NobetTakasTalebi["durum"], createdAt: r.created_at,
+  })) };
+}
+
+export async function nobetTakasKarari(talepId: string, karar: "onaylandi" | "reddedildi"): Promise<{ error: string | null }> {
+  const yetki = await yurtOnayYetkisi();
+  if (!yetki) return { error: "Yurt sorumlusu müdür yardımcısı yetkisi gerekiyor." };
+  if (!/^[0-9a-f-]{36}$/i.test(talepId) || (karar !== "onaylandi" && karar !== "reddedildi")) return { error: "Geçersiz istek." };
+  const { data, error } = await yetki.admin.rpc("yurt_nobet_takas_karari", {
+    p_talep_id: talepId, p_school_id: yetki.schoolId, p_karar_veren_id: yetki.userId, p_karar: karar,
+  });
+  if (error) return { error: error.code === "23505" ? "Devralacak öğretmenin o tarihte zaten nöbeti var." : error.message };
+  const sonuc = data as { tarih: string; devredenId: string; devredenAdi: string; devralanId: string; devralanAdi: string } | null;
+  if (!sonuc) return { error: "Takas kararı kaydedilemedi." };
+
+  await yetki.admin.from("admin_audit_log").insert({
+    actor_id: yetki.userId, eylem: "yurt_nobet_takas_karari",
+    detay: { school_id: yetki.schoolId, talep_id: talepId, karar, tarih: sonuc.tarih, devreden_id: sonuc.devredenId, devralan_id: sonuc.devralanId },
+  });
+  const baslik = karar === "onaylandi" ? "Yurt nöbeti takası onaylandı" : "Yurt nöbeti takası reddedildi";
+  const mesaj = karar === "onaylandi"
+    ? `${sonuc.tarih} tarihli yurt nöbetiniz ${sonuc.devralanAdi} öğretmene devredildi.`
+    : `${sonuc.tarih} tarihli yurt nöbeti takas talebiniz reddedildi.`;
+  await bildirimGonder(yetki.admin, sonuc.devredenId, "sistem", baslik, mesaj);
+  if (karar === "onaylandi") {
+    await ogretmeneBildirimGonder(yetki.admin, sonuc.devralanId, "yurt_nobeti", "Yurt nöbeti devri", `${sonuc.devredenAdi}, ${sonuc.tarih} tarihli yurt nöbetini size devretti.`);
+  }
+  revalidatePath("/dashboard");
+  return { error: null };
 }
 
 // "Nöbet ekle" (kullanıcı isteği 18.09.2026: "takas harici nöbet gelmişse

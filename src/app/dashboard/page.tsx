@@ -103,6 +103,8 @@ import { WhatsappDuyuruStudyosu } from "@/components/dashboard/WhatsappDuyuruStu
 import { DuyuruTuruSekmeleri } from "@/components/dashboard/DuyuruTuruSekmeleri";
 import { yurtDurumlariGetir, yurtVerisiGetir } from "@/lib/yurt-listesi-verisi";
 import { YurtOgrencileriListesi } from "@/components/dashboard/YurtOgrencileriListesi";
+import { YurtNobetPdfPaneli } from "@/components/dashboard/YurtNobetPdfPaneli";
+import { YurtTakasTalepleri } from "@/components/dashboard/YurtTakasTalepleri";
 import { BelletmenBasvurulari } from "@/components/yonetici/BelletmenBasvurulari";
 import { YurtNobetlerimKutusu } from "@/components/dashboard/NobetDevirPaneli";
 import { belletmenMi } from "@/lib/belletmen";
@@ -1111,6 +1113,14 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   if (aktifBolum === "belletmen-basvurulari") {
     if (!idare?.yurt) redirect("/dashboard");
     return <BelletmenBasvurulari />;
+  }
+  if (aktifBolum === "yurt-nobet-listesi") {
+    if (!idare?.yurt || !yurtlu) redirect("/dashboard");
+    return <YurtNobetPdfPaneli />;
+  }
+  if (aktifBolum === "yurt-takas-talepleri") {
+    if (!idare?.yurt || !yurtlu) redirect("/dashboard");
+    return <YurtTakasTalepleri />;
   }
   if (aktifBolum === "yurt-ogrencileri") {
     if (!idare?.yurt) redirect("/dashboard");

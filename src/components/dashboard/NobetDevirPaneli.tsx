@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRightLeft, Plus, X } from "lucide-react";
-import { eklenenYurtNobetimiSil, nobetDevret, yurtNobetimiEkle } from "@/app/dashboard/nobet-devir-actions";
+import { eklenenYurtNobetimiSil, nobetTakasTalebiGonder, nobetTaleplerimGetir, yurtNobetimiEkle, type NobetTakasTalebi } from "@/app/dashboard/nobet-devir-actions";
 import { bugununTarihiTR } from "@/lib/tarih";
 import type { YurtNobetGorevi } from "@/lib/ders-programi";
 import { BG0, BG1_ALT, BLUSH, BORDER, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
@@ -23,14 +23,19 @@ export function YurtNobetDevirPaneli({
   const [hedefOgretmenId, setHedefOgretmenId] = useState("");
   const [mesaj, setMesaj] = useState<string | null>(null);
   const [hata, setHata] = useState<string | null>(null);
+  const [talepler, setTalepler] = useState<NobetTakasTalebi[]>([]);
+
+  useEffect(() => {
+    let iptal = false;
+    void nobetTaleplerimGetir().then((sonuc) => { if (!iptal && !sonuc.error) setTalepler(sonuc.talepler); });
+    return () => { iptal = true; };
+  }, []);
 
   const secenekler = useMemo<Secenek[]>(() =>
     yurtNobetleri.map((n) => ({
       id: n.id,
       etiket: new Date(`${n.tarih}T12:00:00`).toLocaleDateString("tr-TR", { day: "2-digit", month: "long", weekday: "short" }),
     })), [yurtNobetleri]);
-
-  if (secenekler.length === 0) return null;
 
   function devret() {
     const nobet = secenekler.find((s) => s.id === seciliNobet);
@@ -39,14 +44,16 @@ export function YurtNobetDevirPaneli({
       setHata("Nöbetinizi ve devredeceğiniz öğretmeni seçin.");
       return;
     }
-    if (!window.confirm(`${nobet.etiket} nöbeti ${ogretmen.ad} öğretmene devredilsin mi? İşlem doğrudan uygulanacaktır.`)) return;
+    if (!window.confirm(`${nobet.etiket} nöbetini ${ogretmen.ad} öğretmene devretmek için yurt müdür yardımcısına onay talebi gönderilsin mi?`)) return;
 
     setHata(null);
     setMesaj(null);
     startTransition(async () => {
-      const sonuc = await nobetDevret({ nobetId: nobet.id, hedefOgretmenId });
+      const sonuc = await nobetTakasTalebiGonder({ nobetId: nobet.id, hedefOgretmenId });
       if (sonuc.error) return setHata(sonuc.error);
-      setMesaj(sonuc.warning ?? `Nöbet ${ogretmen.ad} öğretmene devredildi ve bildirim gönderildi.`);
+      setMesaj(`Takas talebi yurt müdür yardımcısının onayına gönderildi. Onaylanana kadar nöbetiniz değişmez.`);
+      const guncel = await nobetTaleplerimGetir();
+      if (!guncel.error) setTalepler(guncel.talepler);
       setSeciliNobet("");
       setHedefOgretmenId("");
       router.refresh();
@@ -57,15 +64,16 @@ export function YurtNobetDevirPaneli({
     <div className="mt-4 rounded-2xl p-3 sm:p-4" style={{ background: BG1_ALT, border: `1px solid ${BORDER}` }}>
       <div className="flex items-center gap-2">
         <ArrowRightLeft size={15} color={MINT} />
-        <h3 className="text-sm font-bold" style={{ color: TEXT }}>Yurt Nöbetimi Devret</h3>
+        <h3 className="text-sm font-bold" style={{ color: TEXT }}>Yurt Nöbeti Takas Talebi</h3>
       </div>
       <p className="mt-1 text-[11px] leading-5" style={{ color: TEXT_MUTED }}>
-        Yalnızca kendi yurt nöbetinizi aynı okuldaki aktif bir öğretmene devredebilirsiniz. Devir doğrudan uygulanır ve öğretmene bildirim gönderilir.
+        Kendi yurt nöbetinizi aynı okuldaki aktif bir öğretmene devretmek için talep gönderin. Nöbet, yurt müdür yardımcısı onaylayınca değişir.
       </p>
+      {secenekler.length === 0 && <p className="mt-2 text-xs" style={{ color: TEXT_MUTED }}>Devredilecek güncel nöbetiniz yok.</p>}
       <div className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_auto] sm:items-end">
         <label className="flex min-w-0 flex-col gap-1">
           <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: TEXT_MUTED }}>Nöbetiniz</span>
-          <select value={seciliNobet} onChange={(e) => setSeciliNobet(e.target.value)} disabled={pending}
+          <select value={seciliNobet} onChange={(e) => setSeciliNobet(e.target.value)} disabled={pending || secenekler.length === 0}
             className="min-w-0 rounded-xl px-3 py-2.5 text-xs outline-none disabled:opacity-60"
             style={{ background: BG0, color: TEXT, border: `1px solid ${BORDER}` }}>
             <option value="">Nöbet seçin</option>
@@ -81,15 +89,21 @@ export function YurtNobetDevirPaneli({
             {ogretmenler.map((o) => <option key={o.id} value={o.id}>{o.ad}{o.brans ? ` · ${o.brans}` : ""}</option>)}
           </select>
         </label>
-        <button type="button" onClick={devret} disabled={pending || ogretmenler.length === 0}
+        <button type="button" onClick={devret} disabled={pending || secenekler.length === 0 || ogretmenler.length === 0}
           className="sfec-btn inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-bold disabled:opacity-50"
           style={{ background: MINT, color: MINT_ON }}>
-          <ArrowRightLeft size={14} /> {pending ? "Devrediliyor..." : "Devret"}
+          <ArrowRightLeft size={14} /> {pending ? "Gönderiliyor..." : "Onaya Gönder"}
         </button>
       </div>
       {ogretmenler.length === 0 && <p className="mt-2 text-xs" style={{ color: TEXT_MUTED }}>Devredilebilecek başka aktif öğretmen bulunamadı.</p>}
       {hata && <p className="mt-2 text-xs font-semibold" style={{ color: BLUSH }}>{hata}</p>}
       {mesaj && <p className="mt-2 text-xs font-semibold" style={{ color: MINT }}>{mesaj}</p>}
+      {talepler.length > 0 && <div className="mt-3 space-y-1 border-t pt-3" style={{ borderColor: BORDER }}>
+        <p className="text-[11px] font-bold" style={{ color: TEXT }}>Taleplerim</p>
+        {talepler.map((t) => <p key={t.id} className="text-[11px]" style={{ color: TEXT_MUTED }}>
+          {t.tarih} · {t.devralanAdi} · {t.durum === "bekliyor" ? "Onay bekliyor" : t.durum === "onaylandi" ? "Onaylandı" : "Reddedildi"}
+        </p>)}
+      </div>}
     </div>
   );
 }

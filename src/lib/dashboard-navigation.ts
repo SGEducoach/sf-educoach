@@ -29,6 +29,8 @@ export type DashboardBolumu =
   | "yurt-ogrencileri"
   | "yoklama"
   | "nobetlerim"
+  | "yurt-nobet-listesi"
+  | "yurt-takas-talepleri"
   | "belletmen-basvurulari"
   | "takvim"
   | "yarismalar"
@@ -391,11 +393,19 @@ const BELLETMEN_MENUSU: DashboardMenuOgesi[] = [
 const YURT_OGRENCILERI_MENU_OGESI: DashboardMenuOgesi = {
   bolum: "yurt-ogrencileri", href: "/dashboard/yurt-ogrencileri", etiket: "Yurt Öğrencileri", ikon: "ogrenci",
 };
+const YURT_NOBET_LISTESI_MENU_OGESI: DashboardMenuOgesi = {
+  bolum: "yurt-nobet-listesi", href: "/dashboard/yurt-nobet-listesi", etiket: "Yurt Nöbet Listesi", ikon: "takvim",
+};
+const YURT_TAKAS_TALEPLERI_MENU_OGESI: DashboardMenuOgesi = {
+  bolum: "yurt-takas-talepleri", href: "/dashboard/yurt-takas-talepleri", etiket: "Takas Talepleri", ikon: "gorev",
+};
 // Yalnız yurt sorumlusu müdür yardımcısı (sınıf düzeyi yok; kullanıcı isteği
 // 18.10.2026): sınıf analizi, öğrenciler ve konu durumu yok; yurt
 // öğrencileri, yalnız yurdu ilgilendiren duyurular ve belletmen başvuruları.
 const YURT_MUDUR_YARDIMCISI_MENUSU: DashboardMenuOgesi[] = [
   YURT_OGRENCILERI_MENU_OGESI,
+  YURT_NOBET_LISTESI_MENU_OGESI,
+  YURT_TAKAS_TALEPLERI_MENU_OGESI,
   { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Duyurular", ikon: "duyuru" },
   { bolum: "belletmen-basvurulari", href: "/dashboard/belletmen-basvurulari", etiket: "Belletmen Başvuruları", ikon: "kullanici" },
 ];
@@ -422,7 +432,7 @@ export function dashboardMenusu(
   }
   if (role === "ogretmen" && idare) {
     const taban = [...MUDUR_YARDIMCISI_MENUSU];
-    if (idare.yurt) taban.splice(1, 0, YURT_OGRENCILERI_MENU_OGESI, { bolum: "belletmen-basvurulari", href: "/dashboard/belletmen-basvurulari", etiket: "Belletmen Başvuruları", ikon: "kullanici" });
+    if (idare.yurt) taban.splice(1, 0, YURT_OGRENCILERI_MENU_OGESI, YURT_NOBET_LISTESI_MENU_OGESI, YURT_TAKAS_TALEPLERI_MENU_OGESI, { bolum: "belletmen-basvurulari", href: "/dashboard/belletmen-basvurulari", etiket: "Belletmen Başvuruları", ikon: "kullanici" });
     if (kurumTuru === "okul") taban.push(TAKVIM_MENU_OGESI);
     return kademe === "ortaokul" ? ortaokulaUyarla(taban) : taban;
   }
@@ -473,7 +483,7 @@ export function dashboardMenuYapisi(
 }
 
 export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
-  "yurt-ogrencileri", "yoklama", "nobetlerim", "belletmen-basvurulari",
+  "yurt-ogrencileri", "yoklama", "nobetlerim", "yurt-nobet-listesi", "yurt-takas-talepleri", "belletmen-basvurulari",
   "sinif-analizi", "gorevler", "planlar", "veri-girisi", "konu-hakimiyeti", "analiz", "yapay-zeka", "tg-denemeleri",
   "duyurular", "talepler", "onaylar", "dersler", "ortaokul-dersler", "ortaokul-yardim", "ortaokul-calisma", "ortaokul-onaylar", "ortaokul-yeterlilik", "ilkokul-gelisim", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler", "rehberlik", "profil", "takvim", "yarismalar", "ogrenci-takibi",
 ]);

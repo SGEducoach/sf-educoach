@@ -514,12 +514,15 @@ describe("müdür yardımcısı (İdare paneli)", () => {
     expect(menu).not.toContain("rehberlik");
   });
   test("yurt sorumlusuna Yurt Öğrencileri eklenir; dershanede Ajandam yok", () => {
-    expect(dashboardMenusu("ogretmen", "okul", "Matematik", false, "lise", false, { yurt: true }).map((o) => o.bolum)).toContain("yurt-ogrencileri");
+    const menu = dashboardMenusu("ogretmen", "okul", "Matematik", false, "lise", false, { yurt: true }).map((o) => o.bolum);
+    expect(menu).toContain("yurt-ogrencileri");
+    expect(menu).toContain("yurt-nobet-listesi");
+    expect(menu).toContain("yurt-takas-talepleri");
     expect(dashboardMenusu("ogretmen", "dershane", "Matematik", false, null, false, { yurt: false }).map((o) => o.bolum)).not.toContain("takvim");
   });
   test("yalnız yurt sorumlusu: sınıf analizi, öğrenciler ve konu durumu yok", () => {
     const menu = dashboardMenusu("ogretmen", "okul", "Matematik", false, "lise", false, { yurt: true, yalnizYurt: true }).map((o) => o.bolum);
-    expect(menu).toEqual(["yurt-ogrencileri", "duyurular", "belletmen-basvurulari", "takvim"]);
+    expect(menu).toEqual(["yurt-ogrencileri", "yurt-nobet-listesi", "yurt-takas-talepleri", "duyurular", "belletmen-basvurulari", "takvim"]);
   });
   test("kurum dışı belletmen yalnız Yoklama ve Nöbetlerim görür", () => {
     expect(dashboardMenusu("ogretmen", "okul", "Kurum Dışı Belletmen", false, "lise").map((o) => o.bolum)).toEqual(["yoklama", "nobetlerim"]);
