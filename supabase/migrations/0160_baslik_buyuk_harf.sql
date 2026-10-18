@@ -8,6 +8,12 @@
 -- tablolarda yeni ad zaten varsa o satıra dokunulmaz (çakışma olmaz).
 -- Ayrıca bir öğrencinin elle yazdığı "Söz sanaty" AYT Edebiyat konusu
 -- müfredattaki "Edebi Sanatlar (Söz Sanatları)" adına bağlanır.
+--
+-- Koruma tetikleyicilerine uyulur: soru çözümü kayıtlarında konu değişmez
+-- (soru_cozumleri_onay_guard — yalnız onay güncellenebilir), süresi dolmuş
+-- grubun salt okunur öğrencisinin kayıtları atlanır (grup_salt_okunur).
+-- Konu karşılaştırmaları büyük/küçük harf duyarsız olduğundan eski yazımla
+-- kalan bu kayıtlar konusuyla eşleşmeye devam eder.
 
 begin;
 
@@ -492,6 +498,7 @@ from baslik_harita h where k.alt_baslik = h.eski
 
 update public.ogrenci_konu_hakimiyeti o set konu = h.yeni
 from baslik_harita h where o.konu = h.eski
+  and not public.grup_salt_okunur_uye_mi(o.student_id)
   and not exists (select 1 from public.ogrenci_konu_hakimiyeti x
                   where x.student_id = o.student_id and x.ders = o.ders and x.konu = h.yeni);
 
@@ -505,13 +512,14 @@ from baslik_harita h where e.kaynak_konu = h.eski
 update public.konu_ad_eslesmeleri e set hedef_konu = h.yeni
 from baslik_harita h where e.hedef_konu = h.eski;
 
-update public.konu_calismalar c set konu = h.yeni from baslik_harita h where c.konu = h.eski;
-update public.soru_cozumleri s set konu = h.yeni from baslik_harita h where s.konu = h.eski;
-update public.gorevler g set konu = h.yeni from baslik_harita h where g.konu = h.eski;
+update public.konu_calismalar c set konu = h.yeni from baslik_harita h
+where c.konu = h.eski and not public.grup_salt_okunur_uye_mi(c.student_id);
+update public.gorevler g set konu = h.yeni from baslik_harita h
+where g.konu = h.eski and not public.grup_salt_okunur_uye_mi(g.olusturan_ogrenci_id);
 update public.kazanim_konu_eslesmeleri k set konu = h.yeni from baslik_harita h where k.konu = h.eski;
 update public.ortaokul_calismalar c set alt_baslik = h.yeni from baslik_harita h where c.alt_baslik = h.eski;
 
 update public.konu_calismalar set konu = 'Edebi Sanatlar (Söz Sanatları)'
-where ders = 'Edebiyat' and konu = 'Söz sanaty';
+where ders = 'Edebiyat' and konu = 'Söz sanaty' and not public.grup_salt_okunur_uye_mi(student_id);
 
 commit;
