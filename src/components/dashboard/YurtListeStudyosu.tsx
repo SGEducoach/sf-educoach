@@ -16,8 +16,9 @@ import {
   type OgrenciCinsiyeti, type OgretmenCinsiyeti, type YurtOgrencisi, type YurtSablonu,
 } from "@/lib/yurt-listesi";
 import { yurtListesiCiz } from "@/components/dashboard/whatsapp-kart-cizim";
-import { Alan, FOTO_KOKU, FotoSecici, Onizleme, girdiStili, gorselYukle, indirVeyaPaylas, yaziTipi, type FotoSecimi } from "@/components/dashboard/whatsapp-ortak";
+import { Alan, FotoSecici, Onizleme, girdiStili, gorselYukle, indirVeyaPaylas, useFotoSecimi, yaziTipi } from "@/components/dashboard/whatsapp-ortak";
 import { cinsiyetKaydet } from "@/app/dashboard/yurt-cinsiyet-actions";
+import type { EtkinSablon } from "@/lib/whatsapp-sablon-ayarlari";
 
 export interface YurtOgretmeni { id: string; ad: string; brans: string | null; cinsiyet: OgretmenCinsiyeti | null }
 export interface YurtVerisi {
@@ -27,22 +28,22 @@ export interface YurtVerisi {
   mudurMu: boolean;
   hazirlayan: string;
   cinsiyetHazir: boolean;                // migration 0161 uygulandı mı
+  okulId?: string;                       // admin başka kurum adına girerken
 }
 
 const kucukBaslik = "text-[10px] font-semibold uppercase tracking-wide";
 const sinifSirala = (a: YurtOgrencisi, b: YurtOgrencisi) =>
   (a.seviye && b.seviye && a.sube && b.sube ? sinifSiraKarsilastir({ seviye: a.seviye, sube: a.sube }, { seviye: b.seviye, sube: b.sube }) : 0) || a.ad.localeCompare(b.ad, "tr");
 
-export function YurtListeDuzenleyici({ sablon, kurumAdi, logo: kurumLogosu, yurt, paylasilabilir }: {
-  sablon: YurtSablonu; kurumAdi: string; logo: string | null; yurt: YurtVerisi; paylasilabilir: boolean;
+export function YurtListeDuzenleyici({ sablon, etkin, kurumAdi, logo: kurumLogosu, yurt, paylasilabilir }: {
+  sablon: YurtSablonu; etkin: EtkinSablon; kurumAdi: string; logo: string | null; yurt: YurtVerisi; paylasilabilir: boolean;
 }) {
   const kendiGrubum = ogretmeninGrubu(yurt.benimCinsiyetim);
   const [grup, setGrup] = useState<OgrenciCinsiyeti>(kendiGrubum ?? "kiz");
   const [degerler, setDegerler] = useState<Record<string, string>>(() => yurtVarsayilanlari(sablon, bugununTarihiTR()));
   const [arama, setArama] = useState("");
   const [secili, setSecili] = useState<Record<string, string>>({}); // anahtar → not
-  const [fotoSecim, setFotoSecim] = useState<FotoSecimi>("hazir");
-  const [kendiFoto, setKendiFoto] = useState<string | null>(null);
+  const foto = useFotoSecimi(etkin.fotolar);
   const [sayfa, setSayfa] = useState(0);
   const [onizleme, setOnizleme] = useState<string | null>(null);
   const [durum, setDurum] = useState<string | null>(null);
@@ -58,11 +59,11 @@ export function YurtListeDuzenleyici({ sablon, kurumAdi, logo: kurumLogosu, yurt
 
   async function ciz(i: number): Promise<HTMLCanvasElement> {
     const canvas = document.createElement("canvas");
-    const fotoKaynak = fotoSecim === "hazir" ? `${FOTO_KOKU}${sablon.foto}` : fotoSecim === "kendi" ? kendiFoto : null;
-    const [aile, logo, foto] = await Promise.all([yaziTipi(), gorselYukle(kurumLogosu), gorselYukle(fotoKaynak)]);
+    const fotoKaynak = foto.kaynak;
+    const [aile, logo, fotoImg] = await Promise.all([yaziTipi(), gorselYukle(kurumLogosu), gorselYukle(fotoKaynak)]);
     const s = sayfalar[i] ?? [];
     yurtListesiCiz(canvas, {
-      kurumAdi, logo, foto, baslik: sablon.ad, grupEtiketi: grupEtiketi(grubum ?? "kiz"),
+      kurumAdi, logo, foto: fotoImg, baslik: etkin.baslik ?? sablon.ad, grupEtiketi: grupEtiketi(grubum ?? "kiz"),
       bilgi: yurtBilgiSatirlari(sablon.anahtar, degerler), notEtiketi: sablon.notEtiketi, bosMesaj: sablon.bosMesaj,
       satirlar: s.map((o, j) => ({ no: i * YURT_LISTE_SAYFA_SATIRI + j + 1, ad: o.ad, okulNo: o.okulNo ?? "", sinif: o.sinif ?? "", not: secili[o.anahtar] ?? "" })),
       sayfa: i + 1, toplamSayfa: sayfalar.length, toplamOgrenci: secilenler.length, hazirlayan: yurt.hazirlayan, renk: sablon.renk, aile,
@@ -80,7 +81,7 @@ export function YurtListeDuzenleyici({ sablon, kurumAdi, logo: kurumLogosu, yurt
     return () => { iptal = true; window.clearTimeout(z); };
     // ciz her çizimde yeniden kurulur; bağımlılıklar çizimin girdileri.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gecerliSayfa, sayfalar, secili, degerler, fotoSecim, kendiFoto, grubum, kurumAdi, kurumLogosu]);
+  }, [gecerliSayfa, sayfalar, secili, degerler, foto.kaynak, grubum, kurumAdi, kurumLogosu, etkin.baslik]);
 
   async function cikti(i: number, paylas: boolean) {
     const c = await ciz(i);
@@ -100,7 +101,7 @@ export function YurtListeDuzenleyici({ sablon, kurumAdi, logo: kurumLogosu, yurt
     <section className="sfec-fade grid gap-4 rounded-3xl p-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <div className="flex min-w-0 flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-sm font-bold" style={{ color: TEXT }}>{sablon.ad}</h3>
+          <h3 className="text-sm font-bold" style={{ color: TEXT }}>{etkin.ad}</h3>
           {yurt.mudurMu ? (
             <div className="inline-flex gap-1 rounded-xl p-1" style={{ background: BG1_ALT }}>
               {(["kiz", "erkek"] as const).map((g) => (
@@ -176,7 +177,7 @@ export function YurtListeDuzenleyici({ sablon, kurumAdi, logo: kurumLogosu, yurt
           </div>
         )}
 
-        <FotoSecici secim={fotoSecim} setSecim={setFotoSecim} kendiFoto={kendiFoto} setKendiFoto={setKendiFoto} />
+        <FotoSecici durum={foto} />
 
         <div className="flex flex-wrap items-center gap-2">
           {sayfalar.map((_, i) => (
@@ -234,7 +235,7 @@ export function CinsiyetBilgileri({ yurt }: { yurt: YurtVerisi }) {
     setOgrenci((s) => ({ ...s, ...Object.fromEntries(anahtarlar.map((a) => [a, c])) }));
     setHata(null);
     start(async () => {
-      const r = await cinsiyetKaydet("ogrenci", anahtarlar, c);
+      const r = await cinsiyetKaydet("ogrenci", anahtarlar, c, yurt.okulId);
       if (r.error) { setHata(r.error); setOgrenci(onceki); } else setIsaretli(new Set());
     });
   }
@@ -243,7 +244,7 @@ export function CinsiyetBilgileri({ yurt }: { yurt: YurtVerisi }) {
     setOgretmen((s) => ({ ...s, [id]: c }));
     setHata(null);
     start(async () => {
-      const r = await cinsiyetKaydet("ogretmen", [id], c);
+      const r = await cinsiyetKaydet("ogretmen", [id], c, yurt.okulId);
       if (r.error) { setHata(r.error); setOgretmen(onceki); }
     });
   }

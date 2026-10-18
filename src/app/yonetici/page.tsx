@@ -43,6 +43,10 @@ import { dashboardMenusu } from "@/lib/dashboard-navigation";
 import { YoneticiMesajlar } from "@/components/dashboard/YoneticiMesajlar";
 import type { DashboardBolumu } from "@/lib/dashboard-navigation";
 import { sinifSiraKarsilastir } from "@/lib/types";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { WhatsappYonetimi } from "@/components/yonetici/WhatsappYonetimi";
+import { sablonAyarlariGetir } from "@/lib/whatsapp-sablon-ayarlari-verisi";
+import { TUM_SABLONLAR } from "@/lib/whatsapp-sablon-ayarlari";
 
 // SeFu Koç'un tek kontrol noktası — bilerek /dashboard'dan ayrı, kendi
 // bağımsız girişi olan, hiçbir yerden link verilmeyen bir adres. Normal
@@ -103,6 +107,7 @@ export default async function YoneticiPage({
     : { ayarlar: { baslik: "", govde: "", sliderGecisSaniye: 6 }, gorseller: [] };
   const anaSayfaDuyurulari = aktifBolum === "site-ayarlari" ? await anaSayfaDuyurulariniGetir(supabase) : [];
   const konuAdInceleme = aktifBolum === "icerik" ? await konuAdIncelemeVerisiGetir() : null;
+  const whatsappAyarlari = aktifBolum === "whatsapp-yonetimi" ? await sablonAyarlariGetir(createAdminClient()) : null;
 
   // Kullanıcı isteği (26.08.2026): admin de dahil olmak üzere yanlış giriş
   // denemesi bildirimi alıyor (bkz. api/giris/route.ts) — Mesajlarım kutusu
@@ -183,6 +188,12 @@ export default async function YoneticiPage({
             </section>
           )}
           {aktifBolum === "blog" && <section className="sfec-section"><BlogYonetimi /></section>}
+          {aktifBolum === "whatsapp-yonetimi" && whatsappAyarlari && (
+            <section className="sfec-section">
+              <WhatsappYonetimi sablonlar={TUM_SABLONLAR} ayarlar={whatsappAyarlari.ayarlar} hazir={whatsappAyarlari.hazir}
+                okullar={okulListesi.map((o) => ({ id: o.id, ad: o.ad, yurtlu: o.yurtlu === true }))} />
+            </section>
+          )}
           {aktifBolum === "kurallar" && <KurallarYonetimi />}
           {aktifBolum === "hata-bildirimleri" && <section className="sfec-section"><HataBildirimleriYonetimi /></section>}
           {aktifBolum === "duyuru-gecmisi" && <section className="sfec-section"><DuyuruGecmisi /></section>}

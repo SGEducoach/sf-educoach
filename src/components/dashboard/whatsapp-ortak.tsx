@@ -3,6 +3,7 @@
 // WhatsApp kart stüdyolarının ortak parçaları: görsel yükleme, indirme/
 // paylaşma, fotoğraf seçici, önizleme. Duyuru ve yurt listesi stüdyoları
 // (WhatsappDuyuruStudyosu, YurtListeStudyosu) birlikte kullanır.
+import { useState } from "react";
 import { BG0, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
 
 export const FOTO_KOKU = "/duyuru-fotograflari/";
@@ -60,7 +61,7 @@ export function SablonDugmesi({ ad, foto, renk, secili, sec }: { ad: string; fot
       className="sfec-btn flex shrink-0 items-center gap-2.5 rounded-2xl py-1.5 pl-1.5 pr-3 text-left lg:w-full lg:pr-2"
       style={secili ? { background: MINT_BG, outline: `2px solid ${MINT}`, outlineOffset: -2 } : { background: BG1_ALT }}>
       <span aria-hidden="true" className="relative h-9 w-11 shrink-0 overflow-hidden rounded-xl" style={{ background: renk }}>
-        <span className="absolute inset-0 bg-cover bg-center opacity-80" style={{ backgroundImage: `url(${FOTO_KOKU}${foto})` }} />
+        {foto && <span className="absolute inset-0 bg-cover bg-center opacity-80" style={{ backgroundImage: `url(${foto.startsWith("/") ? foto : FOTO_KOKU + foto})` }} />}
         <span className="absolute inset-x-0 bottom-0 h-1.5" style={{ background: renk }} />
       </span>
       <span className="whitespace-nowrap text-xs font-bold leading-tight lg:whitespace-normal" style={{ color: secili ? TEXT : TEXT_MUTED }}>{ad}</span>
@@ -68,14 +69,35 @@ export function SablonDugmesi({ ad, foto, renk, secili, sec }: { ad: string; fot
   );
 }
 
-export function FotoSecici({ secim, setSecim, kendiFoto, setKendiFoto }: {
-  secim: FotoSecimi; setSecim: (s: FotoSecimi) => void; kendiFoto: string | null; setKendiFoto: (s: string | null) => void;
-}) {
+// Şablonun fotoğraf galerisi (admin ekler/siler) + kendi fotoğrafı + fotoğrafsız.
+export function useFotoSecimi(fotolar: string[]) {
+  const [secim, setSecim] = useState<FotoSecimi>(fotolar.length ? "hazir" : "yok");
+  const [kendiFoto, setKendiFoto] = useState<string | null>(null);
+  const [secilen, setSecilen] = useState(0);
+  const kaynak = secim === "hazir" ? fotolar[Math.min(secilen, fotolar.length - 1)] ?? null : secim === "kendi" ? kendiFoto : null;
+  const sifirla = () => { setSecim(fotolar.length ? "hazir" : "yok"); setSecilen(0); };
+  return { fotolar, secim, setSecim, kendiFoto, setKendiFoto, secilen, setSecilen, kaynak, sifirla };
+}
+export type FotoSecimDurumu = ReturnType<typeof useFotoSecimi>;
+
+export function FotoSecici({ durum }: { durum: FotoSecimDurumu }) {
+  const { fotolar, secim, setSecim, kendiFoto, setKendiFoto, secilen, setSecilen } = durum;
+  const secenekler = ([["hazir", fotolar.length > 1 ? `Hazır Fotoğraf (${fotolar.length})` : "Hazır Fotoğraf"], ["kendi", "Kendi Fotoğrafım"], ["yok", "Fotoğrafsız"]] as const)
+    .filter(([d]) => d !== "hazir" || fotolar.length > 0);
   return (
     <fieldset className="flex flex-col gap-1.5">
       <legend className="mb-1 text-[10px] font-semibold uppercase tracking-wide" style={{ color: TEXT_MUTED }}>Fotoğraf</legend>
+      {secim === "hazir" && fotolar.length > 1 && (
+        <div className="mb-1 flex flex-wrap gap-1.5">
+          {fotolar.map((f, i) => (
+            <button key={f} type="button" onClick={() => setSecilen(i)} aria-pressed={secilen === i} aria-label={`Fotoğraf ${i + 1}`}
+              className="h-12 w-16 overflow-hidden rounded-lg bg-cover bg-center"
+              style={{ backgroundImage: `url(${f})`, outline: secilen === i ? `3px solid ${MINT}` : `1px solid ${BORDER_STRONG}`, outlineOffset: secilen === i ? 1 : 0 }} />
+          ))}
+        </div>
+      )}
       <div className="flex flex-wrap gap-1.5">
-        {([["hazir", "Hazır Fotoğraf"], ["kendi", "Kendi Fotoğrafım"], ["yok", "Fotoğrafsız"]] as const).map(([d, e]) => (
+        {secenekler.map(([d, e]) => (
           <button key={d} type="button" onClick={() => setSecim(d)} aria-pressed={secim === d}
             className="sfec-btn rounded-full px-3 py-1.5 text-[11px] font-bold"
             style={secim === d ? { background: MINT, color: MINT_ON } : { background: BG1_ALT, color: TEXT_MUTED, border: `1px solid ${BORDER_STRONG}` }}>

@@ -11,16 +11,17 @@ import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, BLUSH, MINT, MINT_BG, MINT_ON
 import { bugununTarihiTR } from "@/lib/tarih";
 import { sinifSiraKarsilastir } from "@/lib/types";
 import {
-  DEVAMSIZLIK_FOTO, DEVAMSIZLIK_RENK, DUYURU_SABLONLARI, TOPLU_LISTE_SAYFA_SATIRI, devamsizlikVeliKarti, kartTarihi, topluListeSayfalari, varsayilanDegerler,
+  DEVAMSIZLIK_RENK, DUYURU_SABLONLARI, TOPLU_LISTE_SAYFA_SATIRI, devamsizlikVeliKarti, kartTarihi, topluListeSayfalari, varsayilanDegerler,
   type DevamsizOgrenci, type DuyuruSablonu,
 } from "@/lib/whatsapp-duyuru";
 import { duyuruKartiCiz, topluListeCiz } from "@/components/dashboard/whatsapp-kart-cizim";
 import { kurumLogosuYukle } from "@/app/dashboard/kurum-logo-actions";
 import {
-  Alan, FOTO_KOKU, FotoSecici, Onizleme, SablonDugmesi, dosyaAdiTemizle, girdiStili, gorselYukle, indirVeyaPaylas, yaziTipi, type FotoSecimi,
+  Alan, FotoSecici, Onizleme, SablonDugmesi, dosyaAdiTemizle, girdiStili, gorselYukle, indirVeyaPaylas, useFotoSecimi, yaziTipi,
 } from "@/components/dashboard/whatsapp-ortak";
 import { CinsiyetBilgileri, YurtListeDuzenleyici, type YurtVerisi } from "@/components/dashboard/YurtListeStudyosu";
 import { YURT_SABLONLARI } from "@/lib/yurt-listesi";
+import { etkinSablonlar, type EtkinSablon, type EtkinSablonlar } from "@/lib/whatsapp-sablon-ayarlari";
 
 const DEVAMSIZLIK = "devamsizlik";
 const CINSIYET = "cinsiyet-bilgileri";
@@ -29,12 +30,17 @@ export interface StudyoOgrencisi { id: string; ad: string; sinif: string | null;
 
 // genelDuyurular: müdür ve rehber (duyuru şablonları + devamsızlık).
 // yurt: yurtlu kurumda her öğretmen ve müdür (yurt listesi kartları).
-export function WhatsappDuyuruStudyosu({ kurumAdi, logoAdresi, logoDegistirebilir, ogrenciler, genelDuyurular = true, yurt = null }: {
+// sablonlar: admin ayarları uygulanmış şablonlar (ad, başlık, gizli, fotoğraflar).
+export function WhatsappDuyuruStudyosu({ kurumAdi, logoAdresi, logoDegistirebilir, ogrenciler, genelDuyurular = true, yurt = null, sablonlar: sablonlarGirdi }: {
   kurumAdi: string; logoAdresi: string | null; logoDegistirebilir: boolean; ogrenciler: StudyoOgrencisi[];
-  genelDuyurular?: boolean; yurt?: YurtVerisi | null;
+  genelDuyurular?: boolean; yurt?: YurtVerisi | null; sablonlar?: EtkinSablonlar;
 }) {
+  const sablonlar = useMemo(() => sablonlarGirdi ?? etkinSablonlar([]), [sablonlarGirdi]);
+  const gorunur = (anahtar: string) => !sablonlar[anahtar]?.gizli;
+  const ilkAnahtar = [...(genelDuyurular ? [...DUYURU_SABLONLARI.map((s) => s.anahtar), DEVAMSIZLIK] : []), ...(yurt ? YURT_SABLONLARI.map((s) => s.anahtar) : [])]
+    .find(gorunur) ?? (yurt?.mudurMu ? CINSIYET : DEVAMSIZLIK);
   const [logo, setLogo] = useState<string | null>(logoAdresi);
-  const [sablonAnahtari, setSablonAnahtari] = useState<string>(genelDuyurular ? DUYURU_SABLONLARI[0].anahtar : YURT_SABLONLARI[0].anahtar);
+  const [sablonAnahtari, setSablonAnahtari] = useState<string>(ilkAnahtar);
   const [telefon, setTelefon] = useState("");
   const [paylasilabilir, setPaylasilabilir] = useState(false);
   const [mesaj, setMesaj] = useState<{ hata: boolean; metin: string } | null>(null);
@@ -118,17 +124,19 @@ export function WhatsappDuyuruStudyosu({ kurumAdi, logoAdresi, logoDegistirebili
           <div className="contents lg:flex lg:w-full lg:flex-col lg:gap-1 lg:rounded-3xl lg:p-2" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
             {genelDuyurular && (<>
               <span className="hidden px-2 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wide lg:block" style={{ color: TEXT_MUTED }}>Duyurular</span>
-              {DUYURU_SABLONLARI.map((s) => (
-                <SablonDugmesi key={s.anahtar} ad={s.ad} foto={s.foto} renk={s.renk} secili={s.anahtar === sablonAnahtari} sec={() => setSablonAnahtari(s.anahtar)} />
+              {DUYURU_SABLONLARI.filter((s) => gorunur(s.anahtar)).map((s) => (
+                <SablonDugmesi key={s.anahtar} ad={sablonlar[s.anahtar].ad} foto={sablonlar[s.anahtar].fotolar[0] ?? ""} renk={s.renk} secili={s.anahtar === sablonAnahtari} sec={() => setSablonAnahtari(s.anahtar)} />
               ))}
-              <span className="hidden px-2 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wide lg:block" style={{ color: TEXT_MUTED }}>Veli Bildirimi</span>
-              <SablonDugmesi ad="Devamsızlık Bildirimi" foto={DEVAMSIZLIK_FOTO} renk={DEVAMSIZLIK_RENK}
-                secili={sablonAnahtari === DEVAMSIZLIK} sec={() => setSablonAnahtari(DEVAMSIZLIK)} />
+              {gorunur(DEVAMSIZLIK) && (<>
+                <span className="hidden px-2 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wide lg:block" style={{ color: TEXT_MUTED }}>Veli Bildirimi</span>
+                <SablonDugmesi ad={sablonlar[DEVAMSIZLIK].ad} foto={sablonlar[DEVAMSIZLIK].fotolar[0] ?? ""} renk={DEVAMSIZLIK_RENK}
+                  secili={sablonAnahtari === DEVAMSIZLIK} sec={() => setSablonAnahtari(DEVAMSIZLIK)} />
+              </>)}
             </>)}
             {yurt && (<>
               <span className={`hidden px-2 pb-1 text-[10px] font-semibold uppercase tracking-wide lg:block ${genelDuyurular ? "pt-3" : "pt-1"}`} style={{ color: TEXT_MUTED }}>Yurt</span>
-              {YURT_SABLONLARI.map((s) => (
-                <SablonDugmesi key={s.anahtar} ad={s.ad} foto={s.foto} renk={s.renk} secili={s.anahtar === sablonAnahtari} sec={() => setSablonAnahtari(s.anahtar)} />
+              {YURT_SABLONLARI.filter((s) => gorunur(s.anahtar)).map((s) => (
+                <SablonDugmesi key={s.anahtar} ad={sablonlar[s.anahtar].ad} foto={sablonlar[s.anahtar].fotolar[0] ?? ""} renk={s.renk} secili={s.anahtar === sablonAnahtari} sec={() => setSablonAnahtari(s.anahtar)} />
               ))}
               {yurt.mudurMu && (
                 <SablonDugmesi ad="Cinsiyet Bilgileri" foto="aksam-yoklamasi.jpg" renk="#5b6b82"
@@ -140,42 +148,45 @@ export function WhatsappDuyuruStudyosu({ kurumAdi, logoAdresi, logoDegistirebili
 
         <div className="min-w-0 flex-1">
           {yurt && yurtSablonu
-            ? <YurtListeDuzenleyici key={yurtSablonu.anahtar} sablon={yurtSablonu} kurumAdi={kurumAdi} logo={logo} yurt={yurt} paylasilabilir={paylasilabilir} />
+            ? <YurtListeDuzenleyici key={yurtSablonu.anahtar} sablon={yurtSablonu} etkin={sablonlar[yurtSablonu.anahtar]} kurumAdi={kurumAdi} logo={logo} yurt={yurt} paylasilabilir={paylasilabilir} />
             : yurt && sablonAnahtari === CINSIYET
             ? <CinsiyetBilgileri yurt={yurt} />
             : sablon
-            ? <DuyuruDuzenleyici key={sablon.anahtar} sablon={sablon} kurumAdi={kurumAdi} logo={logo} telefon={telefon} paylasilabilir={paylasilabilir} />
-            : <DevamsizlikDuzenleyici kurumAdi={kurumAdi} logo={logo} telefon={telefon} paylasilabilir={paylasilabilir} ogrenciler={ogrenciler} />}
+            ? <DuyuruDuzenleyici key={sablon.anahtar} sablon={sablon} etkin={sablonlar[sablon.anahtar]} kurumAdi={kurumAdi} logo={logo} telefon={telefon} paylasilabilir={paylasilabilir} />
+            : <DevamsizlikDuzenleyici etkin={sablonlar[DEVAMSIZLIK]} kurumAdi={kurumAdi} logo={logo} telefon={telefon} paylasilabilir={paylasilabilir} ogrenciler={ogrenciler} />}
         </div>
       </div>
     </div>
   );
 }
 
-function DuyuruDuzenleyici({ sablon, kurumAdi, logo, telefon, paylasilabilir }: {
-  sablon: DuyuruSablonu; kurumAdi: string; logo: string | null; telefon: string; paylasilabilir: boolean;
+function DuyuruDuzenleyici({ sablon, etkin, kurumAdi, logo, telefon, paylasilabilir }: {
+  sablon: DuyuruSablonu; etkin: EtkinSablon; kurumAdi: string; logo: string | null; telefon: string; paylasilabilir: boolean;
 }) {
   const [degerler, setDegerler] = useState<Record<string, string>>(() => varsayilanDegerler(sablon));
   const [renk, setRenk] = useState(sablon.renk);
-  const [fotoSecim, setFotoSecim] = useState<FotoSecimi>("hazir");
-  const [kendiFoto, setKendiFoto] = useState<string | null>(null);
+  const foto = useFotoSecimi(etkin.fotolar);
   const [onizleme, setOnizleme] = useState<string | null>(null);
   const [durum, setDurum] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const icerik = useMemo(() => sablon.icerik(degerler), [sablon, degerler]);
+  // Admin başlığı (varsa) şablonun sabit başlığının yerine geçer.
+  const icerik = useMemo(() => {
+    const i = sablon.icerik(degerler);
+    return etkin.baslik ? { ...i, baslik: etkin.baslik } : i;
+  }, [sablon, degerler, etkin.baslik]);
+  const fotoKaynak = foto.kaynak;
 
   useEffect(() => {
     let iptal = false;
     const z = window.setTimeout(async () => {
-      const fotoKaynak = fotoSecim === "hazir" ? `${FOTO_KOKU}${sablon.foto}` : fotoSecim === "kendi" ? kendiFoto : null;
-      const [aile, foto, logoImg, sefu] = await Promise.all([yaziTipi(), gorselYukle(fotoKaynak), gorselYukle(logo), gorselYukle(icerik.girisGerekli ? "/icon-192.png" : null)]);
+      const [aile, fotoImg, logoImg, sefu] = await Promise.all([yaziTipi(), gorselYukle(fotoKaynak), gorselYukle(logo), gorselYukle(icerik.girisGerekli ? "/icon-192.png" : null)]);
       const canvas = canvasRef.current ?? document.createElement("canvas");
       canvasRef.current = canvas;
-      duyuruKartiCiz(canvas, { icerik, sablonAdi: sablon.ad, renk, foto, logo: logoImg, sefuSimgesi: sefu, kurumAdi, telefon, aile });
+      duyuruKartiCiz(canvas, { icerik, sablonAdi: etkin.ad, renk, foto: fotoImg, logo: logoImg, sefuSimgesi: sefu, kurumAdi, telefon, aile });
       if (!iptal) setOnizleme(canvas.toDataURL("image/png"));
     }, 150);
     return () => { iptal = true; window.clearTimeout(z); };
-  }, [icerik, sablon, renk, fotoSecim, kendiFoto, logo, kurumAdi, telefon]);
+  }, [icerik, etkin.ad, renk, fotoKaynak, logo, kurumAdi, telefon]);
 
   async function cikti(paylas: boolean) {
     if (!canvasRef.current) return;
@@ -186,7 +197,7 @@ function DuyuruDuzenleyici({ sablon, kurumAdi, logo, telefon, paylasilabilir }: 
   return (
     <section className="sfec-fade grid gap-4 rounded-3xl p-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <div className="flex min-w-0 flex-col gap-3">
-        <h3 className="text-sm font-bold" style={{ color: TEXT }}>{sablon.ad}</h3>
+        <h3 className="text-sm font-bold" style={{ color: TEXT }}>{etkin.ad}</h3>
         {sablon.girisGerekli && (
           <p className="text-[11px]" style={{ color: TEXT_MUTED }}>Bu duyuru sisteme girişi gerektirdiği için kartın alt köşesinde küçük bir SeFu Koç işareti ve sefukoc.com adresi yer alır.</p>
         )}
@@ -210,7 +221,7 @@ function DuyuruDuzenleyici({ sablon, kurumAdi, logo, telefon, paylasilabilir }: 
           })}
         </div>
         <div className="flex flex-wrap items-end gap-4">
-          <FotoSecici secim={fotoSecim} setSecim={setFotoSecim} kendiFoto={kendiFoto} setKendiFoto={setKendiFoto} />
+          <FotoSecici durum={foto} />
           <Alan id={`wa-renk-${sablon.anahtar}`} etiket="Renk">
             <input id={`wa-renk-${sablon.anahtar}`} type="color" value={renk} onChange={(e) => setRenk(e.target.value)} className="h-9 w-14 cursor-pointer rounded-lg" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0 }} />
           </Alan>
@@ -226,7 +237,7 @@ function DuyuruDuzenleyici({ sablon, kurumAdi, logo, telefon, paylasilabilir }: 
               <Share2 size={13} aria-hidden="true" /> Paylaş (WhatsApp)
             </button>
           )}
-          <button type="button" onClick={() => { setDegerler(varsayilanDegerler(sablon)); setRenk(sablon.renk); setFotoSecim("hazir"); }}
+          <button type="button" onClick={() => { setDegerler(varsayilanDegerler(sablon)); setRenk(sablon.renk); foto.sifirla(); }}
             className="sfec-btn rounded-xl px-3 py-2 text-xs font-bold" style={{ color: TEXT_MUTED }}>
             Sıfırla
           </button>
@@ -238,8 +249,8 @@ function DuyuruDuzenleyici({ sablon, kurumAdi, logo, telefon, paylasilabilir }: 
   );
 }
 
-function DevamsizlikDuzenleyici({ kurumAdi, logo, telefon, paylasilabilir, ogrenciler }: {
-  kurumAdi: string; logo: string | null; telefon: string; paylasilabilir: boolean; ogrenciler: StudyoOgrencisi[];
+function DevamsizlikDuzenleyici({ etkin, kurumAdi, logo, telefon, paylasilabilir, ogrenciler }: {
+  etkin: EtkinSablon; kurumAdi: string; logo: string | null; telefon: string; paylasilabilir: boolean; ogrenciler: StudyoOgrencisi[];
 }) {
   const [tarih, setTarih] = useState(bugununTarihiTR());
   const [varsayilanDers, setVarsayilanDers] = useState("");
@@ -248,8 +259,7 @@ function DevamsizlikDuzenleyici({ kurumAdi, logo, telefon, paylasilabilir, ogren
   const [arama, setArama] = useState("");
   const [secili, setSecili] = useState<Record<string, string>>({}); // öğrenci → ders/saat (boşsa varsayılan)
   const [odak, setOdak] = useState<string | "liste">("liste");
-  const [fotoSecim, setFotoSecim] = useState<FotoSecimi>("hazir");
-  const [kendiFoto, setKendiFoto] = useState<string | null>(null);
+  const foto = useFotoSecimi(etkin.fotolar);
   const [onizleme, setOnizleme] = useState<string | null>(null);
   const [durum, setDurum] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -280,10 +290,10 @@ function DevamsizlikDuzenleyici({ kurumAdi, logo, telefon, paylasilabilir, ogren
     }
     const o = devamsizlar.find((x) => x.id === hedef);
     if (!o) return null;
-    const fotoKaynak = fotoSecim === "hazir" ? `${FOTO_KOKU}${DEVAMSIZLIK_FOTO}` : fotoSecim === "kendi" ? kendiFoto : null;
-    const foto = await gorselYukle(fotoKaynak);
+    const fotoImg = await gorselYukle(foto.kaynak);
+    const icerik = devamsizlikVeliKarti(o, tarih, veliNotu);
     duyuruKartiCiz(canvas, {
-      icerik: devamsizlikVeliKarti(o, tarih, veliNotu), sablonAdi: "Devamsızlık", renk: DEVAMSIZLIK_RENK, foto, logo: logoImg,
+      icerik: etkin.baslik ? { ...icerik, baslik: etkin.baslik } : icerik, sablonAdi: "Devamsızlık", renk: DEVAMSIZLIK_RENK, foto: fotoImg, logo: logoImg,
       sefuSimgesi: null, kurumAdi, telefon, aile,
     });
     return canvas;
@@ -302,7 +312,7 @@ function DevamsizlikDuzenleyici({ kurumAdi, logo, telefon, paylasilabilir, ogren
     return () => { iptal = true; window.clearTimeout(z); };
     // ciz her çizimde yeniden kurulur; bağımlılıklar çizimin girdileri.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gecerliOdak, devamsizlar, tarih, veliNotu, fotoSecim, kendiFoto, logo, telefon, kurumAdi]);
+  }, [gecerliOdak, devamsizlar, tarih, veliNotu, foto.kaynak, logo, telefon, kurumAdi, etkin.baslik]);
 
   async function cikti(hedef: string | "liste", paylas: boolean, sayfa = 0) {
     const c = await ciz(hedef, sayfa);
@@ -324,7 +334,7 @@ function DevamsizlikDuzenleyici({ kurumAdi, logo, telefon, paylasilabilir, ogren
       <div className="flex min-w-0 flex-col gap-3">
         <div className="flex items-center gap-2">
           <UserX size={15} color={BLUSH} aria-hidden="true" />
-          <h3 className="text-sm font-bold" style={{ color: TEXT }}>Devamsızlık Bildirimi</h3>
+          <h3 className="text-sm font-bold" style={{ color: TEXT }}>{etkin.ad}</h3>
         </div>
         <p className="text-[11px]" style={{ color: TEXT_MUTED }}>
           Her öğrenci için yalnız kendi velisine gönderilecek ayrı bir kart oluşur. Toplu liste kurum içidir; üzerinde &quot;velilere gönderilmez&quot; yazar.
@@ -374,7 +384,7 @@ function DevamsizlikDuzenleyici({ kurumAdi, logo, telefon, paylasilabilir, ogren
           </div>
         </div>
 
-        <FotoSecici secim={fotoSecim} setSecim={setFotoSecim} kendiFoto={kendiFoto} setKendiFoto={setKendiFoto} />
+        <FotoSecici durum={foto} />
 
         {devamsizlar.length > 0 && (
           <div className="flex flex-col gap-2">

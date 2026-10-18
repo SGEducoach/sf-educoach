@@ -100,6 +100,8 @@ import { IlkokulSinifimPanosu } from "@/components/dashboard/IlkokulSinifimPanos
 import { WhatsappDuyuruStudyosu } from "@/components/dashboard/WhatsappDuyuruStudyosu";
 import { DuyuruTuruSekmeleri } from "@/components/dashboard/DuyuruTuruSekmeleri";
 import { yurtVerisiGetir } from "@/lib/yurt-listesi-verisi";
+import { sablonAyarlariGetir } from "@/lib/whatsapp-sablon-ayarlari-verisi";
+import { etkinSablonlar } from "@/lib/whatsapp-sablon-ayarlari";
 import { IlkokulGelisimGirisi } from "@/components/dashboard/IlkokulGelisimGirisi";
 import { IlkokulGelisimRaporu } from "@/components/dashboard/IlkokulGelisimRaporu";
 import { bekleyenOgretmenBildirimleriniGonder } from "@/lib/ogretmen-bildirim";
@@ -1025,7 +1027,10 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   const genelWhatsapp = role === "mudur" || rehberOgretmenMi;
   if (aktifBolum === "duyurular" && duyuruTuru === "whatsapp" && (genelWhatsapp || yurtlu)) {
     const admin = createAdminClient();
-    const yurtVerisi = yurtlu ? await yurtVerisiGetir(admin, teacher.school_id, userId, role === "mudur") : null;
+    const [yurtVerisi, { ayarlar: sablonAyarlari }] = await Promise.all([
+      yurtlu ? yurtVerisiGetir(admin, teacher.school_id, userId, role === "mudur") : Promise.resolve(null),
+      sablonAyarlariGetir(admin),
+    ]);
     // logo_url 0159 ile geldi; sütun yoksa yalnız ad okunur.
     const kurumIlk = await admin.from("schools").select("ad, logo_url").eq("id", teacher.school_id).maybeSingle();
     const kurum = (kurumIlk.error
@@ -1054,7 +1059,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       <section className="sfec-section">
         <DuyuruTuruSekmeleri secili="whatsapp" />
         <WhatsappDuyuruStudyosu kurumAdi={kurum?.ad ?? "Kurumumuz"} logoAdresi={kurum?.logo_url ?? null}
-          logoDegistirebilir={role === "mudur"} ogrenciler={ogrenciListesi} genelDuyurular={genelWhatsapp} yurt={yurtVerisi} />
+          logoDegistirebilir={role === "mudur"} ogrenciler={ogrenciListesi} genelDuyurular={genelWhatsapp} yurt={yurtVerisi} sablonlar={etkinSablonlar(sablonAyarlari)} />
       </section>
     );
   }

@@ -24,6 +24,7 @@ export type DashboardBolumu =
   | "denemeler"
   | "rehberlik"
   | "duyuru-gecmisi"
+  | "whatsapp-yonetimi"
   | "takvim"
   | "yarismalar"
   | "ogrenci-takibi"
@@ -259,6 +260,8 @@ const ADMIN_MENU_YAPISI: DashboardMenuKalemi[] = [
       { bolum: "icerik", href: "/yonetici/icerik", etiket: "Konu Özetleri", ikon: "icerik" },
       { bolum: "yapay-zeka", href: "/yonetici/yapay-zeka", etiket: "Konu Durumu", ikon: "ai" },
       { bolum: "blog", href: "/yonetici/blog", etiket: "Blog", ikon: "blog" },
+      // Kullanıcı isteği (18.10.2026): WhatsApp duyuru sistemi admin kontrolünde.
+      { bolum: "whatsapp-yonetimi", href: "/yonetici/whatsapp-yonetimi", etiket: "WhatsApp Duyuruları", ikon: "duyuru" },
     ],
   },
   {
@@ -429,5 +432,5 @@ export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
 export const YONETICI_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
   "mesajlar",
   "kullanicilar", "kullanici-yonetimi", "talepler", "deneme-yukle", "pdf-eslesme", "okullar", "grup-kocluk", "moderatorler", "icerik", "blog", "kurallar", "profil", "hata-bildirimleri",
-  "duyuru-gecmisi", "islem-gecmisi", "ogrenci-aktivitesi", "site-ayarlari", "adminler",
+  "duyuru-gecmisi", "islem-gecmisi", "ogrenci-aktivitesi", "site-ayarlari", "adminler", "whatsapp-yonetimi",
 ]);
