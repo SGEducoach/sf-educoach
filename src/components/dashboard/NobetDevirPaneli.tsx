@@ -57,7 +57,7 @@ export function YurtNobetDevirPaneli({
     <div className="mt-4 rounded-2xl p-3 sm:p-4" style={{ background: BG1_ALT, border: `1px solid ${BORDER}` }}>
       <div className="flex items-center gap-2">
         <ArrowRightLeft size={15} color={MINT} />
-        <h3 className="text-sm font-bold" style={{ color: TEXT }}>Yurt nöbetimi devret</h3>
+        <h3 className="text-sm font-bold" style={{ color: TEXT }}>Yurt Nöbetimi Devret</h3>
       </div>
       <p className="mt-1 text-[11px] leading-5" style={{ color: TEXT_MUTED }}>
         Yalnızca kendi yurt nöbetinizi aynı okuldaki aktif bir öğretmene devredebilirsiniz. Devir doğrudan uygulanır ve öğretmene bildirim gönderilir.

@@ -39,7 +39,7 @@ export function DershaneOgretmenEkleFormu({ siniflar }: { siniflar: { id: string
         <div className="flex h-9 w-9 items-center justify-center rounded-2xl" style={{ background: MINT_BG }}>
           <GraduationCap size={18} color={MINT} />
         </div>
-        <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold">Öğretmen ekle</h2>
+        <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold">Öğretmen Ekle</h2>
       </div>
 
       {sonuc && (

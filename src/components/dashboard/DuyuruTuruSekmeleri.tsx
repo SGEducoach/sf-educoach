@@ -7,8 +7,8 @@ import { BG1, BORDER, MINT, MINT_ON, TEXT_MUTED } from "@/lib/theme";
 // yalnız müdür ve rehber öğretmene gösterilir; çağıran taraf karar verir.
 export function DuyuruTuruSekmeleri({ secili }: { secili: "site" | "whatsapp" }) {
   const sekmeler = [
-    { tur: "site", etiket: "Site içi duyurular", href: "/dashboard/duyurular", Ikon: Megaphone },
-    { tur: "whatsapp", etiket: "WhatsApp duyuruları", href: "/dashboard/duyurular?tur=whatsapp", Ikon: MessageSquareShare },
+    { tur: "site", etiket: "Site İçi Duyurular", href: "/dashboard/duyurular", Ikon: Megaphone },
+    { tur: "whatsapp", etiket: "WhatsApp Duyuruları", href: "/dashboard/duyurular?tur=whatsapp", Ikon: MessageSquareShare },
   ] as const;
   return (
     <nav aria-label="Duyuru türü" className="mb-4 inline-flex gap-1 rounded-2xl p-1" style={{ background: BG1, border: `2px solid ${BORDER}` }}>

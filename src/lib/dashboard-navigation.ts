@@ -79,8 +79,8 @@ export interface DashboardMenuOgesi {
 const OGRENCI_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "ozet", href: "/dashboard", etiket: "Ana sayfa", ikon: "ana-sayfa" },
   { bolum: "gorevler", href: "/dashboard/gorevler", etiket: "Ödevlerim", ikon: "gorev" },
-  { bolum: "planlar", href: "/dashboard/planlar", etiket: "Program yap", ikon: "plan" },
-  { bolum: "veri-girisi", href: "/dashboard/veri-girisi", etiket: "Veri girişi", ikon: "veri" },
+  { bolum: "planlar", href: "/dashboard/planlar", etiket: "Program Yap", ikon: "plan" },
+  { bolum: "veri-girisi", href: "/dashboard/veri-girisi", etiket: "Veri Girişi", ikon: "veri" },
   { bolum: "konu-hakimiyeti", href: "/dashboard/konu-hakimiyeti", etiket: "Konu Hakimiyeti", ikon: "hakimiyet" },
   { bolum: "analiz", href: "/dashboard/analiz", etiket: "Analiz / Rapor", ikon: "analiz" },
   { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Konu Durumu", ikon: "ai" },
@@ -112,7 +112,7 @@ const ORTAOKUL_YETERLILIK_MENU_OGESI: DashboardMenuOgesi = {
   bolum: "ortaokul-yeterlilik", href: "/dashboard/ortaokul-yeterlilik", etiket: "Konu Yeterliliği", ikon: "hakimiyet",
 };
 const ORTAOKUL_ONAYLAR_MENU_OGESI: DashboardMenuOgesi = {
-  bolum: "ortaokul-onaylar", href: "/dashboard/ortaokul-onaylar", etiket: "Çalışma onayları", ikon: "onay",
+  bolum: "ortaokul-onaylar", href: "/dashboard/ortaokul-onaylar", etiket: "Çalışma Onayları", ikon: "onay",
 };
 
 // İlkokul gelişim raporu (16.10.2026): ilkokul yalnız "ortaokul" kademeli
@@ -131,7 +131,7 @@ const ILKOKUL_SINIF_OGRETMENI_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "ozet", href: "/dashboard", etiket: "Sınıfım", ikon: "ana-sayfa" },
   ILKOKUL_GELISIM_MENU_OGESI,
   { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Duyurular", ikon: "duyuru" },
-  { bolum: "talepler", href: "/dashboard/talepler", etiket: "Veli talepleri", ikon: "talep" },
+  { bolum: "talepler", href: "/dashboard/talepler", etiket: "Veli Talepleri", ikon: "talep" },
   { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Pano", ikon: "takvim" },
 ];
 
@@ -153,11 +153,11 @@ const SINIF_ANALIZI_MENU_OGESI: DashboardMenuOgesi = {
 const OGRETMEN_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "ozet", href: "/dashboard", etiket: "Sınıflarım", ikon: "ana-sayfa" },
   { bolum: "sinif-analizi", href: "/dashboard?bolum=sinif-analizi", etiket: "Sınıf Analizi", ikon: "ogrenci" },
-  { bolum: "gorevler", href: "/dashboard/gorevler", etiket: "Ödev ver", ikon: "gorev" },
-  { bolum: "onaylar", href: "/dashboard/onaylar", etiket: "Bekleyen onaylar", ikon: "onay" },
+  { bolum: "gorevler", href: "/dashboard/gorevler", etiket: "Ödev Ver", ikon: "gorev" },
+  { bolum: "onaylar", href: "/dashboard/onaylar", etiket: "Bekleyen Onaylar", ikon: "onay" },
   { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Konu Durumu", ikon: "ai" },
   { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Duyurular", ikon: "duyuru" },
-  { bolum: "talepler", href: "/dashboard/talepler", etiket: "Veli talepleri", ikon: "talep" },
+  { bolum: "talepler", href: "/dashboard/talepler", etiket: "Veli Talepleri", ikon: "talep" },
   { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Pano", ikon: "takvim" },
 ];
 
@@ -237,26 +237,26 @@ export function menuGrubuMu(kalem: DashboardMenuKalemi): kalem is DashboardMenuG
 }
 
 const ADMIN_MENU_YAPISI: DashboardMenuKalemi[] = [
-  { bolum: "ozet", href: "/yonetici", etiket: "Genel bakış", ikon: "ana-sayfa" },
+  { bolum: "ozet", href: "/yonetici", etiket: "Genel Bakış", ikon: "ana-sayfa" },
   { bolum: "mesajlar", href: "/yonetici/mesajlar", etiket: "Mesajlar", ikon: "duyuru" },
   {
     baslik: "Kurumlar", ikon: "okul", ogeler: [
       { bolum: "okullar", href: "/yonetici/okullar", etiket: "Okullar", ikon: "okul" },
       { bolum: "grup-kocluk", href: "/yonetici/grup-kocluk", etiket: "Grup Koçluk", ikon: "grup" },
-      { bolum: "talepler", href: "/yonetici/talepler", etiket: "Veli talepleri", ikon: "talep" },
+      { bolum: "talepler", href: "/yonetici/talepler", etiket: "Veli Talepleri", ikon: "talep" },
     ],
   },
   {
     baslik: "Kullanıcı ekle / çıkar", ikon: "kullanici", ogeler: [
-      { bolum: "kullanici-yonetimi", href: "/yonetici/kullanici-yonetimi", etiket: "Kullanıcı ekle", ikon: "kullanici" },
-      { bolum: "kullanicilar", href: "/yonetici/kullanicilar", etiket: "Kullanıcı ara / çıkar", ikon: "ogrenci" },
+      { bolum: "kullanici-yonetimi", href: "/yonetici/kullanici-yonetimi", etiket: "Kullanıcı Ekle", ikon: "kullanici" },
+      { bolum: "kullanicilar", href: "/yonetici/kullanicilar", etiket: "Kullanıcı Ara / Çıkar", ikon: "ogrenci" },
     ],
   },
   {
     baslik: "Deneme ve İçerik", ikon: "deneme", ogeler: [
       { bolum: "deneme-yukle", href: "/yonetici/deneme-yukle", etiket: "Deneme Yükle", ikon: "deneme" },
       { bolum: "pdf-eslesme", href: "/yonetici/pdf-eslesme", etiket: "PDF Eşleştirme", ikon: "eslestir" },
-      { bolum: "icerik", href: "/yonetici/icerik", etiket: "Konu özetleri", ikon: "icerik" },
+      { bolum: "icerik", href: "/yonetici/icerik", etiket: "Konu Özetleri", ikon: "icerik" },
       { bolum: "yapay-zeka", href: "/yonetici/yapay-zeka", etiket: "Konu Durumu", ikon: "ai" },
       { bolum: "blog", href: "/yonetici/blog", etiket: "Blog", ikon: "blog" },
     ],
@@ -275,7 +275,7 @@ const ADMIN_MENU_YAPISI: DashboardMenuKalemi[] = [
       { bolum: "adminler", href: "/yonetici/adminler", etiket: "Adminler", ikon: "admin" },
       { bolum: "moderatorler", href: "/yonetici/moderatorler", etiket: "Moderatörler", ikon: "moderator" },
       { bolum: "kurallar", href: "/yonetici/kurallar", etiket: "Kurallar", ikon: "kural" },
-      { bolum: "site-ayarlari", href: "/yonetici/site-ayarlari", etiket: "Site ayarları", ikon: "ayarlar" },
+      { bolum: "site-ayarlari", href: "/yonetici/site-ayarlari", etiket: "Site Ayarları", ikon: "ayarlar" },
     ],
   },
   { bolum: "profil", href: "/yonetici/profil", etiket: "Profilim", ikon: "profil" },

@@ -93,7 +93,7 @@ export function HesapBaglama({ baglanti }: { baglanti: HesapBaglantisi }) {
         <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: SKY_BG }}>
           <Link2 size={14} color={SKY} />
         </div>
-        <h2 className="text-[14px] font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Diğer kurumdaki hesabım</h2>
+        <h2 className="text-[14px] font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Diğer Kurumdaki Hesabım</h2>
       </div>
 
       {bagli ? (

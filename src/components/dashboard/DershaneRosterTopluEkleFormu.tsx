@@ -44,7 +44,7 @@ export function DershaneRosterTopluEkleFormu() {
           <Upload size={18} color={MINT} />
         </div>
         <div>
-          <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold">Toplu öğrenci ön kaydı</h2>
+          <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold">Toplu Öğrenci Ön Kaydı</h2>
           <p style={{ color: TEXT_MUTED }} className="text-xs">
             Listeyle eklenenler ön kayıt olur; öğrenci daha sonra telefonuyla kaydını tamamlar.
           </p>

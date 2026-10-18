@@ -628,7 +628,7 @@ export function KonuCalismaForm({ dersListesi, konuOnerileri, konuSayaclari, sin
         <Girdi placeholder="örn. Palme, MEB, Okul kitabı" value={yayinevi} onChange={(e) => setYayinevi(e.target.value)} required />
       </label>
       <p style={{ color: TEXT_MUTED }} className="text-[11px] -mt-1">Konuyu okuduktan/çalıştıktan sonra ne kadar hakim olduğunu aşağıdan işaretle:</p>
-      <SecenekSecici baslik="Konuya hakimiyet" value={hedefeYakinlik}
+      <SecenekSecici baslik="Konuya Hakimiyet" value={hedefeYakinlik}
         onChange={(v) => { setHedefeYakinlik(v); setTakipCevabi(TAKIP_SORUSU[v].secenekler[0][0]); }}
         secenekler={[["uzak", "Yetersiz"], ["belirsiz", "Orta"], ["yakin", "Yeterli"]]} />
       {/* Konu bilme/bilmeme göstergesi — 1. aşamada seçilen düzeye özel
@@ -913,9 +913,9 @@ export function DenemeForm({ aytAlan, sinifSeviyesi, onBasari, gorevAtamaId, gor
         })}
       </div>
 
-      <SecenekSecici baslik="Deneme seviyesi" value={zorluk} onChange={setZorluk}
+      <SecenekSecici baslik="Deneme Seviyesi" value={zorluk} onChange={setZorluk}
         secenekler={[["kolay", "Kolay"], ["orta", "Orta"], ["zor", "Zor"]]} />
-      <SecenekSecici baslik="Deneme net hedefim" value={hedefeYakinlik} onChange={setHedefeYakinlik}
+      <SecenekSecici baslik="Deneme Net Hedefim" value={hedefeYakinlik} onChange={setHedefeYakinlik}
         secenekler={[["uzak", "Uzak"], ["belirsiz", "Ortalama"], ["yakin", "Ulaştım"]]} />
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
       {benzerUyari && (

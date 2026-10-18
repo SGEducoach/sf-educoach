@@ -199,7 +199,7 @@ function OgretmenKararlari({ satirlar }: { satirlar: TemaYeterliligi[] }) {
   return (
     <section className="rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <h2 className="text-sm font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>
-        Öğretmeninin değerlendirmesi
+        Öğretmeninin Değerlendirmesi
       </h2>
       <p className="mt-0.5 text-[11px]" style={{ color: TEXT_MUTED }}>
         Bu değerlendirmeyi öğretmenin yapar; buradan değiştirilemez.

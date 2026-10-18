@@ -99,7 +99,7 @@ export function OrtaokulCalismaOnaylari({ kayitlar, bugun }: { kayitlar: Ortaoku
   const bekleyen = kayitlar.filter((k) => !tamamlanan.has(k.id));
   return <section className="flex flex-col gap-4">
     <div>
-      <h1 className="text-xl font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Çalışma onayları</h1>
+      <h1 className="text-xl font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Çalışma Onayları</h1>
       <p className="mt-1 text-sm" style={{ color: TEXT_MUTED }}>
         Öğrencilerin konu çalışması ve soru çözümü kayıtlarını inceleyin. Hatalı sayı, süre veya tarihi düzelterek onaylayabilirsiniz.
       </p>

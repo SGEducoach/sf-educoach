@@ -10,6 +10,7 @@ import type { AytAlan, KurumKademesi, KurumTuru, SinifSeviyesi, UserRole } from 
 import { kurumSeviyeleri } from "@/lib/kademe";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
 import type { OgrenciYonetimKaydi, OgrenciKayitTuru } from "@/app/yonetici/actions";
+import { baslikBicimi } from "@/lib/baslik-bicimi";
 
 export interface ModeratorKullanici {
   id: string;
@@ -167,7 +168,8 @@ export async function moderatorKurumKonusuEkle(ders: string, ustKonu: string, al
   const { admin, schoolId, user } = await requireModerator();
   const temizDers = ders.trim();
   const ust = ustKonu.trim();
-  const alt = altBaslik.trim().replace(/\s+/g, " ");
+  // Başlık biçimi: her sözcüğün baş harfi büyük (bkz. lib/baslik-bicimi.ts).
+  const alt = baslikBicimi(altBaslik.trim().replace(/\s+/g, " "));
   if (!MUFREDAT_KONULARI.some((k) => k.ders === temizDers && k.konu === ust))
     return { error: "Geçerli bir ders ve üst başlık seçin." };
   if (alt.length < 2 || alt.length > 120) return { error: "Alt konu 2-120 karakter olmalı." };

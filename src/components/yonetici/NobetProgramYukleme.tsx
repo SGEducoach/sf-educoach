@@ -341,7 +341,7 @@ export function NobetProgramYukleme({ okulId, okulAdi, yurtlu = false }: { okulI
       )}
 
       {nobetler && nobetler.bekleyenProgramlar.length > 0 && (
-        <Kutu baslik="Hesabı eşleşmeyen ders programları" ikon={<Link2 size={13} color={MINT} />}>
+        <Kutu baslik="Hesabı Eşleşmeyen Ders Programları" ikon={<Link2 size={13} color={MINT} />}>
           <p className="mb-3 text-[11px]" style={{ color: TEXT_MUTED }}>
             Bu adların programı bekliyor: ya öğretmenin henüz hesabı yok (üye olunca kendiliğinden yansır)
             ya da aynı adda birden fazla hesap olduğu için sistem tahmin etmedi. İkinci durumda doğru hesabı seçin.

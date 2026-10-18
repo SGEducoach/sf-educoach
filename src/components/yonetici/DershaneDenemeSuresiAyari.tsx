@@ -34,7 +34,7 @@ export function DershaneDenemeSuresiAyari({ bitis, doldu }: { bitis: string | nu
     <div className="rounded-3xl p-5" style={{ background: BG1_ALT, border: `2px solid ${BORDER}` }}>
       <div className="flex items-center gap-2 mb-1">
         <Clock size={16} color={doldu ? BLUSH : MINT} />
-        <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold">Dershane deneme süresi</h2>
+        <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold">Dershane Deneme Süresi</h2>
       </div>
       <p style={{ color: TEXT_MUTED }} className="text-xs mb-3">
         {bitis

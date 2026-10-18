@@ -49,7 +49,7 @@ export function ModeratorKurumKonulari({ baslangic, ortakBaslangic, ilkHata }: {
   const gorunen = konular.filter((k) => k.ders === ders && k.ustKonu === ustKonu);
   return (
     <section className="rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-      <h1 className="text-xl font-bold" style={{ color: TEXT }}>Kurumun alt konuları</h1>
+      <h1 className="text-xl font-bold" style={{ color: TEXT }}>Kurumun Alt Konuları</h1>
       <p className="mt-1 text-sm" style={{ color: TEXT_MUTED }}>
         Eksik alt konuları ilgili üst başlığın altına ekleyin. Bunlar yalnızca kurumunuzdaki öğretmen ve öğrencilerin konu seçimlerinde görünür.
       </p>
@@ -81,7 +81,7 @@ export function ModeratorKurumKonulari({ baslangic, ortakBaslangic, ilkHata }: {
       </div>
       {hata && <p role="alert" className="mt-3 text-sm" style={{ color: BLUSH }}>{hata}</p>}
       <div className="mt-6">
-        <h2 className="text-sm font-bold" style={{ color: TEXT }}>Mevcut ortak alt konular</h2>
+        <h2 className="text-sm font-bold" style={{ color: TEXT }}>Mevcut Ortak Alt Konular</h2>
         <p className="mt-1 text-sm" style={{ color: TEXT_MUTED }}>
           {ortakKonular.filter((k) => k.ders === ders && k.ustKonu === ustKonu).map((k) => k.altBaslik).join(" · ") || "Bu başlık altında ortak alt konu yok."}
         </p>

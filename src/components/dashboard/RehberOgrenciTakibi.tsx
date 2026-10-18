@@ -24,9 +24,9 @@ type Sekme = "odev" | "veri" | "program";
 type VeriSekmesi = "konu" | "soru" | "deneme";
 
 const SEKMELER: { id: Sekme; ad: string; ikon: typeof BookOpen }[] = [
-  { id: "odev", ad: "Ödev ver", ikon: ListChecks },
-  { id: "veri", ad: "Veri gir", ikon: PenLine },
-  { id: "program", ad: "Program yap", ikon: CalendarPlus },
+  { id: "odev", ad: "Ödev Ver", ikon: ListChecks },
+  { id: "veri", ad: "Veri Gir", ikon: PenLine },
+  { id: "program", ad: "Program Yap", ikon: CalendarPlus },
 ];
 
 const VERI_SEKMELERI: { id: VeriSekmesi; ad: string; ikon: typeof BookOpen }[] = [

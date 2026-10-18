@@ -151,7 +151,7 @@ export function DenemeKonuAnalizi({ ozet, kapsam, kapsamEtiketi, hata }: {
             </div>
           </section>
           <section aria-label="Ders ders konular" className="flex flex-col gap-2">
-            <h3 style={{ color: TEXT }} className="text-sm font-bold">Ders ders</h3>
+            <h3 style={{ color: TEXT }} className="text-sm font-bold">Ders Ders</h3>
             {dersler.map((d) => <DersBolumu key={d} ders={d} konular={konular.filter((k) => k.ders === d)} grup={grup} />)}
           </section>
         </div>

@@ -141,7 +141,7 @@ export function OrtaokulYeterlilik({
 
       {destek.length > 0 && (
         <section className="rounded-3xl p-4" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-          <h2 className="text-sm font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Destek gereken konular</h2>
+          <h2 className="text-sm font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Destek Gereken Konular</h2>
           <div className="mt-2 flex flex-wrap gap-1.5">
             {destek.map((s) => (
               <span key={s.temaId} className="rounded-full px-2.5 py-1 text-[11px] font-semibold"

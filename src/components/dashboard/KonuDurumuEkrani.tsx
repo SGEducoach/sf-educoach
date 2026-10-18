@@ -396,7 +396,7 @@ function KonuDurumuIcerik({ veri, hata, kapsamlar, seciliAnahtar, ogrenciLinki =
           </div>
 
           <section aria-label="Öncelikli konular">
-            <h3 style={{ color: TEXT }} className="text-sm font-bold">Öncelikli konular</h3>
+            <h3 style={{ color: TEXT }} className="text-sm font-bold">Öncelikli Konular</h3>
             <p style={{ color: TEXT_MUTED }} className="mb-1 text-[11px]">En çok öğrencinin, en derin zorlandığı konular. Kimlerin zorlandığını görmek için konuya tıklayın.</p>
             {oncelikliler.length === 0
               ? <p style={{ color: MINT }} className="py-3 text-sm font-semibold">Birden çok öğrencinin zorlandığı konu yok.</p>
@@ -406,7 +406,7 @@ function KonuDurumuIcerik({ veri, hata, kapsamlar, seciliAnahtar, ogrenciLinki =
           {veri.karsilastirma && <SinifKarsilastirmasi karsilastirma={veri.karsilastirma} ders={gecerliDers} />}
 
           <section aria-label="Ders ders" className="flex flex-col gap-2">
-            <h3 style={{ color: TEXT }} className="text-sm font-bold">Ders ders</h3>
+            <h3 style={{ color: TEXT }} className="text-sm font-bold">Ders Ders</h3>
             {dersler.filter((d) => dersUyar(d.ders)).map((d) => (
               <DersBolumu key={d.ders} ders={d.ders} ortalama={d.ortalama} zayifKonuSayisi={d.zayifKonuSayisi} ogrenciSayisi={d.ogrenciSayisi}
                 konular={konular.filter((k) => k.ders === d.ders)} ogrenciLinki={ogrenciLinki} />
@@ -443,7 +443,7 @@ function SinifKarsilastirmasi({ karsilastirma, ders }: { karsilastirma: KdKarsil
   };
   return (
     <section aria-label="Sınıflar arası karşılaştırma">
-      <h3 style={{ color: TEXT }} className="text-sm font-bold">Sınıflar arası karşılaştırma</h3>
+      <h3 style={{ color: TEXT }} className="text-sm font-bold">Sınıflar Arası Karşılaştırma</h3>
       <p style={{ color: TEXT_MUTED }} className="mb-2 text-[11px]">
         Her hücre o sınıftaki öğrencilerin konu puanı ortalaması; üzerine gelince öğrenci ve zorlanan sayısı görünür. Konular en çok öğrencinin zorlandığına göre sıralı.
       </p>

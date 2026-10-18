@@ -148,8 +148,8 @@ export function WhatsappDuyuruStudyosu({ kurumAdi, logoAdresi, logoDegistirebili
             {DUYURU_SABLONLARI.map((s) => (
               <SablonDugmesi key={s.anahtar} ad={s.ad} foto={s.foto} renk={s.renk} secili={s.anahtar === sablonAnahtari} sec={() => setSablonAnahtari(s.anahtar)} />
             ))}
-            <span className="hidden px-2 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wide lg:block" style={{ color: TEXT_MUTED }}>Veli bildirimi</span>
-            <SablonDugmesi ad="Devamsızlık bildirimi" foto={DEVAMSIZLIK_FOTO} renk={DEVAMSIZLIK_RENK}
+            <span className="hidden px-2 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wide lg:block" style={{ color: TEXT_MUTED }}>Veli Bildirimi</span>
+            <SablonDugmesi ad="Devamsızlık Bildirimi" foto={DEVAMSIZLIK_FOTO} renk={DEVAMSIZLIK_RENK}
               secili={sablonAnahtari === DEVAMSIZLIK} sec={() => setSablonAnahtari(DEVAMSIZLIK)} />
           </div>
         </nav>
@@ -185,7 +185,7 @@ function FotoSecici({ secim, setSecim, kendiFoto, setKendiFoto }: {
     <fieldset className="flex flex-col gap-1.5">
       <legend className="mb-1 text-[10px] font-semibold uppercase tracking-wide" style={{ color: TEXT_MUTED }}>Fotoğraf</legend>
       <div className="flex flex-wrap gap-1.5">
-        {([["hazir", "Hazır fotoğraf"], ["kendi", "Kendi fotoğrafım"], ["yok", "Fotoğrafsız"]] as const).map(([d, e]) => (
+        {([["hazir", "Hazır Fotoğraf"], ["kendi", "Kendi Fotoğrafım"], ["yok", "Fotoğrafsız"]] as const).map(([d, e]) => (
           <button key={d} type="button" onClick={() => setSecim(d)} aria-pressed={secim === d}
             className="sfec-btn rounded-full px-3 py-1.5 text-[11px] font-bold"
             style={secim === d ? { background: MINT, color: MINT_ON } : { background: BG1_ALT, color: TEXT_MUTED, border: `1px solid ${BORDER_STRONG}` }}>
@@ -397,7 +397,7 @@ function DevamsizlikDuzenleyici({ kurumAdi, logo, telefon, paylasilabilir, ogren
       <div className="flex min-w-0 flex-col gap-3">
         <div className="flex items-center gap-2">
           <UserX size={15} color={BLUSH} aria-hidden="true" />
-          <h3 className="text-sm font-bold" style={{ color: TEXT }}>Devamsızlık bildirimi</h3>
+          <h3 className="text-sm font-bold" style={{ color: TEXT }}>Devamsızlık Bildirimi</h3>
         </div>
         <p className="text-[11px]" style={{ color: TEXT_MUTED }}>
           Her öğrenci için yalnız kendi velisine gönderilecek ayrı bir kart oluşur. Toplu liste kurum içidir; üzerinde &quot;velilere gönderilmez&quot; yazar.

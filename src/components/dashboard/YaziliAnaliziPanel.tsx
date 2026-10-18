@@ -81,12 +81,12 @@ export function YaziliAnaliziPanel({
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h2 className="text-lg font-bold" style={{ color: TEXT }}>Analiz önizlemesi</h2>
+        <h2 className="text-lg font-bold" style={{ color: TEXT }}>Analiz Önizlemesi</h2>
         <p className="mt-1 text-sm" style={{ color: TEXT_MUTED }}>Giriş yöntemi: {GIRIS_MODU_ETIKET[mod].baslik}</p>
       </div>
 
       <section>
-        <h3 className="mb-2 text-sm font-semibold" style={{ color: TEXT }}>Sınıf istatistikleri (gerçek toplam puanlar)</h3>
+        <h3 className="mb-2 text-sm font-semibold" style={{ color: TEXT }}>Sınıf İstatistikleri (Gerçek Toplam Puanlar)</h3>
         <dl className="grid grid-cols-3 gap-3 sm:grid-cols-6">
           {istatistikler.map(([etiket, deger]) => (
             <div key={etiket}>
@@ -108,7 +108,7 @@ export function YaziliAnaliziPanel({
 
       {hesap && (
         <section>
-          <h3 className="mb-2 text-sm font-semibold" style={{ color: TEXT }}>Soru bazlı puanlar</h3>
+          <h3 className="mb-2 text-sm font-semibold" style={{ color: TEXT }}>Soru Bazlı Puanlar</h3>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse" style={{ color: TEXT, borderColor: BORDER_STRONG }}>
               <thead>

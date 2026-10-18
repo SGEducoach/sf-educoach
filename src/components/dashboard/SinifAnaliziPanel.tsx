@@ -366,7 +366,7 @@ function OlcumPanelleri({ kapsam }: { kapsam: AnalizOgrencisi[] }) {
 
   return (
     <div className="grid gap-3 sm:grid-cols-3">
-      <Rack baslik="En aktif sınıf" led={MINT}>
+      <Rack baslik="En Aktif Sınıf" led={MINT}>
         {siniflar.length === 0 ? <RackBos metin="Sınıf verisi yok." /> : (
           <>
             <div className="flex flex-1 items-end gap-2">
@@ -405,7 +405,7 @@ function OlcumPanelleri({ kapsam }: { kapsam: AnalizOgrencisi[] }) {
         <RackLejant satirlar={katilim.map((d) => ({ ad: d.etiket, sayi: d.sayi, renk: renkler[d.kod] }))} />
       </Rack>
 
-      <Rack baslik="Görev akıbeti" led={BUTTER}>
+      <Rack baslik="Görev Akıbeti" led={BUTTER}>
         {gorev.oran === null ? <RackBos metin="Bu kapsamda görev atanmamış." /> : (
           <>
             <div className="py-1 text-center">

@@ -67,7 +67,7 @@ export function DenemeKarnesi({ karneler }: { karneler: DenemeKarnesiVerisi[] })
           <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: BUTTER_BG }}>
             <Award size={13} color={PEACH} aria-hidden="true" />
           </div>
-          <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Deneme karnesi</h2>
+          <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Deneme Karnesi</h2>
         </div>
         <select value={k.denemeId} onChange={(e) => setSecilenId(e.target.value)} aria-label="Deneme seç"
           className="text-xs px-3 py-1.5 rounded-xl outline-none"
@@ -98,7 +98,7 @@ export function DenemeKarnesi({ karneler }: { karneler: DenemeKarnesiVerisi[] })
 
         {k.dersler.length > 0 && (
           <section aria-label="Ders ortalamaları">
-            <h3 style={{ color: TEXT }} className="text-sm font-bold mb-2">Ortalamalarla karşılaştırma (net)</h3>
+            <h3 style={{ color: TEXT }} className="text-sm font-bold mb-2">Ortalamalarla Karşılaştırma (Net)</h3>
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>

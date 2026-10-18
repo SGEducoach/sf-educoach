@@ -13,6 +13,7 @@ import type { DenemeTuru, DenemeZorlugu, HedefeYakinlik, TakipCevabi, Verimlilik
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
 import { manipulasyonGirisimiKaydet } from "@/lib/manipulasyon-takip";
 import { veriHatasiCevir } from "@/lib/veri-hata-mesaji";
+import { baslikBicimi } from "@/lib/baslik-bicimi";
 
 // Faz F — bir veri girişi server-side bir SAYISAL SINIRI aştığı için
 // reddedildiğinde (boş alan gibi masum hatalarda DEĞİL) çağrılır; sayaç
@@ -250,7 +251,8 @@ export async function soruCozumuEkle(formData: FormData) {
   // kaynak: bu bir görevin karşılığıysa 'ogretmen', öğrencinin kendi
   // inisiyatifiyle girdiyse 'ogrenci' (bkz. Görevler alt sistemi, Faz 3).
   const { error } = await supabase.from("soru_cozumleri").insert({
-    student_id: user.id, ders, dogru, yanlis, bos, konu: konu || null, sure_dakika: sureDakika, yayinevi,
+    // Serbest yazılan konu da başlık biçiminde saklanır (bkz. lib/baslik-bicimi.ts).
+    student_id: user.id, ders, dogru, yanlis, bos, konu: konu ? baslikBicimi(konu) : null, sure_dakika: sureDakika, yayinevi,
     kaynak: gorevAtamaId ? "ogretmen" : "ogrenci", tarih, gorev_atama_id: gorevAtamaId,
   });
   if (error) return { error: veriHatasiCevir(error.message), verimlilikSorulsunMu: false };

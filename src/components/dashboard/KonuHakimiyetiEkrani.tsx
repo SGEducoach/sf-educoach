@@ -290,7 +290,7 @@ function KonuSatiri({ satir }: { satir: KonuHakimiyetiSatiri }) {
             </div>
           </div>
 
-          <SecenekSecici baslik="Tekrar durumu" value={tekrarDurumu} onChange={setTekrarDurumu}
+          <SecenekSecici baslik="Tekrar Durumu" value={tekrarDurumu} onChange={setTekrarDurumu}
             secenekler={[["tekrar_edebilirim", TEKRAR_DURUMU_ETIKET.tekrar_edebilirim], ["yuzeysel_bakarim", TEKRAR_DURUMU_ETIKET.yuzeysel_bakarim], ["gerek_yok", TEKRAR_DURUMU_ETIKET.gerek_yok]]} />
 
           <button type="button" onClick={kaydet} disabled={pending}

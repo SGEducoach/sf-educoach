@@ -101,7 +101,7 @@ export function YaziliAnaliziSekmesi({
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-extrabold" style={{ color: TEXT }}>Yazılı analizi</h1>
+          <h1 className="text-xl font-extrabold" style={{ color: TEXT }}>Yazılı Analizi</h1>
           <p className="mt-1 text-sm" style={{ color: TEXT_MUTED }}>Kaydedilen yazılılar ve soru analizi raporları.</p>
         </div>
         <button type="button" onClick={() => setGorunum("yeni")} disabled={!erisim}

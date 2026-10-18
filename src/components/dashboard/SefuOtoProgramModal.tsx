@@ -239,7 +239,7 @@ export function SefuOtoProgramModal({ ilkHafta, onKapat, ogrenciId }: { ilkHafta
           <div className="flex min-w-0 items-center gap-3">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl" style={{ background: MINT_BG, color: MINT }}><BrainCircuit size={21} /></span>
             <div className="min-w-0">
-              <h2 id="oto-program-baslik" className="text-base font-extrabold sm:text-lg" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>SeFu oto program yap</h2>
+              <h2 id="oto-program-baslik" className="text-base font-extrabold sm:text-lg" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>SeFu Oto Program Yap</h2>
               <p className="text-[11px] sm:text-xs" style={{ color: TEXT_MUTED }}>Siz zamanı ve öncelikleri seçin; SeFu konu çalışmasını ve soru çözümünü dengeli yerleştirsin.</p>
             </div>
           </div>
@@ -290,8 +290,8 @@ export function SefuOtoProgramModal({ ilkHafta, onKapat, ogrenciId }: { ilkHafta
                 </div>
               </fieldset>
               <div className="grid gap-3 lg:grid-cols-2">
-                <Periyotlar baslik="Hafta içi periyotları" periyotlar={ayar.haftaIciPeriyotlari} okulUyarisi={veri.okulOgrencisi} onChange={(p) => setAyar({ ...ayar, haftaIciPeriyotlari: p })} />
-                <Periyotlar baslik="Hafta sonu periyotları" periyotlar={ayar.haftaSonuPeriyotlari} onChange={(p) => setAyar({ ...ayar, haftaSonuPeriyotlari: p })} />
+                <Periyotlar baslik="Hafta İçi Periyotları" periyotlar={ayar.haftaIciPeriyotlari} okulUyarisi={veri.okulOgrencisi} onChange={(p) => setAyar({ ...ayar, haftaIciPeriyotlari: p })} />
+                <Periyotlar baslik="Hafta Sonu Periyotları" periyotlar={ayar.haftaSonuPeriyotlari} onChange={(p) => setAyar({ ...ayar, haftaSonuPeriyotlari: p })} />
               </div>
               <p className="text-[11px]" style={{ color: TEXT_MUTED }}>Her periyot 40 dakikalık çalışma ve 10 dakikalık molalarla bölünür. En fazla {EN_FAZLA_PERIYOT} periyot kullanabilirsiniz.</p>
             </div>
@@ -302,14 +302,14 @@ export function SefuOtoProgramModal({ ilkHafta, onKapat, ogrenciId }: { ilkHafta
                 <Alan className="flex flex-wrap items-center justify-between gap-3"><p className="text-xs" style={{ color: TEXT_MUTED }}>Hafta içi kısa çalışma saatleri, hafta sonu sabah ve öğleden sonra birer aralık önerilir. Taslağı oluşturmadan veya kaydetmeden önce saatleri değiştirebilirsiniz.</p><button type="button" onClick={() => setAdim(1)} className="sfec-btn shrink-0 rounded-full px-3 py-1.5 text-[11px] font-bold" style={{ background: MINT_BG, color: MINT, border: `1px solid ${MINT}` }}>Gün ve saatleri düzenle</button></Alan>
               </div>
               <div>
-                <h3 className="mb-1 text-sm font-extrabold" style={{ color: TEXT }}>Ders havuzu</h3>
+                <h3 className="mb-1 text-sm font-extrabold" style={{ color: TEXT }}>Ders Havuzu</h3>
                 <p className="mb-3 text-[11px]" style={{ color: TEXT_MUTED }}>Dersleri önem sıranıza göre seçin.</p>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-2">
                   {veri.dersListesi.map((ders) => { const secili = ayar.dersler.some((d) => d.ders === ders); return <button key={ders} type="button" onClick={() => dersiSec(ders)} className="sfec-btn flex items-center gap-2 rounded-xl px-3 py-2 text-left text-[11px] font-bold" style={{ background: secili ? MINT_BG : BG1_ALT, color: secili ? MINT : TEXT, border: `1px solid ${secili ? MINT : BORDER_STRONG}` }}><span className="flex h-4 w-4 shrink-0 items-center justify-center rounded" style={{ background: secili ? MINT : BG0, color: MINT_ON }}>{secili && <Check size={11} />}</span><span>{ders}</span></button>; })}
                 </div>
               </div>
               <div>
-                <h3 className="mb-1 text-sm font-extrabold" style={{ color: TEXT }}>Öncelik ve dağıtım ağırlığı</h3>
+                <h3 className="mb-1 text-sm font-extrabold" style={{ color: TEXT }}>Öncelik ve Dağıtım Ağırlığı</h3>
                 <p className="mb-3 text-[11px]" style={{ color: TEXT_MUTED }}>Üstteki ders eşitlikte önce yerleşir. Dağılım oranı ağırlıklı/orta/hafif için 3/2/1’dir.</p>
                 <div className="flex flex-col gap-2">
                   {ayar.dersler.map((d, i) => <Alan key={d.ders} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2"><span className="flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-extrabold" style={{ background: MINT_BG, color: MINT }}>{i + 1}</span><div className="min-w-0"><div className="truncate text-xs font-extrabold" style={{ color: TEXT }}>{d.ders}</div><div className="mt-1 flex gap-1">{AGIRLIKLAR.map((a) => <button type="button" key={a} onClick={() => setAyar({ ...ayar, dersler: ayar.dersler.map((x) => x.ders === d.ders ? { ...x, agirlik: a } : x) })} className="sfec-btn rounded-full px-2 py-1 text-[9px] font-bold" style={{ background: d.agirlik === a ? PEACH_BG : BG0, color: d.agirlik === a ? PEACH : TEXT_MUTED, border: `1px solid ${d.agirlik === a ? PEACH : BORDER}` }}>{DERS_AGIRLIGI_ETIKET[a]}</button>)}</div></div><div className="flex flex-col"><button type="button" aria-label="Yukarı taşı" disabled={i === 0} onClick={() => dersiTasi(i, -1)} className="sfec-btn p-1 disabled:opacity-20" style={{ color: TEXT_MUTED }}><ArrowUp size={13} /></button><button type="button" aria-label="Aşağı taşı" disabled={i === ayar.dersler.length - 1} onClick={() => dersiTasi(i, 1)} className="sfec-btn p-1 disabled:opacity-20" style={{ color: TEXT_MUTED }}><ArrowDown size={13} /></button></div></Alan>)}

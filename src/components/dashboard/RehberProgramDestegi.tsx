@@ -47,7 +47,7 @@ export function RehberProgramDestegi({ ogrenciler, akibetler, ilkHafta, seviyele
     <div className="flex flex-col gap-4">
       <section className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <h2 className="text-[15px] font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>
-          Öğrenciyle program hazırla
+          Öğrenciyle Program Hazırla
         </h2>
         <p className="mt-1 text-xs" style={{ color: TEXT_MUTED }}>
           Öğrenciyle oturup SeFu Oto Program sihirbazını birlikte geçin: günler, çalışma saatleri ve ders ağırlıkları seçilir,
@@ -83,7 +83,7 @@ export function RehberProgramDestegi({ ogrenciler, akibetler, ilkHafta, seviyele
       </section>
 
       <section className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-        <h3 className="text-sm font-bold" style={{ color: TEXT }}>Hazırladığınız programların akıbeti</h3>
+        <h3 className="text-sm font-bold" style={{ color: TEXT }}>Hazırladığınız Programların Akıbeti</h3>
         {akibetler.length === 0 ? (
           <p className="mt-3 text-xs" style={{ color: TEXT_MUTED }}>
             Henüz öğrenci adına program hazırlamadınız. Yukarıdan bir öğrenci seçip başlayabilirsiniz.

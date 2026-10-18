@@ -88,7 +88,7 @@ export function TemsiliOgrenciSecici({
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h2 className="text-lg font-bold" style={{ color: TEXT }}>Soru puanları</h2>
+        <h2 className="text-lg font-bold" style={{ color: TEXT }}>Soru Puanları</h2>
         <p className="mt-1 text-sm" style={{ color: TEXT_MUTED }}>Soru ve kazanım analizi için puanların nasıl girileceğini seçin.</p>
       </div>
 

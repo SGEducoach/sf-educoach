@@ -77,14 +77,14 @@ export async function OgrenciAktivitesi({ kurumId, donem }: { kurumId: string | 
       {veri.error && <p style={{ color: BLUSH }} className="text-sm font-semibold">Veri alınamadı: {veri.error}</p>}
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <Kart baslik="En çok veri giren" aciklama={`${donemEtiketi} · girilen konu, soru ve deneme kayıtları`} ikon={<Database size={15} color={TEXT_MUTED} aria-hidden="true" />}>
+        <Kart baslik="En Çok Veri Giren" aciklama={`${donemEtiketi} · girilen konu, soru ve deneme kayıtları`} ikon={<Database size={15} color={TEXT_MUTED} aria-hidden="true" />}>
           <Siralama bos="Bu dönemde veri girişi yok."
             satirlar={veri.veriSiralamasi.map((s) => ({ ogrenci: s.ogrenci, veri: s }))}
             deger={(s) => <span style={{ color: TEXT }} className="text-sm font-bold tabular-nums">{s.toplam}</span>}
             ek={(s) => `${s.konu} konu · ${s.soru} soru · ${s.deneme} deneme`} />
         </Kart>
 
-        <Kart baslik="En çok giriş yapan" aciklama={`${donemEtiketi} · siteyi kullandığı farklı gün sayısı`} ikon={<CalendarCheck size={15} color={TEXT_MUTED} aria-hidden="true" />}>
+        <Kart baslik="En Çok Giriş Yapan" aciklama={`${donemEtiketi} · siteyi kullandığı farklı gün sayısı`} ikon={<CalendarCheck size={15} color={TEXT_MUTED} aria-hidden="true" />}>
           <Siralama bos="Bu dönemde aktif öğrenci yok." satirlar={veri.aktifGunSiralamasi.map((s) => ({ ogrenci: s.ogrenci, veri: s }))}
             deger={(s) => <span style={{ color: TEXT }} className="text-sm font-bold tabular-nums">{s.gunSayisi} gün</span>}
             ek={(s) => `son: ${s.sonGun.split("-").reverse().slice(0, 2).join(".")}`} />
@@ -96,7 +96,7 @@ export async function OgrenciAktivitesi({ kurumId, donem }: { kurumId: string | 
           </p>
         </Kart>
 
-        <Kart baslik="En son kayıt olan" aciklama="Sisteme en son katılan öğrenciler" ikon={<UserPlus size={15} color={TEXT_MUTED} aria-hidden="true" />}>
+        <Kart baslik="En Son Kayıt Olan" aciklama="Sisteme en son katılan öğrenciler" ikon={<UserPlus size={15} color={TEXT_MUTED} aria-hidden="true" />}>
           <Siralama bos="Kayıtlı öğrenci yok." satirlar={veri.sonKayitlar.map((o) => ({ ogrenci: o, veri: o.kayitZamani }))}
             deger={(z) => <span style={{ color: TEXT_MUTED }} className="text-[11px] tabular-nums">{zamanGoster(z)}</span>} />
         </Kart>
@@ -104,7 +104,7 @@ export async function OgrenciAktivitesi({ kurumId, donem }: { kurumId: string | 
 
       <section className="rounded-3xl p-5 flex flex-col gap-3" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <div>
-          <h3 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Son hareketler</h3>
+          <h3 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Son Hareketler</h3>
           <p style={{ color: TEXT_MUTED }} className="text-[11px] mt-0.5">
             Son 200 öğrenci hareketi, kaydın yapıldığı ana göre. Okulun toplu deneme yüklemeleri tek satırda.
           </p>

@@ -10,6 +10,7 @@ import type { DenemeTuru, DenemeZorlugu, GorevTuru, HedefeYakinlik, TakipCevabi 
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
 import { veriHatasiCevir } from "@/lib/veri-hata-mesaji";
 import { konuCalismaKonusuGecerliMi } from "@/lib/konu-calisma-secimi";
+import { baslikBicimi } from "@/lib/baslik-bicimi";
 
 // Dershane rehberlik servisi (kullanıcı isteği 13.09.2026) — rehber öğretmen
 // öğrenci adına ödev verir, program yapar, veri girer. Kullanıcı kararları:
@@ -240,7 +241,7 @@ export async function rehberSoruCozumuEkle(ogrenciId: string, formData: FormData
   if (yetki.error !== null) return veriSonucu(yetki.error);
 
   const { error } = await yetki.admin.from("soru_cozumleri").insert({
-    student_id: ogrenciId, ders, dogru, yanlis, bos, konu: konu || null, sure_dakika: sureDakika, yayinevi,
+    student_id: ogrenciId, ders, dogru, yanlis, bos, konu: konu ? baslikBicimi(konu) : null, sure_dakika: sureDakika, yayinevi,
     kaynak: "ogrenci", tarih, giren_rehber_id: yetki.rehberId,
     onaylandi_mi: true, onaylayan_id: yetki.rehberId, onaylanma_at: new Date().toISOString(),
   });

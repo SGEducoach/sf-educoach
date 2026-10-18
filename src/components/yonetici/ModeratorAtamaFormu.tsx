@@ -55,7 +55,7 @@ export function ModeratorAtamaFormu() {
     <div className="rounded-3xl p-5 mb-5" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
       <div className="flex items-center gap-2 mb-3">
         <UserCog size={16} color={TEXT_MUTED} />
-        <h3 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-sm font-bold">Moderatörlük yetkisi ver/al</h3>
+        <h3 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-sm font-bold">Moderatörlük Yetkisi Ver/Al</h3>
       </div>
       <select value={schoolId} onChange={(e) => setSchoolId(e.target.value)}
         className="rounded-xl px-3 py-2 text-sm outline-none w-full sm:w-72" style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>

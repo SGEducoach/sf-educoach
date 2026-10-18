@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { veriHatasiCevir } from "@/lib/veri-hata-mesaji";
+import { baslikBicimi } from "@/lib/baslik-bicimi";
 
 type Sonuc = { error: string | null };
 
@@ -58,7 +59,7 @@ export async function sinavaDogruKonuDuzenle(
   if (!oturum) return { error: "Bu işlem yalnızca kurum öğretmenine açıktır." };
   if (!await temaDogrula(oturum, temaId)) return { error: "Bu konu kurumunuza ait değil." };
   if (degisiklik.ad === undefined && degisiklik.aktif === undefined) return { error: "Değişiklik belirtilmedi." };
-  const ad = degisiklik.ad === undefined ? undefined : String(degisiklik.ad).trim();
+  const ad = degisiklik.ad === undefined ? undefined : baslikBicimi(String(degisiklik.ad).trim());
   if (ad !== undefined && (ad.length < 2 || ad.length > 120)) return { error: "Konu adı 2–120 karakter olmalı." };
 
   const { data: mevcut } = await oturum.supabase.from("ortaokul_sinava_dogru_konu_duzenlemeleri")
@@ -78,7 +79,8 @@ export async function sinavaDogruAltBaslikEkle(temaId: string, adGirdisi: string
   const oturum = await ogretmenOturumu();
   if (!oturum) return { error: "Bu işlem yalnızca kurum öğretmenine açıktır." };
   if (!await temaDogrula(oturum, temaId)) return { error: "Bu ana konu kurumunuza ait değil." };
-  const ad = String(adGirdisi ?? "").trim();
+  // Başlık biçimi: her sözcüğün baş harfi büyük (bkz. lib/baslik-bicimi.ts).
+  const ad = baslikBicimi(String(adGirdisi ?? "").trim());
   if (ad.length < 2 || ad.length > 120) return { error: "Alt başlık 2–120 karakter olmalı." };
 
   const [{ data: tema }, { data: kurumAltBasliklari }] = await Promise.all([
@@ -107,7 +109,7 @@ export async function sinavaDogruAltBaslikDuzenle(
   const oturum = await ogretmenOturumu();
   if (!oturum) return { error: "Bu işlem yalnızca kurum öğretmenine açıktır." };
   if (degisiklik.ad === undefined && degisiklik.aktif === undefined) return { error: "Değişiklik belirtilmedi." };
-  const ad = degisiklik.ad === undefined ? undefined : String(degisiklik.ad).trim();
+  const ad = degisiklik.ad === undefined ? undefined : baslikBicimi(String(degisiklik.ad).trim());
   if (ad !== undefined && (ad.length < 2 || ad.length > 120)) return { error: "Alt başlık 2–120 karakter olmalı." };
 
   const { data: altBaslik } = await oturum.supabase.from("ortaokul_sinava_dogru_alt_basliklar")

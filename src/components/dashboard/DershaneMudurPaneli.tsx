@@ -48,7 +48,7 @@ export async function DershaneMudurPaneli({ siniflar, aktifBolum, schoolId, seci
       <section id="duyurular" className="sfec-section">
         <DuyuruTuruSekmeleri secili="site" />
         <DuyuruFormu
-          baslik="Dershaneye duyuru gönder"
+          baslik="Dershaneye Duyuru Gönder"
           aciklama="Dershane veya sınıf kapsamını ve duyurunun öğrenciye, veliye ya da ikisine birden gideceğini seçebilirsiniz."
           gonder={ogretmenDuyuruGonder}
           kapsamSecenekleri={kapsamSecenekleri}

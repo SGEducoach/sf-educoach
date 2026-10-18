@@ -68,7 +68,7 @@ export function AdminPanel({
   if (mod === "kullanici") return (
     <div className="flex flex-col gap-5 rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <div>
-        <h1 className="text-lg font-bold" style={{ color: TEXT }}>Kullanıcı ekle</h1>
+        <h1 className="text-lg font-bold" style={{ color: TEXT }}>Kullanıcı Ekle</h1>
         <p className="text-xs" style={{ color: TEXT_MUTED }}>Önce kurumu seçin, ardından öğretmen veya öğrenci ekleyin. Kullanıcı çıkarmak için “Kullanıcı ara / çıkar” bölümüne geçin.</p>
       </div>
       <select value={gorunecekOkulId ?? ""} onChange={(e) => router.push(`/yonetici/kullanici-yonetimi?okul=${e.target.value}`)}

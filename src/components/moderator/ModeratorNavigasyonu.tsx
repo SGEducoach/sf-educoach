@@ -36,7 +36,7 @@ export function ModeratorNavigasyonu({ aktif, denemeAcik, adminOkulId }: {
 
   const gruplar: { baslik: string; ogeler: Oge[] }[] = [
     {
-      baslik: "Kurum yönetimi",
+      baslik: "Kurum Yönetimi",
       ogeler: [
         { id: "ogrenciler", href: panel("ogrenciler"), etiket: "Öğrenciler", Icon: Users },
         { id: "ogretmenler", href: panel("ogretmenler"), etiket: "Öğretmenler", Icon: GraduationCap },

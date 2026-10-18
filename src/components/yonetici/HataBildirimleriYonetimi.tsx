@@ -17,7 +17,7 @@ export async function HataBildirimleriYonetimi() {
       {error && <p role="alert" className="rounded-xl px-4 py-3 text-sm" style={{ background: BG1, color: BLUSH }}>Hata bildirimleri yüklenemedi: {error}</p>}
       {adminNotlari.length > 0 && (
         <div className="rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-          <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold mb-1">Claude ile çözülecek notlar</h2>
+          <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold mb-1">Claude ile Çözülecek Notlar</h2>
           <p style={{ color: TEXT_MUTED }} className="text-xs mb-4">
             Kendi bildirdiğiniz kayıtlar — panelden değil, Claude Code oturumunda kod değişikliğiyle çözülür.
           </p>
@@ -26,7 +26,7 @@ export async function HataBildirimleriYonetimi() {
       )}
 
       <div className="rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-        <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold mb-1">Bekleyen hata bildirimleri</h2>
+        <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold mb-1">Bekleyen Hata Bildirimleri</h2>
         <p style={{ color: TEXT_MUTED }} className="text-xs mb-4">Öğrenci, veli, öğretmen ve müdürlerden gelen bildirimler.</p>
         {kullaniciBildirimleri.length === 0
           ? <p style={{ color: TEXT_MUTED }} className="text-sm">Bekleyen bildirim yok.</p>

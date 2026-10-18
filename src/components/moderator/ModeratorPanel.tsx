@@ -201,7 +201,7 @@ function SiniflarBolumu({ schoolId, kademe, onMesaj }: { schoolId?: string; kade
     <div className="rounded-3xl p-4 sm:p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-base font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Sınıflar ve sınıf öğretmenleri</h2>
+          <h2 className="text-base font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Sınıflar ve Sınıf Öğretmenleri</h2>
           <p className="mt-0.5 text-xs" style={{ color: TEXT_MUTED }}>Her sınıfın bir sınıf öğretmeni olabilir. Başka sınıfın öğretmenini seçerseniz o sınıftan bu sınıfa geçer.</p>
         </div>
         <button type="button" onClick={() => setEkleAcik((v) => !v)} aria-expanded={ekleAcik}

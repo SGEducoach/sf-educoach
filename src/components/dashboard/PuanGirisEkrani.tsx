@@ -94,7 +94,7 @@ export function PuanGirisEkrani({
 
   return (
     <div>
-      <h2>Öğrenci toplam puanları</h2>
+      <h2>Öğrenci Toplam Puanları</h2>
       <p className="text-TEXT_MUTED mb-4">
         Alınabilecek en yüksek toplam puan: {maxTotal}
       </p>

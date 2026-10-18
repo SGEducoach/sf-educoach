@@ -58,7 +58,7 @@ const yokSaBos = (s: string | undefined) => dolu(s) || null;
 
 export const DUYURU_SABLONLARI: DuyuruSablonu[] = [
   {
-    anahtar: "veli-toplantisi", ad: "Veli toplantısı", renk: "#1f4e9c", foto: "veli-toplantisi.jpg",
+    anahtar: "veli-toplantisi", ad: "Veli Toplantısı", renk: "#1f4e9c", foto: "veli-toplantisi.jpg",
     alanlar: [
       { anahtar: "kapsam", etiket: "Kimler", tur: "metin", ornek: "12. sınıf velilerimiz" },
       { anahtar: "tarih", etiket: "Tarih", tur: "tarih" },
@@ -73,7 +73,7 @@ export const DUYURU_SABLONLARI: DuyuruSablonu[] = [
     }),
   },
   {
-    anahtar: "deneme-ilani", ad: "Deneme sınavı ilanı", renk: "#d9661a", foto: "deneme-sinavi.jpg",
+    anahtar: "deneme-ilani", ad: "Deneme Sınavı İlanı", renk: "#d9661a", foto: "deneme-sinavi.jpg",
     alanlar: [
       { anahtar: "deneme", etiket: "Deneme adı", tur: "metin", ornek: "TYT Genel Deneme 3" },
       { anahtar: "kapsam", etiket: "Kimler", tur: "metin", ornek: "12. sınıflar ve mezunlar" },
@@ -89,7 +89,7 @@ export const DUYURU_SABLONLARI: DuyuruSablonu[] = [
     }),
   },
   {
-    anahtar: "deneme-sonuc", ad: "Deneme sonuç ilanı", renk: "#0f8a6a", foto: "deneme-sonucu.jpg", girisGerekli: true,
+    anahtar: "deneme-sonuc", ad: "Deneme Sonuç İlanı", renk: "#0f8a6a", foto: "deneme-sonucu.jpg", girisGerekli: true,
     alanlar: [
       { anahtar: "deneme", etiket: "Deneme adı", tur: "metin", ornek: "TYT Genel Deneme 3" },
       { anahtar: "tarih", etiket: "Sınav tarihi", tur: "tarih" },
@@ -102,7 +102,7 @@ export const DUYURU_SABLONLARI: DuyuruSablonu[] = [
     }),
   },
   {
-    anahtar: "ucret-hatirlatma", ad: "Ücret ödeme hatırlatması", renk: "#5b3fa0", foto: "odeme.jpg",
+    anahtar: "ucret-hatirlatma", ad: "Ücret Ödeme Hatırlatması", renk: "#5b3fa0", foto: "odeme.jpg",
     alanlar: [
       { anahtar: "donem", etiket: "Dönem", tur: "metin", ornek: "Kasım ayı taksiti" },
       { anahtar: "sonTarih", etiket: "Son ödeme tarihi", tur: "tarih" },
@@ -116,7 +116,7 @@ export const DUYURU_SABLONLARI: DuyuruSablonu[] = [
     }),
   },
   {
-    anahtar: "ders-iptali", ad: "Ders iptali / tatil", renk: "#b8323a", foto: "ders-iptali.jpg",
+    anahtar: "ders-iptali", ad: "Ders İptali / Tatil", renk: "#b8323a", foto: "ders-iptali.jpg",
     alanlar: [
       { anahtar: "tarih", etiket: "Tarih", tur: "tarih" },
       { anahtar: "kapsam", etiket: "Kimler", tur: "metin", varsayilan: "Tüm sınıflar" },
@@ -130,7 +130,7 @@ export const DUYURU_SABLONLARI: DuyuruSablonu[] = [
     }),
   },
   {
-    anahtar: "program-degisikligi", ad: "Ders programı değişikliği", renk: "#2471a3", foto: "ders-programi.jpg",
+    anahtar: "program-degisikligi", ad: "Ders Programı Değişikliği", renk: "#2471a3", foto: "ders-programi.jpg",
     alanlar: [
       { anahtar: "kapsam", etiket: "Kimler", tur: "metin", ornek: "11-A ve 11-B" },
       { anahtar: "gecerlilik", etiket: "Geçerli olduğu tarih", tur: "tarih" },
@@ -143,7 +143,7 @@ export const DUYURU_SABLONLARI: DuyuruSablonu[] = [
     }),
   },
   {
-    anahtar: "etut", ad: "Etüt / ek ders", renk: "#138d75", foto: "etut.jpg",
+    anahtar: "etut", ad: "Etüt / Ek Ders", renk: "#138d75", foto: "etut.jpg",
     alanlar: [
       { anahtar: "ders", etiket: "Ders", tur: "metin", ornek: "Matematik soru çözüm etüdü" },
       { anahtar: "kapsam", etiket: "Kimler", tur: "metin", ornek: "12. sınıflar" },
@@ -160,7 +160,7 @@ export const DUYURU_SABLONLARI: DuyuruSablonu[] = [
   {
     // Kullanıcı isteği (18.10.2026): "Rehberlik semineri" yerine genel
     // Rehberlik Servisi duyurusu — seminer, görüşme, tercih danışmanlığı vb.
-    anahtar: "rehberlik", ad: "Rehberlik servisi", renk: "#7d3c98", foto: "seminer.jpg",
+    anahtar: "rehberlik", ad: "Rehberlik Servisi", renk: "#7d3c98", foto: "seminer.jpg",
     alanlar: [
       { anahtar: "konu", etiket: "Konu", tur: "metin", ornek: "Sınav kaygısıyla baş etme semineri" },
       { anahtar: "kapsam", etiket: "Kimler", tur: "metin", ornek: "12. sınıf öğrencileri ve velileri" },
@@ -176,7 +176,7 @@ export const DUYURU_SABLONLARI: DuyuruSablonu[] = [
     }),
   },
   {
-    anahtar: "kayit", ad: "Kayıt dönemi", renk: "#c0590f", foto: "kayit.jpg",
+    anahtar: "kayit", ad: "Kayıt Dönemi", renk: "#c0590f", foto: "kayit.jpg",
     alanlar: [
       { anahtar: "donem", etiket: "Program", tur: "metin", ornek: "2027 YKS hazırlık programı" },
       { anahtar: "avantaj", etiket: "Avantaj", tur: "uzun", ornek: "Erken kayıtta %15 indirim ve ücretsiz seviye tespit sınavı" },
@@ -190,7 +190,7 @@ export const DUYURU_SABLONLARI: DuyuruSablonu[] = [
     }),
   },
   {
-    anahtar: "tebrik", ad: "Başarı tebriği", renk: "#b7860b", foto: "tebrik.jpg",
+    anahtar: "tebrik", ad: "Başarı Tebriği", renk: "#b7860b", foto: "tebrik.jpg",
     alanlar: [
       { anahtar: "ogrenci", etiket: "Öğrenci(ler)", tur: "metin", ornek: "Ayşe Yılmaz" },
       { anahtar: "basari", etiket: "Başarı", tur: "metin", ornek: "TYT denemesinde il 3.'sü" },
@@ -203,7 +203,7 @@ export const DUYURU_SABLONLARI: DuyuruSablonu[] = [
     }),
   },
   {
-    anahtar: "ozel-gun", ad: "Bayram / özel gün", renk: "#c0392b", foto: "ozel-gun.jpg",
+    anahtar: "ozel-gun", ad: "Bayram / Özel Gün", renk: "#c0392b", foto: "ozel-gun.jpg",
     alanlar: [
       { anahtar: "baslik", etiket: "Başlık", tur: "metin", varsayilan: "Cumhuriyet Bayramımız Kutlu Olsun" },
       { anahtar: "mesaj", etiket: "Mesaj", tur: "uzun", ornek: "Cumhuriyetimizin 103. yılını gururla kutluyoruz." },
@@ -214,7 +214,7 @@ export const DUYURU_SABLONLARI: DuyuruSablonu[] = [
     }),
   },
   {
-    anahtar: "genel", ad: "Genel duyuru", renk: "#34495e", foto: "genel.jpg",
+    anahtar: "genel", ad: "Genel Duyuru", renk: "#34495e", foto: "genel.jpg",
     alanlar: [
       { anahtar: "baslik", etiket: "Başlık", tur: "metin", ornek: "Önemli Duyuru" },
       { anahtar: "altBaslik", etiket: "Alt başlık", tur: "metin" },

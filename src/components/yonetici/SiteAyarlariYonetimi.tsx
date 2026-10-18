@@ -88,7 +88,7 @@ export function SiteAyarlariYonetimi({
     <div className="rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <div className="flex items-center gap-2 mb-1">
         <Settings2 size={16} color={TEXT_MUTED} />
-        <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold">Site ayarları</h2>
+        <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold">Site Ayarları</h2>
       </div>
       <div className="mt-3 rounded-2xl p-4" style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>
         <div style={{ color: TEXT }} className="text-sm font-bold flex items-center gap-1.5">

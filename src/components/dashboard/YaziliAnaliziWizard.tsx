@@ -129,7 +129,7 @@ export function YaziliAnaliziWizard({
 
   const renderStep1 = () => (
     <div>
-      <div className="mb-5"><h1 className="text-xl font-extrabold">Yazılı analizi</h1><p className="mt-1 text-sm text-TEXT_MUTED">Sınav bilgilerini, soru puanlarını ve kazanımları girin.</p></div>
+      <div className="mb-5"><h1 className="text-xl font-extrabold">Yazılı Analizi</h1><p className="mt-1 text-sm text-TEXT_MUTED">Sınav bilgilerini, soru puanlarını ve kazanımları girin.</p></div>
       <YaziliSinavForm
         onChange={(data) => setFormData((prev) => ({ ...prev, ...data }))}
         onComplete={goToNext}

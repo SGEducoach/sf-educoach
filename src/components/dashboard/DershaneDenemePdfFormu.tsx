@@ -73,7 +73,7 @@ export function DershaneDenemePdfFormu({ schoolId, yalnizcaExcel = false }: { sc
           <FileSpreadsheet size={18} color={MINT} />
         </div>
         <div>
-          <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold">Toplu deneme sonucu yükle</h2>
+          <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold">Toplu Deneme Sonucu Yükle</h2>
           <p style={{ color: TEXT_MUTED }} className="text-xs">
             {mod === "pdf"
               ? "Deneme sonuç PDF'i öğrencilerle ad-soyad ile otomatik eşleştirilir; belirsiz satırlar site yöneticisine düşer."

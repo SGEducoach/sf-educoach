@@ -37,7 +37,7 @@ export default async function YoneticiYapayZekaPage({ searchParams }: {
           <section className="rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
             <div className="mb-4 flex items-center gap-2">
               <School size={18} color={MINT} />
-              <div><h1 className="font-bold" style={{ color: TEXT }}>Kurum seçimi</h1><p className="text-xs" style={{ color: TEXT_MUTED }}>Konu Durumu tek kurum sınırında gösterilir.</p></div>
+              <div><h1 className="font-bold" style={{ color: TEXT }}>Kurum Seçimi</h1><p className="text-xs" style={{ color: TEXT_MUTED }}>Konu Durumu tek kurum sınırında gösterilir.</p></div>
             </div>
             <form action="/yonetici/yapay-zeka" method="get" className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
               <select name="okul" defaultValue={okulId} className="rounded-xl px-3 py-3 text-sm font-semibold outline-none" style={{ color: TEXT, background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>

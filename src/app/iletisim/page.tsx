@@ -24,7 +24,7 @@ export default function IletisimSayfasi() {
   const kartlar = [
     { Icon: Mail, baslik: "E-posta", metin: EPOSTA, href: `mailto:${EPOSTA}` },
     { Icon: Globe, baslik: "Web", metin: "www.sefukoc.com", href: TABAN },
-    { Icon: MessageSquare, baslik: "Kurum başvurusu", metin: "Okul/dershane olarak kullanmak için bize yazın", href: `mailto:${EPOSTA}?subject=Kurum%20ba%C5%9Fvurusu` },
+    { Icon: MessageSquare, baslik: "Kurum Başvurusu", metin: "Okul/dershane olarak kullanmak için bize yazın", href: `mailto:${EPOSTA}?subject=Kurum%20ba%C5%9Fvurusu` },
   ];
 
   return (

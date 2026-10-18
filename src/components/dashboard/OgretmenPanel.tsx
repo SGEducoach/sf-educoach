@@ -1036,7 +1036,7 @@ function DerslerimBolumu({ dersler, siniflar, dersProgramiSatirlari, okulNobetle
       )}
 
       <div className="mt-6 border-t pt-5" style={{ borderColor: BORDER }}>
-        <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="mb-4 text-[15px] font-bold">Girdiğim sınıflar ve derslerim</h2>
+        <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="mb-4 text-[15px] font-bold">Girdiğim Sınıflar ve Derslerim</h2>
 
         {gosterilecekler.length === 0 ? (
           <p style={{ color: TEXT_MUTED }} className="text-sm mb-3">Henüz eklenmiş bir branş dersiniz yok.</p>

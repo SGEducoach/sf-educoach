@@ -137,7 +137,7 @@ export function RehberGorusmeleri({ ogrenciler, kayitlar, seviyeler }: {
 
       <section className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h3 className="text-sm font-bold" style={{ color: TEXT }}>Geçmiş görüşmeler</h3>
+          <h3 className="text-sm font-bold" style={{ color: TEXT }}>Geçmiş Görüşmeler</h3>
           <select
             value={suzgec} onChange={(e) => setSuzgec(e.target.value)} aria-label="Öğrenciye göre süz"
             className="rounded-full px-3 py-1.5 text-xs"

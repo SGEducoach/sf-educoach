@@ -37,14 +37,14 @@ export default async function GoogleAnalyticsPage({ searchParams }: { searchPara
           <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">{["Aktif kullanıcı", "Oturum", "Sayfa görüntüleme", "Etkileşim oranı"].map((etiket,i) =>
             <div key={etiket} className="rounded-2xl p-5" style={kart}><p className="text-xs" style={{ color: TEXT_MUTED }}>{etiket}</p>
               <p className="mt-2 text-2xl font-bold">{i === 3 ? `%${(veri.ozet[i]*100).toLocaleString("tr-TR",{maximumFractionDigits:1})}` : veri.ozet[i].toLocaleString("tr-TR")}</p></div>)}</section>
-          <section className="rounded-2xl p-5" style={kart}><h2 className="font-semibold">Günlük oturumlar</h2>
+          <section className="rounded-2xl p-5" style={kart}><h2 className="font-semibold">Günlük Oturumlar</h2>
             <GoogleAnalyticsGrafigi gunler={veri.gunler} />
             {veri.gunler.length > 0 && <details className="mt-4 text-xs"><summary className="cursor-pointer" style={{color:TEXT_MUTED}}>Tarih ve oturum sayılarını göster</summary>
               <table className="mt-2 w-full text-left"><thead><tr><th>Tarih</th><th className="text-right">Oturum</th></tr></thead>
                 <tbody>{veri.gunler.map(r=><tr key={r.etiket}><td className="py-1">{r.etiket.slice(6,8)}.{r.etiket.slice(4,6)}.{r.etiket.slice(0,4)}</td><td className="text-right">{r.deger.toLocaleString("tr-TR")}</td></tr>)}</tbody>
               </table></details>}
           </section>
-          <div className="grid gap-4 lg:grid-cols-2"><Liste baslik="Trafik kaynakları" birim="Oturum" satirlar={veri.kaynaklar} /><Liste baslik="En çok görüntülenen sayfalar" birim="Görüntüleme" satirlar={veri.sayfalar} /></div>
+          <div className="grid gap-4 lg:grid-cols-2"><Liste baslik="Trafik Kaynakları" birim="Oturum" satirlar={veri.kaynaklar} /><Liste baslik="En Çok Görüntülenen Sayfalar" birim="Görüntüleme" satirlar={veri.sayfalar} /></div>
           <p className="text-xs" style={{color:TEXT_MUTED}}>GA4 verileri gecikmeli işlenebilir. Bu rapor öğrenci başarı analizinden bağımsızdır.</p>
         </>}
       </main>

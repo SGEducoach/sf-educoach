@@ -75,7 +75,7 @@ export function DershaneRosterEkleFormu({ siniflar }: { siniflar: { id: string; 
           <UserPlus size={18} color={MINT} />
         </div>
         <div>
-          <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold">Öğrenci kesin kaydı</h2>
+          <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-base font-bold">Öğrenci Kesin Kaydı</h2>
           <p style={{ color: TEXT_MUTED }} className="text-xs">
             Aktif öğrenci hesabı hemen oluşturulur; kullanıcı adı ve geçici şifreyi öğrenciye iletin.
           </p>
