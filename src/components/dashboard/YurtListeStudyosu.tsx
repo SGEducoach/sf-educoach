@@ -4,15 +4,15 @@
 // olmayanlar, evci ve çarşı iznine gidecekler. Kart yoklama isteyen müdür
 // yardımcısına WhatsApp'tan gider. Kadın öğretmen kız, erkek öğretmen erkek
 // öğrencilerin listesini hazırlar; müdür iki grubu da seçebilir ve cinsiyet
-// bilgisini girer. Logo kurumun logosu (yatay ise çerçevesiz); kurum logosu
-// yoksa MEB amblemi. Kart saklanmaz.
+// bilgisini girer. Logo kurumun logosu (yatay ise çerçevesiz); yoksa
+// kurumun baş harfleri. Kart saklanmaz.
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { Download, Share2, Users } from "lucide-react";
 import { BG1, BG1_ALT, BORDER, BORDER_STRONG, BLUSH, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
 import { bugununTarihiTR } from "@/lib/tarih";
 import { sinifSiraKarsilastir } from "@/lib/types";
 import {
-  MEB_LOGOSU, YURT_LISTE_SAYFA_SATIRI, grupEtiketi, ogretmeninGrubu, yurtBilgiSatirlari, yurtSayfalari, yurtVarsayilanlari,
+  YURT_LISTE_SAYFA_SATIRI, grupEtiketi, ogretmeninGrubu, yurtBilgiSatirlari, yurtSayfalari, yurtVarsayilanlari,
   type OgrenciCinsiyeti, type OgretmenCinsiyeti, type YurtOgrencisi, type YurtSablonu,
 } from "@/lib/yurt-listesi";
 import { yurtListesiCiz } from "@/components/dashboard/whatsapp-kart-cizim";
@@ -59,7 +59,7 @@ export function YurtListeDuzenleyici({ sablon, kurumAdi, logo: kurumLogosu, yurt
   async function ciz(i: number): Promise<HTMLCanvasElement> {
     const canvas = document.createElement("canvas");
     const fotoKaynak = fotoSecim === "hazir" ? `${FOTO_KOKU}${sablon.foto}` : fotoSecim === "kendi" ? kendiFoto : null;
-    const [aile, logo, foto] = await Promise.all([yaziTipi(), gorselYukle(kurumLogosu ?? MEB_LOGOSU), gorselYukle(fotoKaynak)]);
+    const [aile, logo, foto] = await Promise.all([yaziTipi(), gorselYukle(kurumLogosu), gorselYukle(fotoKaynak)]);
     const s = sayfalar[i] ?? [];
     yurtListesiCiz(canvas, {
       kurumAdi, logo, foto, baslik: sablon.ad, grupEtiketi: grupEtiketi(grubum ?? "kiz"),

@@ -55,7 +55,6 @@ export const YURT_SABLONLARI: YurtSablonu[] = [
 export const YURT_BLOK_SATIRI = 12;
 export const YURT_LISTE_SAYFA_SATIRI = 90;
 export const yurtSutunSatiri = (n: number) => Math.max(YURT_BLOK_SATIRI, Math.ceil(n / 3));
-export const MEB_LOGOSU = "/logolar/meb.svg";
 
 export function yurtVarsayilanlari(s: YurtSablonu, bugun: string): Record<string, string> {
   return Object.fromEntries(s.alanlar.map((a) => [a.anahtar, a.varsayilan ?? (a.tur === "tarih" ? bugun : "")]));
