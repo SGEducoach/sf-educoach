@@ -3,6 +3,7 @@
 // HER ZAMAN yuvarlak kırpılır (kullanıcı kararı 18.10.2026). SeFu simgesi
 // yalnız giriş gerektiren kartta, alt köşede küçük olarak çizilir.
 import type { KartIcerigi } from "@/lib/whatsapp-duyuru";
+import { YURT_BLOK_SATIRI as BLOK_SATIRI } from "@/lib/yurt-listesi";
 
 export const KART_G = 1080;
 export const KART_Y = 1350;
@@ -80,7 +81,9 @@ function kurumLogosu(ctx: Ctx, logo: HTMLImageElement | null, kurumAdi: string, 
   if (logo) {
     ctx.fillStyle = "#fff";
     ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
-    kapla(ctx, logo, cx - r, cy - r, r * 2, r * 2);
+    // Yatay logo daireye sığdırılır (kırpılmaz); kare logo daireyi doldurur.
+    if (genisLogoMu(logo)) genisLogoCiz(ctx, logo, cx - r * 0.86, cy - r, r * 2, r * 1.72);
+    else kapla(ctx, logo, cx - r, cy - r, r * 2, r * 2);
   } else {
     ctx.fillStyle = renk;
     ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
@@ -94,6 +97,20 @@ function kurumLogosu(ctx: Ctx, logo: HTMLImageElement | null, kurumAdi: string, 
     ctx.textBaseline = "alphabetic";
   }
   ctx.restore();
+}
+
+// Yatay (yazılı) kurum logosu yuvarlak kırpılmaz (kullanıcı isteği
+// 18.10.2026, Elbistan Bist Fen Lisesi logosu): fotoğrafın altındaki açık
+// zemine çerçevesiz, oranı korunarak çizilir. Kare logo yuvarlak kalır.
+export const genisLogoMu = (logo: HTMLImageElement | null): logo is HTMLImageElement =>
+  !!logo && logo.naturalHeight > 0 && logo.naturalWidth / logo.naturalHeight > 1.4;
+
+function genisLogoCiz(ctx: Ctx, logo: HTMLImageElement, x: number, y: number, yukseklik: number, enFazlaGenislik: number): number {
+  const oran = logo.naturalWidth / logo.naturalHeight;
+  const g = Math.min(enFazlaGenislik, yukseklik * oran);
+  const h = g / oran;
+  ctx.drawImage(logo, x, y + (yukseklik - h) / 2, g, h);
+  return g;
 }
 
 export interface DuyuruCizimi {
@@ -156,15 +173,25 @@ export function duyuruKartiCiz(canvas: HTMLCanvasElement, c: DuyuruCizimi) {
 
   // Logo ve kurum adı
   const LR = 104;
-  kurumLogosu(ctx, c.logo, c.kurumAdi, KENAR + LR, FOTO_Y, LR, c.renk);
-  const adX = KENAR + LR * 2 + 40;
-  ctx.fillStyle = KOYU;
-  ctx.font = font(900, 38);
-  const adSatir = satirla(ctx, c.kurumAdi, KART_G - KENAR - adX, 1)[0] ?? "";
-  ctx.fillText(adSatir, adX, FOTO_Y + 64);
-  ctx.fillStyle = c.renk;
-  ctx.font = font(700, 24);
-  ctx.fillText("Duyuru", adX, FOTO_Y + 100);
+  if (genisLogoMu(c.logo)) {
+    // Logo kurumun adını zaten taşır; yanına yalnız "Duyuru" yazılır.
+    genisLogoCiz(ctx, c.logo, KENAR, FOTO_Y + 28, 104, KART_G - 2 * KENAR - 200);
+    ctx.fillStyle = c.renk;
+    ctx.font = font(800, 26);
+    ctx.textAlign = "right";
+    ctx.fillText("Duyuru", KART_G - KENAR, FOTO_Y + 88);
+    ctx.textAlign = "left";
+  } else {
+    kurumLogosu(ctx, c.logo, c.kurumAdi, KENAR + LR, FOTO_Y, LR, c.renk);
+    const adX = KENAR + LR * 2 + 40;
+    ctx.fillStyle = KOYU;
+    ctx.font = font(900, 38);
+    const adSatir = satirla(ctx, c.kurumAdi, KART_G - KENAR - adX, 1)[0] ?? "";
+    ctx.fillText(adSatir, adX, FOTO_Y + 64);
+    ctx.fillStyle = c.renk;
+    ctx.font = font(700, 24);
+    ctx.fillText("Duyuru", adX, FOTO_Y + 100);
+  }
 
   // Alt bilgi
   const altY = KART_Y - 54;
@@ -333,4 +360,155 @@ export function topluListeCiz(canvas: HTMLCanvasElement, c: TopluListeCizimi) {
   ctx.fillStyle = SOLUK;
   ctx.font = font(700, 22);
   ctx.fillText("Bu liste kurum içi bilgilendirme içindir; öğrenci velilerine ayrı ayrı bildirim yapılır.", KENAR, KART_Y - 54);
+}
+
+// Yurt listesi kartı (kullanıcı isteği 18.10.2026): yoklama/evci/çarşı
+// listesi, yoklama isteyen müdür yardımcısına gider. Logo yuvarlak (MEB).
+export interface YurtListesiCizimi {
+  kurumAdi: string;
+  logo: HTMLImageElement | null;
+  foto: HTMLImageElement | null;
+  baslik: string;
+  grupEtiketi: string;   // "Kız Öğrenciler"
+  bilgi: string[];
+  satirlar: { no: number; ad: string; okulNo: string; sinif: string; not: string }[];
+  notEtiketi: string;
+  bosMesaj: string;
+  sayfa: number;
+  toplamSayfa: number;
+  toplamOgrenci: number;
+  hazirlayan: string;
+  renk: string;
+  aile: string;
+}
+
+export function yurtListesiCiz(canvas: HTMLCanvasElement, c: YurtListesiCizimi) {
+  canvas.width = KART_G;
+  canvas.height = KART_Y;
+  const ctx = canvas.getContext("2d") as Ctx;
+  const font = (a: number, b: number) => `${a} ${Math.round(b)}px ${c.aile}`;
+  const harf = (px: number) => { if ("letterSpacing" in ctx) ctx.letterSpacing = `${px}px`; };
+
+  ctx.fillStyle = ZEMIN;
+  ctx.fillRect(0, 0, KART_G, KART_Y);
+
+  const FOTO_Y = 360;
+  if (c.foto) kapla(ctx, c.foto, 0, 0, KART_G, FOTO_Y);
+  else { ctx.fillStyle = c.renk; ctx.fillRect(0, 0, KART_G, FOTO_Y); }
+  const perde = ctx.createLinearGradient(0, 0, 0, FOTO_Y);
+  perde.addColorStop(0, "rgba(0,0,0,0.05)");
+  perde.addColorStop(1, rgba(c.renk, 0.7));
+  ctx.fillStyle = perde;
+  ctx.fillRect(0, 0, KART_G, FOTO_Y);
+
+  // Grup etiketi (hap)
+  ctx.font = font(900, 26);
+  harf(2);
+  const etiket = c.grupEtiketi.toLocaleUpperCase("tr-TR");
+  const ew = ctx.measureText(etiket).width + 48;
+  ctx.fillStyle = "rgba(255,255,255,0.94)";
+  yuvarlak(ctx, KENAR, 52, ew, 56, 28);
+  ctx.fill();
+  ctx.fillStyle = c.renk;
+  ctx.textBaseline = "middle";
+  ctx.fillText(etiket, KENAR + 24, 81);
+  ctx.textBaseline = "alphabetic";
+  harf(0);
+
+  const LR = 86;
+  if (genisLogoMu(c.logo)) {
+    genisLogoCiz(ctx, c.logo, KENAR, FOTO_Y + 22, 92, KART_G - 2 * KENAR - 300);
+    ctx.fillStyle = c.renk;
+    ctx.font = font(800, 22);
+    ctx.textAlign = "right";
+    ctx.fillText("Yurt Bildirimi · Kurum İçi", KART_G - KENAR, FOTO_Y + 76);
+    ctx.textAlign = "left";
+  } else {
+    kurumLogosu(ctx, c.logo, c.kurumAdi, KENAR + LR, FOTO_Y, LR, c.renk);
+    const adX = KENAR + LR * 2 + 36;
+    ctx.fillStyle = KOYU;
+    ctx.font = font(900, 34);
+    ctx.fillText(satirla(ctx, c.kurumAdi, KART_G - KENAR - adX, 1)[0] ?? "", adX, FOTO_Y + 52);
+    ctx.fillStyle = c.renk;
+    ctx.font = font(700, 22);
+    ctx.fillText("Yurt Bildirimi · Kurum İçi", adX, FOTO_Y + 86);
+  }
+
+  // Başlık: tek satıra sığana kadar küçülür.
+  let bp = 54;
+  ctx.font = font(900, bp);
+  while (ctx.measureText(c.baslik).width > KART_G - 2 * KENAR && bp > 34) { bp -= 2; ctx.font = font(900, bp); }
+  ctx.fillStyle = KOYU;
+  harf(-1);
+  ctx.fillText(c.baslik, KENAR, FOTO_Y + 176);
+  harf(0);
+  let y = FOTO_Y + 176;
+  ctx.font = font(700, 26);
+  ctx.fillStyle = c.renk;
+  for (const b of c.bilgi.slice(0, 2)) { y += 38; ctx.fillText(b, KENAR, y); }
+
+  // Liste 12'şer satırlık üç blok (kullanıcı isteği: mesaj uzamasın). Her
+  // satır: sıra + ad; altında okul no · sınıf · not.
+  y = Math.max(y + 30, FOTO_Y + 256);
+  if (c.satirlar.length > 0) {
+    ctx.fillStyle = KOYU;
+    ctx.font = font(800, 20);
+    ctx.textAlign = "right";
+    ctx.fillText(`${c.toplamOgrenci} öğrenci${c.toplamSayfa > 1 ? ` · kart ${c.sayfa}/${c.toplamSayfa}` : ""}`, KART_G - KENAR, y - 6);
+    ctx.textAlign = "left";
+    ctx.fillStyle = SOLUK;
+    ctx.font = font(600, 17);
+    const satirYuk = (KART_Y - 100 - (y + 8)) / Math.max(BLOK_SATIRI, Math.ceil(c.satirlar.length / 3));
+    ctx.fillText(Math.min(54, satirYuk) >= 42
+      ? `Ad altında: okul no · sınıf · ${c.notEtiketi.toLocaleLowerCase("tr-TR")}`
+      : `Ad — ${c.notEtiketi.toLocaleLowerCase("tr-TR")}`, KENAR, y - 6);
+    y += 8;
+  }
+  if (c.satirlar.length === 0) {
+    ctx.fillStyle = "#e7f5ee";
+    yuvarlak(ctx, KENAR, y + 24, KART_G - 2 * KENAR, 110, 22);
+    ctx.fill();
+    ctx.fillStyle = "#0f7a5c";
+    ctx.font = font(800, 30);
+    ctx.textAlign = "center";
+    ctx.fillText(c.bosMesaj, KART_G / 2, y + 90);
+    ctx.textAlign = "left";
+  }
+  // 36'ya kadar sütun başına 12 satır; fazlasında üç sütuna eşit dağılır.
+  const ARA = 14;
+  const BLOK_G = (KART_G - 2 * KENAR - 2 * ARA) / 3;
+  const sutunSatiri = Math.max(BLOK_SATIRI, Math.ceil(c.satirlar.length / 3));
+  const SATIR_Y = Math.min(54, (KART_Y - 100 - y) / sutunSatiri);
+  const iki = SATIR_Y >= 42; // sıklaşınca tek satır: ad · not
+  c.satirlar.forEach((s, i) => {
+    const blok = Math.floor(i / sutunSatiri);
+    const sira = i % sutunSatiri;
+    const x = KENAR + blok * (BLOK_G + ARA);
+    const sy = y + sira * SATIR_Y;
+    ctx.fillStyle = sira % 2 === 0 ? "#ffffff" : rgba(c.renk, 0.06);
+    yuvarlak(ctx, x, sy + 1, BLOK_G, SATIR_Y - 2, Math.min(10, SATIR_Y / 3));
+    ctx.fill();
+    const tabanY = iki ? sy + 24 : sy + SATIR_Y / 2 + 7;
+    const boy = iki ? 20 : Math.max(14, Math.min(19, SATIR_Y * 0.62));
+    ctx.fillStyle = c.renk;
+    ctx.font = font(800, boy - 2);
+    ctx.textAlign = "right";
+    ctx.fillText(String(s.no), x + 34, tabanY);
+    ctx.textAlign = "left";
+    ctx.fillStyle = KOYU;
+    ctx.font = font(800, boy);
+    if (iki) {
+      ctx.fillText(satirla(ctx, s.ad, BLOK_G - 52, 1)[0] ?? "", x + 44, tabanY);
+      const alt = [s.okulNo ? `No ${s.okulNo}` : "", s.sinif, s.not].filter(Boolean).join(" · ");
+      ctx.fillStyle = s.not ? c.renk : SOLUK;
+      ctx.font = font(600, 15);
+      ctx.fillText(satirla(ctx, alt || "—", BLOK_G - 52, 1)[0] ?? "", x + 44, sy + 44);
+    } else {
+      ctx.fillText(satirla(ctx, s.not ? `${s.ad} — ${s.not}` : s.ad, BLOK_G - 52, 1)[0] ?? "", x + 44, tabanY);
+    }
+  });
+
+  ctx.fillStyle = SOLUK;
+  ctx.font = font(700, 22);
+  ctx.fillText(satirla(ctx, `Hazırlayan: ${c.hazirlayan}`, KART_G - 2 * KENAR, 1)[0] ?? "", KENAR, KART_Y - 54);
 }

@@ -244,7 +244,7 @@ export function OgretmenPanel({
 
       {aktifBolum === "duyurular" && duyuruMumkunMu && (
         <section id="duyurular" className="sfec-section">
-          {(role === "mudur" || rehberOgretmenMi) && <DuyuruTuruSekmeleri secili="site" />}
+          {(role === "mudur" || rehberOgretmenMi || yurtlu) && <DuyuruTuruSekmeleri secili="site" />}
           <DuyuruFormu
           baslik={grupMu ? "Grubuna duyuru gönder" : rehberOgretmenMi ? "Rehber Öğretmen duyurusu gönder" : role === "mudur" ? "Okula duyuru gönder" : "Sınıfınıza duyuru gönder"}
           aciklama={grupMu

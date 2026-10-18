@@ -16,64 +16,25 @@ import {
 } from "@/lib/whatsapp-duyuru";
 import { duyuruKartiCiz, topluListeCiz } from "@/components/dashboard/whatsapp-kart-cizim";
 import { kurumLogosuYukle } from "@/app/dashboard/kurum-logo-actions";
+import {
+  Alan, FOTO_KOKU, FotoSecici, Onizleme, SablonDugmesi, dosyaAdiTemizle, girdiStili, gorselYukle, indirVeyaPaylas, yaziTipi, type FotoSecimi,
+} from "@/components/dashboard/whatsapp-ortak";
+import { CinsiyetBilgileri, YurtListeDuzenleyici, type YurtVerisi } from "@/components/dashboard/YurtListeStudyosu";
+import { YURT_SABLONLARI } from "@/lib/yurt-listesi";
 
-const FOTO_KOKU = "/duyuru-fotograflari/";
 const DEVAMSIZLIK = "devamsizlik";
-type FotoSecimi = "hazir" | "kendi" | "yok";
-
-const gorselOnbellegi = new Map<string, Promise<HTMLImageElement | null>>();
-function gorselYukle(src: string | null): Promise<HTMLImageElement | null> {
-  if (!src) return Promise.resolve(null);
-  const hazir = gorselOnbellegi.get(src);
-  if (hazir) return hazir;
-  const soz = new Promise<HTMLImageElement | null>((coz) => {
-    const img = new Image();
-    img.onload = () => coz(img);
-    img.onerror = () => coz(null);
-    img.src = src;
-  });
-  gorselOnbellegi.set(src, soz);
-  return soz;
-}
-
-async function yaziTipi(): Promise<string> {
-  const aile = getComputedStyle(document.body).fontFamily || "sans-serif";
-  try { await Promise.all([document.fonts.load(`900 40px ${aile}`), document.fonts.load(`700 24px ${aile}`), document.fonts.load(`600 28px ${aile}`)]); } catch { /* yedek yazı tipi */ }
-  return aile;
-}
-
-function blobOl(canvas: HTMLCanvasElement): Promise<Blob | null> {
-  return new Promise((coz) => canvas.toBlob(coz, "image/png"));
-}
-
-function dosyaAdiTemizle(s: string): string {
-  return s.toLocaleLowerCase("tr-TR").replace(/[^a-z0-9ğüşıöç]+/g, "-").replace(/^-|-$/g, "") || "kart";
-}
-
-async function indirVeyaPaylas(canvas: HTMLCanvasElement, ad: string, paylas: boolean): Promise<boolean> {
-  const blob = await blobOl(canvas);
-  if (!blob) return false;
-  if (paylas) {
-    try { await navigator.share({ files: [new File([blob], ad, { type: "image/png" })] }); return true; } catch { return false; }
-  }
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = ad;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 2000);
-  return true;
-}
+const CINSIYET = "cinsiyet-bilgileri";
 
 export interface StudyoOgrencisi { id: string; ad: string; sinif: string | null; seviye: string | null; sube: string | null }
 
-export function WhatsappDuyuruStudyosu({ kurumAdi, logoAdresi, logoDegistirebilir, ogrenciler }: {
+// genelDuyurular: müdür ve rehber (duyuru şablonları + devamsızlık).
+// yurt: yurtlu kurumda her öğretmen ve müdür (yurt listesi kartları).
+export function WhatsappDuyuruStudyosu({ kurumAdi, logoAdresi, logoDegistirebilir, ogrenciler, genelDuyurular = true, yurt = null }: {
   kurumAdi: string; logoAdresi: string | null; logoDegistirebilir: boolean; ogrenciler: StudyoOgrencisi[];
+  genelDuyurular?: boolean; yurt?: YurtVerisi | null;
 }) {
   const [logo, setLogo] = useState<string | null>(logoAdresi);
-  const [sablonAnahtari, setSablonAnahtari] = useState<string>(DUYURU_SABLONLARI[0].anahtar);
+  const [sablonAnahtari, setSablonAnahtari] = useState<string>(genelDuyurular ? DUYURU_SABLONLARI[0].anahtar : YURT_SABLONLARI[0].anahtar);
   const [telefon, setTelefon] = useState("");
   const [paylasilabilir, setPaylasilabilir] = useState(false);
   const [mesaj, setMesaj] = useState<{ hata: boolean; metin: string } | null>(null);
@@ -104,14 +65,24 @@ export function WhatsappDuyuruStudyosu({ kurumAdi, logoAdresi, logoDegistirebili
   }
 
   const sablon = DUYURU_SABLONLARI.find((s) => s.anahtar === sablonAnahtari) ?? null;
+  const yurtSablonu = YURT_SABLONLARI.find((s) => s.anahtar === sablonAnahtari) ?? null;
 
   return (
     <div className="flex flex-col gap-4">
+      {!genelDuyurular ? (
+        <section className="sfec-fade flex items-center gap-3 rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+          <MessageSquareShare size={18} color={MINT} aria-hidden="true" />
+          <div>
+            <h2 className="text-[15px] font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Yurt Listeleri</h2>
+            <p className="text-xs" style={{ color: TEXT_MUTED }}>Yoklama, evci ve çarşı izni listelerini kart olarak hazırlayıp müdür yardımcısına WhatsApp&apos;tan gönderin. Kartlar sistemde saklanmaz.</p>
+          </div>
+        </section>
+      ) : (
       <section className="sfec-fade flex flex-wrap items-center gap-4 rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full" style={{ background: "#fff", border: `3px solid ${BORDER_STRONG}` }}>
           {logo
             // eslint-disable-next-line @next/next/no-img-element -- kurum logosu, kendi API yolumuzdan
-            ? <img src={logo} alt={`${kurumAdi} logosu`} className="h-full w-full object-cover" />
+            ? <img src={logo} alt={`${kurumAdi} logosu`} className="h-full w-full object-contain p-1" />
             : <span className="flex h-full w-full items-center justify-center text-lg font-black" style={{ color: "#14213d" }}>{kurumAdi.slice(0, 2).toLocaleUpperCase("tr-TR")}</span>}
         </div>
         <div className="min-w-0 flex-1">
@@ -138,91 +109,47 @@ export function WhatsappDuyuruStudyosu({ kurumAdi, logoAdresi, logoDegistirebili
         </div>
         {mesaj && <p className="w-full text-xs font-semibold" style={{ color: mesaj.hata ? BLUSH : MINT }}>{mesaj.metin}</p>}
       </section>
+      )}
 
       {/* Şablonlar kenarda (kullanıcı isteği 18.10.2026); dar ekranda üstte yatay kayan şerit. */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
         <nav aria-label="Duyuru türü"
           className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 max-lg:[contain:inline-size] lg:sticky lg:top-4 lg:mx-0 lg:w-60 lg:shrink-0 lg:overflow-visible lg:p-0">
           <div className="contents lg:flex lg:w-full lg:flex-col lg:gap-1 lg:rounded-3xl lg:p-2" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-            <span className="hidden px-2 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wide lg:block" style={{ color: TEXT_MUTED }}>Duyurular</span>
-            {DUYURU_SABLONLARI.map((s) => (
-              <SablonDugmesi key={s.anahtar} ad={s.ad} foto={s.foto} renk={s.renk} secili={s.anahtar === sablonAnahtari} sec={() => setSablonAnahtari(s.anahtar)} />
-            ))}
-            <span className="hidden px-2 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wide lg:block" style={{ color: TEXT_MUTED }}>Veli Bildirimi</span>
-            <SablonDugmesi ad="Devamsızlık Bildirimi" foto={DEVAMSIZLIK_FOTO} renk={DEVAMSIZLIK_RENK}
-              secili={sablonAnahtari === DEVAMSIZLIK} sec={() => setSablonAnahtari(DEVAMSIZLIK)} />
+            {genelDuyurular && (<>
+              <span className="hidden px-2 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wide lg:block" style={{ color: TEXT_MUTED }}>Duyurular</span>
+              {DUYURU_SABLONLARI.map((s) => (
+                <SablonDugmesi key={s.anahtar} ad={s.ad} foto={s.foto} renk={s.renk} secili={s.anahtar === sablonAnahtari} sec={() => setSablonAnahtari(s.anahtar)} />
+              ))}
+              <span className="hidden px-2 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wide lg:block" style={{ color: TEXT_MUTED }}>Veli Bildirimi</span>
+              <SablonDugmesi ad="Devamsızlık Bildirimi" foto={DEVAMSIZLIK_FOTO} renk={DEVAMSIZLIK_RENK}
+                secili={sablonAnahtari === DEVAMSIZLIK} sec={() => setSablonAnahtari(DEVAMSIZLIK)} />
+            </>)}
+            {yurt && (<>
+              <span className={`hidden px-2 pb-1 text-[10px] font-semibold uppercase tracking-wide lg:block ${genelDuyurular ? "pt-3" : "pt-1"}`} style={{ color: TEXT_MUTED }}>Yurt</span>
+              {YURT_SABLONLARI.map((s) => (
+                <SablonDugmesi key={s.anahtar} ad={s.ad} foto={s.foto} renk={s.renk} secili={s.anahtar === sablonAnahtari} sec={() => setSablonAnahtari(s.anahtar)} />
+              ))}
+              {yurt.mudurMu && (
+                <SablonDugmesi ad="Cinsiyet Bilgileri" foto="aksam-yoklamasi.jpg" renk="#5b6b82"
+                  secili={sablonAnahtari === CINSIYET} sec={() => setSablonAnahtari(CINSIYET)} />
+              )}
+            </>)}
           </div>
         </nav>
 
         <div className="min-w-0 flex-1">
-          {sablon
+          {yurt && yurtSablonu
+            ? <YurtListeDuzenleyici key={yurtSablonu.anahtar} sablon={yurtSablonu} kurumAdi={kurumAdi} logo={logo} yurt={yurt} paylasilabilir={paylasilabilir} />
+            : yurt && sablonAnahtari === CINSIYET
+            ? <CinsiyetBilgileri yurt={yurt} />
+            : sablon
             ? <DuyuruDuzenleyici key={sablon.anahtar} sablon={sablon} kurumAdi={kurumAdi} logo={logo} telefon={telefon} paylasilabilir={paylasilabilir} />
             : <DevamsizlikDuzenleyici kurumAdi={kurumAdi} logo={logo} telefon={telefon} paylasilabilir={paylasilabilir} ogrenciler={ogrenciler} />}
         </div>
       </div>
     </div>
   );
-}
-
-function SablonDugmesi({ ad, foto, renk, secili, sec }: { ad: string; foto: string; renk: string; secili: boolean; sec: () => void }) {
-  return (
-    <button type="button" onClick={sec} aria-pressed={secili}
-      className="sfec-btn flex shrink-0 items-center gap-2.5 rounded-2xl py-1.5 pl-1.5 pr-3 text-left lg:w-full lg:pr-2"
-      style={secili ? { background: MINT_BG, outline: `2px solid ${MINT}`, outlineOffset: -2 } : { background: BG1_ALT }}>
-      <span aria-hidden="true" className="relative h-9 w-11 shrink-0 overflow-hidden rounded-xl" style={{ background: renk }}>
-        <span className="absolute inset-0 bg-cover bg-center opacity-80" style={{ backgroundImage: `url(${FOTO_KOKU}${foto})` }} />
-        <span className="absolute inset-x-0 bottom-0 h-1.5" style={{ background: renk }} />
-      </span>
-      <span className="whitespace-nowrap text-xs font-bold leading-tight lg:whitespace-normal" style={{ color: secili ? TEXT : TEXT_MUTED }}>{ad}</span>
-    </button>
-  );
-}
-
-function FotoSecici({ secim, setSecim, kendiFoto, setKendiFoto }: {
-  secim: FotoSecimi; setSecim: (s: FotoSecimi) => void; kendiFoto: string | null; setKendiFoto: (s: string | null) => void;
-}) {
-  return (
-    <fieldset className="flex flex-col gap-1.5">
-      <legend className="mb-1 text-[10px] font-semibold uppercase tracking-wide" style={{ color: TEXT_MUTED }}>Fotoğraf</legend>
-      <div className="flex flex-wrap gap-1.5">
-        {([["hazir", "Hazır Fotoğraf"], ["kendi", "Kendi Fotoğrafım"], ["yok", "Fotoğrafsız"]] as const).map(([d, e]) => (
-          <button key={d} type="button" onClick={() => setSecim(d)} aria-pressed={secim === d}
-            className="sfec-btn rounded-full px-3 py-1.5 text-[11px] font-bold"
-            style={secim === d ? { background: MINT, color: MINT_ON } : { background: BG1_ALT, color: TEXT_MUTED, border: `1px solid ${BORDER_STRONG}` }}>
-            {e}
-          </button>
-        ))}
-      </div>
-      {secim === "kendi" && (
-        <label className="mt-1 flex flex-col gap-1 text-[11px]" style={{ color: TEXT_MUTED }}>
-          <input type="file" accept="image/*" onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (kendiFoto) URL.revokeObjectURL(kendiFoto);
-            setKendiFoto(f ? URL.createObjectURL(f) : null);
-          }} className="text-xs" style={{ color: TEXT }} />
-          Fotoğraf yalnız bu kartta kullanılır, sisteme yüklenmez.
-        </label>
-      )}
-    </fieldset>
-  );
-}
-
-function Alan({ id, etiket, children }: { id: string; etiket: string; children: React.ReactNode }) {
-  return (
-    <label htmlFor={id} className="flex flex-col gap-1">
-      <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: TEXT_MUTED }}>{etiket}</span>
-      {children}
-    </label>
-  );
-}
-
-const girdiStili = { background: BG0, color: TEXT, border: `2px solid ${BORDER_STRONG}` };
-
-function Onizleme({ src, yukseklik = "auto" }: { src: string | null; yukseklik?: string }) {
-  return src
-    // eslint-disable-next-line @next/next/no-img-element -- canvas çıktısı (data URL)
-    ? <img src={src} alt="Kart önizlemesi" className="w-full rounded-2xl" style={{ border: `1px solid ${BORDER}`, height: yukseklik }} />
-    : <div className="flex aspect-[4/5] w-full items-center justify-center rounded-2xl text-xs" style={{ background: BG1_ALT, color: TEXT_MUTED }}>Önizleme hazırlanıyor…</div>;
 }
 
 function DuyuruDuzenleyici({ sablon, kurumAdi, logo, telefon, paylasilabilir }: {

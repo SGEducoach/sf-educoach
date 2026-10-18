@@ -99,6 +99,7 @@ import { sinifimOzeti } from "@/lib/ilkokul-sinifim";
 import { IlkokulSinifimPanosu } from "@/components/dashboard/IlkokulSinifimPanosu";
 import { WhatsappDuyuruStudyosu } from "@/components/dashboard/WhatsappDuyuruStudyosu";
 import { DuyuruTuruSekmeleri } from "@/components/dashboard/DuyuruTuruSekmeleri";
+import { yurtVerisiGetir } from "@/lib/yurt-listesi-verisi";
 import { IlkokulGelisimGirisi } from "@/components/dashboard/IlkokulGelisimGirisi";
 import { IlkokulGelisimRaporu } from "@/components/dashboard/IlkokulGelisimRaporu";
 import { bekleyenOgretmenBildirimleriniGonder } from "@/lib/ogretmen-bildirim";
@@ -1019,14 +1020,18 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   // DuyuruTuruSekmeleri). Dershane müdürü de buraya düşer: bu dal
   // DershaneMudurPaneli'nden önce. Yetkisi olmayan site içi sekmeye düşer.
   // Okul rehberi yalnız atandığı düzeylerin öğrencilerini görür.
-  if (aktifBolum === "duyurular" && duyuruTuru === "whatsapp" && (role === "mudur" || rehberOgretmenMi)) {
+  // Yurtlu kurumda her öğretmen yurt listesi kartlarını da hazırlar
+  // (kullanıcı isteği 18.10.2026, bkz. YurtListeStudyosu).
+  const genelWhatsapp = role === "mudur" || rehberOgretmenMi;
+  if (aktifBolum === "duyurular" && duyuruTuru === "whatsapp" && (genelWhatsapp || yurtlu)) {
     const admin = createAdminClient();
+    const yurtVerisi = yurtlu ? await yurtVerisiGetir(admin, teacher.school_id, userId, role === "mudur") : null;
     // logo_url 0159 ile geldi; sütun yoksa yalnız ad okunur.
     const kurumIlk = await admin.from("schools").select("ad, logo_url").eq("id", teacher.school_id).maybeSingle();
     const kurum = (kurumIlk.error
       ? (await admin.from("schools").select("ad").eq("id", teacher.school_id).maybeSingle()).data
       : kurumIlk.data) as { ad: string; logo_url?: string | null } | null;
-    const { data: ogrenciler } = okulRehberi && rehberSeviyeleri.length === 0
+    const { data: ogrenciler } = !genelWhatsapp || (okulRehberi && rehberSeviyeleri.length === 0)
       ? { data: [] }
       : okulRehberi
       ? await admin.from("students")
@@ -1049,7 +1054,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       <section className="sfec-section">
         <DuyuruTuruSekmeleri secili="whatsapp" />
         <WhatsappDuyuruStudyosu kurumAdi={kurum?.ad ?? "Kurumumuz"} logoAdresi={kurum?.logo_url ?? null}
-          logoDegistirebilir={role === "mudur"} ogrenciler={ogrenciListesi} />
+          logoDegistirebilir={role === "mudur"} ogrenciler={ogrenciListesi} genelDuyurular={genelWhatsapp} yurt={yurtVerisi} />
       </section>
     );
   }
