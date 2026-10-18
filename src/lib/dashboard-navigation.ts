@@ -1,5 +1,6 @@
 import type { KurumTuru, UserRole } from "@/lib/types";
 import { REHBER_BRANSI } from "@/lib/rehberlik";
+import { belletmenMi } from "@/lib/belletmen";
 
 export type DashboardBolumu =
   | "mesajlar"
@@ -26,6 +27,9 @@ export type DashboardBolumu =
   | "duyuru-gecmisi"
   | "whatsapp-yonetimi"
   | "yurt-ogrencileri"
+  | "yoklama"
+  | "nobetlerim"
+  | "belletmen-basvurulari"
   | "takvim"
   | "yarismalar"
   | "ogrenci-takibi"
@@ -252,6 +256,7 @@ const ADMIN_MENU_YAPISI: DashboardMenuKalemi[] = [
     baslik: "Kullanıcı ekle / çıkar", ikon: "kullanici", ogeler: [
       { bolum: "kullanici-yonetimi", href: "/yonetici/kullanici-yonetimi", etiket: "Kullanıcı Ekle", ikon: "kullanici" },
       { bolum: "kullanicilar", href: "/yonetici/kullanicilar", etiket: "Kullanıcı Ara / Çıkar", ikon: "ogrenci" },
+      { bolum: "belletmen-basvurulari", href: "/yonetici/belletmen-basvurulari", etiket: "Belletmen Başvuruları", ikon: "kullanici" },
     ],
   },
   {
@@ -377,6 +382,12 @@ const MUDUR_YARDIMCISI_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Duyurular", ikon: "duyuru" },
   { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Pano", ikon: "takvim" },
 ];
+// Kurum dışı belletmen (Faz 4, migration 0165): yalnız yoklama ve kendi
+// nöbetleri (takas hakkıyla).
+const BELLETMEN_MENUSU: DashboardMenuOgesi[] = [
+  { bolum: "yoklama", href: "/dashboard/yoklama", etiket: "Yoklama", ikon: "gorev" },
+  { bolum: "nobetlerim", href: "/dashboard/nobetlerim", etiket: "Nöbetlerim", ikon: "takvim" },
+];
 const YURT_OGRENCILERI_MENU_OGESI: DashboardMenuOgesi = {
   bolum: "yurt-ogrencileri", href: "/dashboard/yurt-ogrencileri", etiket: "Yurt Öğrencileri", ikon: "ogrenci",
 };
@@ -394,6 +405,7 @@ export function dashboardMenusu(
   idare: { yurt: boolean } | null = null,
 ): DashboardMenuOgesi[] {
   const rehber = rehberlikBirimiMi(brans, okulRehberi);
+  if (role === "ogretmen" && belletmenMi(brans)) return BELLETMEN_MENUSU;
   if (role === "ogretmen" && idare) {
     const taban = [...MUDUR_YARDIMCISI_MENUSU];
     if (idare.yurt) taban.splice(1, 0, YURT_OGRENCILERI_MENU_OGESI);
@@ -447,7 +459,7 @@ export function dashboardMenuYapisi(
 }
 
 export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
-  "yurt-ogrencileri",
+  "yurt-ogrencileri", "yoklama", "nobetlerim",
   "sinif-analizi", "gorevler", "planlar", "veri-girisi", "konu-hakimiyeti", "analiz", "yapay-zeka", "tg-denemeleri",
   "duyurular", "talepler", "onaylar", "dersler", "ortaokul-dersler", "ortaokul-yardim", "ortaokul-calisma", "ortaokul-onaylar", "ortaokul-yeterlilik", "ilkokul-gelisim", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler", "rehberlik", "profil", "takvim", "yarismalar", "ogrenci-takibi",
 ]);
@@ -458,5 +470,5 @@ export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
 export const YONETICI_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
   "mesajlar",
   "kullanicilar", "kullanici-yonetimi", "talepler", "deneme-yukle", "pdf-eslesme", "okullar", "grup-kocluk", "moderatorler", "icerik", "blog", "kurallar", "profil", "hata-bildirimleri",
-  "duyuru-gecmisi", "islem-gecmisi", "ogrenci-aktivitesi", "site-ayarlari", "adminler", "whatsapp-yonetimi",
+  "duyuru-gecmisi", "islem-gecmisi", "ogrenci-aktivitesi", "site-ayarlari", "adminler", "whatsapp-yonetimi", "belletmen-basvurulari",
 ]);

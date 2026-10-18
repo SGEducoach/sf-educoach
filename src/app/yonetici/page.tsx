@@ -46,6 +46,7 @@ import { sinifSiraKarsilastir } from "@/lib/types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { WhatsappYonetimi } from "@/components/yonetici/WhatsappYonetimi";
 import { MudurYardimcisiAtamalari } from "@/components/yonetici/MudurYardimcisiAtamalari";
+import { BelletmenBasvurulari } from "@/components/yonetici/BelletmenBasvurulari";
 import { sablonAyarlariGetir } from "@/lib/whatsapp-sablon-ayarlari-verisi";
 import { TUM_SABLONLAR } from "@/lib/whatsapp-sablon-ayarlari";
 
@@ -134,6 +135,7 @@ export default async function YoneticiPage({
             </>
           )}
           {aktifBolum === "kullanicilar" && <section className="sfec-section"><KullaniciArama /></section>}
+          {aktifBolum === "belletmen-basvurulari" && <section className="sfec-section"><BelletmenBasvurulari /></section>}
           {aktifBolum === "kullanici-yonetimi" && <section className="sfec-section"><AdminPanel
             mod="kullanici"
             okullar={okulListesi}

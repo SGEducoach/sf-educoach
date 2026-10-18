@@ -103,6 +103,8 @@ import { WhatsappDuyuruStudyosu } from "@/components/dashboard/WhatsappDuyuruStu
 import { DuyuruTuruSekmeleri } from "@/components/dashboard/DuyuruTuruSekmeleri";
 import { yurtVerisiGetir } from "@/lib/yurt-listesi-verisi";
 import { YurtOgrencileriListesi } from "@/components/dashboard/YurtOgrencileriListesi";
+import { YurtNobetlerimKutusu } from "@/components/dashboard/NobetDevirPaneli";
+import { belletmenMi } from "@/lib/belletmen";
 import { sablonAyarlariGetir } from "@/lib/whatsapp-sablon-ayarlari-verisi";
 import { etkinSablonlar } from "@/lib/whatsapp-sablon-ayarlari";
 import { IlkokulGelisimGirisi } from "@/components/dashboard/IlkokulGelisimGirisi";
@@ -241,7 +243,8 @@ export default async function DashboardPage({
   // Gömülü ilişki çalışma anında NESNE döner, tipte dizi görünür (proje notu).
   const ogrenciSinifSeviyesi = Array.isArray(ogrenciSinifKaydi) ? ogrenciSinifKaydi[0]?.seviye : ogrenciSinifKaydi?.seviye;
   const grupAlanSorulur = !dokuzOnSinifMi(ogrenciSinifSeviyesi);
-  const varsayilanBolum: DashboardBolumu = !grupKocu && ((role === "mudur" && kurumTuru !== "dershane") || rehberlikBirimi || idareMenusu)
+  const varsayilanBolum: DashboardBolumu = role === "ogretmen" && belletmenMi(brans) ? "yoklama"
+    : !grupKocu && ((role === "mudur" && kurumTuru !== "dershane") || rehberlikBirimi || idareMenusu)
     ? "kurum-performansi" : "ozet";
   const aktifBolum = (params.bolum ?? varsayilanBolum) as DashboardBolumu;
   // Ortaokul paneli (Faz 1): yalnızca özellik bayrağı AÇIKKEN ve öğrenci
@@ -807,6 +810,48 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       <div className="sfec-fade rounded-3xl p-6 text-center" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <p style={{ color: TEXT_MUTED }} className="text-sm">Öğretmen profili bulunamadı.</p>
       </div>
+    );
+  }
+
+  // Kurum dışı belletmen (Faz 4, migration 0165): yalnız Yoklama (yurt
+  // listesi kartları; WhatsApp'ta paylaş ya da müdür yardımcısına gönder)
+  // ve Nöbetlerim (yurt nöbetleri + takas). Menü de yalnız bu ikisini içerir.
+  if (role === "ogretmen" && belletmenMi(brans)) {
+    const admin = createAdminClient();
+    if (aktifBolum === "nobetlerim") {
+      const [nobetler, { data: adaylar }] = await Promise.all([
+        yurtNobetGorevleriGetir(supabase, userId, bugununTarihiTR()),
+        admin.from("teachers").select("id, brans, profiles!teachers_id_fkey(ad, role, aktif)").eq("school_id", teacher.school_id).neq("id", userId),
+      ]);
+      type Aday = { id: string; brans: string | null; profiles: { ad: string | null; role: string | null; aktif: boolean | null } | null };
+      const devirOgretmenleri = ((adaylar ?? []) as unknown as Aday[])
+        .filter((o) => o.profiles?.role === "ogretmen" && o.profiles.aktif === true)
+        .map((o) => ({ id: o.id, ad: o.profiles?.ad ?? "İsimsiz", brans: o.brans ?? "" }))
+        .sort((a, b) => a.ad.localeCompare(b.ad, "tr"));
+      return (
+        <section className="sfec-section">
+          <YurtNobetlerimKutusu yurtNobetleri={nobetler.filter((n) => n.tarih >= bugununTarihiTR())} ogretmenler={devirOgretmenleri} />
+        </section>
+      );
+    }
+    if (!yurtlu) {
+      return (
+        <div className="sfec-fade rounded-3xl p-6 text-center" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+          <p style={{ color: TEXT_MUTED }} className="text-sm">Kurumunuzda yurt tanımlı değil; yoklama listesi kullanılmaz.</p>
+        </div>
+      );
+    }
+    const [{ data: kurumSatiri }, yurtVerisi, { ayarlar }] = await Promise.all([
+      admin.from("schools").select("ad, logo_url").eq("id", teacher.school_id).maybeSingle(),
+      yurtVerisiGetir(admin, teacher.school_id, userId, false),
+      sablonAyarlariGetir(admin),
+    ]);
+    const kurumBilgisi = kurumSatiri as { ad: string; logo_url?: string | null } | null;
+    return (
+      <section className="sfec-section">
+        <WhatsappDuyuruStudyosu kurumAdi={kurumBilgisi?.ad ?? "Kurumumuz"} logoAdresi={kurumBilgisi?.logo_url ?? null}
+          logoDegistirebilir={false} ogrenciler={[]} genelDuyurular={false} yurt={yurtVerisi} sablonlar={etkinSablonlar(ayarlar)} />
+      </section>
     );
   }
 

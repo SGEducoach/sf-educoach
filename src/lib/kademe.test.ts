@@ -517,6 +517,9 @@ describe("müdür yardımcısı (İdare paneli)", () => {
     expect(dashboardMenusu("ogretmen", "okul", "Matematik", false, "lise", false, { yurt: true }).map((o) => o.bolum)).toContain("yurt-ogrencileri");
     expect(dashboardMenusu("ogretmen", "dershane", "Matematik", false, null, false, { yurt: false }).map((o) => o.bolum)).not.toContain("takvim");
   });
+  test("kurum dışı belletmen yalnız Yoklama ve Nöbetlerim görür", () => {
+    expect(dashboardMenusu("ogretmen", "okul", "Kurum Dışı Belletmen", false, "lise").map((o) => o.bolum)).toEqual(["yoklama", "nobetlerim"]);
+  });
   test("İdare paneli dışındaki öğretmen menüsü değişmez", () => {
     expect(dashboardMenusu("ogretmen", "okul", "Matematik", false, "lise").map((o) => o.bolum)).toContain("gorevler");
   });

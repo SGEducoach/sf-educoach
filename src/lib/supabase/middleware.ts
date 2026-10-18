@@ -92,7 +92,7 @@ export async function updateSession(request: NextRequest) {
   // başladığı için startsWith kullansaydık /yonetici dahil HER rota
   // bakıma girerdi).
   const { pathname } = request.nextUrl;
-  const bakimKapsaminda = pathname === "/" || ["/dashboard", "/moderator", "/login", "/signup"].some((p) => pathname.startsWith(p));
+  const bakimKapsaminda = pathname === "/" || ["/dashboard", "/moderator", "/login", "/signup", "/belletmen-kayit"].some((p) => pathname.startsWith(p));
   if (bakimKapsaminda) {
     const siteKapaliMi = await siteKapaliMiGetir(supabase);
     if (siteKapaliMi) {

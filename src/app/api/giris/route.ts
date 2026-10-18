@@ -175,12 +175,21 @@ export async function POST(request: NextRequest) {
   let denemeSuresiDoldu = false;
   let grupDonduruldu = false;
   let ilkokulOgrencisi = false;
+  let belletmenDurumu: "bekliyor" | "reddedildi" | null = null;
   if (!error) {
     const { data: { user } } = await supabase.auth.getUser();
     const { data: profile } = user ? await admin.from("profiles").select("role, aktif").eq("id", user.id).maybeSingle() : { data: null };
+    // Kurum dışı belletmen (migration 0165): admin onayına kadar giremez.
+    const { data: belletmen } = user && profile?.role === "ogretmen"
+      ? await admin.from("kurum_disi_belletmenler").select("durum").eq("profile_id", user.id).maybeSingle()
+      : { data: null };
     if (body.role === "admin" && profile?.role !== "admin") {
       await supabase.auth.signOut();
       error = new Error("Invalid login credentials");
+    } else if (belletmen && belletmen.durum !== "onaylandi") {
+      await supabase.auth.signOut();
+      belletmenDurumu = belletmen.durum as "bekliyor" | "reddedildi";
+      error = new Error("Belletmen onay bekliyor");
     } else if (profile && profile.aktif === false) {
       // Faz F (2026-08-25) — profiles.aktif ZATEN vardı (moderatör/admin
       // aç-kapa yapabiliyordu, bkz. moderatorAktiflikDegistir/
@@ -223,6 +232,12 @@ export async function POST(request: NextRequest) {
 
   if (grupDonduruldu) {
     return NextResponse.json({ error: GRUP_DONDURULDU_MESAJI }, { status: 403 });
+  }
+
+  if (belletmenDurumu) {
+    return NextResponse.json({ error: belletmenDurumu === "bekliyor"
+      ? "Belletmen başvurunuz yönetici onayı bekliyor. Onaylanınca giriş yapabilirsiniz."
+      : "Belletmen başvurunuz onaylanmadı. Ayrıntı için okul yönetimiyle görüşün." }, { status: 403 });
   }
 
   if (ilkokulOgrencisi) {
