@@ -97,6 +97,7 @@ import { IlkokulEtkinlikleri } from "@/components/dashboard/IlkokulEtkinlikleri"
 import { ayAnahtari, ayEtiketi } from "@/lib/ilkokul-gelisim";
 import { sinifimOzeti } from "@/lib/ilkokul-sinifim";
 import { IlkokulSinifimPanosu } from "@/components/dashboard/IlkokulSinifimPanosu";
+import { WhatsappDuyuruStudyosu } from "@/components/dashboard/WhatsappDuyuruStudyosu";
 import { IlkokulGelisimGirisi } from "@/components/dashboard/IlkokulGelisimGirisi";
 import { IlkokulGelisimRaporu } from "@/components/dashboard/IlkokulGelisimRaporu";
 import { bekleyenOgretmenBildirimleriniGonder } from "@/lib/ogretmen-bildirim";
@@ -1008,6 +1009,48 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       }))
       .sort((a, b) => a.ad.localeCompare(b.ad, "tr"));
     return <RehberlikPaneli ogrenciler={ogrenciListesi} />;
+  }
+
+  // WhatsApp duyuru stüdyosu (kullanıcı isteği 18.10.2026) — müdür ve
+  // rehber. Dershane müdürü de buraya düşer: bu dal DershaneMudurPaneli'nden
+  // önce. Okul rehberi yalnız atandığı düzeylerin öğrencilerini görür.
+  if (aktifBolum === "whatsapp-duyurulari") {
+    if (role !== "mudur" && !rehberOgretmenMi) {
+      return (
+        <div className="sfec-fade rounded-3xl p-6 text-center" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+          <p style={{ color: TEXT_MUTED }} className="text-sm">Bu bölüm müdür ve rehber öğretmenlere açıktır.</p>
+        </div>
+      );
+    }
+    const admin = createAdminClient();
+    // logo_url 0159 ile geldi; sütun yoksa yalnız ad okunur.
+    const kurumIlk = await admin.from("schools").select("ad, logo_url").eq("id", teacher.school_id).maybeSingle();
+    const kurum = (kurumIlk.error
+      ? (await admin.from("schools").select("ad").eq("id", teacher.school_id).maybeSingle()).data
+      : kurumIlk.data) as { ad: string; logo_url?: string | null } | null;
+    const { data: ogrenciler } = okulRehberi && rehberSeviyeleri.length === 0
+      ? { data: [] }
+      : okulRehberi
+      ? await admin.from("students")
+          .select("id, profiles!students_id_fkey(ad), classes!inner(seviye, sube)")
+          .eq("school_id", teacher.school_id).in("classes.seviye", rehberSeviyeleri)
+      : await admin.from("students")
+          .select("id, profiles!students_id_fkey(ad), classes(seviye, sube)")
+          .eq("school_id", teacher.school_id);
+    type DuyuruOgrenciRow = { id: string; profiles: { ad: string } | null; classes: { seviye: string; sube: string } | null };
+    const ogrenciListesi = ((ogrenciler as unknown as DuyuruOgrenciRow[]) ?? [])
+      .map((o) => ({
+        id: o.id, ad: o.profiles?.ad ?? "İsimsiz",
+        sinif: o.classes ? `${o.classes.seviye}-${o.classes.sube}` : null,
+        seviye: o.classes?.seviye ?? null, sube: o.classes?.sube ?? null,
+      }))
+      .sort((a, b) => (a.seviye && b.seviye && a.sube && b.sube
+        ? sinifSiraKarsilastir({ seviye: a.seviye, sube: a.sube }, { seviye: b.seviye, sube: b.sube })
+        : (a.seviye ? -1 : b.seviye ? 1 : 0)) || a.ad.localeCompare(b.ad, "tr"));
+    return (
+      <WhatsappDuyuruStudyosu kurumAdi={kurum?.ad ?? "Kurumumuz"} logoAdresi={kurum?.logo_url ?? null}
+        logoDegistirebilir={role === "mudur"} ogrenciler={ogrenciListesi} />
+    );
   }
 
 
