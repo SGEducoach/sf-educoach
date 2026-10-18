@@ -9,6 +9,7 @@ import { geciciSifreyiEtkinlestir } from "@/lib/gecici-sifre";
 import { grupKoduNormalize } from "@/lib/grup-kocluk";
 import { ilkokulMu } from "@/lib/kademe";
 import type { UserRole } from "@/lib/types";
+import { IDARE_CEREZI } from "@/lib/mudur-yardimcisi";
 
 const PENCERE_MS = 15 * 60 * 1000;
 const ENGEL_MS = 15 * 60 * 1000;
@@ -26,7 +27,9 @@ type GirisRolu = "ogrenci" | "ogretmen" | "veli" | "mudur" | "admin";
 // grupKodu: Grup Koçluk öğrencisi (Faz 4) — kurum listesi yerine koçun verdiği
 // kod; sunucuda kuruma çevrilir (dışarıya kod sorgulatan ayrı bir kapı yok,
 // kod denemeleri de aşağıdaki hatalı giriş sınırına takılır).
-interface GirisGovdesi { role?: GirisRolu; schoolId?: string; okulNo?: string; email?: string; password?: string; grupKodu?: string }
+// gorev: İdare girişi (kullanıcı isteği 18.10.2026) — role "mudur" ile
+// "mudur" (müdür) ya da "mudur_yardimcisi" (okul kodu + kendi şifresi).
+interface GirisGovdesi { role?: GirisRolu; gorev?: "mudur" | "mudur_yardimcisi"; schoolId?: string; okulNo?: string; email?: string; password?: string; grupKodu?: string }
 
 // Kullanıcı isteği (26.08.2026): öğrenci hariç tüm rollerde (admin dahil)
 // hesap sahibine "yanlış giriş denemesi yapıldı" bildirimi düşsün.
@@ -73,7 +76,9 @@ function anahtarOlustur(request: NextRequest, body: GirisGovdesi) {
   const tanimlayici = body.role === "ogretmen"
     ? body.email?.trim().toLocaleLowerCase("tr-TR")
     : `${body.schoolId ?? ""}:${body.okulNo?.trim().toLocaleLowerCase("tr-TR")}`;
-  return createHash("sha256").update(`${istemciIp(request)}|${body.role ?? ""}|${tanimlayici ?? ""}`).digest("hex");
+  // Müdür yardımcısı denemeleri müdürün sayacından ayrı tutulur.
+  const rol = `${body.role ?? ""}${body.role === "mudur" && body.gorev === "mudur_yardimcisi" ? ":mudur_yardimcisi" : ""}`;
+  return createHash("sha256").update(`${istemciIp(request)}|${rol}|${tanimlayici ?? ""}`).digest("hex");
 }
 
 export async function POST(request: NextRequest) {
@@ -114,7 +119,30 @@ export async function POST(request: NextRequest) {
 
   const supabase = await createClient();
   let error: Error | null;
-  if (body.role === "veli") {
+  const mudurYardimcisiGirisi = body.role === "mudur" && body.gorev === "mudur_yardimcisi";
+  if (mudurYardimcisiGirisi) {
+    // Müdür yardımcısı (migration 0163): okul kodundan kurumun müdür
+    // yardımcıları bulunur, şifre her birine denenir (veli adaylarındaki
+    // gibi), ilk tutan kazanır. Hatalı denemeler aynı sınıra takılır.
+    girisEmail = "";
+    error = new Error("Invalid login credentials");
+    const { data: okul } = await admin.from("schools").select("id").eq("okul_kodu", body.okulNo?.trim() ?? "").maybeSingle();
+    const { data: uyeler } = okul
+      ? await admin.from("mudur_yardimcilari").select("profile_id").eq("school_id", okul.id)
+      : { data: [] };
+    const idler = ((uyeler ?? []) as { profile_id: string }[]).map((u) => u.profile_id).slice(0, 20);
+    const { data: adaylar } = idler.length
+      ? await admin.from("profiles").select("id, email").in("id", idler).eq("role", "ogretmen")
+      : { data: [] };
+    for (const aday of (adaylar ?? []) as { id: string; email: string | null }[]) {
+      if (!aday.email) continue;
+      let sonuc = await supabase.auth.signInWithPassword({ email: aday.email, password: body.password });
+      if (sonuc.error && await geciciSifreyiEtkinlestir(admin, aday.id, body.password)) {
+        sonuc = await supabase.auth.signInWithPassword({ email: aday.email, password: body.password });
+      }
+      if (!sonuc.error) { error = null; girisEmail = aday.email; break; }
+    }
+  } else if (body.role === "veli") {
     // Sadeleştirme (29.08.2026) — veli artık HER girişte kod GİRMİYOR,
     // sadece şifre. Bir öğrencide birden fazla tamamlanmış veli hesabı
     // olabildiği için (anne+baba ayrı kayıt) okul_no tek başına hesabı
@@ -230,5 +258,10 @@ export async function POST(request: NextRequest) {
   }
 
   await admin.from("login_attempt_limits").delete().eq("attempt_key", attemptKey);
-  return NextResponse.json({ ok: true });
+  const yanit = NextResponse.json({ ok: true });
+  // İdare girişiyle gelen müdür yardımcısı İdare paneline açılır; öğretmen
+  // ya da müdür girişi panel tercihini sıfırlar (bkz. src/lib/mudur-yardimcisi.ts).
+  if (mudurYardimcisiGirisi) yanit.cookies.set(IDARE_CEREZI, "idare", { httpOnly: true, sameSite: "lax", secure: true, path: "/", maxAge: 60 * 60 * 24 * 30 });
+  else if (body.role === "ogretmen" || body.role === "mudur") yanit.cookies.delete(IDARE_CEREZI);
+  return yanit;
 }

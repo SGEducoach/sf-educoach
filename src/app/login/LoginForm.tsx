@@ -19,7 +19,9 @@ const rolSecenekleri: { id: UserRole; ad: string; icon: typeof BookOpen }[] = [
   { id: "ogrenci", ad: "Öğrenci", icon: BookOpen },
   { id: "ogretmen", ad: "Öğretmen", icon: GraduationCap },
   { id: "veli", ad: "Veli", icon: Users },
-  { id: "mudur", ad: "Müdür", icon: Building2 },
+  // "İdare" (kullanıcı isteği 18.10.2026): basınca görev seçilir — Müdür ya da
+  // Müdür Yardımcısı; ikisi de okul kodu ve kendi şifresiyle girer.
+  { id: "mudur", ad: "İdare", icon: Building2 },
 ];
 
 // Grup Koçluk girişi (Faz 4, 18.09.2026): kurum listesi yok; öğrenci grup
@@ -46,6 +48,8 @@ export default function LoginForm() {
   const [grupModu, setGrupModu] = useState(false);
   const [grupKodu, setGrupKodu] = useState("");
   const [role, setRole] = useState<UserRole>(() => baslangicRolu(searchParams));
+  const [idareGorevi, setIdareGorevi] = useState<"mudur" | "mudur_yardimcisi">("mudur");
+  const mudurYardimcisi = role === "mudur" && idareGorevi === "mudur_yardimcisi";
 
   const [schools, setSchools] = useState<School[]>([]);
   const [schoolId, setSchoolId] = useState("");
@@ -97,7 +101,8 @@ export default function LoginForm() {
     const response = await fetch("/api/sifre-sifirla", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role, email: email.trim(), okulNo: okulNo.trim() }),
+      // Müdür yardımcısı bir öğretmen hesabıdır: geçici şifre e-postasına gider.
+      body: JSON.stringify({ role: mudurYardimcisi ? "ogretmen" : role, email: email.trim(), okulNo: okulNo.trim() }),
     });
     const sonuc = await response.json() as { error?: string; message?: string };
     setSifirlamaYukleniyor(false);
@@ -136,7 +141,7 @@ export default function LoginForm() {
     const response = await fetch("/api/giris", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role, schoolId, okulNo: okulNo.trim(), email: email.trim(), password: girisSifre }),
+      body: JSON.stringify({ role, gorev: role === "mudur" ? idareGorevi : undefined, schoolId, okulNo: okulNo.trim(), email: email.trim(), password: girisSifre }),
     });
     const sonuc = await response.json() as { error?: string };
     const error = response.ok ? null : { message: sonuc.error ?? "Giriş yapılamadı." };
@@ -322,11 +327,11 @@ export default function LoginForm() {
         ) : sifirlamaModu ? (
           <form onSubmit={sifirlamaGonder} className="rounded-3xl p-6 flex flex-col gap-4" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
             <p style={{ color: TEXT_MUTED }} className="text-xs">
-              {role === "mudur"
+              {role === "mudur" && !mudurYardimcisi
                 ? `${KURUM_ETIKET[kurumTuru].kod}'nuzu girin, geçici şifrenizi kayıtlı e-posta adresinize gönderelim.`
                 : "Kayıtlı e-posta adresinizi girin, 30 dakika geçerli geçici şifrenizi gönderelim."}
             </p>
-            {role === "mudur" ? (
+            {role === "mudur" && !mudurYardimcisi ? (
               <label className="flex flex-col gap-1">
                 <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">{KURUM_ETIKET[kurumTuru].kod}</span>
                 <input required value={okulNo} onChange={(e) => setOkulNo(e.target.value)}
@@ -423,6 +428,21 @@ export default function LoginForm() {
             </>
           ) : (
             <>
+              {/* İdare: görev seçimi (kullanıcı isteği 18.10.2026). */}
+              {role === "mudur" && !grupModu && (
+                <div className="flex flex-col gap-1">
+                  <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Görev</span>
+                  <div className="flex gap-1 rounded-xl p-1" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0 }}>
+                    {([["mudur", "Müdür"], ["mudur_yardimcisi", "Müdür Yardımcısı"]] as const).map(([g, e]) => (
+                      <button key={g} type="button" onClick={() => { setIdareGorevi(g); setHata(null); }} aria-pressed={idareGorevi === g}
+                        className="sfec-btn flex-1 rounded-lg px-2 py-1.5 text-[12px] font-bold"
+                        style={{ background: idareGorevi === g ? MINT : "transparent", color: idareGorevi === g ? MINT_ON : TEXT_MUTED }}>
+                        {e}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               {grupModu && (role === "ogrenci" || role === "veli") && (
                 <label className="flex flex-col gap-1">
                   <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Grup kodu</span>

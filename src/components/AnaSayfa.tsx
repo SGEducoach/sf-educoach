@@ -14,7 +14,7 @@ const roller=[
  {ad:"Öğrenci",Icon:GraduationCap,renk:"#2563EB",zemin:"#EFF6FF",metin:"Kimseyle yarışmadan, kendi hedefi ve gelişim hızına göre kişiye özel çalışma takibi."},
  {ad:"Öğretmen",Icon:UserRoundCheck,renk:"#7C3AED",zemin:"#F5F3FF",metin:"Öğrencilerin çalışma, soru ve deneme verilerini izleyerek doğru zamanda yönlendirme."},
  {ad:"Veli",Icon:Users,renk:"#C2410C",zemin:"#FFF7ED",metin:"Çocuğunu başkalarıyla kıyaslamadan, kişiye özel gelişimini ve öğretmen geri bildirimlerini güvenle takip."},
- {ad:"Müdür",Icon:School,renk:"#047857",zemin:"#ECFDF5",metin:"Okul veya dershane genelindeki akademik gelişimi, sınıfları ve koçluk sürecini tek yerden izleme."},
+ {ad:"İdare",Icon:School,renk:"#047857",zemin:"#ECFDF5",metin:"Müdür ve müdür yardımcıları için okul veya dershane genelindeki akademik gelişimi, sınıfları ve koçluk sürecini tek yerden izleme."},
 ];
 export function AnaSayfa({baslik,govde,sliderGecisSaniye,sliderGorselleri,duyurular,panoIlanlari}:{baslik:string;govde:string;sliderGecisSaniye:number;sliderGorselleri:AnaSayfaSliderGorseli[];duyurular:AnaSayfaDuyurusu[];panoIlanlari:AnaSayfaPanoIlani[]}){
  const paragraflar=govde.split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean);
