@@ -39,7 +39,7 @@ export async function OgrenciSonIslemleri({ studentId }: { studentId: string }) 
 
   return (
     <section className="rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-      <h2 className="flex items-center gap-2 text-base font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}><Clock3 size={17} color={MINT} /> Son işlemler</h2>
+      <h2 className="flex items-center gap-2 text-base font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}><Clock3 size={17} color={MINT} /> Son İşlemler</h2>
       <p className="mt-1 text-xs" style={{ color: TEXT_MUTED }}>Öğrenci kayıtları ve öğretmenlerin profil görüntülemeleri, en yeni işlem üstte.</p>
       {islemler.length === 0
         ? <p className="mt-3 text-sm" style={{ color: TEXT_MUTED }}>Henüz işlem kaydı yok.</p>

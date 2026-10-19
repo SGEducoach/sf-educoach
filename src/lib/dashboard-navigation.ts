@@ -90,7 +90,7 @@ export interface DashboardMenuOgesi {
 }
 
 const OGRENCI_MENUSU: DashboardMenuOgesi[] = [
-  { bolum: "ozet", href: "/dashboard", etiket: "Ana sayfa", ikon: "ana-sayfa" },
+  { bolum: "ozet", href: "/dashboard", etiket: "Ana Sayfa", ikon: "ana-sayfa" },
   { bolum: "gorevler", href: "/dashboard/gorevler", etiket: "Ödevlerim", ikon: "gorev" },
   { bolum: "planlar", href: "/dashboard/planlar", etiket: "Program Yap", ikon: "plan" },
   { bolum: "veri-girisi", href: "/dashboard/veri-girisi", etiket: "Veri Girişi", ikon: "veri" },

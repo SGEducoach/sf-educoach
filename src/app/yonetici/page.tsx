@@ -186,7 +186,7 @@ export default async function YoneticiPage({
           {aktifBolum === "belletmen-basvurulari" && <section className="sfec-section"><BelletmenBasvurulari /></section>}
           {aktifBolum === "kullanici-yonetimi" && <section className="sfec-section flex flex-col gap-5">
             <div>
-              <h1 className="text-xl font-bold" style={{ color: TEXT }}>Kullanıcı Yönetimi</h1>
+              <h1 className="text-xl font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Kullanıcı Yönetimi</h1>
               <p className="text-sm" style={{ color: TEXT_MUTED }}>Kullanıcıları ara, ekle, çıkar ve hesaplarını yönet.</p>
             </div>
             <KullaniciArama />

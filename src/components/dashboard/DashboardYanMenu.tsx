@@ -62,13 +62,16 @@ export function DashboardYanMenu({ role, kurumTuru, brans, grupMu = false, kadem
     () => menu.filter(menuGrubuMu).find((kalem) => kalem.ogeler.some((oge) => oge.bolum === aktifBolum))?.baslik ?? null,
   );
   if (menu.length === 0) return null;
-  const rolBasligi: Partial<Record<UserRole, string>> = {
-    ogrenci: "Öğrenci çalışma alanı",
-    veli: "Veli takip alanı",
-    ogretmen: "Öğretmen çalışma alanı",
-    mudur: kurumTuru === "dershane" ? "Dershane yönetim alanı" : "Okul yönetim alanı",
-    admin: "Platform yönetimi",
+  // Menünün başındaki panel kimliği (kullanıcı bildirimi 20.10.2026: düz
+  // "Platform yönetimi" yazısı amatör duruyordu): rol simgesi + panel adı.
+  const rolBasligi: Partial<Record<UserRole, { ad: string; Ikon: typeof Home }>> = {
+    ogrenci: { ad: "Öğrenci Paneli", Ikon: GraduationCap },
+    veli: { ad: "Veli Paneli", Ikon: HeartHandshake },
+    ogretmen: grupMu ? { ad: "Grup Koçluk Paneli", Ikon: UsersRound } : { ad: "Öğretmen Paneli", Ikon: BookOpenCheck },
+    mudur: { ad: kurumTuru === "dershane" ? "Dershane Yönetimi" : "Okul Yönetimi", Ikon: School },
+    admin: { ad: "Yönetim Paneli", Ikon: ShieldCheck },
   };
+  const panel = rolBasligi[role] ?? { ad: "Çalışma Alanı", Ikon: Home };
 
   return (
     <aside
@@ -77,16 +80,22 @@ export function DashboardYanMenu({ role, kurumTuru, brans, grupMu = false, kadem
       <nav aria-label="Dashboard bölümleri"
         className="sfec-dashboard-sidebar flex h-full min-h-0 flex-col gap-1.5 overflow-y-auto overscroll-contain rounded-3xl p-4"
         style={{ border: `1px solid ${BORDER}` }}>
-        {role === "admin" && <div className="pb-2">
+        <div className="mb-1 flex shrink-0 items-center gap-2.5 rounded-2xl px-2.5 py-2.5" style={{ background: BG1_ALT, border: `1px solid ${BORDER}` }}>
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: MINT_BG, border: `1px solid ${MINT}` }}>
+            <panel.Ikon size={18} color={MINT} aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+            <div className="text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: TEXT_MUTED }}>SeFu Koç</div>
+            <div className="text-sm font-extrabold leading-tight" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>{panel.ad}</div>
+          </div>
+        </div>
+
+        {role === "admin" && <div className="pb-1">
           <KomutPaleti role={role} kurumTuru={kurumTuru} brans={brans} grupMu={grupMu} kademe={kademe}
             okulRehberi={okulRehberi} idare={idare} />
         </div>}
 
-        <div className="px-3 pt-1 pb-4 mb-2" style={{ borderBottom: `1px solid ${BORDER}` }}>
-          <div className="text-sm font-extrabold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>
-            {grupMu && role === "ogretmen" ? "Grup koçluk alanı" : rolBasligi[role] ?? "Çalışma alanı"}
-          </div>
-        </div>
+        <div className="mx-3 mb-1" style={{ borderBottom: `1px solid ${BORDER}` }} />
 
         {menu.map((kalem) => {
           if (menuGrubuMu(kalem)) {
@@ -144,7 +153,7 @@ export function DashboardYanMenu({ role, kurumTuru, brans, grupMu = false, kadem
         })}
 
         <div className="mt-auto flex items-center gap-1 px-3 pt-4 text-[11px] font-semibold" style={{ borderTop: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
-          <Copyright size={12} aria-hidden="true" /> SefuKoc {new Date().getFullYear()}
+          <Copyright size={12} aria-hidden="true" /> SeFu Koç {new Date().getFullYear()}
         </div>
       </nav>
     </aside>

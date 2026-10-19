@@ -24,7 +24,7 @@ export function KonuAdEslesmeYonetimi({ satirlar, hedefler, error }: {
   [satirlar, ders, durum, arama]);
 
   return <div className="rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-    <h2 className="text-base font-bold" style={{ color: TEXT }}>Konu Adı Eşleştirme</h2>
+    <h2 className="text-base font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Konu Adı Eşleştirme</h2>
     <p className="mt-1 text-xs leading-relaxed" style={{ color: TEXT_MUTED }}>
       Lise konu çalışması ve soru çözümünde girilen adları Konu Hâkimiyeti alt konularına bağlayın.
       Yalnız birebir adlar kendiliğinden eşleşir; öneriler kontrol edilmeden uygulanmaz. Öğrencinin geçmiş kaydı değiştirilmez.

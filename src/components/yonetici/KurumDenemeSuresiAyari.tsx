@@ -41,7 +41,7 @@ export function KurumDenemeSuresiAyari({ okulId, bitis }: { okulId: string; biti
     <div className="rounded-2xl p-4" style={{ background: BG1_ALT, border: `1px solid ${BORDER}` }}>
       <div className="mb-1 flex items-center gap-2">
         <Clock size={16} color={doldu ? BLUSH : MINT} />
-        <h2 className="text-sm font-bold" style={{ color: TEXT }}>Deneme süresi</h2>
+        <h2 className="text-sm font-bold" style={{ color: TEXT }}>Deneme Süresi</h2>
       </div>
       <p className="mb-3 text-xs" style={{ color: TEXT_MUTED }}>
         {bitis

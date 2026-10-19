@@ -3,7 +3,8 @@
 import { useEffect, useState, useTransition } from "react";
 import { yoneticiMesajlariniGetir, yoneticiMesajGonder } from "@/app/dashboard/yonetici-mesaj-actions";
 import type { KurumYetkilisi } from "@/app/dashboard/yonetici-mesaj-actions";
-import { BG0, BG1, BORDER, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
+import { MessagesSquare, RefreshCw } from "lucide-react";
+import { BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 
 type Mesaj = { id: string; kurum_yetkilisi_id: string; gonderen_id: string; mesaj: string; created_at: string; profiles: { ad: string } | null; schools: { ad: string } | null };
 export function YoneticiMesajlar() {
@@ -35,10 +36,23 @@ export function YoneticiMesajlar() {
   const yazisilanlar = new Set(konusmalar.map(m => m.kurum_yetkilisi_id));
   const yeniler = kisiler.filter(k => !yazisilanlar.has(k.id));
   const secili = mesajlar.filter(m => m.kurum_yetkilisi_id === hedef).slice().reverse();
-  return <div className="flex flex-col gap-3 rounded-2xl p-4" style={{ background: BG1, color: TEXT, border: `1px solid ${BORDER}` }}>
-    <h2 className="text-lg font-bold">{adminMi ? "Kurum Yazışmaları" : "Yöneticiyle İletişim"}</h2>
-    <button type="button" disabled={bekliyor} onClick={() => baslat(() => yenile())} className="self-start text-sm underline" style={{ color: MINT }}>Mesajları yenile</button>
-    {adminMi && <select aria-label="Konuşma seç" value={hedef} onChange={e => { setHedef(e.target.value); setMetin(""); }} className="rounded-xl p-3 w-full" style={{ background: BG0, color: TEXT }}>
+  return <div className="sfec-fade flex flex-col gap-3 rounded-3xl p-5" style={{ background: BG1, color: TEXT, border: `2px solid ${BORDER}` }}>
+    <div className="flex items-start gap-3">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: MINT_BG }}>
+        <MessagesSquare size={16} color={MINT} aria-hidden="true" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <h2 className="text-[15px] font-bold" style={{ fontFamily: "var(--font-baloo)" }}>{adminMi ? "Kurum Yazışmaları" : "Yöneticiyle İletişim"}</h2>
+        <p className="text-xs" style={{ color: TEXT_MUTED }}>
+          {adminMi ? "Kurum müdürleri ve moderatörleriyle yazışmalar. Yeni bir konuşmayı listeden başlatabilirsiniz." : "SeFu Koç yönetimine buradan yazabilirsiniz."}
+        </p>
+      </div>
+      <button type="button" disabled={bekliyor} onClick={() => baslat(() => yenile())} aria-label="Mesajları yenile" title="Mesajları yenile"
+        className="sfec-btn flex h-9 w-9 shrink-0 items-center justify-center rounded-full disabled:opacity-50" style={{ border: `2px solid ${BORDER_STRONG}` }}>
+        <RefreshCw size={14} color={TEXT_MUTED} aria-hidden="true" className={bekliyor ? "animate-spin" : undefined} />
+      </button>
+    </div>
+    {adminMi && <select aria-label="Konuşma seç" value={hedef} onChange={e => { setHedef(e.target.value); setMetin(""); }} className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={{ background: BG0, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
       <option value="">{konusmalar.length || yeniler.length ? "Konuşma seçin" : "Henüz kurum yetkilisi yok"}</option>
       {konusmalar.length > 0 && <optgroup label="Yazışmalar">
         {konusmalar.map(m => <option key={m.kurum_yetkilisi_id} value={m.kurum_yetkilisi_id}>{m.profiles?.ad ?? "Kurum yetkilisi"} · {m.schools?.ad ?? "Kurum"} · {rolEtiketi(m.kurum_yetkilisi_id)}</option>)}
@@ -57,8 +71,8 @@ export function YoneticiMesajlar() {
       </p>}
     </div>
     {hazir && hedef && <form onSubmit={e => { e.preventDefault(); baslat(async () => { try { const sonuc = await yoneticiMesajGonder(metin, hedef); setHata(sonuc.error); if (!sonuc.error) { setMetin(""); await yenile(); } } catch { setHata("İşlem tamamlanamadı. Tekrar deneyin."); } }); }} className="flex flex-col gap-3">
-      <textarea aria-label="Mesajınız" required maxLength={4000} rows={4} value={metin} onChange={e => setMetin(e.target.value)} placeholder="Mesajınızı yazın…" className="w-full rounded-xl p-3 text-sm" style={{ background: BG0, color: TEXT, border: `1px solid ${BORDER}` }} />
-      <button disabled={bekliyor || !metin.trim()} className="self-start rounded-xl px-4 py-2 font-bold disabled:opacity-50" style={{ background: MINT, color: MINT_ON }}>{bekliyor ? "İşleniyor…" : adminMi ? "Yanıt gönder" : "Gönder"}</button>
+      <textarea aria-label="Mesajınız" required maxLength={4000} rows={4} value={metin} onChange={e => setMetin(e.target.value)} placeholder="Mesajınızı yazın…" className="w-full rounded-xl p-3 text-sm outline-none" style={{ background: BG0, color: TEXT, border: `2px solid ${BORDER_STRONG}` }} />
+      <button disabled={bekliyor || !metin.trim()} className="sfec-btn self-start rounded-full px-4 py-2 text-xs font-bold disabled:opacity-50" style={{ background: MINT, color: MINT_ON }}>{bekliyor ? "İşleniyor…" : adminMi ? "Yanıt Gönder" : "Gönder"}</button>
     </form>}
     {hata && <p role="alert" className="text-sm" style={{ color: BLUSH }}>{hata}</p>}
   </div>;

@@ -62,7 +62,7 @@ export function DuyuruGecmisi() {
         <div className="flex items-center gap-2">
           <Megaphone color={MINT} />
           <div>
-            <h1 className="font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Duyuru Geçmişi</h1>
+            <h2 className="text-[15px] font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Duyuru Geçmişi</h2>
             <p className="text-xs" style={{ color: TEXT_MUTED }}>Gönderen, kurum, hedef, içerik ve gönderim zamanı</p>
           </div>
         </div>

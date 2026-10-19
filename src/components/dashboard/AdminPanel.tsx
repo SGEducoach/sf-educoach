@@ -84,7 +84,7 @@ export function AdminPanel({
   if (mod === "kullanici") return (
     <div className="flex flex-col gap-5 rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <div>
-        <h1 className="text-lg font-bold" style={{ color: TEXT }}>Kullanıcı Ekle</h1>
+        <h2 className="text-[15px] font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Kullanıcı Ekle</h2>
         <p className="text-xs" style={{ color: TEXT_MUTED }}>Önce kurumu seçin, ardından öğretmen veya öğrenci ekleyin. Kullanıcı arama, çıkarma ve hesap düzenleme işlemleri yukarıda.</p>
       </div>
       <select value={gorunecekOkulId ?? ""} onChange={(e) => router.push(`/yonetici/kullanici-yonetimi?okul=${e.target.value}`)}
@@ -111,7 +111,6 @@ export function AdminPanel({
               <Shield size={13} color={LILAC} />
             </div>
             <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Kurumları Yönet</span>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(199,182,255,0.15)", color: LILAC }}>admin</span>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             {okullar.length > 0 && (
@@ -334,7 +333,7 @@ function KurumYetkileriPaneli({ okul, paketler }: { okul: OkulSatiri; paketler: 
   return <section className="mt-4 rounded-2xl p-4" style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}` }}>
     <div className="flex flex-wrap items-center justify-between gap-2">
       <div>
-        <h2 className="text-sm font-bold" style={{ color: TEXT }}>Kurum yetkileri</h2>
+        <h2 className="text-sm font-bold" style={{ color: TEXT }}>Kurum Yetkileri</h2>
         <p className="text-xs" style={{ color: TEXT_MUTED }}>Mevcut paket: {okul.paket_adi ?? "Geçiş öncesi erişim"}. Pasif kurumun yetkileri de düzenlenebilir.</p>
       </div>
       <div className="flex flex-wrap gap-2" aria-label="Hazır paketler">

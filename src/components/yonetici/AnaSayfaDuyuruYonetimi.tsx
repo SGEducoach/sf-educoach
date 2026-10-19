@@ -12,7 +12,7 @@ export function AnaSayfaDuyuruYonetimi({baslangic}:{baslangic:AnaSayfaDuyurusu[]
  function kaydet(e:React.FormEvent){e.preventDefault();setMesaj(null);start(async()=>{const r=await anaSayfaDuyurusuKaydet({id,baslik,icerik});if(r.error)return setMesaj(r.error);setListe(r.duyurular);temizle();setMesaj("Duyuru kaydedildi.");});}
  function sil(d:AnaSayfaDuyurusu){if(!confirm(`“${d.baslik}” silinsin mi?`))return;start(async()=>{const r=await anaSayfaDuyurusuSil(d.id);if(r.error)return setMesaj(r.error);setListe(r.duyurular);if(id===d.id)temizle();setMesaj("Duyuru silindi.");});}
  return <div className="mt-4 rounded-3xl p-5" style={{background:BG1,border:`2px solid ${BORDER}`}}>
-  <div className="flex items-center gap-2"><Bell size={16} color={MINT}/><h2 className="font-bold" style={{color:TEXT}}>Ana Sayfa Duyuruları</h2></div>
+  <div className="flex items-center gap-2"><Bell size={16} color={MINT}/><h2 className="text-base font-bold" style={{color:TEXT, fontFamily:"var(--font-baloo)"}}>Ana Sayfa Duyuruları</h2></div>
   <p className="mt-1 text-[11px]" style={{color:TEXT_MUTED}}>En fazla 6 duyuru tutulur. Yedincisi eklendiğinde tarihi en eski olan otomatik silinir.</p>
   <form onSubmit={kaydet} className="mt-3 flex flex-col gap-2.5 rounded-2xl p-4" style={{background:BG1_ALT,border:`2px solid ${BORDER_STRONG}`}}>
    <input aria-label="Duyuru başlığı" placeholder="Duyuru başlığı" value={baslik} onChange={e=>setBaslik(e.target.value.slice(0,120))} className="rounded-xl px-3 py-2 text-sm outline-none" style={{background:BG0,color:TEXT,border:`2px solid ${BORDER_STRONG}`}}/>
