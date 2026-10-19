@@ -1,13 +1,14 @@
 "use server";
 
-// Yurt listesi için cinsiyet bilgisi (migration 0161). Kurum müdürü ya da admin
-// yazar; kayıt service-role ile, hedefin aynı kuruma ait olduğu
+// Yurt listesi için cinsiyet bilgisi (migration 0161). Kurum müdürü, yurt
+// sorumlusu müdür yardımcısı ya da admin yazar; kayıt service-role ile, hedefin aynı kuruma ait olduğu
 // doğrulanarak yapılır. Öğrenci anahtarı "r:<resmî liste id>" (ön kayıt)
 // ya da "s:<öğrenci id>" (resmî listede olmayan kayıtlı öğrenci).
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { mudurYardimcisiUyeligiGetir } from "@/lib/mudur-yardimcisi";
 
 const UUID = /^[0-9a-f-]{36}$/i;
 
@@ -21,8 +22,13 @@ export async function cinsiyetKaydet(tur: "ogrenci" | "ogretmen", anahtarlar: st
     supabase.from("profiles").select("role").eq("id", user.id).maybeSingle(),
     supabase.from("teachers").select("school_id").eq("id", user.id).maybeSingle(),
   ]);
-  const okulHedefi = profil?.role === "admin" ? (okulId && UUID.test(okulId) ? okulId : null) : profil?.role === "mudur" ? ogretmen?.school_id ?? null : null;
-  if (!okulHedefi) return { error: "Cinsiyet bilgisini yalnız kurum müdürü ya da yönetici girebilir." };
+  let okulHedefi = profil?.role === "admin" ? (okulId && UUID.test(okulId) ? okulId : null) : profil?.role === "mudur" ? ogretmen?.school_id ?? null : null;
+  // Yurt sorumlusu müdür yardımcısı da kendi okulunda girer (kullanıcı isteği 19.10.2026).
+  if (!okulHedefi && profil?.role === "ogretmen") {
+    const uyelik = await mudurYardimcisiUyeligiGetir(createAdminClient(), user.id);
+    if (uyelik?.yurt) okulHedefi = uyelik.schoolId;
+  }
+  if (!okulHedefi) return { error: "Cinsiyet bilgisini yalnız kurum müdürü, yurt sorumlusu müdür yardımcısı ya da yönetici girebilir." };
   const izinli = tur === "ogrenci" ? ["kiz", "erkek"] : ["kadin", "erkek"];
   if (cinsiyet !== null && !izinli.includes(cinsiyet)) return { error: "Geçersiz seçim." };
   if (anahtarlar.length === 0 || anahtarlar.length > 600) return { error: "Seçim geçersiz." };

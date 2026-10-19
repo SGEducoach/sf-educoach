@@ -10,8 +10,9 @@ import Link from "next/link";
 import { BedDouble } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BLUSH, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
 import { sinifSiraKarsilastir } from "@/lib/types";
-import type { DurumluOgrenci } from "@/lib/yurt-listesi";
+import type { DurumluOgrenci, OgrenciCinsiyeti } from "@/lib/yurt-listesi";
 import { yurtDurumuKaydet } from "@/app/dashboard/yurt-durumu-actions";
+import { cinsiyetKaydet } from "@/app/dashboard/yurt-cinsiyet-actions";
 
 const girdi = { background: BG0, color: TEXT, border: `2px solid ${BORDER_STRONG}` };
 
@@ -22,12 +23,19 @@ export function YurtOgrencileriListesi({ ogrenciler }: { ogrenciler: DurumluOgre
   const [goster, setGoster] = useState<"yurt" | "degil" | "hepsi">("yurt");
   // Kaydedilen değişiklikler sayfa yenilenmeden listeye yansır.
   const [degisen, setDegisen] = useState<Record<string, boolean>>({});
+  const [cinsiyetDegisen, setCinsiyetDegisen] = useState<Record<string, OgrenciCinsiyeti>>({});
   const [secili, setSecili] = useState<Set<string>>(new Set());
   const [hata, setHata] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
-  const tum = useMemo(() => ogrenciler.map((o) => (o.anahtar in degisen ? { ...o, yurt: degisen[o.anahtar] } : o)), [ogrenciler, degisen]);
+  const tum = useMemo(() => ogrenciler.map((o) => ({
+    ...o,
+    yurt: o.anahtar in degisen ? degisen[o.anahtar] : o.yurt,
+    cinsiyet: cinsiyetDegisen[o.anahtar] ?? o.cinsiyet,
+  })), [ogrenciler, degisen, cinsiyetDegisen]);
   const yurtlular = tum.filter((o) => o.yurt);
+  // Cinsiyeti girilmemiş yurt öğrencisi kız/erkek yoklama listelerinde görünmez.
+  const cinsiyetsiz = yurtlular.filter((o) => !o.cinsiyet).length;
 
   const siniflar = useMemo(() => {
     const m = new Map<string, { seviye: string; sube: string }>();
@@ -56,11 +64,22 @@ export function YurtOgrencileriListesi({ ogrenciler }: { ogrenciler: DurumluOgre
     });
   }
 
+  function cinsiyetiKaydet(anahtarlar: string[], c: OgrenciCinsiyeti) {
+    if (anahtarlar.length === 0) return;
+    setHata(null);
+    start(async () => {
+      const r = await cinsiyetKaydet("ogrenci", anahtarlar, c);
+      if (r.error) return setHata(r.error);
+      setCinsiyetDegisen((d) => ({ ...d, ...Object.fromEntries(anahtarlar.map((a) => [a, c])) }));
+      setSecili(new Set());
+    });
+  }
+
   const tumuSecili = liste.length > 0 && liste.every((o) => secili.has(o.anahtar));
   const sec = (anahtar: string) => setSecili((s) => { const y = new Set(s); if (y.has(anahtar)) y.delete(anahtar); else y.add(anahtar); return y; });
 
   return (
-    <section className="sfec-fade flex flex-col gap-4 rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+    <section className="sfec-fade flex min-w-0 max-w-full flex-col gap-4 rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <div className="flex items-center gap-2">
         <BedDouble size={16} color={MINT} aria-hidden="true" />
         <h2 className="text-[15px] font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Yurt Öğrencileri</h2>
@@ -69,7 +88,18 @@ export function YurtOgrencileriListesi({ ogrenciler }: { ogrenciler: DurumluOgre
         {[["Yurt öğrencisi", yurtlular.length], ["Kız", kiz], ["Erkek", erkek], ["Sisteme kayıtlı", kayitli], ["Ön kayıt", yurtlular.length - kayitli]].map(([e, n]) => (
           <span key={e} className="rounded-full px-3 py-1 font-semibold" style={{ background: BG1_ALT, color: TEXT }}>{e}: {n}</span>
         ))}
+        {cinsiyetsiz > 0 && (
+          <button type="button" onClick={() => { setGoster("yurt"); setCinsiyet("yok"); setSecili(new Set()); }}
+            className="rounded-full px-3 py-1 font-bold" style={{ background: BLUSH, color: "#fff" }}>
+            Cinsiyeti girilmemiş: {cinsiyetsiz}
+          </button>
+        )}
       </div>
+      {cinsiyetsiz > 0 && (
+        <p className="text-[11px] font-semibold" style={{ color: BLUSH }}>
+          Cinsiyeti girilmemiş yurt öğrencisi kız ve erkek yoklama listelerinde görünmez. Satırdaki Kız / Erkek düğmesiyle ya da seçerek toplu işaretleyin.
+        </p>
+      )}
       <p className="text-[11px]" style={{ color: TEXT_MUTED }}>
         Ön kayıtlılar dahil bütün öğrenciler listelenir. Yurt öğrencisi olanı işaretleyin, ayrılanın işaretini kaldırın; yoklama ve izin listeleri buna göre hazırlanır.
       </p>
@@ -103,11 +133,18 @@ export function YurtOgrencileriListesi({ ogrenciler }: { ogrenciler: DurumluOgre
             className="sfec-btn rounded-full px-3 py-1.5 text-xs font-bold disabled:opacity-50" style={{ background: MINT, color: MINT_ON }}>Yurt Öğrencisi Yap</button>
           <button type="button" disabled={pending} onClick={() => kaydet([...secili], false)}
             className="sfec-btn rounded-full px-3 py-1.5 text-xs font-bold disabled:opacity-50" style={{ color: BLUSH, border: `1px solid ${BORDER}` }}>Yurttan Çıkar</button>
+          <span className="text-xs" style={{ color: TEXT_MUTED }}>Cinsiyet:</span>
+          {(["kiz", "erkek"] as const).map((c) => (
+            <button key={c} type="button" disabled={pending} onClick={() => cinsiyetiKaydet([...secili], c)}
+              className="sfec-btn rounded-full px-3 py-1.5 text-xs font-bold disabled:opacity-50" style={{ color: TEXT, border: `1px solid ${BORDER_STRONG}` }}>
+              {c === "kiz" ? "Kız" : "Erkek"}
+            </button>
+          ))}
         </div>
       )}
       {hata && <p className="text-xs font-semibold" style={{ color: BLUSH }}>{hata}</p>}
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[600px] text-left text-xs">
+      <div className="min-w-0 overflow-x-auto">
+        <table className="w-full min-w-[640px] text-left text-xs">
           <thead>
             <tr style={{ color: TEXT_MUTED }}>
               <th className="w-8 px-2 py-2">
@@ -135,7 +172,19 @@ export function YurtOgrencileriListesi({ ogrenciler }: { ogrenciler: DurumluOgre
                 </td>
                 <td className="px-2 py-2">{o.okulNo ?? "—"}</td>
                 <td className="px-2 py-2">{o.sinif ?? "—"}</td>
-                <td className="px-2 py-2">{o.cinsiyet === "kiz" ? "Kız" : o.cinsiyet === "erkek" ? "Erkek" : "—"}</td>
+                <td className="px-2 py-2">
+                  <span className="inline-flex gap-1" role="group" aria-label={`${o.ad} cinsiyet`}>
+                    {(["kiz", "erkek"] as const).map((c) => (
+                      <button key={c} type="button" disabled={pending || o.cinsiyet === c} onClick={() => cinsiyetiKaydet([o.anahtar], c)} aria-pressed={o.cinsiyet === c}
+                        className="rounded-full px-2 py-0.5 text-[11px] font-bold disabled:cursor-default"
+                        style={o.cinsiyet === c
+                          ? { background: MINT, color: MINT_ON }
+                          : { color: o.yurt && !o.cinsiyet ? BLUSH : TEXT_MUTED, border: `1px solid ${o.yurt && !o.cinsiyet ? BLUSH : BORDER_STRONG}` }}>
+                        {c === "kiz" ? "Kız" : "Erkek"}
+                      </button>
+                    ))}
+                  </span>
+                </td>
                 <td className="px-2 py-2" style={{ color: o.kayitli ? MINT : TEXT_MUTED }}>{o.kayitli ? "Kayıtlı" : "Ön kayıt"}</td>
                 <td className="px-2 py-2">
                   <button type="button" disabled={pending} onClick={() => kaydet([o.anahtar], !o.yurt)} aria-pressed={o.yurt}
