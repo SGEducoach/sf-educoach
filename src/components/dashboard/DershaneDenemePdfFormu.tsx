@@ -138,7 +138,7 @@ export function DershaneDenemePdfFormu({ schoolId, yalnizcaExcel = false }: { sc
           </select>
           {tur === "LGS" && mod === "pdf" && (
             <span className="text-[11px]" style={{ color: TEXT_MUTED }}>
-              LGS sonuç listesi PDF&apos;ten henüz okunmuyor; &quot;Excel yükle&quot; sekmesindeki LGS şablonunu kullanın.
+              &quot;OKUL NET LİSTESİ (LGS sıralı)&quot; sayfaları olan sonuç PDF&apos;i yapay zekâsız okunur. Başka biçim için &quot;Excel yükle&quot; sekmesindeki LGS şablonunu kullanın.
             </span>
           )}
         </label>
@@ -154,7 +154,7 @@ export function DershaneDenemePdfFormu({ schoolId, yalnizcaExcel = false }: { sc
             Eşleştirmede öğrenci arama listesi yalnız bu seviyeyle açılır.
           </span>
         </label>
-        {mod === "pdf" && (
+        {mod === "pdf" && tur !== "LGS" && (
           <label className="flex flex-col gap-1">
             <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">PDF biçimi</span>
             <select value={bicim} onChange={(e) => setBicim(e.target.value as typeof bicim)}

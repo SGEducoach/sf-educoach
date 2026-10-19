@@ -24,6 +24,8 @@ import type { KarneBirinciSayfa } from "@/lib/karne-birinci-sayfa";
 import { gruplaraBolerekOku, YanitSigmadiHatasi } from "@/lib/gruplu-okuma";
 import { netHesapla } from "@/lib/types";
 import { gecerliDersler } from "@/lib/deneme-dersleri";
+import { lgsOkulListesiCoz } from "@/lib/lgs-okul-listesi";
+import { pdfOgeleriniCikar } from "@/lib/pdf-oge";
 
 interface PdfOgrenciSonucu {
   ad_soyad: string;
@@ -444,12 +446,10 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
   if (!yayinevi) return { error: "Yayınevi gerekli.", ...BOS_SONUC };
   if (!/^\d{4}-\d{2}-\d{2}$/.test(tarih)) return { error: "Uygulama tarihi gerekli.", ...BOS_SONUC };
   if (!["TYT", "AYT", "BRANS", "LGS"].includes(tur)) return { error: "Tür seçin.", ...BOS_SONUC };
-  // LGS (16.10.2026, kolej): yapay zekâsız okuyucular henüz LGS biçimini
-  // tanımıyor ve kullanıcı kararı yapay zekâyla okunmaması. Okuyucu,
-  // kolejin örnek PDF'leriyle eklenecek; o zamana kadar Excel şablonu.
-  if (tur === "LGS") {
-    return { error: "LGS sonuç listesi PDF'ten henüz okunamıyor. Şimdilik \"Excel yükle\" sekmesindeki LGS şablonunu kullanın.", ...BOS_SONUC };
-  }
+  // LGS (16.10.2026, kolej; okuyucu 19.10.2026): yalnız yapay zekâsız
+  // okul net listesi okuyucusu (kullanıcı kararı). Biçim tanınmazsa durur,
+  // Claude'a gidilmez.
+  if (tur === "LGS") return lgsPdfIceriAktar({ dosya, admin, userId: user.id, schoolId, yayinevi, tarih, sinifSeviyesi });
   // Kullanıcı isteği (27.09.2026): yükleyen PDF biçimini seçebilir. Seçilen
   // biçim tanınmazsa sessizce Claude'a gidilmez, neden okunamadığı söylenir.
   const bicim = String(formData.get("bicim") ?? "otomatik") as PdfBicimi;
@@ -940,6 +940,53 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
     incelemeBekleyen,
     okunamayan: okunamayanAdlar.length,
     bekleyen: kayitBekleyen + incelemeBekleyen,
+  };
+}
+
+// LGS okul net listesi (deterministik, src/lib/lgs-okul-listesi.ts). Yalnız
+// "OKUL NET LİSTESİ (LGS sıralı)" sayfaları okunur; okul listesi PDF'in ilk
+// sayfalarında olduğu için 30 sayfa (≈ 600 öğrenci) yeter, karne sayfaları
+// boşuna işlenmez.
+async function lgsPdfIceriAktar(p: {
+  dosya: File; admin: ReturnType<typeof createAdminClient>; userId: string; schoolId: string;
+  yayinevi: string; tarih: string; sinifSeviyesi: string | null;
+}) {
+  let sonuc: ReturnType<typeof lgsOkulListesiCoz>;
+  try {
+    sonuc = lgsOkulListesiCoz(await pdfOgeleriniCikar(new Uint8Array(await p.dosya.arrayBuffer()), 30));
+  } catch (hata) {
+    console.warn("[deneme-pdf LGS] PDF okunamadı:", hataOzeti(hata));
+    return { error: "PDF açılamadı. Dosyanın bozuk ya da şifreli olmadığından emin olun.", ...BOS_SONUC };
+  }
+  if (!sonuc.basarili) {
+    return { error: `LGS sonuç listesi okunamadı (${sonuc.hata}). Okul net listesi sayfaları olan PDF'i yükleyin ya da Excel şablonunu kullanın.`, ...BOS_SONUC };
+  }
+  const hedef = await hedefOgrencileriGetir(p.admin, p.schoolId);
+  if (hedef.error) return { error: hedef.error, ...BOS_SONUC };
+  if (hedef.ogrenciler.length + hedef.onKayitlar.length === 0) {
+    return { error: "Kurumda PDF sonucu eşleştirilecek aktif veya ön kayıtlı öğrenci bulunamadı.", ...BOS_SONUC };
+  }
+  const ayristirilan: PdfOgrenciSonucu[] = sonuc.ogrenciler.map((o) => ({
+    ad_soyad: o.isimHam,
+    ders_sonuclari: o.dersSonuclari.map(({ ders, dogru, yanlis }) => ({ ders, dogru, yanlis })),
+    ogrenci_no: o.ogrenciNo || undefined,
+    sinif: o.sinif || undefined,
+  }));
+  const sinifMap = new Map<string, string>();
+  for (const o of sonuc.ogrenciler) if (o.sinif) sinifMap.set(adNormalize(o.isimHam), o.sinif);
+  const okunamayanAdlar = sonuc.okunamayanSatirlar.map((o) => o.isimHam);
+  console.info("[deneme-pdf LGS] sınav:", sonuc.sinavAdi, "| öğrenci:", ayristirilan.length, "| okunamayan:", okunamayanAdlar.length);
+
+  const { otomatikEslesen, kayitBekleyen, incelemeBekleyen } = await sonuclariEslestirVeKaydet({
+    admin: p.admin, userId: p.userId, schoolId: p.schoolId, yayinevi: p.yayinevi, tarih: p.tarih, tur: "LGS",
+    ayristirilan, ogrenciler: hedef.ogrenciler, onKayitlar: hedef.onKayitlar,
+    sinifMap, okunamayanAdlar, sinifSeviyesi: p.sinifSeviyesi, pdfMuafiyeti: true,
+  });
+  revalidatePath("/dashboard");
+  revalidatePath("/yonetici", "layout");
+  return {
+    error: null, toplam: ayristirilan.length, otomatikEslesen, kayitBekleyen, incelemeBekleyen,
+    okunamayan: okunamayanAdlar.length, bekleyen: kayitBekleyen + incelemeBekleyen,
   };
 }
 
