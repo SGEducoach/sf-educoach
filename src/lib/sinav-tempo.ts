@@ -55,6 +55,16 @@ export function dersTempoButcesi(tur: DenemeTuru, ders: string): number | undefi
 // bütçe bu katsayıyla daraltılır.
 export const CALISMA_KATSAYISI = 0.8;
 
+// Soru çözümü formunda isteğe bağlı süre önerisi. Serbest çalışma temposu
+// kullanılır; kayıt kuralı olan soru başına en fazla iki dakikayı aşmaz.
+export function onerilenCalismaSuresi(ders: string, soruSayisi: number): number | null {
+  if (!Number.isInteger(soruSayisi) || soruSayisi <= 0) return null;
+  const tur = ders === "Edebiyat" ? "AYT" : "TYT";
+  const soruBasinaDakika = dersTempoButcesi(tur, ders);
+  if (soruBasinaDakika === undefined) return null;
+  return Math.max(1, Math.min(soruSayisi * 2, Math.round(soruSayisi * soruBasinaDakika * CALISMA_KATSAYISI)));
+}
+
 // Öz beyan süre; bu bandın dışındaki kayıtlar analizi zehirliyor (canlı veride
 // 450 kaydın 7'si 25 saniyenin altında "çözülmüş" görünüyor).
 export const OLCUM_ALT_SINIR_DK = 0.4;

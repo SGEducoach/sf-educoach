@@ -10,7 +10,8 @@ import {
   SURE_UST_SINIR, SORU_SAYISI_UST_SINIR, GOREV_GERIYE_DONUK_GUN, KATEGORI_GERIYE_DONUK_SINIR, dokuzOnSinifMi, maarifHiyerarsiSinifMi,
 } from "@/lib/types";
 import { soruKonuOnerileri } from "@/lib/konu-oneri-listesi";
-import { konuSinavi, konuSinifi } from "@/lib/mufredat-konulari";
+import { konuSinavi, konuSinifi, konuSinifiSecenekleri } from "@/lib/mufredat-konulari";
+import { onerilenCalismaSuresi } from "@/lib/sinav-tempo";
 import {
   BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, SKY, SKY_BG, TEXT, TEXT_MUTED, BLUSH,
 } from "@/lib/theme";
@@ -340,7 +341,8 @@ export function OgrenciVeriGirisi({ aytAlan, konuOnerileri, sinifSeviyesi, konuS
           <Etiket>Konu sınıfı</Etiket>
           <Secim value={konuSinifiSecimi} onChange={(e) => setKonuSinifiSecimi(e.target.value)}>
             <option value="tum">Tüm uygun sınıflar</option>
-            {Array.from({ length: sinifNo - 8 }, (_, i) => String(9 + i)).map((s) => <option key={s} value={s}>{s}. sınıf{s === sinifSeviyesi ? " (Mevcut sınıfım)" : ""}</option>)}
+            {konuSinifiSecenekleri(sinifNo, sekme === "konu" ? konuSinaviSecimi : null)
+              .map((s) => <option key={s} value={s}>{s}. sınıf{String(s) === sinifSeviyesi ? " (Mevcut sınıfım)" : ""}</option>)}
           </Secim>
           <span className="text-[10px]" style={{ color: TEXT_MUTED }}>Sınıfı değiştirdiğinde açık formdaki girişler sıfırlanır.</span>
         </label>}
@@ -701,6 +703,7 @@ export function SoruCozumuForm({ dersListesi, konuOnerileri, onBasari, prefillDe
   // uygulanıyor.
   const toplamSoru = (Number(dogru) || 0) + (Number(yanlis) || 0) + (Number(bos) || 0);
   const sureUstSiniri = toplamSoru * 2;
+  const onerilenSure = onerilenCalismaSuresi(ders, toplamSoru);
 
   function submit(formData: FormData) {
     setHata(null);
@@ -766,6 +769,13 @@ export function SoruCozumuForm({ dersListesi, konuOnerileri, onBasari, prefillDe
       <p style={{ color: TEXT_MUTED }} className="text-[11px] -mt-1">Süre, şu an bitirdiğin <strong>tek oturumun</strong> süresi — haftalık/günlük toplam değil.
         {toplamSoru > 0 && <> En fazla <strong>{sureUstSiniri} dakika</strong> (soru başına ~2 dk).</>}
       </p>
+      {onerilenSure !== null && (
+        <button type="button" onClick={() => setSureDakika(String(onerilenSure))}
+          className="sfec-btn self-start rounded-full px-3 py-1.5 text-[11px] font-bold"
+          style={{ background: MINT_BG, color: MINT }}>
+          {ders} için yaklaşık {onerilenSure} dk öner · Süreye uygula
+        </button>
+      )}
       <SesliYayineviGirisi value={yayinevi} onChange={setYayinevi} />
       {sesliVeriAktarildi && !yayinevi.trim() && (
         <p role="status" className="text-xs font-semibold" style={{ color: BLUSH }}>Yayınevini girmen veya “Söyle” düğmesiyle sesli doldurman gerekiyor.</p>

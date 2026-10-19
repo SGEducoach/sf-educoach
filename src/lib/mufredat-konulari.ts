@@ -32,6 +32,12 @@ export function konuSeviyesi(seviye: string): string {
   return seviye === "Hazırlık" ? "9. Sınıf" : seviye;
 }
 
+export function konuSinifiSecenekleri(ogrenciSinifi: number, sinav: "TYT" | "AYT" | null): number[] {
+  if (!Number.isInteger(ogrenciSinifi) || ogrenciSinifi < 9 || ogrenciSinifi > 12) return [];
+  return [9, 10, 11, 12].filter((sinif) => sinif <= ogrenciSinifi &&
+    (sinav === null || (sinav === "TYT" ? sinif <= 10 : sinif >= 11)));
+}
+
 export function konuSinavi(konu: Pick<MufredatKonusu, "ders" | "seviye">): "TYT" | "AYT" {
   if (konu.seviye === "AYT" || konu.ders === "Edebiyat") return "AYT";
   if (konu.seviye === "TYT" || konu.ders === "Türkçe") return "TYT";

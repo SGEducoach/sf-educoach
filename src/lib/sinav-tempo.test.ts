@@ -1,10 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
-  SINAV_SURESI_DAKIKA, dersTempoButcesi, olcumGecerliMi, sinavProjeksiyonu,
+  SINAV_SURESI_DAKIKA, dersTempoButcesi, olcumGecerliMi, onerilenCalismaSuresi, sinavProjeksiyonu,
 } from "./sinav-tempo";
 import { TYT_DERSLERI, AYT_DERSLERI, dersSoruSayisi } from "./types";
 
 describe("sınav tempo bütçesi", () => {
+  it("ders bazlı çalışma süresi önerir ve kayıt üst sınırını aşmaz", () => {
+    expect(onerilenCalismaSuresi("Matematik", 20)).toBe(24);
+    expect(onerilenCalismaSuresi("Türkçe", 20)).toBe(19);
+    expect(onerilenCalismaSuresi("Edebiyat", 20)).toBe(34);
+    expect(onerilenCalismaSuresi("Matematik", 0)).toBeNull();
+  });
   it("TYT bütçesi 165 dakikaya sığar ve kodlama payı bırakır", () => {
     const toplam = TYT_DERSLERI.reduce((t, ders) => {
       const soru = dersSoruSayisi("TYT", ders) ?? 0;

@@ -134,6 +134,42 @@ export async function haftayiTemizle(haftaBaslangici: string): Promise<{ error: 
   return { error: null, silinen: kendiGorevIdleri.length, cikarilan: ogretmenAtamaIdleri.length };
 }
 
+// Öğrenci programındaki tek bir bekleyen kalemi kaldırır. Öğretmen ödevi
+// silinmez; yalnızca öğrencinin haftalık programından çıkarılır.
+export async function programKaleminiSil(atamaId: string): Promise<{ error: string | null }> {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(atamaId)) {
+    return { error: "Program kaydı geçersiz." };
+  }
+  const oturum = await programAktoru();
+  if (oturum.error !== null) return { error: oturum.error };
+
+  const admin = createAdminClient();
+  const { data: atama, error } = await admin.from("gorev_atamalari")
+    .select("id, gorev_id, gorevler!inner(olusturan_ogrenci_id)")
+    .eq("id", atamaId)
+    .eq("student_id", oturum.userId)
+    .eq("programa_eklendi_mi", true)
+    .eq("durum", "bekliyor")
+    .maybeSingle();
+  if (error) return { error: "Program kaydı alınamadı." };
+  if (!atama) return { error: "Bekleyen program kaydı bulunamadı." };
+
+  const gorev = Array.isArray(atama.gorevler) ? atama.gorevler[0] : atama.gorevler;
+  if (gorev?.olusturan_ogrenci_id === oturum.userId) {
+    const { data: silinen, error: silmeHatasi } = await admin.from("gorevler")
+      .delete().eq("id", atama.gorev_id).eq("olusturan_ogrenci_id", oturum.userId).select("id").maybeSingle();
+    if (silmeHatasi || !silinen) return { error: "Program kalemi silinemedi." };
+  } else {
+    const { data: cikarilan, error: cikarmaHatasi } = await admin.from("gorev_atamalari")
+      .update({ programa_eklendi_mi: false, ogrenci_tarih: null, ogrenci_baslangic_saat: null, ogrenci_bitis_saat: null })
+      .eq("id", atamaId).eq("student_id", oturum.userId).eq("durum", "bekliyor")
+      .select("id").maybeSingle();
+    if (cikarmaHatasi || !cikarilan) return { error: "Ödev programdan çıkarılamadı." };
+  }
+  revalidatePath("/dashboard");
+  return { error: null };
+}
+
 export async function otoProgramHazirla(baslangicTarihi: string, kapsam: ProgramKapsami, ogrenciId?: string): Promise<{ error: string | null; veri: OtoProgramVerisi | null }> {
   const hata = donemHatasi(baslangicTarihi, kapsam);
   if (hata) return { error: hata, veri: null };

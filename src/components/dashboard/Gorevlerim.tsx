@@ -5,10 +5,10 @@ import { createPortal } from "react-dom";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, BookOpen, PenLine, ClipboardList, X, Clock, Plus, CalendarDays, Rows3, Eraser, Printer } from "lucide-react";
+import { ChevronLeft, ChevronRight, BookOpen, PenLine, ClipboardList, X, Clock, Plus, CalendarDays, Rows3, Eraser, Printer, Trash2 } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BLUSH, BLUSH_BG, BORDER, BORDER_STRONG, BUTTER, BUTTER_BG, MINT, MINT_BG, MINT_ON, PEACH, PEACH_BG, TEXT, TEXT_MUTED } from "@/lib/theme";
 import { GOREV_TURU_ETIKET, GOREV_DURUMU_ETIKET } from "@/lib/types";
-import { haftayiTemizle } from "@/app/dashboard/oto-program-actions";
+import { haftayiTemizle, programKaleminiSil } from "@/app/dashboard/oto-program-actions";
 import type { GorevTuru, GorevDurumu, AytAlan } from "@/lib/types";
 import { KonuCalismaForm, SoruCozumuForm, DenemeForm } from "@/components/dashboard/OgrenciVeriGirisi";
 import { MaskotKonusmaBalonu } from "@/components/dashboard/MaskotKonusmaBalonu";
@@ -455,6 +455,20 @@ function GorevDetayBalonu({ gorev, gunler, onKapat, onTamamla }: {
     programaEkle(gun, baslangic, bitis);
   }
 
+  function programdanKaldir() {
+    const kendiPlani = gorev.kaynak === "plan";
+    if (!window.confirm(kendiPlani
+      ? "Bu bekleyen program kalemi silinsin mi? Tamamlanmış çalışmaların etkilenmez."
+      : "Bu ödev programından çıkarılsın mı? Ödevlerim listesinde kalacak.")) return;
+    setHata(null);
+    startTransition(async () => {
+      const sonuc = await programKaleminiSil(gorev.atamaId);
+      if (sonuc.error) { setHata(sonuc.error); return; }
+      onKapat();
+      router.refresh();
+    });
+  }
+
   return (
     <MaskotKonusmaBalonu onKapat={onKapat} ariaLabel={gorev.kaynak === "plan" ? "Program ayrıntıları" : "Ödev ayrıntıları"}>
       <div className="pr-9">
@@ -487,6 +501,15 @@ function GorevDetayBalonu({ gorev, gunler, onKapat, onTamamla }: {
           </button>
         )}
       </div>
+
+      {gorev.programaEklendiMi && gorev.durum === "bekliyor" && (
+        <button type="button" onClick={programdanKaldir} disabled={pending}
+          className="sfec-btn mt-3 flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold disabled:opacity-60"
+          style={{ color: BLUSH, border: `2px solid ${BORDER_STRONG}` }}>
+          <Trash2 size={13} /> {gorev.kaynak === "plan" ? "Bu kalemi sil" : "Programdan çıkar"}
+        </button>
+      )}
+      {hata && <div role="alert" style={{ color: BLUSH }} className="mt-2 text-xs font-semibold">{hata}</div>}
 
       {basari ? (
         <div className="mt-3 rounded-xl px-3 py-2 text-xs font-semibold text-center" style={{ background: MINT_BG, color: MINT }}>

@@ -1,7 +1,12 @@
 import { describe, expect, test } from "vitest";
-import { MUFREDAT_KONULARI, konuOgrenciyeUygunMu, konuSinavi } from "./mufredat-konulari";
+import { MUFREDAT_KONULARI, konuOgrenciyeUygunMu, konuSinavi, konuSinifiSecenekleri } from "./mufredat-konulari";
 
 describe("ortak konu kapsamı", () => {
+  test("11. sınıf için TYT seçimi 11. sınıf AYT konularını göstermez", () => {
+    expect(konuSinifiSecenekleri(11, "TYT")).toEqual([9, 10]);
+    expect(konuSinifiSecenekleri(11, "AYT")).toEqual([11]);
+    expect(konuSinifiSecenekleri(11, null)).toEqual([9, 10, 11]);
+  });
   test("taslak Türkçe Maarif dersi ortak listede yer almaz", () => {
     expect(MUFREDAT_KONULARI.some((k) => k.ders === "Türkçe (Maarif)")).toBe(false);
     expect(MUFREDAT_KONULARI.some((k) => k.ders === "Türkçe" && k.seviye === "TYT")).toBe(true);
