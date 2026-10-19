@@ -229,9 +229,8 @@ const DERSHANE_MUDUR_MENUSU: DashboardMenuOgesi[] = [
 // rollerle aynı bölüm adını kasıtlı olarak paylaşıyor (kapsamı platform geneli).
 // Rozet sistemi 19.09.2026 kullanıcı isteğiyle kaldırıldı (yerine Başarım
 // sistemi gelecek, yalnızca öğrenciye).
-// Kullanıcı isteği (27.09.2026): admin menüsü kalabalıklaştı — alt menülü
-// gruplara ayrıldı. Grup başlığı yalnız alt menüyü açıp kapatır; bir sayfanın
-// yüklenmesi için kullanıcı alt menüdeki sayfayı ayrıca seçer.
+// Admin menüsünde ilişkili sayfalar gruplanır. Kullanıcı Yönetimi, arama,
+// ekleme, çıkarma ve düzenlemeyi tek sayfada topladığı için doğrudan öğedir.
 // Genel bakış ve Mesajlar grup DEĞİL, ayrı öğeler; Mesajlar Genel bakış'ın
 // hemen altında (kullanıcı kararı 27.09.2026).
 export interface DashboardMenuGrubu {
@@ -251,17 +250,12 @@ const ADMIN_MENU_YAPISI: DashboardMenuKalemi[] = [
   {
     baslik: "Kurumlar", ikon: "okul", ogeler: [
       { bolum: "okullar", href: "/yonetici/okullar", etiket: "Kurumları Yönet", ikon: "okul" },
+      { bolum: "belletmen-basvurulari", href: "/yonetici/belletmen-basvurulari", etiket: "Yurt · Belletmen Başvuruları", ikon: "kullanici" },
       { bolum: "grup-kocluk", href: "/yonetici/grup-kocluk", etiket: "Grup Koçluk", ikon: "grup" },
       { bolum: "talepler", href: "/yonetici/talepler", etiket: "Veli Talepleri", ikon: "talep" },
     ],
   },
-  {
-    baslik: "Kullanıcı ekle / çıkar", ikon: "kullanici", ogeler: [
-      { bolum: "kullanici-yonetimi", href: "/yonetici/kullanici-yonetimi", etiket: "Kullanıcı Ekle", ikon: "kullanici" },
-      { bolum: "kullanicilar", href: "/yonetici/kullanicilar", etiket: "Kullanıcı Ara / Çıkar", ikon: "ogrenci" },
-      { bolum: "belletmen-basvurulari", href: "/yonetici/belletmen-basvurulari", etiket: "Belletmen Başvuruları", ikon: "kullanici" },
-    ],
-  },
+  { bolum: "kullanici-yonetimi", href: "/yonetici/kullanici-yonetimi", etiket: "Kullanıcı Yönetimi", ikon: "kullanici" },
   {
     baslik: "Deneme ve İçerik", ikon: "deneme", ogeler: [
       { bolum: "deneme-yukle", href: "/yonetici/deneme-yukle", etiket: "Deneme Yükle", ikon: "deneme" },

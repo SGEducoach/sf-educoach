@@ -85,9 +85,9 @@ export default async function KullaniciGoruntulemeSayfasi({ params, searchParams
 
   return (
     <div className="sfec-dashboard-shell min-h-dvh w-full flex-1 flex flex-col">
-      <Header ad={yonetici.ad} role="admin" aktifBolum="kullanicilar" />
+      <Header ad={yonetici.ad} role="admin" aktifBolum="kullanici-yonetimi" />
       <div className="mx-auto flex min-h-[calc(100dvh-6.75rem)] w-full max-w-[100rem] flex-1 items-stretch gap-6 px-4 py-6 sm:px-6 lg:py-7">
-        <DashboardYanMenu role="admin" aktifBolum="kullanicilar" />
+        <DashboardYanMenu role="admin" aktifBolum="kullanici-yonetimi" />
         <main id="ana-icerik" className="sfec-dashboard-main min-h-[calc(100dvh-10.25rem)] min-w-0 w-full max-w-4xl flex-1 flex flex-col gap-6">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <GeriDonButonu />

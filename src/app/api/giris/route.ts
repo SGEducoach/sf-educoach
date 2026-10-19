@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { dershaneDenemeBitisGetir, suresiDolduMu, kullaniciKurumuGetir, denemeSuresiUygulanir, grupDondurulmus, DENEME_SURESI_SONA_ERDI_MESAJI, GRUP_DONDURULDU_MESAJI } from "@/lib/deneme-suresi";
+import { kullaniciKurumuGetir, kurumDenemeSuresiDolduMu, grupDondurulmus, DENEME_SURESI_SONA_ERDI_MESAJI, GRUP_DONDURULDU_MESAJI } from "@/lib/deneme-suresi";
 import { pushGonderProfile } from "@/lib/push-send";
 import { bildirimGonder } from "@/lib/bildirim-gonder";
 import { geciciSifreyiEtkinlestir } from "@/lib/gecici-sifre";
@@ -208,22 +208,18 @@ export async function POST(request: NextRequest) {
       ilkokulOgrencisi = true;
       error = new Error("İlkokul öğrencisi");
     } else if (user && profile && profile.role !== "admin") {
-      // Dershane 1 haftalık deneme süresi (bkz. deneme-suresi.ts,
-      // migration 0065) — SADECE dershane rolleri, okul hiç etkilenmez.
-      // Gruplar (Grup Koçluk) kendi bitiş tarihine tabi, bu süreden muaf.
+      // Kuruma özel deneme tarihi yalnız girildiğinde uygulanır.
+      // Grup Koçluk grupları kendi bitiş kuralına tabidir.
       const kurum = await kullaniciKurumuGetir(admin, user.id, profile.role as UserRole);
       if (kurumErisimiKapaliMi(kurum)) {
         await supabase.auth.signOut();
         kurumKapali = true;
         error = new Error(KURUM_BAGLANTI_HATASI);
       }
-      if (!kurumKapali && denemeSuresiUygulanir(kurum)) {
-        const bitis = await dershaneDenemeBitisGetir(admin);
-        if (suresiDolduMu(bitis)) {
-          await supabase.auth.signOut();
-          denemeSuresiDoldu = true;
-          error = new Error("Deneme süresi doldu");
-        }
+      if (!kurumKapali && kurumDenemeSuresiDolduMu(kurum)) {
+        await supabase.auth.signOut();
+        denemeSuresiDoldu = true;
+        error = new Error("Deneme süresi doldu");
       }
       if (!kurumKapali && grupDondurulmus(kurum)) {
         await supabase.auth.signOut();

@@ -19,7 +19,6 @@ import { GrupKoclukYonetimi } from "@/components/yonetici/GrupKoclukYonetimi";
 import { BlogYonetimi } from "@/components/yonetici/BlogYonetimi";
 import { KurallarYonetimi } from "@/components/yonetici/KurallarYonetimi";
 import { HataBildirimleriYonetimi } from "@/components/yonetici/HataBildirimleriYonetimi";
-import { DershaneDenemeSuresiAyari } from "@/components/yonetici/DershaneDenemeSuresiAyari";
 import type { KurumKademesi } from "@/lib/types";
 import { SiteAyarlariYonetimi } from "@/components/yonetici/SiteAyarlariYonetimi";
 import { AdminlerYonetimi } from "@/components/yonetici/AdminlerYonetimi";
@@ -27,13 +26,12 @@ import { IslemGecmisi } from "@/components/yonetici/IslemGecmisi";
 import { OgrenciAktivitesi } from "@/components/yonetici/OgrenciAktivitesi";
 import { AKTIVITE_DONEMLERI, VARSAYILAN_AKTIVITE_DONEMI } from "@/lib/ogrenci-aktivitesi-verisi";
 import { DuyuruGecmisi } from "@/components/dashboard/DuyuruGecmisi";
-import { dershaneDenemeSuresiGetir, siteAyarlariGetir, ortaokulAyariGetir, anaSayfaAyarlariGetir } from "@/app/yonetici/actions";
+import { siteAyarlariGetir, ortaokulAyariGetir, anaSayfaAyarlariGetir } from "@/app/yonetici/actions";
 import { AnaSayfaAyarlariYonetimi } from "@/components/yonetici/AnaSayfaAyarlariYonetimi";
 import { AnaSayfaDuyuruYonetimi } from "@/components/yonetici/AnaSayfaDuyuruYonetimi";
 import { anaSayfaDuyurulariniGetir } from "@/lib/ana-sayfa-duyurulari";
 import { seoAnahtarKelimeleriGetir, siteTemaGetir } from "@/lib/app-ayarlari";
 import { VARSAYILAN_TEMA } from "@/lib/site-tema";
-import { suresiDolduMu } from "@/lib/deneme-suresi";
 import { AdminProfilim } from "@/components/yonetici/AdminProfilim";
 import { YoneticiGirisForm } from "@/components/yonetici/YoneticiGirisForm";
 import { YoneticiDuyuruPaneli } from "@/components/yonetici/YoneticiDuyuruPaneli";
@@ -50,6 +48,7 @@ import type { KurumModulYetkileri } from "@/lib/kurum-yetkileri";
 import { BelletmenBasvurulari } from "@/components/yonetici/BelletmenBasvurulari";
 import { sablonAyarlariGetir } from "@/lib/whatsapp-sablon-ayarlari-verisi";
 import { TUM_SABLONLAR } from "@/lib/whatsapp-sablon-ayarlari";
+import { TEXT, TEXT_MUTED } from "@/lib/theme";
 
 // SeFu Koç'un tek kontrol noktası — bilerek /dashboard'dan ayrı, kendi
 // bağımsız girişi olan, hiçbir yerden link verilmeyen bir adres. Normal
@@ -78,13 +77,14 @@ export default async function YoneticiPage({
 
   const params = await searchParams;
   const aktifBolum = (params.bolum ?? "ozet") as DashboardBolumu;
+  if (aktifBolum === "kullanicilar") redirect("/yonetici/kullanici-yonetimi");
   if (!dashboardMenusu("admin").some((oge) => oge.bolum === aktifBolum)) redirect("/yonetici");
 
   // ozel 0166 ile geldi; sütun yoksa onsuz okunur.
   const okulSorgusu = (sutunlar: string) => supabase.from("schools").select(sutunlar).is("grup_kapasitesi", null).order("ad");
-  const okulIlk = await okulSorgusu("id, ad, okul_kodu, tur, aktif, manuel_aktif, kullanim_bitis_tarihi, modul_yetkileri, paket_adi, logo_url, kademe, yurtlu, ozel");
+  const okulIlk = await okulSorgusu("id, ad, okul_kodu, tur, aktif, manuel_aktif, kullanim_bitis_tarihi, deneme_bitis_tarihi, modul_yetkileri, paket_adi, logo_url, kademe, yurtlu, ozel");
   const okullar = okulIlk.error ? (await okulSorgusu("id, ad, okul_kodu, tur, aktif, kademe, yurtlu")).data : okulIlk.data;
-  const okulListesi = (okullar ?? []) as unknown as { id: string; ad: string; okul_kodu: string; tur: "okul" | "dershane"; aktif: boolean; manuel_aktif?: boolean; kullanim_bitis_tarihi?: string | null; modul_yetkileri?: KurumModulYetkileri; paket_adi?: string | null; logo_url?: string | null; kademe?: KurumKademesi; yurtlu?: boolean; ozel?: boolean }[];
+  const okulListesi = (okullar ?? []) as unknown as { id: string; ad: string; okul_kodu: string; tur: "okul" | "dershane"; aktif: boolean; manuel_aktif?: boolean; kullanim_bitis_tarihi?: string | null; deneme_bitis_tarihi?: string | null; modul_yetkileri?: KurumModulYetkileri; paket_adi?: string | null; logo_url?: string | null; kademe?: KurumKademesi; yurtlu?: boolean; ozel?: boolean }[];
   const { data: kurumPaketleri } = aktifBolum === "okullar"
     ? await supabase.from("kurum_paketleri").select("id, ad, aciklama, modul_yetkileri").eq("aktif", true).order("sira")
     : { data: [] };
@@ -106,7 +106,6 @@ export default async function YoneticiPage({
     mudurMu: o.profiles?.role === "mudur",
   }));
 
-  const { bitis: dershaneDenemeBitisi } = aktifBolum === "ozet" ? await dershaneDenemeSuresiGetir() : { bitis: null };
   const { kapali: siteKapali } = aktifBolum === "site-ayarlari" ? await siteAyarlariGetir() : { kapali: false };
   const { aktif: ortaokulAktif } = aktifBolum === "site-ayarlari" ? await ortaokulAyariGetir() : { aktif: false };
   const siteTemaId = aktifBolum === "site-ayarlari" ? (await siteTemaGetir()).id : VARSAYILAN_TEMA.id;
@@ -136,20 +135,25 @@ export default async function YoneticiPage({
           {aktifBolum === "ozet" && (
             <>
               <section className="sfec-section"><PlatformIstatistikleri /></section>
-              <section className="sfec-section"><DershaneDenemeSuresiAyari bitis={dershaneDenemeBitisi} doldu={suresiDolduMu(dershaneDenemeBitisi)} /></section>
               <section className="sfec-section"><YoneticiDuyuruPaneli okullar={okulListesi.map((o) => ({ id: o.id, ad: o.ad }))} /></section>
               <section className="sfec-section"><TgDenemeYonetimi okullar={okulListesi.map((o) => ({ id: o.id, ad: o.ad }))} /></section>
             </>
           )}
-          {aktifBolum === "kullanicilar" && <section className="sfec-section"><KullaniciArama /></section>}
           {aktifBolum === "belletmen-basvurulari" && <section className="sfec-section"><BelletmenBasvurulari /></section>}
-          {aktifBolum === "kullanici-yonetimi" && <section className="sfec-section"><AdminPanel
-            mod="kullanici"
-            okullar={okulListesi}
-            gorunecekOkulId={gorunecekOkulId}
-            siniflar={((siniflar ?? []) as { id: string; seviye: string; sube: string }[]).sort(sinifSiraKarsilastir)}
-            ogretmenListesi={ogretmenListesi}
-          /></section>}
+          {aktifBolum === "kullanici-yonetimi" && <section className="sfec-section flex flex-col gap-5">
+            <div>
+              <h1 className="text-xl font-bold" style={{ color: TEXT }}>Kullanıcı Yönetimi</h1>
+              <p className="text-sm" style={{ color: TEXT_MUTED }}>Kullanıcıları ara, ekle, çıkar ve hesaplarını yönet.</p>
+            </div>
+            <KullaniciArama />
+            <AdminPanel
+              mod="kullanici"
+              okullar={okulListesi}
+              gorunecekOkulId={gorunecekOkulId}
+              siniflar={((siniflar ?? []) as { id: string; seviye: string; sube: string }[]).sort(sinifSiraKarsilastir)}
+              ogretmenListesi={ogretmenListesi}
+            />
+          </section>}
           {aktifBolum === "ogrenci-aktivitesi" && (
             <section className="sfec-section">
               <OgrenciAktivitesi

@@ -26,10 +26,12 @@ import type { KurumKademesi, KurumTuru } from "@/lib/types";
 import { telefonSanitize, okulNoSanitize, TELEFON_IPUCU } from "@/lib/validators";
 import { ogrenciKaydiEslestir } from "@/lib/ogrenci-eslestirme";
 import { KurumSilmeButonu } from "@/components/yonetici/KurumSilmeButonu";
+import { KurumDenemeSuresiAyari } from "@/components/yonetici/KurumDenemeSuresiAyari";
 import { VeliDavetKodlari } from "@/components/dashboard/IlkokulGelisimGirisi";
 import { adminKurumLogosuYukle, adminKurumLogosuKaldir } from "@/app/yonetici/whatsapp-actions";
 import { kurumModuluDegistir, kurumPaketiUygula } from "@/app/yonetici/kurum-yetki-actions";
 import { KURUM_MODULLERI, kurumErisimiKapaliMi, type KurumModulYetkileri } from "@/lib/kurum-yetkileri";
+import { suresiDolduMu } from "@/lib/deneme-suresi";
 
 interface OkulSatiri {
   id: string;
@@ -39,6 +41,7 @@ interface OkulSatiri {
   aktif: boolean;
   manuel_aktif?: boolean;
   kullanim_bitis_tarihi?: string | null;
+  deneme_bitis_tarihi?: string | null;
   modul_yetkileri?: KurumModulYetkileri;
   paket_adi?: string | null;
   logo_url?: string | null;
@@ -82,7 +85,7 @@ export function AdminPanel({
     <div className="flex flex-col gap-5 rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
       <div>
         <h1 className="text-lg font-bold" style={{ color: TEXT }}>Kullanıcı Ekle</h1>
-        <p className="text-xs" style={{ color: TEXT_MUTED }}>Önce kurumu seçin, ardından öğretmen veya öğrenci ekleyin. Kullanıcı çıkarmak için “Kullanıcı ara / çıkar” bölümüne geçin.</p>
+        <p className="text-xs" style={{ color: TEXT_MUTED }}>Önce kurumu seçin, ardından öğretmen veya öğrenci ekleyin. Kullanıcı arama, çıkarma ve hesap düzenleme işlemleri yukarıda.</p>
       </div>
       <select value={gorunecekOkulId ?? ""} onChange={(e) => router.push(`/yonetici/kullanici-yonetimi?okul=${e.target.value}`)}
         className="rounded-xl px-3 py-2 text-sm" style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
@@ -125,7 +128,8 @@ export function AdminPanel({
                     <option key={o.id} value={o.id}>
                       {o.ad}
                       {o.kademe && o.kademe !== "lise" ? ` · ${KURUM_KADEMESI_ETIKET[o.kademe]}` : ""}
-                      {kurumErisimiKapaliMi({ aktif: o.aktif, manuelAktif: o.manuel_aktif, kullanimBitisTarihi: o.kullanim_bitis_tarihi }) ? " (Pasif)" : ""}
+                      {kurumErisimiKapaliMi({ aktif: o.aktif, manuelAktif: o.manuel_aktif, kullanimBitisTarihi: o.kullanim_bitis_tarihi })
+                        ? " (Pasif)" : suresiDolduMu(o.deneme_bitis_tarihi ?? null) ? " (Deneme doldu)" : ""}
                     </option>
                   ))}
                 </select>
@@ -163,11 +167,13 @@ export function AdminPanel({
         {gorunenOkul && okulDuzenleAcik && <div className="mt-3"><KurumSilmeButonu schoolId={gorunenOkul.id} onDeleted={() => { setOkulDuzenleAcik(false); router.replace("/yonetici/okullar"); router.refresh(); }} /></div>}
         {gorunenOkul && <div className="mt-3 rounded-xl p-3 text-xs" style={{ background: BG1_ALT, border: `1px solid ${BORDER}` }}>
           <span style={{ color: TEXT_MUTED }}>Kurum ID: </span><code style={{ color: TEXT }}>{gorunenOkul.id}</code>
-          <span className="ml-2" style={{ color: kurumErisimiKapaliMi({ aktif: gorunenOkul.aktif, manuelAktif: gorunenOkul.manuel_aktif, kullanimBitisTarihi: gorunenOkul.kullanim_bitis_tarihi }) ? BLUSH : MINT }}>
-            {kurumErisimiKapaliMi({ aktif: gorunenOkul.aktif, manuelAktif: gorunenOkul.manuel_aktif, kullanimBitisTarihi: gorunenOkul.kullanim_bitis_tarihi }) ? "Pasif" : "Aktif"}
+          <span className="ml-2" style={{ color: kurumErisimiKapaliMi({ aktif: gorunenOkul.aktif, manuelAktif: gorunenOkul.manuel_aktif, kullanimBitisTarihi: gorunenOkul.kullanim_bitis_tarihi }) || suresiDolduMu(gorunenOkul.deneme_bitis_tarihi ?? null) ? BLUSH : MINT }}>
+            {kurumErisimiKapaliMi({ aktif: gorunenOkul.aktif, manuelAktif: gorunenOkul.manuel_aktif, kullanimBitisTarihi: gorunenOkul.kullanim_bitis_tarihi })
+              ? "Pasif" : suresiDolduMu(gorunenOkul.deneme_bitis_tarihi ?? null) ? "Deneme doldu" : "Aktif"}
           </span>
           {gorunenOkul.kullanim_bitis_tarihi && <span className="ml-2" style={{ color: TEXT_MUTED }}>Son kullanım: {gorunenOkul.kullanim_bitis_tarihi}</span>}
         </div>}
+        {gorunenOkul && <KurumDenemeSuresiAyari key={gorunenOkul.id} okulId={gorunenOkul.id} bitis={gorunenOkul.deneme_bitis_tarihi ?? null} />}
         {gorunenOkul && <KurumYetkileriPaneli okul={gorunenOkul} paketler={paketler} />}
 
         {!gorunenOkul ? (

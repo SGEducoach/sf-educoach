@@ -48,6 +48,7 @@ export const EYLEM_ETIKET: Record<string, string> = {
   izinli_ogrenci_sil: "İzinli öğrenci listesinden silindi",
   izinli_ogrenci_listesi_temizle: "İzinli öğrenci listesi temizlendi",
   dershane_deneme_suresi_ayarla: "Dershane deneme süresi ayarlandı",
+  kurum_deneme_suresi_ayarla: "Kurum deneme süresi ayarlandı",
   site_bakima_al: "Site bakıma alındı",
   site_ac: "Site tekrar açıldı",
   admin_hesap_olustur: "Yeni yönetici hesabı oluşturuldu",

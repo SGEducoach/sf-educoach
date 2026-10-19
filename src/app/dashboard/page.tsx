@@ -64,7 +64,7 @@ import { ORTAOKUL_SEVIYELERI, ilkokulMu, kademeBul } from "@/lib/kademe";
 import { yardimMesaji } from "@/lib/ortaokul-yardim";
 import { OrtaokulYardim } from "@/components/dashboard/OrtaokulYardim";
 import type { DashboardBolumu } from "@/lib/dashboard-navigation";
-import { dershaneDenemeBitisGetir, suresiDolduMu, kullaniciKurumuGetir, denemeSuresiUygulanir, grupDondurulmus, GRUP_DONDURULDU_MESAJI, GRUP_SALT_OKUNUR_MESAJI } from "@/lib/deneme-suresi";
+import { kullaniciKurumuGetir, kurumDenemeSuresiDolduMu, grupDondurulmus, GRUP_DONDURULDU_MESAJI, GRUP_SALT_OKUNUR_MESAJI } from "@/lib/deneme-suresi";
 import { ogretmenProgramiGetir, okulNobetiGetir, yurtNobetGorevleriGetir } from "@/lib/ders-programi";
 import type { OkulNobeti } from "@/lib/ders-programi";
 import type { DersProgramiSatiri } from "@/lib/ders-programi";
@@ -160,13 +160,12 @@ export default async function DashboardPage({
   // tamamen değişiyor (bkz. dashboard-navigation.ts DERSHANE_MUDUR_MENUSU) —
   // bu yüzden aktifBolum doğrulamasından ÖNCE bilinmesi gerekiyor. Artık
   // TÜM roller için çözülüyor (öncesinde sadece müdür) — dershane 1
-  // haftalık deneme süresi (bkz. deneme-suresi.ts) öğrenci/veli/öğretmen
+  // kuruma özel deneme süresi (bkz. deneme-suresi.ts) öğrenci/veli/öğretmen
   // için de kontrol edilmesi gerektiğinden.
   // Performans (2026-09-04): bu dört okuma birbirinden bağımsız (hepsi
   // yalnızca user.id/role'e bağlı) — eskiden ardışık await oldukları için
   // TTFB'ye art arda ekleniyorlardı, şimdi Promise.all ile aynı anda
-  // gidiyorlar. Dershane deneme süresi kontrolü kurumTuru'na BAĞLI
-  // olduğundan bilinçli olarak hâlâ sonrasında, ayrı bekleniyor.
+  // gidiyorlar. Deneme bitişi kurum verisiyle birlikte okunuyor.
   // Müdür yardımcısı İdare panelinde mi (migration 0163): çerez tercihi +
   // geçerli üyelik. İdare panelinde menü ve kapsam müdür yardımcısınındır.
   const idareCerezi = (await cookies()).get(IDARE_CEREZI)?.value;
@@ -197,20 +196,12 @@ export default async function DashboardPage({
     ? { yurt: idareUyeligi.yurt, yalnizYurt: idareUyeligi.yurt && idareUyeligi.sinifDuzeyleri.length === 0 }
     : null;
 
-  // Dershane 1 haftalık deneme süresi (2026-08-25 kullanıcı isteği, bkz.
-  // migration 0065) — SADECE dershane rolleri, okul hiç etkilenmez. Zaten
-  // oturum açmış birinin dashboard'a her girişinde de kontrol ediliyor
-  // (sadece login anında değil) — süre oturum sırasında dolarsa da anında
-  // engellensin diye.
+  // Kuruma özel deneme bitişi oturum sırasında da kontrol edilir.
   const kurumTuru = kurum?.tur;
   if (kurumErisimiKapaliMi(kurum)) return <DenemeSuresiSonaErdiEkrani mesaj={KURUM_BAGLANTI_HATASI} />;
   // Yönetici grubu dondurduysa açık oturumlar da durdurulur (girişte de engelli).
   if (grupDondurulmus(kurum)) return <DenemeSuresiSonaErdiEkrani mesaj={GRUP_DONDURULDU_MESAJI} />;
-  // Gruplar (Grup Koçluk) kendi bitiş tarihine tabi, bu süreden muaf.
-  if (denemeSuresiUygulanir(kurum)) {
-    const bitis = await dershaneDenemeBitisGetir(supabase);
-    if (suresiDolduMu(bitis)) return <DenemeSuresiSonaErdiEkrani />;
-  }
+  if (kurumDenemeSuresiDolduMu(kurum)) return <DenemeSuresiSonaErdiEkrani />;
 
   const params = await searchParams;
   // Tüm rollerde (dershane müdürü dahil, artık kendi "Ana Sayfa"sı var —

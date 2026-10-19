@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { bugununTarihiTR } from "@/lib/tarih";
-import { kullaniciKurumuGetir } from "@/lib/deneme-suresi";
+import { kullaniciKurumuGetir, kurumDenemeSuresiDolduMu, DENEME_SURESI_SONA_ERDI_MESAJI } from "@/lib/deneme-suresi";
 import { kurumBolumuAcikMi, kurumErisimiKapaliMi, moderatorBolumuAcikMi, KURUM_BAGLANTI_HATASI } from "@/lib/kurum-yetkileri";
 import type { DashboardBolumu } from "@/lib/dashboard-navigation";
 import type { UserRole } from "@/lib/types";
@@ -71,17 +71,18 @@ export async function updateSession(request: NextRequest) {
   if (user && ((request.method === "POST" && kurumIstekMi) || moderatorIstekMi)) {
     const { data: profil } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
     if (profil && profil.role !== "admin") {
-      let kurum: { aktif: boolean; manuelAktif: boolean; kullanimBitisTarihi: string | null; grupMu: boolean; modulYetkileri: KurumModulYetkileri } | undefined;
+      let kurum: { aktif: boolean; manuelAktif: boolean; kullanimBitisTarihi: string | null; denemeBitisTarihi: string | null; grupMu: boolean; modulYetkileri: KurumModulYetkileri } | undefined;
       if (moderatorIstekMi) {
         const { data: yetki } = await supabase.from("school_moderators").select("school_id").eq("profile_id", user.id).maybeSingle();
         if (!yetki) {
           if (request.method === "GET") return NextResponse.redirect(new URL("/dashboard", request.url));
           return NextResponse.json({ error: "Moderatör yetkisi gerekiyor." }, { status: 403 });
         }
-        const { data: okul } = await supabase.from("schools").select("aktif, manuel_aktif, kullanim_bitis_tarihi, grup_kapasitesi, modul_yetkileri").eq("id", yetki.school_id).maybeSingle();
+        const { data: okul } = await supabase.from("schools").select("aktif, manuel_aktif, kullanim_bitis_tarihi, deneme_bitis_tarihi, grup_kapasitesi, modul_yetkileri").eq("id", yetki.school_id).maybeSingle();
         if (okul) kurum = {
           aktif: okul.aktif !== false, manuelAktif: okul.manuel_aktif !== false,
           kullanimBitisTarihi: okul.kullanim_bitis_tarihi as string | null,
+          denemeBitisTarihi: okul.deneme_bitis_tarihi as string | null,
           grupMu: okul.grup_kapasitesi !== null,
           modulYetkileri: (okul.modul_yetkileri as KurumModulYetkileri | null) ?? {},
         };
@@ -91,6 +92,10 @@ export async function updateSession(request: NextRequest) {
       if (kurumErisimiKapaliMi(kurum)) {
         if (request.method === "GET" && moderatorIstekMi) return NextResponse.redirect(new URL("/dashboard", request.url));
         return NextResponse.json({ error: KURUM_BAGLANTI_HATASI }, { status: 403 });
+      }
+      if (kurumDenemeSuresiDolduMu(kurum)) {
+        if (request.method === "GET" && moderatorIstekMi) return NextResponse.redirect(new URL("/dashboard", request.url));
+        return NextResponse.json({ error: DENEME_SURESI_SONA_ERDI_MESAJI }, { status: 403 });
       }
       const bolum = pathname.startsWith("/dashboard")
         ? (pathname.split("/")[2] || request.nextUrl.searchParams.get("bolum") || "ozet") as DashboardBolumu

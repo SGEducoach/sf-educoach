@@ -2,19 +2,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { KurumKademesi, KurumTuru, UserRole } from "@/lib/types";
 import type { KurumModulYetkileri } from "@/lib/kurum-yetkileri";
 
-// Dershane modülü 1 haftalık deneme süresi (2026-08-25 kullanıcı isteği,
-// bkz. migration 0065). Süre dolunca dershane rolleri "deneme süreniz
-// sona erdi" ekranıyla karşılanır — okul tarafı hiç etkilenmez.
+// Deneme süresi kuruma özeldir (migration 0170). Tarih girilmemiş kurumlarda
+// deneme sınırı uygulanmaz; Grup Koçluk kendi süre kurallarını kullanır.
 
 export const DENEME_SURESI_SONA_ERDI_MESAJI =
-  "Deneme süreniz sona erdi. Hata kontrolleri yapılıp çalışmayan sistemler aktif hâle getirilecektir.";
-
-// anon dahil herkes okuyabilir (login sayfası kimlik doğrulamadan önce de
-// bu tarihi bilmeli) — bkz. migration 0065 RLS.
-export async function dershaneDenemeBitisGetir(supabase: SupabaseClient): Promise<string | null> {
-  const { data } = await supabase.from("platform_ayarlari").select("dershane_deneme_bitis").eq("id", 1).maybeSingle();
-  return (data?.dershane_deneme_bitis as string | null) ?? null;
-}
+  "Kurumunuzun deneme süresi sona erdi. Devam etmek için kurum yetkilinizle görüşün.";
 
 export function suresiDolduMu(bitisTarihi: string | null): boolean {
   if (!bitisTarihi) return false;
@@ -37,6 +29,7 @@ export interface KullaniciKurumu {
   aktif: boolean;
   manuelAktif: boolean;
   kullanimBitisTarihi: string | null;
+  denemeBitisTarihi: string | null;
   modulYetkileri: KurumModulYetkileri;
   // Grup bitiş tarihi geçtiyse true: grup salt okunur (Faz 8, migration 0119).
   suresiDoldu: boolean;
@@ -55,7 +48,7 @@ export const GRUP_DONDURULDU_MESAJI =
 
 async function okulBilgisi(supabase: SupabaseClient, schoolId: string | null | undefined): Promise<KullaniciKurumu | undefined> {
   if (!schoolId) return undefined;
-  const { data: s } = await supabase.from("schools").select("tur, kademe, yurtlu, grup_kapasitesi, grup_bitis_tarihi, aktif, manuel_aktif, kullanim_bitis_tarihi, modul_yetkileri").eq("id", schoolId).maybeSingle();
+  const { data: s } = await supabase.from("schools").select("tur, kademe, yurtlu, grup_kapasitesi, grup_bitis_tarihi, aktif, manuel_aktif, kullanim_bitis_tarihi, deneme_bitis_tarihi, modul_yetkileri").eq("id", schoolId).maybeSingle();
   if (!s) return undefined;
   const bugun = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Istanbul" });
   const grupMu = s.grup_kapasitesi !== null;
@@ -64,6 +57,7 @@ async function okulBilgisi(supabase: SupabaseClient, schoolId: string | null | u
     tur: s.tur as KurumTuru, grupMu, aktif: s.aktif !== false,
     manuelAktif: s.manuel_aktif !== false,
     kullanimBitisTarihi: (s.kullanim_bitis_tarihi as string | null) ?? null,
+    denemeBitisTarihi: (s.deneme_bitis_tarihi as string | null) ?? null,
     modulYetkileri: (s.modul_yetkileri as KurumModulYetkileri | null) ?? {},
     kademe: (s.kademe as KurumKademesi | null) ?? null,
     yurtlu: s.yurtlu === true,
@@ -97,10 +91,9 @@ export async function kurumTuruGetir(
   return (await kullaniciKurumuGetir(supabase, userId, role))?.tur;
 }
 
-// Platform geneli dershane deneme süresi yalnızca gerçek dershanelere
-// uygulanır; gruplar kendi bitiş tarihine tabidir (Faz 8: salt okunur).
-export function denemeSuresiUygulanir(kurum: KullaniciKurumu | undefined): boolean {
-  return kurum?.tur === "dershane" && !kurum.grupMu;
+// Grup Koçluk gruplarının ayrı bitiş kuralı vardır.
+export function kurumDenemeSuresiDolduMu(kurum: Pick<KullaniciKurumu, "grupMu" | "denemeBitisTarihi"> | undefined): boolean {
+  return !!kurum && !kurum.grupMu && suresiDolduMu(kurum.denemeBitisTarihi);
 }
 
 export function grupDondurulmus(kurum: KullaniciKurumu | undefined): boolean {

@@ -48,3 +48,23 @@ export async function kurumModuluDegistir(schoolId: string, modul: KurumModulu, 
   revalidatePath("/dashboard");
   return { error: null };
 }
+
+export async function kurumDenemeSuresiAyarla(schoolId: string, bitisIso: string | null): Promise<{ error: string | null }> {
+  const baglam = await adminBaglami();
+  if (!baglam) return { error: "Yönetici yetkisi gerekiyor." };
+  if (!UUID.test(schoolId)) return { error: "Geçersiz kurum." };
+  if (bitisIso !== null && (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(bitisIso) || !Number.isFinite(Date.parse(bitisIso)))) {
+    return { error: "Geçerli bir bitiş tarihi girin." };
+  }
+  const { data, error } = await baglam.admin.from("schools")
+    .update({ deneme_bitis_tarihi: bitisIso })
+    .eq("id", schoolId).is("grup_kapasitesi", null).select("id").maybeSingle();
+  if (error) return { error: error.message };
+  if (!data) return { error: "Kurum bulunamadı." };
+  await baglam.admin.from("admin_audit_log").insert({
+    actor_id: baglam.actorId, eylem: "kurum_deneme_suresi_ayarla", detay: { school_id: schoolId, bitis: bitisIso },
+  });
+  revalidatePath("/yonetici");
+  revalidatePath("/dashboard");
+  return { error: null };
+}

@@ -4,8 +4,8 @@ import { BG0, BG1, BORDER_STRONG, TEXT, TEXT_MUTED, BUTTER, BUTTER_BG } from "@/
 import { SeFuMarkaAdi, SeFuSlogan } from "@/components/SeFuWordmark";
 import { DENEME_SURESI_SONA_ERDI_MESAJI } from "@/lib/deneme-suresi";
 
-// Dershane 1 haftalık deneme süresi doldu (bkz. deneme-suresi.ts,
-// migration 0065) — dashboard/page.tsx'ten tüm dashboard shell'i
+// Kuruma özel deneme süresi doldu (bkz. deneme-suresi.ts,
+// migration 0170) — dashboard/page.tsx'ten tüm dashboard shell'i
 // (Header/menü dahil) YERİNE render ediliyor, tek başına bir tam ekran.
 // mesaj: aynı ekran grubu dondurulan Grup Koçluk üyeleri için de kullanılır.
 export function DenemeSuresiSonaErdiEkrani({ mesaj = DENEME_SURESI_SONA_ERDI_MESAJI }: { mesaj?: string } = {}) {
