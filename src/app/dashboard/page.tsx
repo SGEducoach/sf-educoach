@@ -103,6 +103,8 @@ import { IlkokulSinifimPanosu } from "@/components/dashboard/IlkokulSinifimPanos
 import { WhatsappDuyuruStudyosu } from "@/components/dashboard/WhatsappDuyuruStudyosu";
 import { DuyuruTuruSekmeleri } from "@/components/dashboard/DuyuruTuruSekmeleri";
 import { duyuruSecenekleri, seciliDuyuruAlani, seciliDuyuruTuru, yalnizGenelKartMi } from "@/lib/duyuru-alanlari";
+import { takipBildirimleriniGetir, takipBildirimleriniUret, takipKapsamiGetir, yeniTakipSayisi } from "@/lib/rehber-takip-verisi";
+import { RehberTakipBildirimleri } from "@/components/dashboard/RehberTakipBildirimleri";
 import { yurtDurumlariGetir, yurtVerisiGetir } from "@/lib/yurt-listesi-verisi";
 import { YurtOgrencileriListesi } from "@/components/dashboard/YurtOgrencileriListesi";
 import { YurtNobetPdfPaneli } from "@/components/dashboard/YurtNobetPdfPaneli";
@@ -313,8 +315,12 @@ export default async function DashboardPage({
   if (role === "ogretmen") bekleyenOgretmenBildirimleriniGonder(user.id);
   // Koçun bekleyen işleri menüde rozet olarak görünür (denetim 27.09.2026).
   const grupRozetleri = grupKocu ? await grupBekleyenIsSayilari() : null;
-  const menuRozetleri = grupRozetleri
-    ? { ozet: grupRozetleri.veliTalebi + grupRozetleri.onayBekleyen }
+  // Rehberlik rollerinde yeni takip bildirimi sayısı menüde (bildirim kutusuna gitmez).
+  const takipYeni = rehberlikBirimi && !idareUyeligi
+    ? await (async () => { const a = createAdminClient(); const k = await takipKapsamiGetir(a, user.id); return k ? yeniTakipSayisi(a, k) : 0; })().catch(() => 0)
+    : 0;
+  const menuRozetleri = grupRozetleri || takipYeni
+    ? { ...(grupRozetleri ? { ozet: grupRozetleri.veliTalebi + grupRozetleri.onayBekleyen } : {}), ...(takipYeni ? { "takip-bildirimleri": takipYeni } : {}) }
     : undefined;
   const donem = (["bugun", "haftalik", "aylik", "tum"].includes(params.donem ?? "") ? params.donem : "tum") as RaporDonemi;
   const okunmamisMesajSayisi = okunmamisMesajSayisiHam ?? 0;
@@ -1021,6 +1027,24 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   // Dershane rehberlik servisi (kullanıcı isteği 13.09.2026): öğrenci adına
   // ödev, veri girişi ve program. Yetki sunucu işlemlerinde ayrıca doğrulanır
   // (bkz. rehber-ogrenci-actions.ts, lib/dershane-rehber.ts).
+  // Rehber Takip Bildirimleri (20.10.2026, migration 0171): açılışta kapsam
+  // yeniden taranır (günlük cron'a ek), sonra kayıtlar listelenir.
+  if (aktifBolum === "takip-bildirimleri") {
+    const admin = createAdminClient();
+    const kapsam = await takipKapsamiGetir(admin, userId);
+    if (!kapsam) {
+      return (
+        <div className="sfec-fade rounded-3xl p-6 text-center" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+          <p style={{ color: TEXT_MUTED }} className="text-sm">Bu bölüm yalnız rehberlik servisine açıktır.</p>
+        </div>
+      );
+    }
+    try { await takipBildirimleriniUret(admin, kapsam); } catch { /* tarama hatası listeyi engellemesin */ }
+    const { bildirimler, hazir } = await takipBildirimleriniGetir(admin, kapsam);
+    return <RehberTakipBildirimleri bildirimler={bildirimler} hazir={hazir} ogrenciBaglantisi={kapsam.ogrenciBaglantisi}
+      duzeySiz={!!kapsam.seviyeler && kapsam.seviyeler.length === 0} />;
+  }
+
   if (aktifBolum === "ogrenci-takibi") {
     if (!rehberOgretmenMi || kurumTuru !== "dershane") {
       return (

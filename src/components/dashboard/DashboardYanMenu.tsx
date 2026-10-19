@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import {
+import { BellRing,
   BarChart3, BookOpen, BookOpenCheck, Bot, Bug, CalendarDays, CalendarPlus2, ChevronDown,
   CircleUserRound, ClipboardCheck, ClipboardList,
   Copyright, Crown, FileCheck2, FileSpreadsheet, GraduationCap, HeartHandshake, History, Home, ListChecks, Megaphone, PenLine, School, ScrollText,
@@ -44,6 +44,7 @@ const IKONLAR: Record<DashboardIkonu, typeof Home> = {
   gecmis: History,
   grup: UsersRound,
   rehberlik: HeartHandshake,
+  bildirim: BellRing,
 };
 
 export function DashboardYanMenu({ role, kurumTuru, brans, grupMu = false, kademe, aktifBolum, rozetler, okulRehberi = false, idare = null, modulYetkileri }: {

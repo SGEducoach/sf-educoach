@@ -424,10 +424,20 @@ describe("ortaokul kurumunda rol menüleri", () => {
     // rehber menüsünü alıyor. Tek fark servise ÖZEL kalemler — "Kapsamım"
     // (Adım 2); bu da rehberin atandığı
     // sinif_duzeyleri'ne dayanıyor, eski branş kimliğinde böyle bir kapsam yok.
-    const servisEOzel: string[] = ["kapsamim", "program-destegi"];
+    const servisEOzel: string[] = ["kapsamim", "takip-bildirimleri", "program-destegi"];
     expect(servisUyesi.filter((b) => !servisEOzel.includes(b))).toEqual(eskiBransli);
     expect(servisUyesi).toContain("rehberlik");
     for (const b of servisEOzel) expect(eskiBransli).not.toContain(b);
+  });
+
+  // Rehber Takip Bildirimleri (20.10.2026): bütün rehberlik rollerinde.
+  test("takip bildirimleri okul rehberi, dershane rehberi ve grup koçunda var; öğretmende yok", () => {
+    const okul = dashboardMenusu("ogretmen", "okul", "Matematik", false, "lise", true).map((o) => o.bolum);
+    expect(okul.indexOf("takip-bildirimleri")).toBe(okul.indexOf("kapsamim") + 1);
+    expect(dashboardMenusu("ogretmen", "dershane", REHBER_BRANSI, false, null, false).map((o) => o.bolum)).toContain("takip-bildirimleri");
+    expect(dashboardMenusu("ogretmen", "dershane", REHBER_BRANSI, true, null, false).map((o) => o.bolum)).toContain("takip-bildirimleri");
+    expect(dashboardMenusu("ogretmen", "okul", "Matematik", false, "lise", false).map((o) => o.bolum)).not.toContain("takip-bildirimleri");
+    expect(dashboardMenusu("mudur", "okul", undefined, false, "lise").map((o) => o.bolum)).not.toContain("takip-bildirimleri");
   });
 
   test("servis üyesi olmayan öğretmen rehber menüsü ALMAZ", () => {

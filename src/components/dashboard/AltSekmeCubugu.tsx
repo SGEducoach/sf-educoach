@@ -21,7 +21,7 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import {
+import { BellRing,
   BarChart3, BookOpen, BookOpenCheck, Bot, Bug, CalendarDays, CalendarPlus2, CircleUserRound, ClipboardCheck,
   ClipboardList, Crown, Ellipsis, FileCheck2, FileSpreadsheet, GraduationCap, HeartHandshake, History, Home,
   ListChecks, Megaphone, PenLine, School, ScrollText, Settings2, ShieldCheck, UserPlus, Users, UsersRound, Rss, X,
@@ -39,6 +39,7 @@ const IKONLAR: Record<DashboardIkonu, typeof Home> = {
   eslestir: FileCheck2, okul: School, moderator: ShieldCheck, icerik: BookOpen, blog: Rss, kural: ScrollText,
   profil: CircleUserRound, hata: Bug, ayarlar: Settings2, admin: Crown, gecmis: History, grup: UsersRound,
   rehberlik: HeartHandshake,
+  bildirim: BellRing,
 };
 
 /** Çubukta kaç bölüm doğrudan görünsün. Beşinci yuva "Daha"ya ayrılır. */

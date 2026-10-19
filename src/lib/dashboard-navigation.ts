@@ -36,6 +36,8 @@ export type DashboardBolumu =
   | "takvim"
   | "yarismalar"
   | "ogrenci-takibi"
+  // Rehber Takip Bildirimleri (20.10.2026, migration 0171).
+  | "takip-bildirimleri"
   // YÖNETİCİ (admin) paneline özel — bkz. ADMIN_MENUSU
   // İletişim (20.10.2026): yazışma, site duyurusu, WhatsApp kartları, pano ve
   // duyuru geçmişi tek sayfada sekmeli. "mesajlar", "whatsapp-yonetimi",
@@ -80,7 +82,7 @@ export type DashboardIkonu =
   | "ana-sayfa" | "gorev" | "plan" | "veri" | "hakimiyet" | "analiz" | "ai" | "takvim" | "duyuru" | "talep" | "onay" | "ders"
   | "ogretmen" | "ogrenci" | "deneme"
   | "kullanici" | "eslestir" | "okul" | "moderator" | "icerik" | "blog" | "kural" | "profil" | "hata"
-  | "ayarlar" | "admin" | "gecmis" | "rehberlik" | "grup";
+  | "ayarlar" | "admin" | "gecmis" | "rehberlik" | "grup" | "bildirim";
 
 export interface DashboardMenuOgesi {
   bolum: DashboardBolumu;
@@ -330,11 +332,20 @@ const PROGRAM_DESTEGI_MENU_OGESI: DashboardMenuOgesi = {
   bolum: "program-destegi", href: "/dashboard?bolum=program-destegi", etiket: "Program Desteği", ikon: "takvim",
 };
 
+// Rehber Takip Bildirimleri (kullanıcı kararı 20.10.2026, migration 0171):
+// ani net değişimi, ders düşüşü, sessizlik, biriken görev. Bildirim
+// kutusuna gitmez; bütün rehberlik rollerinde (okul rehberi, dershane
+// rehberi, grup koçu) bu bölümde izlenir.
+const TAKIP_BILDIRIMLERI_MENU_OGESI: DashboardMenuOgesi = {
+  bolum: "takip-bildirimleri", href: "/dashboard/takip-bildirimleri", etiket: "Takip Bildirimleri", ikon: "bildirim",
+};
+
 // Dershane rehberlik servisi (kullanıcı isteği 13.09.2026): öğrenci adına
 // ödev, veri girişi ve program — yalnızca DERSHANE rehber öğretmenine.
 const DERSHANE_REHBER_MENUSU: DashboardMenuOgesi[] = [
   ...REHBER_OGRETMEN_MENUSU.slice(0, 2),
   { bolum: "ogrenci-takibi", href: "/dashboard/ogrenci-takibi", etiket: "Öğrenci Takibi", ikon: "gorev" },
+  TAKIP_BILDIRIMLERI_MENU_OGESI,
   ...REHBER_OGRETMEN_MENUSU.slice(2),
 ];
 
@@ -344,6 +355,7 @@ const DERSHANE_REHBER_MENUSU: DashboardMenuOgesi[] = [
 const GRUP_KOC_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "ozet", href: "/dashboard", etiket: "Grubum", ikon: "grup" },
   { bolum: "ogrenci-takibi", href: "/dashboard/ogrenci-takibi", etiket: "Öğrenci Takibi", ikon: "gorev" },
+  TAKIP_BILDIRIMLERI_MENU_OGESI,
   { bolum: "denemeler", href: "/dashboard/denemeler", etiket: "Denemeler", ikon: "deneme" },
   { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Grubun Konu Durumu", ikon: "ai" },
   { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Grup Duyurusu", ikon: "duyuru" },
@@ -458,7 +470,7 @@ function dashboardMenusuTemel(
     if (kurumTuru === "dershane") return DERSHANE_REHBER_MENUSU;
     // "Kapsamım" Kurum Performansı'nın HEMEN ARDINDAN gelir: triyaj girişi.
     const rehberMenusu = okulRehberi
-      ? [REHBER_OGRETMEN_MENUSU[0], KAPSAMIM_MENU_OGESI, PROGRAM_DESTEGI_MENU_OGESI, ...REHBER_OGRETMEN_MENUSU.slice(1)]
+      ? [REHBER_OGRETMEN_MENUSU[0], KAPSAMIM_MENU_OGESI, TAKIP_BILDIRIMLERI_MENU_OGESI, PROGRAM_DESTEGI_MENU_OGESI, ...REHBER_OGRETMEN_MENUSU.slice(1)]
       : REHBER_OGRETMEN_MENUSU;
     // İlkokulun "Rehberlik" kalemini rehberlik servisi işaretler.
     return okulRehberi && kademe === "ortaokul" ? [...rehberMenusu, ILKOKUL_GELISIM_MENU_OGESI] : rehberMenusu;
@@ -497,7 +509,7 @@ export function dashboardMenuYapisi(
 export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
   "yurt-ogrencileri", "yoklama", "nobetlerim", "yurt-nobet-listesi", "yurt-takas-talepleri", "belletmen-basvurulari",
   "sinif-analizi", "gorevler", "planlar", "veri-girisi", "konu-hakimiyeti", "analiz", "yapay-zeka", "tg-denemeleri",
-  "duyurular", "talepler", "onaylar", "dersler", "ortaokul-dersler", "ortaokul-yardim", "ortaokul-calisma", "ortaokul-onaylar", "ortaokul-yeterlilik", "ilkokul-gelisim", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler", "rehberlik", "profil", "takvim", "yarismalar", "ogrenci-takibi",
+  "duyurular", "talepler", "onaylar", "dersler", "ortaokul-dersler", "ortaokul-yardim", "ortaokul-calisma", "ortaokul-onaylar", "ortaokul-yeterlilik", "ilkokul-gelisim", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler", "rehberlik", "profil", "takvim", "yarismalar", "ogrenci-takibi", "takip-bildirimleri",
 ]);
 // Yazılı analizinin ayrı sayfası yok (kullanıcı kararı 11.09.2026: yalnızca
 // öğretmene özel) — öğretmen Ajandam > Yazılı Analizi sekmesinden girer.
