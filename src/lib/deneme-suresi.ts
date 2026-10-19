@@ -8,6 +8,14 @@ import type { KurumModulYetkileri } from "@/lib/kurum-yetkileri";
 export const DENEME_SURESI_SONA_ERDI_MESAJI =
   "Kurumunuzun deneme süresi sona erdi. Devam etmek için kurum yetkilinizle görüşün.";
 
+// GEÇİŞ: eski platform geneli dershane tarihi. Yalnız yayındaki
+// src/app/signup/dershane-actions.ts kullanıyor (o dosyadaki yeni değişiklik
+// henüz yayında değil); o dosya güncellenince kaldırılacak.
+export async function dershaneDenemeBitisGetir(supabase: SupabaseClient): Promise<string | null> {
+  const { data } = await supabase.from("platform_ayarlari").select("dershane_deneme_bitis").eq("id", 1).maybeSingle();
+  return (data?.dershane_deneme_bitis as string | null) ?? null;
+}
+
 export function suresiDolduMu(bitisTarihi: string | null): boolean {
   if (!bitisTarihi) return false;
   return new Date(bitisTarihi).getTime() < Date.now();
