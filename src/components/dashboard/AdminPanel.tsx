@@ -339,9 +339,12 @@ function KurumYetkileriPaneli({ okul, paketler }: { okul: OkulSatiri; paketler: 
     <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
       {KURUM_MODULLERI.map((modul) => {
         const acik = yetkiler[modul.key] !== false;
-        return <label key={modul.key} className="flex cursor-pointer items-center justify-between gap-2 rounded-xl px-3 py-2 text-xs" style={{ background: BG0, color: TEXT }}>
+        return <label key={modul.key} className={`flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-xs ${pending ? "cursor-wait" : "cursor-pointer"}`} style={{ background: BG0, color: TEXT }}>
           <span>{modul.ad}</span>
-          <input type="checkbox" role="switch" aria-label={modul.ad} checked={acik} disabled={pending} onChange={() => modulDegistir(modul.key, !acik)} className="h-4 w-4 accent-emerald-400" />
+          <input type="checkbox" role="switch" checked={acik} disabled={pending} onChange={(e) => modulDegistir(modul.key, e.target.checked)} className="peer sr-only" />
+          <span aria-hidden="true" className="inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-disabled:opacity-50" style={{ background: acik ? MINT : BORDER_STRONG, outlineColor: MINT }}>
+            <span className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${acik ? "translate-x-5" : "translate-x-0"}`} />
+          </span>
         </label>;
       })}
     </div>
