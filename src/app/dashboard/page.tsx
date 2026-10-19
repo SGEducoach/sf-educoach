@@ -77,6 +77,7 @@ import { IDARE_CEREZI, IDARE_UNVANI, mudurYardimcisiUyeligiGetir, type MudurYard
 import { cookies } from "next/headers";
 import { rehberKapsamListesiGetir } from "@/lib/rehber-kapsam-listesi";
 import { AltSekmeCubugu } from "@/components/dashboard/AltSekmeCubugu";
+import { kurumBolumuAcikMi, kurumErisimiKapaliMi, KURUM_BAGLANTI_HATASI } from "@/lib/kurum-yetkileri";
 import { SinifAnaliziPanel } from "@/components/dashboard/SinifAnaliziPanel";
 import { sinifAnaliziGetir } from "@/lib/sinif-analizi-verisi";
 import { RehberKapsamListesi } from "@/components/dashboard/RehberKapsamListesi";
@@ -202,6 +203,7 @@ export default async function DashboardPage({
   // (sadece login anında değil) — süre oturum sırasında dolarsa da anında
   // engellensin diye.
   const kurumTuru = kurum?.tur;
+  if (kurumErisimiKapaliMi(kurum)) return <DenemeSuresiSonaErdiEkrani mesaj={KURUM_BAGLANTI_HATASI} />;
   // Yönetici grubu dondurduysa açık oturumlar da durdurulur (girişte de engelli).
   if (grupDondurulmus(kurum)) return <DenemeSuresiSonaErdiEkrani mesaj={GRUP_DONDURULDU_MESAJI} />;
   // Gruplar (Grup Koçluk) kendi bitiş tarihine tabi, bu süreden muaf.
@@ -253,7 +255,7 @@ export default async function DashboardPage({
     : idareMenusu?.yalnizYurt ? "yurt-ogrencileri"
     : !grupKocu && ((role === "mudur" && kurumTuru !== "dershane") || rehberlikBirimi || idareMenusu)
     ? "kurum-performansi" : "ozet";
-  const aktifBolum = (params.bolum ?? varsayilanBolum) as DashboardBolumu;
+  let aktifBolum = (params.bolum ?? varsayilanBolum) as DashboardBolumu;
   // Ortaokul paneli (Faz 1): yalnızca özellik bayrağı AÇIKKEN ve öğrenci
   // 5-8. sınıftayken "ortaokul" döner. Bayrak kapalıyken null — bu satır
   // dışında hiçbir davranış değişmez, lise tarafı aynen çalışır.
@@ -272,6 +274,15 @@ export default async function DashboardPage({
     ? "ortaokul" as const
     : null;
   const menuKademesi = ogrenciKademesi ?? ogretmenKademesi ?? mudurKademesi;
+  const izinliMenu = dashboardMenusu(role, kurumTuru, brans, grupKocu, menuKademesi, okulRehberi, idareMenusu, kurum?.modulYetkileri);
+  if (izinliMenu.length === 0) {
+    return <DenemeSuresiSonaErdiEkrani mesaj="Kurumunuz için kullanılabilir modül bulunmuyor. Kurum yetkilinizle görüşün." />;
+  }
+  // Varsayılan bölüm pakette kapalıysa ilk izinli bölüme aç. Böylece
+  // /dashboard yönlendirmesi kendisine geri dönerek döngü yaratmaz.
+  if (!params.bolum && !kurumBolumuAcikMi(kurum?.modulYetkileri, aktifBolum)) {
+    aktifBolum = izinliMenu[0].bolum;
+  }
   // Pano içeriği kademeye göre ayrışıyor ama kaynak KURUMUN kademesiydi:
   // "ikisi" okulunda `kurum.kademe === "ortaokul"` FALSE olduğu için
   // ortaokul öğrencisine LİSE panosu gösteriliyordu (O1 tespiti B3).
@@ -301,7 +312,8 @@ export default async function DashboardPage({
   // Yalnız yurt sorumlusu müdür yardımcısı yurt öğrencisinin profilini açar
   // (Yurt Öğrencileri listesinden); öğrenci listesi menüsünde yok.
   const yurtOgrenciProfili = !!idareMenusu?.yalnizYurt && aktifBolum === "ozet" && !!params.ogrenci;
-  if (!dashboardMenusu(role, kurumTuru, brans, grupKocu, menuKademesi, okulRehberi, idareMenusu).some((oge) => oge.bolum === aktifBolum) && !ogrenciProgramiGizliRotasi && !yurtOgrenciProfili) redirect("/dashboard");
+  if (!kurumBolumuAcikMi(kurum?.modulYetkileri, aktifBolum)) redirect("/dashboard");
+  if (!izinliMenu.some((oge) => oge.bolum === aktifBolum) && !ogrenciProgramiGizliRotasi && !yurtOgrenciProfili) redirect("/dashboard");
   // Yazılı analizi dürüstlük engeli: öğretmenin panele girdiği günler sayılır
   // (bkz. src/lib/ogretmen-takip.ts, yazili-erisim.ts).
   if (role === "ogretmen") ogretmenAktifGunuKaydet(user.id);
@@ -348,7 +360,7 @@ export default async function DashboardPage({
       )}
       <HosgeldinPopuplari role={role} />
       <div className="mx-auto flex min-h-[calc(100dvh-6.75rem)] w-full max-w-[100rem] flex-1 items-stretch gap-6 px-4 py-6 sm:px-6 lg:py-7">
-        <DashboardYanMenu role={role} kurumTuru={kurumTuru} brans={brans} grupMu={grupKocu} kademe={menuKademesi} aktifBolum={aktifBolum} rozetler={menuRozetleri} okulRehberi={okulRehberi} idare={idareMenusu} />
+        <DashboardYanMenu role={role} kurumTuru={kurumTuru} brans={brans} grupMu={grupKocu} kademe={menuKademesi} aktifBolum={aktifBolum} rozetler={menuRozetleri} okulRehberi={okulRehberi} idare={idareMenusu} modulYetkileri={kurum?.modulYetkileri} />
         <main id="ana-icerik" className="sfec-dashboard-main min-h-[calc(100dvh-10.25rem)] min-w-0 w-full flex-1 flex flex-col gap-6">
           {/* Kullanıcı isteği (03.09.2026): Duyuru Geçmişi artık YALNIZCA admin
               panelinde (bkz. duyuru-gecmisi-actions.ts) — müdür menüsünden ve
@@ -380,7 +392,7 @@ export default async function DashboardPage({
           geçildiği için hamburgerde yalnızca hesap/mesaj kaldı, gezinme iki
           yerde birden durmuyor. */}
       <AltSekmeCubugu role={role} kurumTuru={kurumTuru} brans={brans} grupMu={grupKocu}
-        kademe={menuKademesi} okulRehberi={okulRehberi} idare={idareMenusu} aktifBolum={aktifBolum} rozetler={menuRozetleri} />
+        kademe={menuKademesi} okulRehberi={okulRehberi} idare={idareMenusu} aktifBolum={aktifBolum} rozetler={menuRozetleri} modulYetkileri={kurum?.modulYetkileri} />
       {/* Çubuk sabit konumlu: içeriğin son satırı altında kalmasın. */}
       <div aria-hidden="true" className="lg:hidden print:hidden" style={{ height: "var(--mobile-nav-height)" }} />
     </div>

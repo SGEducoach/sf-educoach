@@ -46,6 +46,7 @@ import { sinifSiraKarsilastir } from "@/lib/types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { WhatsappYonetimi } from "@/components/yonetici/WhatsappYonetimi";
 import { MudurYardimcisiAtamalari } from "@/components/yonetici/MudurYardimcisiAtamalari";
+import type { KurumModulYetkileri } from "@/lib/kurum-yetkileri";
 import { BelletmenBasvurulari } from "@/components/yonetici/BelletmenBasvurulari";
 import { sablonAyarlariGetir } from "@/lib/whatsapp-sablon-ayarlari-verisi";
 import { TUM_SABLONLAR } from "@/lib/whatsapp-sablon-ayarlari";
@@ -81,9 +82,12 @@ export default async function YoneticiPage({
 
   // ozel 0166 ile geldi; sütun yoksa onsuz okunur.
   const okulSorgusu = (sutunlar: string) => supabase.from("schools").select(sutunlar).is("grup_kapasitesi", null).order("ad");
-  const okulIlk = await okulSorgusu("id, ad, okul_kodu, tur, aktif, kademe, yurtlu, ozel");
+  const okulIlk = await okulSorgusu("id, ad, okul_kodu, tur, aktif, manuel_aktif, kullanim_bitis_tarihi, modul_yetkileri, paket_adi, logo_url, kademe, yurtlu, ozel");
   const okullar = okulIlk.error ? (await okulSorgusu("id, ad, okul_kodu, tur, aktif, kademe, yurtlu")).data : okulIlk.data;
-  const okulListesi = (okullar ?? []) as unknown as { id: string; ad: string; okul_kodu: string; tur: "okul" | "dershane"; aktif: boolean; kademe?: KurumKademesi; yurtlu?: boolean; ozel?: boolean }[];
+  const okulListesi = (okullar ?? []) as unknown as { id: string; ad: string; okul_kodu: string; tur: "okul" | "dershane"; aktif: boolean; manuel_aktif?: boolean; kullanim_bitis_tarihi?: string | null; modul_yetkileri?: KurumModulYetkileri; paket_adi?: string | null; logo_url?: string | null; kademe?: KurumKademesi; yurtlu?: boolean; ozel?: boolean }[];
+  const { data: kurumPaketleri } = aktifBolum === "okullar"
+    ? await supabase.from("kurum_paketleri").select("id, ad, aciklama, modul_yetkileri").eq("aktif", true).order("sira")
+    : { data: [] };
   const gorunecekOkulId = params.okul || okulListesi[0]?.id || null;
 
   const [{ data: siniflar }, { data: ogretmenler }] = await Promise.all([
@@ -165,6 +169,7 @@ export default async function YoneticiPage({
           {aktifBolum === "okullar" && (
             <section className="sfec-section"><AdminPanel
               okullar={okulListesi}
+              paketler={kurumPaketleri ?? []}
               gorunecekOkulId={gorunecekOkulId}
               siniflar={((siniflar ?? []) as { id: string; seviye: string; sube: string }[]).sort(sinifSiraKarsilastir)}
               ogretmenListesi={ogretmenListesi}

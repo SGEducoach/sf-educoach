@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { BG1, BORDER, MINT, MINT_BG, TEXT, TEXT_MUTED } from "@/lib/theme";
 import type { ModeratorMenuOgesi, ModeratorPanelBolumu } from "@/lib/moderator-bolumleri";
+import { moderatorBolumuAcikMi, type KurumModulYetkileri } from "@/lib/kurum-yetkileri";
 
 export { moderatorBolumuCoz } from "@/lib/moderator-bolumleri";
 
@@ -19,12 +20,13 @@ export { moderatorBolumuCoz } from "@/lib/moderator-bolumleri";
 // kolej: "yönetici ya da kurum moderatörü işleyecek"); Grup Koçluk hariç.
 type Oge = { id: ModeratorMenuOgesi; href: string; etiket: string; Icon: LucideIcon };
 
-export function ModeratorNavigasyonu({ aktif, denemeAcik, adminOkulId }: {
+export function ModeratorNavigasyonu({ aktif, denemeAcik, adminOkulId, modulYetkileri }: {
   aktif: ModeratorMenuOgesi;
   denemeAcik: boolean;
   // Admin başka bir kurumun panelini görüntülerken (/moderator?okul=...):
   // linkler okul parametresini taşır; moderatörün kişisel sayfaları gizlenir.
   adminOkulId?: string;
+  modulYetkileri?: KurumModulYetkileri;
 }) {
   const panel = (bolum: ModeratorPanelBolumu) => {
     const parametreler = new URLSearchParams();
@@ -35,16 +37,16 @@ export function ModeratorNavigasyonu({ aktif, denemeAcik, adminOkulId }: {
   };
 
   const gruplar: { baslik: string; ogeler: Oge[] }[] = [
-    {
+    ...(moderatorBolumuAcikMi(modulYetkileri, "ogrenciler") ? [{
       baslik: "Kurum Yönetimi",
       ogeler: [
-        { id: "ogrenciler", href: panel("ogrenciler"), etiket: "Öğrenciler", Icon: Users },
-        { id: "ogretmenler", href: panel("ogretmenler"), etiket: "Öğretmenler", Icon: GraduationCap },
-        { id: "siniflar", href: panel("siniflar"), etiket: "Sınıflar", Icon: Layers },
-        { id: "kurum", href: panel("kurum"), etiket: "Kurum bilgileri", Icon: Building2 },
+        { id: "ogrenciler" as const, href: panel("ogrenciler"), etiket: "Öğrenciler", Icon: Users },
+        { id: "ogretmenler" as const, href: panel("ogretmenler"), etiket: "Öğretmenler", Icon: GraduationCap },
+        { id: "siniflar" as const, href: panel("siniflar"), etiket: "Sınıflar", Icon: Layers },
+        { id: "kurum" as const, href: panel("kurum"), etiket: "Kurum bilgileri", Icon: Building2 },
       ],
-    },
-    ...(denemeAcik ? [{
+    }] : []),
+    ...(denemeAcik && moderatorBolumuAcikMi(modulYetkileri, "deneme-yukle") ? [{
       baslik: "Denemeler",
       ogeler: [
         { id: "deneme-yukle" as const, href: panel("deneme-yukle"), etiket: "Deneme yükle", Icon: FileUp },
@@ -57,7 +59,7 @@ export function ModeratorNavigasyonu({ aktif, denemeAcik, adminOkulId }: {
         { id: "konu-haritasi" as const, href: "/moderator/konu-haritasi", etiket: "Konu Durumu", Icon: BarChart2 },
         { id: "kurum-konulari" as const, href: "/moderator/kurum-konulari", etiket: "Kurum Konuları", Icon: ListTree },
         { id: "profil" as const, href: "/moderator/profil", etiket: "Profilim", Icon: CircleUserRound },
-      ],
+      ].filter((oge) => moderatorBolumuAcikMi(modulYetkileri, oge.id)),
     }] : []),
   ];
 

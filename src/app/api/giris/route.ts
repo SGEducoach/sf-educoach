@@ -10,6 +10,7 @@ import { grupKoduNormalize } from "@/lib/grup-kocluk";
 import { ilkokulMu } from "@/lib/kademe";
 import type { UserRole } from "@/lib/types";
 import { IDARE_CEREZI } from "@/lib/mudur-yardimcisi";
+import { kurumErisimiKapaliMi, KURUM_BAGLANTI_HATASI } from "@/lib/kurum-yetkileri";
 
 const PENCERE_MS = 15 * 60 * 1000;
 const ENGEL_MS = 15 * 60 * 1000;
@@ -174,6 +175,7 @@ export async function POST(request: NextRequest) {
   let askidaMi = false;
   let denemeSuresiDoldu = false;
   let grupDonduruldu = false;
+  let kurumKapali = false;
   let ilkokulOgrencisi = false;
   let belletmenDurumu: "bekliyor" | "reddedildi" | null = null;
   if (!error) {
@@ -210,7 +212,12 @@ export async function POST(request: NextRequest) {
       // migration 0065) — SADECE dershane rolleri, okul hiç etkilenmez.
       // Gruplar (Grup Koçluk) kendi bitiş tarihine tabi, bu süreden muaf.
       const kurum = await kullaniciKurumuGetir(admin, user.id, profile.role as UserRole);
-      if (denemeSuresiUygulanir(kurum)) {
+      if (kurumErisimiKapaliMi(kurum)) {
+        await supabase.auth.signOut();
+        kurumKapali = true;
+        error = new Error(KURUM_BAGLANTI_HATASI);
+      }
+      if (!kurumKapali && denemeSuresiUygulanir(kurum)) {
         const bitis = await dershaneDenemeBitisGetir(admin);
         if (suresiDolduMu(bitis)) {
           await supabase.auth.signOut();
@@ -218,12 +225,16 @@ export async function POST(request: NextRequest) {
           error = new Error("Deneme süresi doldu");
         }
       }
-      if (grupDondurulmus(kurum)) {
+      if (!kurumKapali && grupDondurulmus(kurum)) {
         await supabase.auth.signOut();
         grupDonduruldu = true;
         error = new Error("Grup donduruldu");
       }
     }
+  }
+
+  if (kurumKapali) {
+    return NextResponse.json({ error: KURUM_BAGLANTI_HATASI }, { status: 403 });
   }
 
   if (denemeSuresiDoldu) {

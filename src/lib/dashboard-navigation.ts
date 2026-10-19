@@ -1,6 +1,7 @@
 import type { KurumTuru, UserRole } from "@/lib/types";
 import { REHBER_BRANSI } from "@/lib/rehberlik";
 import { belletmenMi } from "@/lib/belletmen";
+import { kurumBolumuAcikMi, type KurumModulYetkileri } from "@/lib/kurum-yetkileri";
 
 export type DashboardBolumu =
   | "mesajlar"
@@ -249,7 +250,7 @@ const ADMIN_MENU_YAPISI: DashboardMenuKalemi[] = [
   { bolum: "mesajlar", href: "/yonetici/mesajlar", etiket: "Mesajlar", ikon: "duyuru" },
   {
     baslik: "Kurumlar", ikon: "okul", ogeler: [
-      { bolum: "okullar", href: "/yonetici/okullar", etiket: "Okullar", ikon: "okul" },
+      { bolum: "okullar", href: "/yonetici/okullar", etiket: "Kurumları Yönet", ikon: "okul" },
       { bolum: "grup-kocluk", href: "/yonetici/grup-kocluk", etiket: "Grup Koçluk", ikon: "grup" },
       { bolum: "talepler", href: "/yonetici/talepler", etiket: "Veli Talepleri", ikon: "talep" },
     ],
@@ -413,7 +414,7 @@ const YURT_MUDUR_YARDIMCISI_MENUSU: DashboardMenuOgesi[] = [
 // yalnizYurt: yurt sorumlusu ve hiç sınıf düzeyi atanmamış müdür yardımcısı.
 export type IdareMenusu = { yurt: boolean; yalnizYurt?: boolean };
 
-export function dashboardMenusu(
+function dashboardMenusuTemel(
   role: UserRole,
   kurumTuru?: KurumTuru,
   brans?: string,
@@ -472,14 +473,25 @@ export function dashboardMenusu(
   return [];
 }
 
+export function dashboardMenusu(
+  role: UserRole, kurumTuru?: KurumTuru, brans?: string, grupMu = false,
+  kademe?: "ortaokul" | "lise" | "ikisi" | null,
+  okulRehberi = false, idare: IdareMenusu | null = null,
+  modulYetkileri?: KurumModulYetkileri,
+): DashboardMenuOgesi[] {
+  const menu = dashboardMenusuTemel(role, kurumTuru, brans, grupMu, kademe, okulRehberi, idare);
+  return role === "admin" ? menu : menu.filter((oge) => kurumBolumuAcikMi(modulYetkileri, oge.bolum));
+}
+
 // Menü çizimi için: admin gruplu, diğer roller düz (değişmedi).
 export function dashboardMenuYapisi(
   role: UserRole, kurumTuru?: KurumTuru, brans?: string, grupMu = false,
   kademe?: "ortaokul" | "lise" | "ikisi" | null,
   okulRehberi = false,
   idare: IdareMenusu | null = null,
+  modulYetkileri?: KurumModulYetkileri,
 ): DashboardMenuKalemi[] {
-  return role === "admin" ? ADMIN_MENU_YAPISI : dashboardMenusu(role, kurumTuru, brans, grupMu, kademe, okulRehberi, idare);
+  return role === "admin" ? ADMIN_MENU_YAPISI : dashboardMenusu(role, kurumTuru, brans, grupMu, kademe, okulRehberi, idare, modulYetkileri);
 }
 
 export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([

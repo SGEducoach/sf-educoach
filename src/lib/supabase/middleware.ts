@@ -1,6 +1,11 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { bugununTarihiTR } from "@/lib/tarih";
+import { kullaniciKurumuGetir } from "@/lib/deneme-suresi";
+import { kurumBolumuAcikMi, kurumErisimiKapaliMi, moderatorBolumuAcikMi, KURUM_BAGLANTI_HATASI } from "@/lib/kurum-yetkileri";
+import type { DashboardBolumu } from "@/lib/dashboard-navigation";
+import type { UserRole } from "@/lib/types";
+import type { KurumModulYetkileri } from "@/lib/kurum-yetkileri";
 
 const AKTIF_GUN_CEREZI = "sfec_aktif_gun";
 
@@ -55,6 +60,53 @@ export async function updateSession(request: NextRequest) {
 
   // Oturumu tazelemek için gerekli — kaldırılmamalı.
   const { data: { user } } = await supabase.auth.getUser();
+  const { pathname } = request.nextUrl;
+
+  // Server Action'lar sayfa çiziminden önce çalışır. Kapatılmış kurumu ve
+  // modülü POST aşamasında da durdur; sadece menüyü gizlemek yeterli değil.
+  const kurumIstekMi = pathname === "/dashboard" || pathname.startsWith("/dashboard/")
+    || pathname === "/moderator" || pathname.startsWith("/moderator/")
+    || (pathname.startsWith("/api/") && pathname !== "/api/giris");
+  const moderatorIstekMi = pathname === "/moderator" || pathname.startsWith("/moderator/");
+  if (user && ((request.method === "POST" && kurumIstekMi) || moderatorIstekMi)) {
+    const { data: profil } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
+    if (profil && profil.role !== "admin") {
+      let kurum: { aktif: boolean; manuelAktif: boolean; kullanimBitisTarihi: string | null; grupMu: boolean; modulYetkileri: KurumModulYetkileri } | undefined;
+      if (moderatorIstekMi) {
+        const { data: yetki } = await supabase.from("school_moderators").select("school_id").eq("profile_id", user.id).maybeSingle();
+        if (!yetki) {
+          if (request.method === "GET") return NextResponse.redirect(new URL("/dashboard", request.url));
+          return NextResponse.json({ error: "Moderatör yetkisi gerekiyor." }, { status: 403 });
+        }
+        const { data: okul } = await supabase.from("schools").select("aktif, manuel_aktif, kullanim_bitis_tarihi, grup_kapasitesi, modul_yetkileri").eq("id", yetki.school_id).maybeSingle();
+        if (okul) kurum = {
+          aktif: okul.aktif !== false, manuelAktif: okul.manuel_aktif !== false,
+          kullanimBitisTarihi: okul.kullanim_bitis_tarihi as string | null,
+          grupMu: okul.grup_kapasitesi !== null,
+          modulYetkileri: (okul.modul_yetkileri as KurumModulYetkileri | null) ?? {},
+        };
+      } else {
+        kurum = await kullaniciKurumuGetir(supabase, user.id, profil.role as UserRole);
+      }
+      if (kurumErisimiKapaliMi(kurum)) {
+        if (request.method === "GET" && moderatorIstekMi) return NextResponse.redirect(new URL("/dashboard", request.url));
+        return NextResponse.json({ error: KURUM_BAGLANTI_HATASI }, { status: 403 });
+      }
+      const bolum = pathname.startsWith("/dashboard")
+        ? (pathname.split("/")[2] || request.nextUrl.searchParams.get("bolum") || "ozet") as DashboardBolumu
+        : null;
+      if (bolum && !kurumBolumuAcikMi(kurum?.modulYetkileri, bolum)) {
+        return NextResponse.json({ error: "Bu modül kurumunuz için kapalı." }, { status: 403 });
+      }
+      if (moderatorIstekMi) {
+        const moderatorBolumu = pathname.split("/")[2] || request.nextUrl.searchParams.get("bolum") || "ogrenciler";
+        if (!moderatorBolumuAcikMi(kurum?.modulYetkileri, moderatorBolumu)) {
+          if (request.method === "GET") return NextResponse.redirect(new URL("/moderator/profil", request.url));
+          return NextResponse.json({ error: "Bu modül kurumunuz için kapalı." }, { status: 403 });
+        }
+      }
+    }
+  }
 
   // "Şu an aktif kullanıcı" göstergesi (2026-08-26 kullanıcı isteği, bkz.
   // migration 0073) — gerçek zamanlı websocket/presence yerine, her istekte
@@ -91,7 +143,6 @@ export async function updateSession(request: NextRequest) {
   // "/" TAM EŞLEŞME ile eklendi (startsWith değil — her yol "/" ile
   // başladığı için startsWith kullansaydık /yonetici dahil HER rota
   // bakıma girerdi).
-  const { pathname } = request.nextUrl;
   const bakimKapsaminda = pathname === "/" || ["/dashboard", "/moderator", "/login", "/signup", "/belletmen-kayit"].some((p) => pathname.startsWith(p));
   if (bakimKapsaminda) {
     const siteKapaliMi = await siteKapaliMiGetir(supabase);

@@ -1,6 +1,10 @@
 {
   "crons": [
     {
+      "path": "/api/cron/kurum-sureleri",
+      "schedule": "10 21 * * *"
+    },
+    {
       "path": "/api/cron/hatirlatmalar",
       "schedule": "0 5 * * *"
     },

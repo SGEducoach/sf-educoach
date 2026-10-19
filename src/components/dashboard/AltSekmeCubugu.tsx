@@ -30,6 +30,7 @@ import type { KurumTuru, UserRole } from "@/lib/types";
 import type { DashboardBolumu, DashboardIkonu, DashboardMenuOgesi } from "@/lib/dashboard-navigation";
 import { dashboardMenusu } from "@/lib/dashboard-navigation";
 import { BG0, BG1, BG1_ALT, BORDER, MINT, MINT_BG, TEXT, TEXT_MUTED } from "@/lib/theme";
+import type { KurumModulYetkileri } from "@/lib/kurum-yetkileri";
 
 const IKONLAR: Record<DashboardIkonu, typeof Home> = {
   "ana-sayfa": Home, gorev: ClipboardList, plan: CalendarPlus2, veri: PenLine, hakimiyet: ListChecks,
@@ -65,7 +66,7 @@ export function sekmeleriBol(menu: DashboardMenuOgesi[], aktifBolum: DashboardBo
   return { gorunen, kalan };
 }
 
-export function AltSekmeCubugu({ role, kurumTuru, brans, grupMu = false, kademe, okulRehberi = false, aktifBolum, rozetler, idare = null }: {
+export function AltSekmeCubugu({ role, kurumTuru, brans, grupMu = false, kademe, okulRehberi = false, aktifBolum, rozetler, idare = null, modulYetkileri }: {
   role: UserRole;
   kurumTuru?: KurumTuru;
   brans?: string;
@@ -75,9 +76,10 @@ export function AltSekmeCubugu({ role, kurumTuru, brans, grupMu = false, kademe,
   idare?: { yurt: boolean } | null;
   aktifBolum: DashboardBolumu;
   rozetler?: Partial<Record<DashboardBolumu, number>>;
+  modulYetkileri?: KurumModulYetkileri;
 }) {
   const [dahaAcik, setDahaAcik] = useState(false);
-  const menu = dashboardMenusu(role, kurumTuru, brans, grupMu, kademe, okulRehberi, idare);
+  const menu = dashboardMenusu(role, kurumTuru, brans, grupMu, kademe, okulRehberi, idare, modulYetkileri);
   if (menu.length === 0) return null;
   const { gorunen, kalan } = sekmeleriBol(menu, aktifBolum);
 

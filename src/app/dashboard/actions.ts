@@ -124,7 +124,7 @@ export async function sinifEkle(schoolId: string, seviye: SinifSeviyesi, sube: s
 // Ekleme/düzenleme RLS'te (schools_insert_admin / schools_update_admin,
 // bkz. migration 0020) is_admin()'e bağlı — buradaki kontrol sadece daha
 // anlaşılır bir hata mesajı göstermek için.
-export async function okulEkle(input: { ad: string; tur: "okul" | "dershane"; okulKodu: string; kademe?: KurumKademesi; yurtlu?: boolean; ozel?: boolean }) {
+export async function okulEkle(input: { ad: string; tur: "okul" | "dershane"; okulKodu: string; kademe?: KurumKademesi; yurtlu?: boolean; ozel?: boolean; kullanimBitisTarihi?: string | null; paketId?: string }) {
   const { supabase, user } = await requireUser();
   const ad = input.ad.trim();
   const okulKodu = input.okulKodu.trim();
@@ -138,7 +138,17 @@ export async function okulEkle(input: { ad: string; tur: "okul" | "dershane"; ok
   // Özel okul (migration 0166): ücret ve kayıt duyuru kartları açılır.
   // Yalnız işaretliyse gönderilir; sütun varsayılanı false.
   const ozel = input.tur === "okul" && input.ozel === true;
-  const { data, error } = await supabase.from("schools").insert({ ad, tur: input.tur, okul_kodu: okulKodu, kademe, yurtlu, ...(ozel ? { ozel } : {}) }).select("id").single();
+  const { data: profil } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  if (profil?.role !== "admin") return { error: "Bu işlem için yönetici yetkisi gerekiyor.", id: null };
+  const { data: paket } = await supabase.from("kurum_paketleri").select("ad, modul_yetkileri").eq("id", input.paketId ?? "tam").eq("aktif", true).maybeSingle();
+  if (!paket) return { error: "Geçerli bir kurum paketi seçin.", id: null };
+  if (input.kullanimBitisTarihi && !/^\d{4}-\d{2}-\d{2}$/.test(input.kullanimBitisTarihi)) return { error: "Geçerli bir bitiş tarihi girin.", id: null };
+  const { data, error } = await supabase.from("schools").insert({
+    ad, tur: input.tur, okul_kodu: okulKodu, kademe, yurtlu,
+    ...(ozel ? { ozel } : {}),
+    kullanim_bitis_tarihi: input.kullanimBitisTarihi || null,
+    paket_adi: paket.ad, modul_yetkileri: paket.modul_yetkileri,
+  }).select("id").single();
   if (error) {
     if (error.code === "23505") return { error: "Bu okul kodu zaten kullanılıyor.", id: null };
     if (error.message?.includes("row-level security")) return { error: "Bu işlem için yönetici yetkisi gerekiyor.", id: null };
@@ -152,7 +162,7 @@ export async function okulEkle(input: { ad: string; tur: "okul" | "dershane"; ok
   return { error: null, id: data.id };
 }
 
-export async function okulDuzenle(id: string, input: { ad: string; okulKodu: string; tur?: "okul" | "dershane"; kademe?: KurumKademesi; yurtlu?: boolean; ozel?: boolean }) {
+export async function okulDuzenle(id: string, input: { ad: string; okulKodu: string; tur?: "okul" | "dershane"; kademe?: KurumKademesi; yurtlu?: boolean; ozel?: boolean; kullanimBitisTarihi?: string | null }) {
   const { supabase, user } = await requireUser();
   const ad = input.ad.trim();
   const okulKodu = input.okulKodu.trim();
@@ -169,6 +179,10 @@ export async function okulDuzenle(id: string, input: { ad: string; okulKodu: str
   if (input.yurtlu !== undefined) guncelleme.yurtlu = input.tur === "dershane" ? false : input.yurtlu;
   // Özel okul işareti (migration 0166) yalnız değiştiğinde gönderilir.
   if (input.ozel !== undefined) guncelleme.ozel = input.ozel;
+  if (input.kullanimBitisTarihi !== undefined) {
+    if (input.kullanimBitisTarihi && !/^\d{4}-\d{2}-\d{2}$/.test(input.kullanimBitisTarihi)) return { error: "Geçerli bir bitiş tarihi girin." };
+    guncelleme.kullanim_bitis_tarihi = input.kullanimBitisTarihi || null;
+  }
   const { error } = await supabase.from("schools").update(guncelleme).eq("id", id);
   if (error) {
     if (error.code === "23505") return { error: "Bu okul kodu zaten kullanılıyor." };
@@ -181,7 +195,7 @@ export async function okulDuzenle(id: string, input: { ad: string; okulKodu: str
 
 export async function okulAktiflikDegistir(id: string, aktif: boolean) {
   const { supabase, user } = await requireUser();
-  const { error } = await supabase.from("schools").update({ aktif }).eq("id", id);
+  const { error } = await supabase.from("schools").update({ manuel_aktif: aktif }).eq("id", id);
   if (error) return { error: "Bu işlem için yönetici yetkisi gerekiyor." };
   await auditLogYaz(supabase, user.id, aktif ? "okul_aktiflestir" : "okul_pasiflestir", { school_id: id });
   revalidatePath("/yonetici");

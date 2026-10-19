@@ -12,6 +12,7 @@ import type { DashboardBolumu, DashboardIkonu } from "@/lib/dashboard-navigation
 import { dashboardMenuYapisi, menuGrubuMu } from "@/lib/dashboard-navigation";
 import { KomutPaleti } from "@/components/dashboard/KomutPaleti";
 import { BG1, BG1_ALT, BORDER, MINT, MINT_BG, TEXT, TEXT_MUTED } from "@/lib/theme";
+import type { KurumModulYetkileri } from "@/lib/kurum-yetkileri";
 
 const IKONLAR: Record<DashboardIkonu, typeof Home> = {
   "ana-sayfa": Home,
@@ -45,7 +46,7 @@ const IKONLAR: Record<DashboardIkonu, typeof Home> = {
   rehberlik: HeartHandshake,
 };
 
-export function DashboardYanMenu({ role, kurumTuru, brans, grupMu = false, kademe, aktifBolum, rozetler, okulRehberi = false, idare = null }: {
+export function DashboardYanMenu({ role, kurumTuru, brans, grupMu = false, kademe, aktifBolum, rozetler, okulRehberi = false, idare = null, modulYetkileri }: {
   role: UserRole; kurumTuru?: KurumTuru; brans?: string; grupMu?: boolean; aktifBolum: DashboardBolumu;
   // Ortaokul paneli (Faz 1): yalnız bayrak acikken ve ortaokul sinifinda dolu gelir.
   kademe?: "ortaokul" | "lise" | "ikisi" | null;
@@ -54,8 +55,9 @@ export function DashboardYanMenu({ role, kurumTuru, brans, grupMu = false, kadem
   rozetler?: Partial<Record<DashboardBolumu, number>>;
   okulRehberi?: boolean;
   idare?: { yurt: boolean } | null;
+  modulYetkileri?: KurumModulYetkileri;
 }) {
-  const menu = dashboardMenuYapisi(role, kurumTuru, brans, grupMu, kademe, okulRehberi, idare);
+  const menu = dashboardMenuYapisi(role, kurumTuru, brans, grupMu, kademe, okulRehberi, idare, modulYetkileri);
   const [acikGrup, setAcikGrup] = useState<string | null>(
     () => menu.filter(menuGrubuMu).find((kalem) => kalem.ogeler.some((oge) => oge.bolum === aktifBolum))?.baslik ?? null,
   );

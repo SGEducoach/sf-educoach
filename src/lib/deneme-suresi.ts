@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { KurumKademesi, KurumTuru, UserRole } from "@/lib/types";
+import type { KurumModulYetkileri } from "@/lib/kurum-yetkileri";
 
 // Dershane modülü 1 haftalık deneme süresi (2026-08-25 kullanıcı isteği,
 // bkz. migration 0065). Süre dolunca dershane rolleri "deneme süreniz
@@ -34,6 +35,9 @@ export interface KullaniciKurumu {
   // Yönetici grubu dondurduğunda false (schools.aktif) — grup üyeleri girişte
   // ve panelde durdurulur; öğrencilerin kendi hesap durumu değişmez.
   aktif: boolean;
+  manuelAktif: boolean;
+  kullanimBitisTarihi: string | null;
+  modulYetkileri: KurumModulYetkileri;
   // Grup bitiş tarihi geçtiyse true: grup salt okunur (Faz 8, migration 0119).
   suresiDoldu: boolean;
   // Kurumun kademesi (migration 0128). Ortaokul öğretmeninin menüsü buna
@@ -51,13 +55,16 @@ export const GRUP_DONDURULDU_MESAJI =
 
 async function okulBilgisi(supabase: SupabaseClient, schoolId: string | null | undefined): Promise<KullaniciKurumu | undefined> {
   if (!schoolId) return undefined;
-  const { data: s } = await supabase.from("schools").select("tur, kademe, yurtlu, grup_kapasitesi, grup_bitis_tarihi, aktif").eq("id", schoolId).maybeSingle();
+  const { data: s } = await supabase.from("schools").select("tur, kademe, yurtlu, grup_kapasitesi, grup_bitis_tarihi, aktif, manuel_aktif, kullanim_bitis_tarihi, modul_yetkileri").eq("id", schoolId).maybeSingle();
   if (!s) return undefined;
   const bugun = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Istanbul" });
   const grupMu = s.grup_kapasitesi !== null;
   return {
     id: schoolId,
     tur: s.tur as KurumTuru, grupMu, aktif: s.aktif !== false,
+    manuelAktif: s.manuel_aktif !== false,
+    kullanimBitisTarihi: (s.kullanim_bitis_tarihi as string | null) ?? null,
+    modulYetkileri: (s.modul_yetkileri as KurumModulYetkileri | null) ?? {},
     kademe: (s.kademe as KurumKademesi | null) ?? null,
     yurtlu: s.yurtlu === true,
     suresiDoldu: grupMu && !!s.grup_bitis_tarihi && (s.grup_bitis_tarihi as string) < bugun,

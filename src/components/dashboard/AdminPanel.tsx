@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Shield, Building2, UserPlus, Copy, Check, Plus, Pencil, EyeOff, Eye, X, ClipboardList, Download } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH, LILAC } from "@/lib/theme";
 import {
@@ -26,6 +27,9 @@ import { telefonSanitize, okulNoSanitize, TELEFON_IPUCU } from "@/lib/validators
 import { ogrenciKaydiEslestir } from "@/lib/ogrenci-eslestirme";
 import { KurumSilmeButonu } from "@/components/yonetici/KurumSilmeButonu";
 import { VeliDavetKodlari } from "@/components/dashboard/IlkokulGelisimGirisi";
+import { adminKurumLogosuYukle, adminKurumLogosuKaldir } from "@/app/yonetici/whatsapp-actions";
+import { kurumModuluDegistir, kurumPaketiUygula } from "@/app/yonetici/kurum-yetki-actions";
+import { KURUM_MODULLERI, kurumErisimiKapaliMi, type KurumModulYetkileri } from "@/lib/kurum-yetkileri";
 
 interface OkulSatiri {
   id: string;
@@ -33,6 +37,11 @@ interface OkulSatiri {
   okul_kodu: string;
   tur: "okul" | "dershane";
   aktif: boolean;
+  manuel_aktif?: boolean;
+  kullanim_bitis_tarihi?: string | null;
+  modul_yetkileri?: KurumModulYetkileri;
+  paket_adi?: string | null;
+  logo_url?: string | null;
   // Kurumun kademesi (migration 0128) — sınıf seviyesi seçeneklerini belirler.
   kademe?: KurumKademesi;
   // Yurdu var mı (migration 0133) — yurt arayüzleri buna göre gösteriliyor.
@@ -40,6 +49,7 @@ interface OkulSatiri {
   // Özel okul mu (migration 0166) — ücret ve kayıt duyuru kartları açılır.
   ozel?: boolean;
 }
+interface KurumPaketi { id: string; ad: string; aciklama: string; modul_yetkileri: KurumModulYetkileri }
 interface SinifSatiri {
   id: string;
   seviye: string;
@@ -54,9 +64,10 @@ interface OgretmenSatiri {
   mudurMu: boolean;
 }
 export function AdminPanel({
-  okullar, gorunecekOkulId, siniflar, ogretmenListesi, mod = "kurum",
+  okullar, gorunecekOkulId, siniflar, ogretmenListesi, paketler = [], mod = "kurum",
 }: {
   okullar: OkulSatiri[];
+  paketler?: KurumPaketi[];
   gorunecekOkulId: string | null;
   siniflar: SinifSatiri[];
   ogretmenListesi: OgretmenSatiri[];
@@ -78,7 +89,7 @@ export function AdminPanel({
         {okullar.map((o) => <option key={o.id} value={o.id}>{o.ad}</option>)}
       </select>
       {!gorunenOkul ? <p style={{ color: TEXT_MUTED }}>Önce bir kurum ekleyin.</p> : <>
-        {siniflar.length === 0 && <p className="text-xs" style={{ color: BLUSH }}>Öğrenci eklemek için önce Okullar bölümünde sınıf oluşturun.</p>}
+        {siniflar.length === 0 && <p className="text-xs" style={{ color: BLUSH }}>Öğrenci eklemek için önce Kurumları Yönet bölümünde sınıf oluşturun.</p>}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <OgretmenEkleFormu schoolId={gorunenOkul.id} okullar={okullar} />
           <OgrenciEkleFormu schoolId={gorunenOkul.id} siniflar={siniflar} />
@@ -96,7 +107,7 @@ export function AdminPanel({
             <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(199,182,255,0.15)" }}>
               <Shield size={13} color={LILAC} />
             </div>
-            <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Yönetim</span>
+            <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Kurumları Yönet</span>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(199,182,255,0.15)", color: LILAC }}>admin</span>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -114,7 +125,7 @@ export function AdminPanel({
                     <option key={o.id} value={o.id}>
                       {o.ad}
                       {o.kademe && o.kademe !== "lise" ? ` · ${KURUM_KADEMESI_ETIKET[o.kademe]}` : ""}
-                      {!o.aktif ? " (Pasif)" : ""}
+                      {kurumErisimiKapaliMi({ aktif: o.aktif, manuelAktif: o.manuel_aktif, kullanimBitisTarihi: o.kullanim_bitis_tarihi }) ? " (Pasif)" : ""}
                     </option>
                   ))}
                 </select>
@@ -137,7 +148,7 @@ export function AdminPanel({
         </div>
 
         {okulEkleAcik && (
-          <OkulEkleFormu onDone={(yeniOkulId) => {
+          <OkulEkleFormu paketler={paketler} onDone={(yeniOkulId) => {
             setOkulEkleAcik(false);
             // Kullanıcı isteği (27.08.2026): "yeni eklenen kurum ilk iş
             // olarak sınıflarını oluştursun" — yeni kurum otomatik seçilip
@@ -150,6 +161,14 @@ export function AdminPanel({
           <OkulDuzenleFormu okul={gorunenOkul} onDone={() => setOkulDuzenleAcik(false)} />
         )}
         {gorunenOkul && okulDuzenleAcik && <div className="mt-3"><KurumSilmeButonu schoolId={gorunenOkul.id} onDeleted={() => { setOkulDuzenleAcik(false); router.replace("/yonetici/okullar"); router.refresh(); }} /></div>}
+        {gorunenOkul && <div className="mt-3 rounded-xl p-3 text-xs" style={{ background: BG1_ALT, border: `1px solid ${BORDER}` }}>
+          <span style={{ color: TEXT_MUTED }}>Kurum ID: </span><code style={{ color: TEXT }}>{gorunenOkul.id}</code>
+          <span className="ml-2" style={{ color: kurumErisimiKapaliMi({ aktif: gorunenOkul.aktif, manuelAktif: gorunenOkul.manuel_aktif, kullanimBitisTarihi: gorunenOkul.kullanim_bitis_tarihi }) ? BLUSH : MINT }}>
+            {kurumErisimiKapaliMi({ aktif: gorunenOkul.aktif, manuelAktif: gorunenOkul.manuel_aktif, kullanimBitisTarihi: gorunenOkul.kullanim_bitis_tarihi }) ? "Pasif" : "Aktif"}
+          </span>
+          {gorunenOkul.kullanim_bitis_tarihi && <span className="ml-2" style={{ color: TEXT_MUTED }}>Son kullanım: {gorunenOkul.kullanim_bitis_tarihi}</span>}
+        </div>}
+        {gorunenOkul && <KurumYetkileriPaneli okul={gorunenOkul} paketler={paketler} />}
 
         {!gorunenOkul ? (
           <p style={{ color: TEXT_MUTED }} className="text-sm py-4 text-center">Henüz kayıtlı okul yok.</p>
@@ -282,12 +301,64 @@ function KurumSecimiDugmeleri({ secim, setSecim }: { secim: KurumSecimi; setSeci
 // Kullanıcı isteği (01.10.2026): kurum eklerken TEK seçim — Ortaokul / Lise /
 // Ortaokul+Lise / Dershane. Seçim arka planda tur + kademe alanlarına
 // çözülüyor; böylece ortaokulda sınıf eklerken 9-12 boş yere görünmüyor.
-function OkulEkleFormu({ onDone }: { onDone: (yeniOkulId?: string) => void }) {
+function KurumYetkileriPaneli({ okul, paketler }: { okul: OkulSatiri; paketler: KurumPaketi[] }) {
+  const [hata, setHata] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+  const router = useRouter();
+  const yetkiler = okul.modul_yetkileri ?? {};
+
+  function paketUygula(id: string) {
+    setHata(null);
+    startTransition(async () => {
+      const sonuc = await kurumPaketiUygula(okul.id, id);
+      if (sonuc.error) setHata(sonuc.error);
+      else router.refresh();
+    });
+  }
+
+  function modulDegistir(modul: (typeof KURUM_MODULLERI)[number]["key"], acik: boolean) {
+    setHata(null);
+    startTransition(async () => {
+      const sonuc = await kurumModuluDegistir(okul.id, modul, acik);
+      if (sonuc.error) setHata(sonuc.error);
+      else router.refresh();
+    });
+  }
+
+  return <section className="mt-4 rounded-2xl p-4" style={{ background: BG1_ALT, border: `1px solid ${BORDER_STRONG}` }}>
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <div>
+        <h2 className="text-sm font-bold" style={{ color: TEXT }}>Kurum yetkileri</h2>
+        <p className="text-xs" style={{ color: TEXT_MUTED }}>Mevcut paket: {okul.paket_adi ?? "Geçiş öncesi erişim"}. Pasif kurumun yetkileri de düzenlenebilir.</p>
+      </div>
+      <div className="flex flex-wrap gap-2" aria-label="Hazır paketler">
+        {paketler.map((paket) => <button key={paket.id} type="button" disabled={pending} onClick={() => paketUygula(paket.id)} title={paket.aciklama}
+          className="rounded-full px-3 py-1.5 text-xs font-bold disabled:opacity-50" style={{ background: okul.paket_adi === paket.ad ? MINT : BG0, color: okul.paket_adi === paket.ad ? MINT_ON : TEXT, border: `1px solid ${BORDER_STRONG}` }}>{paket.ad}</button>)}
+      </div>
+    </div>
+    <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      {KURUM_MODULLERI.map((modul) => {
+        const acik = yetkiler[modul.key] !== false;
+        return <label key={modul.key} className="flex cursor-pointer items-center justify-between gap-2 rounded-xl px-3 py-2 text-xs" style={{ background: BG0, color: TEXT }}>
+          <span>{modul.ad}</span>
+          <input type="checkbox" role="switch" aria-label={modul.ad} checked={acik} disabled={pending} onChange={() => modulDegistir(modul.key, !acik)} className="h-4 w-4 accent-emerald-400" />
+        </label>;
+      })}
+    </div>
+    {hata && <p role="alert" className="mt-2 text-xs" style={{ color: BLUSH }}>{hata}</p>}
+  </section>;
+}
+
+function OkulEkleFormu({ onDone, paketler }: { onDone: (yeniOkulId?: string) => void; paketler: KurumPaketi[] }) {
   const [ad, setAd] = useState("");
   const [secim, setSecim] = useState<KurumSecimi>("lise");
   const [yurtlu, setYurtlu] = useState(false);
   const [ozel, setOzel] = useState(false);
   const [okulKodu, setOkulKodu] = useState("");
+  const [kullanimBitisTarihi, setKullanimBitisTarihi] = useState("");
+  const [paketId, setPaketId] = useState("tam");
+  const [logo, setLogo] = useState<File | null>(null);
+  const [olusanOkulId, setOlusanOkulId] = useState<string | null>(null);
   const [hata, setHata] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -296,8 +367,19 @@ function OkulEkleFormu({ onDone }: { onDone: (yeniOkulId?: string) => void }) {
     setHata(null);
     const { tur, kademe } = kurumSeciminiCoz(secim);
     startTransition(async () => {
-      const res = await okulEkle({ ad, tur, okulKodu, kademe, yurtlu, ozel });
+      const res = await okulEkle({ ad, tur, okulKodu, kademe, yurtlu, ozel, kullanimBitisTarihi: kullanimBitisTarihi || null, paketId });
       if (res.error) return setHata(res.error);
+      if (logo && res.id) {
+        const form = new FormData();
+        form.set("okul", res.id);
+        form.set("logo", logo);
+        const yukleme = await adminKurumLogosuYukle(form);
+        if (yukleme.error) {
+          setOlusanOkulId(res.id);
+          setHata(`Kurum eklendi, ancak ${yukleme.error} Düzenleme ekranından logoyu yeniden yükleyin.`);
+          return;
+        }
+      }
       setAd(""); setOkulKodu("");
       onDone(res.id ?? undefined);
     });
@@ -316,8 +398,20 @@ function OkulEkleFormu({ onDone }: { onDone: (yeniOkulId?: string) => void }) {
         <input value={okulKodu} onChange={(e) => setOkulKodu(e.target.value)} placeholder="Kurum kodu" required
           className="text-sm px-3 py-1.5 rounded-xl outline-none w-32" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
       </div>
+      <label className="text-xs" style={{ color: TEXT }}>Kullanım bitiş tarihi (boşsa süresiz)
+        <input type="date" value={kullanimBitisTarihi} onChange={(e) => setKullanimBitisTarihi(e.target.value)} className="mt-1 block rounded-xl px-3 py-2" style={{ background: BG0, color: TEXT, border: `1px solid ${BORDER_STRONG}` }} />
+      </label>
+      <label className="text-xs" style={{ color: TEXT }}>Paket
+        <select value={paketId} onChange={(e) => setPaketId(e.target.value)} className="mt-1 block rounded-xl px-3 py-2" style={{ background: BG0, color: TEXT, border: `1px solid ${BORDER_STRONG}` }}>
+          {paketler.map((p) => <option key={p.id} value={p.id}>{p.ad}</option>)}
+        </select>
+      </label>
+      <label className="text-xs" style={{ color: TEXT }}>Kurum logosu (isteğe bağlı, en fazla 1 MB)
+        <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => setLogo(e.target.files?.[0] ?? null)} className="mt-1 block text-xs" />
+      </label>
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
-      <button type="submit" disabled={pending}
+      {olusanOkulId && <button type="button" onClick={() => onDone(olusanOkulId)} className="self-start text-xs font-bold underline" style={{ color: MINT }}>Eklenen kuruma git</button>}
+      <button type="submit" disabled={pending || !!olusanOkulId}
         className="sfec-btn self-start text-xs font-bold px-4 py-2 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
         {pending ? "Ekleniyor..." : "Kurumu ekle"}
       </button>
@@ -326,11 +420,14 @@ function OkulEkleFormu({ onDone }: { onDone: (yeniOkulId?: string) => void }) {
 }
 
 function OkulDuzenleFormu({ okul, onDone }: { okul: OkulSatiri; onDone: () => void }) {
+  const router = useRouter();
   const [ad, setAd] = useState(okul.ad);
   const [okulKodu, setOkulKodu] = useState(okul.okul_kodu);
   const [secim, setSecim] = useState<KurumSecimi>(kurumSecimi(okul.tur, okul.kademe));
   const [yurtlu, setYurtlu] = useState(okul.yurtlu === true);
   const [ozel, setOzel] = useState(okul.ozel === true);
+  const [kullanimBitisTarihi, setKullanimBitisTarihi] = useState(okul.kullanim_bitis_tarihi ?? "");
+  const [logo, setLogo] = useState<File | null>(null);
   const [hata, setHata] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [aktiflikPending, startAktiflikTransition] = useTransition();
@@ -340,8 +437,15 @@ function OkulDuzenleFormu({ okul, onDone }: { okul: OkulSatiri; onDone: () => vo
     setHata(null);
     startTransition(async () => {
       const { tur, kademe } = kurumSeciminiCoz(secim);
-      const res = await okulDuzenle(okul.id, { ad, okulKodu, tur, kademe, yurtlu, ozel: ozel !== (okul.ozel === true) ? ozel : undefined });
+      const res = await okulDuzenle(okul.id, { ad, okulKodu, tur, kademe, yurtlu, ozel: ozel !== (okul.ozel === true) ? ozel : undefined, kullanimBitisTarihi: kullanimBitisTarihi || null });
       if (res.error) return setHata(res.error);
+      if (logo) {
+        const form = new FormData();
+        form.set("okul", okul.id);
+        form.set("logo", logo);
+        const yukleme = await adminKurumLogosuYukle(form);
+        if (yukleme.error) return setHata(`Kurum bilgileri kaydedildi; ${yukleme.error}`);
+      }
       onDone();
     });
   }
@@ -349,8 +453,9 @@ function OkulDuzenleFormu({ okul, onDone }: { okul: OkulSatiri; onDone: () => vo
   function aktiflikDegistir() {
     setHata(null);
     startAktiflikTransition(async () => {
-      const res = await okulAktiflikDegistir(okul.id, !okul.aktif);
+      const res = await okulAktiflikDegistir(okul.id, okul.manuel_aktif === false);
       if (res.error) setHata(res.error);
+      else router.refresh();
     });
   }
 
@@ -374,6 +479,16 @@ function OkulDuzenleFormu({ okul, onDone }: { okul: OkulSatiri; onDone: () => vo
         <input value={okulKodu} onChange={(e) => setOkulKodu(e.target.value)} placeholder="Kurum kodu" required
           className="text-sm px-3 py-1.5 rounded-xl outline-none w-32" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
       </div>
+      <label className="text-xs" style={{ color: TEXT }}>Kullanım bitiş tarihi (boşsa süresiz)
+        <input type="date" value={kullanimBitisTarihi} onChange={(e) => setKullanimBitisTarihi(e.target.value)} className="mt-1 block rounded-xl px-3 py-2" style={{ background: BG0, color: TEXT, border: `1px solid ${BORDER_STRONG}` }} />
+      </label>
+      <div className="flex items-center gap-3">
+        <Image src={okul.logo_url || "/logo.png"} alt={`${okul.ad} logosu`} width={44} height={44} unoptimized className="h-11 w-11 rounded-full object-contain" />
+        <label className="text-xs" style={{ color: TEXT }}>Yeni logo yükle (eskisinin üzerine yazılır)
+          <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => setLogo(e.target.files?.[0] ?? null)} className="mt-1 block text-xs" />
+        </label>
+        {okul.logo_url && <button type="button" onClick={() => startTransition(async () => { const res = await adminKurumLogosuKaldir(okul.id); if (res.error) setHata(res.error); else router.refresh(); })} className="text-xs underline" style={{ color: BLUSH }}>Logoyu kaldır</button>}
+      </div>
       {hata && <div style={{ color: BLUSH }} className="text-xs font-semibold">{hata}</div>}
       <div className="flex items-center gap-2">
         <button type="submit" disabled={pending}
@@ -382,8 +497,8 @@ function OkulDuzenleFormu({ okul, onDone }: { okul: OkulSatiri; onDone: () => vo
         </button>
         <button type="button" onClick={aktiflikDegistir} disabled={aktiflikPending}
           className="sfec-btn flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-xl disabled:opacity-60"
-          style={{ background: "rgba(255,255,255,0.06)", color: okul.aktif ? BLUSH : MINT, border: `2px solid ${BORDER_STRONG}` }}>
-          {okul.aktif ? <><EyeOff size={12} /> Pasifleştir</> : <><Eye size={12} /> Aktifleştir</>}
+          style={{ background: "rgba(255,255,255,0.06)", color: okul.manuel_aktif === false ? MINT : BLUSH, border: `2px solid ${BORDER_STRONG}` }}>
+          {okul.manuel_aktif === false ? <><Eye size={12} /> Aktifleştir</> : <><EyeOff size={12} /> Pasifleştir</>}
         </button>
       </div>
     </form>

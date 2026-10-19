@@ -33,6 +33,9 @@ export async function kurumKaliciSil(schoolId: string, kurumAdi: string): Promis
   if (!supabase) return { error: "Yönetici yetkisi gerekiyor." };
   const { error } = await supabase.rpc("admin_kurum_kalici_sil", { p_school_id: schoolId, p_ad: kurumAdi });
   if (error) return { error: error.message };
+  // Kurum logosu veritabanı dışında Storage'da tutulur. Hesap silindikten
+  // sonra dosyayı da temizle; zaten yoksa silme sonucu etkilenmez.
+  await createAdminClient().storage.from("kurum-logolari").remove([`${schoolId}/logo`]);
   revalidatePath("/yonetici");
   revalidatePath("/yonetici/okullar");
   revalidatePath("/yonetici/grup-kocluk");

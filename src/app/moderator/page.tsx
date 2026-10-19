@@ -9,6 +9,8 @@ import { TgDenemeYonetimi } from "@/components/yonetici/TgDenemeYonetimi";
 import { DershaneDenemePdfFormu } from "@/components/dashboard/DershaneDenemePdfFormu";
 import { PdfEslesmeYonetimi } from "@/components/yonetici/PdfEslesmeYonetimi";
 import { TEXT, TEXT_MUTED } from "@/lib/theme";
+import { kullaniciKurumuGetir } from "@/lib/deneme-suresi";
+import { kurumErisimiKapaliMi, kurumModuluAcikMi, moderatorBolumuAcikMi, type KurumModulYetkileri } from "@/lib/kurum-yetkileri";
 
 // ?okul=<schoolId>: admin'in /yonetici → "Moderatörler" listesinden bir
 // okula tıklayıp o okulun moderatör panelini görüntülemesi için — sadece
@@ -28,16 +30,23 @@ export default async function ModeratorPage({ searchParams }: { searchParams: Pr
 
   const params = await searchParams;
   const adminGoruntuluyor = profil.role === "admin" && !!params.okul;
+  let moderatorOkulId = adminGoruntuluyor ? params.okul : undefined;
 
   if (!adminGoruntuluyor) {
+    if (kurumErisimiKapaliMi(await kullaniciKurumuGetir(supabase, user.id, profil.role as UserRole))) redirect("/dashboard");
     const { data: yetki } = await supabase.from("school_moderators").select("school_id").eq("profile_id", user.id).maybeSingle();
     if (!yetki) redirect("/dashboard");
+    moderatorOkulId = yetki.school_id;
   }
 
   const veri = await moderatorKullanicilariGetir(adminGoruntuluyor ? params.okul : undefined);
+  const { data: kurumAyarlari } = await supabase.from("schools")
+    .select("modul_yetkileri").eq("id", moderatorOkulId!).maybeSingle();
+  const modulYetkileri = (kurumAyarlari?.modul_yetkileri as KurumModulYetkileri | null) ?? {};
   // Deneme yükleme ve eşleştirme dershane ve okul moderatöründe (okul 16.10.2026).
-  const denemeAcik = veri.kurumTuru === "dershane" || veri.kurumTuru === "okul";
+  const denemeAcik = (veri.kurumTuru === "dershane" || veri.kurumTuru === "okul") && kurumModuluAcikMi(modulYetkileri, "denemeler");
   const bolum = moderatorBolumuCoz(params.bolum, denemeAcik);
+  if (!moderatorBolumuAcikMi(modulYetkileri, bolum)) redirect("/moderator/profil");
   const adminOkulId = adminGoruntuluyor ? params.okul : undefined;
 
   return (
@@ -47,7 +56,7 @@ export default async function ModeratorPage({ searchParams }: { searchParams: Pr
         geriDonusEtiketi={adminGoruntuluyor ? "Yönetim paneline dön" : "Ana sayfaya dön"}
       />
       <main id="ana-icerik" className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 px-4 py-7 pb-24 sm:px-6">
-        <ModeratorNavigasyonu aktif={bolum} denemeAcik={denemeAcik} adminOkulId={adminOkulId} />
+        <ModeratorNavigasyonu aktif={bolum} denemeAcik={denemeAcik} adminOkulId={adminOkulId} modulYetkileri={modulYetkileri} />
 
         {(bolum === "ogrenciler" || bolum === "ogretmenler" || bolum === "siniflar" || bolum === "kurum") && (
           <ModeratorPanel {...veri} bolum={bolum} schoolId={adminOkulId} />
@@ -58,7 +67,7 @@ export default async function ModeratorPage({ searchParams }: { searchParams: Pr
             moderatörün kendi kaydından okunuyor, istemciden gelmiyor.
             Admin başka bir kurumu görüntülerken bu kart gizli — admin bütün
             panoları /yonetici > İçerik altından yönetiyor. */}
-        {bolum === "kurum" && !adminGoruntuluyor && <section className="sfec-section"><TgDenemeYonetimi /></section>}
+        {bolum === "kurum" && !adminGoruntuluyor && kurumModuluAcikMi(modulYetkileri, "pano") && <section className="sfec-section"><TgDenemeYonetimi /></section>}
 
         {bolum === "deneme-yukle" && (
           <section className="flex flex-col gap-3">
