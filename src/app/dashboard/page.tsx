@@ -102,7 +102,7 @@ import { sinifimOzeti } from "@/lib/ilkokul-sinifim";
 import { IlkokulSinifimPanosu } from "@/components/dashboard/IlkokulSinifimPanosu";
 import { WhatsappDuyuruStudyosu } from "@/components/dashboard/WhatsappDuyuruStudyosu";
 import { DuyuruTuruSekmeleri } from "@/components/dashboard/DuyuruTuruSekmeleri";
-import { duyuruSecenekleri, seciliDuyuruAlani, seciliDuyuruTuru } from "@/lib/duyuru-alanlari";
+import { duyuruSecenekleri, seciliDuyuruAlani, seciliDuyuruTuru, yalnizGenelKartMi } from "@/lib/duyuru-alanlari";
 import { yurtDurumlariGetir, yurtVerisiGetir } from "@/lib/yurt-listesi-verisi";
 import { YurtOgrencileriListesi } from "@/components/dashboard/YurtOgrencileriListesi";
 import { YurtNobetPdfPaneli } from "@/components/dashboard/YurtNobetPdfPaneli";
@@ -1178,8 +1178,13 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       return null;
     };
     const kurum = await kurumOku();
-    const sablonlar = kurumaUygunSablonlar(etkinSablonlar(sablonAyarlari), ucretliKurumMu({ tur: kurumTuru ?? "okul", ozel: kurum?.ozel }));
-    const { data: ogrenciler } = !genelWhatsapp || (okulRehberi && rehberSeviyeleri.length === 0)
+    const kurumSablonlari = kurumaUygunSablonlar(etkinSablonlar(sablonAyarlari), ucretliKurumMu({ tur: kurumTuru ?? "okul", ozel: kurum?.ozel }));
+    // Öğretmen yalnız Genel Duyuru kartını görür (yurt kartları ayrı bölümde).
+    const yalnizGenelKart = yalnizGenelKartMi({ mudur: role === "mudur", rehber: rehberOgretmenMi });
+    const sablonlar = genelWhatsapp && yalnizGenelKart
+      ? Object.fromEntries(Object.entries(kurumSablonlari).map(([a, s]) => [a, a === "genel" ? s : { ...s, gizli: true }]))
+      : kurumSablonlari;
+    const { data: ogrenciler } = !genelWhatsapp || yalnizGenelKart || (okulRehberi && rehberSeviyeleri.length === 0)
       ? { data: [] }
       : okulRehberi
       ? await admin.from("students")

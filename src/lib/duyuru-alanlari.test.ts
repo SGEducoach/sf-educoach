@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { duyuruAdresi, duyuruSecenekleri, seciliDuyuruAlani, seciliDuyuruTuru } from "./duyuru-alanlari";
+import { duyuruAdresi, duyuruSecenekleri, seciliDuyuruAlani, seciliDuyuruTuru, yalnizGenelKartMi } from "./duyuru-alanlari";
 
 const temel = { mudur: false, rehber: false, sinifOgretmeni: false, yurtlu: false };
 
@@ -16,8 +16,11 @@ describe("duyuru bölümleri", () => {
     expect(duyuruSecenekleri({ ...temel, rehber: true, yurtlu: true, idareYurt: "yalniz" })).toEqual({ site: ["yurt"], whatsapp: ["yurt"] });
   });
 
-  test("sınıf öğretmeni site içi genel, yurtlu kurumda WhatsApp yurt kartları", () => {
-    expect(duyuruSecenekleri({ ...temel, sinifOgretmeni: true, yurtlu: true })).toEqual({ site: ["genel"], whatsapp: ["yurt"] });
+  test("sınıf öğretmeni site içi ve WhatsApp genel; yurtlu kurumda WhatsApp yurt kartları da", () => {
+    expect(duyuruSecenekleri({ ...temel, sinifOgretmeni: true })).toEqual({ site: ["genel"], whatsapp: ["genel"] });
+    expect(duyuruSecenekleri({ ...temel, sinifOgretmeni: true, yurtlu: true })).toEqual({ site: ["genel"], whatsapp: ["genel", "yurt"] });
+    expect(yalnizGenelKartMi({ mudur: false, rehber: false })).toBe(true);
+    expect(yalnizGenelKartMi({ mudur: false, rehber: true })).toBe(false);
     // Sınıfı olmayan öğretmen doğrudan WhatsApp yurt kartlarına düşer.
     const s = duyuruSecenekleri({ ...temel, yurtlu: true });
     expect(seciliDuyuruTuru(s, undefined)).toBe("whatsapp");

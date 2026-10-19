@@ -19,11 +19,17 @@ export function duyuruSecenekleri(k: {
   // Site içi yurt duyurusu yurt öğrencilerine ve velilerine gider: müdür ve
   // yurt sorumlusu müdür yardımcısı.
   if (k.yurtlu && (k.mudur || !!k.idareYurt)) site.push("yurt");
-  if (!yalnizYurt && (k.mudur || k.rehber)) whatsapp.push("genel");
+  // Sınıf öğretmeni de WhatsApp genel duyurusu hazırlar; yalnız serbest
+  // metinli Genel Duyuru kartıyla (yalnizGenelKart, kullanıcı bildirimi 19.10.2026).
+  if (!yalnizYurt && (k.mudur || k.rehber || k.sinifOgretmeni)) whatsapp.push("genel");
   // Yurt listesi kartlarını yurtlu kurumda her öğretmen hazırlar.
   if (k.yurtlu) whatsapp.push("yurt");
   return { site, whatsapp };
 }
+
+// Müdür ve rehber kurumun bütün WhatsApp kartlarını hazırlar; öğretmen
+// yalnız Genel Duyuru kartını.
+export const yalnizGenelKartMi = (k: { mudur: boolean; rehber: boolean }) => !k.mudur && !k.rehber;
 
 // Adresteki tür geçersizse ya da o türde bölüm yoksa ilk uygun tür seçilir.
 export function seciliDuyuruTuru(s: DuyuruSecenekleri, tur: string | undefined): DuyuruTuru | null {
