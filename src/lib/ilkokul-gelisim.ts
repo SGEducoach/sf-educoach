@@ -8,23 +8,31 @@
 // Saf modül — sorgular ilkokul-gelisim-sorgu.ts'te.
 //
 // Kaynak: MEB, İlkokul 1. Sınıf Gelişim Raporu Öğretmen Bilgilendirme
-// Kılavuzu (2024-2025). 1. sınıfın dersleri kılavuzdaki gibi; 2-4.
-// sınıfların MEB ders listesi henüz doğrulanmadı, o sınıflarda önceki
-// kalemler (İngilizce dahil) MEB ders adlarıyla sürer (kullanıcı kararı:
-// diğer sınıflar sonra aynı kalıba oturtulacak).
+// Kılavuzu (2024-2025). Sınıflara göre dersler MEB Talim ve Terbiye
+// Kurulunun 09/05/2025 tarihli 4 sayılı kararındaki İlköğretim Kurumları
+// Haftalık Ders Çizelgesi'nden (zorunlu dersler, çizelgedeki sırayla;
+// 19.10.2026). 2026-2027 için 23/09/2026 tarihli 115 sayılı karar
+// geçerli; tablosuna erişilemedi, ilkokul ders listesinde değişiklik
+// bildirilmedi.
 
 export type GelisimBolumu = "ders" | "kurum";
 
 export const GELISIM_KALEMLERI = [
   { anahtar: "turkce", ad: "Türkçe", bolum: "ders", siniflar: ["1", "2", "3", "4"] },
   { anahtar: "matematik", ad: "Matematik", bolum: "ders", siniflar: ["1", "2", "3", "4"] },
-  { anahtar: "hayat_bilgisi", ad: "Hayat Bilgisi", bolum: "ders", siniflar: ["1", "2", "3", "4"] },
+  { anahtar: "hayat_bilgisi", ad: "Hayat Bilgisi", bolum: "ders", siniflar: ["1", "2", "3"] },
+  { anahtar: "fen_bilimleri", ad: "Fen Bilimleri", bolum: "ders", siniflar: ["3", "4"] },
+  { anahtar: "sosyal_bilgiler", ad: "Sosyal Bilgiler", bolum: "ders", siniflar: ["4"] },
   { anahtar: "ingilizce", ad: "İngilizce", bolum: "ders", siniflar: ["2", "3", "4"] },
+  { anahtar: "din_kulturu", ad: "Din Kültürü ve Ahlak Bilgisi", bolum: "ders", siniflar: ["4"] },
   { anahtar: "resim", ad: "Görsel Sanatlar", bolum: "ders", siniflar: ["1", "2", "3", "4"] },
   { anahtar: "muzik", ad: "Müzik", bolum: "ders", siniflar: ["1", "2", "3", "4"] },
   { anahtar: "beden_egitimi", ad: "Beden Eğitimi ve Oyun", bolum: "ders", siniflar: ["1", "2", "3", "4"] },
+  { anahtar: "trafik_guvenligi", ad: "Trafik Güvenliği", bolum: "ders", siniflar: ["4"] },
+  { anahtar: "insan_haklari", ad: "İnsan Hakları, Vatandaşlık ve Demokrasi", bolum: "ders", siniflar: ["4"] },
   // MEB raporunda yok; kurumun kendi değerlendirmesi (ayrı bölümde gösterilir).
-  { anahtar: "degerler", ad: "Değerler (Din Kültürü)", bolum: "kurum", siniflar: ["1", "2", "3", "4"] },
+  // 4. sınıfta yerini MEB'in Din Kültürü ve Ahlak Bilgisi dersi alır.
+  { anahtar: "degerler", ad: "Değerler (Din Kültürü)", bolum: "kurum", siniflar: ["1", "2", "3"] },
   { anahtar: "sosyal_etkinlik", ad: "Sosyal Etkinlik", bolum: "kurum", siniflar: ["1", "2", "3", "4"] },
   { anahtar: "rehberlik", ad: "Rehberlik", bolum: "kurum", siniflar: ["1", "2", "3", "4"] },
 ] as const;

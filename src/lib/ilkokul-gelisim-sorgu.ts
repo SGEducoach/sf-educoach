@@ -1,7 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ilkokulMu } from "@/lib/kademe";
-import { donemAylari, duzeyOku, gelisimKalemiMi, oncekiAy, sdoDuzeyiMi, sdoGostergesiMi } from "@/lib/ilkokul-gelisim";
+import { GELISIM_KALEMLERI, donemAylari, duzeyOku, gelisimKalemiMi, oncekiAy, sdoDuzeyiMi, sdoGostergesiMi } from "@/lib/ilkokul-gelisim";
 import type { DonemBilgisi, GelisimKaydi, GelisimKalemi, GelisimNotTuru, GelisimYetkisi, SdoDuzeyi } from "@/lib/ilkokul-gelisim";
 
 // Ham kayıt satırını okur: bilinmeyen kalem ya da düzey atlanır, eski üç
@@ -133,7 +133,7 @@ export interface IlkokulOgrenciRaporu {
 // Tek öğrencinin son aylarının raporu — veli ve öğretmen öğrenci sayfası.
 export async function ilkokulOgrenciRaporuGetir(client: Istemci, studentId: string, ayLimiti = 6): Promise<IlkokulOgrenciRaporu> {
   const [{ data: kayitHam }, { data: notHam }, { data: etkinlikHam }, { data: sinifHam }] = await Promise.all([
-    client.from("ilkokul_gelisim").select("ay, kalem, duzey").eq("student_id", studentId).order("ay", { ascending: false }).limit(ayLimiti * 10),
+    client.from("ilkokul_gelisim").select("ay, kalem, duzey").eq("student_id", studentId).order("ay", { ascending: false }).limit(ayLimiti * GELISIM_KALEMLERI.length),
     client.from("ilkokul_gelisim_notlari").select("ay, tur, metin").eq("student_id", studentId).order("ay", { ascending: false }).limit(ayLimiti * 2),
     client.from("ilkokul_etkinlik_katilimlari").select("ilkokul_etkinlikleri(ad, tarih, aciklama)").eq("student_id", studentId),
     client.from("students").select("classes(seviye)").eq("id", studentId).maybeSingle(),

@@ -6,10 +6,22 @@ import {
 } from "./ilkokul-gelisim";
 
 describe("gelişim kalemleri", () => {
-  test("on kalem, migration 0157 kısıtıyla aynı anahtarlar", () => {
+  test("kalemler migration 0168 kısıtıyla aynı anahtarlar", () => {
     expect([...GELISIM_KALEMLERI.map((k) => k.anahtar)].sort()).toEqual([
-      "beden_egitimi", "degerler", "hayat_bilgisi", "ingilizce", "matematik", "muzik", "rehberlik", "resim", "sosyal_etkinlik", "turkce",
+      "beden_egitimi", "degerler", "din_kulturu", "fen_bilimleri", "hayat_bilgisi", "ingilizce", "insan_haklari", "matematik", "muzik",
+      "rehberlik", "resim", "sosyal_bilgiler", "sosyal_etkinlik", "trafik_guvenligi", "turkce",
     ]);
+  });
+  test("2-4. sınıflar MEB haftalık ders çizelgesine göre (2025, 4 sayılı karar)", () => {
+    const dersler = (s: string) => sinifKalemleri(s).filter((k) => k.bolum === "ders").map((k) => k.ad);
+    expect(dersler("2")).toEqual(["Türkçe", "Matematik", "Hayat Bilgisi", "İngilizce", "Görsel Sanatlar", "Müzik", "Beden Eğitimi ve Oyun"]);
+    expect(dersler("3")).toEqual(["Türkçe", "Matematik", "Hayat Bilgisi", "Fen Bilimleri", "İngilizce", "Görsel Sanatlar", "Müzik", "Beden Eğitimi ve Oyun"]);
+    expect(dersler("4")).toEqual([
+      "Türkçe", "Matematik", "Fen Bilimleri", "Sosyal Bilgiler", "İngilizce", "Din Kültürü ve Ahlak Bilgisi", "Görsel Sanatlar", "Müzik",
+      "Beden Eğitimi ve Oyun", "Trafik Güvenliği", "İnsan Hakları, Vatandaşlık ve Demokrasi",
+    ]);
+    // 4. sınıfta Değerler kurum kalemi yok; yerini Din Kültürü dersi alır.
+    expect(sinifKalemleri("4").filter((k) => k.bolum === "kurum").map((k) => k.anahtar)).toEqual(["sosyal_etkinlik", "rehberlik"]);
   });
   test("1. sınıf MEB dersleri; İngilizce 2. sınıftan; kurum değerlendirmesi ayrı", () => {
     const bir = sinifKalemleri("1");

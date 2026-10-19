@@ -9,7 +9,7 @@ const tumKalemler = (studentId: string): IlkokulSinifKaydi[] =>
 
 describe("sinifimOzeti", () => {
   test("rapor tamamı Rehberlik hariç sınıf düzeyinin kalemleri; okul numarası sırası; veli bağı", () => {
-    expect(ogretmenKalemleri("4")).toHaveLength(9);
+    expect(ogretmenKalemleri("4")).toHaveLength(12);
     expect(ogretmenKalemleri("1")).toHaveLength(8); // 1. sınıfta İngilizce yok (MEB)
     const rehberliksiz = tumKalemler("b").filter((k) => k.kalem !== "rehberlik");
     const o = sinifimOzeti({
@@ -24,8 +24,8 @@ describe("sinifimOzeti", () => {
       bugun: "2026-10-18",
       seviye: "4",
     });
-    expect(o.kalemSayisi).toBe(9);
-    expect(o.ogrenciler.map((x) => [x.okulNo, x.yazilanKalem, x.veliBagli])).toEqual([["2", 9, false], ["3", 0, false], ["10", 1, true]]);
+    expect(o.kalemSayisi).toBe(12);
+    expect(o.ogrenciler.map((x) => [x.okulNo, x.yazilanKalem, x.veliBagli])).toEqual([["2", 12, false], ["3", 0, false], ["10", 1, true]]);
     expect(o.raporuTamam).toBe(1);
     expect(o.raporaBaslanmamis).toBe(1); // yalnız Rehberlik'i olan öğrenci öğretmen için "başlanmadı"
     expect(o.veliBagli).toBe(1);
