@@ -176,7 +176,8 @@ const OGRETMEN_MENUSU: DashboardMenuOgesi[] = [
 
 // Revizyon_2 madde 1 — Ajanda (takvim) menü ögesi yalnızca OKUL öğretmenlerine
 // açık (sosyal etkinlik/yarışma bölümü okul kurumlarında faal olacağı için).
-const TAKVIM_MENU_OGESI: DashboardMenuOgesi = { bolum: "takvim", href: "/dashboard/takvim", etiket: "Ajandam", ikon: "takvim" };
+// Kullanıcı kararı (20.10.2026): menüde "Ajandam" yerine "Okul İşlemleri".
+const TAKVIM_MENU_OGESI: DashboardMenuOgesi = { bolum: "takvim", href: "/dashboard/takvim", etiket: "Okul İşlemleri", ikon: "takvim" };
 
 const MUDUR_MENUSU: DashboardMenuOgesi[] = [
   // 2026-08-25 kullanıcı isteği: "dershane müdürünün ana sayfası okul

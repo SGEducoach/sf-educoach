@@ -269,7 +269,7 @@ export async function yurtNobetiPdfYukle(formData: FormData): Promise<{ error: s
   let bildirilen = 0;
   if (bildir) {
     const baslik = "Bu ayın nöbet görevleri yüklendi";
-    const mesaj = `${cozum.ilkTarih} – ${cozum.sonTarih} dönemine ait yurt nöbeti göreviniz SeFu Koç'a yüklendi. Ajandanızdan görebilirsiniz.`;
+    const mesaj = `${cozum.ilkTarih} – ${cozum.sonTarih} dönemine ait yurt nöbeti göreviniz SeFu Koç'a yüklendi. Okul İşlemleri bölümünden görebilirsiniz.`;
     for (const teacherId of eslesenIdler) {
       const sonuc = await ogretmeneBildirimGonder(admin, teacherId, "yurt_nobeti", baslik, mesaj);
       if (!sonuc.error) bildirilen++;
