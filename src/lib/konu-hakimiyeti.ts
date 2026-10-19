@@ -134,14 +134,30 @@ export async function konuHakimiyetiGetir(
   void dokuzOnMu;
   void dershaneMi;
 
-  const { data: altKonularHam } = await supabase
-    .from("mufredat_alt_konular")
-    .select("ders, ust_konu, alt_baslik")
-    .order("sira");
-  const { data: ogrenci } = await supabase.from("students").select("school_id").eq("id", studentId).single();
-  const { data: kurumAltKonularHam } = ogrenci?.school_id
-    ? await supabase.from("kurum_mufredat_alt_konulari").select("ders, ust_konu, alt_baslik").eq("school_id", ogrenci.school_id)
-    : { data: [] };
+  // Bu sorgular birbirinin sonucuna bağlı değil. Birlikte başlatılmaları,
+  // Konu Hâkimiyeti sayfasındaki veritabanı bekleme zincirini kısaltır.
+  const ogrenciPromise = supabase.from("students").select("school_id").eq("id", studentId).single();
+  const kurumAltKonulariPromise = (async () => {
+    const { data: ogrenci } = await ogrenciPromise;
+    if (!ogrenci?.school_id) return [];
+    const { data } = await supabase.from("kurum_mufredat_alt_konulari")
+      .select("ders, ust_konu, alt_baslik").eq("school_id", ogrenci.school_id);
+    return data ?? [];
+  })();
+  const [
+    { data: altKonularHam }, kurumAltKonularHam, { data: hakimiyetHam },
+    oturumHam, olcumHam, denemeOlcumleri, { data: adEslesmeleriHam },
+  ] = await Promise.all([
+    supabase.from("mufredat_alt_konular").select("ders, ust_konu, alt_baslik").order("sira"),
+    kurumAltKonulariPromise,
+    supabase.from("ogrenci_konu_hakimiyeti")
+      .select("ders, konu, hakimiyet_seviyesi, ogrenme_sekli, tekrar_durumu, guncellenme_tarihi")
+      .eq("student_id", studentId),
+    konuCalismalariniGetir(supabase, studentId),
+    soruCozumleriniGetir(supabase, studentId),
+    denemeKonuOlcumleriGetir(supabase, studentId),
+    supabase.from("konu_ad_eslesmeleri").select("ders, kaynak_konu, hedef_konu"),
+  ]);
   type AltKonuRow = { ders: string; ust_konu: string; alt_baslik: string };
   const altKonularMap = new Map<string, string[]>();
   for (const r of ([...(altKonularHam ?? []), ...(kurumAltKonularHam ?? [])] as AltKonuRow[])) {
@@ -162,10 +178,6 @@ export async function konuHakimiyetiGetir(
     }
   }
 
-  const { data: hakimiyetHam } = await supabase
-    .from("ogrenci_konu_hakimiyeti")
-    .select("ders, konu, hakimiyet_seviyesi, ogrenme_sekli, tekrar_durumu, guncellenme_tarihi")
-    .eq("student_id", studentId);
   type HakimiyetRow = {
     ders: string; konu: string; hakimiyet_seviyesi: HedefeYakinlik;
     ogrenme_sekli: OgrenmeSekli[]; tekrar_durumu: TekrarDurumu | null; guncellenme_tarihi: string;
@@ -178,12 +190,6 @@ export async function konuHakimiyetiGetir(
   // ve "ölçüm" (soru_cozumleri'ndeki gerçek dogru/yanlis oranı). İkisi de
   // TARİH SINIRI OLMADAN, öğrencinin o konudaki tüm geçmişini kapsar —
   // bkz. analiz-motoru.ts'teki formül gerekçesi.
-  const [oturumHam, olcumHam, denemeOlcumleri, { data: adEslesmeleriHam }] = await Promise.all([
-    konuCalismalariniGetir(supabase, studentId),
-    soruCozumleriniGetir(supabase, studentId),
-    denemeKonuOlcumleriGetir(supabase, studentId),
-    supabase.from("konu_ad_eslesmeleri").select("ders, kaynak_konu, hedef_konu"),
-  ]);
   const adEslesmeleri = (adEslesmeleriHam as KonuAdEslesmesi[] | null) ?? [];
   const oturumSeviyeleriMap = new Map<string, HedefeYakinlik[]>();
   for (const r of oturumHam) {

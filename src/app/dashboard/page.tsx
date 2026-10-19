@@ -526,6 +526,8 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
   // sorgular tek Promise.all'da paralel çalışıyor — toplam süre artık
   // en YAVAŞ sorgu kadar (toplamı değil).
   const haftaBitis = tarihEkle(haftaBaslangic, 6);
+  const konuSecimiGerekli = aktifBolum === "gorevler" || aktifBolum === "planlar" || aktifBolum === "veri-girisi";
+  const gorevListesiGerekli = aktifBolum === "ozet" || aktifBolum === "gorevler" || aktifBolum === "planlar";
   const [
     { data: student },
     analiz,
@@ -542,7 +544,9 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
     // ders başına konu sayısı (MUFREDAT_KONULARI), pay = öğrencinin
     // "hakimim" (hedefe_yakinlik='yakin') işaretlediği FARKLI konu sayısı
     // — aynı konuyu birden fazla kez çalışmış olsa bile bir kez sayılır.
-    supabase.from("konu_calismalar").select("ders, konu").eq("student_id", userId).eq("hedefe_yakinlik", "yakin"),
+    konuSecimiGerekli
+      ? supabase.from("konu_calismalar").select("ders, konu").eq("student_id", userId).eq("hedefe_yakinlik", "yakin")
+      : Promise.resolve({ data: [] }),
     // Konu bilme/bilmeme göstergesi (Faz K3) — sadece "ozet" ve
     // "yapay-zeka" sekmelerinde gösteriliyor, gereksiz sorguyu diğer
     // sekmelerde atlıyoruz.
@@ -561,11 +565,13 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
     // Gorevlerim.tsx gün seçici) ogrenci_tarih hiçbir zaman gorevler.tarih'in
     // haftasından farklı bir haftaya kaymaz — bu yüzden filtre hâlâ tek
     // (orijinal) tarihe bakabiliyor, ayrı bir OR sorgusu gerekmiyor.
-    supabase.from("gorev_atamalari")
-      .select("id, durum, programa_eklendi_mi, ogrenci_tarih, ogrenci_baslangic_saat, ogrenci_bitis_saat, gorevler!inner(tur, ders, konu, hedef_soru_sayisi, hedef_dakika, tarih, son_tarih, baslangic_saat, bitis_saat, aciklama, olusturan_ogrenci_id)")
-      .eq("student_id", userId)
-      .gte("gorevler.tarih", haftaBaslangic)
-      .lte("gorevler.tarih", haftaBitis),
+    gorevListesiGerekli
+      ? supabase.from("gorev_atamalari")
+        .select("id, durum, programa_eklendi_mi, ogrenci_tarih, ogrenci_baslangic_saat, ogrenci_bitis_saat, gorevler!inner(tur, ders, konu, hedef_soru_sayisi, hedef_dakika, tarih, son_tarih, baslangic_saat, bitis_saat, aciklama, olusturan_ogrenci_id)")
+        .eq("student_id", userId)
+        .gte("gorevler.tarih", haftaBaslangic)
+        .lte("gorevler.tarih", haftaBitis)
+      : Promise.resolve({ data: [] }),
   ]);
   const gerekYokListesi = Array.from(gerekYokSeti);
 
@@ -605,7 +611,7 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
     );
   }
 
-  const kurumKonulari = await kurumAltKonulariGetir(supabase, s.school_id);
+  const kurumKonulari = konuSecimiGerekli ? await kurumAltKonulariGetir(supabase, s.school_id) : [];
 
   const tamamlananSet = new Set<string>();
   for (const r of (tamamlananKonularHam as { ders: string; konu: string }[] | null) ?? []) {
@@ -621,13 +627,13 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
   }
 
   // Faz K4 — 9-10-11. sınıf müfredat üst başlık/alt başlık hiyerarşisi:
-  // sadece "veri-girisi" sekmesinde ve sadece ilgili sınıf seviyesinde
+  // konu seçimi gereken bölümlerde ve sadece ilgili sınıf seviyesinde
   // gerekiyor. Öğrencinin sınıf seviyesi yukarıdaki Promise.all'daki
   // `student` sorgusunun sonucuna muhtaç olduğu için BİLEREK ayrı/sıralı
   // kalıyor — ama küçük ve dar kapsamlı bir sorgu, toplam süreye
   // önceki haliyle kıyasla ihmal edilebilir bir katkısı var.
   let mufredatAltKonulari: { ders: string; ustKonu: string; altBaslik: string }[] = [];
-  if (["9", "10", "11", "12"].includes(s.classes?.seviye ?? "")) {
+  if (konuSecimiGerekli && ["9", "10", "11", "12"].includes(s.classes?.seviye ?? "")) {
     const { data: altKonularHam } = await supabase.from("mufredat_alt_konular").select("ders, ust_konu, alt_baslik").order("sira");
     mufredatAltKonulari = ((altKonularHam as { ders: string; ust_konu: string; alt_baslik: string }[]) ?? [])
       .map((r) => ({ ders: r.ders, ustKonu: r.ust_konu, altBaslik: r.alt_baslik }))
