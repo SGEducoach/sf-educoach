@@ -12,17 +12,25 @@ import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT,
 // mantığını kullanır (kullanıcı isteği, 27.08.2026: "sonuçlar excel olarak
 // da yüklenebilecek").
 // yalnizcaExcel: Grup Koçluk koçu (kullanıcı kararı: koçlara PDF yok, elle/Excel).
-export function DershaneDenemePdfFormu({ schoolId, yalnizcaExcel = false }: { schoolId?: string; yalnizcaExcel?: boolean }) {
+// kademe: kurumun kademesi (kullanıcı isteği 19.10.2026) — ortaokulda yalnız
+// LGS ve 1-8. sınıflar, lisede yalnız TYT/AYT/Branş; "ikisi" ya da bilinmiyorsa hepsi.
+type DenemeTuruSecimi = "TYT" | "AYT" | "BRANS" | "LGS";
+const TUR_ADI: Record<DenemeTuruSecimi, string> = { TYT: "TYT", AYT: "AYT", BRANS: "Branş Denemesi (9-10. sınıf)", LGS: "LGS (ortaokul)" };
+
+export function DershaneDenemePdfFormu({ schoolId, yalnizcaExcel = false, kademe = null }: {
+  schoolId?: string; yalnizcaExcel?: boolean; kademe?: "ortaokul" | "lise" | "ikisi" | null;
+}) {
+  const turSecenekleri: DenemeTuruSecimi[] = kademe === "ortaokul" ? ["LGS"] : kademe === "lise" ? ["TYT", "AYT", "BRANS"] : ["TYT", "AYT", "BRANS", "LGS"];
   const dosyaRef = useRef<HTMLInputElement>(null);
   const [mod, setMod] = useState<"pdf" | "excel">(schoolId || yalnizcaExcel ? "excel" : "pdf");
   const [yayinevi, setYayinevi] = useState("");
   const [tarih, setTarih] = useState("");
-  const [tur, setTur] = useState<"TYT" | "AYT" | "BRANS" | "LGS">("TYT");
+  const [tur, setTur] = useState<DenemeTuruSecimi>(turSecenekleri[0]);
   const [bicim, setBicim] = useState<"otomatik" | "okul" | "maarif" | "sinif" | "sirali" | "claude">("otomatik");
   // Kullanıcı isteği (17.10.2026): denemeye giren sınıf seviyesi sorulur;
   // eşleştirme ekranında öğrenci arama listesi bu seviyeyle açılır.
   const [seviye, setSeviye] = useState("");
-  const seviyeSecenekleri = tur === "LGS" ? ["5", "6", "7", "8"] : tur === "BRANS" ? ["9", "10"] : ["9", "10", "11", "12"];
+  const seviyeSecenekleri = tur === "LGS" ? ["1", "2", "3", "4", "5", "6", "7", "8"] : tur === "BRANS" ? ["9", "10"] : ["9", "10", "11", "12"];
   const [hata, setHata] = useState<string | null>(null);
   const [sonuc, setSonuc] = useState<{
     toplam: number;
@@ -103,7 +111,9 @@ export function DershaneDenemePdfFormu({ schoolId, yalnizcaExcel = false }: { sc
           </a>
         )}
         <p className="text-xs" style={{ color: TEXT_MUTED }}>
-          {mod === "excel" ? "Excel dosyasını indirilen şablona göre hazırlayın. Excel işlemi yapay zekâ kullanmaz." : bicim === "claude"
+          {mod === "excel" ? "Excel dosyasını indirilen şablona göre hazırlayın. Excel işlemi yapay zekâ kullanmaz." : tur === "LGS"
+            ? "\"OKUL NET LİSTESİ (LGS sıralı)\" sayfaları olan sonuç PDF'i yapay zekâsız okunur. Başka biçim için \"Excel yükle\" sekmesindeki LGS şablonunu kullanın."
+            : bicim === "claude"
             ? "Bu seçenek yapay zekâ kullanır ve API kullanım maliyeti oluşturabilir."
             : "Tanınan biçimler yapay zekâsız okunur; biçim tanınmazsa (yalnızca Otomatik'te) yapay zekâya geçilir."}
         </p>
@@ -129,17 +139,13 @@ export function DershaneDenemePdfFormu({ schoolId, yalnizcaExcel = false }: { sc
         </div>
         <label className="flex flex-col gap-1">
           <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Tür</span>
-          <select value={tur} onChange={(e) => { setTur(e.target.value as typeof tur); setSeviye(""); }}
-            className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
-            <option value="TYT">TYT</option>
-            <option value="AYT">AYT</option>
-            <option value="BRANS">Branş Denemesi (9-10. sınıf)</option>
-            <option value="LGS">LGS (ortaokul)</option>
-          </select>
-          {tur === "LGS" && mod === "pdf" && (
-            <span className="text-[11px]" style={{ color: TEXT_MUTED }}>
-              &quot;OKUL NET LİSTESİ (LGS sıralı)&quot; sayfaları olan sonuç PDF&apos;i yapay zekâsız okunur. Başka biçim için &quot;Excel yükle&quot; sekmesindeki LGS şablonunu kullanın.
-            </span>
+          {turSecenekleri.length === 1 ? (
+            <span className="text-sm font-semibold px-3 py-2 rounded-xl" style={{ border: `2px solid ${BORDER}`, background: BG1_ALT, color: TEXT }}>{TUR_ADI[tur]}</span>
+          ) : (
+            <select value={tur} onChange={(e) => { setTur(e.target.value as DenemeTuruSecimi); setSeviye(""); }}
+              className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+              {turSecenekleri.map((t) => <option key={t} value={t}>{TUR_ADI[t]}</option>)}
+            </select>
           )}
         </label>
         <label className="flex flex-col gap-1">

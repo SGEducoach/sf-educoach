@@ -66,7 +66,7 @@ export default async function ModeratorPage({ searchParams }: { searchParams: Pr
               <h1 className="text-base font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Deneme Sonucu Yükle</h1>
               <p className="text-xs" style={{ color: TEXT_MUTED }}>PDF ya da Excel ile toplu deneme sonucu yükleyin. Adı eşleşmeyen satırlar “PDF eşleştirme” bölümüne düşer.</p>
             </div>
-            <DershaneDenemePdfFormu schoolId={adminOkulId} />
+            <DershaneDenemePdfFormu schoolId={adminOkulId} kademe={veri.kademe} />
           </section>
         )}
 

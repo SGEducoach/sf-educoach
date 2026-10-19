@@ -158,7 +158,7 @@ export default async function YoneticiPage({
           {aktifBolum === "pdf-eslesme" && <section className="sfec-section flex flex-col gap-4"><PdfEslesmeYonetimi denemeAnahtari={params.deneme} /><KazanimEslesmeYonetimi /></section>}
           {aktifBolum === "deneme-yukle" && (
             <section className="sfec-section"><DenemeYuklemeSayfasi
-              okullar={okulListesi.map((o) => ({ id: o.id, ad: o.ad, tur: o.tur }))}
+              okullar={okulListesi.map((o) => ({ id: o.id, ad: o.ad, tur: o.tur, kademe: o.kademe ?? null }))}
               seciliOkulId={params.okul ?? null}
             /></section>
           )}

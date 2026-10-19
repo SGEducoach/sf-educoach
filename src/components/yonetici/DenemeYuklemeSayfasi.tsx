@@ -12,7 +12,7 @@ import { BG0, BG1, BORDER, BORDER_STRONG, MINT, TEXT, TEXT_MUTED } from "@/lib/t
 // tam genişlikte açılır. Kurum seçimi URL'de (?okul=) tutuluyor — Okullar
 // sayfasıyla aynı parametre, iki sayfa arasında geçişte seçim korunuyor.
 export function DenemeYuklemeSayfasi({ okullar, seciliOkulId }: {
-  okullar: { id: string; ad: string; tur: "okul" | "dershane" }[];
+  okullar: { id: string; ad: string; tur: "okul" | "dershane"; kademe?: "ortaokul" | "lise" | "ikisi" | null }[];
   seciliOkulId: string | null;
 }) {
   const router = useRouter();
@@ -53,7 +53,7 @@ export function DenemeYuklemeSayfasi({ okullar, seciliOkulId }: {
       </div>
 
       {secili
-        ? <DershaneDenemePdfFormu key={secili.id} schoolId={secili.id} />
+        ? <DershaneDenemePdfFormu key={secili.id} schoolId={secili.id} kademe={secili.kademe ?? null} />
         : <p className="text-sm" style={{ color: TEXT_MUTED }}>Yüklemeye başlamak için yukarıdan bir kurum seçin.</p>}
     </div>
   );

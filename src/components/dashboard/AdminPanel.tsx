@@ -189,7 +189,7 @@ export function AdminPanel({
                   Sonuçlar yalnızca seçili kurumun öğrencileriyle eşleştirilir: {gorunenOkul.ad}.{" "}
                   <Link href="/yonetici/deneme-yukle" className="underline" style={{ color: MINT }}>Deneme Yükle bölümünde</Link> tam ekran çalışabilirsiniz.
                 </p>
-                <DershaneDenemePdfFormu schoolId={gorunenOkul.id} />
+                <DershaneDenemePdfFormu schoolId={gorunenOkul.id} kademe={gorunenOkul.kademe ?? null} />
               </details>
               <IzinliOgrenciListesi schoolId={gorunenOkul.id} />
             </div>
