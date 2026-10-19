@@ -117,7 +117,7 @@ async function karsiTarafaHaberVer(
   const govde = `${gonderenAd} (${okulAd}): ${ozet}`;
   for (const a of ((adminler ?? []) as { id: string }[])) {
     await bildirimGonder(db, a.id, "sistem", baslik, govde);
-    await pushGonderProfile(db, a.id, baslik, govde, "/yonetici/mesajlar");
+    await pushGonderProfile(db, a.id, baslik, govde, "/yonetici/iletisim");
   }
 }
 

@@ -35,6 +35,6 @@ export async function duyuruGecmistenKaldir(id:string){
  const{count}=await y.admin.from("duyuru_aliciler").select("*",{count:"exact",head:true}).eq("duyuru_id",id);
  const{error}=await y.admin.from("duyurular").update({silindi_at:new Date().toISOString(),silen_id:y.user.id,alici_sayisi:d.alici_sayisi||count||0}).eq("id",id);if(error)return{error:error.message};
  await y.admin.from("duyuru_aliciler").delete().eq("duyuru_id",id);
- revalidatePath("/yonetici/duyuru-gecmisi");
+ revalidatePath("/yonetici/iletisim");
  return{error:null};
 }

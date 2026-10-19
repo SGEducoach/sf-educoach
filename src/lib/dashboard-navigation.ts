@@ -37,6 +37,10 @@ export type DashboardBolumu =
   | "yarismalar"
   | "ogrenci-takibi"
   // YÖNETİCİ (admin) paneline özel — bkz. ADMIN_MENUSU
+  // İletişim (20.10.2026): yazışma, site duyurusu, WhatsApp kartları, pano ve
+  // duyuru geçmişi tek sayfada sekmeli. "mesajlar", "whatsapp-yonetimi",
+  // "duyuru-gecmisi" admin'de artık bu sayfanın sekmelerine yönlenir.
+  | "iletisim"
   | "kullanicilar"
   | "kullanici-yonetimi"
   | "google-analytics"
@@ -229,10 +233,10 @@ const DERSHANE_MUDUR_MENUSU: DashboardMenuOgesi[] = [
 // rollerle aynı bölüm adını kasıtlı olarak paylaşıyor (kapsamı platform geneli).
 // Rozet sistemi 19.09.2026 kullanıcı isteğiyle kaldırıldı (yerine Başarım
 // sistemi gelecek, yalnızca öğrenciye).
-// Admin menüsünde ilişkili sayfalar gruplanır. Kullanıcı Yönetimi, arama,
-// ekleme, çıkarma ve düzenlemeyi tek sayfada topladığı için doğrudan öğedir.
-// Genel bakış ve Mesajlar grup DEĞİL, ayrı öğeler; Mesajlar Genel bakış'ın
-// hemen altında (kullanıcı kararı 27.09.2026).
+// Admin menüsü (kullanıcı kararı 20.10.2026): ilişkili sayfalar gruplanır.
+// Genel Bakış ve İletişim doğrudan öğe; İletişim bütün mesaj ve duyuru
+// araçlarını sekmelerde toplar (bkz. YoneticiIletisim). Onay bekleyen işler
+// (veli talebi, belletmen başvurusu) ve yetkiler Kullanıcılar grubunda.
 export interface DashboardMenuGrubu {
   baslik: string;
   ikon: DashboardIkonu;
@@ -246,42 +250,43 @@ export function menuGrubuMu(kalem: DashboardMenuKalemi): kalem is DashboardMenuG
 
 const ADMIN_MENU_YAPISI: DashboardMenuKalemi[] = [
   { bolum: "ozet", href: "/yonetici", etiket: "Genel Bakış", ikon: "ana-sayfa" },
-  { bolum: "mesajlar", href: "/yonetici/mesajlar", etiket: "Mesajlar", ikon: "duyuru" },
+  { bolum: "iletisim", href: "/yonetici/iletisim", etiket: "İletişim", ikon: "duyuru" },
   {
     baslik: "Kurumlar", ikon: "okul", ogeler: [
       { bolum: "okullar", href: "/yonetici/okullar", etiket: "Kurumları Yönet", ikon: "okul" },
-      { bolum: "belletmen-basvurulari", href: "/yonetici/belletmen-basvurulari", etiket: "Yurt · Belletmen Başvuruları", ikon: "kullanici" },
       { bolum: "grup-kocluk", href: "/yonetici/grup-kocluk", etiket: "Grup Koçluk", ikon: "grup" },
-      { bolum: "talepler", href: "/yonetici/talepler", etiket: "Veli Talepleri", ikon: "talep" },
     ],
   },
-  { bolum: "kullanici-yonetimi", href: "/yonetici/kullanici-yonetimi", etiket: "Kullanıcı Yönetimi", ikon: "kullanici" },
+  {
+    baslik: "Kullanıcılar", ikon: "kullanici", ogeler: [
+      { bolum: "kullanici-yonetimi", href: "/yonetici/kullanici-yonetimi", etiket: "Kullanıcı Yönetimi", ikon: "kullanici" },
+      { bolum: "talepler", href: "/yonetici/talepler", etiket: "Veli Talepleri", ikon: "talep" },
+      { bolum: "belletmen-basvurulari", href: "/yonetici/belletmen-basvurulari", etiket: "Belletmen Başvuruları", ikon: "kullanici" },
+      { bolum: "moderatorler", href: "/yonetici/moderatorler", etiket: "Moderatörler", ikon: "moderator" },
+      { bolum: "adminler", href: "/yonetici/adminler", etiket: "Adminler", ikon: "admin" },
+    ],
+  },
   {
     baslik: "Deneme ve İçerik", ikon: "deneme", ogeler: [
       { bolum: "deneme-yukle", href: "/yonetici/deneme-yukle", etiket: "Deneme Yükle", ikon: "deneme" },
       { bolum: "pdf-eslesme", href: "/yonetici/pdf-eslesme", etiket: "PDF Eşleştirme", ikon: "eslestir" },
       { bolum: "icerik", href: "/yonetici/icerik", etiket: "Konu Özetleri", ikon: "icerik" },
       { bolum: "yapay-zeka", href: "/yonetici/yapay-zeka", etiket: "Konu Durumu", ikon: "ai" },
-      { bolum: "blog", href: "/yonetici/blog", etiket: "Blog", ikon: "blog" },
-      // Kullanıcı isteği (18.10.2026): WhatsApp duyuru sistemi admin kontrolünde.
-      { bolum: "whatsapp-yonetimi", href: "/yonetici/whatsapp-yonetimi", etiket: "WhatsApp Duyuruları", ikon: "duyuru" },
     ],
   },
   {
-    baslik: "İzleme ve Raporlar", ikon: "analiz", ogeler: [
+    baslik: "İzleme", ikon: "analiz", ogeler: [
       { bolum: "ogrenci-aktivitesi", href: "/yonetici/ogrenci-aktivitesi", etiket: "Öğrenci Aktivitesi", ikon: "analiz" },
       { bolum: "google-analytics", href: "/yonetici/google-analytics", etiket: "Google Analytics", ikon: "analiz" },
       { bolum: "islem-gecmisi", href: "/yonetici/islem-gecmisi", etiket: "İşlem Geçmişi", ikon: "gecmis" },
-      { bolum: "duyuru-gecmisi", href: "/yonetici/duyuru-gecmisi", etiket: "Duyuru Geçmişi", ikon: "duyuru" },
       { bolum: "hata-bildirimleri", href: "/yonetici/hata-bildirimleri", etiket: "Hata Bildirimleri", ikon: "hata" },
     ],
   },
   {
-    baslik: "Yetki ve Ayarlar", ikon: "ayarlar", ogeler: [
-      { bolum: "adminler", href: "/yonetici/adminler", etiket: "Adminler", ikon: "admin" },
-      { bolum: "moderatorler", href: "/yonetici/moderatorler", etiket: "Moderatörler", ikon: "moderator" },
-      { bolum: "kurallar", href: "/yonetici/kurallar", etiket: "Kurallar", ikon: "kural" },
+    baslik: "Site", ikon: "ayarlar", ogeler: [
       { bolum: "site-ayarlari", href: "/yonetici/site-ayarlari", etiket: "Site Ayarları", ikon: "ayarlar" },
+      { bolum: "blog", href: "/yonetici/blog", etiket: "Blog", ikon: "blog" },
+      { bolum: "kurallar", href: "/yonetici/kurallar", etiket: "Kayıt Kuralları", ikon: "kural" },
     ],
   },
   { bolum: "profil", href: "/yonetici/profil", etiket: "Profilim", ikon: "profil" },
@@ -498,7 +503,8 @@ export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
 
 // /yonetici/[bolum] catch-all için.
 export const YONETICI_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
-  "mesajlar",
+  // "mesajlar", "whatsapp-yonetimi", "duyuru-gecmisi": eski adresler, İletişim sekmelerine yönlenir.
+  "iletisim", "mesajlar",
   "kullanicilar", "kullanici-yonetimi", "talepler", "deneme-yukle", "pdf-eslesme", "okullar", "grup-kocluk", "moderatorler", "icerik", "blog", "kurallar", "profil", "hata-bildirimleri",
   "duyuru-gecmisi", "islem-gecmisi", "ogrenci-aktivitesi", "site-ayarlari", "adminler", "whatsapp-yonetimi", "belletmen-basvurulari",
 ]);

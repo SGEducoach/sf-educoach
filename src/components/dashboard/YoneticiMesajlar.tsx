@@ -36,7 +36,7 @@ export function YoneticiMesajlar() {
   const yeniler = kisiler.filter(k => !yazisilanlar.has(k.id));
   const secili = mesajlar.filter(m => m.kurum_yetkilisi_id === hedef).slice().reverse();
   return <div className="flex flex-col gap-3 rounded-2xl p-4" style={{ background: BG1, color: TEXT, border: `1px solid ${BORDER}` }}>
-    <h2 className="text-lg font-bold">{adminMi ? "Mesajlar" : "Yöneticiyle iletişim"}</h2>
+    <h2 className="text-lg font-bold">{adminMi ? "Kurum Yazışmaları" : "Yöneticiyle İletişim"}</h2>
     <button type="button" disabled={bekliyor} onClick={() => baslat(() => yenile())} className="self-start text-sm underline" style={{ color: MINT }}>Mesajları yenile</button>
     {adminMi && <select aria-label="Konuşma seç" value={hedef} onChange={e => { setHedef(e.target.value); setMetin(""); }} className="rounded-xl p-3 w-full" style={{ background: BG0, color: TEXT }}>
       <option value="">{konusmalar.length || yeniler.length ? "Konuşma seçin" : "Henüz kurum yetkilisi yok"}</option>

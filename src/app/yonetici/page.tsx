@@ -49,6 +49,26 @@ import { BelletmenBasvurulari } from "@/components/yonetici/BelletmenBasvurulari
 import { sablonAyarlariGetir } from "@/lib/whatsapp-sablon-ayarlari-verisi";
 import { TUM_SABLONLAR } from "@/lib/whatsapp-sablon-ayarlari";
 import { TEXT, TEXT_MUTED } from "@/lib/theme";
+import { YoneticiSekmeleri } from "@/components/yonetici/YoneticiSekmeleri";
+import { KurumSecici } from "@/components/yonetici/KurumSecici";
+import { BekleyenIslerKarti } from "@/components/yonetici/BekleyenIslerKarti";
+import { bekleyenIsleriGetir } from "@/lib/yonetici-bekleyen-isler";
+
+// İletişim sayfasının sekmeleri (20.10.2026); ilki varsayılan.
+const ILETISIM_SEKMELERI = [
+  { deger: "yazismalar", etiket: "Kurum Yazışmaları" },
+  { deger: "site-duyurusu", etiket: "Site Duyurusu" },
+  { deger: "whatsapp", etiket: "WhatsApp Kartları" },
+  { deger: "pano", etiket: "Pano İlanları" },
+  { deger: "gecmis", etiket: "Duyuru Geçmişi" },
+] as const;
+
+// Kurumları Yönet iç sekmeleri (20.10.2026); ilki varsayılan.
+const KURUM_SEKMELERI = [
+  { deger: "bilgi", etiket: "Bilgi ve Paket" },
+  { deger: "idare", etiket: "Rehberlik ve İdare" },
+  { deger: "program", etiket: "Ders Programı ve Nöbet" },
+] as const;
 
 // SeFu Koç'un tek kontrol noktası — bilerek /dashboard'dan ayrı, kendi
 // bağımsız girişi olan, hiçbir yerden link verilmeyen bir adres. Normal
@@ -62,7 +82,7 @@ import { TEXT, TEXT_MUTED } from "@/lib/theme";
 export default async function YoneticiPage({
   searchParams,
 }: {
-  searchParams: Promise<{ okul?: string; bolum?: string; kurum?: string; donem?: string; deneme?: string }>;
+  searchParams: Promise<{ okul?: string; bolum?: string; kurum?: string; donem?: string; deneme?: string; sekme?: string }>;
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -78,7 +98,13 @@ export default async function YoneticiPage({
   const params = await searchParams;
   const aktifBolum = (params.bolum ?? "ozet") as DashboardBolumu;
   if (aktifBolum === "kullanicilar") redirect("/yonetici/kullanici-yonetimi");
+  // Eski adresler (yer imleri, bildirim bağlantıları) İletişim sekmelerine.
+  if (aktifBolum === "mesajlar") redirect("/yonetici/iletisim?sekme=yazismalar");
+  if (aktifBolum === "whatsapp-yonetimi") redirect("/yonetici/iletisim?sekme=whatsapp");
+  if (aktifBolum === "duyuru-gecmisi") redirect("/yonetici/iletisim?sekme=gecmis");
   if (!dashboardMenusu("admin").some((oge) => oge.bolum === aktifBolum)) redirect("/yonetici");
+  const iletisimSekmesi = (ILETISIM_SEKMELERI.find((s) => s.deger === params.sekme) ?? ILETISIM_SEKMELERI[0]).deger;
+  const kurumSekmesi = (KURUM_SEKMELERI.find((s) => s.deger === params.sekme) ?? KURUM_SEKMELERI[0]).deger;
 
   // ozel 0166 ile geldi; sütun yoksa onsuz okunur.
   const okulSorgusu = (sutunlar: string) => supabase.from("schools").select(sutunlar).is("grup_kapasitesi", null).order("ad");
@@ -115,7 +141,8 @@ export default async function YoneticiPage({
     : { ayarlar: { baslik: "", govde: "", sliderGecisSaniye: 6 }, gorseller: [] };
   const anaSayfaDuyurulari = aktifBolum === "site-ayarlari" ? await anaSayfaDuyurulariniGetir(supabase) : [];
   const konuAdInceleme = aktifBolum === "icerik" ? await konuAdIncelemeVerisiGetir() : null;
-  const whatsappAyarlari = aktifBolum === "whatsapp-yonetimi" ? await sablonAyarlariGetir(createAdminClient()) : null;
+  const whatsappAyarlari = aktifBolum === "iletisim" && iletisimSekmesi === "whatsapp" ? await sablonAyarlariGetir(createAdminClient()) : null;
+  const bekleyenIsler = aktifBolum === "ozet" || aktifBolum === "iletisim" ? await bekleyenIsleriGetir(createAdminClient()) : null;
 
   // Kullanıcı isteği (26.08.2026): admin de dahil olmak üzere yanlış giriş
   // denemesi bildirimi alıyor (bkz. api/giris/route.ts) — Mesajlarım kutusu
@@ -132,12 +159,29 @@ export default async function YoneticiPage({
       <div className="mx-auto flex min-h-[calc(100dvh-6.75rem)] w-full max-w-[100rem] flex-1 items-stretch gap-6 px-4 py-6 sm:px-6 lg:py-7">
         <DashboardYanMenu role="admin" aktifBolum={aktifBolum} />
         <main id="ana-icerik" className="sfec-dashboard-main min-h-[calc(100dvh-10.25rem)] min-w-0 w-full flex-1 flex flex-col gap-6">
+          {/* Genel Bakış (20.10.2026): bekleyen işler + istatistikler; duyuru
+              ve pano formları İletişim'e taşındı. */}
           {aktifBolum === "ozet" && (
             <>
+              {bekleyenIsler && <section className="sfec-section"><BekleyenIslerKarti isler={bekleyenIsler} /></section>}
               <section className="sfec-section"><PlatformIstatistikleri /></section>
-              <section className="sfec-section"><YoneticiDuyuruPaneli okullar={okulListesi.map((o) => ({ id: o.id, ad: o.ad }))} /></section>
-              <section className="sfec-section"><TgDenemeYonetimi okullar={okulListesi.map((o) => ({ id: o.id, ad: o.ad }))} /></section>
             </>
+          )}
+          {/* İletişim (20.10.2026): yazışma, site duyurusu, WhatsApp kartları,
+              pano ve duyuru geçmişi tek sayfada; yalnız açık sekme yüklenir. */}
+          {aktifBolum === "iletisim" && (
+            <section className="sfec-section flex flex-col gap-4">
+              <YoneticiSekmeleri etiket="İletişim bölümleri" secili={iletisimSekmesi}
+                sekmeler={ILETISIM_SEKMELERI.map((s) => ({ ...s, href: `/yonetici/iletisim?sekme=${s.deger}`, sayi: s.deger === "yazismalar" ? bekleyenIsler?.yanitBekleyenYazisma : undefined }))} />
+              {iletisimSekmesi === "yazismalar" && <YoneticiMesajlar />}
+              {iletisimSekmesi === "site-duyurusu" && <YoneticiDuyuruPaneli okullar={okulListesi.map((o) => ({ id: o.id, ad: o.ad }))} />}
+              {iletisimSekmesi === "whatsapp" && whatsappAyarlari && (
+                <WhatsappYonetimi sablonlar={TUM_SABLONLAR} ayarlar={whatsappAyarlari.ayarlar} hazir={whatsappAyarlari.hazir}
+                  okullar={okulListesi.map((o) => ({ id: o.id, ad: o.ad, yurtlu: o.yurtlu === true }))} />
+              )}
+              {iletisimSekmesi === "pano" && <TgDenemeYonetimi okullar={okulListesi.map((o) => ({ id: o.id, ad: o.ad }))} />}
+              {iletisimSekmesi === "gecmis" && <DuyuruGecmisi />}
+            </section>
           )}
           {aktifBolum === "belletmen-basvurulari" && <section className="sfec-section"><BelletmenBasvurulari /></section>}
           {aktifBolum === "kullanici-yonetimi" && <section className="sfec-section flex flex-col gap-5">
@@ -161,7 +205,6 @@ export default async function YoneticiPage({
                 donem={AKTIVITE_DONEMLERI.find((d) => d.deger === params.donem)?.deger ?? VARSAYILAN_AKTIVITE_DONEMI} />
             </section>
           )}
-          {aktifBolum === "mesajlar" && <section className="sfec-section"><YoneticiMesajlar /></section>}
           {aktifBolum === "talepler" && <VeliTalepleri />}
           {aktifBolum === "pdf-eslesme" && <section className="sfec-section flex flex-col gap-4"><PdfEslesmeYonetimi denemeAnahtari={params.deneme} /><KazanimEslesmeYonetimi /></section>}
           {aktifBolum === "deneme-yukle" && (
@@ -170,7 +213,14 @@ export default async function YoneticiPage({
               seciliOkulId={params.okul ?? null}
             /></section>
           )}
-          {aktifBolum === "okullar" && (
+          {/* Kurumları Yönet iç sekmeleri (20.10.2026): Bilgi ve Paket
+              (kurum ekle/düzenle, paket, sınıflar), Rehberlik ve İdare,
+              Ders Programı ve Nöbet. Seçili kurum sekmeler arasında korunur. */}
+          {aktifBolum === "okullar" && okulListesi.length > 0 && (
+            <YoneticiSekmeleri etiket="Kurum bölümleri" secili={kurumSekmesi}
+              sekmeler={KURUM_SEKMELERI.map((s) => ({ ...s, href: `/yonetici/okullar?${gorunecekOkulId ? `okul=${gorunecekOkulId}&` : ""}sekme=${s.deger}` }))} />
+          )}
+          {aktifBolum === "okullar" && kurumSekmesi === "bilgi" && (
             <section className="sfec-section"><AdminPanel
               okullar={okulListesi}
               paketler={kurumPaketleri ?? []}
@@ -179,15 +229,17 @@ export default async function YoneticiPage({
               ogretmenListesi={ogretmenListesi}
             /></section>
           )}
-          {aktifBolum === "okullar" && gorunecekOkulId && okulListesi.some((o) => o.id === gorunecekOkulId && o.tur === "okul") && (
+          {aktifBolum === "okullar" && kurumSekmesi !== "bilgi" && okulListesi.length > 0 && (
+            <KurumSecici okullar={okulListesi.map((o) => ({ id: o.id, ad: o.ad }))} seciliOkulId={gorunecekOkulId} sekme={kurumSekmesi} />
+          )}
+          {aktifBolum === "okullar" && kurumSekmesi === "idare" && gorunecekOkulId && okulListesi.some((o) => o.id === gorunecekOkulId && o.tur === "okul") && (
             <section className="sfec-section"><RehberSinifAtamalari schoolId={gorunecekOkulId} /></section>
           )}
-          {aktifBolum === "okullar" && gorunecekOkulId && (
+          {aktifBolum === "okullar" && kurumSekmesi === "idare" && gorunecekOkulId && (
             <section className="sfec-section"><MudurYardimcisiAtamalari schoolId={gorunecekOkulId} /></section>
           )}
-          {/* Ders programı + nöbet listesi PDF yükleme (kullanıcı isteği
-              17.09.2026) — seçili okul için, AdminPanel'in altında. */}
-          {aktifBolum === "okullar" && gorunecekOkulId && (
+          {/* Ders programı + nöbet listesi PDF yükleme (kullanıcı isteği 17.09.2026). */}
+          {aktifBolum === "okullar" && kurumSekmesi === "program" && gorunecekOkulId && (
             <section className="sfec-section">
               <NobetProgramYukleme
                 okulId={gorunecekOkulId}
@@ -206,15 +258,8 @@ export default async function YoneticiPage({
             </section>
           )}
           {aktifBolum === "blog" && <section className="sfec-section"><BlogYonetimi /></section>}
-          {aktifBolum === "whatsapp-yonetimi" && whatsappAyarlari && (
-            <section className="sfec-section">
-              <WhatsappYonetimi sablonlar={TUM_SABLONLAR} ayarlar={whatsappAyarlari.ayarlar} hazir={whatsappAyarlari.hazir}
-                okullar={okulListesi.map((o) => ({ id: o.id, ad: o.ad, yurtlu: o.yurtlu === true }))} />
-            </section>
-          )}
           {aktifBolum === "kurallar" && <KurallarYonetimi />}
           {aktifBolum === "hata-bildirimleri" && <section className="sfec-section"><HataBildirimleriYonetimi /></section>}
-          {aktifBolum === "duyuru-gecmisi" && <section className="sfec-section"><DuyuruGecmisi /></section>}
           {aktifBolum === "islem-gecmisi" && <section className="sfec-section"><IslemGecmisi /></section>}
           {aktifBolum === "site-ayarlari" && (
             <section className="sfec-section">
