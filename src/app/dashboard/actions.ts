@@ -746,7 +746,10 @@ export async function ogretmenDuyuruGonder(mesaj: string, kapsam?: string, alici
   const rehberSeviyeleri = rehberlikUyeligi?.sinifDuzeyleri ?? [];
   // Yurt sorumlusu müdür yardımcısı yurt öğrencilerine (ve velilerine) duyuru
   // gönderir (kullanıcı isteği 18.10.2026); yalnız yurt sorumlusunun tek kapsamı bu.
-  const yurtKapsami = !!idare?.yurt && kapsam === "yurt";
+  // Müdür de yurtlu kurumda Yurt Duyuruları bölümünden gönderir (19.10.2026).
+  const yurtKapsami = kapsam === "yurt" && (!!idare?.yurt || (profile.role === "mudur"
+    && (await admin.from("schools").select("yurtlu").eq("id", teacher.school_id).maybeSingle()).data?.yurtlu === true));
+  if (kapsam === "yurt" && !yurtKapsami) return { error: "Yurt öğrencilerine duyuru gönderme yetkiniz yok.", ...bosSonuc };
   if (okulRehberi && rehberSeviyeleri.length === 0 && !yurtKapsami) {
     return { error: idare?.yurt ? "Yalnız yurt öğrencilerine duyuru gönderebilirsiniz." : "Henüz sorumlu olduğunuz sınıf düzeyi atanmadı.", ...bosSonuc };
   }

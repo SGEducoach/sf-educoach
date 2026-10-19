@@ -2,6 +2,7 @@ import { moderatorKullanicilariGetir } from "@/app/moderator/actions";
 import { ogretmenDuyuruGonder, gonderilenDuyurularGetir } from "@/app/dashboard/actions";
 import { DuyuruFormu } from "@/components/dashboard/DuyuruFormu";
 import { DuyuruTuruSekmeleri } from "@/components/dashboard/DuyuruTuruSekmeleri";
+import { seciliDuyuruAlani, type DuyuruSecenekleri } from "@/lib/duyuru-alanlari";
 import { MudurYardimcisiAtamalari } from "@/components/yonetici/MudurYardimcisiAtamalari";
 import { KonuDurumuBolumu } from "@/components/dashboard/KonuDurumuBolumu";
 import { konuDurumuKapsamlari } from "@/lib/konu-durumu-verisi";
@@ -23,12 +24,15 @@ import { BG1, BORDER, TEXT_MUTED } from "@/lib/theme";
 // (Ana Sayfa — kademe bazlı performans, varsayılan sekme), öğretmenler,
 // öğrenciler, denemeler, tg-denemeleri (page.tsx üst seviyede, buraya hiç
 // düşmez), yapay-zeka, duyurular.
-export async function DershaneMudurPaneli({ siniflar, aktifBolum, schoolId, secilenKapsam }: {
+export async function DershaneMudurPaneli({ siniflar, aktifBolum, schoolId, secilenKapsam, duyuruSecenekleri, duyuruAlani }: {
   siniflar: { id: string; seviye: string; sube: string }[];
   aktifBolum: DashboardBolumu;
   schoolId: string;
   // Konu Durumu'nun seçili kapsamı (?kapsam=).
   secilenKapsam?: string;
+  // Duyurular sekmeleri (Site İçi / WhatsApp, Genel / Yurt) ve seçili bölüm (?alan=).
+  duyuruSecenekleri: DuyuruSecenekleri;
+  duyuruAlani?: string;
 }) {
   if (aktifBolum === "ozet") {
     const supabase = await createClient();
@@ -37,6 +41,23 @@ export async function DershaneMudurPaneli({ siniflar, aktifBolum, schoolId, seci
   }
 
   if (aktifBolum === "duyurular") {
+    const alan = seciliDuyuruAlani(duyuruSecenekleri.site, duyuruAlani) ?? "genel";
+    if (alan === "yurt") {
+      return (
+        <section id="duyurular" className="sfec-section">
+          <DuyuruTuruSekmeleri tur="site" alan="yurt" secenekler={duyuruSecenekleri} />
+          <DuyuruFormu
+            key="yurt"
+            baslik="Yurt Öğrencilerine Duyuru Gönder"
+            aciklama="Duyuru yalnız yurt öğrencilerine gider; öğrenciye, veliye ya da ikisine birden gönderebilirsiniz."
+            gonder={ogretmenDuyuruGonder}
+            kapsamSecenekleri={[{ deger: "yurt", etiket: "Yurt öğrencileri" }]}
+            aliciTuruSecilebilir
+            gecmisGetir={gonderilenDuyurularGetir}
+          />
+        </section>
+      );
+    }
     const kapsamSecenekleri = [
       { deger: "okul", etiket: "Tüm dershane" },
       { deger: "9", etiket: "9. Sınıflar" },
@@ -47,8 +68,9 @@ export async function DershaneMudurPaneli({ siniflar, aktifBolum, schoolId, seci
     ];
     return (
       <section id="duyurular" className="sfec-section">
-        <DuyuruTuruSekmeleri secili="site" />
+        <DuyuruTuruSekmeleri tur="site" alan="genel" secenekler={duyuruSecenekleri} />
         <DuyuruFormu
+          key="genel"
           baslik="Dershaneye Duyuru Gönder"
           aciklama="Dershane veya sınıf kapsamını ve duyurunun öğrenciye, veliye ya da ikisine birden gideceğini seçebilirsiniz."
           gonder={ogretmenDuyuruGonder}

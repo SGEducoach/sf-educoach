@@ -30,9 +30,11 @@ function yuvarlak(ctx: Ctx, x: number, y: number, w: number, h: number, r: numbe
   ctx.closePath();
 }
 
-function satirla(ctx: Ctx, metin: string, genislik: number, enFazla: number): string[] {
+// paragrafArasi: paragraflar arasına boş satır (serbest metinli genel duyuru).
+function satirla(ctx: Ctx, metin: string, genislik: number, enFazla: number, paragrafArasi = false): string[] {
   const sonuc: string[] = [];
   for (const paragraf of metin.split(/\n+/)) {
+    if (paragrafArasi && sonuc.length) sonuc.push("");
     let satir = "";
     for (const k of paragraf.split(/\s+/).filter(Boolean)) {
       const aday = satir ? `${satir} ${k}` : k;
@@ -123,9 +125,17 @@ export interface DuyuruCizimi {
   kurumAdi: string;
   telefon: string;
   aile: string;
+  // Serbest metinli genel duyuru: fotoğraf bandı kısa, metin uzun olabilir.
+  metinOdakli?: boolean;
+  // Kartla birlikte gönderilen dosyaların adları; kartın altında listelenir.
+  ekler?: string[];
 }
 
 const OLCEKLER = [1, 0.9, 0.8, 0.72, 0.64];
+// Serbest metinde yazı, alanı dolduran en büyük boyutta kalsın diye sık adım.
+const METIN_OLCEKLERI = [1, 0.94, 0.88, 0.83, 0.78, 0.73, 0.69, 0.65, 0.61, 0.57, 0.53, 0.5];
+// Paragraf arası boş satır yarım satır yer kaplar.
+const satirAdimi = (s: string) => (s === "" ? 0.5 : 1);
 
 export function duyuruKartiCiz(canvas: HTMLCanvasElement, c: DuyuruCizimi) {
   canvas.width = KART_G;
@@ -138,7 +148,7 @@ export function duyuruKartiCiz(canvas: HTMLCanvasElement, c: DuyuruCizimi) {
   ctx.fillRect(0, 0, KART_G, KART_Y);
 
   // Fotoğraf alanı
-  const FOTO_Y = 580;
+  const FOTO_Y = c.metinOdakli ? 400 : 580;
   if (c.foto) {
     kapla(ctx, c.foto, 0, 0, KART_G, FOTO_Y);
   } else {
@@ -210,7 +220,9 @@ export function duyuruKartiCiz(canvas: HTMLCanvasElement, c: DuyuruCizimi) {
   const ust = FOTO_Y + LR + 66;
   const alt = altY - 44;
   const genislik = KART_G - 2 * KENAR;
-  for (const o of OLCEKLER) {
+  const olcekler = c.metinOdakli ? METIN_OLCEKLERI : OLCEKLER;
+  const ekler = (c.ekler ?? []).filter(Boolean);
+  for (const o of olcekler) {
     const p = {
       baslik: 66 * o, alt: 32 * o, etiket: 22 * o, deger: 32 * o, aciklama: 28 * o, satirAra: 22 * o,
     };
@@ -222,14 +234,18 @@ export function duyuruKartiCiz(canvas: HTMLCanvasElement, c: DuyuruCizimi) {
     ctx.font = font(800, p.deger);
     const satirlar = c.icerik.satirlar.map((s) => ({ etiket: s.etiket, degerler: satirla(ctx, s.deger, KART_G - KENAR - degerX, 2) }));
     ctx.font = font(600, p.aciklama);
-    const aciklama = c.icerik.aciklama ? satirla(ctx, c.icerik.aciklama, genislik - 56, 7) : [];
+    const aciklama = c.icerik.aciklama ? satirla(ctx, c.icerik.aciklama, genislik - 56, c.metinOdakli ? 30 : 7, c.metinOdakli) : [];
+    ctx.font = font(700, p.aciklama * 0.9);
+    const ekX = KENAR + 28 + 175 * Math.max(o, 0.8);
+    const ekSatirlari = ekler.length ? satirla(ctx, ekler.join(" · "), KART_G - KENAR - 28 - ekX, 2) : [];
 
     const baslikYuk = baslik.length * p.baslik * 1.08;
     const altYuk = altBaslik.length ? altBaslik.length * p.alt * 1.25 + 8 : 0;
     const satirYuk = satirlar.reduce((t, s) => t + Math.max(1, s.degerler.length) * p.deger * 1.2 + p.satirAra, 0);
-    const aciklamaYuk = aciklama.length ? 56 + (c.icerik.aciklamaBasligi ? p.etiket + 14 : 0) + aciklama.length * p.aciklama * 1.42 : 0;
-    const toplam = baslikYuk + altYuk + (satirlar.length ? 26 + satirYuk : 0) + (aciklama.length ? 24 + aciklamaYuk : 0);
-    if (toplam > alt - ust && o !== OLCEKLER[OLCEKLER.length - 1]) continue;
+    const aciklamaYuk = aciklama.length ? 56 + (c.icerik.aciklamaBasligi ? p.etiket + 14 : 0) + aciklama.reduce((t, s) => t + satirAdimi(s), 0) * p.aciklama * 1.42 : 0;
+    const ekYuk = ekSatirlari.length ? 36 + ekSatirlari.length * p.aciklama * 1.3 : 0;
+    const toplam = baslikYuk + altYuk + (satirlar.length ? 26 + satirYuk : 0) + (aciklama.length ? 24 + aciklamaYuk : 0) + (ekYuk ? 18 + ekYuk : 0);
+    if (toplam > alt - ust && o !== olcekler[olcekler.length - 1]) continue;
 
     let y = ust;
     ctx.fillStyle = KOYU;
@@ -278,7 +294,26 @@ export function duyuruKartiCiz(canvas: HTMLCanvasElement, c: DuyuruCizimi) {
       }
       ctx.fillStyle = KOYU;
       ctx.font = font(600, p.aciklama);
-      for (const s of aciklama) { ay += p.aciklama * 1.42; ctx.fillText(s, KENAR + 28, ay - p.aciklama * 0.3); }
+      for (const s of aciklama) { ay += p.aciklama * 1.42 * satirAdimi(s); if (s) ctx.fillText(s, KENAR + 28, ay - p.aciklama * 0.3); }
+      y += aciklamaYuk;
+    }
+    if (ekSatirlari.length) {
+      // Ekli dosyalar: alıcı kartın yanında hangi dosyaların geldiğini görür.
+      y += 18;
+      ctx.strokeStyle = rgba(c.renk, 0.45);
+      ctx.lineWidth = 2;
+      ctx.setLineDash([10, 8]);
+      yuvarlak(ctx, KENAR, y, genislik, ekYuk, 22);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = c.renk;
+      ctx.font = font(800, p.etiket);
+      harf(2);
+      ctx.fillText(ekler.length > 1 ? `EKLER (${ekler.length})` : "EK DOSYA", KENAR + 28, y + 18 + p.aciklama * 0.95);
+      harf(0);
+      ctx.fillStyle = KOYU;
+      ctx.font = font(700, p.aciklama * 0.9);
+      ekSatirlari.forEach((s, i) => ctx.fillText(s, ekX, y + 18 + p.aciklama * (0.95 + i * 1.3)));
     }
     break;
   }

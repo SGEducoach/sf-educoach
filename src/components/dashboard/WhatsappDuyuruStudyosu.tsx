@@ -6,7 +6,7 @@
 // liste üretir. Kartlar tarayıcıda çizilir; sunucuya gitmez, saklanmaz.
 // Kendi seçilen fotoğraf da yalnız bu sayfada kullanılır, yüklenmez.
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { Download, ImagePlus, MessageSquareShare, Share2, UserX } from "lucide-react";
+import { Download, FileText, ImagePlus, MessageSquareShare, Paperclip, Share2, UserX, X } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, BLUSH, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
 import { bugununTarihiTR } from "@/lib/tarih";
 import { sinifSiraKarsilastir } from "@/lib/types";
@@ -22,6 +22,12 @@ import {
 import { CinsiyetBilgileri, GelenYoklamalar, YurtListeDuzenleyici, type YoklamaBaslangici, type YurtVerisi } from "@/components/dashboard/YurtListeStudyosu";
 import { YURT_SABLONLARI } from "@/lib/yurt-listesi";
 import { etkinSablonlar, type EtkinSablon, type EtkinSablonlar } from "@/lib/whatsapp-sablon-ayarlari";
+
+// Genel duyuruya eklenebilen dosyalar (kartla birlikte paylaşılır).
+const EK_EN_FAZLA = 5;
+const EK_EN_BUYUK_MB = 25;
+const EK_TURLERI = ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,image/*";
+const boyutYaz = (b: number) => b >= 1024 * 1024 ? `${(b / 1024 / 1024).toLocaleString("tr-TR", { maximumFractionDigits: 1 })} MB` : `${Math.max(1, Math.round(b / 1024))} KB`;
 
 const DEVAMSIZLIK = "devamsizlik";
 const CINSIYET = "cinsiyet-bilgileri";
@@ -180,6 +186,10 @@ function DuyuruDuzenleyici({ sablon, etkin, kurumAdi, logo, telefon, paylasilabi
   const foto = useFotoSecimi(etkin.fotolar);
   const [onizleme, setOnizleme] = useState<string | null>(null);
   const [durum, setDurum] = useState<string | null>(null);
+  // Genel duyurunun ekli dosyaları: yalnız bu sayfada tutulur, yüklenmez.
+  const [ekler, setEkler] = useState<File[]>([]);
+  const [ekHatasi, setEkHatasi] = useState<string | null>(null);
+  const ekAdlari = useMemo(() => ekler.map((f) => f.name), [ekler]);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   // Admin başlığı (varsa) şablonun sabit başlığının yerine geçer.
   const icerik = useMemo(() => {
@@ -194,16 +204,31 @@ function DuyuruDuzenleyici({ sablon, etkin, kurumAdi, logo, telefon, paylasilabi
       const [aile, fotoImg, logoImg, sefu] = await Promise.all([yaziTipi(), gorselYukle(fotoKaynak), gorselYukle(logo), gorselYukle(icerik.girisGerekli ? "/icon-192.png" : null)]);
       const canvas = canvasRef.current ?? document.createElement("canvas");
       canvasRef.current = canvas;
-      duyuruKartiCiz(canvas, { icerik, sablonAdi: etkin.ad, renk, foto: fotoImg, logo: logoImg, sefuSimgesi: sefu, kurumAdi, telefon, aile });
+      duyuruKartiCiz(canvas, { icerik, sablonAdi: etkin.ad, renk, foto: fotoImg, logo: logoImg, sefuSimgesi: sefu, kurumAdi, telefon, aile, metinOdakli: sablon.metinOdakli, ekler: ekAdlari });
       if (!iptal) setOnizleme(canvas.toDataURL("image/png"));
     }, 150);
     return () => { iptal = true; window.clearTimeout(z); };
-  }, [icerik, etkin.ad, renk, fotoKaynak, logo, kurumAdi, telefon]);
+  }, [icerik, etkin.ad, renk, fotoKaynak, logo, kurumAdi, telefon, sablon.metinOdakli, ekAdlari]);
 
   async function cikti(paylas: boolean) {
     if (!canvasRef.current) return;
-    const ok = await indirVeyaPaylas(canvasRef.current, `duyuru-${sablon.anahtar}-${bugununTarihiTR()}.png`, paylas);
-    setDurum(ok ? (paylas ? "Kart paylaşıldı. Sistemde saklanmadı." : "Kart indirildi. Sistemde saklanmadı.") : null);
+    const sonuc = await indirVeyaPaylas(canvasRef.current, `duyuru-${sablon.anahtar}-${bugununTarihiTR()}.png`, paylas, ekler);
+    setDurum(!sonuc ? null
+      : sonuc === "yalnizKart" ? "Kart paylaşıldı; bu cihaz ekli dosyaları birlikte gönderemedi, WhatsApp'ta ayrıca ekleyin."
+      : paylas ? (ekler.length ? "Kart ve ekli dosyalar paylaşıldı. Sistemde saklanmadı." : "Kart paylaşıldı. Sistemde saklanmadı.")
+      : ekler.length ? "Kart indirildi. Ekli dosyaları WhatsApp'ta kartla birlikte seçin." : "Kart indirildi. Sistemde saklanmadı.");
+  }
+
+  function ekSec(liste: FileList | null) {
+    if (!liste?.length) return;
+    setEkHatasi(null);
+    const yeni = [...ekler];
+    for (const f of Array.from(liste)) {
+      if (yeni.length >= EK_EN_FAZLA) { setEkHatasi(`En fazla ${EK_EN_FAZLA} dosya eklenebilir.`); break; }
+      if (f.size > EK_EN_BUYUK_MB * 1024 * 1024) { setEkHatasi(`${f.name} ${EK_EN_BUYUK_MB} MB'tan büyük; eklenmedi.`); continue; }
+      if (!yeni.some((v) => v.name === f.name && v.size === f.size)) yeni.push(f);
+    }
+    setEkler(yeni);
   }
 
   return (
@@ -224,7 +249,10 @@ function DuyuruDuzenleyici({ sablon, etkin, kurumAdi, logo, telefon, paylasilabi
               <div key={a.anahtar} className={a.tur === "uzun" ? "sm:col-span-2" : ""}>
                 <Alan id={id} etiket={a.etiket}>
                   {a.tur === "uzun"
-                    ? <textarea {...ortak} rows={3} maxLength={320} className="rounded-xl px-3 py-2 text-xs outline-none" style={girdiStili} />
+                    ? <>
+                        <textarea {...ortak} rows={sablon.metinOdakli ? 8 : 3} maxLength={a.enFazla ?? 320} className="rounded-xl px-3 py-2 text-xs leading-relaxed outline-none" style={girdiStili} />
+                        {a.enFazla && <span className="text-right text-[10px]" style={{ color: TEXT_MUTED }}>{(degerler[a.anahtar] ?? "").length}/{a.enFazla}</span>}
+                      </>
                     : <input {...ortak} type={a.tur === "tarih" ? "date" : a.tur === "saat" ? "time" : "text"} maxLength={90}
                         className="rounded-xl px-3 py-2 text-xs font-semibold outline-none" style={girdiStili} />}
                 </Alan>
@@ -232,6 +260,38 @@ function DuyuruDuzenleyici({ sablon, etkin, kurumAdi, logo, telefon, paylasilabi
             );
           })}
         </div>
+        {sablon.dosyaEklenebilir && (
+          <fieldset className="flex flex-col gap-2 rounded-2xl p-3" style={{ background: BG1_ALT, border: `1px dashed ${BORDER_STRONG}` }}>
+            <legend className="px-1 text-[10px] font-semibold uppercase tracking-wide" style={{ color: TEXT_MUTED }}>Dosya Ekle (isteğe bağlı)</legend>
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="sfec-btn inline-flex cursor-pointer items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold" style={{ background: BG0, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
+                <Paperclip size={13} aria-hidden="true" /> Dosya seç
+                <input type="file" multiple accept={EK_TURLERI} className="sr-only"
+                  onChange={(e) => { ekSec(e.target.files); e.target.value = ""; }} />
+              </label>
+              <span className="text-[11px]" style={{ color: TEXT_MUTED }}>PDF, Word, Excel, PowerPoint ya da görsel · en fazla {EK_EN_FAZLA} dosya, her biri {EK_EN_BUYUK_MB} MB</span>
+            </div>
+            {ekler.length > 0 && (
+              <ul className="flex flex-col gap-1">
+                {ekler.map((f, i) => (
+                  <li key={`${f.name}-${f.size}`} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs" style={{ background: BG0, color: TEXT }}>
+                    <FileText size={13} color={MINT} aria-hidden="true" />
+                    <span className="min-w-0 flex-1 truncate font-semibold">{f.name}</span>
+                    <span className="shrink-0 text-[10px]" style={{ color: TEXT_MUTED }}>{boyutYaz(f.size)}</span>
+                    <button type="button" onClick={() => setEkler((l) => l.filter((_, j) => j !== i))} aria-label={`${f.name} dosyasını kaldır`}
+                      className="sfec-btn flex h-6 w-6 shrink-0 items-center justify-center rounded-full" style={{ color: TEXT_MUTED }}>
+                      <X size={12} aria-hidden="true" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {ekHatasi && <p className="text-[11px] font-semibold" style={{ color: BLUSH }}>{ekHatasi}</p>}
+            <p className="text-[11px]" style={{ color: TEXT_MUTED }}>
+              Dosyalar sisteme yüklenmez. Telefonda &quot;Paylaş&quot; ile kartla birlikte WhatsApp&apos;a gider; bilgisayarda kartı indirip dosyaları WhatsApp&apos;ta ayrıca ekleyin. Kartın altında ek dosyaların adı yazar.
+            </p>
+          </fieldset>
+        )}
         <div className="flex flex-wrap items-end gap-4">
           <FotoSecici durum={foto} />
           <Alan id={`wa-renk-${sablon.anahtar}`} etiket="Renk">
@@ -249,7 +309,7 @@ function DuyuruDuzenleyici({ sablon, etkin, kurumAdi, logo, telefon, paylasilabi
               <Share2 size={13} aria-hidden="true" /> Paylaş (WhatsApp)
             </button>
           )}
-          <button type="button" onClick={() => { setDegerler(varsayilanDegerler(sablon)); setRenk(sablon.renk); foto.sifirla(); }}
+          <button type="button" onClick={() => { setDegerler(varsayilanDegerler(sablon)); setRenk(sablon.renk); foto.sifirla(); setEkler([]); setEkHatasi(null); }}
             className="sfec-btn rounded-xl px-3 py-2 text-xs font-bold" style={{ color: TEXT_MUTED }}>
             Sıfırla
           </button>

@@ -102,6 +102,7 @@ import { sinifimOzeti } from "@/lib/ilkokul-sinifim";
 import { IlkokulSinifimPanosu } from "@/components/dashboard/IlkokulSinifimPanosu";
 import { WhatsappDuyuruStudyosu } from "@/components/dashboard/WhatsappDuyuruStudyosu";
 import { DuyuruTuruSekmeleri } from "@/components/dashboard/DuyuruTuruSekmeleri";
+import { duyuruSecenekleri, seciliDuyuruAlani, seciliDuyuruTuru } from "@/lib/duyuru-alanlari";
 import { yurtDurumlariGetir, yurtVerisiGetir } from "@/lib/yurt-listesi-verisi";
 import { YurtOgrencileriListesi } from "@/components/dashboard/YurtOgrencileriListesi";
 import { YurtNobetPdfPaneli } from "@/components/dashboard/YurtNobetPdfPaneli";
@@ -133,7 +134,7 @@ function haftaninPazartesisi(tarihISO?: string): string {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sinif?: string; ogrenci?: string; ogretmen?: string; donem?: string; okul?: string; hafta?: string; ders?: string; konu?: string; kisim?: string; bolum?: string; gecmis?: string; ay?: string; kapsam?: string; tur?: string }>;
+  searchParams: Promise<{ sinif?: string; ogrenci?: string; ogretmen?: string; donem?: string; okul?: string; hafta?: string; ders?: string; konu?: string; kisim?: string; bolum?: string; gecmis?: string; ay?: string; kapsam?: string; tur?: string; alan?: string }>;
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -370,7 +371,7 @@ export default async function DashboardPage({
             <>
               {role === "ogrenci" && <OgrenciIcerik userId={user.id} ad={profile.ad} donem={donem} haftaBaslangic={haftaninPazartesisi(params.hafta)} aktifBolum={aktifBolum} gecmisHafta={Number(params.gecmis ?? 0)} seciliDersId={params.ders} seciliKonu={params.konu} seciliBolum={params.kisim} kademe={ogrenciKademesi} sinifSeviyesi={ogrenciSinifSeviyesi} />}
               {(role === "ogretmen" || role === "mudur") && (
-                <OgretmenIcerik userId={user.id} role={role} kurumTuru={kurumTuru} brans={brans} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} secilenOgretmenId={params.ogretmen} donem={donem} aktifBolum={aktifBolum} seciliDersId={params.ders} seciliBolum={params.kisim} kademe={menuKademesi} yurtlu={kurum?.yurtlu === true} grupMu={grupKocu} secilenAy={params.ay} secilenKapsam={params.kapsam} duyuruTuru={params.tur} idare={idareUyeligi} />
+                <OgretmenIcerik userId={user.id} role={role} kurumTuru={kurumTuru} brans={brans} secilenSinifId={params.sinif} secilenOgrenciId={params.ogrenci} secilenOgretmenId={params.ogretmen} donem={donem} aktifBolum={aktifBolum} seciliDersId={params.ders} seciliBolum={params.kisim} kademe={menuKademesi} yurtlu={kurum?.yurtlu === true} grupMu={grupKocu} secilenAy={params.ay} secilenKapsam={params.kapsam} duyuruTuru={params.tur} duyuruAlani={params.alan} idare={idareUyeligi} />
               )}
               {role === "veli" && <VeliIcerik userId={user.id} ad={profile.ad} secilenOgrenciId={params.ogrenci} donem={donem} aktifBolum={aktifBolum} />}
             </>
@@ -791,7 +792,7 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
   );
 }
 
-async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, secilenOgrenciId, secilenOgretmenId, donem, aktifBolum, seciliDersId, seciliBolum, kademe, yurtlu = false, grupMu = false, secilenAy, secilenKapsam, duyuruTuru, idare = null }: {
+async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, secilenOgrenciId, secilenOgretmenId, donem, aktifBolum, seciliDersId, seciliBolum, kademe, yurtlu = false, grupMu = false, secilenAy, secilenKapsam, duyuruTuru, duyuruAlani, idare = null }: {
   // İdare panelindeki müdür yardımcısı (migration 0163): kapsamı rehberinki
   // gibi sınıf düzeyleriyle sınırlı; aşağıda rehber kapsam akışına bağlanır.
   idare?: MudurYardimcisiUyeligi | null;
@@ -800,8 +801,9 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   secilenAy?: string;
   // Konu Durumu'nun seçili kapsamı (?kapsam=).
   secilenKapsam?: string;
-  // Duyurular'da WhatsApp sekmesi (?tur=whatsapp).
+  // Duyurular'da WhatsApp sekmesi (?tur=whatsapp) ve Genel/Yurt bölümü (?alan=yurt).
   duyuruTuru?: string;
+  duyuruAlani?: string;
   // Ortaokul Konu Yeterliliği ekranının seçimleri (?ders=, ?kisim=).
   seciliDersId?: string; seciliBolum?: string;
   // Kurumun kademesi: ortaokulda ödev formunun konu havuzu değişiyor.
@@ -1154,12 +1156,16 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   }
 
   // Yalnız yurt sorumlusu müdür yardımcısı yalnız yurt kartlarını hazırlar.
-  const yalnizYurtIdaresi = !!idare?.yurt && idare.sinifDuzeyleri.length === 0;
-  const genelWhatsapp = (role === "mudur" || rehberOgretmenMi) && !yalnizYurtIdaresi;
-  if (aktifBolum === "duyurular" && duyuruTuru === "whatsapp" && (genelWhatsapp || yurtlu)) {
+  // Duyurular düzeni (19.10.2026): Site İçi / WhatsApp, altında Genel / Yurt.
+  const idareYurt = idare?.yurt ? (idare.sinifDuzeyleri.length === 0 ? "yalniz" as const : "ek" as const) : undefined;
+  const duyuruBolumleri = duyuruSecenekleri({ mudur: role === "mudur", rehber: rehberOgretmenMi, sinifOgretmeni: !!teacher.class_id, yurtlu, idareYurt });
+  const etkinDuyuruTuru = seciliDuyuruTuru(duyuruBolumleri, duyuruTuru);
+  if (aktifBolum === "duyurular" && etkinDuyuruTuru === "whatsapp") {
+    const alan = seciliDuyuruAlani(duyuruBolumleri.whatsapp, duyuruAlani) ?? "genel";
+    const genelWhatsapp = alan === "genel";
     const admin = createAdminClient();
     const [yurtVerisi, { ayarlar: sablonAyarlari }] = await Promise.all([
-      yurtlu ? yurtVerisiGetir(admin, teacher.school_id, userId, role === "mudur" || !!idare?.yurt) : Promise.resolve(null),
+      alan === "yurt" ? yurtVerisiGetir(admin, teacher.school_id, userId, role === "mudur" || !!idare?.yurt) : Promise.resolve(null),
       sablonAyarlariGetir(admin),
     ]);
     // logo_url 0159, ozel 0166 ile geldi; sütun yoksa bir öncekine düşülür.
@@ -1194,8 +1200,8 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
         : (a.seviye ? -1 : b.seviye ? 1 : 0)) || a.ad.localeCompare(b.ad, "tr"));
     return (
       <section className="sfec-section">
-        <DuyuruTuruSekmeleri secili="whatsapp" />
-        <WhatsappDuyuruStudyosu kurumAdi={kurum?.ad ?? "Kurumumuz"} logoAdresi={kurum?.logo_url ?? null}
+        <DuyuruTuruSekmeleri tur="whatsapp" alan={alan} secenekler={duyuruBolumleri} />
+        <WhatsappDuyuruStudyosu key={alan} kurumAdi={kurum?.ad ?? "Kurumumuz"} logoAdresi={kurum?.logo_url ?? null}
           logoDegistirebilir={role === "mudur"} ogrenciler={ogrenciListesi} genelDuyurular={genelWhatsapp} yurt={yurtVerisi} sablonlar={sablonlar} />
       </section>
     );
@@ -1356,6 +1362,8 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
         aktifBolum={aktifBolum}
         schoolId={teacher.school_id}
         secilenKapsam={secilenKapsam}
+        duyuruSecenekleri={duyuruBolumleri}
+        duyuruAlani={duyuruAlani}
       />
     );
   }
@@ -1676,7 +1684,8 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       secilenOgretmenNobetleri={secilenOgretmenNobetleri}
       rehberOgretmenMi={rehberOgretmenMi}
       idareModu={!!idare}
-      idareYurt={idare?.yurt ? (idare.sinifDuzeyleri.length === 0 ? "yalniz" : "ek") : undefined}
+      duyuruSecenekleri={duyuruBolumleri}
+      duyuruAlani={duyuruAlani}
       grupMu={grupMu}
       secilenOgrenciId={secilenOgrenciId}
       secilenOgrenciProgrami={secilenOgrenciProgrami}

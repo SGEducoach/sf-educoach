@@ -38,11 +38,17 @@ export function dosyaAdiTemizle(s: string): string {
   return s.toLocaleLowerCase("tr-TR").replace(/[^a-z0-9ğüşıöç]+/g, "-").replace(/^-|-$/g, "") || "kart";
 }
 
-export async function indirVeyaPaylas(canvas: HTMLCanvasElement, ad: string, paylas: boolean): Promise<boolean> {
+// ekler (genel duyuru): paylaşımda kartla birlikte gider; cihaz ekleri
+// paylaşamıyorsa yalnız kart gider ve sonuç "yalnizKart" olur. İndirmede
+// yalnız kart iner; dosyalar zaten kullanıcının cihazında.
+export async function indirVeyaPaylas(canvas: HTMLCanvasElement, ad: string, paylas: boolean, ekler: File[] = []): Promise<false | "tam" | "yalnizKart"> {
   const blob = await blobOl(canvas);
   if (!blob) return false;
   if (paylas) {
-    try { await navigator.share({ files: [new File([blob], ad, { type: "image/png" })] }); return true; } catch { return false; }
+    const kart = new File([blob], ad, { type: "image/png" });
+    const hepsi = [kart, ...ekler];
+    const ekliOlur = ekler.length > 0 && (navigator.canShare?.({ files: hepsi }) ?? false);
+    try { await navigator.share({ files: ekliOlur ? hepsi : [kart] }); return ekler.length > 0 && !ekliOlur ? "yalnizKart" : "tam"; } catch { return false; }
   }
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -52,7 +58,7 @@ export async function indirVeyaPaylas(canvas: HTMLCanvasElement, ad: string, pay
   a.click();
   a.remove();
   window.setTimeout(() => URL.revokeObjectURL(url), 2000);
-  return true;
+  return "tam";
 }
 
 export function SablonDugmesi({ ad, foto, renk, secili, sec }: { ad: string; foto: string; renk: string; secili: boolean; sec: () => void }) {

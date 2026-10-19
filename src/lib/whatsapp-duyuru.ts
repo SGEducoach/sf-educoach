@@ -14,6 +14,7 @@ export interface SablonAlani {
   tur: AlanTuru;
   ornek?: string;      // yer tutucu
   varsayilan?: string; // forma dolu gelir
+  enFazla?: number;    // karakter sınırı (uzun alanda varsayılan 320)
 }
 
 export interface KartSatiri { etiket: string; deger: string }
@@ -34,6 +35,10 @@ export interface DuyuruSablonu {
   foto: string;   // hazır fotoğrafın dosya adı (/duyuru-fotograflari/…)
   alanlar: SablonAlani[];
   girisGerekli?: boolean;
+  // Serbest metinli kart: fotoğraf bandı kısalır, metne geniş yer açılır.
+  metinOdakli?: boolean;
+  // Karta dosya eklenebilir; dosya kartla birlikte paylaşılır, yüklenmez.
+  dosyaEklenebilir?: boolean;
   icerik: (d: Record<string, string>) => KartIcerigi;
 }
 
@@ -57,6 +62,22 @@ function satirlar(...liste: [string, string | undefined, ((v: string) => string)
 const yokSaBos = (s: string | undefined) => dolu(s) || null;
 
 export const DUYURU_SABLONLARI: DuyuruSablonu[] = [
+  {
+    // Genel duyuru (kullanıcı isteği 19.10.2026): kullanıcı metni kendisi
+    // yazar, isterse dosya ekler. Listenin başında; stüdyonun ilk kartı.
+    anahtar: "genel", ad: "Genel Duyuru", renk: "#34495e", foto: "genel.jpg", metinOdakli: true, dosyaEklenebilir: true,
+    alanlar: [
+      { anahtar: "baslik", etiket: "Başlık", tur: "metin", ornek: "Önemli Duyuru" },
+      { anahtar: "altBaslik", etiket: "Alt başlık (isteğe bağlı)", tur: "metin", ornek: "Tüm öğrenci ve velilerimize" },
+      { anahtar: "tarih", etiket: "Tarih (isteğe bağlı)", tur: "tarih" },
+      { anahtar: "metin", etiket: "Duyuru metni", tur: "uzun", enFazla: 900, ornek: "Duyurunuzu buraya yazın. Paragraf için yeni satıra geçebilirsiniz." },
+    ],
+    icerik: (d) => ({
+      baslik: dolu(d.baslik) || "Duyuru", altBaslik: yokSaBos(d.altBaslik),
+      satirlar: satirlar(["Tarih", d.tarih, kartTarihi]),
+      aciklamaBasligi: null, aciklama: yokSaBos(d.metin), girisGerekli: false,
+    }),
+  },
   {
     anahtar: "veli-toplantisi", ad: "Veli Toplantısı", renk: "#1f4e9c", foto: "veli-toplantisi.jpg",
     alanlar: [
@@ -211,20 +232,6 @@ export const DUYURU_SABLONLARI: DuyuruSablonu[] = [
     icerik: (d) => ({
       baslik: dolu(d.baslik) || "İyi Bayramlar", altBaslik: null, satirlar: [],
       aciklamaBasligi: null, aciklama: yokSaBos(d.mesaj), girisGerekli: false,
-    }),
-  },
-  {
-    anahtar: "genel", ad: "Genel Duyuru", renk: "#34495e", foto: "genel.jpg",
-    alanlar: [
-      { anahtar: "baslik", etiket: "Başlık", tur: "metin", ornek: "Önemli Duyuru" },
-      { anahtar: "altBaslik", etiket: "Alt başlık", tur: "metin" },
-      { anahtar: "tarih", etiket: "Tarih (isteğe bağlı)", tur: "tarih" },
-      { anahtar: "metin", etiket: "Duyuru metni", tur: "uzun" },
-    ],
-    icerik: (d) => ({
-      baslik: dolu(d.baslik) || "Duyuru", altBaslik: yokSaBos(d.altBaslik),
-      satirlar: satirlar(["Tarih", d.tarih, kartTarihi]),
-      aciklamaBasligi: null, aciklama: yokSaBos(d.metin), girisGerekli: false,
     }),
   },
 ];
