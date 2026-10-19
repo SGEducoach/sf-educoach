@@ -94,9 +94,9 @@ import { grupBekleyenIsSayilari, grupOgrencileriGetir, grupVelileriGetir } from 
 import { rehberOgrenciTakibiVerisiGetir } from "@/lib/dershane-rehber";
 import { OgrenciProfilim } from "@/components/dashboard/OgrenciProfilim";
 import { ogretmenAktifGunuKaydet, ogrenciProfilGoruntulemesiKaydet } from "@/lib/ogretmen-takip";
-import { ilkokulOgrenciRaporuGetir, ilkokulSinifEtkinlikleriGetir, ilkokulSinifRaporuGetir, ilkokulSiniflariGetir } from "@/lib/ilkokul-gelisim-sorgu";
+import { ilkokulOgrenciRaporuGetir, ilkokulSinifEtkinlikleriGetir, ilkokulSinifRaporuGetir, ilkokulSinifSdoGetir, ilkokulSiniflariGetir } from "@/lib/ilkokul-gelisim-sorgu";
 import { IlkokulEtkinlikleri } from "@/components/dashboard/IlkokulEtkinlikleri";
-import { ayAnahtari, ayEtiketi } from "@/lib/ilkokul-gelisim";
+import { ayAnahtari, ayEtiketi, donemBilgisi } from "@/lib/ilkokul-gelisim";
 import { sinifimOzeti } from "@/lib/ilkokul-sinifim";
 import { IlkokulSinifimPanosu } from "@/components/dashboard/IlkokulSinifimPanosu";
 import { WhatsappDuyuruStudyosu } from "@/components/dashboard/WhatsappDuyuruStudyosu";
@@ -110,7 +110,8 @@ import { YurtNobetlerimKutusu } from "@/components/dashboard/NobetDevirPaneli";
 import { belletmenMi } from "@/lib/belletmen";
 import { sablonAyarlariGetir } from "@/lib/whatsapp-sablon-ayarlari-verisi";
 import { etkinSablonlar, kurumaUygunSablonlar, ucretliKurumMu } from "@/lib/whatsapp-sablon-ayarlari";
-import { IlkokulGelisimGirisi } from "@/components/dashboard/IlkokulGelisimGirisi";
+import { IlkokulGelisimGirisi, IlkokulGelisimSekmeleri } from "@/components/dashboard/IlkokulGelisimGirisi";
+import { IlkokulSosyalDuygusalGirisi } from "@/components/dashboard/IlkokulSosyalDuygusalGirisi";
 import { IlkokulGelisimRaporu } from "@/components/dashboard/IlkokulGelisimRaporu";
 import { bekleyenOgretmenBildirimleriniGonder } from "@/lib/ogretmen-bildirim";
 
@@ -881,14 +882,30 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
     }
     const secili = siniflar.find((s) => s.id === secilenSinifId) ?? siniflar[0];
     const ay = ayAnahtari(secilenAy ?? "") ?? ayAnahtari(bugununTarihiTR())!;
+    const sinifSecenekleri = siniflar.map((s) => ({ id: s.id, ad: `${s.seviye}-${s.sube}`, seviye: s.seviye }));
+    // Sosyal duygusal beceriler (MEB, dönemlik; migration 0167).
+    if (seciliBolum === "sosyal") {
+      const donem = donemBilgisi(ay);
+      const rapor = await ilkokulSinifRaporuGetir(yonetici, secili.id, ay);
+      const sdo = await ilkokulSinifSdoGetir(yonetici, rapor.ogrenciler.map((o) => o.id), donem);
+      return (
+        <div className="flex flex-col gap-4">
+          <IlkokulGelisimSekmeleri sinifId={secili.id} ay={ay} secili="sosyal" />
+          <IlkokulSosyalDuygusalGirisi key={`${secili.id}-${donem.egitimYili}-${donem.donem}`}
+            siniflar={sinifSecenekleri} seciliSinifId={secili.id} donem={donem} yetkiler={secili.yetkiler}
+            ogrenciler={rapor.ogrenciler} kayitlar={sdo.kayitlar} gorusler={sdo.gorusler} hazir={sdo.hazir} />
+        </div>
+      );
+    }
     const [rapor, etkinlikler] = await Promise.all([
       ilkokulSinifRaporuGetir(yonetici, secili.id, ay),
       ilkokulSinifEtkinlikleriGetir(yonetici, secili.id, ay),
     ]);
     return (
       <div className="flex flex-col gap-4">
+        <IlkokulGelisimSekmeleri sinifId={secili.id} ay={ay} secili="aylik" />
         <IlkokulGelisimGirisi key={`${secili.id}-${ay}`}
-          siniflar={siniflar.map((s) => ({ id: s.id, ad: `${s.seviye}-${s.sube}` }))}
+          siniflar={sinifSecenekleri}
           seciliSinifId={secili.id} ay={ay} yetkiler={secili.yetkiler}
           ogrenciler={rapor.ogrenciler} kayitlar={rapor.kayitlar} oncekiAyKayitlari={rapor.oncekiAyKayitlari} notlar={rapor.notlar} />
         <IlkokulEtkinlikleri key={`etkinlik-${secili.id}-${ay}`} classId={secili.id} ay={ay} bugun={bugununTarihiTR()}
@@ -926,7 +943,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
           : Promise.resolve({ count: 0 }),
       ]);
       const ozet = sinifimOzeti({
-        rapor, etkinlikler, bugun,
+        rapor, etkinlikler, bugun, seviye: sinif.seviye,
         veliBagliIdler: new Set(((veliBaglari ?? []) as { student_id: string }[]).map((v) => v.student_id)),
       });
       return (

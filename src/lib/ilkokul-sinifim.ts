@@ -1,12 +1,14 @@
 // İlkokul sınıf öğretmeninin "Sınıfım" panosu (kullanıcı kararı 18.10.2026)
-// — saf özet hesabı. Sınıf öğretmeni Rehberlik dışındaki 9 kalemi yazar
+// — saf özet hesabı. Sınıf öğretmeni Rehberlik dışındaki kalemleri yazar
 // (Rehberlik'i rehberlik servisi işaretler, bkz. kalemiYazabilirMi); bir
-// öğrencinin aylık raporu bu 9 kalem dolunca "tamam" sayılır.
-import { GELISIM_KALEMLERI } from "@/lib/ilkokul-gelisim";
+// öğrencinin aylık raporu sınıf düzeyinin bu kalemleri dolunca "tamam"
+// sayılır (kalemler sınıf düzeyine göre, bkz. sinifKalemleri).
+import { sinifKalemleri } from "@/lib/ilkokul-gelisim";
 import type { IlkokulEtkinligi, IlkokulSinifRaporu } from "@/lib/ilkokul-gelisim-sorgu";
 
-const OGRETMEN_KALEMLERI: readonly string[] = GELISIM_KALEMLERI.map((k) => k.anahtar).filter((k) => k !== "rehberlik");
-export const OGRETMEN_KALEM_SAYISI = OGRETMEN_KALEMLERI.length;
+export function ogretmenKalemleri(seviye: string | null | undefined): string[] {
+  return sinifKalemleri(seviye).map((k) => k.anahtar as string).filter((k) => k !== "rehberlik");
+}
 
 export interface SinifimOgrencisi {
   id: string;
@@ -18,6 +20,7 @@ export interface SinifimOgrencisi {
 
 export interface SinifimOzeti {
   ogrenciler: SinifimOgrencisi[];
+  kalemSayisi: number; // sınıf öğretmeninin bu sınıf düzeyindeki kalem sayısı
   raporuTamam: number;
   raporaBaslanmamis: number;
   veliBagli: number;
@@ -31,10 +34,13 @@ export function sinifimOzeti(girdi: {
   etkinlikler: IlkokulEtkinligi[];
   veliBagliIdler: Set<string>;
   bugun: string;
+  seviye: string;
 }): SinifimOzeti {
+  const ogretmeninKalemleri = ogretmenKalemleri(girdi.seviye);
+  const kalemToplami = ogretmeninKalemleri.length;
   const kalemSayisi = new Map<string, Set<string>>();
   for (const k of girdi.rapor.kayitlar) {
-    if (!OGRETMEN_KALEMLERI.includes(k.kalem)) continue;
+    if (!ogretmeninKalemleri.includes(k.kalem)) continue;
     const s = kalemSayisi.get(k.studentId) ?? new Set<string>();
     s.add(k.kalem);
     kalemSayisi.set(k.studentId, s);
@@ -50,7 +56,8 @@ export function sinifimOzeti(girdi: {
   const gecen = girdi.etkinlikler.filter((e) => e.tarih < girdi.bugun).sort((a, b) => b.tarih.localeCompare(a.tarih));
   return {
     ogrenciler,
-    raporuTamam: ogrenciler.filter((o) => o.yazilanKalem >= OGRETMEN_KALEM_SAYISI).length,
+    kalemSayisi: kalemToplami,
+    raporuTamam: ogrenciler.filter((o) => o.yazilanKalem >= kalemToplami).length,
     raporaBaslanmamis: ogrenciler.filter((o) => o.yazilanKalem === 0).length,
     veliBagli: ogrenciler.filter((o) => o.veliBagli).length,
     etkinlikSayisi: girdi.etkinlikler.length,

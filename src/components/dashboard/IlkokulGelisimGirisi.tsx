@@ -3,34 +3,47 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Download, NotebookPen, Save, Sprout } from "lucide-react";
+import { Download, NotebookPen, Printer, Save, Sprout } from "lucide-react";
 import {
-  GELISIM_DUZEYLERI, GELISIM_KALEMLERI, ayEtiketi, kalemiYazabilirMi, notuYazabilirMi,
+  GELISIM_DUZEYLERI, ayEtiketi, kalemiYazabilirMi, notuYazabilirMi, sinifKalemleri,
 } from "@/lib/ilkokul-gelisim";
 import type { GelisimDuzeyi, GelisimKalemi, GelisimNotTuru, GelisimYetkisi } from "@/lib/ilkokul-gelisim";
 import type { IlkokulSinifKaydi } from "@/lib/ilkokul-gelisim-sorgu";
 import { ilkokulGelisimKaydet, veliDavetKodlariOlustur } from "@/app/dashboard/ilkokul-actions";
 import type { VeliDavetKodu } from "@/app/dashboard/ilkokul-actions";
+import { DUZEY_RENK } from "@/components/dashboard/ilkokul-renkler";
 import {
-  BG0, BG1, BG1_ALT, BLUSH, BORDER, BORDER_STRONG, BUTTER, BUTTER_BG, MINT, MINT_BG, MINT_ON, PEACH, PEACH_BG, TEXT, TEXT_MUTED,
+  BG0, BG1, BG1_ALT, BLUSH, BORDER, BORDER_STRONG, BUTTER_BG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED,
 } from "@/lib/theme";
 
-// İlkokul gelişim raporu giriş ekranı (16.10.2026). Sınıf öğretmeni dokuz
-// kalemi ve öğretmen notunu, rehberlik servisi "Rehberlik" kalemini ve
-// rehberlik notunu, müdür/moderatör hepsini düzenler. Ayda bir doldurulur;
-// boş aya geçen ayın işaretleri ön dolgu olarak gelir, kaydedilene kadar
-// yazılmaz.
-
-const DUZEY_RENK: Record<GelisimDuzeyi, { arka: string; yazi: string }> = {
-  // "Geliştirilmeli" akademik bir eksik, kırmızı değil sıcak nötr (ortaokulla aynı ilke).
-  gelistirilmeli: { arka: PEACH_BG, yazi: PEACH },
-  gelisiyor: { arka: BUTTER_BG, yazi: BUTTER },
-  basarili: { arka: MINT_BG, yazi: MINT },
-};
+// İlkokul gelişim raporu giriş ekranı (16.10.2026; MEB uyumu 19.10.2026).
+// Sınıf öğretmeni dersleri ve öğretmen notunu, rehberlik servisi
+// "Rehberlik" kalemini ve rehberlik notunu, müdür/moderatör hepsini
+// düzenler. Ayda bir, MEB'in dört düzeyiyle doldurulur; kalemler sınıf
+// düzeyine göre. Boş aya geçen ayın işaretleri ön dolgu olarak gelir,
+// kaydedilene kadar yazılmaz.
 
 export interface IlkokulSinifSecenegi {
   id: string;
   ad: string;
+  seviye: string;
+}
+
+// Gelişim raporu ekranının sekmeleri: aylık dersler, dönemlik sosyal
+// duygusal beceriler ve yazdırılabilir dönem sonu raporu.
+export function IlkokulGelisimSekmeleri({ sinifId, ay, secili }: { sinifId: string; ay: string; secili: "aylik" | "sosyal" }) {
+  const sekme = (aktif: boolean) => ({ background: aktif ? MINT : BG0, color: aktif ? MINT_ON : TEXT, border: `2px solid ${aktif ? MINT : BORDER_STRONG}` });
+  const temel = `/dashboard/ilkokul-gelisim?sinif=${sinifId}&ay=${ay.slice(0, 7)}`;
+  return (
+    <div className="flex flex-wrap gap-2">
+      <Link href={temel} className="sfec-btn rounded-full px-4 py-1.5 text-xs font-bold" style={sekme(secili === "aylik")}>Aylık Ders Değerlendirmesi</Link>
+      <Link href={`${temel}&kisim=sosyal`} className="sfec-btn rounded-full px-4 py-1.5 text-xs font-bold" style={sekme(secili === "sosyal")}>Sosyal Duygusal Beceriler</Link>
+      <a href={`/dashboard/gelisim-raporu?sinif=${sinifId}&ay=${ay.slice(0, 7)}`} target="_blank" rel="noopener"
+        className="sfec-btn inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold" style={sekme(false)}>
+        <Printer size={13} aria-hidden="true" /> Dönem Sonu Raporu
+      </a>
+    </div>
+  );
 }
 
 const anahtar = (studentId: string, kalem: string) => `${studentId}|${kalem}`;
@@ -49,6 +62,8 @@ export function IlkokulGelisimGirisi({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const kalemler = sinifKalemleri(siniflar.find((s) => s.id === seciliSinifId)?.seviye);
+  const dersSayisi = kalemler.filter((k) => k.bolum === "ders").length;
   const [mesaj, setMesaj] = useState<{ tur: "ok" | "hata"; metin: string } | null>(null);
 
   const kayitliDurum = useMemo(() => {
@@ -78,7 +93,7 @@ export function IlkokulGelisimGirisi({
   const [notDurumu, setNotDurumu] = useState<Map<string, string>>(() => new Map(kayitliNot));
 
   const yazilabilirNotTurleri = (["ogretmen", "rehberlik"] as GelisimNotTuru[]).filter((t) => notuYazabilirMi(yetkiler, t));
-  const degisenHucreler = ogrenciler.flatMap((o) => GELISIM_KALEMLERI
+  const degisenHucreler = ogrenciler.flatMap((o) => kalemler
     .filter((k) => kalemiYazabilirMi(yetkiler, k.anahtar))
     .filter((k) => (durum.get(anahtar(o.id, k.anahtar)) ?? null) !== (kayitliDurum.get(anahtar(o.id, k.anahtar)) ?? null))
     .map((k) => ({ studentId: o.id, kalem: k.anahtar as GelisimKalemi, duzey: durum.get(anahtar(o.id, k.anahtar)) ?? null })));
@@ -111,7 +126,7 @@ export function IlkokulGelisimGirisi({
           <div>
             <h1 className="text-base font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Gelişim Raporu</h1>
             <p className="text-xs" style={{ color: TEXT_MUTED }}>
-              İlkokul öğrencileri sisteme girmez; bu rapor veliye ve kuruma gider. Ayda bir doldurulur.
+              İlkokul öğrencileri sisteme girmez; bu rapor veliye ve kuruma gider. Dersler ayda bir, MEB&apos;in dört düzeyiyle işaretlenir; dönem sonu raporu her ders için dönemdeki son işareti alır.
             </p>
           </div>
         </div>
@@ -137,7 +152,7 @@ export function IlkokulGelisimGirisi({
               {d.ad}
             </span>
           ))}
-          <span>· Rehberlik kalemini rehberlik servisi, diğerlerini sınıf öğretmeni işaretler.</span>
+          <span>· Rehberlik kalemini rehberlik servisi, diğerlerini sınıf öğretmeni işaretler. Kurum değerlendirmesi MEB raporunda yer almaz, kurumun kendi bölümüdür.</span>
         </div>
 
         {onDolgu && (
@@ -155,9 +170,15 @@ export function IlkokulGelisimGirisi({
             <table className="w-full border-collapse text-xs" style={{ minWidth: 900 }}>
               <thead>
                 <tr style={{ background: BG1_ALT }}>
+                  <th className="sticky left-0 z-10" style={{ background: BG1_ALT }} />
+                  <th colSpan={dersSayisi} className="px-1.5 pt-2 text-center text-[10px] font-bold uppercase tracking-wide" style={{ color: TEXT_MUTED }}>Dersler (MEB)</th>
+                  <th colSpan={kalemler.length - dersSayisi} className="px-1.5 pt-2 text-center text-[10px] font-bold uppercase tracking-wide" style={{ color: TEXT_MUTED, borderLeft: `2px solid ${BORDER_STRONG}` }}>Kurum Değerlendirmesi</th>
+                </tr>
+                <tr style={{ background: BG1_ALT }}>
                   <th className="sticky left-0 z-10 px-3 py-2 text-left font-bold" style={{ background: BG1_ALT, color: TEXT }}>Öğrenci</th>
-                  {GELISIM_KALEMLERI.map((k) => (
-                    <th key={k.anahtar} className="px-1.5 py-2 text-center font-bold" style={{ color: kalemiYazabilirMi(yetkiler, k.anahtar) ? TEXT : TEXT_MUTED }}>{k.ad}</th>
+                  {kalemler.map((k, i) => (
+                    <th key={k.anahtar} className="px-1.5 py-2 text-center font-bold"
+                      style={{ color: kalemiYazabilirMi(yetkiler, k.anahtar) ? TEXT : TEXT_MUTED, borderLeft: i === dersSayisi ? `2px solid ${BORDER_STRONG}` : undefined }}>{k.ad}</th>
                   ))}
                 </tr>
               </thead>
@@ -166,20 +187,25 @@ export function IlkokulGelisimGirisi({
                   <tr key={o.id} style={{ borderTop: `1px solid ${BORDER}` }}>
                     <td className="sticky left-0 z-10 px-3 py-1.5 font-semibold whitespace-nowrap" style={{ background: BG1, color: TEXT }}>
                       {o.ad} <span className="font-normal" style={{ color: TEXT_MUTED }}>· {o.okulNo}</span>
+                      <a href={`/dashboard/gelisim-raporu?ogrenci=${o.id}&ay=${ay.slice(0, 7)}`} target="_blank" rel="noopener"
+                        aria-label={`${o.ad} dönem sonu raporu`} title="Dönem sonu raporu" className="ml-1.5 inline-flex align-middle" style={{ color: TEXT_MUTED }}>
+                        <Printer size={12} aria-hidden="true" />
+                      </a>
                     </td>
-                    {GELISIM_KALEMLERI.map((k) => {
+                    {kalemler.map((k, i) => {
                       const deger = durum.get(anahtar(o.id, k.anahtar)) ?? null;
                       const renk = deger ? DUZEY_RENK[deger] : null;
+                      const ayirac = i === dersSayisi ? { borderLeft: `2px solid ${BORDER_STRONG}` } : undefined;
                       if (!kalemiYazabilirMi(yetkiler, k.anahtar)) {
                         return (
-                          <td key={k.anahtar} className="px-1.5 py-1.5 text-center">
+                          <td key={k.anahtar} className="px-1.5 py-1.5 text-center" style={ayirac}>
                             {deger ? <span className="rounded-md px-1.5 py-0.5 font-bold" style={{ background: renk!.arka, color: renk!.yazi }}>{GELISIM_DUZEYLERI.find((d) => d.anahtar === deger)?.kisa}</span>
                               : <span style={{ color: TEXT_MUTED }}>—</span>}
                           </td>
                         );
                       }
                       return (
-                        <td key={k.anahtar} className="px-1 py-1 text-center">
+                        <td key={k.anahtar} className="px-1 py-1 text-center" style={ayirac}>
                           <select
                             aria-label={`${o.ad} — ${k.ad}`}
                             value={deger ?? ""}

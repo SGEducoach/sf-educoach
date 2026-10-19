@@ -3,7 +3,7 @@ import { CalendarDays, ChevronRight, ClipboardList, HeartHandshake, Users } from
 import {
   BG1, BG1_ALT, BORDER, BORDER_STRONG, BLUSH, BLUSH_BG, BUTTER, BUTTER_BG, MINT, MINT_BG, SKY, SKY_BG, TEXT, TEXT_MUTED,
 } from "@/lib/theme";
-import { OGRETMEN_KALEM_SAYISI, type SinifimOzeti } from "@/lib/ilkokul-sinifim";
+import type { SinifimOzeti } from "@/lib/ilkokul-sinifim";
 
 // İlkokul sınıf öğretmeninin ana sayfası (kullanıcı kararı 18.10.2026):
 // "Sınıflarım" değil "Sınıfım". Bu ayın gelişim raporu, etkinlikler, veli
@@ -99,8 +99,8 @@ export function IlkokulSinifimPanosu({ sinifId, sinifAdi, ayEtiketi, ozet, bekle
         ) : (
           <div className="sfec-liste">
             {ozet.ogrenciler.map((o) => {
-              const tamam = o.yazilanKalem >= OGRETMEN_KALEM_SAYISI;
-              const durum = tamam ? "Rapor tamam" : o.yazilanKalem === 0 ? "Başlanmadı" : `${o.yazilanKalem}/${OGRETMEN_KALEM_SAYISI} kalem`;
+              const tamam = o.yazilanKalem >= ozet.kalemSayisi;
+              const durum = tamam ? "Rapor tamam" : o.yazilanKalem === 0 ? "Başlanmadı" : `${o.yazilanKalem}/${ozet.kalemSayisi} kalem`;
               const renk = tamam ? MINT : o.yazilanKalem === 0 ? BLUSH : BUTTER;
               const zemin = tamam ? MINT_BG : o.yazilanKalem === 0 ? BLUSH_BG : BUTTER_BG;
               return (

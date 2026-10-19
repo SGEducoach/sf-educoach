@@ -10,8 +10,10 @@ import { ilkokulMu } from "@/lib/kademe";
 import { ilkokulSiniflariGetir } from "@/lib/ilkokul-gelisim-sorgu";
 import { veliDavetiOlustur } from "@/lib/veli-davet";
 import { duyuruGonder } from "@/lib/push-send";
-import { ayAnahtari, gelisimDuzeyiMi, gelisimKalemiMi, kalemiYazabilirMi, notuYazabilirMi } from "@/lib/ilkokul-gelisim";
-import type { GelisimDuzeyi, GelisimKalemi, GelisimNotTuru, GelisimYetkisi } from "@/lib/ilkokul-gelisim";
+import {
+  ayAnahtari, donemGecerliMi, gelisimDuzeyiMi, gelisimKalemiMi, kalemiYazabilirMi, notuYazabilirMi, sdoDuzeyiMi, sdoGostergesiMi, sdoYazabilirMi, sinifKalemleri,
+} from "@/lib/ilkokul-gelisim";
+import type { GelisimDuzeyi, GelisimKalemi, GelisimNotTuru, GelisimYetkisi, SdoDuzeyi } from "@/lib/ilkokul-gelisim";
 
 type Admin = ReturnType<typeof createAdminClient>;
 
@@ -30,8 +32,12 @@ export interface GelisimNotu {
 }
 
 async function sinifYetkisi(admin: Admin, userId: string, classId: string): Promise<GelisimYetkisi[]> {
+  return (await sinifBul(admin, userId, classId))?.yetkiler ?? [];
+}
+
+async function sinifBul(admin: Admin, userId: string, classId: string) {
   const siniflar = await ilkokulSiniflariGetir(admin, userId);
-  return siniflar.find((s) => s.id === classId)?.yetkiler ?? [];
+  return siniflar.find((s) => s.id === classId) ?? null;
 }
 
 export async function ilkokulGelisimKaydet(girdi: {
@@ -44,8 +50,10 @@ export async function ilkokulGelisimKaydet(girdi: {
   const admin = createAdminClient();
   const ay = ayAnahtari(girdi.ay);
   if (!ay) return { error: "Geçerli bir ay seçin.", kaydedilen: 0 };
-  const yetkiler = await sinifYetkisi(admin, user.id, girdi.classId);
-  if (yetkiler.length === 0) return { error: "Bu sınıfın gelişim raporunu düzenleme yetkiniz yok.", kaydedilen: 0 };
+  const sinif = await sinifBul(admin, user.id, girdi.classId);
+  const yetkiler = sinif?.yetkiler ?? [];
+  if (!sinif || yetkiler.length === 0) return { error: "Bu sınıfın gelişim raporunu düzenleme yetkiniz yok.", kaydedilen: 0 };
+  const sinifinKalemleri = new Set<string>(sinifKalemleri(sinif.seviye).map((k) => k.anahtar));
 
   const { data: ogrenciler } = await admin.from("students").select("id").eq("class_id", girdi.classId);
   const sinifOgrencileri = new Set(((ogrenciler ?? []) as { id: string }[]).map((o) => o.id));
@@ -54,7 +62,7 @@ export async function ilkokulGelisimKaydet(girdi: {
   const silinecek: { studentId: string; kalem: GelisimKalemi }[] = [];
   const simdi = new Date().toISOString();
   for (const h of girdi.hucreler) {
-    if (!sinifOgrencileri.has(h.studentId) || !gelisimKalemiMi(h.kalem)) return { error: "Geçersiz satır.", kaydedilen: 0 };
+    if (!sinifOgrencileri.has(h.studentId) || !gelisimKalemiMi(h.kalem) || !sinifinKalemleri.has(h.kalem)) return { error: "Geçersiz satır.", kaydedilen: 0 };
     if (!kalemiYazabilirMi(yetkiler, h.kalem)) return { error: "Bu kalemi işaretleme yetkiniz yok.", kaydedilen: 0 };
     if (h.duzey === null) silinecek.push({ studentId: h.studentId, kalem: h.kalem });
     else if (gelisimDuzeyiMi(h.duzey)) yazilacak.push({ student_id: h.studentId, ay, kalem: h.kalem, duzey: h.duzey, giren_id: user.id, updated_at: simdi });
@@ -88,6 +96,70 @@ export async function ilkokulGelisimKaydet(girdi: {
 
   revalidatePath("/dashboard/ilkokul-gelisim");
   return { error: null, kaydedilen: yazilacak.length + silinecek.length + notYaz.length + notSil.length };
+}
+
+// ---- Sosyal duygusal beceriler ve dönem görüşü (migration 0167) ----
+
+export interface SdoHucresi {
+  studentId: string;
+  gosterge: string;
+  // null = işareti kaldır.
+  duzey: SdoDuzeyi | null;
+}
+
+export async function ilkokulSdoKaydet(girdi: {
+  classId: string;
+  egitimYili: string;
+  donem: 1 | 2;
+  hucreler: SdoHucresi[];
+  // Boş metin = görüşü sil.
+  gorusler: { studentId: string; metin: string }[];
+}): Promise<{ error: string | null; kaydedilen: number }> {
+  const { user } = await requireUser();
+  const admin = createAdminClient();
+  if (!donemGecerliMi(girdi.egitimYili, girdi.donem)) return { error: "Geçerli bir dönem seçin.", kaydedilen: 0 };
+  const yetkiler = await sinifYetkisi(admin, user.id, girdi.classId);
+  if (!sdoYazabilirMi(yetkiler)) return { error: "Sosyal duygusal değerlendirmeyi yalnız sınıf öğretmeni ya da okul yönetimi girebilir.", kaydedilen: 0 };
+
+  const { data: ogrenciler } = await admin.from("students").select("id").eq("class_id", girdi.classId);
+  const sinifOgrencileri = new Set(((ogrenciler ?? []) as { id: string }[]).map((o) => o.id));
+  const donem = { egitim_yili: girdi.egitimYili, donem: girdi.donem };
+  const simdi = new Date().toISOString();
+
+  const yazilacak: Record<string, unknown>[] = [];
+  const silinecek: SdoHucresi[] = [];
+  for (const h of girdi.hucreler) {
+    if (!sinifOgrencileri.has(h.studentId) || !sdoGostergesiMi(h.gosterge)) return { error: "Geçersiz satır.", kaydedilen: 0 };
+    if (h.duzey === null) silinecek.push(h);
+    else if (sdoDuzeyiMi(h.duzey)) yazilacak.push({ student_id: h.studentId, ...donem, gosterge: h.gosterge, duzey: h.duzey, giren_id: user.id, updated_at: simdi });
+    else return { error: "Geçersiz düzey.", kaydedilen: 0 };
+  }
+  const gorusYaz: Record<string, unknown>[] = [];
+  const gorusSil: string[] = [];
+  for (const g of girdi.gorusler) {
+    if (!sinifOgrencileri.has(g.studentId)) return { error: "Geçersiz görüş.", kaydedilen: 0 };
+    const metin = g.metin.trim().slice(0, 1000);
+    if (metin) gorusYaz.push({ student_id: g.studentId, ...donem, metin, giren_id: user.id, updated_at: simdi });
+    else gorusSil.push(g.studentId);
+  }
+
+  const tabloYok = "Sosyal duygusal değerlendirme için veritabanı güncellemesi (0167) bekleniyor.";
+  if (yazilacak.length > 0) {
+    const { error } = await admin.from("ilkokul_sosyal_duygusal").upsert(yazilacak, { onConflict: "student_id,egitim_yili,donem,gosterge" });
+    if (error) return { error: error.code === "42P01" ? tabloYok : error.message, kaydedilen: 0 };
+  }
+  for (const s of silinecek) {
+    await admin.from("ilkokul_sosyal_duygusal").delete().eq("student_id", s.studentId).eq("egitim_yili", girdi.egitimYili).eq("donem", girdi.donem).eq("gosterge", s.gosterge);
+  }
+  if (gorusYaz.length > 0) {
+    const { error } = await admin.from("ilkokul_donem_gorusleri").upsert(gorusYaz, { onConflict: "student_id,egitim_yili,donem" });
+    if (error) return { error: error.code === "42P01" ? tabloYok : error.message, kaydedilen: 0 };
+  }
+  for (const id of gorusSil) {
+    await admin.from("ilkokul_donem_gorusleri").delete().eq("student_id", id).eq("egitim_yili", girdi.egitimYili).eq("donem", girdi.donem);
+  }
+  revalidatePath("/dashboard/ilkokul-gelisim");
+  return { error: null, kaydedilen: yazilacak.length + silinecek.length + gorusYaz.length + gorusSil.length };
 }
 
 // ---- Sosyal etkinlik ----
