@@ -38,9 +38,9 @@ npm run dev
 
 ## Veritabanı
 
-`supabase/schema.sql` — sıfırdan kurulum için tek dosyalık, kümülatif şema (Supabase SQL Editor'de tamamı çalıştırılabilir).
+`supabase/migrations/` — veritabanı değişikliklerinin tek kaynağı; sırayla uygulanır. Yeni bir migration eklerken yalnızca `NNNN_isim.sql` dosyasını oluşturun. Yeni fonksiyonlarda `EXECUTE` varsayılan olarak `PUBLIC`'e verilir; yalnız sunucudan çağrılacaksa `revoke all ... from public, anon, authenticated; grant execute ... to service_role;` ekleyin (bkz. 0174, 0175).
 
-`supabase/migrations/` — var olan bir veritabanına sırayla uygulanan artımlı değişiklikler. Yeni bir migration eklerken **hem** ilgili `NNNN_isim.sql` dosyasını oluşturun **hem de** aynı SQL'i `schema.sql`'in sonuna ekleyin (iki dosya birbirinden bağımsız kaynaklar değil — schema.sql her zaman "fresh install sonucu tüm migration'lar uygulanmış hali" ile aynı olmalı).
+`supabase/schema.sql` — **kullanımdan kaldırıldı** (23.10.2026) ve çalıştırılmamalı; içinde nedeni ve güncel döküm komutu yazıyor. Eskiden "migration'larla aynı tutulacak" kuralı vardı; uygulanmadığı için dosya canlıdan çok geride kalmıştı.
 
 ## Admin/yönetim script'leri (`scripts/`)
 

@@ -41,8 +41,14 @@ function DersCipleri({ dersler }: { dersler: DersDegisimi[] }) {
   );
 }
 
-export function RehberTakipBildirimleri({ bildirimler, hazir, ogrenciBaglantisi, duzeySiz }: {
+// Saat dilimi sabit: sunucu ve tarayıcı aynı metni üretsin.
+const taramaZamaniYaz = (iso: string) => new Date(iso).toLocaleString("tr-TR", {
+  timeZone: "Europe/Istanbul", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit",
+});
+
+export function RehberTakipBildirimleri({ bildirimler, hazir, ogrenciBaglantisi, duzeySiz, sonTarama = null, taramaHatasi = false }: {
   bildirimler: TakipBildirimi[]; hazir: boolean; ogrenciBaglantisi: "analiz" | "takip"; duzeySiz: boolean;
+  sonTarama?: string | null; taramaHatasi?: boolean;
 }) {
   const router = useRouter();
   const [durum, setDurum] = useState<TakipDurumu | "tumu">("yeni");
@@ -104,6 +110,13 @@ export function RehberTakipBildirimleri({ bildirimler, hazir, ogrenciBaglantisi,
           <p className="text-xs" style={{ color: TEXT_MUTED }}>
             Ani net düşüşü ve yükselişi, ders bazında düşüş, 14 gün ve üzeri sessizlik ve biriken görevler burada toplanır. Bu bildirimler mesaj kutusuna gitmez; her sabah otomatik taranır.
           </p>
+          {hazir && !duzeySiz && (
+            <p className="mt-1 text-[11px] font-semibold" style={{ color: taramaHatasi ? BLUSH : TEXT_MUTED }}>
+              {taramaHatasi
+                ? "Açılış taraması tamamlanamadı; liste son kayıtlı taramaya göre. \"Şimdi Tara\" ile yeniden deneyin."
+                : sonTarama ? `Son tarama: ${taramaZamaniYaz(sonTarama)}` : "Henüz tarama kaydı yok."}
+            </p>
+          )}
         </div>
         <button type="button" onClick={tara} disabled={pending || !hazir || duzeySiz}
           className="sfec-btn inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold disabled:opacity-50" style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>

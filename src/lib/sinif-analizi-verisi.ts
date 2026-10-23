@@ -2,6 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { bugununTarihiTR } from "@/lib/tarih";
 import { kademeBul } from "@/lib/kademe";
 import { denemeToplamNeti, yayineviAnahtari, TREND_PENCERESI, AKTIFLIK_PENCERESI, type AnalizOgrencisi } from "@/lib/sinif-analizi";
+import { ortaokulHareketiniEkle } from "@/lib/ortaokul-aktivite-ekle";
+import { sinifAnalizOzetleriGetir } from "@/lib/sinif-analiz-ozeti";
 
 // Sınıf Analizi veri katmanı — rehber-kapsam-listesi.ts ile AYNI desen:
 // öğrenci başına sorgu YOK, birkaç toplu in() sorgusu + JS'de eşleştirme.
@@ -52,12 +54,6 @@ export interface SinifAnaliziVerisi {
 // Gömülü ilişki çalışma anında NESNE döner, tipte dizi görünür (proje notu).
 const tekil = <T,>(v: T | T[] | null): T | null => (Array.isArray(v) ? v[0] ?? null : v);
 
-function gunOnce(gunSayisi: number): string {
-  const d = new Date(`${bugununTarihiTR()}T00:00:00`);
-  d.setDate(d.getDate() - gunSayisi);
-  return d.toISOString().slice(0, 10);
-}
-
 export async function sinifAnaliziGetir(
   admin: Istemci,
   params: {
@@ -101,57 +97,19 @@ export async function sinifAnaliziGetir(
   if (temel.length === 0) return bos;
 
   const idler = temel.map((o) => o.ogrenciId);
-  const aktiflikBasi = gunOnce(AKTIFLIK_PENCERESI);
-  const sonDonemBasi = gunOnce(TREND_PENCERESI);
-  const oncekiDonemBasi = gunOnce(TREND_PENCERESI * 2);
 
-  // Ortaokul öğrencisi soru_cozumleri / konu_calismalar'a YAZMIYOR; çalışması
-  // ortaokul_calismalar'da (migration 0132). Yalnız lise tablolarına bakmak
-  // ortaokul öğrencisini "hiç veri girmemiş / sistemden uzaklaşmış" gösterirdi.
-  const [soru, konu, ortaokulCalisma, denemeler, gorevler, girisler, resmiListe] = await Promise.all([
-    admin.from("soru_cozumleri").select("student_id, tarih").in("student_id", idler).gte("tarih", oncekiDonemBasi),
-    admin.from("konu_calismalar").select("student_id, tarih").in("student_id", idler).gte("tarih", oncekiDonemBasi),
-    admin.from("ortaokul_calismalar").select("student_id, tarih").in("student_id", idler).gte("tarih", oncekiDonemBasi),
+  // Aktiflik/dönem sayıları (soru + konu), tüm zaman görev dağılımı ve "hiç
+  // verisi var mı" veritabanında hesaplanır (migration 0175, Faz 1 · Adım 5).
+  // Eskiden bu satırlar toplu in() sorgularıyla çekilip JS'te sayılıyordu;
+  // PostgREST max_rows = 1000 olduğundan kurumun tamamında (en büyük kurumda
+  // 1464 görev satırı) sayılar sessizce kesiliyordu. "Verisi var mı" tarih
+  // penceresinden bağımsızdır (RPC içinde tüm satırlara bakılır).
+  const [ozetler, denemeler, girisler, resmiListe] = await Promise.all([
+    sinifAnalizOzetleriGetir(admin, idler, bugununTarihiTR(), AKTIFLIK_PENCERESI, TREND_PENCERESI),
     admin.from("denemeler").select("student_id, tarih, tur, yayinevi, deneme_ders_sonuclari(dogru, yanlis)").in("student_id", idler),
-    admin.from("gorev_atamalari").select("student_id, durum").in("student_id", idler),
     admin.from("kullanici_aktif_gunler").select("user_id").in("user_id", idler),
     admin.from("okul_ogrenci_listesi").select("ad_soyad, okul_no, student_id, classes(seviye, sube)").eq("school_id", params.schoolId),
   ]);
-
-  type HareketRow = { student_id: string; tarih: string | null };
-  const aktiflik = new Map<string, number>();
-  const sonDonem = new Map<string, number>();
-  const oncekiDonem = new Map<string, number>();
-  const artir = (m: Map<string, number>, k: string) => m.set(k, (m.get(k) ?? 0) + 1);
-
-  for (const tablo of [soru, konu, ortaokulCalisma]) {
-    for (const r of ((tablo.data ?? []) as HareketRow[])) {
-      if (!r.tarih) continue;
-      if (r.tarih >= aktiflikBasi) artir(aktiflik, r.student_id);
-      if (r.tarih >= sonDonemBasi) artir(sonDonem, r.student_id);
-      else if (r.tarih >= oncekiDonemBasi) artir(oncekiDonem, r.student_id);
-    }
-  }
-
-  // "Hiç verisi var mı" sorusu PENCEREDEN BAĞIMSIZ: 30 günden eski verisi olan
-  // öğrenci "hiç veri girmemiş" sayılmasın. Pencerede kaydı olanlar zaten
-  // "verisi var"; tam geçmiş sorgusu YALNIZ pencerede kaydı olmayanlar için
-  // çalışır (eskiden tüm öğrencilerin tüm satırları çekiliyordu).
-  const verisiOlanlar = new Set<string>();
-  for (const tablo of [soru, konu, ortaokulCalisma]) {
-    for (const r of ((tablo.data ?? []) as HareketRow[])) verisiOlanlar.add(r.student_id);
-  }
-  const penceredeKaydiOlmayanlar = idler.filter((id) => !verisiOlanlar.has(id));
-  if (penceredeKaydiOlmayanlar.length > 0) {
-    const [soruVarMi, konuVarMi, ortaokulVarMi] = await Promise.all([
-      admin.from("soru_cozumleri").select("student_id").in("student_id", penceredeKaydiOlmayanlar),
-      admin.from("konu_calismalar").select("student_id").in("student_id", penceredeKaydiOlmayanlar),
-      admin.from("ortaokul_calismalar").select("student_id").in("student_id", penceredeKaydiOlmayanlar),
-    ]);
-    for (const tablo of [soruVarMi, konuVarMi, ortaokulVarMi]) {
-      for (const r of ((tablo.data ?? []) as { student_id: string }[])) verisiOlanlar.add(r.student_id);
-    }
-  }
 
   // Denemeler: hem seçenek listesi hem seçili denemenin netleri.
   type DenemeRow = {
@@ -183,17 +141,6 @@ export async function sinifAnaliziGetir(
     netler.set(d.student_id, mevcut);
   }
 
-  const gorevToplam = new Map<string, number>();
-  const gorevTamam = new Map<string, number>();
-  const gorevBekle = new Map<string, number>();
-  const gorevOlmadi = new Map<string, number>();
-  for (const g of ((gorevler.data ?? []) as { student_id: string; durum: string }[])) {
-    artir(gorevToplam, g.student_id);
-    if (g.durum === "tamamlandi") artir(gorevTamam, g.student_id);
-    else if (g.durum === "bekliyor") artir(gorevBekle, g.student_id);
-    else artir(gorevOlmadi, g.student_id);
-  }
-
   const girisYapanlar = new Set(((girisler.data ?? []) as { user_id: string }[]).map((g) => g.user_id));
   const denemesiOlanlar = new Set(denemeSatirlari.map((d) => d.student_id));
 
@@ -215,20 +162,38 @@ export async function sinifAnaliziGetir(
     // Kapsam dışı sınıflar sızmasın: sınıf öğretmeni yalnız kendi sınıfını görür.
     .filter((k) => gorunenSiniflar === null || gorunenSiniflar.has(k.sinifAdi));
 
-  const ogrenciler: AnalizOgrencisiHam[] = temel.map((o) => ({
-    ...o,
-    denemeNetleri: netler.get(o.ogrenciId) ?? {},
-    denemeSayisi: Object.keys(netler.get(o.ogrenciId) ?? {}).length,
-    aktiflik: aktiflik.get(o.ogrenciId) ?? 0,
-    gorevToplam: gorevToplam.get(o.ogrenciId) ?? 0,
-    gorevTamamlanan: gorevTamam.get(o.ogrenciId) ?? 0,
-    gorevBekleyen: gorevBekle.get(o.ogrenciId) ?? 0,
-    gorevTamamlanmayan: gorevOlmadi.get(o.ogrenciId) ?? 0,
-    sonDonem: sonDonem.get(o.ogrenciId) ?? 0,
-    oncekiDonem: oncekiDonem.get(o.ogrenciId) ?? 0,
-    girisYapmisMi: girisYapanlar.has(o.ogrenciId),
-    verisiVarMi: verisiOlanlar.has(o.ogrenciId) || denemesiOlanlar.has(o.ogrenciId),
-  }));
+  // RPC yalnız soru + konu sayıyor; ortaokul öğrencisinin çalışması (migration
+  // 0132) üstüne eklenir. Ortaokul öğrencisi azdır, tüm geçmişi tek sorguyla alınır.
+  const ortaokulTarihleri = new Map<string, string[]>();
+  const ortaokulIdleri = temel.filter((o) => o.kademe === "ortaokul").map((o) => o.ogrenciId);
+  if (ortaokulIdleri.length > 0) {
+    const { data: ortaokulSatirlari } = await admin.from("ortaokul_calismalar").select("student_id, tarih").in("student_id", ortaokulIdleri);
+    for (const r of ((ortaokulSatirlari ?? []) as { student_id: string; tarih: string | null }[])) {
+      if (!r.tarih) continue;
+      const liste = ortaokulTarihleri.get(r.student_id) ?? [];
+      liste.push(r.tarih);
+      ortaokulTarihleri.set(r.student_id, liste);
+    }
+  }
+  const bugun = bugununTarihiTR();
+
+  const ogrenciler: AnalizOgrencisiHam[] = temel.map((o) => {
+    const ozet = ortaokulHareketiniEkle(ozetler.get(o.ogrenciId), o.ogrenciId, ortaokulTarihleri.get(o.ogrenciId) ?? [], bugun, AKTIFLIK_PENCERESI, TREND_PENCERESI);
+    return {
+      ...o,
+      denemeNetleri: netler.get(o.ogrenciId) ?? {},
+      denemeSayisi: Object.keys(netler.get(o.ogrenciId) ?? {}).length,
+      aktiflik: ozet?.aktiflik ?? 0,
+      gorevToplam: ozet?.gorevToplam ?? 0,
+      gorevTamamlanan: ozet?.gorevTamamlanan ?? 0,
+      gorevBekleyen: ozet?.gorevBekleyen ?? 0,
+      gorevTamamlanmayan: ozet?.gorevTamamlanmayan ?? 0,
+      sonDonem: ozet?.sonDonem ?? 0,
+      oncekiDonem: ozet?.oncekiDonem ?? 0,
+      girisYapmisMi: girisYapanlar.has(o.ogrenciId),
+      verisiVarMi: (ozet?.verisiVarMi ?? false) || denemesiOlanlar.has(o.ogrenciId),
+    };
+  });
 
   return { ogrenciler, denemeSecenekleri, kayipNesil };
 }
