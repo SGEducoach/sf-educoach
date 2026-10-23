@@ -66,7 +66,7 @@ Alan açıklamaları: **Çalışan AI** = modülde son işi yapan araç/oturum �
 | Engel / açık soru | Rehber hesabıyla ekranda "Son tarama" etiketi ve Radar/Takip sayıları doğrulanmadı. Radar'daki "açık/toplam görev" sayıları artık son 30 gün (25 öğrencinin toplamı değişti, görev bayrağı değişmedi). Denemeler JS'te (695 satır, sınırın altında ama büyüyor) |
 | Adım 4 doğrulaması (23.10) | Canlı veride RPC `son_hareket` eski üç-tablo mantığıyla 394/394 öğrencide aynı; görev bayrağı eski 1, yeni 1, değişen 0. 784/784 test, tsc, eslint temiz. RPC hatasında artık fırlatılıyor (eksik veriyle bildirim üretilmez) |
 | Adım 5 (23.10) — Sınıf Analizi | `sinif-analizi-verisi.ts` kurumun tamamında soru/konu/görev satırlarını toplu `in()` ile çekip 1000'de kesiyordu (en büyük kurumda 1464 görev). Yeni RPC `sinif_analiz_ozeti` (0175) bunları veritabanında sayar; eski davranış birebir korundu (aktiflik penceresi adı 30 gün ama fiilen 28: eski sorgu yalnız son 28 günü çekiyordu). Canlı veride SQL mantığı eskiyle 394/394 öğrencide aynı (fonksiyon oluşturmadan düz SELECT ile). Kod `faz1-adim5-sinif` dalında (790/790 test, tsc, eslint temiz). **0175 canlıya uygulandı** (23.10, kullanıcı izniyle); ACL `{postgres, service_role}`, `public`/`anon`/`authenticated` EXECUTE yok; fonksiyon sonuçları bağımsız sorguyla aynı (394 öğrenci, aktiflik 1194, son dönem 405, önceki dönem 789, görev 1731 = 142 tamamlanan + 189 bekleyen + 1400 tamamlanmayan). Sıra izlendi: önce 0175, sonra main |
-| Varsayılan dönem | `src/app/dashboard/page.tsx` varsayılanı "Aylık" yapıldı (kullanıcı kararı 23.10). Dikkat: `AnalizPaneli.tsx` tam analiz görünümünü (deneme trendi, regresyon) yalnız "Genel" (`tum`) dönemde gösteriyor; varsayılan Aylık olunca ilk açılışta yalnız dönem özeti çıkar, Genel `?donem=tum` ile seçilir. Admin kullanıcı sayfası (`yonetici/kullanici/[id]`) bilerek değişmedi |
+| Varsayılan dönem | `src/app/dashboard/page.tsx` varsayılanı "Aylık" yapıldı (kullanıcı kararı 23.10). Dikkat: `AnalizPaneli.tsx` tam analiz görünümünü (deneme trendi, regresyon) yalnız "Genel" (`tum`) dönemde gösteriyor; varsayılan Aylık olunca ilk açılışta yalnız dönem özeti çıkar, Genel `?donem=tum` ile seçilir. Admin kullanıcı sayfası (`yonetici/kullanici/[id]`) bilerek değişmedi. **Çözüldü (M8, 23.10):** Aylık/Haftalık/Bugün seçilince artık dönem özetinin yanında deneme net trendi ve ders bazlı ortalama da görünür (başlıkta dönem yazar); hedef/içgörü/hız/sınav saati kartları sabit pencereli olduğu için yalnız Genel'de kalır ve bir not + "Genel görünümde" bağlantısı bunu söyler |
 | Süre ölçümü (23.10) | Canlı veritabanında (yalnız EXPLAIN ANALYZE): en yüklü öğrencinin soru sorgusu 0,75 ms, denemeleri 14,8 ms; 224 öğrencilik Radar RPC'si (`ogrenci_aktivite_ozeti`) 66 ms. **Veritabanı süresi sorun değil.** Öğrenci başına en çok 171 soru çözümü var (sınır 1000) → rapor B4 (öğrenci analizinde kesilme) bugün geçerli değil; `ogrenci_analiz_ozeti` RPC'si şimdilik gereksiz, bu yüzden yazılmadı. Asıl gecikme ağ: Vercel işlevleri `iad1` (ABD), Supabase `eu-west-3` (Paris), depoda `regions` ayarı yok; her sorgu turu bu mesafeyi öder. `vercel.json`'a `"regions": ["cdg1"]` eklemek en büyük kazanç (henüz yapılmadı, karar bekliyor). Uçtan uca 300 ms ölçülemedi (giriş gerektirir) |
 | `schema.sql` (23.10) | Kullanımdan kaldırıldı: 215 KB, `drop table ... cascade` ile başlıyordu (çalıştırılırsa canlı tabloları siler), 0148'de kalmıştı, eski güvensiz RLS içeriyordu. Yerine uyarı + güncel döküm komutu konuldu (`supabase db dump`), README güncellendi. Canlıdan otomatik üretilemedi: `pg_dump`/CLI yok, bağlantı şifresi istenmedi; 270 KB'ı elle aktarmak yanlış referans riski taşırdı |
 | Sonraki adım | (1) ~~0174~~ TAMAM. (2) ~~RPC'yi Radar/Takip'e bağla~~ TAMAM (Adım 4). (3) ~~`max_rows`~~ TAMAM. (4) ~~0175 + main~~ TAMAM (Adım 5). (5) `vercel.json` bölge kararı (`cdg1`). (6) Rehber hesabıyla ekranda doğrulama. (7) Bağımsız: `admin_audit_log` RLS hatası. (8) Gerekirse: `ogrenci_analiz_ozeti` (öğrenci başına satır 1000'e yaklaşırsa), deneme toplamasının DB'ye taşınması |
@@ -76,7 +76,7 @@ Alan açıklamaları: **Çalışan AI** = modülde son işi yapan araç/oturum �
 | --- | --- |
 | Amaç | Net düşüşü, ders düşüşü, sessizlik ve biriken görevden **gerekçeli öncelik sıralaması** (tek risk puanı yok — 07.10.2026 kararı, 23.10'da teyit edildi); kart üzerinden hızlı aksiyon (görüşme, hatırlatma, ödev) |
 | Çalışan AI | Önceki oturumlar (ChatGPT/Claude — sohbet kaydı erişilemedi) |
-| Durum | Kısmen mevcut; canlı işleyiş testi yapılmadı |
+| Durum | Kısmen mevcut; canlı işleyiş testi yapılmadı. **Koddan doğrulandı (23.10):** ÖĞRENCİ düzeyinde gerekçeli öncelik sıralaması zaten var (Analiz Motoru, `oncelikSiralamasi`, `AnalizPaneli.tsx` içgörü kartında ilk 3); rehber/kurum düzeyinde bildirimleri birleştiren tek sıralama yok |
 | Son ilgili commit | 19–20 Ekim 2026 — "Rehber Takip Bildirimleri: ani net değişimi, ders düşüşü, sessizlik, biriken görev" (migration 0171 belirtiliyor); görüldü/ele alındı işlemleri |
 | Bu oturumda yapılan | Yalnız durum kaydı |
 | Engel / açık soru | Koddan doğrulandı (23.10): tek risk puanı **yok** ve bilinçli olarak yapılmamış (`src/lib/rehber-bayrak.ts:4-7`, kullanıcı kararı 07.10.2026 "bayrak sebep söyler, puan vermez"). Bildirimler 5 ayrı tür, JS'te hesaplanıyor; günlük cron 04:30 UTC + sayfa açılışında tarama. Karar hâlâ geçerli mi — kullanıcıya sorulacak |
@@ -87,9 +87,9 @@ Alan açıklamaları: **Çalışan AI** = modülde son işi yapan araç/oturum �
 | --- | --- |
 | Amaç | Konu bazlı hakimiyet yüzdesi, dönem trendi, ek çalışmanın net etkisi simülasyonu |
 | Çalışan AI | — |
-| Durum | Planlandı (Faz 2) |
-| Son ilgili commit | Yok |
-| Engel / açık soru | Konu/kazanım verisi hangi tabloda tutuluyor — doğrulanacak; `ORTAOKUL_LISE_IZLERI.md` okunacak |
+| Durum | **Kısmen mevcut** (koddan doğrulandı, 23.10): öğrencinin konu hakimiyeti beyanı (`ogrenci_konu_hakimiyeti`, `KonuHakimiyetiEkrani`; canlıda 2774 satır / 51 öğrenci), deneme konu/kazanım analizi (`deneme_kazanim_sonuclari` 0063, `DenemeKonuAnalizi.tsx`; yalnız karne kazanım dökümü olan denemelerde), Konu Durumu ekranı. **Yok:** dönem trendi içeren tek matris ve "ek çalışmanın net etkisi" simülasyonu (kodda bulunamadı) |
+| Son ilgili commit | Doğrulanmadı (konu hakimiyeti ve kazanım işleri önceki oturumlarda yapıldı) |
+| Engel / açık soru | Kazanım verisi yalnız karneli PDF'ten geliyor; TG Fen Lisesi karnelerinde kazanım dökümü (2. sayfa) henüz **okunmuyor** (M8). Matris için hangi veri kaynağı esas alınacak — karar gerekli |
 | Sonraki adım | Veri modelini doğrula, matris bileşeni taslağı |
 
 ### M4 — Claude API Koçluk Motoru
@@ -107,9 +107,9 @@ Alan açıklamaları: **Çalışan AI** = modülde son işi yapan araç/oturum �
 | --- | --- |
 | Amaç | Çalışma ve soru verisinin sesle/fotoğrafla girilmesi; analizin sürekli beslenmesi |
 | Çalışan AI | — |
-| Durum | Plan belgeleri var (`SESLI_VE_FOTO_VERI_GIRISI_IS_EMRI.md`, `KONU_CALISMA_SESLI_GIRIS_PLANI.md`); içerikleri incelenmedi |
+| Durum | **Sesli giriş kodda var** (koddan doğrulandı, 23.10): `src/lib/sesli-soru-girisi.ts` (+ test) ve `OgrenciVeriGirisi.tsx` içinde sesli soru çözümü ve yayınevi komutu (tarayıcı konuşma tanıma, iOS/Safari uyarı mesajları). **Fotoğrafla giriş koda yansımamış görünüyor** (kamera/foto girişi bulunamadı). Ana dizinde (`E:SG_EDUCOACH`) `OgrenciVeriGirisi.tsx` ve `page.tsx` **commit edilmemiş** değişiklikte — başka bir oturumun sesli giriş işi olabilir; dokunulmadı. Plan belgeleri: `SESLI_VE_FOTO_VERI_GIRISI_IS_EMRI.md`, `KONU_CALISMA_SESLI_GIRIS_PLANI.md` |
 | Son ilgili commit | Doğrulanmadı |
-| Sonraki adım | İş emri belgelerini oku, uygulanma düzeyini koddan çıkar |
+| Sonraki adım | İş emrindeki maddeleri kodla karşılaştır (hangileri yapıldı), ana dizindeki commit edilmemiş değişikliğin sahibini bul, foto girişi kararı |
 
 ### M6 — PWA ve Mobil Bildirimler
 | Alan | Kayıt |
