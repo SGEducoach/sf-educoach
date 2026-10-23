@@ -60,7 +60,12 @@ as $$
   left join gorev gv on gv.student_id = i.student_id;
 $$;
 
-revoke all on function public.ogrenci_aktivite_ozeti(uuid[], date) from anon, authenticated;
+-- PUBLIC'ten de kaldırılmalı: yeni fonksiyonlarda EXECUTE varsayılan olarak
+-- PUBLIC'e verilir (canlıda has_student_access ACL'inde "=X/postgres");
+-- yalnız anon/authenticated'den almak, onları PUBLIC üyesi olarak çağırmaktan
+-- alıkoymaz. security definer + kurum kontrolü yok: yalnız servis anahtarı.
+revoke all on function public.ogrenci_aktivite_ozeti(uuid[], date) from public, anon, authenticated;
+grant execute on function public.ogrenci_aktivite_ozeti(uuid[], date) to service_role;
 
 comment on function public.ogrenci_aktivite_ozeti(uuid[], date) is
-  'Öğrenci aktivite özeti (0174): son hareket tarihi (pencereszsiz) + son 30 günün görev açık/toplam sayısı. Yalnız servis anahtarıyla çağrılır.';
+  'Öğrenci aktivite özeti (0174): son hareket tarihi (pencere sınırsız) + son 30 günün görev açık/toplam sayısı. Yalnız servis anahtarıyla çağrılır.';
