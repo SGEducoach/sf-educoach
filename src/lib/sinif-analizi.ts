@@ -202,6 +202,86 @@ export function netOrtalamasi(denemeNetleri: Record<string, number>): number | n
   return Math.round((degerler.reduce((t, n) => t + n, 0) / degerler.length) * 100) / 100;
 }
 
+// ——— DENEME TÜRÜ (denetim 20.10.2026) ———
+// "Deneme Net Sırası" eskiden varsayılan olarak TÜM denemelerin (TYT, AYT,
+// branş, LGS) ortalamasını sıralıyordu; kart açıklaması ise "seçilen denemede
+// toplam net" diyordu. TYT 120 soru, AYT alanına göre ~80 soru, branş tek
+// ders: karma ortalama hiçbir ölçüye karşılık gelmez. Artık sıralama ya TEK
+// bir denemeye ya da YALNIZ seçili türün kişisel ortalamasına dayanır.
+
+/**
+ * Aynı denemenin yayınevi yazımı kayıtlarda değişiyor ("Paraf"/"PARAF"/"paraf",
+ * "limit"/"Limit"). Canlı veride (20.10.2026) 570 denemede 40+ ayrı yazım
+ * var; anahtar yazımla ayrışırsa aynı deneme birden çok seçenek olur ve
+ * ortak-deneme karşılaştırması kaçar. Büyük/küçük harf ve baştaki/sondaki
+ * boşluk yok sayılır; imla farkları ("Mikroorjinal"/"Mikroorijinal") çözülmez.
+ */
+export function yayineviAnahtari(yayinevi: string | null | undefined): string {
+  const t = (yayinevi ?? "").trim().toLocaleUpperCase("tr-TR");
+  return t === "" ? "—" : t;
+}
+
+export interface DenemeSecenegiOzeti { anahtar: string; tarih: string; tur: string; katilan: number }
+
+export const TUR_ETIKETLERI: Record<string, string> = {
+  TYT: "TYT", AYT: "AYT", BRANS: "Branş", LGS: "LGS",
+};
+// Seçici sırası: lise ana türleri önce, sonra branş, en sonda ortaokul (LGS).
+const TUR_SIRASI = ["TYT", "AYT", "BRANS", "LGS"];
+
+export function turEtiketi(tur: string): string {
+  return TUR_ETIKETLERI[tur] ?? tur;
+}
+
+/** "yayinevi|tarih|tur" anahtarından tür. Yayınevi "|" içerse bile son parça tür. */
+export function anahtardanTur(anahtar: string): string {
+  const i = anahtar.lastIndexOf("|");
+  return i < 0 ? "" : anahtar.slice(i + 1);
+}
+
+/** Seçeneklerde bulunan türler — sabit sırayla; bilinmeyen türler sona. */
+export function denemeTurleri(secenekler: DenemeSecenegiOzeti[]): string[] {
+  const bulunan = [...new Set(secenekler.map((d) => d.tur))];
+  const sira = (t: string) => { const i = TUR_SIRASI.indexOf(t); return i < 0 ? TUR_SIRASI.length : i; };
+  return bulunan.sort((a, b) => sira(a) - sira(b) || a.localeCompare(b, "tr"));
+}
+
+/**
+ * Bir türün VARSAYILAN denemesi: en yeni ORTAK deneme. "Ortak" = katılımı o
+ * türdeki en yüksek katılımın en az yarısı olan deneme — tek kişinin girdiği
+ * yeni bir deneme, sınıfın girdiği biraz eski denemenin önüne geçmesin.
+ * Sonuç, tarihe göre yeni olandır; tarih eşitse katılımı yüksek olan.
+ */
+export function varsayilanDeneme(secenekler: DenemeSecenegiOzeti[], tur: string): DenemeSecenegiOzeti | null {
+  const aday = secenekler.filter((d) => d.tur === tur);
+  if (aday.length === 0) return null;
+  const enYuksek = Math.max(...aday.map((d) => d.katilan));
+  const ortak = aday.filter((d) => d.katilan * 2 >= enYuksek);
+  return [...ortak].sort((a, b) => b.tarih.localeCompare(a.tarih) || b.katilan - a.katilan)[0] ?? null;
+}
+
+/**
+ * Açılışta seçili tür: en yeni ortak denemesi olan tür (LGS ve branş, lise
+ * ana türleri varken öne geçmesin diye eşitlikte sabit sıra kazanır).
+ */
+export function varsayilanTur(secenekler: DenemeSecenegiOzeti[]): string | null {
+  let secilen: { tur: string; tarih: string } | null = null;
+  for (const tur of denemeTurleri(secenekler)) {
+    const d = varsayilanDeneme(secenekler, tur);
+    if (d && (secilen === null || d.tarih > secilen.tarih)) secilen = { tur, tarih: d.tarih };
+  }
+  return secilen?.tur ?? null;
+}
+
+/** Öğrencinin net haritasından yalnız seçili türün denemeleri. */
+export function turNetleri(denemeNetleri: Record<string, number>, tur: string): Record<string, number> {
+  const sonuc: Record<string, number> = {};
+  for (const [anahtar, net] of Object.entries(denemeNetleri)) {
+    if (anahtardanTur(anahtar) === tur) sonuc[anahtar] = net;
+  }
+  return sonuc;
+}
+
 /** Deneme ders sonuçlarından toplam net — kademeye göre yanlış katsayısı. */
 export function denemeToplamNeti(
   dersler: { dogru: number; yanlis: number }[],

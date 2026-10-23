@@ -10,6 +10,7 @@ import { OgrenciVeriGirisi } from "@/components/dashboard/OgrenciVeriGirisi";
 import { KonuHaritasiRaporu } from "@/components/dashboard/KonuHaritasiRaporu";
 import { AnalizPaneli } from "@/components/dashboard/AnalizPaneli";
 import { DenemeKonuAnalizi } from "@/components/dashboard/DenemeKonuAnalizi";
+import { AnalizSekmeleri } from "@/components/dashboard/AnalizSekmeleri";
 import { denemeKonuAnaliziGetir } from "@/lib/deneme-konu-verisi";
 import { DenemeKarnesi } from "@/components/dashboard/DenemeKarnesi";
 import { denemeKarneleriGetir } from "@/lib/deneme-karnesi-verisi";
@@ -70,6 +71,8 @@ import type { OkulNobeti } from "@/lib/ders-programi";
 import type { DersProgramiSatiri } from "@/lib/ders-programi";
 import { dershaneAnaSayfaVerisiGetir } from "@/lib/dershane-ana-sayfa";
 import { DershaneAnaSayfa } from "@/components/dashboard/DershaneAnaSayfa";
+import { ortaokulKurumOzetiGetir } from "@/lib/ortaokul-kurum-ozeti";
+import { OrtaokulKurumPerformansi } from "@/components/dashboard/OrtaokulKurumPerformansi";
 import { DenemeSuresiSonaErdiEkrani } from "@/components/DenemeSuresiSonaErdiEkrani";
 import { RehberlikPaneli } from "@/components/dashboard/RehberlikPaneli";
 import { rehberlikUyeligiGetir } from "@/lib/rehberlik-servisi";
@@ -790,9 +793,14 @@ async function OgrenciIcerik({ userId, ad, donem, haftaBaslangic, aktifBolum, ge
 
       {aktifBolum === "analiz" && <div>
         <h2 style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-lg font-bold mb-3 print:hidden">Analiz / Rapor</h2>
-        <AnalizPaneli veri={analiz!} ogrenciAdi={ad} konuHakimiyetiSatirlari={konuHakimiyetiSatirlari} konuHakimiyetiTamGorunum={konuHakimiyetiTamGorunum} konuHakimiyetiAytAlan={s.ayt_alan} hedefDuzenlenebilir />
-        {denemeKarneleri.length > 0 && <div className="mt-4"><DenemeKarnesi karneler={denemeKarneleri} /></div>}
-        {denemeKonu && <div className="mt-4"><DenemeKonuAnalizi ozet={denemeKonu.ozet} kapsam="ogrenci" hata={denemeKonu.error} /></div>}
+        <AnalizSekmeleri
+          denemeVarMi={denemeKarneleri.length > 0 || !!denemeKonu}
+          gelisim={<AnalizPaneli veri={analiz!} ogrenciAdi={ad} konuHakimiyetiSatirlari={konuHakimiyetiSatirlari} konuHakimiyetiTamGorunum={konuHakimiyetiTamGorunum} konuHakimiyetiAytAlan={s.ayt_alan} hedefDuzenlenebilir />}
+          denemeler={<>
+            {denemeKarneleri.length > 0 && <DenemeKarnesi karneler={denemeKarneleri} />}
+            {denemeKonu && <DenemeKonuAnalizi ozet={denemeKonu.ozet} kapsam="ogrenci" hata={denemeKonu.error} denemeKaydiSayisi={analiz!.donem === "tum" && analiz!.denemeKapsami === "yks" ? analiz!.denemeTrend.length : undefined} />}
+          </>}
+        />
       </div>}
     </div>
   );
@@ -1243,6 +1251,14 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   // yeniden kullanıldı. Sadece okul müdürü (dershane müdürü zaten kendi
   // ayrı panelinde, "ozet" bölümünde, aynı bileşeni kullanıyor).
   if (aktifBolum === "kurum-performansi" && (role === "mudur" || rehberOgretmenMi) && (kurumTuru !== "dershane" || idare)) {
+    // Ortaokul kurumunda lise net/deneme grafikleri boş ve yanlış çerçeve
+    // olurdu: ortaokulun kendi özeti (çalışma, görev, yeterlilik, yardım).
+    // Yetki yukarıdaki rol koşuluyla verildi, okul kapsamı school_id ile
+    // sınırlı; ortaokul tabloları için servis istemcisi (Sınıf Analizi gibi).
+    if (kademe === "ortaokul") {
+      const ortaokulVeri = await ortaokulKurumOzetiGetir(createAdminClient(), teacher.school_id, okulRehberi ? rehberSeviyeleri : undefined);
+      return <section className="sfec-section"><OrtaokulKurumPerformansi veri={ortaokulVeri} /></section>;
+    }
     const veri = await dershaneAnaSayfaVerisiGetir(okulOkumaClient, teacher.school_id, okulRehberi ? rehberSeviyeleri : undefined);
     return <section className="sfec-section"><DershaneAnaSayfa veri={veri} /></section>;
   }
@@ -1370,7 +1386,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
                 konuHakimiyetiSatirlari={konuHakimiyetiOzeti.satirlar} konuHakimiyetiTamGorunum={konuHakimiyetiOzeti.tamGorunum}
                 konuHakimiyetiAytAlan={konuHakimiyetiOzeti.aytAlan} ogretmenGorunumu kohortKarsilastirma={kohort} />
               <DenemeKarnesi karneler={denemeKarneleri} />
-              <DenemeKonuAnalizi ozet={denemeKonu.ozet} kapsam="ogrenci" hata={denemeKonu.error} />
+              <DenemeKonuAnalizi ozet={denemeKonu.ozet} kapsam="ogrenci" hata={denemeKonu.error} denemeKaydiSayisi={analiz.donem === "tum" && analiz.denemeKapsami === "yks" ? analiz.denemeTrend.length : undefined} />
             </>
           ) : null}
         </div>
@@ -1380,7 +1396,9 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
 
   // DERSHANE MODU (Faz D3): dershane müdürü tamamen ayrı bir panel görüyor
   // — bkz. src/components/dashboard/DershaneMudurPaneli.tsx.
-  if (role === "mudur" && kurumTuru === "dershane") {
+  // Sınıf Analizi dışında: o bölüm aşağıdaki ORTAK dala düşer (kapsam: müdürün
+  // kendi school_id sınıfları; sinifAnaliziGetir de school_id ile sınırlı).
+  if (role === "mudur" && kurumTuru === "dershane" && aktifBolum !== "sinif-analizi") {
     const { data: dershaneSiniflari } = await supabase
       .from("classes")
       .select("id, seviye, sube")
@@ -1817,7 +1835,7 @@ async function VeliAnalizBolumu({ supabase, studentId, donem, ogrenciAdi }: {
         konuHakimiyetiSatirlari={konuHakimiyetiOzeti.satirlar} konuHakimiyetiTamGorunum={konuHakimiyetiOzeti.tamGorunum}
         konuHakimiyetiAytAlan={konuHakimiyetiOzeti.aytAlan} />
       <DenemeKarnesi karneler={denemeKarneleri} />
-      <DenemeKonuAnalizi ozet={denemeKonu.ozet} kapsam="ogrenci" hata={denemeKonu.error} />
+      <DenemeKonuAnalizi ozet={denemeKonu.ozet} kapsam="ogrenci" hata={denemeKonu.error} denemeKaydiSayisi={analiz.donem === "tum" && analiz.denemeKapsami === "yks" ? analiz.denemeTrend.length : undefined} />
     </section>
   );
 }

@@ -11,6 +11,7 @@ import {
   BG1, BG1_ALT, BORDER, BORDER_STRONG, BLUSH, BUTTER, MINT, SKY, SKY_BG, TEXT, TEXT_MUTED,
 } from "@/lib/theme";
 import type { KonuAnaliziOzeti, KonuSonucu } from "@/lib/deneme-konu-analizi";
+import { konuBosDurumMetni, konuKaynakMetni } from "@/lib/deneme-konu-bos-durum";
 
 const TUMU = "tumu";
 const ONE_CIKAN_SAYISI = 8;
@@ -92,14 +93,17 @@ function DersBolumu({ ders, konular, grup }: { ders: string; konular: KonuSonucu
   );
 }
 
-export function DenemeKonuAnalizi({ ozet, kapsam, kapsamEtiketi, hata }: {
+export function DenemeKonuAnalizi({ ozet, kapsam, kapsamEtiketi, hata, denemeKaydiSayisi }: {
   ozet: KonuAnaliziOzeti; kapsam: "ogrenci" | "grup"; kapsamEtiketi?: string; hata?: string | null;
+  /** Toplam kayıt sayısı bilinmiyorsa verilmez; genel boş durum metni korunur. */
+  denemeKaydiSayisi?: number;
 }) {
   const [secilen, setSecilen] = useState(TUMU);
   const grup = kapsam === "grup";
   const konular = secilen === TUMU ? ozet.tumu : (ozet.denemeBazli[secilen] ?? []);
   const oneCikanlar = konular.slice(0, ONE_CIKAN_SAYISI);
   const dersler = [...new Set(konular.map((k) => k.ders))];
+  const secilenDeneme = ozet.denemeler.find((d) => d.anahtar === secilen);
 
   return (
     <div className="sfec-fade rounded-3xl p-6 print:hidden" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
@@ -131,11 +135,17 @@ export function DenemeKonuAnalizi({ ozet, kapsam, kapsamEtiketi, hata }: {
           : "Karneli deneme sonuçlarına göre en çok net kaybettiğin konular — tekrar için buradan başla."}
       </p>
 
+      {!hata && konular.length > 0 && (
+        <p style={{ color: TEXT_MUTED }} className="text-[11px] mb-4 -mt-2">
+          {konuKaynakMetni(ozet.denemeler.length, secilenDeneme ? tarihGoster(secilenDeneme.tarih) : null)}
+        </p>
+      )}
+
       {hata ? (
         <p style={{ color: BLUSH }} className="text-sm font-semibold">Konu verisi alınamadı: {hata}</p>
       ) : konular.length === 0 ? (
         <p style={{ color: TEXT_MUTED }} className="text-sm py-4 text-center">
-          Henüz konu dökümü olan bir deneme yok. Deneme sonucu karneli PDF olarak yüklendiğinde konular burada görünür.
+          {konuBosDurumMetni(denemeKaydiSayisi)}
         </p>
       ) : (
         <div className="flex flex-col gap-5">

@@ -3,6 +3,7 @@ import {
   aktifKullanicilar, denemeToplamNeti, gorevAdamlari, kayipNesilOzeti,
   gorevAkibeti, katilimDagilimi, netOrtalamasi, netSiralamasi, sayfala, sessizler,
   sinifAktiflikSiralamasi, uzaklasanlar,
+  anahtardanTur, yayineviAnahtari, denemeTurleri, turNetleri, varsayilanDeneme, varsayilanTur,
   type AnalizOgrencisi,
 } from "./sinif-analizi";
 
@@ -248,5 +249,52 @@ describe("ölçüm panelleri", () => {
   // Görev yokken 0 göstermek "hiç tamamlamamış" gibi okunur; null doğru.
   test("hiç görev yoksa oran null", () => {
     expect(gorevAkibeti([ogrenci("z")]).oran).toBeNull();
+  });
+});
+
+describe("deneme türü seçimi (denetim 20.10.2026)", () => {
+  const sec = (anahtar: string, tarih: string, tur: string, katilan: number) => ({ anahtar, tarih, tur, katilan });
+  const secenekler = [
+    sec("A|2026-10-10|TYT", "2026-10-10", "TYT", 30),
+    sec("B|2026-10-17|TYT", "2026-10-17", "TYT", 2),
+    sec("C|2026-10-15|AYT", "2026-10-15", "AYT", 20),
+    sec("D|2026-10-18|LGS", "2026-10-18", "LGS", 10),
+  ];
+
+  test("türü anahtarın son parçasından okur", () => {
+    expect(anahtardanTur("Yayın|Evi|2026-10-10|TYT")).toBe("TYT");
+  });
+
+  test("türleri sabit sırada listeler", () => {
+    expect(denemeTurleri(secenekler)).toEqual(["TYT", "AYT", "LGS"]);
+  });
+
+  test("varsayılan deneme: tek kişinin girdiği yeni deneme ortak denemenin önüne geçmez", () => {
+    expect(varsayilanDeneme(secenekler, "TYT")?.anahtar).toBe("A|2026-10-10|TYT");
+    expect(varsayilanDeneme(secenekler, "YOK")).toBeNull();
+  });
+
+  test("varsayılan tür en yeni ortak denemesi olan türdür", () => {
+    expect(varsayilanTur(secenekler)).toBe("LGS");
+    expect(varsayilanTur([])).toBeNull();
+  });
+
+  test("net haritası yalnız seçili türü içerir; karışmaz", () => {
+    const harita = { "A|2026-10-10|TYT": 80, "C|2026-10-15|AYT": 40 };
+    expect(turNetleri(harita, "TYT")).toEqual({ "A|2026-10-10|TYT": 80 });
+    expect(netOrtalamasi(turNetleri(harita, "AYT"))).toBe(40);
+    expect(netOrtalamasi(turNetleri(harita, "BRANS"))).toBeNull();
+  });
+});
+
+describe("yayineviAnahtari", () => {
+  test("büyük/küçük harf ve boşluk farkı aynı denemeyi bölmez (Türkçe i/İ dahil)", () => {
+    expect(yayineviAnahtari("Paraf")).toBe(yayineviAnahtari(" PARAF "));
+    expect(yayineviAnahtari("limit")).toBe(yayineviAnahtari("Limit"));
+    expect(yayineviAnahtari("mikrorijinal")).toBe(yayineviAnahtari("MİKRORİJİNAL"));
+  });
+  test("boş yayınevi tire olur", () => {
+    expect(yayineviAnahtari(null)).toBe("—");
+    expect(yayineviAnahtari("  ")).toBe("—");
   });
 });

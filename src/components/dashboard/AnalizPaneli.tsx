@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip,
@@ -130,10 +130,25 @@ export function AnalizPaneli({
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
+  // Yazdırma: "Kısa özet" grafik ve ayrıntı kartlarını çıktıdan çıkarır
+  // (sayılar + içgörüler kalır); "Ayrıntılı" eskisi gibi her şeyi basar.
+  // Öğretmen risk kartı zaten print:hidden — iki modda da çıktıya girmez.
+  const [yazdirmaModu, setYazdirmaModu] = useState<"ayrinti" | "ozet">("ayrinti");
+  useEffect(() => {
+    const geri = () => setYazdirmaModu("ayrinti");
+    window.addEventListener("afterprint", geri);
+    return () => window.removeEventListener("afterprint", geri);
+  }, []);
+  function yazdir(mod: "ayrinti" | "ozet") {
+    setYazdirmaModu(mod);
+    // Durum DOM'a yansıdıktan sonra yazdır (veri-yazdir niteliği CSS'i belirler).
+    setTimeout(() => window.print(), 50);
+  }
+
   const raporTarihi = new Date().toLocaleDateString("tr-TR", { day: "2-digit", month: "long", year: "numeric" });
 
   return (
-    <div className="flex flex-col gap-6" id="rapor-icerigi">
+    <div className="flex flex-col gap-6" id="rapor-icerigi" data-yazdir={yazdirmaModu}>
       <div className="hidden print:block mb-2">
         <div style={{ color: "#111" }} className="text-lg font-bold">{ogrenciAdi ?? "Öğrenci"} — {RAPOR_DONEMI_ETIKET[veri.donem]} Rapor</div>
         <div style={{ color: "#555" }} className="text-xs">Oluşturulma tarihi: {raporTarihi}{veri.donemBaslangic ? ` · Başlangıç: ${tarihFormat(veri.donemBaslangic)}` : ""}</div>
@@ -164,15 +179,20 @@ export function AnalizPaneli({
               </button>
             );
           })()}
-          <button type="button" onClick={() => window.print()}
+          <button type="button" onClick={() => yazdir("ozet")}
             className="sfec-btn flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-full"
             style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
-            <Printer size={13} /> Yazdır / PDF olarak kaydet
+            <Printer size={13} /> Kısa özet yazdır
+          </button>
+          <button type="button" onClick={() => yazdir("ayrinti")}
+            className="sfec-btn flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-full"
+            style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
+            <Printer size={13} /> Ayrıntılı yazdır / PDF
           </button>
         </div>
       </div>
 
-      {veri.donem !== "tum" && <DonemOzeti veri={veri} />}
+      {veri.donem !== "tum" && <DonemOzeti veri={veri} onGenel={() => donemDegistir("tum")} />}
 
       {veri.donem === "tum" && <>
       {ogretmenGorunumu && <OgretmenGorunumuKarti risk={riskSonucu} kohort={kohortKarsilastirma} />}
@@ -185,11 +205,12 @@ export function AnalizPaneli({
         <IstatKart icon={Target} etiket="Toplam çözülen soru" deger={`${toplamSoruSayisi} soru`} renk={SKY} bg={SKY_BG} />
         <IstatKart icon={TrendingUp} etiket="Toplam deneme" deger={`${veri.denemeTrend.length} deneme`} renk={MINT} bg={MINT_BG} />
       </div>
+      </>}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="sfec-grafik-karti sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
           <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
-            <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Deneme net trendi</span>
+            <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Deneme net trendi{veri.donem !== "tum" ? ` — ${RAPOR_DONEMI_ETIKET[veri.donem]}` : ""}</span>
             <TrendRozeti trend={veri.denemeTrendYonu} />
           </div>
           {denemeChartData.length === 0 ? (
@@ -216,7 +237,7 @@ export function AnalizPaneli({
         <div className="sfec-grafik-karti sfec-grafik-karti--sag sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
           <div className="flex items-center justify-between gap-2 mb-4 flex-wrap print:hidden">
             <div className="flex items-center gap-2 flex-wrap">
-              <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Ders bazlı {seciliDers ? "net trendi" : "ortalama net"}</span>
+              <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Ders bazlı {seciliDers ? "net trendi" : "ortalama net"}{veri.donem !== "tum" ? ` — ${RAPOR_DONEMI_ETIKET[veri.donem]}` : ""}</span>
               {seciliDers && <TrendRozeti trend={veri.dersTrendYonu[seciliDers] ?? { yon: null, haftalikDegisim: null }} />}
             </div>
             {dersSecenekleri.length > 0 && (
@@ -256,7 +277,8 @@ export function AnalizPaneli({
           )}
         </div>
 
-        <div className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+        {veri.donem === "tum" && <>
+        <div className="sfec-yazdir-ayrinti sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
           <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold mb-4 block">Hedefe yakınlık dağılımı</span>
           {hedefToplam === 0 ? (
             <BosDurum />
@@ -281,17 +303,16 @@ export function AnalizPaneli({
         </div>
 
 
-        <HizDogrulukKarti satirlar={veri.dersHizDogruluk} />
+        <div className="sfec-yazdir-ayrinti contents"><HizDogrulukKarti satirlar={veri.dersHizDogruluk} /></div>
 
-        <SinavSaatiKarti projeksiyon={veri.sinavProjeksiyonu} yetisme={veri.dersYetisme} bransKapsami={bransKapsami} />
+        <div className="sfec-yazdir-ayrinti contents"><SinavSaatiKarti projeksiyon={veri.sinavProjeksiyonu} yetisme={veri.dersYetisme} bransKapsami={bransKapsami} /></div>
+        </>}
       </div>
-
-      </>}
     </div>
   );
 }
 
-function DonemOzeti({ veri }: { veri: AnalizVerisi }) {
+function DonemOzeti({ veri, onGenel }: { veri: AnalizVerisi; onGenel: () => void }) {
   const konuDakika = veri.konuCalismaGunluk.reduce((toplam, kayit) => toplam + kayit.dakika, 0);
   const soruSayisi = veri.soruCozumuGunluk.reduce((toplam, kayit) => toplam + kayit.soru, 0);
   const denemeSayisi = veri.denemeTrend.length;
@@ -304,7 +325,11 @@ function DonemOzeti({ veri }: { veri: AnalizVerisi }) {
     <section className="flex flex-col gap-4" aria-label={`${donemEtiketi} istatistikleri`}>
       <div>
         <h3 className="text-lg font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>{donemEtiketi} özeti</h3>
-        <p className="mt-1 text-xs" style={{ color: TEXT_MUTED }}>Bu dönemde girilen soru, konu çalışma ve deneme verileri.</p>
+        <p className="mt-1 text-xs" style={{ color: TEXT_MUTED }}>Bu dönemde girilen soru, konu çalışma ve deneme verileri. Aşağıdaki iki grafik de yalnız bu dönemi gösterir.</p>
+        <p className="mt-1 text-xs print:hidden" style={{ color: TEXT_MUTED }}>
+          Hedef, içgörü, hız ve sınav saati kartları sabit zaman pencereleriyle hesaplandığı için yalnız{" "}
+          <button type="button" onClick={onGenel} className="sfec-btn font-bold underline" style={{ color: TEXT }}>Genel görünümde</button> yer alır.
+        </p>
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <IstatKart icon={Target} etiket="Çözülen soru" deger={`${soruSayisi} soru`} altYazi={`${veri.soruCozumuGunluk.length} gün veri girildi`} renk={SKY} bg={SKY_BG} />
@@ -363,7 +388,9 @@ function OgretmenGorunumuKarti({ risk, kohort }: { risk: RiskSonucu; kohort: Koh
             <div key={k.tur} className="text-xs" style={{ color: TEXT }}>
               <span className="font-semibold">{k.tur === "BRANS" ? "Branş" : k.tur}</span> · son net {k.kendiNet}
               {k.persentil.persentil !== null
-                ? <> — sınıfının <span className="font-semibold">%{k.persentil.persentil}</span>&apos;inin üzerinde ({k.persentil.kohortBuyuklugu} sınıf arkadaşıyla karşılaştırıldı)</>
+                ? k.temel === "ortak-deneme"
+                  ? <> — aynı denemeye giren sınıf arkadaşlarının <span className="font-semibold">%{k.persentil.persentil}</span>&apos;inin üzerinde ({k.persentil.kohortBuyuklugu} kişiyle karşılaştırıldı)</>
+                  : <> — <span style={{ color: TEXT_MUTED }}>yaklaşık konum, farklı denemelere göre:</span> sınıfının <span className="font-semibold">%{k.persentil.persentil}</span>&apos;inin üzerinde ({k.persentil.kohortBuyuklugu} sınıf arkadaşının son denemesiyle; denemeler aynı olmayabilir)</>
                 : <span style={{ color: TEXT_MUTED }}> — karşılaştırma için sınıfta yeterli veri yok</span>}
             </div>
           ))}

@@ -225,6 +225,8 @@ const DERSHANE_MUDUR_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "ogretmenler", href: "/dashboard/ogretmenler", etiket: "Öğretmenler", ikon: "ogretmen" },
   { bolum: "ogrenciler", href: "/dashboard/ogrenciler", etiket: "Öğrenciler", ikon: "ogrenci" },
   { bolum: "denemeler", href: "/dashboard/denemeler", etiket: "Denemeler", ikon: "deneme" },
+  // Lise müdürüyle aynı karar ekranı (denetim 20.10.2026); kapsam kendi kurumu.
+  SINIF_ANALIZI_MENU_OGESI,
   { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Konu Durumu", ikon: "ai" },
   { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Duyurular", ikon: "duyuru" },
   { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Pano", ikon: "takvim" },

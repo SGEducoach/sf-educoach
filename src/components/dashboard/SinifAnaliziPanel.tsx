@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   aktifKullanicilar, gorevAdamlari, gorevAkibeti, katilimDagilimi, kayipNesilOzeti,
   netOrtalamasi, netSiralamasi, sinifAktiflikSiralamasi,
+  anahtardanTur, denemeTurleri, turEtiketi, turNetleri, varsayilanDeneme, varsayilanTur,
   sayfala, sessizler, uzaklasanlar,
   AKTIFLIK_PENCERESI, GOREV_MIN_SAYI, KISA_LISTE, TREND_PENCERESI,
   type AnalizOgrencisi, type SiraliSatir,
@@ -15,20 +16,27 @@ import { BG1, BG1_ALT, BORDER, BORDER_STRONG, BLUSH, BUTTER, MINT, SKY, TEXT, TE
 
 type Gorunum = "net" | "aktif" | "gorev" | "uzaklasan" | "sessiz" | "kayip";
 
-const BOLUMLER: { kod: Gorunum; baslik: string; aciklama: string; renk: string }[] = [
-  { kod: "net", baslik: "Deneme Net Sırası", aciklama: "Seçilen denemede toplam net", renk: MINT },
-  { kod: "aktif", baslik: "Aktif Kullanıcılar", aciklama: `Son ${AKTIFLIK_PENCERESI} günde veri girenler`, renk: SKY },
-  { kod: "gorev", baslik: "Görev Adamları", aciklama: "Görevlerini tamamlayanlar", renk: MINT },
-  { kod: "uzaklasan", baslik: "Sistemden Uzaklaşanlar", aciklama: "Veri girişi gerileyenler", renk: BUTTER },
-  { kod: "sessiz", baslik: "Sessizler", aciklama: "Sistemi hiç kullanmayanlar", renk: BLUSH },
-  { kod: "kayip", baslik: "Kayıp Nesil", aciklama: "Listede var, hesabı yok", renk: BLUSH },
+// Kart adları ÖLÇÜM dilinde (denetim 20.10.2026): öğrenciyi etiketlemez, neyin
+// ölçüldüğünü söyler. Gruplar örtüşebilir; kart sayıları toplanıp tek bir
+// "sorunlu öğrenci" sayısı ÜRETİLMEZ. Bu etiketler yalnız yetişkin ekranındadır.
+const BOLUMLER: { kod: Gorunum; baslik: string; aciklama: string; renk: string; grup: string }[] = [
+  { kod: "net", baslik: "Deneme sonuçları", aciklama: "Seçilen türde seçilen deneme ya da kişisel ortalama", renk: MINT, grup: "Deneme başarısı" },
+  { kod: "aktif", baslik: "Çalışma kaydı girenler", aciklama: `Son ${AKTIFLIK_PENCERESI} günde konu/soru kaydı girenler`, renk: SKY, grup: "Çalışma ve görev" },
+  { kod: "gorev", baslik: "Görev tamamlama", aciklama: `En az ${GOREV_MIN_SAYI} görevi olanlarda tamamlanan/toplam`, renk: MINT, grup: "Çalışma ve görev" },
+  { kod: "uzaklasan", baslik: "Kayıt girişi azalanlar", aciklama: `Son ${TREND_PENCERESI} gün, önceki ${TREND_PENCERESI} güne göre azalan`, renk: BUTTER, grup: "Katılım ve erişim" },
+  { kod: "sessiz", baslik: "Kullanıma başlamayanlar", aciklama: "Henüz giriş yapmamış ya da hiç veri girmemiş", renk: BLUSH, grup: "Katılım ve erişim" },
+  { kod: "kayip", baslik: "Hesabı olmayan öğrenciler", aciklama: "Resmî listede var, hesabı açılmamış", renk: BLUSH, grup: "Katılım ve erişim" },
 ];
+const GRUPLAR = ["Deneme başarısı", "Çalışma ve görev", "Katılım ve erişim"];
 
 const TUM_SINIFLAR = "tumu";
 // Tek bir denemeye değil, öğrencinin TÜM denemelerinin ortalamasına göre
 // sıralama (kullanıcı isteği 09.10.2026). Deneme anahtarları
 // "yayinevi|tarih|tur" biçiminde olduğu için bu sabitle çakışmaz.
 const ORTALAMA = "__ortalama__";
+
+const seciliDenemeAnahtari = (secenekler: DenemeSecenegi[], tur: string | null) =>
+  (tur ? varsayilanDeneme(secenekler, tur)?.anahtar : null) ?? ORTALAMA;
 
 export function SinifAnaliziPanel({
   ogrenciler, denemeSecenekleri, kayipNesil, siniflar, sinifSecilebilir, kapsamEtiketi,
@@ -43,7 +51,12 @@ export function SinifAnaliziPanel({
 }) {
   const [gorunum, setGorunum] = useState<Gorunum | null>(null);
   const [sinifId, setSinifId] = useState<string>(TUM_SINIFLAR);
-  const [deneme, setDeneme] = useState<string>(denemeSecenekleri[0]?.anahtar ?? "");
+  // Karma (TYT+AYT+branş+LGS) sıralama YOK: önce tür, sonra o türün en yeni ORTAK denemesi.
+  const turler = useMemo(() => denemeTurleri(denemeSecenekleri), [denemeSecenekleri]);
+  const [tur, setTur] = useState<string | null>(() => varsayilanTur(denemeSecenekleri));
+  const [deneme, setDeneme] = useState<string>(() => seciliDenemeAnahtari(denemeSecenekleri, varsayilanTur(denemeSecenekleri)));
+  const turSecenekleri = useMemo(() => denemeSecenekleri.filter((d) => d.tur === tur), [denemeSecenekleri, tur]);
+  const turDegistir = (yeni: string) => { setTur(yeni); setDeneme(seciliDenemeAnahtari(denemeSecenekleri, yeni)); setSayfa(1); };
   const [sayfa, setSayfa] = useState(1);
 
   const sinifAdiOf = useMemo(() => {
@@ -59,9 +72,11 @@ export function SinifAnaliziPanel({
     .filter((o) => sinifId === TUM_SINIFLAR || o.sinifId === sinifId)
     .map(({ denemeNetleri, ...o }) => ({
       ...o,
-      secilenDenemeNeti: deneme === ORTALAMA ? netOrtalamasi(denemeNetleri) : denemeNetleri[deneme] ?? null,
+      // Ortalama YALNIZ seçili türün denemeleri üzerinden; deneme sayısı da o türe ait.
+      secilenDenemeNeti: !tur ? null : deneme === ORTALAMA ? netOrtalamasi(turNetleri(denemeNetleri, tur)) : denemeNetleri[deneme] ?? null,
+      denemeSayisi: tur ? Object.keys(turNetleri(denemeNetleri, tur)).length : 0,
     })),
-  [ogrenciler, sinifId, deneme]);
+  [ogrenciler, sinifId, deneme, tur]);
 
   const kayipKapsam = useMemo(
     () => kayipNesil.filter((k) => secilenSinifAdi === null || k.sinifAdi === secilenSinifAdi),
@@ -80,23 +95,28 @@ export function SinifAnaliziPanel({
         {siniflar.length === 0 ? (
           <Bos metin="Görebileceğiniz bir sınıf yok. Sınıf öğretmenliğiniz ya da bir derse atamanız tanımlı değil — yöneticinizle görüşün." />
         ) : (
-          <div className="grid grid-cols-2 gap-3">
-            {BOLUMLER.map((b) => (
-              <button
-                key={b.kod}
-                type="button"
-                onClick={() => degistir(b.kod)}
-                className="sfec-btn flex items-center gap-3 rounded-3xl p-4 text-left"
-                style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}
-              >
-                <Image src="/icon-192.png" alt="" width={40} height={40} className="h-10 w-10 shrink-0 rounded-xl" />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[15px] font-extrabold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>
-                    {b.baslik}
-                  </span>
-                  <span className="block truncate text-[10px] font-bold" style={{ color: b.renk }}>{b.aciklama}</span>
-                </span>
-              </button>
+          <div className="flex flex-col gap-4">
+            {GRUPLAR.map((grup) => (
+              <section key={grup} aria-label={grup}>
+                <h3 className="mb-2 text-[11px] font-extrabold uppercase tracking-wider" style={{ color: TEXT_MUTED }}>{grup}</h3>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {BOLUMLER.filter((b) => b.grup === grup).map((b) => (
+                    <button
+                      key={b.kod}
+                      type="button"
+                      onClick={() => degistir(b.kod)}
+                      className="sfec-btn flex items-center gap-3 rounded-2xl p-4 text-left"
+                      style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}
+                    >
+                      <Image src="/icon-192.png" alt="" width={40} height={40} className="h-10 w-10 shrink-0 rounded-xl" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[15px] font-extrabold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>{b.baslik}</span>
+                        <span className="block text-[11px] font-bold" style={{ color: b.renk }}>{b.aciklama}</span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </section>
             ))}
           </div>
         )}
@@ -116,6 +136,11 @@ export function SinifAnaliziPanel({
         </button>
         <h2 className="text-lg font-extrabold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>{bolum.baslik}</h2>
         <p className="mt-0.5 text-[11px] font-bold" style={{ color: bolum.renk }}>{bolum.aciklama}</p>
+        {gorunum === "net" && tur && (
+          <p className="mt-1 text-[11px]" style={{ color: TEXT_MUTED }}>
+            {turEtiketi(tur)} · {deneme === ORTALAMA ? "öğrencinin bu türdeki tüm denemelerinin ortalaması" : "tek deneme"}; farklı türler karıştırılmaz.
+          </p>
+        )}
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
           {sinifSecilebilir && siniflar.length > 1 && (
@@ -127,17 +152,28 @@ export function SinifAnaliziPanel({
               {siniflar.map((s) => <option key={s.id} value={s.id}>{s.seviye}-{s.sube}</option>)}
             </select>
           )}
-          {gorunum === "net" && denemeSecenekleri.length > 0 && (
+          {gorunum === "net" && turler.length > 0 && (
+            <div role="tablist" aria-label="Deneme türü" className="flex flex-wrap gap-2">
+              {turler.map((t) => (
+                <button key={t} type="button" role="tab" aria-selected={t === tur} onClick={() => turDegistir(t)}
+                  className="sfec-btn rounded-xl px-3 py-2 text-xs font-bold"
+                  style={{ border: `2px solid ${t === tur ? BORDER_STRONG : BORDER}`, background: t === tur ? BG1_ALT : "transparent", color: t === tur ? TEXT : TEXT_MUTED }}>
+                  {turEtiketi(t)}
+                </button>
+              ))}
+            </div>
+          )}
+          {gorunum === "net" && tur && turSecenekleri.length > 0 && (
             <select value={deneme} onChange={(e) => { setDeneme(e.target.value); setSayfa(1); }}
               aria-label="Deneme seç"
               className="rounded-xl px-3 py-2 text-xs outline-none"
               style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
-              <option value={ORTALAMA}>Tüm denemelerin ortalaması</option>
-              {denemeSecenekleri.map((d) => (
+              {turSecenekleri.map((d) => (
                 <option key={d.anahtar} value={d.anahtar}>
                   {d.tarih} · {d.yayinevi} ({d.tur}) — {d.katilan} kişi
                 </option>
               ))}
+              <option value={ORTALAMA}>Kişisel deneme ortalaması ({turEtiketi(tur)})</option>
             </select>
           )}
         </div>
@@ -222,7 +258,7 @@ function Liste({ gorunum, kapsam, sayfalaniyorMu, sayfa, setSayfa, denemeVarMi, 
     const mesaj =
       hepsi.tip === "net"
         ? (!denemeVarMi ? "Henüz deneme sonucu yok."
-          : ortalamaMi ? "Bu kapsamda deneme sonucu olan öğrenci yok."
+          : ortalamaMi ? "Bu kapsamda seçili türde deneme sonucu olan öğrenci yok."
           : "Bu denemeye bu kapsamdan kimse girmemiş.")
         : hepsi.tip === "aktif" ? `Son ${AKTIFLIK_PENCERESI} günde veri giren yok.`
         : hepsi.tip === "gorev" ? `En az ${GOREV_MIN_SAYI} görevi olup tamamlayan yok.`
@@ -241,7 +277,7 @@ function Liste({ gorunum, kapsam, sayfalaniyorMu, sayfa, setSayfa, denemeVarMi, 
           // farklı sayıda denemenin ortalaması alınıyor, okuyan neye
           // baktığını bilsin.
           return <Satir key={o.ogrenciId} sira={s.sira} ad={o.ad}
-            altMetin={ortalamaMi ? `${alt} · ${o.denemeSayisi} deneme` : alt}
+            altMetin={ortalamaMi ? `${alt} · ${o.denemeSayisi} deneme (kişisel ortalama; denemelerin zorluğu farklı olabilir)` : alt}
             sag={`${(s.deger as number).toFixed(2)}${ortalamaMi ? " ort." : " net"}`} sagRenk={MINT} />;
         }
         if (hepsi.tip === "aktif") {

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { netHesapla } from "@/lib/types";
+import { kademeBul } from "@/lib/kademe";
 import { bugununTarihiTR } from "@/lib/tarih";
 import { bayraklariBelirle, type Bayrak } from "@/lib/rehber-bayrak";
 
@@ -19,7 +20,7 @@ import { bayraklariBelirle, type Bayrak } from "@/lib/rehber-bayrak";
 
 // "Son hareket" kullanıcı kararı: konu çalışması + soru çözümü + deneme,
 // KAYNAĞI NE OLURSA OLSUN. Yani "bu öğrenciden en son ne zaman bir iz geldi".
-const HAREKET_TABLOLARI = ["konu_calismalar", "soru_cozumleri", "denemeler"] as const;
+const HAREKET_TABLOLARI = ["konu_calismalar", "soru_cozumleri", "ortaokul_calismalar", "denemeler"] as const;
 
 // Net yönü için son kaç deneme karşılaştırılır (3 = son deneme ile ondan
 // önceki ikisinin ortalaması).
@@ -126,9 +127,11 @@ export async function rehberKapsamListesiGetir(
   const ogrenciIdleri = ogrenciler.map((o) => o.ogrenciId);
   const bugun = bugununTarihiTR();
 
-  const [konu, soru, denemeler, gorevler, girisler] = await Promise.all([
+  const [konu, soru, ortaokul, denemeler, gorevler, girisler] = await Promise.all([
     admin.from("konu_calismalar").select("student_id, tarih").in("student_id", ogrenciIdleri),
     admin.from("soru_cozumleri").select("student_id, tarih").in("student_id", ogrenciIdleri),
+    // Ortaokul öğrencisi yukarıdaki iki lise tablosuna yazmaz (migration 0132).
+    admin.from("ortaokul_calismalar").select("student_id, tarih").in("student_id", ogrenciIdleri),
     admin.from("denemeler").select("student_id, tarih, deneme_ders_sonuclari(dogru, yanlis)").in("student_id", ogrenciIdleri),
     // Durum SÜZÜLMÜYOR: oran için hem açık hem toplam gerekiyor.
     admin.from("gorev_atamalari").select("student_id, durum").in("student_id", ogrenciIdleri),
@@ -143,7 +146,7 @@ export async function rehberKapsamListesiGetir(
     const mevcut = sonHareket.get(studentId);
     if (!mevcut || tarih > mevcut) sonHareket.set(studentId, tarih);
   };
-  for (const tablo of [konu, soru, denemeler]) {
+  for (const tablo of [konu, soru, ortaokul, denemeler]) {
     for (const r of ((tablo.data ?? []) as { student_id: string; tarih: string | null }[])) {
       hareketEkle(r.student_id, r.tarih);
     }
@@ -151,9 +154,10 @@ export async function rehberKapsamListesiGetir(
 
   // Denemeler öğrenci başına YENİDEN ESKİYE sıralanır; net = ders netleri toplamı.
   type DenemeRow = { student_id: string; tarih: string; deneme_ders_sonuclari: { dogru: number; yanlis: number }[] | null };
+  const ortaokulOgrencileri = new Set(ogrenciler.filter((o) => kademeBul(o.seviye) === "ortaokul").map((o) => o.ogrenciId));
   const denemeNetleri = new Map<string, { tarih: string; net: number }[]>();
   for (const d of ((denemeler.data ?? []) as unknown as DenemeRow[])) {
-    const net = (d.deneme_ders_sonuclari ?? []).reduce((t, s) => t + netHesapla(s.dogru, s.yanlis), 0);
+    const net = (d.deneme_ders_sonuclari ?? []).reduce((t, s) => t + netHesapla(s.dogru, s.yanlis, ortaokulOgrencileri.has(d.student_id) ? "ortaokul" : "lise"), 0);
     const liste = denemeNetleri.get(d.student_id) ?? [];
     liste.push({ tarih: d.tarih, net });
     denemeNetleri.set(d.student_id, liste);

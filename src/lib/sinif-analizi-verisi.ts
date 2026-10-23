@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { bugununTarihiTR } from "@/lib/tarih";
 import { kademeBul } from "@/lib/kademe";
-import { denemeToplamNeti, TREND_PENCERESI, AKTIFLIK_PENCERESI, type AnalizOgrencisi } from "@/lib/sinif-analizi";
+import { denemeToplamNeti, yayineviAnahtari, TREND_PENCERESI, AKTIFLIK_PENCERESI, type AnalizOgrencisi } from "@/lib/sinif-analizi";
 
 // Sınıf Analizi veri katmanı — rehber-kapsam-listesi.ts ile AYNI desen:
 // öğrenci başına sorgu YOK, birkaç toplu in() sorgusu + JS'de eşleştirme.
@@ -105,21 +105,17 @@ export async function sinifAnaliziGetir(
   const sonDonemBasi = gunOnce(TREND_PENCERESI);
   const oncekiDonemBasi = gunOnce(TREND_PENCERESI * 2);
 
-  const [soru, konu, denemeler, gorevler, girisler, resmiListe] = await Promise.all([
+  // Ortaokul öğrencisi soru_cozumleri / konu_calismalar'a YAZMIYOR; çalışması
+  // ortaokul_calismalar'da (migration 0132). Yalnız lise tablolarına bakmak
+  // ortaokul öğrencisini "hiç veri girmemiş / sistemden uzaklaşmış" gösterirdi.
+  const [soru, konu, ortaokulCalisma, denemeler, gorevler, girisler, resmiListe] = await Promise.all([
     admin.from("soru_cozumleri").select("student_id, tarih").in("student_id", idler).gte("tarih", oncekiDonemBasi),
     admin.from("konu_calismalar").select("student_id, tarih").in("student_id", idler).gte("tarih", oncekiDonemBasi),
+    admin.from("ortaokul_calismalar").select("student_id, tarih").in("student_id", idler).gte("tarih", oncekiDonemBasi),
     admin.from("denemeler").select("student_id, tarih, tur, yayinevi, deneme_ders_sonuclari(dogru, yanlis)").in("student_id", idler),
     admin.from("gorev_atamalari").select("student_id, durum").in("student_id", idler),
     admin.from("kullanici_aktif_gunler").select("user_id").in("user_id", idler),
     admin.from("okul_ogrenci_listesi").select("ad_soyad, okul_no, student_id, classes(seviye, sube)").eq("school_id", params.schoolId),
-  ]);
-
-  // "Hiç verisi var mı" sorusu PENCEREDEN BAĞIMSIZ: yukarıdaki sorgular
-  // tarihe göre süzüldüğü için ayrıca sorulur, yoksa 30 günden eski verisi
-  // olan öğrenci yanlışlıkla "hiç veri girmemiş" sayılır.
-  const [soruVarMi, konuVarMi] = await Promise.all([
-    admin.from("soru_cozumleri").select("student_id").in("student_id", idler),
-    admin.from("konu_calismalar").select("student_id").in("student_id", idler),
   ]);
 
   type HareketRow = { student_id: string; tarih: string | null };
@@ -128,7 +124,7 @@ export async function sinifAnaliziGetir(
   const oncekiDonem = new Map<string, number>();
   const artir = (m: Map<string, number>, k: string) => m.set(k, (m.get(k) ?? 0) + 1);
 
-  for (const tablo of [soru, konu]) {
+  for (const tablo of [soru, konu, ortaokulCalisma]) {
     for (const r of ((tablo.data ?? []) as HareketRow[])) {
       if (!r.tarih) continue;
       if (r.tarih >= aktiflikBasi) artir(aktiflik, r.student_id);
@@ -137,9 +133,24 @@ export async function sinifAnaliziGetir(
     }
   }
 
+  // "Hiç verisi var mı" sorusu PENCEREDEN BAĞIMSIZ: 30 günden eski verisi olan
+  // öğrenci "hiç veri girmemiş" sayılmasın. Pencerede kaydı olanlar zaten
+  // "verisi var"; tam geçmiş sorgusu YALNIZ pencerede kaydı olmayanlar için
+  // çalışır (eskiden tüm öğrencilerin tüm satırları çekiliyordu).
   const verisiOlanlar = new Set<string>();
-  for (const tablo of [soruVarMi, konuVarMi]) {
-    for (const r of ((tablo.data ?? []) as { student_id: string }[])) verisiOlanlar.add(r.student_id);
+  for (const tablo of [soru, konu, ortaokulCalisma]) {
+    for (const r of ((tablo.data ?? []) as HareketRow[])) verisiOlanlar.add(r.student_id);
+  }
+  const penceredeKaydiOlmayanlar = idler.filter((id) => !verisiOlanlar.has(id));
+  if (penceredeKaydiOlmayanlar.length > 0) {
+    const [soruVarMi, konuVarMi, ortaokulVarMi] = await Promise.all([
+      admin.from("soru_cozumleri").select("student_id").in("student_id", penceredeKaydiOlmayanlar),
+      admin.from("konu_calismalar").select("student_id").in("student_id", penceredeKaydiOlmayanlar),
+      admin.from("ortaokul_calismalar").select("student_id").in("student_id", penceredeKaydiOlmayanlar),
+    ]);
+    for (const tablo of [soruVarMi, konuVarMi, ortaokulVarMi]) {
+      for (const r of ((tablo.data ?? []) as { student_id: string }[])) verisiOlanlar.add(r.student_id);
+    }
   }
 
   // Denemeler: hem seçenek listesi hem seçili denemenin netleri.
@@ -153,7 +164,7 @@ export async function sinifAnaliziGetir(
   const secenekSayaci = new Map<string, DenemeSecenegi>();
   for (const d of denemeSatirlari) {
     const yayinevi = d.yayinevi ?? "—";
-    const anahtar = `${yayinevi}|${d.tarih}|${d.tur}`;
+    const anahtar = `${yayineviAnahtari(d.yayinevi)}|${d.tarih}|${d.tur}`;
     const mevcut = secenekSayaci.get(anahtar);
     if (mevcut) mevcut.katilan += 1;
     else secenekSayaci.set(anahtar, { anahtar, yayinevi, tarih: d.tarih, tur: d.tur, katilan: 1 });
@@ -165,7 +176,7 @@ export async function sinifAnaliziGetir(
   // Her öğrenci için TÜM denemelerin netleri — seçim istemcide yapılıyor.
   const netler = new Map<string, Record<string, number>>();
   for (const d of denemeSatirlari) {
-    const anahtar = `${d.yayinevi ?? "—"}|${d.tarih}|${d.tur}`;
+    const anahtar = `${yayineviAnahtari(d.yayinevi)}|${d.tarih}|${d.tur}`;
     const kademe = kademeMap.get(d.student_id) ?? "lise";
     const mevcut = netler.get(d.student_id) ?? {};
     mevcut[anahtar] = denemeToplamNeti(d.deneme_ders_sonuclari ?? [], kademe);

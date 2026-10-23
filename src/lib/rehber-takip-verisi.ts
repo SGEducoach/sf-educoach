@@ -108,13 +108,14 @@ export async function takipBildirimleriniUret(admin: Istemci, k: TakipKapsami): 
   const hareket = (id: string, t: string | null) => { if (t && (!sonHareket.get(id) || t > sonHareket.get(id)!)) sonHareket.set(id, t); };
 
   for (const idler of parcalara(ogrenciler.map((o) => o.id))) {
-    const [konu, soru, den, gor] = await Promise.all([
+    const [konu, soru, ortaokul, den, gor] = await Promise.all([
       admin.from("konu_calismalar").select("student_id, tarih").in("student_id", idler),
       admin.from("soru_cozumleri").select("student_id, tarih").in("student_id", idler),
+      admin.from("ortaokul_calismalar").select("student_id, tarih").in("student_id", idler),
       admin.from("denemeler").select("id, student_id, tarih, tur, deneme_ders_sonuclari(ders, dogru, yanlis)").in("student_id", idler),
       admin.from("gorev_atamalari").select("student_id, durum").in("student_id", idler),
     ]);
-    for (const r of [...(konu.data ?? []), ...(soru.data ?? [])] as { student_id: string; tarih: string | null }[]) hareket(r.student_id, r.tarih);
+    for (const r of [...(konu.data ?? []), ...(soru.data ?? []), ...(ortaokul.data ?? [])] as { student_id: string; tarih: string | null }[]) hareket(r.student_id, r.tarih);
     type DenemeRow = { id: string; student_id: string; tarih: string; tur: string; deneme_ders_sonuclari: { ders: string; dogru: number; yanlis: number }[] | null };
     for (const d of (den.data ?? []) as unknown as DenemeRow[]) {
       hareket(d.student_id, d.tarih);

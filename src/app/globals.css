@@ -659,6 +659,14 @@ input[type="file"]:active::-webkit-file-upload-button {
   .sfec-mascot-bubble--genis { width: min(90vw, 420px); max-height: calc(100dvh - 90px); }
 }
 
+/* "Kısa özet yazdır": grafik ve ayrıntı kartları çıktıdan çıkar (AnalizPaneli). */
+@media print {
+  #rapor-icerigi[data-yazdir="ozet"] .sfec-grafik-karti,
+  #rapor-icerigi[data-yazdir="ozet"] .sfec-yazdir-ayrinti {
+    display: none !important;
+  }
+}
+
 /* Rapor yazdırma: koyu temayı yazıcı için açık zemine çevir. */
 @media print {
   body {

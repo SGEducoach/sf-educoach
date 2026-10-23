@@ -26,7 +26,8 @@ export function DershaneDenemePdfFormu({ schoolId, yalnizcaExcel = false, kademe
   const [yayinevi, setYayinevi] = useState("");
   const [tarih, setTarih] = useState("");
   const [tur, setTur] = useState<DenemeTuruSecimi>(turSecenekleri[0]);
-  const [bicim, setBicim] = useState<"otomatik" | "okul" | "maarif" | "sinif" | "sirali" | "claude">("otomatik");
+  const [bicim, setBicim] = useState<"otomatik" | "okul" | "maarif" | "sinif" | "sirali" | "tg" | "claude">("otomatik");
+  const karneRef = useRef<HTMLInputElement>(null);
   // Kullanıcı isteği (17.10.2026): denemeye giren sınıf seviyesi sorulur;
   // eşleştirme ekranında öğrenci arama listesi bu seviyeyle açılır.
   const [seviye, setSeviye] = useState("");
@@ -58,6 +59,8 @@ export function DershaneDenemePdfFormu({ schoolId, yalnizcaExcel = false, kademe
     formData.set("tur", tur);
     formData.set("sinifSeviyesi", seviye === "karisik" ? "" : seviye);
     if (mod === "pdf") formData.set("bicim", bicim);
+    const karne = karneRef.current?.files?.[0];
+    if (mod === "pdf" && karne) formData.set("karne", karne);
     if (schoolId) formData.set("schoolId", schoolId);
 
     setYukleniyor(true);
@@ -72,6 +75,7 @@ export function DershaneDenemePdfFormu({ schoolId, yalnizcaExcel = false, kademe
       okunamayan: yanit.okunamayan,
     });
     if (dosyaRef.current) dosyaRef.current.value = "";
+    if (karneRef.current) karneRef.current.value = "";
   }
 
   return (
@@ -125,6 +129,19 @@ export function DershaneDenemePdfFormu({ schoolId, yalnizcaExcel = false, kademe
             className="text-sm file:mr-3 file:rounded-lg file:border-0 file:px-3 file:py-2 file:text-xs file:font-bold"
             style={{ color: TEXT }} />
         </label>
+        {mod === "pdf" && tur !== "LGS" && kademe !== "ortaokul" && (bicim === "tg" || bicim === "otomatik") && (
+          <label className="flex flex-col gap-1">
+            <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">
+              Karne PDF'i (isteğe bağlı — yalnız TG Fen Lisesi listesi için)
+            </span>
+            <input ref={karneRef} type="file" accept="application/pdf"
+              className="text-sm file:mr-3 file:rounded-lg file:border-0 file:px-3 file:py-2 file:text-xs file:font-bold"
+              style={{ color: TEXT }} />
+            <span className="text-[11px]" style={{ color: TEXT_MUTED }}>
+              Karne verilirse öğrenci sonuçları dokuz derse ayrılarak kaydedilir; verilmezse listedeki dört birleşik ders (Türkçe, Sosyal, Matematik, Fen) kaydedilir.
+            </span>
+          </label>
+        )}
         <div className="grid grid-cols-2 gap-3">
           <label className="flex flex-col gap-1">
             <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Yayınevi</span>
@@ -171,6 +188,8 @@ export function DershaneDenemePdfFormu({ schoolId, yalnizcaExcel = false, kademe
               <option value="maarif">Maarif — okul net listesi</option>
               <option value="sinif">Orbital / 4K — sınıf net listeleri</option>
               <option value="sirali">Özdebir — kurum sıralı listesi</option>
+              {/* Ortaokul kurumunda zaten yalnız LGS seçilebiliyor (bu liste gösterilmiyor); açık koşul niyeti belgeler. */}
+              {kademe !== "ortaokul" && <option value="tg">TG Fen Lisesi — kurum/şube sıralı liste (+ karne)</option>}
               <option value="claude">Diğer biçim — yapay zekâ ile okut (ÜCRETLİ)</option>
             </select>
           </label>

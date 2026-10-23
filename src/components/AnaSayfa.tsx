@@ -1,5 +1,6 @@
 "use client";
-import { GraduationCap, School, Users, UserRoundCheck } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, GraduationCap, School, Users, UserRoundCheck } from "lucide-react";
 import { SiteUstNavigasyon, SiteAltligi } from "@/components/SiteUstNavigasyon";
 import { AnaSayfaSlider } from "@/components/AnaSayfaSlider";
 import { AnaSayfaDuyurular } from "@/components/AnaSayfaDuyurular";
@@ -11,10 +12,10 @@ import type { AnaSayfaDuyurusu } from "@/lib/ana-sayfa-duyurulari";
 
 const LACIVERT="#0F2540",BEYAZ="#FFF",GRI="#3F4B5A";
 const roller=[
- {ad:"Öğrenci",Icon:GraduationCap,renk:"#2563EB",zemin:"#EFF6FF",metin:"Kimseyle yarışmadan, kendi hedefi ve gelişim hızına göre kişiye özel çalışma takibi."},
- {ad:"Öğretmen",Icon:UserRoundCheck,renk:"#7C3AED",zemin:"#F5F3FF",metin:"Öğrencilerin çalışma, soru ve deneme verilerini izleyerek doğru zamanda yönlendirme."},
- {ad:"Veli",Icon:Users,renk:"#C2410C",zemin:"#FFF7ED",metin:"Çocuğunu başkalarıyla kıyaslamadan, kişiye özel gelişimini ve öğretmen geri bildirimlerini güvenle takip."},
- {ad:"İdare",Icon:School,renk:"#047857",zemin:"#ECFDF5",metin:"Müdür ve müdür yardımcıları için okul veya dershane genelindeki akademik gelişimi, sınıfları ve koçluk sürecini tek yerden izleme."},
+ {ad:"Öğrenci",rol:"ogrenci",Icon:GraduationCap,renk:"#2563EB",zemin:"#EFF6FF",metin:"Kimseyle yarışmadan, kendi hedefi ve gelişim hızına göre kişiye özel çalışma takibi."},
+ {ad:"Öğretmen",rol:"ogretmen",Icon:UserRoundCheck,renk:"#7C3AED",zemin:"#F5F3FF",metin:"Öğrencilerin çalışma, soru ve deneme verilerini izleyerek doğru zamanda yönlendirme."},
+ {ad:"Veli",rol:"veli",Icon:Users,renk:"#C2410C",zemin:"#FFF7ED",metin:"Çocuğunu başkalarıyla kıyaslamadan, kişiye özel gelişimini ve öğretmen geri bildirimlerini güvenle takip."},
+ {ad:"İdare",rol:"mudur",Icon:School,renk:"#047857",zemin:"#ECFDF5",metin:"Müdür ve müdür yardımcıları için okul veya dershane genelindeki akademik gelişimi, sınıfları ve koçluk sürecini tek yerden izleme."},
 ];
 export function AnaSayfa({baslik,govde,sliderGecisSaniye,sliderGorselleri,duyurular,panoIlanlari}:{baslik:string;govde:string;sliderGecisSaniye:number;sliderGorselleri:AnaSayfaSliderGorseli[];duyurular:AnaSayfaDuyurusu[];panoIlanlari:AnaSayfaPanoIlani[]}){
  const paragraflar=govde.split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean);
@@ -26,7 +27,7 @@ export function AnaSayfa({baslik,govde,sliderGecisSaniye,sliderGorselleri,duyuru
     <h1 className="text-balance text-center text-3xl font-extrabold leading-tight sm:text-4xl" style={{color:LACIVERT,fontFamily:"var(--font-baloo)"}}>SeFu Koç YKS Hazırlık ve Öğrenci Takip Platformu&apos;na Hoş Geldiniz!</h1>
     <h2 className="mt-9 text-center text-2xl font-extrabold" style={{color:LACIVERT,fontFamily:"var(--font-baloo)"}}>İçeride neler var?</h2>
     <p className="mx-auto mt-3 max-w-3xl text-center text-base leading-7" style={{color:GRI}}>Okul ve dershanelerin kullanabildiği SeFu Koç; öğrenci, öğretmen, veli ve müdür rollerini aynı gelişim sürecinde buluşturan YKS hazırlık ve öğrenci takip platformudur.</p>
-    <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{roller.map(({ad,Icon,renk,zemin,metin})=><article key={ad} className="flex flex-col items-center rounded-3xl p-5 text-center sm:items-start sm:text-left" style={{background:zemin,border:`1px solid ${renk}33`}}><div className="flex h-11 w-11 items-center justify-center rounded-2xl" style={{background:`${renk}18`}}><Icon color={renk}/></div><h3 className="mt-4 text-lg font-extrabold" style={{color:renk}}>{ad}</h3><p className="mt-2 text-sm leading-6" style={{color:GRI}}>{metin}</p></article>)}</div>
+    <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{roller.map(({ad,rol,Icon,renk,zemin,metin})=><Link key={ad} href={`/login?rol=${rol}`} prefetch={false} aria-label={`${ad} girişi`} className="flex flex-col items-center rounded-3xl p-5 text-center transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0F2540] sm:items-start sm:text-left" style={{background:zemin,border:`1px solid ${renk}33`}}><div className="flex h-11 w-11 items-center justify-center rounded-2xl" style={{background:`${renk}18`}}><Icon color={renk} aria-hidden="true"/></div><h3 className="mt-4 text-lg font-extrabold" style={{color:renk}}>{ad}</h3><p className="mt-2 text-sm leading-6" style={{color:GRI}}>{metin}</p><span className="mt-auto inline-flex items-center gap-1.5 pt-4 text-sm font-bold" style={{color:renk}}>{ad} girişi <ArrowRight size={16} aria-hidden="true"/></span></Link>)}</div>
    </section>
    <section className="mx-auto max-w-6xl px-5 pb-14 sm:px-8">
     <div className="grid gap-4 md:grid-cols-2">
