@@ -323,7 +323,9 @@ export default async function DashboardPage({
   const menuRozetleri = grupRozetleri || takipYeni
     ? { ...(grupRozetleri ? { ozet: grupRozetleri.veliTalebi + grupRozetleri.onayBekleyen } : {}), ...(takipYeni ? { "takip-bildirimleri": takipYeni } : {}) }
     : undefined;
-  const donem = (["bugun", "haftalik", "aylik", "tum"].includes(params.donem ?? "") ? params.donem : "tum") as RaporDonemi;
+  // Varsayılan dönem "Aylık" (kullanıcı kararı 23.10.2026): "Genel" (tüm zamanlar)
+  // en ağır görünüm; hâlâ ?donem=tum ile seçilebilir.
+  const donem = (["bugun", "haftalik", "aylik", "tum"].includes(params.donem ?? "") ? params.donem : "aylik") as RaporDonemi;
   const okunmamisMesajSayisi = okunmamisMesajSayisiHam ?? 0;
 
   return (
