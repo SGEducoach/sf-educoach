@@ -1,10 +1,11 @@
 // Öğrenci Aktivite Özeti (Faz 1 · Adım 3, 23.10.2026): RPC
 // ogrenci_aktivite_ozeti (migration 0174) öğrenci başına son hareket
-// tarihini (pencereszsiz) ve son 30 günün görev açık/toplam sayısını döner.
+// tarihini (pencere sınırsız) ve son 30 günün görev açık/toplam sayısını döner.
 //
-// Bu dosya saf: pencere sınırını hesaplar ve RPC satırını uygulama tipine
-// çevirir; veritabanına dokunmaz (RPC çağrısının kendisi, admin.rpc ile,
-// rehber-takip-verisi.ts'teki JS toplama mantığının yerini alacak).
+// Pencere hesabı ve satır eşleştirme saftır. ogrenciAktiviteOzetleriGetir
+// RPC'yi çağırır; rehber-kapsam-listesi.ts ve rehber-takip-verisi.ts bunu
+// kullanır (eskiden her biri konu/soru/deneme/görev satırlarını çekip JS'te
+// topluyordu ve max_rows = 1000 sınırında sessizce kesiliyordu).
 import { tarihEkleGun } from "@/lib/rehber-takip";
 
 // Kullanıcı kararı (23.10.2026): görev birikmesi yalnız son 30 güne bakar.
@@ -40,4 +41,38 @@ export function ogrenciAktiviteOzetiEslestir(satir: OgrenciAktiviteSatiri): Ogre
     acikGorev: satir.acik_gorev ?? 0,
     gorevToplam: satir.gorev_toplam ?? 0,
   };
+}
+
+// RPC çağrısı için yalnız rpc() gerekir (testte sahte nesne verilebilsin diye
+// SupabaseClient'a bağlanmıyoruz).
+export interface AktiviteRpcIstemcisi {
+  rpc(fn: string, args: Record<string, unknown>): PromiseLike<{ data: unknown; error: { message: string } | null }>;
+}
+
+// PostgREST max_rows = 1000 (canlıda doğrulandı, 23.10.2026). RPC öğrenci başına
+// tek satır döner; yine de çok büyük kurumlarda sınıra takılmasın diye parçalı.
+const RPC_PARCA = 500;
+
+// Verilen öğrencilerin aktivite özetini veritabanında hesaplatır. Hata olursa
+// FIRLATIR: eksik veriyle sessizce devam etmek yanlış "sessizlik"/görev oranı
+// bildirimi üretir (eski davranışın asıl sorunu).
+export async function ogrenciAktiviteOzetleriGetir(
+  admin: AktiviteRpcIstemcisi,
+  ogrenciIdleri: string[],
+  bugun: string,
+): Promise<Map<string, OgrenciAktiviteOzeti>> {
+  const sonuc = new Map<string, OgrenciAktiviteOzeti>();
+  const tekil = [...new Set(ogrenciIdleri)];
+  for (let i = 0; i < tekil.length; i += RPC_PARCA) {
+    const { data, error } = await admin.rpc("ogrenci_aktivite_ozeti", {
+      p_student_ids: tekil.slice(i, i + RPC_PARCA),
+      p_bugun: bugun,
+    });
+    if (error) throw new Error(`ogrenci_aktivite_ozeti: ${error.message}`);
+    for (const satir of (data ?? []) as OgrenciAktiviteSatiri[]) {
+      const ozet = ogrenciAktiviteOzetiEslestir(satir);
+      sonuc.set(ozet.studentId, ozet);
+    }
+  }
+  return sonuc;
 }

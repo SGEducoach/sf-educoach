@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { netHesapla } from "@/lib/types";
 import { bugununTarihiTR } from "@/lib/tarih";
 import { bayraklariBelirle, type Bayrak } from "@/lib/rehber-bayrak";
+import { ogrenciAktiviteOzetleriGetir } from "@/lib/ogrenci-aktivite";
 
 // Rehber Radarı Adım 2 (kullanıcı onayı 07.10.2026) — "tek kapsam listesi".
 //
@@ -126,28 +127,17 @@ export async function rehberKapsamListesiGetir(
   const ogrenciIdleri = ogrenciler.map((o) => o.ogrenciId);
   const bugun = bugununTarihiTR();
 
-  const [konu, soru, denemeler, gorevler, girisler] = await Promise.all([
-    admin.from("konu_calismalar").select("student_id, tarih").in("student_id", ogrenciIdleri),
-    admin.from("soru_cozumleri").select("student_id, tarih").in("student_id", ogrenciIdleri),
+  // Son hareket (konu + soru + deneme, pencere sınırsız) ve görev açık/toplam
+  // sayıları veritabanında hesaplanır (migration 0174, Faz 1 · Adım 4). Eskiden
+  // bu satırların hepsi çekilip JS'te toplanıyordu; PostgREST max_rows = 1000
+  // olduğundan büyük kurumda görev satırları (1464) sessizce kesiliyordu.
+  // Görevler yalnız SON 30 GÜN sayılır (kullanıcı kararı 23.10.2026).
+  const [aktivite, denemeler, girisler] = await Promise.all([
+    ogrenciAktiviteOzetleriGetir(admin, ogrenciIdleri, bugun),
     admin.from("denemeler").select("student_id, tarih, deneme_ders_sonuclari(dogru, yanlis)").in("student_id", ogrenciIdleri),
-    // Durum SÜZÜLMÜYOR: oran için hem açık hem toplam gerekiyor.
-    admin.from("gorev_atamalari").select("student_id, durum").in("student_id", ogrenciIdleri),
     // Tek bir satır bile varsa öğrenci sisteme en az bir kez girmiş demektir.
     admin.from("kullanici_aktif_gunler").select("user_id").in("user_id", ogrenciIdleri),
   ]);
-
-  // Son hareket: üç tablonun en büyük tarihi.
-  const sonHareket = new Map<string, string>();
-  const hareketEkle = (studentId: string, tarih: string | null) => {
-    if (!tarih) return;
-    const mevcut = sonHareket.get(studentId);
-    if (!mevcut || tarih > mevcut) sonHareket.set(studentId, tarih);
-  };
-  for (const tablo of [konu, soru, denemeler]) {
-    for (const r of ((tablo.data ?? []) as { student_id: string; tarih: string | null }[])) {
-      hareketEkle(r.student_id, r.tarih);
-    }
-  }
 
   // Denemeler öğrenci başına YENİDEN ESKİYE sıralanır; net = ders netleri toplamı.
   type DenemeRow = { student_id: string; tarih: string; deneme_ders_sonuclari: { dogru: number; yanlis: number }[] | null };
@@ -160,17 +150,11 @@ export async function rehberKapsamListesiGetir(
   }
   for (const liste of denemeNetleri.values()) liste.sort((a, b) => b.tarih.localeCompare(a.tarih));
 
-  const acikGorevSayisi = new Map<string, number>();
-  const gorevToplamSayisi = new Map<string, number>();
-  for (const g of ((gorevler.data ?? []) as { student_id: string; durum: string }[])) {
-    gorevToplamSayisi.set(g.student_id, (gorevToplamSayisi.get(g.student_id) ?? 0) + 1);
-    if (g.durum === "bekliyor") acikGorevSayisi.set(g.student_id, (acikGorevSayisi.get(g.student_id) ?? 0) + 1);
-  }
-
   const girisYapanlar = new Set(((girisler.data ?? []) as { user_id: string }[]).map((g) => g.user_id));
 
   return ogrenciler.map((o) => {
-    const hareket = sonHareket.get(o.ogrenciId) ?? null;
+    const ozet = aktivite.get(o.ogrenciId);
+    const hareket = ozet?.sonHareket ?? null;
     const netler = denemeNetleri.get(o.ogrenciId) ?? [];
     const temel = {
       ...o,
@@ -180,8 +164,8 @@ export async function rehberKapsamListesiGetir(
       sonDenemeNeti: netler.length > 0 ? Math.round(netler[0].net * 100) / 100 : null,
       yon: yonBelirle(netler.map((n) => n.net)),
       netDegisimi: netDegisimiHesapla(netler.map((n) => n.net)),
-      acikGorev: acikGorevSayisi.get(o.ogrenciId) ?? 0,
-      gorevToplam: gorevToplamSayisi.get(o.ogrenciId) ?? 0,
+      acikGorev: ozet?.acikGorev ?? 0, // son 30 gün
+      gorevToplam: ozet?.gorevToplam ?? 0, // son 30 gün
       girisYapmisMi: girisYapanlar.has(o.ogrenciId),
     };
     return { ...temel, bayraklar: bayraklariBelirle(temel) };

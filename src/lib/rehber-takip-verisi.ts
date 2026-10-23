@@ -6,6 +6,7 @@ import { netHesapla, type NetKademesi } from "@/lib/types";
 import { bugununTarihiTR } from "@/lib/tarih";
 import { REHBER_BRANSI } from "@/lib/rehberlik";
 import { rehberlikUyeligiGetir } from "@/lib/rehberlik-servisi";
+import { ogrenciAktiviteOzetleriGetir } from "@/lib/ogrenci-aktivite";
 import { sonTaramaZamani, takipOlaylariniBul, taramaKapsamAnahtari, type TakipDenemesi, type TakipDurumu, type TakipTuru } from "@/lib/rehber-takip";
 
 // Rehber Takip Bildirimleri'nin veritabanı tarafı (migration 0171).
@@ -128,37 +129,28 @@ async function olaylariHesaplaKaydet(admin: Istemci, k: TakipKapsami): Promise<n
   if (ogrenciler.length === 0) return 0;
   const bugun = bugununTarihiTR();
 
-  const sonHareket = new Map<string, string>();
+  // Son hareket (pencere sınırsız) ve görev açık/toplam (SON 30 GÜN, kullanıcı
+  // kararı 23.10.2026) veritabanında hesaplanır (migration 0174, Faz 1 · Adım 4).
+  // Eskiden konu/soru/görev satırları çekilip JS'te toplanıyordu; max_rows = 1000
+  // sınırında sessizce kesiliyor ve yanlış sessizlik/görev bildirimi üretiyordu.
+  // RPC hata verirse tarama başarısız sayılır (eksik veriyle bildirim üretilmez).
+  const aktivite = await ogrenciAktiviteOzetleriGetir(admin, ogrenciler.map((o) => o.id), bugun);
   const denemeler = new Map<string, TakipDenemesi[]>();
-  const gorev = new Map<string, { acik: number; toplam: number }>();
-  const hareket = (id: string, t: string | null) => { if (t && (!sonHareket.get(id) || t > sonHareket.get(id)!)) sonHareket.set(id, t); };
 
   for (const idler of parcalara(ogrenciler.map((o) => o.id))) {
-    const [konu, soru, den, gor] = await Promise.all([
-      admin.from("konu_calismalar").select("student_id, tarih").in("student_id", idler),
-      admin.from("soru_cozumleri").select("student_id, tarih").in("student_id", idler),
-      admin.from("denemeler").select("id, student_id, tarih, tur, deneme_ders_sonuclari(ders, dogru, yanlis)").in("student_id", idler),
-      admin.from("gorev_atamalari").select("student_id, durum").in("student_id", idler),
-    ]);
-    for (const r of [...(konu.data ?? []), ...(soru.data ?? [])] as { student_id: string; tarih: string | null }[]) hareket(r.student_id, r.tarih);
+    const { data: den } = await admin.from("denemeler")
+      .select("id, student_id, tarih, tur, deneme_ders_sonuclari(ders, dogru, yanlis)").in("student_id", idler);
     type DenemeRow = { id: string; student_id: string; tarih: string; tur: string; deneme_ders_sonuclari: { ders: string; dogru: number; yanlis: number }[] | null };
-    for (const d of (den.data ?? []) as unknown as DenemeRow[]) {
-      hareket(d.student_id, d.tarih);
+    for (const d of (den ?? []) as unknown as DenemeRow[]) {
       const liste = denemeler.get(d.student_id) ?? [];
       liste.push({ id: d.id, tarih: d.tarih, tur: String(d.tur), dersler: (d.deneme_ders_sonuclari ?? []).map((s) => ({ ders: s.ders, net: netHesapla(s.dogru, s.yanlis, k.kademe) })) });
       denemeler.set(d.student_id, liste);
     }
-    for (const g of (gor.data ?? []) as { student_id: string; durum: string }[]) {
-      const m = gorev.get(g.student_id) ?? { acik: 0, toplam: 0 };
-      m.toplam += 1;
-      if (g.durum === "bekliyor") m.acik += 1;
-      gorev.set(g.student_id, m);
-    }
   }
 
   const satirlar = ogrenciler.flatMap((o) => takipOlaylariniBul({
-    bugun, denemeler: denemeler.get(o.id) ?? [], sonHareket: sonHareket.get(o.id) ?? null,
-    acikGorev: gorev.get(o.id)?.acik ?? 0, gorevToplam: gorev.get(o.id)?.toplam ?? 0,
+    bugun, denemeler: denemeler.get(o.id) ?? [], sonHareket: aktivite.get(o.id)?.sonHareket ?? null,
+    acikGorev: aktivite.get(o.id)?.acikGorev ?? 0, gorevToplam: aktivite.get(o.id)?.gorevToplam ?? 0,
   }).map((olay) => ({
     school_id: k.schoolId, student_id: o.id, sinif_seviyesi: o.seviye, tur: olay.tur, anahtar: olay.anahtar,
     baslik: olay.baslik, ayrinti: olay.ayrinti, olay_tarihi: olay.olayTarihi,
