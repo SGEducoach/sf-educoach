@@ -1,0 +1,14 @@
+-- Faz 1 · Adım 2 (23.10.2026): students(class_id) indeksi. Sınıf analizi,
+-- kohort ve rehber kapsam sorguları bu kolonla süzüyor; depodaki
+-- migration'larda ve canlıda (23.10.2026 kontrolü) indeks yoktu
+-- (FAZ1_KESIF_RAPORU B7).
+--
+-- students(school_id) için ayrı indeks AÇILMADI: canlıda
+-- students_school_id_okul_no_key (school_id, okul_no) birleşik tekil indeksi
+-- school_id aramalarını zaten karşılıyor.
+--
+-- Not: SQL Editor deyimleri tek işlemde çalıştırır; "concurrently" işlem
+-- içinde çalışmaz. students tablosu küçük (canlıda 394 satır) olduğundan
+-- kısa süreli yazma kilidi kabul edilir. Geri alma:
+--   drop index if exists public.students_class_id_idx;
+create index if not exists students_class_id_idx on public.students (class_id);
