@@ -1,6 +1,6 @@
 # SEFUKOC.COM — GÜNLÜK DURUM KAYDI
 
-Son güncelleme: 23 Ekim 2026 · Türkiye saati
+Son güncelleme: 23 Ekim 2026 · Türkiye saati (M8 eklendi)
 Depo: https://github.com/SGEducoach/sf-educoach (dal: main)
 Bağlı ana dosya: SEFUKOC_MERKEZ_PROJE.md (depoda `docs/SEFUKOC_MERKEZ_PROJE.md`)
 
@@ -130,6 +130,20 @@ Alan açıklamaları: **Çalışan AI** = modülde son işi yapan araç/oturum �
 | Başvuru belgesi | `docs/YONETIM_VE_ACIL_MUDAHALE.md` |
 | Sonraki adım | Analiz modülüyle ilişkili "Bekleyen İşler" kartını risk sistemine bağla (M2) |
 
+### M8 — Analiz Ekranları (lise/dershane/ortaokul) ve TG Fen Lisesi deneme PDF'i
+| Alan | Kayıt |
+| --- | --- |
+| Amaç | Lise ve dershane analiz ekranlarında anlam/doğruluk tutarlılığı (deneme türleri karışmasın, dönem filtresi tutarlı, kapsam etiketli); ortaokulda lise izleri kalmasın; yeni PDF biçiminin yapay zekâsız okunması |
+| Çalışan AI | Claude Code (bu oturum); diğer yapay zekâ yalnız "konu analizi boş durum" ve çift kurum incelemesini yazdı, Claude denetledi |
+| Durum | Kodda tamam, testli; **ekranda gerçek hesapla görülmedi**. Canlıya alma: bu kayıtla birlikte main'e (aşağıda devir notu) |
+| Lise/dershane | Kurum ana sayfası TYT ve AYT **ayrı** seriler (karma ortalama yok), kapsamı yetersiz hafta çizgiyi koparır ve her noktada n/toplam yazar (`dershane-ana-sayfa-hesap.ts`). Sınıf Analizi: deneme türü seçici, türün en yeni **ortak** denemesi varsayılan, ortalama yalnız seçili türde, kart adları ölçüm dilinde ve 3 grupta (`SinifAnaliziPanel.tsx`, `sinif-analizi.ts`). Öğrenci analizi: Bugün/Hafta/Ay seçilince deneme trendi + ders ortalaması görünür, "Gelişim | Denemeler" sekmeleri (`AnalizSekmeleri.tsx`), kısa özet / ayrıntılı yazdırma. Dershane müdürüne Sınıf Analizi menüsü. Sınıf yüzdeliği önce aynı denemede, yoksa "yaklaşık konum" etiketiyle (`analiz-kohort.ts`). Yayınevi yazımı (Paraf/PARAF/paraf) deneme kimliğini bölmesin diye `yayineviAnahtari` |
+| Ortaokul | RPC'ler (0174/0175) `ortaokul_calismalar`'ı saymıyordu: Sınıf Analizi, Rehber Radarı ve Takip bildirimlerinde ortaokul öğrencisi "sessiz" görünüyordu. `ortaokul-aktivite-ekle.ts` RPC çıktısının üstüne ortaokul çalışmasını ekler (RPC/migration DEĞİŞTİRİLMEDİ). Ortaokul kurumunun Ana Sayfası lise net grafikleri yerine kendi özetini gösterir (`ortaokul-kurum-ozeti.ts`, `OrtaokulKurumPerformansi.tsx`); rehber kapsam listesinde ortaokul neti D−Y/3 |
+| TG Fen Lisesi PDF | "ÖĞRENCİ LİSTESİ - KURUM|ŞUBE - 9-10.SINIF SIRALI" listesi + isteğe bağlı kişisel karne PDF'i (`deneme-kurum-liste.ts`, `deneme-sonuc-belgesi.ts`, `deneme-tg-liste.ts`; form: "TG Fen Lisesi" biçimi + "Karne PDF'i" alanı, ortaokul kurumunda görünmez). Gerçek 4 PDF'le: 9 kurum 119, 9 şube 119, 10 kurum 114 öğrenci (PDF'teki katılımla aynı), 10 karne 114/114 eşleşti ve 9 derse ayrıldı, okunamayan 0. Karne toplam D/Y/puan üçlüsüyle eşlenir (ad kesik/maskeli); doğrulanamayan öğrenci atılmaz, 4 birleşik dersle kaydedilir. Kazanım dökümü (karne 2. sayfa) ve karne puan/sıralaması **okunmuyor/saklanmıyor** |
+| Canlı veri bulguları (23.10, salt okunur, toplu) | 570 deneme / 305 öğrenci; öğrenci başına 1 deneme: 168, 2: 61, en çok 7. Tür: 502 TYT, 67 branş, **1 AYT**. 531 deneme öğretmen/PDF yüklemesi, 39 öğrenci girişi. Son 30 günde konu girişi 69, soru girişi 61 öğrenci. `ortaokul_calismalar` 0 satır. Yayınevi yazımı 40+ ayrı varyant. Hesap bağlama (0136) yalnız 1 çift |
+| Kontroller | vitest 78 dosya / 844 test, `tsc --noEmit` temiz (yalnız ilgisiz `layout.tsx LayoutProps` hatası). Yükleme **veritabanına yapılmadı**: öğrenci eşleştirme (hesap/ön kayıt) gerçek isimlerle denenmedi |
+| Engel / açık soru | (1) Ekranda doğrulama (müdür/öğretmen hesabı; ortaokul hesabı yok). (2) TG listesi için gerçek yükleme sonrası eşleşme/kuyruk sayıları. (3) Çift kurum: çözüm **zaten var** (0136 hesap bağlama); sorun "bulunamıyor/eksik kalıyor" mu — kullanıcıya soruldu. (4) 9. sınıf karnesi yok → 9. sınıf birleşik derslerle kaydolur. (5) Sınıf Analizi'nde ortaokul eklemesi JS'te; kalıcı çözüm RPC'ye `ortaokul_calismalar` eklemek (yeni migration 0176, kullanıcı onayı gerekir) |
+| Sonraki adım | Gerçek hesapla ekran kontrolü → TG listelerini yükle, eşleşme sayılarını bu dosyaya yaz → gerekirse RPC'ye ortaokul çalışması (0176) → öğrenci analizinde "Konu ve çalışma" sekmesi (analiz panelini bölmeyi gerektirir) |
+
 ---
 
 ## 3. OTURUM GÜNLÜĞÜ
@@ -145,6 +159,7 @@ Alan açıklamaları: **Çalışan AI** = modülde son işi yapan araç/oturum �
 | 23 Ekim 2026 | Claude Code (Claude PC) | M1 | ChatLLM'in `faz1-adim3-0174` dalı incelendi; migration'da **güvenlik açığı** düzeltildi (EXECUTE PUBLIC'ten de kaldırıldı, `747de74`); 0174 canlıya uygulandı; yetkiler ve sonuç doğrulandı; dal `main`'e fast-forward alındı; durum dosyası güncellendi | 779/779 test, tsc, eslint; canlıda ACL ve bağımsız sorgu karşılaştırması temiz; RPC henüz uygulamaya bağlı değil, ekranda deneme **yapılmadı** | `main` (Adım 3 birleşimi) |
 | 23 Ekim 2026 | Claude Code (Claude PC) | M1 | `max_rows = 1000` doğrulandı, canlı veriyle kesilme riski ölçüldü (en büyük kurum 1464 görev satırı); Adım 4: `ogrenci_aktivite_ozeti` RPC `rehber-kapsam-listesi.ts` ve `rehber-takip-verisi.ts`'e bağlandı (`ogrenciAktiviteOzetleriGetir`, 500'lük parçalar, hatada fırlatır); `faz1-adim4-baglama` `main`'e alındı | 784/784 test, tsc, eslint; canlı karşılaştırma: son_hareket 394/394 aynı, görev bayrağı değişen 0; ekranda deneme **yapılmadı** | `main` (Adım 4 birleşimi) |
 | 23 Ekim 2026 | Claude Code (Claude PC) | M1 | Adım 5: Sınıf Analizi `sinif_analiz_ozeti` RPC'sine (0175) taşındı (`faz1-adim5-sinif`), varsayılan dönem Aylık, `schema.sql` kullanımdan kaldırıldı, README güncellendi; süre ölçümü (veritabanı hızlı, asıl gecikme ağ/bölge) | 790/790 test, tsc, eslint; canlı SQL karşılaştırması 394/394 aynı; 0175 kullanıcı izniyle canlıya uygulandı, ACL doğrulandı, dal main'e alındı; ekranda deneme yapılmadı | `main` (Adım 5 birleşimi) |
+| 23 Ekim 2026 | Claude Code (Claude PC) | M8 | Lise/dershane analiz düzeltmeleri (TYT/AYT ayrımı, Sınıf Analizi türü/etiketleri, dönem filtresi, sekmeler, yazdırma, yüzdelik etiketi, yayınevi anahtarı); ortaokul etkinliği RPC üstüne eklendi; ortaokul Kurum Performansı; TG Fen Lisesi liste+karne PDF okuyucusu; origin/main (Adım 4–5 RPC'leri) ile birleştirildi, 3 çakışma çözüldü | 844/844 test, tsc temiz; ekranda deneme ve gerçek yükleme **yapılmadı**; canlı DB'ye yalnız salt okunur toplu sorgu; migration yok | `81b8bec3` + birleşim `08f93c3b` |
 
 ---
 
@@ -154,9 +169,9 @@ Alan açıklamaları: **Çalışan AI** = modülde son işi yapan araç/oturum �
 
 | Alan | Kayıt |
 | --- | --- |
-| Tamamlanmamış iş | Faz 1 Adım 1–5 **canlıda** (0171–0175 uygulandı; Sınıf Analizi RPC, varsayılan Aylık, schema.sql kaldırma main'de). Açık: `vercel.json` bölge kararı (`cdg1`), rehber hesabıyla ekranda doğrulama |
+| Tamamlanmamış iş | **M8 (23.10, Claude):** analiz ekranı düzeltmeleri + TG Fen Lisesi PDF'i main'de; ekranda doğrulama, gerçek yükleme ve (isteğe bağlı) RPC'ye ortaokul çalışması (0176) açık. Önceki: Faz 1 Adım 1–5 **canlıda** (0171–0175 uygulandı; Sınıf Analizi RPC, varsayılan Aylık, schema.sql kaldırma main'de). Açık: `vercel.json` bölge kararı (`cdg1`), rehber hesabıyla ekranda doğrulama |
 | Dallar / commit'ler | Adım 1 → `b2b0d06b` (birleşim; asıl commit `57d9f9b`), Adım 2 → `85936a91` (birleşim; asıl commitler `35a30b9` + `f24f391`). `main` = `680bf5cd` (bu dosyanın 23.10 commit'i). Adım 3 → dal `faz1-adim3-0174` (ChatLLM yazdı, GitHub'a push etti), commit'ler `a12e967a` (migration 0174), `5c46a3fe` (TS yardımcıları + testler), `747de74` (Claude: EXECUTE yetkisi düzeltmesi); `main`'e fast-forward alındı |
-| Aktif dosyalar (başka AI dokunmasın) | Şu an kilitli iş yok. RPC işi devam ederse: `src/lib/analiz.ts`, `rehber-takip-verisi.ts`, `rehber-kapsam-listesi.ts`, `sinif-analizi-verisi.ts`, `src/lib/ogrenci-aktivite.ts` |
+| Aktif dosyalar (başka AI dokunmasın) | Şu an kilitli iş yok. M8 dosyaları (`SinifAnaliziPanel.tsx`, `AnalizPaneli.tsx`, `DershaneAnaSayfa.tsx`, `deneme-*-liste.ts`, `deneme-sonuc-belgesi.ts`) yeni commit'te; değiştirmeden önce `git log` bak. RPC işi devam ederse: `src/lib/analiz.ts`, `rehber-takip-verisi.ts`, `rehber-kapsam-listesi.ts`, `sinif-analizi-verisi.ts`, `src/lib/ogrenci-aktivite.ts` |
 | Migration durumu | 0171, 0172, 0173 **canlıda uygulandı** (23.10.2026, Supabase `sg-educoach`). 0174 (`ogrenci_aktivite_ozeti` RPC) de **canlıda uygulandı** (23.10.2026). Bir sonraki numara **0175** |
 | Doğrulama (0174) | vitest 779/779 (72 dosya), `tsc --noEmit` temiz, eslint temiz. Canlıda: ACL `{postgres, service_role}`; `public`/`anon`/`authenticated` EXECUTE **yok**; sonuç bağımsız sorguyla birebir uyuştu (394 öğrenci, son 30 günde 1447 görev, 189 açık, uyuşmayan 0). Ekranda/entegrasyonda deneme **yapılmadı** (RPC henüz bağlı değil). Not: yeni fonksiyonlarda EXECUTE varsayılan olarak PUBLIC'e verilir; her yeni RPC `revoke ... from public, anon, authenticated` içermeli |
 | Claude PC'sinde commit edilmemiş dosyalar | `.claude/launch.json`, `src/app/signup/SignupForm.tsx`, `src/app/signup/dershane-actions.ts` (bu işle ilgisiz, dokunulmadı, push edilmesin) |
