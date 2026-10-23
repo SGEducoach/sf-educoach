@@ -437,6 +437,22 @@ export async function siraliListeyiAyristir(pdfBuffer: Buffer, maxSayfa = 15): P
   }
 }
 
+// Konum + genişlikle ham sayfa öğeleri (kurum sıralı liste ve sonuç belgesi
+// çözümleyicileri için, bkz. deneme-kurum-liste.ts / deneme-sonuc-belgesi.ts).
+// Tüm sayfalar sırayla döner (en fazla maxSayfa);
+export async function pdfSayfaOgeleri(pdfBuffer: Buffer, maxSayfa = 600): Promise<GenisMetin[][]> {
+  const dogruBoyut = Uint8Array.from(pdfBuffer);
+  const dogument = await (await pdfjsGetDocument())({ data: dogruBoyut, standardFontDataUrl: undefined, disableFontFace: true }).promise;
+  const sayfalar: GenisMetin[][] = [];
+  for (let sayfaNo = 1; sayfaNo <= Math.min(maxSayfa, dogument.numPages); sayfaNo++) {
+    const icerik = await (await dogument.getPage(sayfaNo)).getTextContent();
+    sayfalar.push(icerik.items.filter(metinItemMi).map((it) => ({
+      str: it.str, x: it.transform[4] as number, y: it.transform[5] as number, w: it.width,
+    })));
+  }
+  return sayfalar;
+}
+
 export async function okulListesiniAyristir(pdfBuffer: Buffer, maxSayfa = 10): Promise<OkulListesiAyristirmaSonucu> {
   const BOS: OkulListesiAyristirmaSonucu = { basarili: false, sinavAdi: null, dersEtiketleri: [], ogrenciler: [], okunamayanSatirlar: [] };
   try {

@@ -24,6 +24,7 @@ import type { KarneBirinciSayfa } from "@/lib/karne-birinci-sayfa";
 import { gruplaraBolerekOku, YanitSigmadiHatasi } from "@/lib/gruplu-okuma";
 import { netHesapla } from "@/lib/types";
 import { gecerliDersler } from "@/lib/deneme-dersleri";
+import { tgListesiMi, tgListesiniHazirla } from "@/lib/deneme-tg-liste";
 import { lgsOkulListesiCoz } from "@/lib/lgs-okul-listesi";
 import { pdfOgeleriniCikar } from "@/lib/pdf-oge";
 
@@ -57,7 +58,7 @@ const CLAUDE_GRUP_BOYUTU = 20;
 const CLAUDE_ES_ZAMANLI_GRUP = 3;
 
 // Yükleme formundaki "PDF biçimi" seçimi (DershaneDenemePdfFormu).
-const PDF_BICIMLERI = ["otomatik", "sinif", "okul", "maarif", "sirali", "claude"] as const;
+const PDF_BICIMLERI = ["otomatik", "sinif", "okul", "maarif", "sirali", "tg", "claude"] as const;
 type PdfBicimi = (typeof PDF_BICIMLERI)[number];
 
 function kayitMi(deger: unknown): deger is Record<string, unknown> {
@@ -497,8 +498,34 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
   // sonuçlar sütun konumuna göre doğrudan okunur ve Claude'a hiç gidilmez;
   // her satır toplam sütunuyla doğrulanır. Tanınmazsa eski yol aynen sürer.
   // PDF'teki bütün satırlar alınır; eşleştirme kararı sonuclariEslestirVeKaydet'te.
+  // TG Fen Lisesi (kullanıcı isteği 23.10.2026): "ÖĞRENCİ LİSTESİ - KURUM|ŞUBE -
+  // 9-10.SINIF SIRALI" listesi (+ isteğe bağlı kişisel karne PDF'i, form alanı
+  // "karne"). Karnesi çapraz doğrulanan öğrenci dokuz granüler dersle, diğerleri
+  // listedeki dört birleşik dersle kaydedilir (bkz. deneme-tg-liste.ts).
+  let tgHazirlik: Awaited<ReturnType<typeof tgListesiniHazirla>> | null = null;
+  if ((tur === "TYT" || tur === "BRANS") && bicimDenensin("tg")) {
+    const listeBuf = Buffer.from(await dosya.arrayBuffer());
+    if (bicim === "tg" || (await tgListesiMi(listeBuf))) {
+      const karneDosyasi = formData.get("karne") as File | null;
+      try {
+        tgHazirlik = await tgListesiniHazirla(listeBuf, karneDosyasi && karneDosyasi.size > 0 ? Buffer.from(await karneDosyasi.arrayBuffer()) : null);
+      } catch (tgHatasi) {
+        console.warn("[deneme-pdf TG] beklenmeyen hata:", hataOzeti(tgHatasi));
+      }
+      if (tgHazirlik?.basarili) {
+        ayristirilan = tgHazirlik.ogrenciler.map((o) => ({
+          ad_soyad: o.ad_soyad, ders_sonuclari: o.ders_sonuclari, ogrenci_no: o.ogrenci_no || undefined, sinif: o.sinif || undefined,
+        }));
+        okunamayanAdlar.push(...tgHazirlik.okunamayan.map((o) => o.isimHam));
+        console.info("[deneme-pdf TG] sınav:", tgHazirlik.sinavAdi, "| özet:", JSON.stringify(tgHazirlik.ozet));
+      } else if (bicim === "tg") {
+        return { error: `TG Fen Lisesi listesi okunamadı: ${tgHazirlik?.hata ?? "PDF açılamadı"}`, ...BOS_SONUC };
+      }
+    }
+  }
+
   let sinifListesi: SinifListesiSonucu | null = null;
-  if ((tur === "TYT" || tur === "BRANS") && bicimDenensin("sinif")) {
+  if (ayristirilan === null && (tur === "TYT" || tur === "BRANS") && bicimDenensin("sinif")) {
     sinifListesi = await sinifListeleriniAyristir(Buffer.from(await dosya.arrayBuffer()));
     if (sinifListesi.basarili) {
       const okunanlar: PdfOgrenciSonucu[] = [];
@@ -619,6 +646,7 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
       okul: "Limit — okul net listesi",
       maarif: "Maarif — okul net listesi",
       sirali: "Özdebir — kurum sıralı listesi",
+      tg: "TG Fen Lisesi — kurum/şube sıralı liste",
     }[bicim as Exclude<PdfBicimi, "otomatik" | "claude">];
     return {
       error: bicim === "otomatik"
@@ -810,6 +838,9 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
   }
   if (sinifListesi?.basarili) {
     for (const o of sinifListesi.ogrenciler) pdfSinifMap.set(adNormalize(o.isimHam), o.sinif);
+  }
+  if (tgHazirlik?.basarili) {
+    for (const o of tgHazirlik.ogrenciler) if (o.sinif) pdfSinifMap.set(adNormalize(o.ad_soyad), o.sinif);
   }
 
   // Faz P2 entegrasyonu (Deneme Net Dağıtımı raporu) — SADECE TYT/BRANŞ
