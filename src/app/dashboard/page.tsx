@@ -103,7 +103,8 @@ import { IlkokulSinifimPanosu } from "@/components/dashboard/IlkokulSinifimPanos
 import { WhatsappDuyuruStudyosu } from "@/components/dashboard/WhatsappDuyuruStudyosu";
 import { DuyuruTuruSekmeleri } from "@/components/dashboard/DuyuruTuruSekmeleri";
 import { duyuruSecenekleri, seciliDuyuruAlani, seciliDuyuruTuru, yalnizGenelKartMi } from "@/lib/duyuru-alanlari";
-import { takipBildirimleriniGetir, takipBildirimleriniUret, takipKapsamiGetir, yeniTakipSayisi } from "@/lib/rehber-takip-verisi";
+import { takipBildirimleriniGetir, takipBildirimleriniUret, takipKapsamiGetir, takipSonTaramaGetir, yeniTakipSayisi } from "@/lib/rehber-takip-verisi";
+import { taramaGerekliMi } from "@/lib/rehber-takip";
 import { RehberTakipBildirimleri } from "@/components/dashboard/RehberTakipBildirimleri";
 import { yurtDurumlariGetir, yurtVerisiGetir } from "@/lib/yurt-listesi-verisi";
 import { YurtOgrencileriListesi } from "@/components/dashboard/YurtOgrencileriListesi";
@@ -1027,8 +1028,9 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   // Dershane rehberlik servisi (kullanıcı isteği 13.09.2026): öğrenci adına
   // ödev, veri girişi ve program. Yetki sunucu işlemlerinde ayrıca doğrulanır
   // (bkz. rehber-ogrenci-actions.ts, lib/dershane-rehber.ts).
-  // Rehber Takip Bildirimleri (20.10.2026, migration 0171): açılışta kapsam
-  // yeniden taranır (günlük cron'a ek), sonra kayıtlar listelenir.
+  // Rehber Takip Bildirimleri (20.10.2026, migration 0171). Faz 1 · Adım 1
+  // (23.10.2026): açılış taraması yalnız son tarama TARAMA_TAZELIK_SAAT'ten
+  // eskiyse çalışır (günlük cron zaten tarıyor); zaman 0172'de tutulur.
   if (aktifBolum === "takip-bildirimleri") {
     const admin = createAdminClient();
     const kapsam = await takipKapsamiGetir(admin, userId);
@@ -1039,10 +1041,16 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
         </div>
       );
     }
-    try { await takipBildirimleriniUret(admin, kapsam); } catch { /* tarama hatası listeyi engellemesin */ }
+    const duzeySiz = !!kapsam.seviyeler && kapsam.seviyeler.length === 0;
+    let sonTarama = duzeySiz ? null : await takipSonTaramaGetir(admin, kapsam);
+    let taramaHatasi = false;
+    if (!duzeySiz && taramaGerekliMi(sonTarama)) {
+      // Tarama hatası listeyi engellemesin; ekranda uyarı olarak gösterilir.
+      try { await takipBildirimleriniUret(admin, kapsam); sonTarama = new Date().toISOString(); } catch { taramaHatasi = true; }
+    }
     const { bildirimler, hazir } = await takipBildirimleriniGetir(admin, kapsam);
     return <RehberTakipBildirimleri bildirimler={bildirimler} hazir={hazir} ogrenciBaglantisi={kapsam.ogrenciBaglantisi}
-      duzeySiz={!!kapsam.seviyeler && kapsam.seviyeler.length === 0} />;
+      duzeySiz={duzeySiz} sonTarama={sonTarama} taramaHatasi={taramaHatasi} />;
   }
 
   if (aktifBolum === "ogrenci-takibi") {

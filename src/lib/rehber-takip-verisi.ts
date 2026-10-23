@@ -6,7 +6,7 @@ import { netHesapla, type NetKademesi } from "@/lib/types";
 import { bugununTarihiTR } from "@/lib/tarih";
 import { REHBER_BRANSI } from "@/lib/rehberlik";
 import { rehberlikUyeligiGetir } from "@/lib/rehberlik-servisi";
-import { takipOlaylariniBul, type TakipDenemesi, type TakipDurumu, type TakipTuru } from "@/lib/rehber-takip";
+import { sonTaramaZamani, takipOlaylariniBul, taramaKapsamAnahtari, type TakipDenemesi, type TakipDurumu, type TakipTuru } from "@/lib/rehber-takip";
 
 // Rehber Takip Bildirimleri'nin veritabanı tarafı (migration 0171).
 // Kapsam: okul rehberi atandığı sınıf düzeyleri (Rehberlik Servisi,
@@ -95,9 +95,35 @@ async function kapsamOgrencileri(admin: Istemci, k: TakipKapsami) {
   });
 }
 
+// Son başarılı tarama zamanı (migration 0172). Kurumun kayıtlarından,
+// bu kapsamı tamamen içerenlerin en yenisi. Tablo yoksa ya da okunamazsa
+// null döner: sayfa eski davranışa (açılışta tarama) düşer.
+export async function takipSonTaramaGetir(admin: Istemci, k: TakipKapsami): Promise<string | null> {
+  const { data, error } = await admin.from("rehber_takip_taramalari")
+    .select("kapsam, son_tarama_at").eq("school_id", k.schoolId);
+  if (error || !data) return null;
+  return sonTaramaZamani(data as { kapsam: string; son_tarama_at: string }[], k.seviyeler);
+}
+
+async function taramaKaydet(admin: Istemci, k: TakipKapsami, eklenen: number) {
+  // Kayıt hatası taramayı bozmasın (0172 uygulanmamış olabilir).
+  if (k.seviyeler && k.seviyeler.length === 0) return;
+  await admin.from("rehber_takip_taramalari").upsert(
+    { school_id: k.schoolId, kapsam: taramaKapsamAnahtari(k.seviyeler), son_tarama_at: new Date().toISOString(), eklenen },
+    { onConflict: "school_id,kapsam" },
+  ).then(() => undefined, () => undefined);
+}
+
 // Kapsamdaki öğrencilerin olaylarını hesaplar, yenilerini kaydeder.
 // Var olan kayıt (aynı öğrenci + anahtar) değişmez; kapatılmış olay geri açılmaz.
+// Başarıyla biterse tarama zamanı kaydedilir (cron, "Şimdi tara" ve sayfa).
 export async function takipBildirimleriniUret(admin: Istemci, k: TakipKapsami): Promise<number> {
+  const eklenen = await olaylariHesaplaKaydet(admin, k);
+  await taramaKaydet(admin, k, eklenen);
+  return eklenen;
+}
+
+async function olaylariHesaplaKaydet(admin: Istemci, k: TakipKapsami): Promise<number> {
   const ogrenciler = await kapsamOgrencileri(admin, k);
   if (ogrenciler.length === 0) return 0;
   const bugun = bugununTarihiTR();
