@@ -57,13 +57,17 @@ describe("yardımcılar", () => {
       .toEqual(["Çıkış: 23 Ekim 2026 Cuma · 16:00", "Dönüş: 25 Ekim 2026 Pazar"]);
     expect(yurtBilgiSatirlari("carsi-izni", { tarih: "", cikisSaati: "13:00", donusSaati: "17:00" })).toEqual(["Çıkış-dönüş 13:00 – 17:00"]);
   });
-  test("akşam yoklamasında gönderen ve isteğe bağlı diğer nöbetçi kartta görünür", () => {
-    expect(yurtKartImzasi("aksam-yoklamasi", " Ayşe  Yılmaz ", " Mehmet  Demir "))
+  test("bütün yurt kartlarında gönderen ve diğer nöbetçi aynı imzada görünür", () => {
+    expect(yurtKartImzasi(" Ayşe  Yılmaz ", " Mehmet  Demir "))
       .toBe("Nöbetçiler: Ayşe Yılmaz, Mehmet Demir");
-    expect(yurtKartImzasi("aksam-yoklamasi", "Ayşe Yılmaz", ""))
+  });
+  test("diğer nöbetçi boşsa veya girilmemişse yalnız gönderen görünür", () => {
+    expect(yurtKartImzasi("Ayşe Yılmaz", "  "))
       .toBe("Nöbetçiler: Ayşe Yılmaz");
-    expect(yurtKartImzasi("evci-izni", "Ayşe Yılmaz", "Mehmet Demir"))
-      .toBe("Hazırlayan: Ayşe Yılmaz");
+    expect(yurtKartImzasi("Ayşe Yılmaz")).toBe("Nöbetçiler: Ayşe Yılmaz");
+  });
+  test("gönderen adı boşsa nöbetçi öğretmen etiketi korunur", () => {
+    expect(yurtKartImzasi("  ", "Mehmet Demir")).toBe("Nöbetçiler: Nöbetçi öğretmen, Mehmet Demir");
   });
   test("boş liste tek boş sayfa", () => {
     expect(yurtSayfalari([])).toEqual([[]]);

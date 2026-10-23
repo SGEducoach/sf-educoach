@@ -150,6 +150,13 @@ Alan açıklamaları: **Çalışan AI** = modülde son işi yapan araç/oturum �
 
 ## 4. DEVİR NOTU
 
+### Yurt kartı imzası düzeltmesi — Codex, 23 Ekim 2026
+
+- Yerel dal: `codex/yurt-kart-nobetciler`; başlangıç temeli: `9120a6f8`. Yayın öncesi gelen PDF güncellemesi `cd3f493b` korunarak onun üzerine taşındı; birleşik durumda 74 dosyada 808 test geçti. Diğer açık çalışma klasörlerine dokunulmadı.
+- Akşam yoklaması, çarşı ve evci izni kartlarında ortak imza artık **Nöbetçiler**. İsteğe bağlı ikinci nöbetçi alanı tüm kartlarda açık; müdür yardımcısına gönderimde de korunur. Veritabanı değişikliği gerekmez.
+- Kontrol: 73 test dosyası / 792 test geçti; değişen dört kod dosyasında eslint ve `git diff --check` temiz. Next.js rota tipleri `next typegen` ile üretildikten sonra `tsc --noEmit --incremental false` temiz tamamlandı.
+- Kullanıcı 23 Ekim 2026'da canlıya alma onayı verdi. Bu düzeltme ayrı dalda hazırlanıp güncel `origin/main` ile karşılaştırıldı; yalnız bu kayıtta belirtilen dosyalar yayına gönderilecek. Yayın sonucu ilgili commit'in Vercel kontrolünden izlenmeli. Veritabanı değişikliği yok. Gerçek hesapla kart önizleme/paylaşma doğrulanmadı. Eski indirilmiş/paylaşılmış resimler değişmez; kart yeniden oluşturulmalı.
+
 > **Canlıya alma: Claude.** Son kontrol ve canlıya alma Claude'dadır. Migration'ların canlı veritabanına uygulanması, Claude kontrolünden sonra yalnızca kullanıcının onayıyla yapılır. Diğer AI'lar `main`'e push etmez, migration uygulamaz.
 
 | Alan | Kayıt |

@@ -54,7 +54,7 @@ export async function yoklamaGonder(girdi: {
   if (!Array.isArray(girdi.ogrenciler) || girdi.ogrenciler.length > 300) return { error: "Liste geçersiz.", aliciSayisi: 0 };
   const ogrenciler = girdi.ogrenciler.map((o) => ({ anahtar: kirp(o.anahtar, 60), ad: kirp(o.ad, 80), okulNo: kirp(o.okulNo, 10), sinif: kirp(o.sinif, 10), not: kirp(o.not, 40) }));
   const alanlar = Object.fromEntries(sablon.alanlar.map((a) => [a.anahtar, kirp(girdi.alanlar?.[a.anahtar], 10)]));
-  if (sablon.anahtar === "aksam-yoklamasi") alanlar.ekOgretmen = kirp(girdi.alanlar?.ekOgretmen, 80);
+  alanlar.ekOgretmen = kirp(girdi.alanlar?.ekOgretmen, 80);
   const tarihHam = alanlar.tarih || alanlar.cikisTarihi || "";
   const tarih = /^\d{4}-\d{2}-\d{2}$/.test(tarihHam) ? tarihHam : new Date().toISOString().slice(0, 10);
 
