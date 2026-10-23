@@ -1,16 +1,14 @@
--- Faz 1 · Adım 2 (23.10.2026): students(school_id) ve students(class_id)
--- indeksleri. Rehber takip/kapsam, sınıf analizi, kohort sorguları ve
--- kurum sınırı RLS yardımcıları (0114) bu kolonlarla süzüyor; depodaki
--- migration'larda bu kolonlara indeks bulunmadı (FAZ1_KESIF_RAPORU B7).
+-- Faz 1 · Adım 2 (23.10.2026): students(class_id) indeksi. Sınıf analizi,
+-- kohort ve rehber kapsam sorguları bu kolonla süzüyor; depodaki
+-- migration'larda ve canlıda (23.10.2026 kontrolü) indeks yoktu
+-- (FAZ1_KESIF_RAPORU B7).
 --
--- ÖNCE canlıda kontrol: select indexname, indexdef from pg_indexes
---   where schemaname = 'public' and tablename = 'students';
--- Aynı kolonda farklı adla indeks varsa bu dosya uygulanmamalı.
+-- students(school_id) için ayrı indeks AÇILMADI: canlıda
+-- students_school_id_okul_no_key (school_id, okul_no) birleşik tekil indeksi
+-- school_id aramalarını zaten karşılıyor.
 --
 -- Not: SQL Editor deyimleri tek işlemde çalıştırır; "concurrently" işlem
--- içinde çalışmaz. students tablosu küçük olduğundan kısa süreli yazma
--- kilidi kabul edilir. Geri alma:
---   drop index if exists public.students_school_id_idx;
+-- içinde çalışmaz. students tablosu küçük (canlıda 394 satır) olduğundan
+-- kısa süreli yazma kilidi kabul edilir. Geri alma:
 --   drop index if exists public.students_class_id_idx;
-create index if not exists students_school_id_idx on public.students (school_id);
 create index if not exists students_class_id_idx on public.students (class_id);
