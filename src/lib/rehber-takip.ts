@@ -162,3 +162,41 @@ export function takipOlaylariniBul(g: TakipGirdisi): TakipOlayi[] {
   }
   return olaylar;
 }
+
+// --- Tarama zamanı (Faz 1 · Adım 1, 23.10.2026) ---------------------------
+// Takip sayfası her açılışta tam kurum taraması yapıyordu; günlük cron
+// (04:30 UTC) aynı işi yaptığı için açılış taraması yalnız son tarama bu
+// süreden eskiyse çalışır. 26 saat: cron'un gecikmesine pay bırakır.
+export const TARAMA_TAZELIK_SAAT = 26;
+
+// Kapsamın kayıt anahtarı: null = kurumun tümü; aksi hâlde sıralı düzeyler.
+export function taramaKapsamAnahtari(seviyeler: string[] | null): string {
+  return seviyeler === null ? "tumu" : [...new Set(seviyeler)].sort().join(",");
+}
+
+// Bir tarama kaydı (kapsam anahtarıyla), istenen kapsamı tamamen içeriyor mu?
+// Cron okulda düzeylerin birleşimini tarar; düzey alt kümesi olan rehber de
+// o taramadan yararlanır.
+export function taramaKapsamiIceriyor(kayitAnahtari: string, seviyeler: string[] | null): boolean {
+  if (kayitAnahtari === "tumu") return true;
+  if (seviyeler === null) return false;
+  const kayit = new Set(kayitAnahtari.split(",").filter(Boolean));
+  return seviyeler.every((s) => kayit.has(s));
+}
+
+// Uygun kayıtlar içinden en yeni tarama zamanı (ISO) ya da null.
+export function sonTaramaZamani(kayitlar: { kapsam: string; son_tarama_at: string }[], seviyeler: string[] | null): string | null {
+  let enYeni: string | null = null;
+  for (const k of kayitlar) {
+    if (!taramaKapsamiIceriyor(k.kapsam, seviyeler)) continue;
+    if (!enYeni || Date.parse(k.son_tarama_at) > Date.parse(enYeni)) enYeni = k.son_tarama_at;
+  }
+  return enYeni;
+}
+
+export function taramaGerekliMi(sonTarama: string | null, simdi: Date = new Date()): boolean {
+  if (!sonTarama) return true;
+  const t = Date.parse(sonTarama);
+  if (Number.isNaN(t)) return true;
+  return simdi.getTime() - t >= TARAMA_TAZELIK_SAAT * 3600_000;
+}

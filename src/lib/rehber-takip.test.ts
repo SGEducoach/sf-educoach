@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { takipOlaylariniBul, type TakipDenemesi, type TakipGirdisi } from "./rehber-takip";
+import { sonTaramaZamani, takipOlaylariniBul, taramaGerekliMi, taramaKapsamAnahtari, taramaKapsamiIceriyor, TARAMA_TAZELIK_SAAT, type TakipDenemesi, type TakipGirdisi } from "./rehber-takip";
 
 const BUGUN = "2026-10-20";
 const deneme = (id: string, tarih: string, dersler: Record<string, number>, tur = "TYT"): TakipDenemesi =>
@@ -57,5 +57,36 @@ describe("rehber takip olayları", () => {
     expect(o).toMatchObject({ tur: "gorev_birikmesi", anahtar: "gorev:2026-10" });
     expect(turler({ acikGorev: 2, gorevToplam: 2 })).toEqual([]);
     expect(turler({ acikGorev: 2, gorevToplam: 4 })).toEqual([]);
+  });
+});
+
+describe("takip tarama zamanı", () => {
+  it("kapsam anahtarı sıralı ve tekil", () => {
+    expect(taramaKapsamAnahtari(null)).toBe("tumu");
+    expect(taramaKapsamAnahtari(["11", "9", "10", "9"])).toBe("10,11,9");
+  });
+  it("kapsam içerme", () => {
+    expect(taramaKapsamiIceriyor("tumu", ["9"])).toBe(true);
+    expect(taramaKapsamiIceriyor("tumu", null)).toBe(true);
+    expect(taramaKapsamiIceriyor("10,9", null)).toBe(false);
+    expect(taramaKapsamiIceriyor("10,11,9", ["9", "10"])).toBe(true);
+    expect(taramaKapsamiIceriyor("9", ["9", "10"])).toBe(false);
+  });
+  it("uygun kayıtların en yenisi", () => {
+    const kayitlar = [
+      { kapsam: "9", son_tarama_at: "2026-10-23T05:00:00Z" },
+      { kapsam: "10,9", son_tarama_at: "2026-10-22T04:30:00Z" },
+      { kapsam: "11", son_tarama_at: "2026-10-23T06:00:00Z" },
+    ];
+    expect(sonTaramaZamani(kayitlar, ["9", "10"])).toBe("2026-10-22T04:30:00Z");
+    expect(sonTaramaZamani(kayitlar, ["9"])).toBe("2026-10-23T05:00:00Z");
+    expect(sonTaramaZamani(kayitlar, null)).toBeNull();
+  });
+  it("tazelik eşiği", () => {
+    const simdi = new Date("2026-10-23T12:00:00Z");
+    expect(taramaGerekliMi(null, simdi)).toBe(true);
+    expect(taramaGerekliMi("bozuk", simdi)).toBe(true);
+    expect(taramaGerekliMi("2026-10-23T04:30:00Z", simdi)).toBe(false);
+    expect(taramaGerekliMi(new Date(simdi.getTime() - TARAMA_TAZELIK_SAAT * 3600_000).toISOString(), simdi)).toBe(true);
   });
 });
