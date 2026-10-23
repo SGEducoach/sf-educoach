@@ -53,17 +53,17 @@ Alan açıklamaları: **Çalışan AI** = modülde son işi yapan araç/oturum �
 | --- | --- |
 | Amaç | Analiz ekranlarının hızlı ve **doğru** açılması: öğrenci/kurum bazlı toplamların veritabanında (RPC) hesaplanması; hedef 300 ms altı |
 | Çalışan AI | ChatLLM (Abacus) Adım 0 SQL'leri + Adım 1–2 kodunu yazdı; Claude kontrol etti, migration'ları uyguladı, main'e aldı ve canlıya verdi |
-| Durum | Adım 1 ve 2 **canlıda** (kod + 0171/0172/0173). Adım 0 canlı ölçümü kısmen yapıldı (indeksler, tablolar); **`max_rows` ölçülmedi**. Ekranda deneme yapılmadı. RPC adımları (Adım 3+) başlamadı |
-| Son ilgili commit | `85936a91` (main), öncesinde `b2b0d06b` (Adım 1 birleşimi). Dallar: `faz1-adim1`, `faz1-adim2` yalnız yerelde (Claude'un PC'sinde) |
+| Durum | Adım 1 ve 2 **canlıda** (kod + 0171/0172/0173). Adım 3 (`ogrenci_aktivite_ozeti` RPC, 0174) **yazıldı, test edildi, dalda** — henüz canlıya uygulanmadı, main'e alınmadı. Adım 0 canlı ölçümü kısmen yapıldı (indeksler, tablolar); **`max_rows` ölçülmedi**. Ekranda deneme yapılmadı |
+| Son ilgili commit | `85936a91` (main). Dal `faz1-adim3-0174` (origin/main `680bf5cd` üzerinden): `a12e967a` (migration 0174), `5c46a3fe` (TS yardımcıları + testler) — yalnız yerelde, push edilmedi |
 | Kullanıcı kararları (23.10) | Görev birikmesi son 30 gün (tek sabit) · analiz varsayılanı "Aylık", "Tüm zamanlar" seçenek · tek risk puanı yok, M2 = gerekçeli öncelik sıralaması · `schema.sql` Adım 0 sonrası canlıdan `pg_dump --schema-only` ile yeniden üretilecek |
-| Migration numaraları | 0171 = rehber_takip_bildirimleri (20.10'da kodla gitti ama canlıya **23.10'a kadar uygulanmamıştı**; Takip Bildirimleri canlıda çalışmıyordu), 0172 = rehber_takip_taramalari (Adım 1), 0173 = `students(class_id)` indeksi (Adım 2; `school_id` için ayrı indeks gereksiz, `(school_id, okul_no)` birleşik indeksi var). Planlanan RPC'ler **0174+** |
+| Migration numaraları | 0171 = rehber_takip_bildirimleri (20.10'da kodla gitti ama canlıya **23.10'a kadar uygulanmamıştı**; Takip Bildirimleri canlıda çalışmıyordu), 0172 = rehber_takip_taramalari (Adım 1), 0173 = `students(class_id)` indeksi (Adım 2; `school_id` için ayrı indeks gereksiz, `(school_id, okul_no)` birleşik indeksi var), 0174 = `ogrenci_aktivite_ozeti` RPC (Adım 3; öğrenci başına son hareket + son 30 günün görev açık/toplam sayısı, henüz canlıya uygulanmadı). Bir sonraki numara **0175** |
 | Mevcut yapı (koddan) | Analizde RPC/view yok; tüm toplama JS'te (`src/lib/analiz.ts`, `konu-hakimiyeti.ts`, `sinif-analizi-verisi.ts`, `rehber-kapsam-listesi.ts`, `rehber-takip-verisi.ts`). İndeks: `(student_id, tarih)` üç ana tabloda var; `students(school_id/class_id)` indeksi bulunamadı. `schema.sql` migration'lardan geride (en yüksek referans 0148). Çift `0167` numarası var |
 | Önceki oturum (23.10, 1. oturum) | Faz 1 keşfi: migration/indeks/RLS envanteri, analiz sayfalarının veri yolu, 0171 takip mantığı, Claude kullanımı. Rapor: `FAZ1_KESIF_RAPORU.md` (15 bulgu + 3 UX notu, uygulama sırası) |
 | En kritik bulgular | (1) Rehber/sınıf toplu sorguları tüm geçmişi sınırsız çekiyor → 1000 satır sınırında sessiz kesilme riski (yanlış "sessizlik", görev oranı). (2) Takip Bildirimleri sayfası her açılışta tam kurum taraması bekliyor (`page.tsx:1042`). (3) Öğrenci analizi "Tüm zamanlar"da ham satırları sınırsız çekiyor |
 | Bu oturumda yapılan (23.10, 2. oturum) | `FAZ1_ADIM0_OLCUM.sql` (salt okunur ölçüm S1–S6). Adım 1: takip sayfası açılış taraması yalnız son tarama 26 saatten eskiyse; "Son tarama" etiketi + tarama hatası uyarısı; cron/"Şimdi tara"/sayfa tarama zamanını 0172 tablosuna yazar; tablo yoksa eski davranış. Adım 2: 0173 `students(school_id)`, `(class_id)` (if not exists). Yamalar: `FAZ1_ADIM1_TAKIP_TARAMA.patch`, `FAZ1_ADIM2_STUDENTS_INDEKS.patch` |
 | Kontroller (Claude, 23.10) | Birleşik halde vitest 71 dosya / 774 test geçti, `tsc --noEmit` temiz, eslint temiz. Yerel `next build` ortam sorunuyla (junction + Turbopack) çalışmadı; gerçek build Vercel'de başarılı (READY). Canlı: 0171/0172 tabloları RLS açık, politikasız (servis anahtarıyla erişim, istenen); `students_class_id_idx` doğrulandı. Son 1 saat runtime hatası: yalnız eski bir `admin_audit_log` RLS ihlali (bu işle ilgisiz) |
 | Engel / açık soru | `max_rows` canlıda ölçülmedi (PostgREST ayarı; SQL ile okunamadı, Supabase API ayarlarından bakılmalı veya 1000+ satırlık bir sorguyla sınanmalı). Rehber hesabıyla ekranda "Son tarama" etiketi doğrulanmadı |
-| Sonraki adım | (1) `max_rows` ölçümü. (2) `ogrenci_aktivite_ozeti` RPC (0174, görev penceresi 30 gün, `security definer` ise kurum kontrolü fonksiyon içinde) → `ogrenci_analiz_ozeti` RPC (0175) + varsayılan "Aylık". (3) `schema.sql` canlıdan yeniden üretimi. (4) Bağımsız not: `admin_audit_log` RLS hatası incelenecek |
+| Sonraki adım | (1) 0174'ü Claude kontrol etsin, canlıya uygulasın, `faz1-adim3-0174` main'e alınsın. (2) `ogrenci_aktivite_ozeti` RPC'yi `rehber-takip-verisi.ts`'teki JS toplama mantığının yerine kullan (henüz wire edilmedi — bu oturumun kapsamı yalnız migration + saf TS yardımcıları + testti). (3) `max_rows` ölçümü. (4) `ogrenci_analiz_ozeti` RPC (0175) + varsayılan "Aylık". (5) `schema.sql` canlıdan yeniden üretimi. (6) Bağımsız not: `admin_audit_log` RLS hatası incelenecek |
 
 ### M2 — Rehber Paneli: Risk ve Öncelik Sistemi
 | Alan | Kayıt |
@@ -135,6 +135,7 @@ Alan açıklamaları: **Çalışan AI** = modülde son işi yapan araç/oturum �
 | 23 Ekim 2026 | ChatLLM (Abacus AI Agent) | M1 | Başlangıç protokolü (GitHub = `ce4966d0`, fark yok); Adım 0 ölçüm SQL'leri; Adım 1 (takip açılış taraması koşullu + son tarama etiketi, 0172) ve Adım 2 (0173 indeksler) yazıldı | 774/774 test, tsc, eslint temiz; build/ekran/canlı DB **yapılmadı**; **commit yok** (onay bekleniyor) | `ce4966d0` |
 | 23 Ekim 2026 | ChatLLM (Abacus AI Agent) | M1 | Kullanıcı talimatıyla Adım 1 → `faz1-adim1` (`e76dc7a3`), Adım 2 → `faz1-adim2` (`ebfa412b`) ayrı commit; push denendi, 403 ile reddedildi | 774/774 test, tsc temiz, `next build` başarılı (sahte env); migration canlıya **uygulanmadı**; main'e dokunulmadı | `ce4966d0` (GitHub) |
 | 23 Ekim 2026 | Claude Code (Claude PC) | M1 | Patch'ler ayrı worktree'lerde incelendi ve uygulandı; canlı DB salt okunur kontrol (0171 canlıda **yoktu**, `school_id` indeksi gereksiz bulundu); 0171, 0172, 0173 (yalnız `class_id`) canlıya uygulandı; iki dal `main`'e birleştirildi, push, Vercel READY | tsc, 774/774 test, eslint, Vercel build; ekranda deneme **yapılmadı**; `max_rows` ölçülmedi | `85936a91` |
+| 23 Ekim 2026 | ChatLLM (Abacus AI Agent) | M1 | Adım 3: `origin/main` (`680bf5cd`) üzerinden `faz1-adim3-0174` dalı; 0172/0173 ve ilgili tabloları (`gorev_atamalari`, `gorevler`, `konu_calismalar`, `soru_cozumleri`, `denemeler`) okuyup `ogrenci_aktivite_ozeti` RPC'si (0174) yazıldı — öğrenci başına son hareket (pencereszsiz) + son 30 günün görev açık/toplam sayısı, `security definer`, yalnız servis anahtarıyla; `src/lib/ogrenci-aktivite.ts` (pencere sabiti + RPC satırı eşleştirme) ve testleri eklendi. RPC henüz `rehber-takip-verisi.ts`'e bağlanmadı | vitest 779/779 (72 dosya), `tsc --noEmit` temiz, eslint temiz; canlı DB'ye uygulanmadı, ekranda deneme yapılmadı, push edilmedi | `680bf5cd` (main, değişmedi) |
 
 ---
 
@@ -144,15 +145,15 @@ Alan açıklamaları: **Çalışan AI** = modülde son işi yapan araç/oturum �
 
 | Alan | Kayıt |
 | --- | --- |
-| Tamamlanmamış iş | Faz 1 Adım 1–2 **tamamlandı ve canlıda**. Açık: `max_rows` ölçümü, ekranda doğrulama, RPC adımları (0174+), `schema.sql` yeniden üretimi |
-| Dallar / commit'ler | Adım 1 → `b2b0d06b` (birleşim; asıl commit `57d9f9b`), Adım 2 → `85936a91` (birleşim; asıl commitler `35a30b9` + `f24f391`). `main` = `85936a91` + bu dosyanın commit'i. `faz1-adim1`, `faz1-adim2` dalları yalnız Claude PC'sinde, push edilmedi |
-| Aktif dosyalar (başka AI dokunmasın) | Şu an kilitli iş yok. RPC işi başlarsa: `src/lib/analiz.ts`, `rehber-takip-verisi.ts`, `rehber-kapsam-listesi.ts`, `sinif-analizi-verisi.ts` |
-| Migration durumu | 0171, 0172, 0173 **canlıda uygulandı** (23.10.2026, Supabase `sg-educoach`). Bir sonraki numara **0174** |
-| Doğrulama | vitest 774/774, `tsc` temiz, eslint temiz, Vercel build READY. Ekranda deneme **yapılmadı** |
+| Tamamlanmamış iş | Faz 1 Adım 1–2 **tamamlandı ve canlıda**. Adım 3 (0174 RPC) yazıldı/test edildi ama **canlıya uygulanmadı, main'e alınmadı, push edilmedi**; `rehber-takip-verisi.ts`'e bağlanmadı. Açık: `max_rows` ölçümü, ekranda doğrulama, `schema.sql` yeniden üretimi |
+| Dallar / commit'ler | Adım 1 → `b2b0d06b` (birleşim; asıl commit `57d9f9b`), Adım 2 → `85936a91` (birleşim; asıl commitler `35a30b9` + `f24f391`). `main` = `680bf5cd` (bu dosyanın 23.10 commit'i). Adım 3 → dal `faz1-adim3-0174` (origin/main `680bf5cd` üzerinden), commit'ler `a12e967a` (migration 0174) ve `5c46a3fe` (TS yardımcıları + testler) — yalnız yerelde, push edilmedi |
+| Aktif dosyalar (başka AI dokunmasın) | Şu an kilitli iş yok. RPC işi devam ederse: `src/lib/analiz.ts`, `rehber-takip-verisi.ts`, `rehber-kapsam-listesi.ts`, `sinif-analizi-verisi.ts`, `src/lib/ogrenci-aktivite.ts` |
+| Migration durumu | 0171, 0172, 0173 **canlıda uygulandı** (23.10.2026, Supabase `sg-educoach`). 0174 (`ogrenci_aktivite_ozeti` RPC) **yalnız dalda**, canlıya uygulanmadı. Bir sonraki numara **0175** |
+| Doğrulama (0174) | vitest 779/779 (72 dosya), `tsc --noEmit` temiz, eslint temiz. Canlı DB'ye uygulanmadı, ekranda/entegrasyonda deneme **yapılmadı** |
 | Claude PC'sinde commit edilmemiş dosyalar | `.claude/launch.json`, `src/app/signup/SignupForm.tsx`, `src/app/signup/dershane-actions.ts` (bu işle ilgisiz, dokunulmadı, push edilmesin) |
 | Diğer bilgisayarda aktif iş | Bilinmiyor |
 | Kullanıcı kararı bekleyenler | Rehber hesabıyla ekranda doğrulama; `max_rows` ölçümü için Supabase API ayarı bakışı |
-| Bir sonraki oturum ilk işi | Bölüm 0 protokolü → `max_rows` ölçümü → Adım 3 (RPC 0174) → `schema.sql` yeniden üretimi |
+| Bir sonraki oturum ilk işi | Bölüm 0 protokolü → Claude 0174'ü kontrol edip canlıya uygulasın, `faz1-adim3-0174`'ü main'e alsın → RPC'yi `rehber-takip-verisi.ts`'e bağla → `max_rows` ölçümü → Adım 4 (RPC 0175) → `schema.sql` yeniden üretimi |
 
 ## 5. KISA YÖNLENDİRME (yeni oturuma yapıştırılacak)
 
