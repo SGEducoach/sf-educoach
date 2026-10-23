@@ -12,6 +12,8 @@ import { BG0, BG1, BG1_ALT, BLUSH, BLUSH_BG, BORDER, BORDER_STRONG, LILAC, LILAC
 import { TAKIP_DURUMU_ETIKET, TAKIP_TURU_ETIKET, type DersDegisimi, type TakipDurumu, type TakipTuru } from "@/lib/rehber-takip";
 import type { TakipBildirimi } from "@/lib/rehber-takip-verisi";
 import { takipBildirimiDurumGuncelle, takipBildirimleriniTara } from "@/app/dashboard/rehber-takip-actions";
+import { sinifTakipDurumGuncelle } from "@/app/dashboard/sinif-takip-actions";
+import { SINIF_TAKIP_TURLERI } from "@/lib/sinif-takip";
 import { sinifSiraKarsilastir } from "@/lib/types";
 
 const TUR_GORUNUM: Record<TakipTuru, { Ikon: typeof BellRing; renk: string; zemin: string }> = {
@@ -21,7 +23,7 @@ const TUR_GORUNUM: Record<TakipTuru, { Ikon: typeof BellRing; renk: string; zemi
   sessizlik: { Ikon: Hourglass, renk: SKY, zemin: SKY_BG },
   gorev_birikmesi: { Ikon: ListTodo, renk: LILAC, zemin: LILAC_BG },
 };
-const TURLER = Object.keys(TAKIP_TURU_ETIKET) as TakipTuru[];
+const TUM_TURLER = Object.keys(TAKIP_TURU_ETIKET) as TakipTuru[];
 const DURUM_FILTRELERI: (TakipDurumu | "tumu")[] = ["yeni", "goruldu", "ele_alindi", "tumu"];
 const girdi = { background: BG0, color: TEXT, border: `2px solid ${BORDER_STRONG}` };
 const tarihYaz = (t: string) => new Date(`${t}T12:00:00Z`).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" });
@@ -46,10 +48,13 @@ const taramaZamaniYaz = (iso: string) => new Date(iso).toLocaleString("tr-TR", {
   timeZone: "Europe/Istanbul", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit",
 });
 
-export function RehberTakipBildirimleri({ bildirimler, hazir, ogrenciBaglantisi, duzeySiz, sonTarama = null, taramaHatasi = false }: {
+export function RehberTakipBildirimleri({ bildirimler, hazir, ogrenciBaglantisi, duzeySiz, sonTarama = null, taramaHatasi = false, sinifOgretmeni = false }: {
   bildirimler: TakipBildirimi[]; hazir: boolean; ogrenciBaglantisi: "analiz" | "takip"; duzeySiz: boolean;
   sonTarama?: string | null; taramaHatasi?: boolean;
+  /** Sınıf öğretmeni görünümü (migration 0176): kendi sınıfı, 3 tür, kişiye özel durum/not. */
+  sinifOgretmeni?: boolean;
 }) {
+  const TURLER = sinifOgretmeni ? TUM_TURLER.filter((t) => (SINIF_TAKIP_TURLERI as readonly string[]).includes(t)) : TUM_TURLER;
   const router = useRouter();
   const [durum, setDurum] = useState<TakipDurumu | "tumu">("yeni");
   const [tur, setTur] = useState<TakipTuru | "">("");
@@ -81,7 +86,7 @@ export function RehberTakipBildirimleri({ bildirimler, hazir, ogrenciBaglantisi,
   function guncelle(idler: string[], yeniDurum: TakipDurumu, not?: string) {
     setMesaj(null);
     startTransition(async () => {
-      const r = await takipBildirimiDurumGuncelle(idler, yeniDurum, not);
+      const r = sinifOgretmeni ? await sinifTakipDurumGuncelle(idler, yeniDurum, not) : await takipBildirimiDurumGuncelle(idler, yeniDurum, not);
       if (r.error) { setMesaj({ hata: true, metin: r.error }); return; }
       setNotAcik(null); setNotMetni("");
       router.refresh();
@@ -108,7 +113,9 @@ export function RehberTakipBildirimleri({ bildirimler, hazir, ogrenciBaglantisi,
         <div className="min-w-0 flex-1">
           <h1 className="text-lg font-extrabold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Takip Bildirimleri</h1>
           <p className="text-xs" style={{ color: TEXT_MUTED }}>
-            Ani net düşüşü ve yükselişi, ders bazında düşüş, 14 gün ve üzeri sessizlik ve biriken görevler burada toplanır. Bu bildirimler mesaj kutusuna gitmez; her sabah otomatik taranır.
+            {sinifOgretmeni
+              ? "Sınıfınızdaki öğrenciler için ani net düşüşü, ders bazında düşüş ve 14 gün ve üzeri sessizlik burada toplanır. \"Görüldü\" ve notlarınız yalnız size aittir; rehberlik servisinin kayıtlarını ve notlarını etkilemez, görmezsiniz. Her sabah otomatik taranır."
+              : "Ani net düşüşü ve yükselişi, ders bazında düşüş, 14 gün ve üzeri sessizlik ve biriken görevler burada toplanır. Bu bildirimler mesaj kutusuna gitmez; her sabah otomatik taranır."}
           </p>
           {hazir && !duzeySiz && (
             <p className="mt-1 text-[11px] font-semibold" style={{ color: taramaHatasi ? BLUSH : TEXT_MUTED }}>
@@ -126,7 +133,7 @@ export function RehberTakipBildirimleri({ bildirimler, hazir, ogrenciBaglantisi,
       </div>
 
       {!hazir ? (
-        <p className="rounded-3xl p-6 text-center text-sm" style={{ background: BG1, border: `2px solid ${BORDER}`, color: BLUSH }}>Takip bildirimleri için veritabanı güncellemesi (migration 0171) henüz uygulanmamış.</p>
+        <p className="rounded-3xl p-6 text-center text-sm" style={{ background: BG1, border: `2px solid ${BORDER}`, color: BLUSH }}>{sinifOgretmeni ? "Sınıf takip bildirimleri için veritabanı güncellemesi (migration 0176) henüz uygulanmamış." : "Takip bildirimleri için veritabanı güncellemesi (migration 0171) henüz uygulanmamış."}</p>
       ) : duzeySiz ? (
         <p className="rounded-3xl p-6 text-center text-sm" style={{ background: BG1, border: `2px solid ${BORDER}`, color: TEXT_MUTED }}>Henüz sorumlu olduğunuz sınıf düzeyi atanmadı.</p>
       ) : (<>
@@ -195,7 +202,7 @@ export function RehberTakipBildirimleri({ bildirimler, hazir, ogrenciBaglantisi,
                       <Link href={ogrenciHref(b)} className="text-sm font-bold hover:underline" style={{ color: TEXT }}>{b.ogrenciAd}</Link>
                       <span className="text-xs" style={{ color: TEXT_MUTED }}>{b.sinifAdi} · {tarihYaz(b.olayTarihi)}</span>
                       <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: zemin, color: renk }}>{TAKIP_TURU_ETIKET[b.tur]}</span>
-                      {b.durum !== "yeni" && <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: BG1_ALT, color: TEXT_MUTED }}>{TAKIP_DURUMU_ETIKET[b.durum]}{b.kapatanAdi ? ` · ${b.kapatanAdi}` : ""}</span>}
+                      {b.durum !== "yeni" && <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: BG1_ALT, color: TEXT_MUTED }}>{TAKIP_DURUMU_ETIKET[b.durum]}{!sinifOgretmeni && b.kapatanAdi ? ` · ${b.kapatanAdi}` : ""}</span>}
                     </div>
                     <p className="mt-0.5 text-[13px]" style={{ color: TEXT }}>{b.baslik}</p>
                     <DersCipleri dersler={dersler} />

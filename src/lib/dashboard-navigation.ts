@@ -171,6 +171,10 @@ const OGRETMEN_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "gorevler", href: "/dashboard/gorevler", etiket: "Ödev Ver", ikon: "gorev" },
   { bolum: "onaylar", href: "/dashboard/onaylar", etiket: "Bekleyen Onaylar", ikon: "onay" },
   { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Konu Durumu", ikon: "ai" },
+  // Sınıf öğretmeni kendi sınıfının takip bildirimlerini görür (migration 0176);
+  // branş öğretmeninde menüde durur, içeride "sınıf öğretmeni içindir" der
+  // (Sınıf Analizi ile aynı desen: kapsam veriye bağlı, menü role bağlı).
+  { bolum: "takip-bildirimleri", href: "/dashboard/takip-bildirimleri", etiket: "Takip Bildirimleri", ikon: "bildirim" },
   { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Duyurular", ikon: "duyuru" },
   { bolum: "talepler", href: "/dashboard/talepler", etiket: "Veli Talepleri", ikon: "talep" },
   { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Pano", ikon: "takvim" },

@@ -10,6 +10,7 @@ import { ogrenciAktiviteOzetleriGetir } from "@/lib/ogrenci-aktivite";
 import { kademeBul } from "@/lib/kademe";
 import { ortaokulSonHareketleriGetir, sonHareketiBirlestir } from "@/lib/ortaokul-aktivite-ekle";
 import { sonTaramaZamani, takipOlaylariniBul, taramaKapsamAnahtari, type TakipDenemesi, type TakipDurumu, type TakipTuru } from "@/lib/rehber-takip";
+import { SINIF_TAKIP_TURLERI, kisiDurumunuUygula, sinifTakipKapsamiVarMi, sinifTaramaAnahtari, type KisiDurumu } from "@/lib/sinif-takip";
 
 // Rehber Takip Bildirimleri'nin veritabanı tarafı (migration 0171).
 // Kapsam: okul rehberi atandığı sınıf düzeyleri (Rehberlik Servisi,
@@ -28,6 +29,11 @@ export interface TakipKapsami {
   // Öğrenci bağlantısı: okul rehberi öğrenci analizine, dershane rehberi ve
   // grup koçu Öğrenci Takibi'ne gider.
   ogrenciBaglantisi: "analiz" | "takip";
+  // SINIF ÖĞRETMENİ kapsamı (migration 0176): yalnız bu sınıfın öğrencileri,
+  // yalnız SINIF_TAKIP_TURLERI; durum/not kişiye özel (takip_ogretmen_durumlari).
+  // Doluysa seviyeler = [sınıfın düzeyi].
+  sinifId?: string;
+  ogretmenId?: string;
 }
 
 export interface TakipBildirimi {
@@ -58,11 +64,14 @@ const tekil = <T,>(v: T | T[] | null | undefined): T | null => (v == null ? null
 export async function takipKapsamiGetir(admin: Istemci, userId: string): Promise<TakipKapsami | null> {
   const [{ data: profil }, { data: ogretmen }, uyelik] = await Promise.all([
     admin.from("profiles").select("role").eq("id", userId).maybeSingle(),
-    admin.from("teachers").select("school_id, brans").eq("id", userId).maybeSingle(),
+    admin.from("teachers").select("school_id, brans, class_id").eq("id", userId).maybeSingle(),
     rehberlikUyeligiGetir(admin, userId),
   ]);
   if (profil?.role !== "ogretmen" || !ogretmen?.school_id) return null;
-  const { data: okul } = await admin.from("schools").select("tur, kademe, grup_kapasitesi").eq("id", ogretmen.school_id).maybeSingle();
+  const [{ data: okul }, { data: sinifSatiri }] = await Promise.all([
+    admin.from("schools").select("tur, kademe, grup_kapasitesi").eq("id", ogretmen.school_id).maybeSingle(),
+    ogretmen.class_id ? admin.from("classes").select("seviye").eq("id", ogretmen.class_id).eq("school_id", ogretmen.school_id).maybeSingle() : Promise.resolve({ data: null }),
+  ]);
   const kademe: NetKademesi = okul?.kademe === "ortaokul" ? "ortaokul" : "lise";
   if (uyelik && uyelik.schoolId === ogretmen.school_id) {
     return { schoolId: ogretmen.school_id, seviyeler: uyelik.sinifDuzeyleri, kademe, ogrenciBaglantisi: "analiz" };
@@ -70,6 +79,11 @@ export async function takipKapsamiGetir(admin: Istemci, userId: string): Promise
   const grupMu = okul?.grup_kapasitesi !== null && okul?.grup_kapasitesi !== undefined;
   if (ogretmen.brans === REHBER_BRANSI && (okul?.tur === "dershane" || grupMu)) {
     return { schoolId: ogretmen.school_id, seviyeler: null, kademe, ogrenciBaglantisi: "takip" };
+  }
+  // Sınıf öğretmeni: rehber/koç değilse kendi sınıfı için (ilkokul ve grup hariç).
+  const sinifSeviyesi = (sinifSatiri as { seviye: string } | null)?.seviye ?? null;
+  if (sinifTakipKapsamiVarMi({ sinifId: ogretmen.class_id ?? null, sinifSeviyesi, grupMu })) {
+    return { schoolId: ogretmen.school_id, seviyeler: [sinifSeviyesi!], kademe, ogrenciBaglantisi: "analiz", sinifId: ogretmen.class_id!, ogretmenId: userId };
   }
   return null;
 }
@@ -91,6 +105,7 @@ async function kapsamOgrencileri(admin: Istemci, k: TakipKapsami) {
     .select(`id, profiles!students_id_fkey(ad), classes${k.seviyeler ? "!inner" : ""}(id, seviye, sube)`)
     .eq("school_id", k.schoolId);
   if (k.seviyeler) sorgu = sorgu.in("classes.seviye", k.seviyeler);
+  if (k.sinifId) sorgu = sorgu.eq("class_id", k.sinifId);
   const { data } = await sorgu;
   return ((data ?? []) as unknown as OgrenciRow[]).map((o) => {
     const s = tekil(o.classes);
@@ -105,14 +120,21 @@ export async function takipSonTaramaGetir(admin: Istemci, k: TakipKapsami): Prom
   const { data, error } = await admin.from("rehber_takip_taramalari")
     .select("kapsam, son_tarama_at").eq("school_id", k.schoolId);
   if (error || !data) return null;
-  return sonTaramaZamani(data as { kapsam: string; son_tarama_at: string }[], k.seviyeler);
+  const kayitlar = data as { kapsam: string; son_tarama_at: string }[];
+  const genel = sonTaramaZamani(kayitlar, k.seviyeler);
+  if (!k.sinifId) return genel;
+  // Sınıf öğretmeni: düzeyini kapsayan rehber taraması ya da sınıfın kendi taraması.
+  const kendi = kayitlar.find((x) => x.kapsam === sinifTaramaAnahtari(k.sinifId!))?.son_tarama_at ?? null;
+  if (!genel) return kendi;
+  if (!kendi) return genel;
+  return Date.parse(kendi) > Date.parse(genel) ? kendi : genel;
 }
 
 async function taramaKaydet(admin: Istemci, k: TakipKapsami, eklenen: number) {
   // Kayıt hatası taramayı bozmasın (0172 uygulanmamış olabilir).
   if (k.seviyeler && k.seviyeler.length === 0) return;
   await admin.from("rehber_takip_taramalari").upsert(
-    { school_id: k.schoolId, kapsam: taramaKapsamAnahtari(k.seviyeler), son_tarama_at: new Date().toISOString(), eklenen },
+    { school_id: k.schoolId, kapsam: k.sinifId ? sinifTaramaAnahtari(k.sinifId) : taramaKapsamAnahtari(k.seviyeler), son_tarama_at: new Date().toISOString(), eklenen },
     { onConflict: "school_id,kapsam" },
   ).then(() => undefined, () => undefined);
 }
@@ -170,6 +192,10 @@ async function olaylariHesaplaKaydet(admin: Istemci, k: TakipKapsami): Promise<n
 
 export async function yeniTakipSayisi(admin: Istemci, k: TakipKapsami): Promise<number> {
   if (k.seviyeler && k.seviyeler.length === 0) return 0;
+  if (k.sinifId) {
+    const { bildirimler, hazir } = await takipBildirimleriniGetir(admin, k);
+    return hazir ? bildirimler.filter((b) => b.durum === "yeni").length : 0;
+  }
   let sorgu = admin.from("rehber_takip_bildirimleri").select("id", { count: "exact", head: true })
     .eq("school_id", k.schoolId).eq("durum", "yeni");
   if (k.seviyeler) sorgu = sorgu.in("sinif_seviyesi", k.seviyeler);
@@ -183,6 +209,7 @@ export async function takipBildirimleriniGetir(admin: Istemci, k: TakipKapsami):
     .select("id, student_id, tur, baslik, ayrinti, olay_tarihi, durum, not_metni, kapatilma_at, kapatan:profiles!rehber_takip_bildirimleri_kapatan_id_fkey(ad), students!inner(classes(id, seviye, sube), profiles!students_id_fkey(ad))")
     .eq("school_id", k.schoolId);
   if (k.seviyeler) sorgu = sorgu.in("sinif_seviyesi", k.seviyeler);
+  if (k.sinifId) sorgu = sorgu.eq("students.class_id", k.sinifId).in("tur", [...SINIF_TAKIP_TURLERI]);
   const { data, error } = await sorgu.order("olay_tarihi", { ascending: false }).order("created_at", { ascending: false }).limit(600);
   // Tablo yoksa (migration 0171 uygulanmamış) ekran uyarı gösterir.
   if (error) return { bildirimler: [], hazir: false };
@@ -191,9 +218,22 @@ export async function takipBildirimleriniGetir(admin: Istemci, k: TakipKapsami):
     not_metni: string | null; kapatilma_at: string | null; kapatan: { ad: string } | { ad: string }[] | null;
     students: { classes: OgrenciRow["classes"]; profiles: OgrenciRow["profiles"] } | { classes: OgrenciRow["classes"]; profiles: OgrenciRow["profiles"] }[] | null;
   };
-  return {
-    hazir: true,
-    bildirimler: ((data ?? []) as unknown as Row[]).map((r) => {
+  const hamListe = ((data ?? []) as unknown as Row[]);
+  // Sınıf öğretmeni: kişiye özel durum/not (0176). Tablo yoksa ekran "hazır değil" der.
+  let kisiDurumlari: Map<string, KisiDurumu> | null = null;
+  if (k.sinifId && k.ogretmenId) {
+    kisiDurumlari = new Map();
+    const idler = hamListe.map((r) => r.id);
+    for (const parca of parcalara(idler)) {
+      const { data: d, error: e } = await admin.from("takip_ogretmen_durumlari").select("bildirim_id, durum, not_metni")
+        .eq("teacher_id", k.ogretmenId).in("bildirim_id", parca);
+      if (e) return { bildirimler: [], hazir: false };
+      for (const x of (d ?? []) as { bildirim_id: string; durum: "goruldu" | "ele_alindi"; not_metni: string | null }[]) {
+        kisiDurumlari.set(x.bildirim_id, { durum: x.durum, notMetni: x.not_metni });
+      }
+    }
+  }
+  const sonuc: TakipBildirimi[] = hamListe.map((r) => {
       const ogrenci = tekil(r.students);
       const sinif = tekil(ogrenci?.classes);
       return {
@@ -202,6 +242,6 @@ export async function takipBildirimleriniGetir(admin: Istemci, k: TakipKapsami):
         tur: r.tur, baslik: r.baslik, ayrinti: r.ayrinti ?? {}, olayTarihi: r.olay_tarihi, durum: r.durum,
         notMetni: r.not_metni, kapatanAdi: tekil(r.kapatan)?.ad ?? null, kapatilmaAt: r.kapatilma_at,
       };
-    }),
-  };
+  });
+  return { hazir: true, bildirimler: kisiDurumlari ? kisiDurumunuUygula(sonuc, kisiDurumlari) : sonuc };
 }

@@ -19,6 +19,8 @@ export async function takipBildirimiDurumGuncelle(idler: string[], durum: TakipD
   const not = notMetni?.trim().slice(0, 1000) || null;
 
   const { admin, userId, kapsam } = oturum;
+  // Sınıf öğretmeninin durumu kişiye özeldir (sinif-takip-actions.ts); rehberlerin ortak kaydına yazamaz.
+  if (kapsam.sinifId) return { error: "Bu işlem rehberlik servisine aittir.", guncellenen: 0 };
   if (kapsam.seviyeler && kapsam.seviyeler.length === 0) return { error: "Henüz sorumlu olduğunuz sınıf düzeyi atanmadı.", guncellenen: 0 };
   let sorgu = admin.from("rehber_takip_bildirimleri")
     .update({

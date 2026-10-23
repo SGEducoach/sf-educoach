@@ -431,12 +431,16 @@ describe("ortaokul kurumunda rol menüleri", () => {
   });
 
   // Rehber Takip Bildirimleri (20.10.2026): bütün rehberlik rollerinde.
-  test("takip bildirimleri okul rehberi, dershane rehberi ve grup koçunda var; öğretmende yok", () => {
+  // 23.10.2026 (migration 0176): sınıf öğretmeni kendi sınıfının takip bildirimlerini görür; menüde durur,
+  // sınıfı olmayan branş öğretmenine içeride "sınıf öğretmeni içindir" denir. Müdürde yok.
+  test("takip bildirimleri rehberlik rollerinde ve öğretmen menüsünde var; müdürde yok", () => {
     const okul = dashboardMenusu("ogretmen", "okul", "Matematik", false, "lise", true).map((o) => o.bolum);
     expect(okul.indexOf("takip-bildirimleri")).toBe(okul.indexOf("kapsamim") + 1);
     expect(dashboardMenusu("ogretmen", "dershane", REHBER_BRANSI, false, null, false).map((o) => o.bolum)).toContain("takip-bildirimleri");
     expect(dashboardMenusu("ogretmen", "dershane", REHBER_BRANSI, true, null, false).map((o) => o.bolum)).toContain("takip-bildirimleri");
-    expect(dashboardMenusu("ogretmen", "okul", "Matematik", false, "lise", false).map((o) => o.bolum)).not.toContain("takip-bildirimleri");
+    expect(dashboardMenusu("ogretmen", "okul", "Matematik", false, "lise", false).map((o) => o.bolum)).toContain("takip-bildirimleri");
+    // İlkokul sınıf öğretmeninin menüsü ayrı ve takip bildirimi içermez.
+    expect(dashboardMenusu("ogretmen", "okul", "Sınıf Öğretmeni", false, "ortaokul", false).map((o) => o.bolum)).not.toContain("takip-bildirimleri");
     expect(dashboardMenusu("mudur", "okul", undefined, false, "lise").map((o) => o.bolum)).not.toContain("takip-bildirimleri");
   });
 

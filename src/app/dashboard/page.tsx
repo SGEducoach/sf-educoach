@@ -1047,7 +1047,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
     if (!kapsam) {
       return (
         <div className="sfec-fade rounded-3xl p-6 text-center" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-          <p style={{ color: TEXT_MUTED }} className="text-sm">Bu bölüm yalnız rehberlik servisine açıktır.</p>
+          <p style={{ color: TEXT_MUTED }} className="text-sm">Bu bölüm rehberlik servisine ve sınıf öğretmenlerine açıktır (sınıfı olmayan branş öğretmeni ve ilkokul sınıf öğretmeni görmez).</p>
         </div>
       );
     }
@@ -1060,7 +1060,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
     }
     const { bildirimler, hazir } = await takipBildirimleriniGetir(admin, kapsam);
     return <RehberTakipBildirimleri bildirimler={bildirimler} hazir={hazir} ogrenciBaglantisi={kapsam.ogrenciBaglantisi}
-      duzeySiz={duzeySiz} sonTarama={sonTarama} taramaHatasi={taramaHatasi} />;
+      duzeySiz={duzeySiz} sonTarama={sonTarama} taramaHatasi={taramaHatasi} sinifOgretmeni={!!kapsam.sinifId} />;
   }
 
   if (aktifBolum === "ogrenci-takibi") {
