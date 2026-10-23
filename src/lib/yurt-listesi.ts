@@ -77,9 +77,9 @@ export function yurtBilgiSatirlari(tur: YurtListeTuru, d: Record<string, string>
 
 export const grupEtiketi = (c: OgrenciCinsiyeti) => (c === "kiz" ? "Kız Öğrenciler" : "Erkek Öğrenciler");
 
-export function yurtKartImzasi(tur: YurtListeTuru, gonderen: string, ekOgretmen?: string): string {
+// Bütün yurt kartlarında aynı nöbetçi imzası kullanılır.
+export function yurtKartImzasi(gonderen: string, ekOgretmen?: string): string {
   const birinci = gonderen.trim().replace(/\s+/g, " ") || "Nöbetçi öğretmen";
-  if (tur !== "aksam-yoklamasi") return `Hazırlayan: ${birinci}`;
   const ikinci = ekOgretmen?.trim().replace(/\s+/g, " ");
   return `Nöbetçiler: ${[birinci, ikinci].filter(Boolean).join(", ")}`;
 }
