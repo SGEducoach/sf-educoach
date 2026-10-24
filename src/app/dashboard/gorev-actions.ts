@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { bekleyenGorevAtamalariniYaz, kayitsizListeIdleri } from "@/lib/on-kayitli-veri";
 import type { GorevTuru } from "@/lib/types";
 import { saatiDakikayaCevir } from "@/lib/saat-araligi";
 import { programaCakisiyorMu } from "@/lib/program-cakisma";
@@ -22,6 +24,13 @@ async function requireUser() {
 export async function gorevVer(input: {
   studentIds: string[];
   classIds?: string[];
+  /**
+   * Sisteme üye olmamış (okul listesinde hesapsız) öğrenciler — liste kimlikleri.
+   * Ödev 10 gün bekler; öğrenci bu sürede üye olursa ödevlerine eklenir
+   * (migration 0179). `classIds` ile toplu verilirken sınıfın hesapsızları
+   * sunucuda kendiliğinden eklenir.
+   */
+  listeOgrenciIds?: string[];
   tur: GorevTuru;
   ders: string;
   konu?: string;
@@ -67,7 +76,23 @@ export async function gorevVer(input: {
     studentIds = [...new Set((sinifOgrencileri ?? []).map((ogrenci) => ogrenci.id))];
   }
 
-  if (studentIds.length === 0) return { error: classIds.length > 0 ? "Seçilen sınıflarda öğrenci bulunamadı." : "En az bir öğrenci seçin." };
+  // Hesapsız öğrenciler: toplu verilen sınıfların hesapsızları kendiliğinden,
+  // tek tek seçilenler ise öğretmenin o sınıfa erişimi doğrulanarak eklenir.
+  let listeIdleri: string[] = classIds.length > 0 ? await kayitsizListeIdleri(supabase, { sinifIdleri: classIds }) : [];
+  const istenenListe = [...new Set(input.listeOgrenciIds ?? [])];
+  if (istenenListe.length > 0) {
+    const [{ data: ben }, { data: atamalar }] = await Promise.all([
+      supabase.from("teachers").select("class_id").eq("id", user.id).maybeSingle(),
+      supabase.from("ogretmen_dersleri").select("class_id").eq("teacher_id", user.id),
+    ]);
+    const yetkiliSiniflar = new Set([ben?.class_id, ...(atamalar ?? []).map((a) => a.class_id)].filter((id): id is string => !!id));
+    const { data: listeSatirlari } = await supabase.from("okul_ogrenci_listesi").select("id, class_id").in("id", istenenListe).is("student_id", null);
+    const uygunlar = (listeSatirlari ?? []).filter((s) => yetkiliSiniflar.has(s.class_id));
+    if (uygunlar.length !== istenenListe.length) return { error: "Seçilen öğrencilerden bazıları size ait değil ya da bu arada sisteme kayıt oldu; listeyi yenileyin." };
+    listeIdleri = [...new Set([...listeIdleri, ...uygunlar.map((s) => s.id)])];
+  }
+
+  if (studentIds.length === 0 && listeIdleri.length === 0) return { error: classIds.length > 0 ? "Seçilen sınıflarda öğrenci bulunamadı." : "En az bir öğrenci seçin." };
 
   const { data: gorev, error } = await supabase.from("gorevler").insert({
     olusturan_ogretmen_id: user.id,
@@ -84,20 +109,27 @@ export async function gorevVer(input: {
   }).select("id").single();
   if (error || !gorev) return { error: error?.message ?? "Görev oluşturulamadı." };
 
-  const atamalar = studentIds.map((studentId) => ({ gorev_id: gorev.id, student_id: studentId }));
-  const { error: atamaError } = await supabase.from("gorev_atamalari").insert(atamalar);
-  if (atamaError) {
-    // Atama başarısızsa (ör. yetkisiz bir öğrenci seçildiyse) yetim görev
-    // kalmasın diye geri alınıyor.
-    await supabase.from("gorevler").delete().eq("id", gorev.id);
-    if (atamaError.message?.includes("row-level security")) {
-      return { error: "Seçilen öğrencilerden bazıları size ait değil." };
+  if (studentIds.length > 0) {
+    const atamalar = studentIds.map((studentId) => ({ gorev_id: gorev.id, student_id: studentId }));
+    const { error: atamaError } = await supabase.from("gorev_atamalari").insert(atamalar);
+    if (atamaError) {
+      // Atama başarısızsa (ör. yetkisiz bir öğrenci seçildiyse) yetim görev
+      // kalmasın diye geri alınıyor.
+      await supabase.from("gorevler").delete().eq("id", gorev.id);
+      if (atamaError.message?.includes("row-level security")) {
+        return { error: "Seçilen öğrencilerden bazıları size ait değil." };
+      }
+      return { error: atamaError.message };
     }
-    return { error: atamaError.message };
   }
 
+  // Hesapsız öğrenciler: ödev 10 gün bekler, üyelikte atamaya dönüşür.
+  const bekleyenSayisi = listeIdleri.length > 0
+    ? await bekleyenGorevAtamalariniYaz(createAdminClient(), gorev.id, listeIdleri)
+    : 0;
+
   revalidatePath("/dashboard");
-  return { error: null, ogrenciSayisi: studentIds.length };
+  return { error: null, ogrenciSayisi: studentIds.length, bekleyenSayisi };
 }
 
 // Görevi yalnız oluşturan öğretmen silebilir. Atamalar görevle birlikte

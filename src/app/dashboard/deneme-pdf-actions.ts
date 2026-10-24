@@ -27,6 +27,8 @@ import { gecerliDersler } from "@/lib/deneme-dersleri";
 import { tgListesiMi, tgListesiniHazirla } from "@/lib/deneme-tg-liste";
 import { lgsOkulListesiCoz } from "@/lib/lgs-okul-listesi";
 import { pdfOgeleriniCikar } from "@/lib/pdf-oge";
+import { numarayaGoreListeBaglantisi, type ListeAdayi } from "@/lib/on-kayitli";
+import { listeAdaylariniGetir } from "@/lib/on-kayitli-veri";
 
 interface PdfOgrenciSonucu {
   ad_soyad: string;
@@ -249,6 +251,10 @@ async function sonuclariEslestirVeKaydet(params: {
   // Bu yüklemede sonucu YAZILAN öğrenciler — adaş korumasının dayanağı.
   const buYuklemedeYazilanlar = new Set<string>();
 
+  // Okul listesi bir kez, ilk gereken satırda yüklenir (dershanede boş döner).
+  let listeAdaylariOnbellek: ListeAdayi[] | null = null;
+  const listeAdaylari = async () => (listeAdaylariOnbellek ??= await listeAdaylariniGetir(admin, schoolId));
+
   async function eslesmeKuyrugunaYaz(satir: PdfOgrenciSonucu): Promise<boolean> {
     // "Aynı satır mı" kararı ada DEĞİL ad + PDF öğrenci numarasına bakıyor
     // (migration 0130). Yalnız ada bakılırsa aynı denemede iki ayrı adaşın
@@ -283,6 +289,13 @@ async function sonuclariEslestirVeKaydet(params: {
       return !error;
     }
 
+    // Ön kayıtlı (hesapsız) öğrenci: numara + ad benzerliği + sınıf seviyesi
+    // birlikte uyuyorsa satır okul listesindeki öğrenciye bağlanır (migration
+    // 0179/0180); şüpheli eşleşmeler yönetici onayı bekler, bağlanmaz.
+    const listeBaglantisi = numarayaGoreListeBaglantisi(
+      { adSoyad: satir.ad_soyad, ogrenciNo: satir.ogrenci_no ?? null, sinifSeviyesi },
+      await listeAdaylari(),
+    );
     const ekle = () => admin.from("pdf_deneme_eslesme_bekleyenler").insert({
       school_id: schoolId,
       ad_soyad_ham: satir.ad_soyad,
@@ -292,6 +305,7 @@ async function sonuclariEslestirVeKaydet(params: {
       tarih,
       tur,
       olusturan_mudur_id: userId,
+      liste_ogrenci_id: listeBaglantisi.karar === "guvenli" ? listeBaglantisi.liste.id : null,
       ...seviyeAlani(),
     });
     let { error } = await ekle();

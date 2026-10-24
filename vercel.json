@@ -13,6 +13,10 @@
       "schedule": "30 4 * * *"
     },
     {
+      "path": "/api/cron/bekleyen-temizle",
+      "schedule": "40 21 * * *"
+    },
+    {
       "path": "/api/cron/yurt-nobeti-bildirim?sira=1",
       "schedule": "0 6 * * *"
     },

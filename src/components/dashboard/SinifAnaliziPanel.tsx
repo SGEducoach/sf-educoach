@@ -12,6 +12,7 @@ import {
   type AnalizOgrencisi, type SiraliSatir,
 } from "@/lib/sinif-analizi";
 import type { AnalizOgrencisiHam, DenemeSecenegi, KayipNesilKaydi } from "@/lib/sinif-analizi-verisi";
+import { ON_KAYIT_ETIKETI } from "@/lib/on-kayitli";
 import { BG1, BG1_ALT, BORDER, BORDER_STRONG, BLUSH, BUTTER, MINT, SKY, TEXT, TEXT_MUTED } from "@/lib/theme";
 
 type Gorunum = "net" | "aktif" | "gorev" | "uzaklasan" | "sessiz" | "kayip";
@@ -82,6 +83,21 @@ export function SinifAnaliziPanel({
     () => kayipNesil.filter((k) => secilenSinifAdi === null || k.sinifAdi === secilenSinifAdi),
     [kayipNesil, secilenSinifAdi],
   );
+
+  // Hesapsız (ön kayıtlı) öğrencilerin yüklü denemeleri yalnız deneme
+  // sıralamasına girer; diğer listelere (aktiflik, görev, uzaklaşma, sessizlik)
+  // karıştırılmaz. Seçilen deneme/ortalama ile aynı kural.
+  const hesapsizNetKapsam: AnalizOgrencisi[] = useMemo(() => kayipKapsam
+    .filter((k) => !k.hesabiVarMi && Object.keys(k.denemeNetleri).length > 0)
+    .map((k) => ({
+      ogrenciId: `liste:${k.listeId}`, ad: k.adSoyad, okulNo: k.okulNo, sinifId: null, sinifAdi: k.sinifAdi,
+      kademe: "lise" as const, hesapsiz: true,
+      secilenDenemeNeti: !tur ? null : deneme === ORTALAMA ? netOrtalamasi(turNetleri(k.denemeNetleri, tur)) : k.denemeNetleri[deneme] ?? null,
+      denemeSayisi: tur ? Object.keys(turNetleri(k.denemeNetleri, tur)).length : 0,
+      aktiflik: 0, gorevToplam: 0, gorevTamamlanan: 0, gorevBekleyen: 0, gorevTamamlanmayan: 0,
+      sonDonem: 0, oncekiDonem: 0, girisYapmisMi: false, verisiVarMi: true,
+    })),
+  [kayipKapsam, deneme, tur]);
 
   // Sınıf seçiliyken liste zaten tek sayfa (sınıf başına ~13 kişi);
   // sayfalama yalnızca kurum geneli görünümünde anlamlı.
@@ -181,7 +197,7 @@ export function SinifAnaliziPanel({
 
       {gorunum === "kayip"
         ? <KayipNesil kayitlar={kayipKapsam} sinifSecildiMi={secilenSinifAdi !== null} />
-        : <Liste gorunum={gorunum} kapsam={kapsam} sayfalaniyorMu={sayfalaniyorMu}
+        : <Liste gorunum={gorunum} kapsam={gorunum === "net" ? [...kapsam, ...hesapsizNetKapsam] : kapsam} sayfalaniyorMu={sayfalaniyorMu}
             sayfa={sayfa} setSayfa={setSayfa} denemeVarMi={denemeSecenekleri.length > 0}
             ortalamaMi={deneme === ORTALAMA} />}
     </div>
@@ -271,7 +287,7 @@ function Liste({ gorunum, kapsam, sayfalaniyorMu, sayfa, setSayfa, denemeVarMi, 
     <div className="flex flex-col gap-2">
       {gosterilecek.satirlar.map((s) => {
         const o = (s as SiraliSatir<unknown>).ogrenci;
-        const alt = [o.sinifAdi, o.okulNo ? `No ${o.okulNo}` : null].filter(Boolean).join(" · ");
+        const alt = [o.sinifAdi, o.okulNo ? `No ${o.okulNo}` : null, o.hesapsiz ? ON_KAYIT_ETIKETI : null].filter(Boolean).join(" · ");
         if (hepsi.tip === "net") {
           // Ortalamada deneme SAYISI da gösteriliyor: farklı yayınevi ve
           // farklı sayıda denemenin ortalaması alınıyor, okuyan neye
@@ -335,8 +351,8 @@ function KayipNesil({ kayitlar, sinifSecildiMi }: { kayitlar: KayipNesilKaydi[];
           .sort((a, b) => a.adSoyad.localeCompare(b.adSoyad, "tr"))
           .map((k, i) => (
             <Satir key={`${k.okulNo}-${k.adSoyad}`} sira={i + 1} ad={k.adSoyad}
-              altMetin={[k.sinifAdi, k.okulNo ? `No ${k.okulNo}` : null].filter(Boolean).join(" · ")}
-              sag="hesap yok" sagRenk={BLUSH} />
+              altMetin={[k.sinifAdi, k.okulNo ? `No ${k.okulNo}` : null, ON_KAYIT_ETIKETI].filter(Boolean).join(" · ")}
+              sag={Object.keys(k.denemeNetleri).length > 0 ? `${Object.keys(k.denemeNetleri).length} deneme yüklü` : "hesap yok"} sagRenk={BLUSH} />
           ))}
       </div>
     );

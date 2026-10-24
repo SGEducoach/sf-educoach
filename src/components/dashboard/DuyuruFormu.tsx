@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { History, Megaphone, Send, X } from "lucide-react";
 import { BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
 import type { DuyuruAliciTuru } from "@/lib/push-send";
+import { ON_KAYIT_BEKLEME_GUNU } from "@/lib/on-kayitli";
 
 const MAKS_UZUNLUK = 500;
 const MIN_UZUNLUK = 10;
@@ -32,7 +33,7 @@ export function DuyuruFormu({
 }: {
   baslik: string;
   aciklama: string;
-  gonder: (mesaj: string, kapsam?: string, aliciTuru?: DuyuruAliciTuru) => Promise<{ error: string | null; ogrenciSayisi: number; veliSayisi: number; kalanGunlukHak: number }>;
+  gonder: (mesaj: string, kapsam?: string, aliciTuru?: DuyuruAliciTuru) => Promise<{ error: string | null; ogrenciSayisi: number; veliSayisi: number; bekleyenSayisi?: number; kalanGunlukHak: number }>;
   kapsamSecenekleri?: KapsamSecenegi[];
   aliciTuruSecilebilir?: boolean;
   gecmisGetir?: () => Promise<{ error: string | null; duyurular: GonderilenDuyuruSatiri[] }>;
@@ -75,7 +76,8 @@ export function DuyuruFormu({
     startTransition(async () => {
       const res = await gonder(temiz, kapsamSecenekleri ? kapsam : undefined, aliciTuruSecilebilir ? aliciTuru : undefined);
       if (res.error) return setHata(res.error);
-      setBasari(`Gönderildi — ${res.ogrenciSayisi} öğrenci, ${res.veliSayisi} veliye ulaştı. Bugün için kalan hakkınız: ${res.kalanGunlukHak}.`);
+      const bekleyenNotu = res.bekleyenSayisi ? ` ${res.bekleyenSayisi} öğrenci sisteme kayıtlı değil: duyuru ${ON_KAYIT_BEKLEME_GUNU} gün saklanır, bu sürede üye olurlarsa mesaj kutularına eklenir.` : "";
+      setBasari(`Gönderildi — ${res.ogrenciSayisi} öğrenci, ${res.veliSayisi} veliye ulaştı.${bekleyenNotu} Bugün için kalan hakkınız: ${res.kalanGunlukHak}.`);
       setMesaj("");
       setGecmis(null);
     });

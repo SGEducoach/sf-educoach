@@ -75,7 +75,8 @@ export function YoneticiDuyuruPaneli({ okullar }: { okullar: { id: string; ad: s
     startTransition(async () => {
       const res = await adminDuyuruGonder(temiz, sureSecim ? Number(sureSecim) : null, kurumId || null);
       if (res.error) return setHata(res.error);
-      setBasari(`Gönderildi — ${res.ogrenciSayisi} öğrenci, ${res.veliSayisi} veliye push bildirimi ulaştı; site geneli şerit de aktif.`);
+      const bekleyenNotu = res.bekleyenSayisi ? ` ${res.bekleyenSayisi} öğrenci sisteme kayıtlı değil; duyuru 10 gün saklanır, üye olurlarsa mesaj kutularına eklenir.` : "";
+      setBasari(`Gönderildi — ${res.ogrenciSayisi} öğrenci, ${res.veliSayisi} veliye push bildirimi ulaştı;${bekleyenNotu} site geneli şerit de aktif.`);
       setMesaj("");
       setGecmis(null);
       aktifDuyuruYukle();

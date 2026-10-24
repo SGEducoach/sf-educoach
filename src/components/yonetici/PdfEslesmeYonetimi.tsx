@@ -1,4 +1,6 @@
 import { pdfEslesmeBekleyenleriGetir, pdfEslesmeDenemeleriGetir } from "@/app/yonetici/pdf-eslesme-actions";
+import { onKayitliEslesmeOzetiGetir } from "@/app/yonetici/on-kayitli-eslesme-actions";
+import { OnKayitliEslesme } from "@/components/yonetici/OnKayitliEslesme";
 import { PdfEslesmeDenemeSecici, PdfEslesmeListesi } from "@/components/yonetici/PdfEslesmeListesi";
 import { pdfEslesmeDenemeAnahtariniCoz } from "@/lib/pdf-eslesme-durum";
 import { BG1, BLUSH, BORDER, TEXT, TEXT_MUTED } from "@/lib/theme";
@@ -17,6 +19,7 @@ import { BG1, BLUSH, BORDER, TEXT, TEXT_MUTED } from "@/lib/theme";
 // (pdf-eslesme-actions.ts requireEslesmeYetkisi) yapılıyor.
 export async function PdfEslesmeYonetimi({ kurumId, denemeAnahtari }: { kurumId?: string; denemeAnahtari?: string } = {}) {
   const { error, denemeler } = await pdfEslesmeDenemeleriGetir(kurumId);
+  const onKayitli = await onKayitliEslesmeOzetiGetir(kurumId);
   const secim = pdfEslesmeDenemeAnahtariniCoz(denemeAnahtari);
   const secili = secim ? denemeler.find((d) => d.schoolId === secim.schoolId && d.tarih === secim.tarih && d.tur === secim.tur && d.yayinevi === secim.yayinevi) : undefined;
   const satirlar = secili ? await pdfEslesmeBekleyenleriGetir(secili) : null;
@@ -27,6 +30,7 @@ export async function PdfEslesmeYonetimi({ kurumId, denemeAnahtari }: { kurumId?
       <p style={{ color: TEXT_MUTED }} className="text-xs mb-4">
         Bir deneme seçin; o denemenin PDF&apos;indeki bütün adlar (eşleşenler, ön kayıtta bulunanlar ve okunamayan satırlar) durumlarıyla gösterilir.
       </p>
+      {onKayitli.ozetler.map((ozet) => <OnKayitliEslesme key={ozet.schoolId} ozet={ozet} />)}
       {error && <p style={{ color: BLUSH }} className="mb-3 text-xs font-semibold">Denemeler alınamadı: {error}</p>}
       {denemeler.length === 0
         ? <p style={{ color: TEXT_MUTED }} className="text-sm">Henüz yüklenmiş bir deneme PDF&apos;i yok.</p>

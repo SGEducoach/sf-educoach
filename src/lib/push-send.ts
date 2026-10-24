@@ -1,6 +1,7 @@
 import webpush from "web-push";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ilkokulMu } from "@/lib/kademe";
+import { bekleyenDuyuruAlicilariniYaz } from "@/lib/on-kayitli-veri";
 
 export type DuyuruAliciTuru = "hepsi" | "ogrenci" | "veli";
 
@@ -78,14 +79,21 @@ export async function duyuruGonder(
   gonderenId?: string,
   aliciTuru: DuyuruAliciTuru = "hepsi",
   kategori?: DuyuruKategorisi,
-  meta?: { schoolId?: string | null; gonderenRol?: string; gonderenAdi?: string; hedef?: string },
-): Promise<{ ogrenciSayisi: number; veliSayisi: number }> {
-  if (ogrenciIdleri.length === 0) return { ogrenciSayisi: 0, veliSayisi: 0 };
+  // listeOgrenciIdleri: sisteme üye olmamış öğrencilerin okul listesi kimlikleri.
+  // Duyuru onlara bildirim olarak gidemez; 10 gün bekler, öğrenci bu sürede üye
+  // olursa mesaj kutusuna eklenir (migration 0179). Yalnız öğrenciye giden
+  // duyurularda geçerlidir ("yalnız veli" seçilmişse yazılmaz).
+  meta?: { schoolId?: string | null; gonderenRol?: string; gonderenAdi?: string; hedef?: string; listeOgrenciIdleri?: string[] },
+): Promise<{ ogrenciSayisi: number; veliSayisi: number; bekleyenSayisi: number }> {
+  const bekleyenListe = aliciTuru === "veli" ? [] : [...new Set(meta?.listeOgrenciIdleri ?? [])];
+  if (ogrenciIdleri.length === 0 && bekleyenListe.length === 0) return { ogrenciSayisi: 0, veliSayisi: 0, bekleyenSayisi: 0 };
 
-  const [{ data: veliBaglantilari }, { data: sinifSatirlari }] = await Promise.all([
-    admin.from("parent_students").select("parent_id, student_id").in("student_id", ogrenciIdleri),
-    admin.from("students").select("id, classes(seviye)").in("id", ogrenciIdleri),
-  ]);
+  const [{ data: veliBaglantilari }, { data: sinifSatirlari }] = ogrenciIdleri.length === 0
+    ? [{ data: [] }, { data: [] }]
+    : await Promise.all([
+        admin.from("parent_students").select("parent_id, student_id").in("student_id", ogrenciIdleri),
+        admin.from("students").select("id, classes(seviye)").in("id", ogrenciIdleri),
+      ]);
   // İlkokul (16.10.2026): 1-4. sınıf öğrencisi sisteme girmez. Ona giden
   // duyuru ve rehberlik mesajı, alıcı "yalnız öğrenci" seçilmiş olsa bile
   // velisine gider; öğrencinin kendisine yazılmaz.
@@ -122,10 +130,12 @@ export async function duyuruGonder(
     .insert({ gonderen_id: gonderenId ?? null, baslik, mesaj: govde, school_id: meta?.schoolId ?? null, gonderen_rol: meta?.gonderenRol ?? null, gonderen_adi: meta?.gonderenAdi ?? null, hedef: meta?.hedef ?? null, alici_sayisi: ogrenciAlicilari.length + veliAlicilari.size })
     .select("id")
     .single();
+  let bekleyenSayisi = 0;
   if (!duyuruHatasi && duyuru) {
     const aliciSatirlari = [...ogrenciAlicilari, ...veliAlicilari].map((profileId) => ({ duyuru_id: duyuru.id, profile_id: profileId }));
     if (aliciSatirlari.length > 0) await admin.from("duyuru_aliciler").insert(aliciSatirlari);
+    if (bekleyenListe.length > 0) bekleyenSayisi = await bekleyenDuyuruAlicilariniYaz(admin, duyuru.id, bekleyenListe);
   }
 
-  return { ogrenciSayisi: ogrenciAlicilari.length, veliSayisi: veliAlicilari.size };
+  return { ogrenciSayisi: ogrenciAlicilari.length, veliSayisi: veliAlicilari.size, bekleyenSayisi };
 }

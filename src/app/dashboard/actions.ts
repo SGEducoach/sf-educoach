@@ -15,6 +15,7 @@ import {
   TELEFON_IPUCU,
 } from "@/lib/validators";
 import { duyuruGonder as duyuruGonderTemel } from "@/lib/push-send";
+import { kayitsizListeIdleri } from "@/lib/on-kayitli-veri";
 import type { DuyuruAliciTuru } from "@/lib/push-send";
 import { DUYURU_MIN_UZUNLUK, duyuruGonderimIzniKontrol } from "@/lib/duyuru-guvenligi";
 import { requireDershaneMudur } from "@/lib/dershane-auth";
@@ -706,7 +707,7 @@ export async function ogrencileriTopluEkle(input: {
 // çünkü onun kapsamı zaten sabit: kendi sınıfı).
 // kapsam değerleri (müdür): "okul" (tüm okul, varsayılan) | "11" | "12"
 // (seviye) | <classId> (belirli bir şube).
-export async function ogretmenDuyuruGonder(mesaj: string, kapsam?: string, aliciTuru: DuyuruAliciTuru = "hepsi"): Promise<{ error: string | null; ogrenciSayisi: number; veliSayisi: number; kalanGunlukHak: number }> {
+export async function ogretmenDuyuruGonder(mesaj: string, kapsam?: string, aliciTuru: DuyuruAliciTuru = "hepsi"): Promise<{ error: string | null; ogrenciSayisi: number; veliSayisi: number; bekleyenSayisi?: number; kalanGunlukHak: number }> {
   const { supabase, user } = await requireUser();
   const bosSonuc = { ogrenciSayisi: 0, veliSayisi: 0, kalanGunlukHak: 0 };
 
@@ -754,6 +755,9 @@ export async function ogretmenDuyuruGonder(mesaj: string, kapsam?: string, alici
     return { error: idare?.yurt ? "Yalnız yurt öğrencilerine duyuru gönderebilirsiniz." : "Henüz sorumlu olduğunuz sınıf düzeyi atanmadı.", ...bosSonuc };
   }
   let hedefEtiketi = "";
+  // Sisteme üye olmamış (hesapsız) öğrenciler: duyuru 10 gün bekler (migration 0179).
+  // Yurt kapsamında liste yok; diğer kapsamlar öğrenci kapsamıyla aynı filtreyi kullanır.
+  let kayitsizListe: string[] = [];
 
   if (yurtKapsami) {
     const { data: ogrenciler } = await admin.from("students").select("id").eq("school_id", teacher.school_id).eq("yurt_ogrencisi", true);
@@ -768,6 +772,7 @@ export async function ogretmenDuyuruGonder(mesaj: string, kapsam?: string, alici
         .from("students").select("id, classes!inner(seviye)")
         .eq("school_id", teacher.school_id).eq("classes.seviye", kapsam);
       ogrenciIdleri = (ogrenciler ?? []).map((o) => o.id);
+      kayitsizListe = await kayitsizListeIdleri(admin, { schoolId: teacher.school_id, seviyeler: [kapsam!] });
       baslik = rehberMi ? `Rehber Öğretmen duyurusu (${kapsam}. sınıflar)` : `Okul yönetiminden duyuru (${kapsam}. sınıflar)`;
       hedefEtiketi = `${kapsam}. sınıflar`;
     } else if (kapsam && kapsam !== "okul") {
@@ -779,6 +784,7 @@ export async function ogretmenDuyuruGonder(mesaj: string, kapsam?: string, alici
       if (okulRehberi && !rehberSeviyeleri.includes(sinif.seviye)) return { error: "Bu sınıf sorumluluğunuzda değil.", ...bosSonuc };
       const { data: ogrenciler } = await admin.from("students").select("id").eq("class_id", sinif.id);
       ogrenciIdleri = (ogrenciler ?? []).map((o) => o.id);
+      kayitsizListe = await kayitsizListeIdleri(admin, { sinifIdleri: [sinif.id] });
       baslik = rehberMi ? `Rehber Öğretmen duyurusu (${sinif.seviye}-${sinif.sube})` : `Okul yönetiminden duyuru (${sinif.seviye}-${sinif.sube})`;
       hedefEtiketi = `${sinif.seviye}-${sinif.sube} sınıfı`;
     } else {
@@ -786,6 +792,7 @@ export async function ogretmenDuyuruGonder(mesaj: string, kapsam?: string, alici
         ? await admin.from("students").select("id, classes!inner(seviye)").eq("school_id", teacher.school_id).in("classes.seviye", rehberSeviyeleri)
         : await admin.from("students").select("id").eq("school_id", teacher.school_id);
       ogrenciIdleri = (ogrenciler ?? []).map((o) => o.id);
+      kayitsizListe = await kayitsizListeIdleri(admin, { schoolId: teacher.school_id, seviyeler: okulRehberi ? rehberSeviyeleri : undefined });
       baslik = rehberMi ? "Rehber Öğretmen duyurusu" : "Okul yönetiminden duyuru";
       hedefEtiketi = okulRehberi ? "Sorumlu olduğum sınıflar" : "Tüm okul";
     }
@@ -793,15 +800,16 @@ export async function ogretmenDuyuruGonder(mesaj: string, kapsam?: string, alici
     if (!teacher.class_id) return { error: "Sınıf öğretmeni olmadığınız için duyuru gönderemezsiniz.", ...bosSonuc };
     const { data: ogrenciler } = await admin.from("students").select("id").eq("class_id", teacher.class_id);
     ogrenciIdleri = (ogrenciler ?? []).map((o) => o.id);
+    kayitsizListe = await kayitsizListeIdleri(admin, { sinifIdleri: [teacher.class_id] });
     baslik = "Öğretmeninizden duyuru";
     hedefEtiketi = "Kendi sınıfı";
   }
 
-  const sonuc = await duyuruGonderTemel(admin, ogrenciIdleri, baslik, mesajTemiz, user.id, aliciTuru, profile.role === "mudur" ? "mudur_mesaji" : "ogretmen_mesaji", { schoolId: teacher.school_id, gonderenRol: rehberMi ? "rehber_ogretmen" : profile.role, gonderenAdi: profile.ad, hedef: `${hedefEtiketi} · ${aliciTuru === "hepsi" ? "Öğrenci ve veliler" : aliciTuru === "ogrenci" ? "Öğrenciler" : "Veliler"}` });
+  const sonuc = await duyuruGonderTemel(admin, ogrenciIdleri, baslik, mesajTemiz, user.id, aliciTuru, profile.role === "mudur" ? "mudur_mesaji" : "ogretmen_mesaji", { schoolId: teacher.school_id, gonderenRol: rehberMi ? "rehber_ogretmen" : profile.role, gonderenAdi: profile.ad, hedef: `${hedefEtiketi} · ${aliciTuru === "hepsi" ? "Öğrenci ve veliler" : aliciTuru === "ogrenci" ? "Öğrenciler" : "Veliler"}`, listeOgrenciIdleri: kayitsizListe });
   await admin.from("admin_audit_log").insert({
     actor_id: user.id,
     eylem: profile.role === "mudur" ? "mudur_duyuru_gonder" : rehberMi ? "rehber_duyuru_gonder" : "ogretmen_duyuru_gonder",
-    detay: { school_id: teacher.school_id, class_id: teacher.class_id, kapsam: kapsam ?? null, alici_turu: aliciTuru, ogrenci_sayisi: sonuc.ogrenciSayisi, veli_sayisi: sonuc.veliSayisi },
+    detay: { school_id: teacher.school_id, class_id: teacher.class_id, kapsam: kapsam ?? null, alici_turu: aliciTuru, ogrenci_sayisi: sonuc.ogrenciSayisi, veli_sayisi: sonuc.veliSayisi, bekleyen_kayitsiz_sayisi: sonuc.bekleyenSayisi },
   });
   return { error: null, ...sonuc, kalanGunlukHak: izin.kalanGunlukHak };
 }

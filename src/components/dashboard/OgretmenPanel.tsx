@@ -35,6 +35,7 @@ import type { DersProgramiSatiri, OkulNobeti, YurtNobetGorevi } from "@/lib/ders
 import { Takvim } from "@/components/dashboard/Takvim";
 import { SosyalEtkinlikler } from "@/components/dashboard/SosyalEtkinlikler";
 import { YaziliAnaliziSekmesi } from "@/components/dashboard/YaziliAnaliziSekmesi";
+import { ON_KAYIT_BEKLEME_GUNU, ON_KAYIT_ETIKETI, davetMetni, type KayitsizOgrenciSatiri } from "@/lib/on-kayitli";
 
 export interface OgrenciSatiri {
   id: string;
@@ -90,7 +91,7 @@ function ogrencilerOkulNoSirali(ogrenciler: OgrenciSatiri[]): OgrenciSatiri[] {
 }
 
 export function OgretmenPanel({
-  role, bekleyenTalepler, ogrenciler, sinifAdi, siniflar, atanabilirSiniflar, sinifSecildiMi = false, sinifKartOzetleri, gorunecekSinifId, kendiSinifId, kendiSinifiMi,
+  role, bekleyenTalepler, ogrenciler, kayitsizOgrenciler = [], sinifAdi, siniflar, atanabilirSiniflar, sinifSecildiMi = false, sinifKartOzetleri, gorunecekSinifId, kendiSinifId, kendiSinifiMi,
   ogretmenDersleri, bekleyenOnaylar, verdigimGorevler, mesajKartiGorevleri, ogretmenAdi, konuOnerileri, kademe, aktifBolum,
   dersProgramiSatirlari, okulNobetleri, yurtNobetGorevleri, dershaneMi, yurtlu = false,
   nobetDevirOgretmenleri,
@@ -101,6 +102,9 @@ export function OgretmenPanel({
   role: "ogretmen" | "mudur";
   bekleyenTalepler: (VeliLinkRequest & { ogrenci_ad: string })[];
   ogrenciler: OgrenciSatiri[];
+  // Okul listesinde olup sisteme üye olmamış öğrenciler (migration 0179): ödev ve
+  // duyuru 10 gün saklanır, üye olurlarsa eklenir. Görünen sınıfa aittir.
+  kayitsizOgrenciler?: KayitsizOgrenciSatiri[];
   sinifAdi: string | null;
   siniflar: SinifSatiri[];
   // "Ders Programım"da öğretmen HANGİ SINIFLARA GİRDİĞİNİ BEYAN EDER, bu
@@ -179,6 +183,14 @@ export function OgretmenPanel({
   const [pending, startTransition] = useTransition();
   const [silPending, startSilTransition] = useTransition();
   const [acikSinifOgrenciId, setAcikSinifOgrenciId] = useState<string | null>(null);
+  const [davetKopyalandi, setDavetKopyalandi] = useState(false);
+  async function davetMetniniKopyala() {
+    try {
+      await navigator.clipboard.writeText(davetMetni(ogretmenAdi));
+      setDavetKopyalandi(true);
+      window.setTimeout(() => setDavetKopyalandi(false), 2500);
+    } catch { /* pano izni yoksa WhatsApp bağlantısı yine çalışır */ }
+  }
 
   function onayla(talep: VeliLinkRequest & { ogrenci_ad: string }) {
     setHata(null);
@@ -361,8 +373,8 @@ export function OgretmenPanel({
         <MesajKartiOlusturucu gorevler={mesajKartiGorevleri} ogretmenAdi={ogretmenAdi ?? null} />
       )}
 
-      {aktifBolum === "gorevler" && role === "ogretmen" && (gorevVerilebilirMi || ogretmenDersleri.length > 0) && (ogrenciler.length > 0 || ogretmenDersleri.length > 0) && (
-        <GorevVerBolumu ogrenciler={ogrenciler} konuOnerileri={konuOnerileri} topluSiniflar={ogretmenDersleri}
+      {aktifBolum === "gorevler" && role === "ogretmen" && (gorevVerilebilirMi || ogretmenDersleri.length > 0) && (ogrenciler.length > 0 || kayitsizOgrenciler.length > 0 || ogretmenDersleri.length > 0) && (
+        <GorevVerBolumu ogrenciler={ogrenciler} kayitsizOgrenciler={kayitsizOgrenciler} konuOnerileri={konuOnerileri} topluSiniflar={ogretmenDersleri}
           kademe={kademe}
           sinifSeviyesi={siniflar.find((sinif) => sinif.id === gorunecekSinifId)?.seviye} />
       )}
@@ -474,6 +486,36 @@ export function OgretmenPanel({
                 </div>}
               </div>;
             })}
+          </div>
+        )}
+        {kayitsizOgrenciler.length > 0 && (
+          <div className="mt-4 rounded-2xl p-3" style={{ border: `2px dashed ${BORDER_STRONG}` }}>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: BLUSH_BG, color: BLUSH }}>{ON_KAYIT_ETIKETI}</span>
+              <span className="text-xs font-semibold" style={{ color: TEXT }}>{kayitsizOgrenciler.length} öğrenci</span>
+            </div>
+            <p className="mt-1 text-[11px]" style={{ color: TEXT_MUTED }}>
+              Sınıf listesinde var, henüz üye olmamış. Verdiğiniz ödev ve duyurular {ON_KAYIT_BEKLEME_GUNU} gün saklanır; bu sürede üye olurlarsa kendilerine eklenir.
+            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <a href={`https://wa.me/?text=${encodeURIComponent(davetMetni(ogretmenAdi))}`} target="_blank" rel="noopener noreferrer"
+                className="sfec-btn rounded-full px-3 py-1.5 text-xs font-bold" style={{ background: MINT_BG, color: MINT }}>
+                WhatsApp&apos;ta giriş daveti gönder
+              </a>
+              <button type="button" onClick={davetMetniniKopyala}
+                className="sfec-btn rounded-full px-3 py-1.5 text-xs font-bold" style={{ background: BG1_ALT, color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
+                {davetKopyalandi ? "Kopyalandı" : "Davet metnini kopyala"}
+              </button>
+              <span className="text-[11px]" style={{ color: TEXT_MUTED }}>Mesaj otomatik gitmez; alıcıyı siz seçersiniz.</span>
+            </div>
+            <div className="mt-2">
+              {[...kayitsizOgrenciler].sort((a, b) => (a.okulNo ?? "").localeCompare(b.okulNo ?? "", "tr", { numeric: true })).map((k) => (
+                <div key={k.id} className="flex items-center justify-between gap-3 px-2 py-1.5 text-xs" style={{ borderBottom: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
+                  <span className="min-w-0 truncate font-semibold">{k.ad}</span>
+                  <span className="shrink-0">{k.okulNo ? `#${k.okulNo}` : ""}</span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
         {secilenOgrenciId && secilenOgrenciProgrami && secilenOgrenciProgrami.length > 0 && (
@@ -1166,17 +1208,20 @@ export function SinifEkleFormu({ schoolId, kademe }: { schoolId: string; kademe?
 // (checkbox ile, "Tümünü seç" toplu görev karşılığı) seçilip aynı görev
 // hepsine birden atanıyor. Öğrenci tarafında bu görev, ilgili mevcut veri
 // giriş formundan (Konu/Soru/Deneme) tamamlanıyor (bkz. Gorevlerim.tsx).
-export function GorevVerBolumu({ ogrenciler, konuOnerileri, topluSiniflar = [], sinifSeviyesi, kademe, gorevVerEylemi = gorevVer }: {
+export function GorevVerBolumu({ ogrenciler, kayitsizOgrenciler = [], konuOnerileri, topluSiniflar = [], sinifSeviyesi, kademe, gorevVerEylemi = gorevVer }: {
   ogrenciler: OgrenciSatiri[]; konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
+  // Sisteme üye olmamış öğrenciler: ödev 10 gün saklanır, üye olurlarsa eklenir (migration 0179).
+  kayitsizOgrenciler?: KayitsizOgrenciSatiri[];
   // Ortaokulda ders listesi LISE brans listesinden gelmez; konu havuzunun
   // kendi ders adlari kullanilir (kullanici bildirimi 02.10.2026).
   kademe?: "ortaokul" | "lise" | "ikisi" | null;
   topluSiniflar?: OgretmenDersiSatiri[];
   sinifSeviyesi?: string;
   // Dershane rehberi kendi yetki kontrolüyle ödev verir (bkz. rehber-ogrenci-actions.ts rehberGorevVer).
-  gorevVerEylemi?: (input: Parameters<typeof gorevVer>[0]) => Promise<{ error: string | null; ogrenciSayisi?: number }>;
+  gorevVerEylemi?: (input: Parameters<typeof gorevVer>[0]) => Promise<{ error: string | null; ogrenciSayisi?: number; bekleyenSayisi?: number }>;
 }) {
   const [secili, setSecili] = useState<Set<string>>(new Set());
+  const [seciliKayitsiz, setSeciliKayitsiz] = useState<Set<string>>(new Set());
   const [tur, setTur] = useState<GorevTuru>("soru");
   const [ders, setDers] = useState<string>(topluSiniflar[0]?.ders ?? konuOnerileri[0]?.ders ?? BRANS_LISTESI[0]);
   // Öğretmen aynı derse birden fazla sınıfta giriyorsa form toplu modda
@@ -1274,16 +1319,27 @@ export function GorevVerBolumu({ ogrenciler, konuOnerileri, topluSiniflar = [], 
     setSecili(tumuSeciliMi ? new Set() : new Set(ogrenciler.map((o) => o.id)));
   }
 
+  function kayitsizToggle(id: string) {
+    setSeciliKayitsiz((s) => {
+      const yeni = new Set(s);
+      if (yeni.has(id)) yeni.delete(id); else yeni.add(id);
+      return yeni;
+    });
+  }
+
+  const tumuKayitsizSeciliMi = kayitsizOgrenciler.length > 0 && seciliKayitsiz.size === kayitsizOgrenciler.length;
+
   function gonder(e: React.FormEvent) {
     e.preventDefault();
     setHata(null);
     setBasari(null);
-    if (!topluGonderimAktif && secili.size === 0) return setHata("En az bir öğrenci seçin.");
+    if (!topluGonderimAktif && secili.size === 0 && seciliKayitsiz.size === 0) return setHata("En az bir öğrenci seçin.");
     if (!ders.trim()) return setHata("Ders seçin.");
     startTransition(async () => {
       const res = await gorevVerEylemi({
         studentIds: topluGonderimAktif ? [] : Array.from(secili),
         classIds: topluGonderimAktif ? uygunTopluSiniflar.map((sinif) => sinif.classId) : undefined,
+        listeOgrenciIds: topluGonderimAktif || seciliKayitsiz.size === 0 ? undefined : Array.from(seciliKayitsiz),
         tur, ders, konu: konu || undefined,
         hedefSoruSayisi: hedefSoru ? Number(hedefSoru) : undefined,
         hedefDakika: hedefDakika ? Number(hedefDakika) : undefined,
@@ -1294,7 +1350,9 @@ export function GorevVerBolumu({ ogrenciler, konuOnerileri, topluSiniflar = [], 
       if (res.error) setHata(res.error);
       else {
         const ogrenciSayisi = res.ogrenciSayisi ?? secili.size;
-        setBasari(`Görev ${ogrenciSayisi} öğrenciye verildi.`);
+        const bekleyenNotu = res.bekleyenSayisi ? ` ${res.bekleyenSayisi} öğrenci sisteme kayıtlı değil: ödev ${ON_KAYIT_BEKLEME_GUNU} gün saklanır, bu sürede üye olurlarsa ödevlerine eklenir.` : "";
+        setBasari(`Görev ${ogrenciSayisi} öğrenciye verildi.${bekleyenNotu}`);
+        setSeciliKayitsiz(new Set());
         setKonu(""); setHedefSoru(""); setHedefDakika(""); setSonTarih(""); setBaslangicSaat(""); setBitisSaat(""); setAciklama("");
       }
     });
@@ -1315,7 +1373,7 @@ export function GorevVerBolumu({ ogrenciler, konuOnerileri, topluSiniflar = [], 
             <input type="checkbox" checked={tumSiniflaraGonder} onChange={(e) => setTumSiniflaraGonder(e.target.checked)} className="mt-0.5 h-4 w-4 accent-current" />
             <span className="min-w-0">
               <strong className="block text-sm" style={{ color: TEXT }}>Bu derse girdiğim tüm sınıflara gönder</strong>
-              <span className="mt-0.5 block text-[11px]" style={{ color: TEXT_MUTED }}>{uygunTopluSiniflar.map((sinif) => sinif.sinifAdi).join(", ")} · Öğrenci listesi açılmadan toplu atanır.</span>
+              <span className="mt-0.5 block text-[11px]" style={{ color: TEXT_MUTED }}>{uygunTopluSiniflar.map((sinif) => sinif.sinifAdi).join(", ")} · Öğrenci listesi açılmadan toplu atanır; sisteme kayıtlı olmayanlar için ödev {ON_KAYIT_BEKLEME_GUNU} gün saklanır.</span>
             </span>
           </label>
         )}
@@ -1340,6 +1398,30 @@ export function GorevVerBolumu({ ogrenciler, konuOnerileri, topluSiniflar = [], 
               );
             })}
           </div>
+          {kayitsizOgrenciler.length > 0 && (
+            <div className="mt-2 flex flex-col gap-1.5 rounded-2xl p-2.5" style={{ border: `2px dashed ${BORDER_STRONG}` }}>
+              <div className="flex items-center justify-between gap-2">
+                <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">{ON_KAYIT_ETIKETI} ({kayitsizOgrenciler.length})</span>
+                <button type="button" onClick={() => setSeciliKayitsiz(tumuKayitsizSeciliMi ? new Set() : new Set(kayitsizOgrenciler.map((k) => k.id)))}
+                  className="sfec-btn text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: BG1_ALT, color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
+                  {tumuKayitsizSeciliMi ? "Seçimi kaldır" : "Tümünü seç"}
+                </button>
+              </div>
+              <p style={{ color: TEXT_MUTED }} className="text-[11px]">Ödev {ON_KAYIT_BEKLEME_GUNU} gün saklanır; öğrenci bu sürede üye olursa ödevlerine eklenir, olmazsa silinir.</p>
+              <div className="sfec-ogrenci-listesi max-h-32 overflow-y-auto">
+                {kayitsizOgrenciler.map((k) => {
+                  const isSecili = seciliKayitsiz.has(k.id);
+                  return (
+                    <button key={k.id} type="button" onClick={() => kayitsizToggle(k.id)}
+                      className="sfec-btn sfec-ogrenci-satiri flex items-center gap-1.5 px-2 py-2 text-left text-xs font-semibold"
+                      style={{ background: isSecili ? MINT : "transparent", color: isSecili ? MINT_ON : TEXT }}>
+                      {isSecili && <Check size={11} className="shrink-0" />} <span className="truncate">{k.ad}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>}
 
         {/* Bulgu 06 — önceden her alan kendi başına ayrı bir çerçeveydi (8-9

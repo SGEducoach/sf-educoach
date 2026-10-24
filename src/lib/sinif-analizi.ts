@@ -61,6 +61,12 @@ export interface AnalizOgrencisi {
   girisYapmisMi: boolean;
   /** Hiçbir tabloda tek bir kaydı yok. */
   verisiVarMi: boolean;
+  /**
+   * Sisteme üye olmamış, yalnız yüklü denemesi olan öğrenci (migration 0179).
+   * Yalnız deneme sıralamasına girer; aktiflik/görev/uzaklaşma/sessizlik
+   * listelerine ASLA karıştırılmaz (veri girişi yok → yanlış alarm olur).
+   */
+  hesapsiz?: boolean;
 }
 
 export interface SiraliSatir<T> {

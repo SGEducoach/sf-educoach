@@ -33,6 +33,13 @@ export interface KayipNesilKaydi {
   okulNo: string | null;
   sinifAdi: string;
   hesabiVarMi: boolean;
+  /** okul_ogrenci_listesi.id — hesapsız öğrencinin kimliği. */
+  listeId: string;
+  /**
+   * Hesapsız öğrencinin yüklü (henüz hesaba bağlanmamış) denemeleri, aynı
+   * "yayinevi|tarih|tur" anahtarıyla → toplam net (migration 0179).
+   */
+  denemeNetleri: Record<string, number>;
 }
 
 /**
@@ -108,7 +115,7 @@ export async function sinifAnaliziGetir(
     sinifAnalizOzetleriGetir(admin, idler, bugununTarihiTR(), AKTIFLIK_PENCERESI, TREND_PENCERESI),
     admin.from("denemeler").select("student_id, tarih, tur, yayinevi, deneme_ders_sonuclari(dogru, yanlis)").in("student_id", idler),
     admin.from("kullanici_aktif_gunler").select("user_id").in("user_id", idler),
-    admin.from("okul_ogrenci_listesi").select("ad_soyad, okul_no, student_id, classes(seviye, sube)").eq("school_id", params.schoolId),
+    admin.from("okul_ogrenci_listesi").select("id, ad_soyad, okul_no, student_id, classes(seviye, sube)").eq("school_id", params.schoolId),
   ]);
 
   // Denemeler: hem seçenek listesi hem seçili denemenin netleri.
@@ -127,10 +134,6 @@ export async function sinifAnaliziGetir(
     if (mevcut) mevcut.katilan += 1;
     else secenekSayaci.set(anahtar, { anahtar, yayinevi, tarih: d.tarih, tur: d.tur, katilan: 1 });
   }
-  const denemeSecenekleri = [...secenekSayaci.values()]
-    // En yeni önce; aynı günde birden çok deneme varsa katılımı yüksek olan.
-    .sort((a, b) => b.tarih.localeCompare(a.tarih) || b.katilan - a.katilan);
-
   // Her öğrenci için TÜM denemelerin netleri — seçim istemcide yapılıyor.
   const netler = new Map<string, Record<string, number>>();
   for (const d of denemeSatirlari) {
@@ -145,22 +148,56 @@ export async function sinifAnaliziGetir(
   const denemesiOlanlar = new Set(denemeSatirlari.map((d) => d.student_id));
 
   type ListeRow = {
-    ad_soyad: string; okul_no: string | number | null; student_id: string | null;
+    id: string; ad_soyad: string; okul_no: string | number | null; student_id: string | null;
     classes: { seviye: string; sube: string } | { seviye: string; sube: string }[] | null;
   };
   const gorunenSiniflar = params.sinifIdleri === null ? null : new Set(temel.map((o) => o.sinifAdi));
-  const kayipNesil: KayipNesilKaydi[] = ((resmiListe.data ?? []) as unknown as ListeRow[])
+  const kayipNesilTaslak = ((resmiListe.data ?? []) as unknown as ListeRow[])
     .map((l) => {
       const s = tekil(l.classes);
       return {
+        listeId: l.id,
         adSoyad: l.ad_soyad,
         okulNo: l.okul_no === null ? null : String(l.okul_no),
         sinifAdi: s ? `${s.seviye}-${s.sube}` : "—",
+        seviye: s?.seviye,
         hesabiVarMi: l.student_id !== null,
       };
     })
     // Kapsam dışı sınıflar sızmasın: sınıf öğretmeni yalnız kendi sınıfını görür.
     .filter((k) => gorunenSiniflar === null || gorunenSiniflar.has(k.sinifAdi));
+
+  // Hesapsız öğrencinin yüklü denemeleri (migration 0179): numarayla listeye
+  // bağlanmış, henüz hesaba aktarılmamış sonuçlar. Aynı deneme anahtarı
+  // ("yayinevi|tarih|tur") kullanılır; seçenek sayacına katılımcı olarak girer.
+  const hesapsizSeviyesi = new Map(kayipNesilTaslak.filter((k) => !k.hesabiVarMi).map((k) => [k.listeId, k.seviye]));
+  const hesapsizDenemeleri = new Map<string, Record<string, number>>();
+  if (hesapsizSeviyesi.size > 0) {
+    const { data: bekleyenler } = await admin
+      .from("pdf_deneme_eslesme_bekleyenler")
+      .select("liste_ogrenci_id, tarih, tur, yayinevi, ders_sonuclari")
+      .eq("durum", "bekliyor")
+      .in("liste_ogrenci_id", [...hesapsizSeviyesi.keys()]);
+    for (const b of (bekleyenler ?? []) as { liste_ogrenci_id: string; tarih: string; tur: string; yayinevi: string | null; ders_sonuclari: unknown }[]) {
+      const anahtar = `${yayineviAnahtari(b.yayinevi)}|${b.tarih}|${b.tur}`;
+      const kademe = kademeBul(hesapsizSeviyesi.get(b.liste_ogrenci_id)) === "ortaokul" ? "ortaokul" as const : "lise" as const;
+      const net = denemeToplamNeti(Array.isArray(b.ders_sonuclari) ? b.ders_sonuclari as { dogru: number; yanlis: number }[] : [], kademe);
+      const harita = hesapsizDenemeleri.get(b.liste_ogrenci_id) ?? {};
+      harita[anahtar] = net;
+      hesapsizDenemeleri.set(b.liste_ogrenci_id, harita);
+      const mevcut = secenekSayaci.get(anahtar);
+      if (mevcut) mevcut.katilan += 1;
+      else secenekSayaci.set(anahtar, { anahtar, yayinevi: b.yayinevi ?? "—", tarih: b.tarih, tur: b.tur, katilan: 1 });
+    }
+  }
+  const kayipNesil: KayipNesilKaydi[] = kayipNesilTaslak.map((k) => ({
+    listeId: k.listeId, adSoyad: k.adSoyad, okulNo: k.okulNo, sinifAdi: k.sinifAdi, hesabiVarMi: k.hesabiVarMi,
+    denemeNetleri: hesapsizDenemeleri.get(k.listeId) ?? {},
+  }));
+
+  const denemeSecenekleri = [...secenekSayaci.values()]
+    // En yeni önce; aynı günde birden çok deneme varsa katılımı yüksek olan.
+    .sort((a, b) => b.tarih.localeCompare(a.tarih) || b.katilan - a.katilan);
 
   // RPC yalnız soru + konu sayıyor; ortaokul öğrencisinin çalışması (migration
   // 0132) üstüne eklenir. Ortaokul öğrencisi azdır, tüm geçmişi tek sorguyla alınır.

@@ -62,6 +62,7 @@ import { OrtaokulYeterlilik } from "@/components/dashboard/OrtaokulYeterlilik";
 import { OrtaokulCalismaOnaylari } from "@/components/dashboard/OrtaokulCalismaOnaylari";
 import { ortaokulBekleyenCalismalarGetir } from "@/lib/ortaokul-calisma-onay-sorgu";
 import { ORTAOKUL_SEVIYELERI, ilkokulMu, kademeBul } from "@/lib/kademe";
+import { onKayitliDenemeleriniAktar } from "@/lib/on-kayitli-veri";
 import { yardimMesaji } from "@/lib/ortaokul-yardim";
 import { OrtaokulYardim } from "@/components/dashboard/OrtaokulYardim";
 import type { DashboardBolumu } from "@/lib/dashboard-navigation";
@@ -246,6 +247,13 @@ export default async function DashboardPage({
   const ogrenciSinifKaydi = role === "ogrenci"
     ? ((await supabase.from("students").select("classes(seviye)").eq("id", user.id).maybeSingle()).data as unknown as { classes: { seviye: string } | { seviye: string }[] | null } | null)?.classes
     : null;
+  // Ön kayıtlı öğrencinin üyelikten ÖNCE yüklenmiş denemeleri, üye olduktan sonra
+  // ilk panel açılışında hesabına aktarılır (migration 0179). Tekrar çalışması
+  // zararsızdır; hata paneli düşürmez.
+  if (role === "ogrenci") {
+    try { await onKayitliDenemeleriniAktar(createAdminClient(), user.id); }
+    catch (hata) { console.warn("Ön kayıtlı denemeler aktarılamadı:", hata); }
+  }
   // Gömülü ilişki çalışma anında NESNE döner, tipte dizi görünür (proje notu).
   const ogrenciSinifSeviyesi = Array.isArray(ogrenciSinifKaydi) ? ogrenciSinifKaydi[0]?.seviye : ogrenciSinifKaydi?.seviye;
   const grupAlanSorulur = !dokuzOnSinifMi(ogrenciSinifSeviyesi);
@@ -1495,9 +1503,13 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   const onayAdayiSinifIdleri = [...new Set([teacher.class_id, ...kendiDersAtamalari.map((d) => d.class_id)].filter((id): id is string => !!id))];
   const onayAdmin = createAdminClient();
 
-  const [{ data: ogrenciler }, { data: talepler }, { data: bekleyenOnaylarHam }, { data: sinifDersAtamalariHam }] = await Promise.all([
+  const [{ data: ogrenciler }, { data: kayitsizHam }, { data: talepler }, { data: bekleyenOnaylarHam }, { data: sinifDersAtamalariHam }] = await Promise.all([
     gorunecekSinifId
       ? okulOkumaClient.from("students").select("id, okul_no, yurt_ogrencisi, profiles!students_id_fkey(ad)").eq("class_id", gorunecekSinifId)
+      : Promise.resolve({ data: [] }),
+    // Sisteme üye olmamış (okul listesinde hesapsız) öğrenciler — migration 0179.
+    gorunecekSinifId
+      ? okulOkumaClient.from("okul_ogrenci_listesi").select("id, okul_no, ad_soyad, class_id").eq("class_id", gorunecekSinifId).is("student_id", null)
       : Promise.resolve({ data: [] }),
     teacher.class_id
       ? supabase.from("veli_link_requests").select("*, students!inner(class_id, profiles!students_id_fkey(ad))").eq("students.class_id", teacher.class_id).eq("durum", "bekliyor")
@@ -1533,6 +1545,12 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
 
   const gorunenSinif = sinifListesi.find((s) => s.id === gorunecekSinifId);
   const sinifAdi = gorunenSinif ? `${gorunenSinif.seviye}-${gorunenSinif.sube}` : null;
+  // İlkokul (1-4) sisteme girmediği için ön kayıtlı/hesapsız listesi gösterilmez.
+  const kayitsizOgrenciListesi = gorunenSinif && ilkokulMu(gorunenSinif.seviye)
+    ? []
+    : ((kayitsizHam as { id: string; okul_no: string | null; ad_soyad: string; class_id: string }[] | null) ?? [])
+        .map((k) => ({ id: k.id, ad: k.ad_soyad, okulNo: k.okul_no, sinifId: k.class_id }))
+        .sort((a, b) => a.ad.localeCompare(b.ad, "tr"));
 
   const ogretmenDersleri = kendiDersAtamalari.map((d) => {
     const sinif = sinifListesi.find((s) => s.id === d.class_id);
@@ -1731,6 +1749,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       role={role}
       bekleyenTalepler={talepListesi}
       ogrenciler={ogrenciListesi}
+      kayitsizOgrenciler={kayitsizOgrenciListesi}
       sinifAdi={sinifAdi}
       siniflar={sinifListesi}
       atanabilirSiniflar={tumSiniflar}

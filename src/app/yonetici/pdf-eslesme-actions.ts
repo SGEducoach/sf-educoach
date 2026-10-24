@@ -14,8 +14,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { denemeModeratorKurumu } from "@/lib/dershane-auth";
 import { ogretmenDenemeSonucuKaydet, yayineviAyniMi } from "@/lib/deneme-sonucu-kaydet";
 import { adlarBenzerMi } from "@/lib/ad-benzerligi";
-import { adNormalize } from "@/lib/validators";
-import { eslestirilebilirMi, pdfEslesmeDenemeAnahtari, pdfEslesmeDurumEtiketi } from "@/lib/pdf-eslesme-durum";
+import { adNormalize } from "@/lib/validators";import { eslestirilebilirMi, pdfEslesmeDenemeAnahtari, pdfEslesmeDurumEtiketi } from "@/lib/pdf-eslesme-durum";
 import type { PdfEslesmeDurumEtiketi, PdfEslesmeDurumu } from "@/lib/pdf-eslesme-durum";
 import type { DenemeTuru } from "@/lib/types";
 
@@ -367,7 +366,9 @@ export async function pdfEslesmeAtamayiGeriAl(id: string): Promise<{ error: stri
   }
 
   const { error: guncellemeHatasi } = await admin.from("pdf_deneme_eslesme_bekleyenler")
-    .update({ durum: "bekliyor", atanan_student_id: null }).eq("id", id);
+    // liste_ogrenci_id de temizlenir: geri alınan satır, öğrencinin bir sonraki
+    // panel açılışında (ön kayıtlı aktarımı) kendiliğinden yeniden yazılmasın.
+    .update({ durum: "bekliyor", atanan_student_id: null, liste_ogrenci_id: null }).eq("id", id);
   if (guncellemeHatasi) return { error: guncellemeHatasi.message, uyari: null };
   await admin.from("admin_audit_log").insert({
     actor_id: user.id,

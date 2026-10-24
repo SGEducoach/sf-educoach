@@ -9,6 +9,7 @@ import { okulDenemeKaydiniHazirla } from "@/lib/deneme-sonucu-kaydet";
 import { getAnthropicClient } from "@/lib/anthropic";
 import { KONU_ANLATIMI_SISTEM_PROMPTU, icerikTemizle } from "@/lib/konu-anlatimi";
 import { duyuruGonder, pushGonderProfile } from "@/lib/push-send";
+import { kayitsizListeIdleri } from "@/lib/on-kayitli-veri";
 import { DUYURU_MIN_UZUNLUK, duyuruGonderimIzniKontrol } from "@/lib/duyuru-guvenligi";
 import { dersSoruSayisi, sinifSiraKarsilastir } from "@/lib/types";
 import type { AytAlan, DenemeTuru, DenemeZorlugu, UserRole, KurumTuru } from "@/lib/types";
@@ -1508,7 +1509,7 @@ export async function adminDuyuruGonder(
   mesaj: string,
   sureSaat: number | null,
   kurumId: string | null,
-): Promise<{ error: string | null; ogrenciSayisi: number; veliSayisi: number; kalanGunlukHak: number }> {
+): Promise<{ error: string | null; ogrenciSayisi: number; veliSayisi: number; bekleyenSayisi?: number; kalanGunlukHak: number }> {
   const { supabase, user, admin } = await requireAdmin();
   const bosSonuc = { ogrenciSayisi: 0, veliSayisi: 0, kalanGunlukHak: 0 };
 
@@ -1528,7 +1529,9 @@ export async function adminDuyuruGonder(
 
   const { data: adminProfil } = await admin.from("profiles").select("ad").eq("id", user.id).single();
   const { data: hedefKurum } = kurumId ? await admin.from("schools").select("ad").eq("id", kurumId).maybeSingle() : { data: null };
-  const sonuc = await duyuruGonder(admin, ogrenciIdleri, "SEFU KOÇ duyurusu", mesajTemiz, user.id, "hepsi", undefined, { schoolId: kurumId, gonderenRol: "admin", gonderenAdi: adminProfil?.ad ?? "Admin", hedef: kurumId ? `${hedefKurum?.ad ?? "Kurum"} · Öğrenci ve veliler` : "Tüm kurumlar · Öğrenci ve veliler" });
+  const sonuc = await duyuruGonder(admin, ogrenciIdleri, "SEFU KOÇ duyurusu", mesajTemiz, user.id, "hepsi", undefined, { schoolId: kurumId, gonderenRol: "admin", gonderenAdi: adminProfil?.ad ?? "Admin", hedef: kurumId ? `${hedefKurum?.ad ?? "Kurum"} · Öğrenci ve veliler` : "Tüm kurumlar · Öğrenci ve veliler",
+    // Seçili kurumun sisteme üye olmamış öğrencileri duyuruyu 10 gün bekletir (migration 0179).
+    listeOgrenciIdleri: kurumId ? await kayitsizListeIdleri(admin, { schoolId: kurumId }) : [] });
 
   const bitis = sureSaat ? new Date(Date.now() + sureSaat * 3_600_000).toISOString() : null;
   const { error: bannerError } = await admin.from("platform_ayarlari")

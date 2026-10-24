@@ -1,6 +1,12 @@
 # Ön kayıtlı (hesapsız) okul öğrencileri — uygulama planı (24.10.2026)
 
-Durum: **yalnızca plan**; kod ve veritabanı değişikliği yok. Onay verirsen aşağıdaki fazlarla uygularım.
+Durum (25.10.2026): **uygulandı** — kullanıcı 6 önerinin tamamını onayladı (10 gün verilme tarihinden; deneme verisi dönem sonuna kadar; ad eşleşmesi onaylı; hesapsızlar yalnız deneme sıralamasında, aktiflik/risk dışında; davet; kod genel, veri bağlama Elbistan'dan). Migration 0179 + 0180 canlıda. Aşağıdaki plan metni korundu; uygulamada plandan farklı olanlar:
+
+1. **Numara tek başına yetmedi (0180):** 535 numara eşleşmesinin 41'inde ad ya da sınıf uyuşmuyordu. Bağlama kararı SQL tetikleyicisinden uygulama koduna alındı (`numarayaGoreListeBaglantisi`: numara + ad benzerliği + sınıf seviyesi); tetikleyici kaldırıldı, 41 şüpheli bağ kaldırıldı. Canlıda şu an **494 güvenli bağ**; şüpheliler ve numarasız ad önerileri `/yonetici` PDF Deneme Eşleştirme ekranında **"Onayınızı bekleyen eşleşmeler"** olarak yönetici/moderatör onayında.
+2. **Davet kartı yerine davet metni:** öğretmen "Ödev ver" ve sınıf listesinde "WhatsApp'ta giriş daveti gönder" / "Davet metnini kopyala" görür (kişisel veri içermeyen sabit metin, otomatik gönderim yok). Canvas'lı görsel kart ayrı iş olarak bırakıldı.
+3. **Duyuru kapsamı:** sınıf, seviye, okul ve admin'in tek-kurum duyurusu hesapsızları da kapsar; yurt duyurusu, "tüm kurumlar" admin duyurusu ve "yalnız veli" seçimi kapsamaz.
+4. **Üyelik anında deneme aktarımı** okul kaydı tarayıcıdan yapıldığı için SQL tetikleyicisinde değil, öğrencinin ilk panel açılışında çalışır (`onKayitliDenemeleriniAktar`, tek sorgu, tekrar çalışması zararsız).
+5. "Atamayı geri al" artık `liste_ogrenci_id`'yi de temizler (aksi hâlde geri alınan satır öğrencinin bir sonraki açılışında yeniden yazılırdı).
 Kapsam: Elbistan Bist Fen Lisesi'nden başlayıp tüm "okul" türü kurumlarda çalışacak şekilde. Rapora öğrenci adı/numarası yazılmadı (yalnızca sayılar).
 
 ## 1. İstediğin üç şey
