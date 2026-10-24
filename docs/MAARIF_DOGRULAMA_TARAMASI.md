@@ -58,8 +58,23 @@ Dikkat edilecek iki not (kodda değişiklik yapılmadı):
 - Belgede Matematik'in 11–12. sınıf **"Temel Düzey"** bölümü ayrı (sayı kümeleri, çember, istatistik…). AYT matematiği ileri düzeydir; projedeki Matematik 11–12 listesinin ileri düzey olduğunu ayrıca teyit etmek gerekir.
 - Coğrafya-1 sorularında 11–12. sınıfta yalnız 4 saatlik programdaki (belgede kırmızı) kazanımlar sorumluluk dışı; proje bunu ayırt etmiyor.
 
+### 4.1 Matematik 11–12: ÖSYM 2026 belgesi ile proje listesi UYUŞMUYOR (karşılaştırıldı)
+
+ÖSYM 2026 belgesindeki ana (ileri düzey) 11–12. sınıf Matematik programı ile projedeki liste (tymm.meb.gov.tr Maarif sayfalarından alınmış) farklı yapıda:
+
+| | ÖSYM 2026 belgesi (ana program) | Projede (tymm Maarif listesi) |
+|---|---|---|
+| 11 | Trigonometri (yönlü açılar, trigonometrik fonksiyonlar) · Analitik Geometri (doğru) · Fonksiyonlarda Uygulamalar (2. dereceden fonksiyonlar, dönüşümler) · Denklem ve Eşitsizlik Sistemleri · Çember ve Daire (teğet dahil) · Katı Cisimler · Olasılık (koşullu, deneysel-teorik) | Trigonometrik Fonksiyonlar · Üstel ve Logaritmik · Fonksiyonlarda İşlemler ve Bileşke · Dörtgenler ve Çokgenler · İstatistik (iki nicel değişken) |
+| 12 | Üstel ve Logaritmik Fonksiyonlar · Diziler · Trigonometri (toplam-fark, denklemler) · Dönüşümler · Türev (limit, süreklilik, türev uygulamaları) · **İntegral** (belirsiz) · Analitik Geometri (çember) | Diziler · Polinomlar · Limit ve Süreklilik · Türev · Türev Uygulamaları · Çemberde Açı ve Uzunluk · Katı Cisimler · İstatistiksel Problemler |
+
+Çıkarımlar:
+- **Projede eksik (ÖSYM 2026 kapsamında):** İntegral, Analitik Geometri (doğru ve çember), Dönüşümler, Denklem ve Eşitsizlik Sistemleri, Olasılık (11. sınıf), 2. dereceden fonksiyonlar. Üstel-logaritma ÖSYM'de 12. sınıfta, projede 11. sınıfta.
+- **Projede fazla (ÖSYM 2026 ana programında yok):** Dörtgenler ve Çokgenler, İki nicel değişkenli istatistik, Polinomlar, İstatistiksel Problemler.
+- "Toplam-Fark Formülleri" (0178 raporunda "resmî olmayan" denen alt başlık) ÖSYM belgesinde **var** (12.3.1) — bu alt başlık silinmemeli.
+- Olası açıklama: projedeki liste yeni Maarif programının (2025-26'dan itibaren kademeli) tymm sayfasından, ÖSYM belgesi ise 2026 sınavının geçiş dönemi kapsamından geliyor. Hangisinin hangi öğrenci grubuna uygulanacağı (2026 mezunu / 2027 mezunu) bir ürün kararıdır; **veri değiştirilmedi**.
+
 ## 5. Açık kararlar
 
-1. Matematik 11–12 listesinin ileri düzey kazanımlarıyla birebir olup olmadığı (Temel Düzey ile karışmış mı): istenirse bu belgeyle satır satır karşılaştırılır.
+1. **Matematik 11–12 (yukarıdaki 4.1):** 12. sınıf/AYT öğrencisi için ÖSYM 2026 belgesindeki ana programa göre mi, tymm Maarif listesine göre mi çalışılsın? İntegral ve Analitik Geometri şu an öğrencide hiç yok. Öneri: 12. sınıf (2026 sınavı) için ÖSYM belgesinin 11–12 listesini ayrı etiketle ("AYT Matematik") ekle; 9–11 mevcut Maarif listesiyle kalsın. Onay verirsen migration/JSON hazırlarım.
 2. Din Kültürü ve Coğrafya sınıf dağılımı: MEB program sitesi açılınca ya da aynı belgeden (Coğrafya s.112–123) tekrar doğrulanacak.
 3. Eski bekleyenler: Elbistan'ın 55 kurum alt başlığının yeniden dağıtımı, 3 resmî olmayan Matematik alt başlığı (Modüler Aritmetik, Binom Açılımı, Toplam-Fark Formülleri), 9. sınıf listesindeki Hazırlık konuları.
