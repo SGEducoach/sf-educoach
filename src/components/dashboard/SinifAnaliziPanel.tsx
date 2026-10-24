@@ -101,7 +101,10 @@ export function SinifAnaliziPanel({
   // Sınıf seçiliyken liste zaten tek sayfa (sınıf başına ~13 kişi);
   // sayfalama yalnızca kurum geneli görünümünde anlamlı.
   const sayfalaniyorMu = sinifId === TUM_SINIFLAR;
-  const degistir = (yeni: Gorunum | null) => { setGorunum(yeni); setSayfa(1); };
+  // Ana ekrana dönünce sınıf süzgeci sıfırlanır: ölçüm panelleri (En Aktif Sınıf,
+  // Katılım, Görev Akıbeti) o ekranda görünmeyen bir süzgeçle daralıyordu —
+  // 11-A seçilip dönülünce "en aktif sınıf" yalnız 11-A oluyordu (25.10.2026).
+  const degistir = (yeni: Gorunum | null) => { setGorunum(yeni); setSayfa(1); if (yeni === null) setSinifId(TUM_SINIFLAR); };
 
   if (gorunum === null) {
     return (
@@ -429,7 +432,7 @@ function OlcumPanelleri({ kapsam }: { kapsam: AnalizOgrencisi[] }) {
               ))}
             </div>
             <p className="m-0 text-[10px] leading-snug" style={{ color: TEXT_MUTED }}>
-              {siniflar[0].sinifAdi} · {siniflar[0].mevcut} kişilik sınıfın {siniflar[0].aktif}&apos;i aktif.
+              {siniflar[0].sinifAdi} · {siniflar[0].mevcut} kişilik sınıfın {siniflar[0].aktif}&apos;i aktif, {siniflar[0].kayit} kayıt.
             </p>
           </>
         )}

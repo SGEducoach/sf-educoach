@@ -219,9 +219,17 @@ describe("ölçüm panelleri", () => {
 
   test("sınıf aktifliği: aktif sayısına göre sıralanır, mevcut da taşınır", () => {
     expect(sinifAktiflikSiralamasi(kapsam)).toEqual([
-      { sinifAdi: "11-C", mevcut: 2, aktif: 2 },
-      { sinifAdi: "10-A", mevcut: 3, aktif: 1 },
+      { sinifAdi: "11-C", mevcut: 2, aktif: 2, kayit: 6 },
+      { sinifAdi: "10-A", mevcut: 3, aktif: 1, kayit: 1 },
     ]);
+  });
+
+  test("sınıf aktifliği: aktif sayısı eşitse çok kayıt girilen sınıf öne geçer (alfabetik değil)", () => {
+    const esitAktif = [
+      ogrenci("a1", { sinifAdi: "11-A", aktiflik: 1 }), ogrenci("a2", { sinifAdi: "11-A", aktiflik: 2 }),
+      ogrenci("c1", { sinifAdi: "11-C", aktiflik: 40 }), ogrenci("c2", { sinifAdi: "11-C", aktiflik: 30 }),
+    ];
+    expect(sinifAktiflikSiralamasi(esitAktif).map((s) => s.sinifAdi)).toEqual(["11-C", "11-A"]);
   });
 
   test("sınıf aktifliği: eşitlikte alfabetik, kaç taneyle sınırlanır", () => {

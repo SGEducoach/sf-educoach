@@ -302,7 +302,7 @@ export function denemeToplamNeti(
 // kurala uyuyor — her biri tek bir ham gerçeği gösteriyor, birleşik bir
 // "başarı puanı" üretmiyor.
 
-export interface SinifAktifligi { sinifAdi: string; mevcut: number; aktif: number }
+export interface SinifAktifligi { sinifAdi: string; mevcut: number; aktif: number; /** Son AKTIFLIK_PENCERESI gününde sınıfın girdiği toplam soru + konu kaydı. */ kayit: number }
 
 /**
  * 1 — EN AKTİF SINIF. Kullanıcı önerisiydi; canlı veride ayırt ettiği
@@ -310,16 +310,19 @@ export interface SinifAktifligi { sinifAdi: string; mevcut: number; aktif: numbe
  * ortalaması 2,5 — tek sınıf gerçekten ayrışıyor).
  */
 export function sinifAktiflikSiralamasi(ogrenciler: AnalizOgrencisi[], kac = 5): SinifAktifligi[] {
-  const sayac = new Map<string, { mevcut: number; aktif: number }>();
+  const sayac = new Map<string, { mevcut: number; aktif: number; kayit: number }>();
   for (const o of ogrenciler) {
-    const s = sayac.get(o.sinifAdi) ?? { mevcut: 0, aktif: 0 };
+    const s = sayac.get(o.sinifAdi) ?? { mevcut: 0, aktif: 0, kayit: 0 };
     s.mevcut += 1;
     if (o.aktiflik > 0) s.aktif += 1;
+    s.kayit += o.aktiflik;
     sayac.set(o.sinifAdi, s);
   }
   return [...sayac.entries()]
     .map(([sinifAdi, s]) => ({ sinifAdi, ...s }))
-    .sort((a, b) => (b.aktif - a.aktif) || a.sinifAdi.localeCompare(b.sinifAdi, "tr"))
+    // Önce aktif öğrenci sayısı; eşitlikte girilen KAYIT sayısı (alfabetik sıra
+    // "11-A en aktif" gibi yanlış bir sonuç veriyordu, 25.10.2026), en son ad.
+    .sort((a, b) => (b.aktif - a.aktif) || (b.kayit - a.kayit) || a.sinifAdi.localeCompare(b.sinifAdi, "tr"))
     .slice(0, kac);
 }
 
