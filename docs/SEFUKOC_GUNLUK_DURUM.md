@@ -1,6 +1,6 @@
 # SEFUKOC.COM — GÜNLÜK DURUM KAYDI
 
-Son güncelleme: 24 Ekim 2026 · Türkiye saati (M9: müfredat değişiklik başvuruları)
+Son güncelleme: 24 Ekim 2026 · Türkiye saati (M10: adminin SeFu Koç logolu genel WhatsApp kartı)
 Depo: https://github.com/SGEducoach/sf-educoach (dal: main)
 Bağlı ana dosya: SEFUKOC_MERKEZ_PROJE.md (depoda `docs/SEFUKOC_MERKEZ_PROJE.md`)
 
@@ -157,10 +157,21 @@ Alan açıklamaları: **Çalışan AI** = modülde son işi yapan araç/oturum �
 - **Kontrol:** 83 dosya / **912 test** geçti (yeni özellik için 49 test; doğrulama, yetki, kurum bağlamı, bozuk/eski kayıt, istem içeriği ve SSR arayüz). `tsc --noEmit --incremental false`, değişen dosyalarda eslint ve `git diff --check` temiz. Production build, gerçek öğretmen/admin oturumunda kayıt ve mobil pano/klavye akışı **denenmedi**.
 - **Sonraki adım:** Onaylı yayın için yalnız bu görevi main'e gönder; Vercel production READY ve alan adı eşleşmesini doğrula. Ardından öğretmen → iki adımlı başvuru → admin → istemi kopyala → cevap/ek bilgi akışını gerçek hesapla doğrula. Sadece HTTP 200 veya test başarısı kullanıcı ekranı doğrulaması sayılmaz.
 
+### M10 — Admin genel WhatsApp duyurusu (24.10.2026)
+
+- **Durum:** Kullanıcı 24.10.2026'da canlıya alma onayı verdi. Güncel main (`29fbbcfd`) ile fark kontrol edildi; yalnız bu görevin dosyaları yayına gönderilecek. Görev dalı `codex/admin-whatsapp-genel-duyuru`; yerel klasör `E:\SG_EDUCOACH\.claude\worktrees\codex-yurt-kart-nobetciler`. Ana klasördeki ve diğer bilgisayardaki çalışmalara dokunulmadı. Production sonucu ilgili commit'in Vercel kontrolünden doğrulanmalı.
+- **Kullanım:** Admin → İletişim → WhatsApp → **SeFu Koç Genel WhatsApp Duyurusu** → **SeFu Koç duyurusu hazırla**. Kurum seçmeden sabit **SeFu Koç** adı ve uygulamanın `/logo.png` logosuyla genel kart hazırlar. Başlık, alt başlık, tarih, metin, fotoğraf, renk, dosya eki ve mevcut indirme/paylaşma akışı kullanılır. Telefonda paylaşım alıcısını kullanıcı seçer; desteklenmeyen cihazda PNG indirip WhatsApp'tan gönderir. Otomatik toplu mesaj/WhatsApp API çağrısı yok.
+- **Kapsam:** Yalnız admin korumalı mevcut sayfaya eklendi; kurum logoları ve şablon yönetimi değişmedi. Admin stüdyosuna yalnız Genel şablonu açılır; kurumlar için gizleme ayarı kopyalanır, yerinde değiştirilmez. Logo değiştirme ve öğrenci/yurt listeleri bu stüdyoda yok. Mevcut genel şablonun fotoğraf galerisi korunur. Düzenleyici ilk tıklamada yüklenir, gizle/açta taslak korunur.
+- **Dosyalar:** `src/components/yonetici/WhatsappYonetimi.tsx`, `AdminWhatsappDuyurusu.tsx` (+SSR test), `src/lib/admin-whatsapp-duyuru.ts` (+test). Mevcut `WhatsappDuyuruStudyosu` yeniden kullanıldı; çizim/paylaşma kodu değiştirilmedi.
+- **Veri/maliyet:** Migration ve canlı veri yazması yok. Kart ve dosya ekleri cihazda kalır; ücretli servis veya polling eklenmedi.
+- **Kontrol:** 85 dosyada **918 test** geçti; `tsc --noEmit --incremental false`, değişen dosyalarda eslint ve `git diff --check` temiz. Gerçek admin hesabı ve mobil WhatsApp paylaşımı denenmedi; production build/yayın yapılmadı.
+- **Sonraki adım:** Onaylı yayını main'e gönder; Vercel production READY ve alan adı eşleşmesini doğrula. Ardından gerçek admin hesabında logo/önizleme, PNG indirme ve mobil paylaşımı kontrol et.
+
 ## 3. OTURUM GÜNLÜĞÜ
 
 | Tarih | Araç / Oturum | Modül | Yapılan | Kontrol sonucu | Son commit |
 | --- | --- | --- | --- | --- | --- |
+| 24 Ekim 2026, 23:22 (Europe/Istanbul) | Codex, bu bilgisayar | M10 | Admin için SeFu Koç logosuyla genel WhatsApp kartı; kurum seçimi olmadan hazırlama/indirme/paylaşma, mevcut kurum ayarlarını koruma | 918 test, tsc, eslint temiz; migration/yayın yok | `codex/admin-whatsapp-genel-duyuru`, temel `29fbbcfd` |
 | 24 Ekim 2026, 23:02 (Europe/Istanbul) | Codex, bu bilgisayar | M9 | Öğretmen için tespit → öneri başvurusu; admin için ayrı liste ve kopyalanabilir düzeltme istemi; mevcut hata bildirimi altyapısı kullanıldı | 912 test, tsc ve eslint temiz; migration/yayın yok; gerçek hesapla denenmedi | `codex/mufredat-degisiklik-basvurusu` (başlangıç `555e8c86`) |
 | 23 Ekim 2026 | ChatLLM (Abacus AI Agent) | Genel | Analiz modülü için verimlilik raporu ve 4 fazlı plan; bu durum dosyası ve oturum protokolü oluşturuldu | Depo commit geçmişi okundu; kod okunmadı, test yapılmadı | 23 Eki — merkez proje dosyası eklendi |
 | 23 Ekim 2026 | ChatLLM (Abacus AI Agent) | M1 (+M2, M4 notları) | Faz 1 keşfi (salt okunur): GitHub son commit kontrolü, migration/indeks/RLS, analiz veri yolları, 0171, Claude kullanımı; `FAZ1_KESIF_RAPORU.md` yazıldı | Kod okundu; canlı DB, test, build **yapılmadı**; depoda değişiklik yok | `ce4966d0` |
@@ -181,6 +192,10 @@ Alan açıklamaları: **Çalışan AI** = modülde son işi yapan araç/oturum �
 ---
 
 ## 4. DEVİR NOTU
+
+### Admin SeFu Koç WhatsApp duyurusu — Codex, 24 Ekim 2026
+
+M10 görevi `codex/admin-whatsapp-genel-duyuru` dalında; özellik ve dosyalar yukarıda. Kullanıcı 24.10.2026'da canlıya alma talebi verdi. Kurum logolarına ve veritabanına dokunulmadı. Gönderimi GitHub main üzerinden, yayını ilgili commit'e bağlı Vercel production kontrolünden doğrulayın. Gerçek admin hesabı ve WhatsApp paylaşımı kontrol bekliyor.
 
 ### Müfredat değişiklik başvuruları — Codex, 24 Ekim 2026
 
