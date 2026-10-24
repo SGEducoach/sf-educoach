@@ -4,14 +4,18 @@
 // KARARLAR (REHBER_ANALIZLERI_SINIF_OGRETMENI_KARAR_RAPORU.md önerisi):
 //  * Kapsam yalnız öğretmenin KENDİ sınıfı (teachers.class_id). Branş
 //    öğretmeni, ilkokul sınıf öğretmeni ve grup koçluğu kapsam dışı.
-//  * Üç tür: net düşüşü, ders düşüşü, sessizlik. "Net yükselişi" ve "biriken
-//    görev" rehberde kalır (sınıf öğretmenine bildirim yükü olmasın).
+//  * Rehberle aynı beş tür: net düşüşü, net yükselişi, ders düşüşü,
+//    sessizlik, biriken görev. (İlk sürümde yükseliş ve biriken görev
+//    rehberde bırakılmıştı; kullanıcı kararı 24.10.2026 ile eklendi.)
 //  * Durum ve not KİŞİYE özel (takip_ogretmen_durumlari); rehberin ortak
 //    durumu ve NOTU sınıf öğretmenine hiç taşınmaz.
+//  * Ters yön (kullanıcı kararı 24.10.2026): sınıf öğretmeninin "ele alındı"
+//    işareti ve değerlendirmesi rehberin ekranında BİLGİ olarak görünür;
+//    rehberin kaydını kapatmaz (bkz. sinifOgretmeniDegerlendirmeleriniEkle).
 import { kademeBul } from "@/lib/kademe";
 import type { TakipDurumu, TakipTuru } from "@/lib/rehber-takip";
 
-export const SINIF_TAKIP_TURLERI: readonly TakipTuru[] = ["net_dususu", "ders_dususu", "sessizlik"];
+export const SINIF_TAKIP_TURLERI: readonly TakipTuru[] = ["net_dususu", "net_yukselisi", "ders_dususu", "sessizlik", "gorev_birikmesi"];
 
 export const SINIF_TAKIP_NOT_EN_FAZLA = 500;
 
@@ -38,17 +42,33 @@ export function sinifTakipKapsamiVarMi(g: SinifOgretmeniGirdisi): boolean {
   return kademeBul(g.sinifSeviyesi) !== "ilkokul";
 }
 
-export interface KisiDurumu { durum: TakipDurumu; notMetni: string | null }
+// rehbereYonlendirildi (0177): öğretmen "Ele Alındı"da öğrenciyi rehberlik
+// servisine yönlendirdi.
+export interface KisiDurumu { durum: TakipDurumu; notMetni: string | null; rehbereYonlendirildi?: boolean }
 
 /** Kayıtta ortak durum/not ne olursa olsun, kişinin kendi durumunu uygular. */
-export function kisiDurumunuUygula<T extends { id: string; durum: TakipDurumu; notMetni: string | null; kapatanAdi: string | null; kapatilmaAt: string | null }>(
+export function kisiDurumunuUygula<T extends { id: string; durum: TakipDurumu; notMetni: string | null; kapatanAdi: string | null; kapatilmaAt: string | null; rehbereYonlendirildi?: boolean }>(
   bildirimler: T[],
   durumlar: Map<string, KisiDurumu>,
 ): T[] {
   return bildirimler.map((b) => {
     const d = durumlar.get(b.id);
-    return { ...b, durum: d?.durum ?? "yeni", notMetni: d?.notMetni ?? null, kapatanAdi: null, kapatilmaAt: null };
+    return { ...b, durum: d?.durum ?? "yeni", notMetni: d?.notMetni ?? null, kapatanAdi: null, kapatilmaAt: null, rehbereYonlendirildi: d?.rehbereYonlendirildi === true };
   });
+}
+
+// Yönlendirme rehbere iş çıkarır; gerekçesiz yönlendirme kabul edilmez.
+export const YONLENDIRME_NOT_EN_AZ = 10;
+
+export function yonlendirmeHatasi(not: string | null): string | null {
+  return (not ?? "").length < YONLENDIRME_NOT_EN_AZ
+    ? `Rehberlik servisine yönlendirmek için en az ${YONLENDIRME_NOT_EN_AZ} karakterlik bir açıklama yazın.`
+    : null;
+}
+
+// Veritabanında 0177 sütunu yoksa (migration uygulanmamış) dönen hata.
+export function sutunYokHatasiMi(e: { code?: string; message?: string } | null): boolean {
+  return !!e && (e.code === "42703" || e.code === "PGRST204" || /rehbere_yonlendirildi|yonlendirme_at/.test(e.message ?? ""));
 }
 
 /** Kişiye göre "yeni" sayısı: kendi durum satırı olmayanlar. */

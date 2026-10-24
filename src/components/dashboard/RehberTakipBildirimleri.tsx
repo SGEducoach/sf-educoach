@@ -7,7 +7,7 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BellRing, BookX, Check, CheckCheck, Hourglass, ListTodo, RefreshCw, RotateCcw, TrendingDown, TrendingUp } from "lucide-react";
+import { BellRing, BookX, Check, CheckCheck, Hourglass, ListTodo, RefreshCw, RotateCcw, Send, TrendingDown, TrendingUp } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BLUSH, BLUSH_BG, BORDER, BORDER_STRONG, LILAC, LILAC_BG, MINT, MINT_BG, MINT_ON, PEACH, PEACH_BG, SKY, SKY_BG, TEXT, TEXT_MUTED } from "@/lib/theme";
 import { TAKIP_DURUMU_ETIKET, TAKIP_TURU_ETIKET, type DersDegisimi, type TakipDurumu, type TakipTuru } from "@/lib/rehber-takip";
 import type { TakipBildirimi } from "@/lib/rehber-takip-verisi";
@@ -51,7 +51,7 @@ const taramaZamaniYaz = (iso: string) => new Date(iso).toLocaleString("tr-TR", {
 export function RehberTakipBildirimleri({ bildirimler, hazir, ogrenciBaglantisi, duzeySiz, sonTarama = null, taramaHatasi = false, sinifOgretmeni = false }: {
   bildirimler: TakipBildirimi[]; hazir: boolean; ogrenciBaglantisi: "analiz" | "takip"; duzeySiz: boolean;
   sonTarama?: string | null; taramaHatasi?: boolean;
-  /** Sınıf öğretmeni görünümü (migration 0176): kendi sınıfı, 3 tür, kişiye özel durum/not. */
+  /** Sınıf öğretmeni görünümü (migration 0176): kendi sınıfı, beş tür, kişiye özel durum/not. */
   sinifOgretmeni?: boolean;
 }) {
   const TURLER = sinifOgretmeni ? TUM_TURLER.filter((t) => (SINIF_TAKIP_TURLERI as readonly string[]).includes(t)) : TUM_TURLER;
@@ -62,6 +62,10 @@ export function RehberTakipBildirimleri({ bildirimler, hazir, ogrenciBaglantisi,
   const [arama, setArama] = useState("");
   const [notAcik, setNotAcik] = useState<string | null>(null);
   const [notMetni, setNotMetni] = useState("");
+  // Sınıf öğretmeni: "Ele Alındı" ile rehberlik servisine yönlendirme (0177).
+  const [yonlendir, setYonlendir] = useState(false);
+  // Rehber: yalnız sınıf öğretmeninin yönlendirdiği kayıtlar.
+  const [yalnizYonlendirme, setYalnizYonlendirme] = useState(false);
   const [mesaj, setMesaj] = useState<{ hata: boolean; metin: string } | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -79,16 +83,20 @@ export function RehberTakipBildirimleri({ bildirimler, hazir, ogrenciBaglantisi,
     return m;
   }, [bildirimler]);
   const kucukArama = arama.toLocaleLowerCase("tr-TR");
+  const yonlendirildiMi = (b: TakipBildirimi) => !!b.sinifOgretmeniDegerlendirmeleri?.some((d) => d.yonlendirme);
+  const yeniYonlendirmeSayisi = sinifOgretmeni ? 0 : bildirimler.filter((b) => b.durum === "yeni" && yonlendirildiMi(b)).length;
   const liste = bildirimler.filter((b) => (durum === "tumu" || b.durum === durum) && (!tur || b.tur === tur)
-    && (!sinif || b.sinifAdi === sinif) && b.ogrenciAd.toLocaleLowerCase("tr-TR").includes(kucukArama));
+    && (!sinif || b.sinifAdi === sinif) && b.ogrenciAd.toLocaleLowerCase("tr-TR").includes(kucukArama)
+    && (!yalnizYonlendirme || yonlendirildiMi(b)));
   const yeniListe = liste.filter((b) => b.durum === "yeni");
 
-  function guncelle(idler: string[], yeniDurum: TakipDurumu, not?: string) {
+  function guncelle(idler: string[], yeniDurum: TakipDurumu, not?: string, rehbereYonlendir = false) {
     setMesaj(null);
     startTransition(async () => {
-      const r = sinifOgretmeni ? await sinifTakipDurumGuncelle(idler, yeniDurum, not) : await takipBildirimiDurumGuncelle(idler, yeniDurum, not);
+      const r = sinifOgretmeni ? await sinifTakipDurumGuncelle(idler, yeniDurum, not, rehbereYonlendir) : await takipBildirimiDurumGuncelle(idler, yeniDurum, not);
       if (r.error) { setMesaj({ hata: true, metin: r.error }); return; }
-      setNotAcik(null); setNotMetni("");
+      if (rehbereYonlendir) setMesaj({ hata: false, metin: "Öğrenci rehberlik servisine yönlendirildi." });
+      setNotAcik(null); setNotMetni(""); setYonlendir(false);
       router.refresh();
     });
   }
@@ -114,7 +122,7 @@ export function RehberTakipBildirimleri({ bildirimler, hazir, ogrenciBaglantisi,
           <h1 className="text-lg font-extrabold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Takip Bildirimleri</h1>
           <p className="text-xs" style={{ color: TEXT_MUTED }}>
             {sinifOgretmeni
-              ? "Sınıfınızdaki öğrenciler için ani net düşüşü, ders bazında düşüş ve 14 gün ve üzeri sessizlik burada toplanır. \"Görüldü\" ve notlarınız yalnız size aittir; rehberlik servisinin kayıtlarını ve notlarını etkilemez, görmezsiniz. Her sabah otomatik taranır."
+              ? "Sınıfınızdaki öğrenciler için ani net düşüşü ve yükselişi, ders bazında düşüş, 14 gün ve üzeri sessizlik ve biriken görevler burada toplanır. \"Görüldü\" işaretiniz yalnız size aittir. \"Ele Alındı\" değerlendirmeniz rehberlik servisinin ekranında bilgi olarak görünür ama onların kaydını kapatmaz; isterseniz aynı adımda öğrenciyi rehberlik servisine yönlendirebilirsiniz. Rehberlik servisinin notlarını görmezsiniz. Her sabah otomatik taranır."
               : "Ani net düşüşü ve yükselişi, ders bazında düşüş, 14 gün ve üzeri sessizlik ve biriken görevler burada toplanır. Bu bildirimler mesaj kutusuna gitmez; her sabah otomatik taranır."}
           </p>
           {hazir && !duzeySiz && (
@@ -171,6 +179,13 @@ export function RehberTakipBildirimleri({ bildirimler, hazir, ogrenciBaglantisi,
               {siniflar.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
           )}
+          {!sinifOgretmeni && (
+            <button type="button" onClick={() => setYalnizYonlendirme((v) => !v)} aria-pressed={yalnizYonlendirme}
+              className="sfec-btn inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold"
+              style={yalnizYonlendirme ? { background: PEACH_BG, color: PEACH, border: `2px solid ${PEACH}` } : { color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
+              <Send size={12} aria-hidden="true" /> Yönlendirilenler{yeniYonlendirmeSayisi > 0 ? ` (${yeniYonlendirmeSayisi} yeni)` : ""}
+            </button>
+          )}
           <input value={arama} onChange={(e) => setArama(e.target.value)} placeholder="Öğrenci ara…" aria-label="Öğrenci ara"
             className="min-w-[140px] flex-1 rounded-xl px-3 py-1.5 text-xs outline-none" style={girdi} />
           {yeniListe.length > 1 && (
@@ -191,9 +206,11 @@ export function RehberTakipBildirimleri({ bildirimler, hazir, ogrenciBaglantisi,
             {liste.map((b) => {
               const { Ikon, renk, zemin } = TUR_GORUNUM[b.tur];
               const dersler = Array.isArray(b.ayrinti.dersler) ? (b.ayrinti.dersler as DersDegisimi[]) : [];
+              // Rehber: sınıf öğretmeninin yönlendirdiği yeni kayıt turuncu çerçeveyle öne çıkar.
+              const yonlendirmeVurgusu = !sinifOgretmeni && b.durum === "yeni" && yonlendirildiMi(b);
               return (
                 <li key={b.id} className="sfec-fade flex flex-wrap items-start gap-3 rounded-2xl p-3.5"
-                  style={{ background: BG1, border: `2px solid ${b.durum === "yeni" ? renk : BORDER}`, opacity: b.durum === "yeni" ? 1 : 0.86 }}>
+                  style={{ background: BG1, border: `2px solid ${yonlendirmeVurgusu ? PEACH : b.durum === "yeni" ? renk : BORDER}`, opacity: b.durum === "yeni" ? 1 : 0.86 }}>
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: zemin }}>
                     <Ikon size={16} color={renk} aria-hidden="true" />
                   </span>
@@ -203,19 +220,46 @@ export function RehberTakipBildirimleri({ bildirimler, hazir, ogrenciBaglantisi,
                       <span className="text-xs" style={{ color: TEXT_MUTED }}>{b.sinifAdi} · {tarihYaz(b.olayTarihi)}</span>
                       <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: zemin, color: renk }}>{TAKIP_TURU_ETIKET[b.tur]}</span>
                       {b.durum !== "yeni" && <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: BG1_ALT, color: TEXT_MUTED }}>{TAKIP_DURUMU_ETIKET[b.durum]}{!sinifOgretmeni && b.kapatanAdi ? ` · ${b.kapatanAdi}` : ""}</span>}
+                      {(sinifOgretmeni ? b.rehbereYonlendirildi : yonlendirildiMi(b)) && (
+                        <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: PEACH_BG, color: PEACH }}>
+                          <Send size={10} aria-hidden="true" /> {sinifOgretmeni ? "Rehberliğe Yönlendirildi" : "Sınıf Öğretmeni Yönlendirdi"}
+                        </span>
+                      )}
                     </div>
                     <p className="mt-0.5 text-[13px]" style={{ color: TEXT }}>{b.baslik}</p>
                     <DersCipleri dersler={dersler} />
                     {b.notMetni && <p className="mt-1.5 rounded-xl px-3 py-2 text-xs" style={{ background: BG1_ALT, color: TEXT }}>Not: {b.notMetni}</p>}
+                    {/* Rehber görünümü: sınıf öğretmeninin değerlendirmesi bilgi olarak; rehberin durumunu değiştirmez (24.10.2026). */}
+                    {!sinifOgretmeni && b.sinifOgretmeniDegerlendirmeleri?.map((d) => (
+                      <p key={`${d.ogretmenAdi}-${d.tarih}`} className="mt-1.5 rounded-xl px-3 py-2 text-xs"
+                        style={d.yonlendirme ? { background: PEACH_BG, color: TEXT, border: `1px solid ${PEACH}` } : { background: MINT_BG, color: TEXT, border: `1px solid ${MINT}` }}>
+                        <span className="font-bold">{d.yonlendirme ? "Sınıf öğretmeni rehberlik servisine yönlendirdi" : "Sınıf öğretmeni ele aldı"}</span>
+                        <span style={{ color: TEXT_MUTED }}> · {d.ogretmenAdi} · {new Date(d.tarih).toLocaleDateString("tr-TR", { day: "numeric", month: "long" })}</span>
+                        {d.notMetni && <span className="mt-0.5 block whitespace-pre-wrap">{d.notMetni}</span>}
+                      </p>
+                    ))}
                     {notAcik === b.id && (
                       <div className="mt-2 flex flex-col gap-2">
-                        <textarea value={notMetni} onChange={(e) => setNotMetni(e.target.value)} rows={2} maxLength={1000} autoFocus
-                          placeholder="Ne yapıldı? Örn. Öğrenciyle görüşüldü, veliye bilgi verildi."
+                        <textarea value={notMetni} onChange={(e) => setNotMetni(e.target.value)} rows={yonlendir ? 3 : 2} maxLength={sinifOgretmeni ? 500 : 1000} autoFocus
+                          placeholder={yonlendir ? "Yönlendirme nedeni: ne gözlemlediniz, ne yaptınız? Rehberlik servisi bu açıklamayı görür." : "Ne yapıldı? Örn. Öğrenciyle görüşüldü, veliye bilgi verildi."}
                           className="rounded-xl px-3 py-2 text-xs outline-none" style={girdi} />
+                        {sinifOgretmeni && (
+                          <label className="flex cursor-pointer items-start gap-2 rounded-xl px-3 py-2 text-xs"
+                            style={{ background: yonlendir ? PEACH_BG : BG1_ALT, color: TEXT, border: `1px solid ${yonlendir ? PEACH : BORDER}` }}>
+                            <input type="checkbox" checked={yonlendir} onChange={(e) => setYonlendir(e.target.checked)} className="mt-0.5" />
+                            <span>
+                              <span className="font-bold">Rehberlik servisine yönlendir</span>
+                              <span className="block text-[11px]" style={{ color: TEXT_MUTED }}>Kayıt rehberlik servisinin listesinde &quot;yeni&quot; olarak öne çıkar; açıklamanızı görürler.</span>
+                            </span>
+                          </label>
+                        )}
                         <div className="flex gap-2">
-                          <button type="button" disabled={pending} onClick={() => guncelle([b.id], "ele_alindi", notMetni)}
-                            className="sfec-btn rounded-full px-3 py-1.5 text-xs font-bold disabled:opacity-50" style={{ background: MINT, color: MINT_ON }}>Kaydet</button>
-                          <button type="button" onClick={() => { setNotAcik(null); setNotMetni(""); }} className="sfec-btn rounded-full px-3 py-1.5 text-xs font-bold" style={{ color: TEXT_MUTED }}>Vazgeç</button>
+                          <button type="button" disabled={pending} onClick={() => guncelle([b.id], "ele_alindi", notMetni, sinifOgretmeni && yonlendir)}
+                            className="sfec-btn inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-bold disabled:opacity-50"
+                            style={yonlendir && sinifOgretmeni ? { background: PEACH, color: "#fff" } : { background: MINT, color: MINT_ON }}>
+                            {yonlendir && sinifOgretmeni ? <><Send size={12} aria-hidden="true" /> Kaydet ve Yönlendir</> : "Kaydet"}
+                          </button>
+                          <button type="button" onClick={() => { setNotAcik(null); setNotMetni(""); setYonlendir(false); }} className="sfec-btn rounded-full px-3 py-1.5 text-xs font-bold" style={{ color: TEXT_MUTED }}>Vazgeç</button>
                         </div>
                       </div>
                     )}
@@ -227,10 +271,10 @@ export function RehberTakipBildirimleri({ bildirimler, hazir, ogrenciBaglantisi,
                         <Check size={12} aria-hidden="true" /> Görüldü
                       </button>
                     )}
-                    {b.durum !== "ele_alindi" && notAcik !== b.id && (
-                      <button type="button" disabled={pending} onClick={() => { setNotAcik(b.id); setNotMetni(b.notMetni ?? ""); }}
+                    {(b.durum !== "ele_alindi" || sinifOgretmeni) && notAcik !== b.id && (
+                      <button type="button" disabled={pending} onClick={() => { setNotAcik(b.id); setNotMetni(b.notMetni ?? ""); setYonlendir(!!b.rehbereYonlendirildi); }}
                         className="sfec-btn inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-bold disabled:opacity-50" style={{ background: MINT, color: MINT_ON }}>
-                        <CheckCheck size={12} aria-hidden="true" /> Ele Alındı
+                        <CheckCheck size={12} aria-hidden="true" /> {b.durum === "ele_alindi" ? "Düzenle" : "Ele Alındı"}
                       </button>
                     )}
                     {b.durum !== "yeni" && (
