@@ -100,3 +100,14 @@ export function davetMetni(ogretmenAdi?: string | null): string {
   const imza = ogretmenAdi?.trim() ? `\n\n${ogretmenAdi.trim()}` : "";
   return `Merhaba, SeFu Koç'a henüz üye olmadığınızı gördük. www.sefukoc.com adresinden okul numaranızla üye olabilirsiniz.\n\nSize verdiğimiz ödev ve duyurular ${ON_KAYIT_BEKLEME_GUNU} gün saklanıyor; bu süre içinde üye olursanız hesabınıza eklenecek, olmazsanız silinecek.${imza}`;
 }
+
+/**
+ * Numarası başka birine ait çıkan (ya da numarası hatalı kodlanmış) satır için:
+ * AD benzer (adlarBenzerMi: ikinci ad eksik / kısaltma) ve listede TEK kişi,
+ * sınıf seviyesi çelişmiyorsa o kişi önerilir. Otomatik yazılmaz, yönetici onaylar.
+ * Tek sözcüklü ("SENA") ya da birden çok kişiye uyan adlar öneri almaz.
+ */
+export function adaGoreBenzerAday(satir: BekleyenSatiri, liste: ListeAdayi[]): ListeAdayi | null {
+  const adaylar = liste.filter((l) => adlarBenzerMi(satir.adSoyad, l.adSoyad) && !seviyeCelisirMi(satir, l));
+  return adaylar.length === 1 ? adaylar[0] : null;
+}

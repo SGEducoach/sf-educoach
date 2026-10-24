@@ -15,7 +15,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { denemeModeratorKurumu } from "@/lib/dershane-auth";
-import { adaGoreListeOnerisi, numarayaGoreListeBaglantisi, type ListeAdayi } from "@/lib/on-kayitli";
+import { adaGoreBenzerAday, adaGoreListeOnerisi, numarayaGoreListeBaglantisi, type ListeAdayi } from "@/lib/on-kayitli";
 import { listeAdaylariniGetir, onKayitliDenemeleriniAktar } from "@/lib/on-kayitli-veri";
 
 const SAYFA = 1000;
@@ -45,8 +45,14 @@ export interface OnKayitliOnerisi {
   listeNo: string | null;
   listeSeviyesi: string | null;
   hesabiVar: boolean;
-  /** "numara": numara eşleşiyor ama ad/sınıf uyuşmuyor; "ad": numara yok, ad tam aynı ve tek kişi. */
-  tur: "numara" | "ad";
+  /**
+   * "numara": numara eşleşiyor ama ad/sınıf uyuşmuyor (ada benzeyen başka kişi yok);
+   * "numara-hatali": ad listedeki TEK bir öğrenciye uyuyor ama PDF'teki numara başka birine ait (numara hatalı kodlanmış olabilir);
+   * "ad": numara yok, ad tam aynı ve tek kişi.
+   */
+  tur: "numara" | "numara-hatali" | "ad";
+  /** PDF'teki numaranın listede kime ait olduğu ("Ad (no, sınıf, hesap durumu)"); numara listede yoksa null. */
+  numaraSahibi: string | null;
   deneme: string;
 }
 
@@ -111,17 +117,30 @@ export async function onKayitliEslesmeOzetiGetir(kurumId?: string): Promise<{ er
       }
       const satir = { adSoyad: s.ad_soyad_ham, ogrenciNo: s.ogrenci_no, sinifSeviyesi: s.sinif_seviyesi };
       const numara = numarayaGoreListeBaglantisi(satir, liste);
-      let hedef: { liste: ListeAdayi; tur: "numara" | "ad" } | null = null;
-      if (numara.karar !== "yok") hedef = { liste: numara.liste, tur: "numara" };
-      else if (s.ogrenci_no === null) {
+      let hedef: { liste: ListeAdayi; tur: OnKayitliOnerisi["tur"] } | null = null;
+      if (numara.karar !== "yok") {
+        // Numara eşleşse bile ad listedeki BAŞKA tek bir öğrenciye uyuyorsa asıl sahibi odur
+        // (PDF'te numara hatalı kodlanmış): numaradaki kişi değil o önerilir.
+        const adAdayi = adaGoreBenzerAday(satir, liste);
+        hedef = adAdayi && adAdayi.id !== numara.liste.id
+          ? { liste: adAdayi, tur: "numara-hatali" }
+          : { liste: numara.liste, tur: "numara" };
+      } else if (s.ogrenci_no === null) {
         const adayi = adaGoreListeOnerisi(satir, liste);
         if (adayi) hedef = { liste: adayi, tur: "ad" };
+      } else {
+        // Numara listede hiç yok: ad tek kişiye benziyorsa yine öneri (numara hatalı kodlanmış olabilir).
+        const adAdayi = adaGoreBenzerAday(satir, liste);
+        if (adAdayi) hedef = { liste: adAdayi, tur: "numara-hatali" };
       }
       if (!hedef) continue;
+      const sahip = s.ogrenci_no === null ? null : liste.find((l) => l.okulNo === String(s.ogrenci_no));
       ozet.oneriler.push({
         bekleyenId: s.id, adSoyadHam: s.ad_soyad_ham, ogrenciNo: s.ogrenci_no,
         listeId: hedef.liste.id, listeAd: hedef.liste.adSoyad, listeNo: hedef.liste.okulNo, listeSeviyesi: hedef.liste.seviye,
-        hesabiVar: hedef.liste.studentId !== null, tur: hedef.tur, deneme: `${s.tarih} · ${s.yayinevi}`,
+        hesabiVar: hedef.liste.studentId !== null, tur: hedef.tur,
+        numaraSahibi: sahip ? `${sahip.adSoyad} (${sahip.okulNo}${sahip.seviye ? `, ${sahip.seviye}. sınıf` : ""}, ${sahip.studentId ? "hesabı var" : "kayıtsız"})` : null,
+        deneme: `${s.tarih} · ${s.yayinevi}`,
       });
     }
     ozet.hesapsizBagliKisi = hesapsizKisi.size;
@@ -183,7 +202,11 @@ export async function onKayitliOnerileriOnayla(kayitlar: { bekleyenId: string; l
     const aday: ListeAdayi = { id: l.id, okulNo: l.okul_no, adSoyad: l.ad_soyad, seviye: (Array.isArray(l.classes) ? l.classes[0] : l.classes)?.seviye ?? null, studentId: l.student_id };
     const satir = { adSoyad: s.ad_soyad_ham, ogrenciNo: s.ogrenci_no, sinifSeviyesi: s.sinif_seviyesi };
     const numara = numarayaGoreListeBaglantisi(satir, [aday]);
-    const gecerli = numara.karar !== "yok" || (s.ogrenci_no === null && adaGoreListeOnerisi(satir, [aday])?.id === aday.id);
+    // Geçerli bağlar: numara bu kişiyle eşleşiyor; ya da numarası yok/yanlış ama ad bu kişiye
+    // benziyor (ad tam aynı ya da benzer, sınıf çelişmiyor). İstemci hedefi seçer, kural sunucuda yeniden sınanır.
+    const gecerli = numara.karar !== "yok"
+      || (s.ogrenci_no === null && adaGoreListeOnerisi(satir, [aday])?.id === aday.id)
+      || adaGoreBenzerAday(satir, [aday])?.id === aday.id;
     if (!gecerli) continue;
     const { error } = await admin.from("pdf_deneme_eslesme_bekleyenler").update({ liste_ogrenci_id: l.id }).eq("id", s.id).eq("durum", "bekliyor").is("liste_ogrenci_id", null);
     if (error) continue;

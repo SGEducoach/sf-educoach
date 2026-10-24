@@ -80,8 +80,11 @@ export function OnKayitliEslesme({ ozet }: { ozet: OnKayitliOzeti }) {
                     PDF: {o.adSoyadHam}{o.ogrenciNo !== null ? ` (${o.ogrenciNo})` : ""} → Liste: {o.listeAd}{o.listeNo ? ` (${o.listeNo})` : ""}{o.listeSeviyesi ? ` · ${o.listeSeviyesi}. sınıf` : ""}
                   </span>
                   <span className="block" style={{ color: TEXT_MUTED }}>
-                    {o.deneme} · {o.tur === "numara" ? "numara eşleşiyor, ad/sınıf uyuşmuyor" : "numara yok, ad tam aynı"} · {o.hesabiVar ? "öğrencinin hesabı var" : ON_KAYIT_ETIKETI.toLowerCase()}
+                    {o.deneme} · {o.tur === "numara" ? "numara eşleşiyor, ad/sınıf uyuşmuyor" : o.tur === "numara-hatali" ? "ad bu öğrenciye uyuyor, PDF'teki numara başka birine ait (numara hatalı kodlanmış olabilir)" : "numara yok, ad tam aynı"} · {o.hesabiVar ? "öğrencinin hesabı var" : ON_KAYIT_ETIKETI.toLowerCase()}
                   </span>
+                  {o.numaraSahibi && o.tur !== "numara" && (
+                    <span className="block" style={{ color: TEXT_MUTED }}>PDF numarası ({o.ogrenciNo}) listede şu kişiye ait: {o.numaraSahibi}</span>
+                  )}
                 </span>
               </label>
             ))}

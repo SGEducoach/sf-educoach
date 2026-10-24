@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  ON_KAYIT_BEKLEME_GUNU, adaGoreListeOnerisi, bekleyenKalanGun, bekleyenSuresiDolduMu, davetMetni,
+  ON_KAYIT_BEKLEME_GUNU, adaGoreBenzerAday, adaGoreListeOnerisi, bekleyenKalanGun, bekleyenSuresiDolduMu, davetMetni,
   hesapsizDenemeNeti, numarayaGoreListeBaglantisi, type ListeAdayi,
 } from "./on-kayitli";
 
@@ -78,5 +78,31 @@ describe("davetMetni", () => {
     expect(m).toContain("www.sefukoc.com");
     expect(m.endsWith("Sedat Güler")).toBe(true);
     expect(davetMetni(null)).not.toContain("null");
+  });
+});
+
+describe("adaGoreBenzerAday (PDF numarası hatalı kodlanmışsa asıl sahibi ada göre bul)", () => {
+  const sinif: ListeAdayi[] = [
+    { id: "a", okulNo: "80", adSoyad: "ÇAĞAN AKPINAR", seviye: "11", studentId: "s-a" },
+    { id: "b", okulNo: "81", adSoyad: "BETÜL ERVA MEŞE", seviye: "9", studentId: null },
+    { id: "c", okulNo: "91", adSoyad: "MEHMET EMRE KARACA", seviye: "9", studentId: null },
+    { id: "d", okulNo: "3660", adSoyad: "HÜSEYİN EFE ERDOĞAN", seviye: "9", studentId: null },
+    { id: "e", okulNo: "442", adSoyad: "EBRAR SENA HURMAN", seviye: "10", studentId: "s-e" },
+    { id: "f", okulNo: "223", adSoyad: "MERVE SENA KUYUCU", seviye: "10", studentId: "s-f" },
+  ];
+  const aday = (adSoyad: string, no: number, seviye: string | null = null) =>
+    adaGoreBenzerAday({ adSoyad, ogrenciNo: no, sinifSeviyesi: seviye }, sinif)?.id ?? null;
+
+  it("kısaltılmış ad ya da eksik ikinci ad tek kişiye uyuyorsa o kişi", () => {
+    expect(aday("B ERVA MEŞE", 80)).toBe("b");
+    expect(aday("EMRE KARACA", 90)).toBe("c");
+    expect(aday("HÜSEYİN ERDOĞAN", 260)).toBe("d");
+  });
+  it("tek sözcük, birden çok kişiye uyan ya da listede olmayan ad öneri almaz", () => {
+    expect(aday("SENA", 443)).toBeNull();
+    expect(aday("Y ENES ZEDELİ", 165)).toBeNull();
+  });
+  it("sınıf seviyesi çelişen kişi önerilmez", () => {
+    expect(aday("B ERVA MEŞE", 80, "12")).toBeNull();
   });
 });
