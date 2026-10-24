@@ -1,6 +1,6 @@
 # SEFUKOC.COM — GÜNLÜK DURUM KAYDI
 
-Son güncelleme: 23 Ekim 2026 · Türkiye saati (M8 eklendi)
+Son güncelleme: 24 Ekim 2026 · Türkiye saati (M9: müfredat değişiklik başvuruları)
 Depo: https://github.com/SGEducoach/sf-educoach (dal: main)
 Bağlı ana dosya: SEFUKOC_MERKEZ_PROJE.md (depoda `docs/SEFUKOC_MERKEZ_PROJE.md`)
 
@@ -146,10 +146,22 @@ Alan açıklamaları: **Çalışan AI** = modülde son işi yapan araç/oturum �
 
 ---
 
+### M9 — Öğretmenden müfredat değişiklik başvurusu (24.10.2026)
+
+- **Durum:** Kod hazır ve testli; kullanıcı 24.10.2026'da bu özelliği canlıya alma onayı verdi. Yayın için güncel ana dal `6a2ba9c5` üzerine taşındı; diğer bilgisayarın 0178 Matematik düzeltmesi korundu. İlgili commit'in production sonucu GitHub Vercel kontrolünden doğrulanmalı. Bu özellik için canlı veritabanına dokunulmadı; migration gerekmiyor.
+- **Çalışma alanı:** Codex, bu bilgisayar; `E:\SG_EDUCOACH\.claude\worktrees\codex-yurt-kart-nobetciler`, dal `codex/mufredat-degisiklik-basvurusu`, başlangıç `555e8c86`. Ana klasördeki ve diğer çalışma klasörlerindeki ilgisiz değişiklikler korunuyor. Diğer bilgisayarın gönderilmemiş işleri bilinmiyor.
+- **Öğretmen:** Üst çubuktaki kitap simgesi / mobil menüde **Müfredat düzeltme başvurusu**. Adım 1: kademe, program, sınıf, ders, konu, varsa alt başlık, hata türü ve tespit. Adım 2: düzeltme önerisi, sınıf yanlışsa önerilen sınıf, isteğe bağlı kaynak. Ortaokul ve lise desteklenir. Ders/konu önerisi listede yoksa elle yazılabilir.
+- **Admin:** **Hata Bildirimleri → Müfredat Değişiklik Başvuruları**. Okunur tespit/öneri, mevcut cevapla/çözüldü akışı, **Düzeltme istemini kopyala** ve pano izni yoksa elle seçme. İstem başvuru kimliği, kurum, program/sınıf/konu, tespit, öneri, kaynak ve ek yanıtları taşır; kullanıcı beyanını talimattan ayırır, doğrulama ve öğrenci eşleşmelerini koruma ister; tek başına canlı yayın/migration izni vermez.
+- **Altyapı:** Mevcut `hata_bildirimleri.mesaj` alanında sürümlü JSON zarfı; yeni tablo/sütun/RLS/grant yok. Aktif öğretmen kontrolü sunucuda; kimlik/rol/kurum istemciden alınmaz. Genel hata formundan sahte müfredat zarfı kaydı engellenir. Müfredat ve öğrenci kayıtlarına otomatik yazma yok. Form yalnız tıklanınca yüklenir; polling veya AI servisi çağrısı yok.
+- **Dosyalar:** `src/lib/mufredat-basvurusu.ts` (+test), `src/app/dashboard/mufredat-basvuru-actions.ts` (+test), `src/app/dashboard/hata-actions.ts`, `MufredatBasvuruButonu.tsx`, `MufredatBasvuruFormu.tsx`, `mufredat-basvuru-arayuz.test.ts`, `Header.tsx`, `MobilMenu.tsx`, `HataBildirButonu.tsx`, `HataBildirimleriYonetimi.tsx`, `HataBildirimListesi.tsx`.
+- **Kontrol:** 83 dosya / **912 test** geçti (yeni özellik için 49 test; doğrulama, yetki, kurum bağlamı, bozuk/eski kayıt, istem içeriği ve SSR arayüz). `tsc --noEmit --incremental false`, değişen dosyalarda eslint ve `git diff --check` temiz. Production build, gerçek öğretmen/admin oturumunda kayıt ve mobil pano/klavye akışı **denenmedi**.
+- **Sonraki adım:** Onaylı yayın için yalnız bu görevi main'e gönder; Vercel production READY ve alan adı eşleşmesini doğrula. Ardından öğretmen → iki adımlı başvuru → admin → istemi kopyala → cevap/ek bilgi akışını gerçek hesapla doğrula. Sadece HTTP 200 veya test başarısı kullanıcı ekranı doğrulaması sayılmaz.
+
 ## 3. OTURUM GÜNLÜĞÜ
 
 | Tarih | Araç / Oturum | Modül | Yapılan | Kontrol sonucu | Son commit |
 | --- | --- | --- | --- | --- | --- |
+| 24 Ekim 2026, 23:02 (Europe/Istanbul) | Codex, bu bilgisayar | M9 | Öğretmen için tespit → öneri başvurusu; admin için ayrı liste ve kopyalanabilir düzeltme istemi; mevcut hata bildirimi altyapısı kullanıldı | 912 test, tsc ve eslint temiz; migration/yayın yok; gerçek hesapla denenmedi | `codex/mufredat-degisiklik-basvurusu` (başlangıç `555e8c86`) |
 | 23 Ekim 2026 | ChatLLM (Abacus AI Agent) | Genel | Analiz modülü için verimlilik raporu ve 4 fazlı plan; bu durum dosyası ve oturum protokolü oluşturuldu | Depo commit geçmişi okundu; kod okunmadı, test yapılmadı | 23 Eki — merkez proje dosyası eklendi |
 | 23 Ekim 2026 | ChatLLM (Abacus AI Agent) | M1 (+M2, M4 notları) | Faz 1 keşfi (salt okunur): GitHub son commit kontrolü, migration/indeks/RLS, analiz veri yolları, 0171, Claude kullanımı; `FAZ1_KESIF_RAPORU.md` yazıldı | Kod okundu; canlı DB, test, build **yapılmadı**; depoda değişiklik yok | `ce4966d0` |
 | 23 Ekim 2026 | ChatLLM (Abacus AI Agent) | M1 | Başlangıç protokolü (GitHub = `ce4966d0`, fark yok); Adım 0 ölçüm SQL'leri; Adım 1 (takip açılış taraması koşullu + son tarama etiketi, 0172) ve Adım 2 (0173 indeksler) yazıldı | 774/774 test, tsc, eslint temiz; build/ekran/canlı DB **yapılmadı**; **commit yok** (onay bekleniyor) | `ce4966d0` |
@@ -169,6 +181,10 @@ Alan açıklamaları: **Çalışan AI** = modülde son işi yapan araç/oturum �
 ---
 
 ## 4. DEVİR NOTU
+
+### Müfredat değişiklik başvuruları — Codex, 24 Ekim 2026
+
+M9 görev dalı `codex/mufredat-degisiklik-basvurusu`, yerel klasör `E:\SG_EDUCOACH\.claude\worktrees\codex-yurt-kart-nobetciler`. Yukarıdaki M9 kaydı özellik, dosya ve kontrolleri açıklar. Kullanıcı 24.10.2026'da canlıya alma onayı verdi; güncel `6a2ba9c5` üzerine taşındı. Bu özellikte veritabanı değişikliği yok; 0178 başka oturumun mevcut Matematik düzeltmesidir, yeniden uygulanmadı. Son commit ve gönderim için `git log -1` / GitHub main, yayın için o commit'e bağlı Vercel production kontrolü esas alınmalı. Gerçek hesapla uçtan uca doğrulama bekliyor.
 
 ### Rehberliğe yönlendirme — Claude Code, 24 Ekim 2026 (Türkiye saati)
 
