@@ -28,7 +28,6 @@ const BOLUMLER: { kod: Gorunum; baslik: string; aciklama: string; renk: string; 
   { kod: "sessiz", baslik: "Kullanıma başlamayanlar", aciklama: "Henüz giriş yapmamış ya da hiç veri girmemiş", renk: BLUSH, grup: "Katılım ve erişim" },
   { kod: "kayip", baslik: "Hesabı olmayan öğrenciler", aciklama: "Resmî listede var, hesabı açılmamış", renk: BLUSH, grup: "Katılım ve erişim" },
 ];
-const GRUPLAR = ["Deneme başarısı", "Çalışma ve görev", "Katılım ve erişim"];
 
 const TUM_SINIFLAR = "tumu";
 // Tek bir denemeye değil, öğrencinin TÜM denemelerinin ortalamasına göre
@@ -111,28 +110,25 @@ export function SinifAnaliziPanel({
         {siniflar.length === 0 ? (
           <Bos metin="Görebileceğiniz bir sınıf yok. Sınıf öğretmenliğiniz ya da bir derse atamanız tanımlı değil — yöneticinizle görüşün." />
         ) : (
-          <div className="flex flex-col gap-4">
-            {GRUPLAR.map((grup) => (
-              <section key={grup} aria-label={grup}>
-                <h3 className="mb-2 text-[11px] font-extrabold uppercase tracking-wider" style={{ color: TEXT_MUTED }}>{grup}</h3>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  {BOLUMLER.filter((b) => b.grup === grup).map((b) => (
-                    <button
-                      key={b.kod}
-                      type="button"
-                      onClick={() => degistir(b.kod)}
-                      className="sfec-btn flex items-center gap-3 rounded-2xl p-4 text-left"
-                      style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}
-                    >
-                      <Image src="/icon-192.png" alt="" width={40} height={40} className="h-10 w-10 shrink-0 rounded-xl" />
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-[15px] font-extrabold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>{b.baslik}</span>
-                        <span className="block text-[11px] font-bold" style={{ color: b.renk }}>{b.aciklama}</span>
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </section>
+          // Altı kart TEK ızgarada (iki sütun, üç satır). Eskiden gruplar ayrı
+          // ızgaralardı (1 + 2 + 3 kart): iki sütunda sol 4, sağ 2 kalıyor ve
+          // kayıyordu. Grup adı artık kartın içinde küçük etiket olarak duruyor.
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {BOLUMLER.map((b) => (
+              <button
+                key={b.kod}
+                type="button"
+                onClick={() => degistir(b.kod)}
+                className="sfec-btn flex items-center gap-3 rounded-2xl p-4 text-left"
+                style={{ background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}
+              >
+                <Image src="/icon-192.png" alt="" width={40} height={40} className="h-10 w-10 shrink-0 rounded-xl" />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[10px] font-extrabold uppercase tracking-wider" style={{ color: TEXT_MUTED }}>{b.grup}</span>
+                  <span className="block text-[15px] font-extrabold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>{b.baslik}</span>
+                  <span className="block text-[11px] font-bold" style={{ color: b.renk }}>{b.aciklama}</span>
+                </span>
+              </button>
             ))}
           </div>
         )}
