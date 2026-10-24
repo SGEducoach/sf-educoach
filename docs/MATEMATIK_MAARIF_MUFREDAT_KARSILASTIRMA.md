@@ -1,6 +1,6 @@
 # Matematik — Maarif Modeli müfredatı ile SeFuKoç konu verisinin karşılaştırması
 
-**Tarih:** 24.10.2026 · **Durum:** Rapor. Konu verisinde, veritabanında ya da kodda **değişiklik yapılmadı**; düzeltmeler önerilmiştir ve onay bekliyor.
+**Tarih:** 24.10.2026 · **Durum:** Rapor + **ortak alt başlık düzeltmesi (migration 0178) canlıya uygulandı** (Bölüm 4.A, madde 1-5). Okulun kendi 55 alt başlığı (4.B) ve programda olmayan 3 alt başlık (A.6) **henüz değiştirilmedi**, karar bekliyor.
 **Tetikleyen:** Miyase Küçük (10-D sınıf öğretmeni, Matematik) "açıortay-kenarortay konusu 10. sınıf konusu" dedi. **Öğretmen haklı** (aşağıda).
 **Kaynak:** MEB Talim ve Terbiye Kurulu, Türkiye Yüzyılı Maarif Modeli, Ortaöğretim Matematik Dersi Öğretim Programı, `tymm.meb.gov.tr` — 9, 10, 11 ve 12. sınıf tüm tema/ünite sayfaları tek tek okundu (27 sayfa: 7 + 7 + 5 + 8). Kazanım metinlerinin tamamı değil, kod ve konu adları çıkarıldı.
 
@@ -89,6 +89,15 @@ Bu satırlar migration 0056'da "MEB çerçevesine dair genel bilgiyle üretilmi�
 
 **B. Kurum alt başlıkları (`kurum_mufredat_alt_konulari`) — okulun kendi listesi, hatalı yerleştirilmiş**
 Elbistan Fen Lisesi için **55 alt başlığın hepsi tek bir üst konunun altında**: "Üçgende Açı-Kenar Özellikleri". İçinde Binom, İntegral, Türev, Limit, Karmaşık Sayılar, Logaritma, Kümeler, Seriler gibi **bu konuyla ilgisiz** başlıklar ve ayrıca "Açıortay", "Kenarortay", "Üçgende Alan", "Dik ve Özel Üçgenler" var. Büyük olasılıkla genel bir YKS konu listesi yüklenirken üst konu alanı varsayılana düşmüş. Sonuç: 9. sınıf öğrencisinin konu seçiminde de "İntegral" gibi başlıklar çıkıyor olabilir. (Not: tek satırda "Doğrusal İlişkiler ve Problemler › Doğruda ve Üçgende Açılar" ayrıca var.) Bu liste okula ait olduğu için içeriği okulun/moderatörün kararıdır; öneri bu rapordaki resmî haritaya göre **doğru üst konulara dağıtmak**.
+
+## 4.1 Uygulanan düzeltme (0178, 24.10.2026)
+
+Alt başlık ADLARI değiştirilmedi (ad, kayıt anahtarı: taşınan satırlarda 20 + 19 + 1 hakimiyet, 5 + 4 + 1 ödev kaydı var); yalnız üst konu taşındı ve 3 satır eklendi. Doğrulama: Matematik ortak alt başlık sayısı 76 → 79, yetim kalan hakimiyet kaydı 0.
+- "Üçgende Kenar-Açı Bağıntıları (Kenarortay, Açıortay, Kenar Orta Dikme)" → 10 · Trigonometri… (sıra 2)
+- "Üçgende Alan Bağıntıları" → 10 · Trigonometri… (sıra 3)
+- "Ters Fonksiyon" → 10 · Karesel, Karekök ve Rasyonel Fonksiyonlar
+- Eklendi: 9 · "Üçgende Açı ve Kenar Bağıntıları (İç-Dış Açı, Kenar Uzunluk İlişkisi)"; 9 · "Tales, Öklid ve Pisagor Teoremleri"; 10 · "Fonksiyon Olma Şartları"
+- Etki: 9. sınıf öğrencisinin konu seçiminde yardımcı elemanlar/alan artık 9. sınıf altında çıkmaz (kayıtları durur).
 
 ## 5. Öneri ve karar bekleyenler
 
