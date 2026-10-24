@@ -1619,6 +1619,24 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   // ediliyor.
   const dershaneMi = kurumTuru === "dershane";
   const ogretmenKurumKonulari = await kurumAltKonulariGetir(supabase, teacher.school_id);
+  // Ortak alt başlıklar (mufredat_alt_konular, herkese açık okuma): öğretmenin
+  // "Ödev ver" konu listesine de girer. Eskiden yalnız kurumun kendi alt
+  // başlıkları vardı; öğrenci tarafı ortak olanları zaten gösteriyordu.
+  const { data: ortakAltKonularHam } = await supabase.from("mufredat_alt_konular").select("ders, ust_konu, alt_baslik").order("sira");
+  const ortakAltKonuOnerileri = ((ortakAltKonularHam ?? []) as { ders: string; ust_konu: string; alt_baslik: string }[]).flatMap((a) => {
+    const ust = MUFREDAT_KONULARI.find((u) => u.ders === a.ders && u.konu === a.ust_konu);
+    return ust ? [{ ders: a.ders, konu: a.alt_baslik, seviye: ust.seviye as string | null, ustKonu: a.ust_konu }] : [];
+  });
+  const ogretmenKonuOnerileri = (() => {
+    const liste: { ders: string; konu: string; seviye: string | null; ustKonu?: string }[] = [...MUFREDAT_KONULARI, ...kurumKonuOnerileri(ogretmenKurumKonulari)];
+    const gorulen = new Set(liste.map((k) => `${k.ders}|${k.konu}`));
+    for (const k of ortakAltKonuOnerileri) {
+      if (gorulen.has(`${k.ders}|${k.konu}`)) continue;
+      gorulen.add(`${k.ders}|${k.konu}`);
+      liste.push(k);
+    }
+    return liste;
+  })();
   const dersVerisiGerekli = (aktifBolum === "takvim" || aktifBolum === "dersler") && role === "ogretmen";
   const nobetVerisiGerekli = aktifBolum === "takvim" || dersVerisiGerekli;
   // Okulun yüklediği nöbetler (17.09.2026): okul nöbeti programın başlığında
@@ -1726,7 +1744,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       verdigimGorevler={verdigimGorevler}
       mesajKartiGorevleri={mesajKartiGorevleri}
       ogretmenAdi={(ogretmenProfili as { ad: string } | null)?.ad ?? null}
-      konuOnerileri={ortaokulKonulari ?? [...MUFREDAT_KONULARI, ...kurumKonuOnerileri(ogretmenKurumKonulari)]}
+      konuOnerileri={ortaokulKonulari ?? ogretmenKonuOnerileri}
       kademe={kademe}
       aktifBolum={aktifBolum}
       dersProgramiSatirlari={dersProgramiSatirlari}

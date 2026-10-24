@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { kademeBul, kurumSeviyeleri, panelBransListesi, seviyeEtiketi } from "@/lib/kademe";
+import { konuSinifi, ogretmenOdevKonuAdayi } from "@/lib/mufredat-konulari";
 import { ortaokulDersKarsilastir } from "@/lib/ortaokul-ders-sirasi";
 import type { KurumKademesi } from "@/lib/types";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -1223,11 +1224,18 @@ export function GorevVerBolumu({ ogrenciler, konuOnerileri, topluSiniflar = [], 
   // AYT Edebiyat başlıklarından oluşuyor.
   const turkDiliDersiMi = !ortaokulMu && (ders === "Türk Dili ve Edebiyatı" || ders === "Türkçe" || ders === "Edebiyat");
   const dersAdlari = turkDiliDersiMi ? new Set(["Türkçe", "Edebiyat"]) : new Set([ders]);
-  const dersKonulari = konuOnerileri.filter((k) => {
-    if (!dersAdlari.has(k.ders)) return false;
-    if (hedefSeviyeler.size === 0 || !k.seviye || k.seviye === "TYT" || k.seviye === "AYT") return true;
-    return [...hedefSeviyeler].some((seviye) => k.seviye === seviyeEtiketi(seviye));
-  });
+  // Lisede hedef sınıfın KENDİ konuları ve ALT sınıfların konuları listelenir
+  // (10. sınıfa 9. sınıf konusundan tekrar ödevi verilebilir; öğrenci tarafı da
+  // aynı kuralı kullanıyor: konuSinifiSecenekleri). Eskiden yalnız tam eşleşen
+  // seviye gösteriliyordu: 10-D sınıf öğretmeni "açıortay-kenarortay" (9. sınıf
+  // konusu) alt başlığını göremiyordu (öğretmen bildirimi 24.10.2026).
+  const enUstHedefSinifi = Math.max(0, ...[...hedefSeviyeler].map(Number).filter(Number.isFinite));
+  const dersKonulari = konuOnerileri.filter((k) => dersAdlari.has(k.ders) && ogretmenOdevKonuAdayi(k.seviye, [...hedefSeviyeler], ortaokulMu));
+  // Alt sınıftan gelen konuda sınıf yazılır ("… — 9. Sınıf"); hedef sınıfınki yalın kalır.
+  const konuEtiketi = (k: { konu: string; seviye?: string | null }) => {
+    const sinif = k.seviye ? konuSinifi(k.seviye) : null;
+    return !ortaokulMu && sinif !== null && sinif < enUstHedefSinifi ? `${k.konu} — ${k.seviye}` : k.konu;
+  };
 
   // Deneme görevinde "Ders" alanı anlamsız — TYT/AYT birden çok dersi birden
   // kapsıyor, tek bir ders seçmek yanıltıcı. Sadece Branş Denemesi (9-10.
@@ -1389,7 +1397,7 @@ export function GorevVerBolumu({ ogrenciler, konuOnerileri, topluSiniflar = [], 
               <select value={konu} onChange={(e) => setKonu(e.target.value)}
                 className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
                 <option value="">Seçiniz (opsiyonel)</option>
-                {dersKonulari.map((k) => <option key={`${k.ders}-${k.seviye ?? ""}-${k.konu}`} value={k.konu}>{k.konu}</option>)}
+                {dersKonulari.map((k) => <option key={`${k.ders}-${k.seviye ?? ""}-${k.konu}`} value={k.konu}>{konuEtiketi(k)}</option>)}
               </select>
             </label>
           )}

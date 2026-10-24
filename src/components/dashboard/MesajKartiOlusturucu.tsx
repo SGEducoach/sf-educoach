@@ -307,7 +307,10 @@ export function MesajKartiOlusturucu({ gorevler, ogretmenAdi }: { gorevler: Mesa
     if (!blob) return;
     const dosya = new File([blob], dosyaAdi(), { type: "image/png" });
     try {
-      await navigator.share({ files: [dosya], title: `${icerik.baslikOn} ${icerik.baslikVurgu} ${icerik.baslikSon}`.replace(/\s+/g, " ") });
+      // YALNIZ dosya: `title` / `text` verilirse WhatsApp bunu görselin altına
+      // otomatik mesaj olarak koyuyordu ("Bu haftanın Matematik ödevleri" —
+      // öğretmen bildirimi 24.10.2026). Mesajı öğretmen kendisi yazar.
+      await navigator.share({ files: [dosya] });
       setMesaj("Kart paylaşıldı. Sistemde saklanmadı.");
       kapat();
     } catch {

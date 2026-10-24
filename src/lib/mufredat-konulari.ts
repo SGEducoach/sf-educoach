@@ -99,3 +99,22 @@ export const MUFREDAT_KONULARI_ALANLI: MufredatKonusuAlanli[] = MUFREDAT_KONULAR
 export function alanaGoreKonular(alan: AytAlan): MufredatKonusuAlanli[] {
   return MUFREDAT_KONULARI_ALANLI.filter((k) => k.alanlar.includes(alan));
 }
+
+// Öğretmenin "Ödev ver" konu listesi: lisede hedef sınıfın KENDİ konuları ve
+// ALT sınıfların konuları (10. sınıfa 9. sınıf konusundan tekrar ödevi
+// verilebilir — öğrenci tarafındaki konuSinifiSecenekleri ile aynı kural);
+// üst sınıfın konuları gösterilmez. Ortaokulda yalnız tam eşleşen seviye.
+// "TYT"/"AYT" etiketli (Türkçe/Edebiyat) ve seviyesiz konular hep listelenir.
+export function ogretmenOdevKonuAdayi(
+  konuSeviyesiEtiketi: string | null | undefined,
+  hedefSeviyeler: string[],
+  ortaokul: boolean,
+): boolean {
+  if (hedefSeviyeler.length === 0 || !konuSeviyesiEtiketi || konuSeviyesiEtiketi === "TYT" || konuSeviyesiEtiketi === "AYT") return true;
+  const tamEslesme = hedefSeviyeler.some((seviye) => konuSeviyesiEtiketi === `${seviye}. Sınıf`);
+  if (ortaokul) return tamEslesme;
+  const konuSinif = konuSinifi(konuSeviyesiEtiketi);
+  if (konuSinif === null) return tamEslesme;
+  const enUst = Math.max(0, ...hedefSeviyeler.map(Number).filter(Number.isFinite));
+  return konuSinif <= enUst;
+}
