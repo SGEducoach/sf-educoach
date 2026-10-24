@@ -13,6 +13,7 @@
 import { bilesikMasterySkoruHesapla, dogrulukOraniHesapla, oturumOrtalamasiHesapla } from "@/lib/analiz-motoru";
 import { BRANS_KAZANIM_EKI, bransKazanimBasligiMi, kazanimDersiniKanoniklestir } from "@/lib/kazanim-konu-oneri";
 import { dersGosterimAdi, konuGosterimAdi } from "@/lib/deneme-konu-analizi";
+import { MAARIF_EDEBIYAT, bransGosterimDersi } from "@/lib/maarif-edebiyat";
 import { konuAdAnahtari, type KonuAdEslesmesi, type KonuHedefi } from "@/lib/konu-ad-eslesmesi";
 import type { HedefeYakinlik } from "@/lib/types";
 
@@ -124,13 +125,16 @@ function sinifSirasi(a: string, b: string): number {
 const ortala = (l: number[]) => l.reduce((t, s) => t + s, 0) / l.length;
 
 // "Türkçe (Branş)" → "Türkçe" (öğretmenin ders yetkisi taban derse bakar).
+// "Maarif Edebiyat (Branş)" → "Edebiyat" (görev ve ders yetkisi gerçek derse bakar).
 export function tabanDers(ders: string): string {
-  return ders.replace(/ \(Branş\)$/, "");
+  const taban = ders.replace(/ \(Branş\)$/, "");
+  return taban === MAARIF_EDEBIYAT ? "Edebiyat" : taban;
 }
 
 function denemeKonusu(ders: string, metin: string, ad: KdAdlandirma): { ders: string; konu: string; mufredat: boolean } {
   if (bransKazanimBasligiMi(ders)) {
-    return { ders: `${ders.trim().slice(0, -BRANS_KAZANIM_EKI.length)} (Branş)`, konu: konuGosterimAdi(metin), mufredat: false };
+    const taban = ders.trim().slice(0, -BRANS_KAZANIM_EKI.length);
+    return { ders: `${bransGosterimDersi(taban, metin)} (Branş)`, konu: konuGosterimAdi(metin), mufredat: false };
   }
   const kanonik = kazanimDersiniKanoniklestir(ders);
   if (!kanonik) return { ders: dersGosterimAdi(ders), konu: konuGosterimAdi(metin), mufredat: false };

@@ -11,6 +11,18 @@ describe("ortak konu kapsamı", () => {
     expect(MUFREDAT_KONULARI.some((k) => k.ders === "Türkçe (Maarif)")).toBe(false);
     expect(MUFREDAT_KONULARI.some((k) => k.ders === "Türkçe" && k.seviye === "TYT")).toBe(true);
   });
+  test("Türkçe (klasik TYT) her sınıfta ve her alanda ortak görünür; AYT Edebiyat yalnız 12. sınıf EA/SÖZ", () => {
+    const turkce = MUFREDAT_KONULARI.filter((k) => k.ders === "Türkçe");
+    expect(turkce).toHaveLength(20);
+    for (const sinif of ["9", "10", "11", "12"] as const) {
+      for (const alan of ["SAY", "EA", "SOZ"] as const) {
+        expect(turkce.every((k) => konuOgrenciyeUygunMu(k, sinif, alan))).toBe(true);
+      }
+    }
+    const edebiyat = MUFREDAT_KONULARI.filter((k) => k.ders === "Edebiyat");
+    expect(edebiyat.every((k) => konuOgrenciyeUygunMu(k, "12", "EA") && konuOgrenciyeUygunMu(k, "12", "SOZ"))).toBe(true);
+    expect(edebiyat.some((k) => konuOgrenciyeUygunMu(k, "12", "SAY"))).toBe(false);
+  });
   test("Hazırlık adları korunup 9. sınıfa taşınır", () => {
     const konu = MUFREDAT_KONULARI.find((k) => k.konu === "Doğrusal İlişkiler ve Problemler");
     expect(konu?.seviye).toBe("9. Sınıf");

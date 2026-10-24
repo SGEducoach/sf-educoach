@@ -6,6 +6,8 @@
 // Konu adları yayınevinin kendi adları ("PARAGRAF YORUMU"); müfredat konu
 // adlarına eşleştirme ayrı iş (kazanim_konu_eslesmeleri).
 
+import { bransGosterimDersi } from "@/lib/maarif-edebiyat";
+
 export interface KazanimSatiriGirdi {
   denemeId: string;
   studentId: string;
@@ -59,6 +61,14 @@ export function dersGosterimAdi(ders: string): string {
   return ders.trim().replace(/-\d+$/, "");
 }
 
+// Branş denemesi kazanımları "<Ders>_Branş_Deneme" diye saklanır (bkz.
+// kazanim-konu-oneri.ts); ekranda "Türkçe (Branş)", edebiyat kazanımları ise
+// "Maarif Edebiyat (Branş)" (bkz. maarif-edebiyat.ts) görünür.
+function konuDersiGosterimAdi(ders: string, kazanimMetni: string): string {
+  const brans = /^(.*)_Branş_Deneme$/.exec(ders.trim());
+  return brans ? `${bransGosterimDersi(brans[1], kazanimMetni)} (Branş)` : dersGosterimAdi(ders);
+}
+
 // Başlık ortasında küçük kalan Türkçe bağlaç/edatlar.
 const KUCUK_KELIMELER = new Set(["ve", "ile", "ya", "veya", "da", "de", "ki", "için"]);
 
@@ -93,7 +103,7 @@ function secmeliBoslariniAt(satirlar: KazanimSatiriGirdi[]): KazanimSatiriGirdi[
 function konulariTopla(satirlar: KazanimSatiriGirdi[], gecmisEkle: boolean): KonuSonucu[] {
   const gruplar = new Map<string, { ders: string; konu: string; soru: number; dogru: number; yanlis: number; ogrenciler: Set<string>; denemeler: Map<string, { tarih: string; soru: number; dogru: number }> }>();
   for (const s of satirlar) {
-    const ders = dersGosterimAdi(s.ders);
+    const ders = konuDersiGosterimAdi(s.ders, s.kazanimMetni);
     const konu = konuGosterimAdi(s.kazanimMetni);
     const anahtar = `${ders}|${konu.toLocaleUpperCase("tr-TR")}`;
     let g = gruplar.get(anahtar);

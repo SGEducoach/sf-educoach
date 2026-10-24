@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { bransinMufredatDersleri, konuDurumuHesapla, oncelikliKonular, type KdAdlandirma, type KdDenemeSatiri, type KdOgrenci } from "./konu-durumu";
+import { bransinMufredatDersleri, konuDurumuHesapla, tabanDers, oncelikliKonular, type KdAdlandirma, type KdDenemeSatiri, type KdOgrenci } from "./konu-durumu";
 import { konuDurumuKapsamlari } from "./konu-durumu-verisi";
 
 const AD: KdAdlandirma = {
@@ -69,6 +69,18 @@ describe("konuDurumuHesapla", () => {
       ],
     });
     expect(v.konular.map((k) => k.ders).sort()).toEqual(["Türkçe", "Türkçe (Branş)"]);
+  });
+
+  test("branş denemesi edebiyat kazanımı 'Maarif Edebiyat (Branş)' olur; Edebiyat yetkisi görür, görev dersi Edebiyat", () => {
+    const denemeler = [
+      deneme("a", { ders: "Türkçe_Branş_Deneme", kazanimMetni: "İsim Tamlamaları" }),
+      deneme("a", { ders: "Türkçe_Branş_Deneme", kazanimMetni: "Türkü türünün genel özelliklerini belirler." }),
+    ];
+    const edebiyat = konuDurumuHesapla({ ...bos, ogrenciler: [ogr("a", ["Edebiyat"])], adlandirma: AD, denemeler });
+    expect(edebiyat.konular.map((k) => k.ders)).toEqual(["Maarif Edebiyat (Branş)"]);
+    const turkce = konuDurumuHesapla({ ...bos, ogrenciler: [ogr("a", ["Türkçe"])], adlandirma: AD, denemeler });
+    expect(turkce.konular.map((k) => k.ders)).toEqual(["Türkçe (Branş)"]);
+    expect(tabanDers("Maarif Edebiyat (Branş)")).toBe("Edebiyat");
   });
 
   test("gidişat: iki denemede başarı 5 puandan fazla değişirse", () => {

@@ -37,6 +37,18 @@ describe("konuAnaliziOzetle", () => {
     expect(o.tumu[0].ders).toBe("Matematik");
   });
 
+  test("branş denemesi Türkçe kazanımı: klasik TYT 'Türkçe (Branş)', edebiyat 'Maarif Edebiyat (Branş)'", () => {
+    const o = konuAnaliziOzetle([
+      satir({ tur: "BRANS", ders: "Türkçe_Branş_Deneme", kazanimMetni: "İsim Tamlamaları", soru: 2 }),
+      satir({ tur: "BRANS", ders: "Türkçe_Branş_Deneme", kazanimMetni: "Türkü türünün genel özelliklerini belirler.", soru: 2 }),
+      satir({ tur: "BRANS", ders: "Tarih_Branş_Deneme", kazanimMetni: "Destan Dönemi Türk şiirini tanır.", soru: 2 }),
+    ]);
+    const dersler = Object.fromEntries(o.tumu.map((k) => [k.konu, k.ders]));
+    expect(dersler["İsim Tamlamaları"]).toBe("Türkçe (Branş)");
+    expect(dersler["Türkü Türünün Genel Özelliklerini Belirler."]).toBe("Maarif Edebiyat (Branş)");
+    expect(dersler["Destan Dönemi Türk Şiirini Tanır."]).toBe("Tarih (Branş)");
+  });
+
   test("hiç çözülmemiş seçmeli test sayılmaz, çözülmüşse sayılır", () => {
     const bos = konuAnaliziOzetle([satir({ ders: "Felsefe (Seçmeli)", kazanimMetni: "FELSEFEYİ TANIMA", soru: 3, dogru: 0, yanlis: 0 })]);
     expect(bos.tumu).toHaveLength(0);
