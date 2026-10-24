@@ -11,7 +11,7 @@ describe("ortak konu kapsamı", () => {
     expect(MUFREDAT_KONULARI.some((k) => k.ders === "Türkçe (Maarif)")).toBe(false);
     expect(MUFREDAT_KONULARI.some((k) => k.ders === "Türkçe" && k.seviye === "TYT")).toBe(true);
   });
-  test("Türkçe (klasik TYT) her sınıfta ve her alanda ortak görünür; AYT Edebiyat yalnız 12. sınıf EA/SÖZ", () => {
+  test("Türkçe (klasik TYT) her sınıfta ve her alanda ortak görünür; AYT Edebiyat 11-12. sınıf EA/SÖZ", () => {
     const turkce = MUFREDAT_KONULARI.filter((k) => k.ders === "Türkçe");
     expect(turkce).toHaveLength(20);
     for (const sinif of ["9", "10", "11", "12"] as const) {
@@ -41,6 +41,10 @@ describe("ortak konu kapsamı", () => {
     expect(konuOgrenciyeUygunMu(ileri, "11", "SAY")).toBe(true);
     expect(konuOgrenciyeUygunMu(tarih, "12", "SAY")).toBe(false);
     expect(konuOgrenciyeUygunMu(tarih, "12", "EA")).toBe(true);
-    expect(konuOgrenciyeUygunMu({ ders: "Edebiyat", seviye: "AYT" }, "11", "EA")).toBe(false);
+    const aytEdebiyat = { ders: "Edebiyat", seviye: "AYT" };
+    expect(konuOgrenciyeUygunMu(aytEdebiyat, "10", "EA")).toBe(false);
+    expect(konuOgrenciyeUygunMu(aytEdebiyat, "11", "EA")).toBe(true);
+    expect(konuOgrenciyeUygunMu(aytEdebiyat, "11", "SOZ")).toBe(true);
+    expect(konuOgrenciyeUygunMu(aytEdebiyat, "11", "SAY")).toBe(false);
   });
 });

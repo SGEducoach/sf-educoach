@@ -4,6 +4,9 @@
 // Tarihi ve Atatürkçülük 12, Türk Dili ve Edebiyatı). Türkçe/Edebiyat için
 // Maarif Modeli ayrı konu başlığı vermediğinden (tema/beceri bazlı) klasik
 // ÖSYM TYT Türkçe / AYT Edebiyat konu listesi kullanıldı.
+// 2026 YKS kılavuzuna göre ÖSYM sınavı MEB'in "Ortak Derslere Ait Kazanım ve
+// Açıklamalar" belgesine (Maarif) dayanıyor; AYT Tarih/Coğrafya/Matematik
+// (EA dahil) için ayrı bir "klasik" liste yok, bu Maarif listeleri kaynaktır.
 //
 // Gerçek veri mufredat-konulari.json'da duruyor — hem burada (uygulama
 // kodu, TS) hem scripts/preload-konu-anlatimlari.mjs'de (Node script, build
@@ -54,7 +57,8 @@ export function konuOgrenciyeUygunMu(
     ? ogrenciSinifi : 12;
   const konuSinif = konuSinifi(konu.seviye);
   if (konuSinif !== null && konuSinif > sinif) return false;
-  if (konu.seviye === "AYT" && sinif < 12) return false;
+  // AYT Edebiyat EA/SÖZ sınıfının 11'inde de başlar (kullanıcı kararı 24.10.2026).
+  if (konu.seviye === "AYT" && sinif < 11) return false;
   // `?? []`: YKS alanı boş öğrenci (ortaokul/ilkokul) çökme yapmasın (16.10.2026).
   return konuSinavi(konu) === "TYT" || (sinif >= 11 && (AYT_MUFREDAT_DERSLERI[aytAlan] ?? []).includes(konu.ders));
 }

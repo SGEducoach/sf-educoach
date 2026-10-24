@@ -174,7 +174,7 @@ Alan açıklamaları: **Çalışan AI** = modülde son işi yapan araç/oturum �
 ### Maarif doğrulama + Maarif Edebiyat tasnifi — Claude Code, 24 Ekim 2026 (Türkiye saati)
 
 - Değişen: `src/lib/maarif-edebiyat.ts` (+test), `src/lib/konu-durumu.ts` (`tabanDers`, `denemeKonusu`), `src/lib/deneme-konu-analizi.ts`, ilgili testler, `docs/MAARIF_DOGRULAMA_TARAMASI.md`, bu dosya. Veri/migration değişikliği yok; sıradaki migration numarası **0179**.
-- Bekleyen kullanıcı kararları rapor 5. bölümde: klasik AYT Tarih/Coğrafya/Matematik (EA) kaynağı ve "yalnız klasik mi, yan yana mı", 11. sınıf EA'ya AYT Edebiyat, Elbistan'ın 55 alt başlığı. Din Kültürü ve Coğrafya sınıf dağılımı MEB sitesi açılınca tekrar taranacak.
+- Kullanıcı "1 2 3 uygula" dedi: (1) kaynak arandı, 2026 YKS kılavuzu ÖSYM sınavının MEB Maarif "Ortak Derslere Ait Kazanım ve Açıklamalar" belgesine (`ttkb.meb.gov.tr/meb_iys_dosyalar/2025_11/26164023_2026_yks.pdf`) dayandığını söylüyor → Tarih/Coğrafya/Matematik için ayrı klasik AYT listesi yok, eklenmedi; (2) çift görünme sorunu dolayısıyla ortadan kalktı; (3) AYT Edebiyat 11. sınıf EA/SÖZ'e açıldı (`konuOgrenciyeUygunMu`). Açık: Matematik 11–12 listesi "Temel Düzey" ile karışmış mı (belgede ayrı bölüm), Coğrafya-1 4 saatlik program kazanımları, Elbistan'ın 55 alt başlığı, Din Kültürü/Coğrafya sınıf dağılımı.
 
 ### Rehberliğe yönlendirme — Claude Code, 24 Ekim 2026 (Türkiye saati)
 

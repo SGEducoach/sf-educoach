@@ -43,19 +43,23 @@ Nasıl çalışıyor:
 - İşaret yoksa kazanım eskisi gibi Türkçe'de kalır (yanlış tasnif riski düşük tarafta). Yeni bir yayınevinin yeni kazanım metni yanlış düşerse işaret listesine ekleme yeterli (`src/lib/maarif-edebiyat.ts`).
 - Dosyalar: `maarif-edebiyat.ts` (+test), `konu-durumu.ts`, `deneme-konu-analizi.ts`.
 
-## 4. EA (Eşit Ağırlık) için AYT — durum ve onay bekleyen taslak
+## 4. EA (Eşit Ağırlık) için AYT — kaynak bulundu, kararlar uygulandı
 
 Şu an EA öğrencisi (12. sınıf) AYT'de şunları görüyor (`AYT_MUFREDAT_DERSLERI.EA`): Matematik (Maarif 11–12 konuları), Edebiyat (klasik AYT 21 konu), Tarih ve Coğrafya (Maarif 9–12 listeleri).
 
-Eksik/karar bekleyen noktalar:
-1. **Tarih ve Coğrafya için klasik ÖSYM AYT listesi yok** (Edebiyat'ta var). Mevcut Maarif listeleri sınav dilinden farklı ("Tarih-1/Tarih-2", "Coğrafya-1/Coğrafya-2" ÖSYM kılavuzu başlıklarıyla ilerliyor). Klasik listeyi **ÖSYM AYT kılavuzundan** alıp `seviye: "AYT"` olarak eklemek gerekir; ben kılavuz metnini doğrulayamadığım için konu adlarını uydurmadım. Kılavuz PDF'ini (ya da yayınevinin AYT içindekiler sayfasını) verirsen eklerim.
-2. **Aynı konunun iki yerde görünmesi riski:** klasik AYT listesi eklenince EA 12. sınıf öğrencisi hem "Osmanlı Dünya Gücü (Maarif)" hem klasik karşılığını görür. Seçenekler: (a) EA'da yalnız klasik AYT, Maarif 9–12 gizli; (b) ikisi yan yana. Önerim (a), ama TYT konuları Maarif sınıf konularından geldiği için Tarih/Coğrafya'nın TYT'si Maarif'te kalmalı.
-3. **11. sınıf EA** şu an AYT Edebiyat görmüyor (`seviye "AYT"` yalnız 12. sınıfa açık; testte bilinçli). Okullarda EA sınıfı 11'de başladığı için 11'e açılması mantıklı; ama bu kural değişir, onayın gerekir.
-4. **Matematik (EA)**: SAY ile aynı Maarif 11–12 listesini kullanıyor. EA'nın AYT matematiği SAY'dan dar (limit/türev/integral ağırlığı farklı); klasik EA listesi için yine ÖSYM kılavuzu gerekir.
+**Kaynak bulgusu (belirleyici, 24.10.2026):** 2026 YKS kılavuzu adayların "MEB tarafından belirlenen *ÖSYM Tarafından 2026 Yılında Gerçekleştirilecek TYT, AYT ve YDT Sınavlarına Esas Ortak Derslere Ait Kazanım ve Açıklamalar*" belgesinden sorumlu olduğunu söylüyor. Bu belge (`ttkb.meb.gov.tr/meb_iys_dosyalar/2025_11/26164023_2026_yks.pdf`) Maarif kazanımlarıdır: Tarih 9–11, İnkılap 12, Coğrafya 9–12, Matematik, Türk Dili ve Edebiyatı… Yani Tarih, Coğrafya ve Matematik için ayrı bir "klasik ÖSYM AYT listesi" artık yok; projedeki Maarif listeleri zaten sınavın resmî kaynağı.
 
-## 5. Açık kararlar (senden)
+Kararların uygulanması:
+1. **Kaynak (karar 1):** yeni liste eklenmedi, çünkü eklenecek ayrı bir klasik liste yok; Tarih/Coğrafya/Matematik listeleri doğru kaynakla örtüşüyor. Edebiyat'ın klasik 21 konusu senin kararınla duruyor.
+2. **Çift görünme (karar 2):** ikinci bir liste olmadığı için gizlenecek bir şey yok; EA öğrencisi Tarih/Coğrafya/Matematik'i tek listede görüyor.
+3. **11. sınıf EA/SÖZ (karar 3, uygulandı):** AYT Edebiyat artık 11. sınıftan itibaren açık (`konuOgrenciyeUygunMu`, `seviye "AYT"` eşiği 12'den 11'e). SAY ve 10. sınıf hâlâ görmez; testler güncellendi.
 
-1. Tarih/Coğrafya/Matematik klasik AYT listeleri için kaynak (ÖSYM kılavuzu) ve "yalnız klasik mi, yan yana mı" kararı.
-2. 11. sınıf EA'ya AYT Edebiyat açılsın mı?
-3. Din Kültürü ve Coğrafya sınıf dağılımı: MEB sitesi açılınca ünite sayfalarından tekrar doğrulanacak (otomatik, onay gerekmez).
-4. Eski bekleyenler: Elbistan'ın 55 kurum alt başlığının yeniden dağıtımı, 3 resmî olmayan Matematik alt başlığı (Modüler Aritmetik, Binom Açılımı, Toplam-Fark Formülleri), 9. sınıf listesindeki Hazırlık konuları.
+Dikkat edilecek iki not (kodda değişiklik yapılmadı):
+- Belgede Matematik'in 11–12. sınıf **"Temel Düzey"** bölümü ayrı (sayı kümeleri, çember, istatistik…). AYT matematiği ileri düzeydir; projedeki Matematik 11–12 listesinin ileri düzey olduğunu ayrıca teyit etmek gerekir.
+- Coğrafya-1 sorularında 11–12. sınıfta yalnız 4 saatlik programdaki (belgede kırmızı) kazanımlar sorumluluk dışı; proje bunu ayırt etmiyor.
+
+## 5. Açık kararlar
+
+1. Matematik 11–12 listesinin ileri düzey kazanımlarıyla birebir olup olmadığı (Temel Düzey ile karışmış mı): istenirse bu belgeyle satır satır karşılaştırılır.
+2. Din Kültürü ve Coğrafya sınıf dağılımı: MEB program sitesi açılınca ya da aynı belgeden (Coğrafya s.112–123) tekrar doğrulanacak.
+3. Eski bekleyenler: Elbistan'ın 55 kurum alt başlığının yeniden dağıtımı, 3 resmî olmayan Matematik alt başlığı (Modüler Aritmetik, Binom Açılımı, Toplam-Fark Formülleri), 9. sınıf listesindeki Hazırlık konuları.
