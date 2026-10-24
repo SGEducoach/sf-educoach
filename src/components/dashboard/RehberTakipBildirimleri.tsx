@@ -51,7 +51,7 @@ const taramaZamaniYaz = (iso: string) => new Date(iso).toLocaleString("tr-TR", {
 export function RehberTakipBildirimleri({ bildirimler, hazir, ogrenciBaglantisi, duzeySiz, sonTarama = null, taramaHatasi = false, sinifOgretmeni = false }: {
   bildirimler: TakipBildirimi[]; hazir: boolean; ogrenciBaglantisi: "analiz" | "takip"; duzeySiz: boolean;
   sonTarama?: string | null; taramaHatasi?: boolean;
-  /** Sınıf öğretmeni görünümü (migration 0176): kendi sınıfı, 3 tür, kişiye özel durum/not. */
+  /** Sınıf öğretmeni görünümü (migration 0176): kendi sınıfı, beş tür, kişiye özel durum/not. */
   sinifOgretmeni?: boolean;
 }) {
   const TURLER = sinifOgretmeni ? TUM_TURLER.filter((t) => (SINIF_TAKIP_TURLERI as readonly string[]).includes(t)) : TUM_TURLER;
@@ -114,7 +114,7 @@ export function RehberTakipBildirimleri({ bildirimler, hazir, ogrenciBaglantisi,
           <h1 className="text-lg font-extrabold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Takip Bildirimleri</h1>
           <p className="text-xs" style={{ color: TEXT_MUTED }}>
             {sinifOgretmeni
-              ? "Sınıfınızdaki öğrenciler için ani net düşüşü, ders bazında düşüş ve 14 gün ve üzeri sessizlik burada toplanır. \"Görüldü\" ve notlarınız yalnız size aittir; rehberlik servisinin kayıtlarını ve notlarını etkilemez, görmezsiniz. Her sabah otomatik taranır."
+              ? "Sınıfınızdaki öğrenciler için ani net düşüşü ve yükselişi, ders bazında düşüş, 14 gün ve üzeri sessizlik ve biriken görevler burada toplanır. \"Görüldü\" ve notlarınız yalnız size aittir; rehberlik servisinin kayıtlarını ve notlarını etkilemez, görmezsiniz. Her sabah otomatik taranır."
               : "Ani net düşüşü ve yükselişi, ders bazında düşüş, 14 gün ve üzeri sessizlik ve biriken görevler burada toplanır. Bu bildirimler mesaj kutusuna gitmez; her sabah otomatik taranır."}
           </p>
           {hazir && !duzeySiz && (

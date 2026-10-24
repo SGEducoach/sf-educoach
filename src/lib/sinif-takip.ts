@@ -4,14 +4,15 @@
 // KARARLAR (REHBER_ANALIZLERI_SINIF_OGRETMENI_KARAR_RAPORU.md önerisi):
 //  * Kapsam yalnız öğretmenin KENDİ sınıfı (teachers.class_id). Branş
 //    öğretmeni, ilkokul sınıf öğretmeni ve grup koçluğu kapsam dışı.
-//  * Üç tür: net düşüşü, ders düşüşü, sessizlik. "Net yükselişi" ve "biriken
-//    görev" rehberde kalır (sınıf öğretmenine bildirim yükü olmasın).
+//  * Rehberle aynı beş tür: net düşüşü, net yükselişi, ders düşüşü,
+//    sessizlik, biriken görev. (İlk sürümde yükseliş ve biriken görev
+//    rehberde bırakılmıştı; kullanıcı kararı 24.10.2026 ile eklendi.)
 //  * Durum ve not KİŞİYE özel (takip_ogretmen_durumlari); rehberin ortak
 //    durumu ve NOTU sınıf öğretmenine hiç taşınmaz.
 import { kademeBul } from "@/lib/kademe";
 import type { TakipDurumu, TakipTuru } from "@/lib/rehber-takip";
 
-export const SINIF_TAKIP_TURLERI: readonly TakipTuru[] = ["net_dususu", "ders_dususu", "sessizlik"];
+export const SINIF_TAKIP_TURLERI: readonly TakipTuru[] = ["net_dususu", "net_yukselisi", "ders_dususu", "sessizlik", "gorev_birikmesi"];
 
 export const SINIF_TAKIP_NOT_EN_FAZLA = 500;
 

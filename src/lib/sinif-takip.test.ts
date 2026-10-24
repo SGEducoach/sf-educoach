@@ -14,10 +14,9 @@ describe("sinifTakipKapsamiVarMi", () => {
 });
 
 describe("sınıf takip türleri", () => {
-  test("yalnız net düşüşü, ders düşüşü ve sessizlik", () => {
-    expect(["net_dususu", "ders_dususu", "sessizlik"].every(sinifTakipTuruMu)).toBe(true);
-    expect(sinifTakipTuruMu("net_yukselisi")).toBe(false);
-    expect(sinifTakipTuruMu("gorev_birikmesi")).toBe(false);
+  test("rehberle aynı beş tür (yükseliş ve biriken görev dahil, 24.10.2026)", () => {
+    expect(["net_dususu", "net_yukselisi", "ders_dususu", "sessizlik", "gorev_birikmesi"].every(sinifTakipTuruMu)).toBe(true);
+    expect(sinifTakipTuruMu("bilinmeyen")).toBe(false);
   });
   test("tarama anahtarı sınıfa özeldir", () => {
     expect(sinifTaramaAnahtari("abc")).toBe("sinif:abc");
