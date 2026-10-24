@@ -10,7 +10,7 @@ import { ogrenciAktiviteOzetleriGetir } from "@/lib/ogrenci-aktivite";
 import { kademeBul } from "@/lib/kademe";
 import { ortaokulSonHareketleriGetir, sonHareketiBirlestir } from "@/lib/ortaokul-aktivite-ekle";
 import { sonTaramaZamani, takipOlaylariniBul, taramaKapsamAnahtari, type TakipDenemesi, type TakipDurumu, type TakipTuru } from "@/lib/rehber-takip";
-import { SINIF_TAKIP_TURLERI, kisiDurumunuUygula, sinifTakipKapsamiVarMi, sinifTaramaAnahtari, type KisiDurumu } from "@/lib/sinif-takip";
+import { SINIF_TAKIP_TURLERI, kisiDurumunuUygula, sinifTakipKapsamiVarMi, sinifTaramaAnahtari, sutunYokHatasiMi, type KisiDurumu } from "@/lib/sinif-takip";
 
 // Rehber Takip Bildirimleri'nin veritabanı tarafı (migration 0171).
 // Kapsam: okul rehberi atandığı sınıf düzeyleri (Rehberlik Servisi,
@@ -54,9 +54,12 @@ export interface TakipBildirimi {
   // değerlendirmesi (kullanıcı kararı 24.10.2026). Rehberin durumunu
   // değiştirmez; kayıt rehber kapatana kadar listede kalır.
   sinifOgretmeniDegerlendirmeleri?: SinifOgretmeniDegerlendirmesi[];
+  // Yalnız SINIF ÖĞRETMENİ görünümünde: öğrenciyi rehberliğe yönlendirdi mi (0177).
+  rehbereYonlendirildi?: boolean;
 }
 
-export interface SinifOgretmeniDegerlendirmesi { ogretmenAdi: string; notMetni: string | null; tarih: string }
+// yonlendirme (0177): öğretmen öğrenciyi rehberlik servisine yönlendirdi.
+export interface SinifOgretmeniDegerlendirmesi { ogretmenAdi: string; notMetni: string | null; tarih: string; yonlendirme?: boolean }
 
 const PARCA = 150;
 function parcalara<T>(liste: T[]): T[][] {
@@ -231,11 +234,14 @@ export async function takipBildirimleriniGetir(admin: Istemci, k: TakipKapsami):
     kisiDurumlari = new Map();
     const idler = hamListe.map((r) => r.id);
     for (const parca of parcalara(idler)) {
-      const { data: d, error: e } = await admin.from("takip_ogretmen_durumlari").select("bildirim_id, durum, not_metni")
-        .eq("teacher_id", k.ogretmenId).in("bildirim_id", parca);
+      // 0177 (yönlendirme) sütunu yoksa onsuz okunur.
+      const oku = (sutunlar: string) => admin.from("takip_ogretmen_durumlari").select(sutunlar)
+        .eq("teacher_id", k.ogretmenId!).in("bildirim_id", parca);
+      let { data: d, error: e } = await oku("bildirim_id, durum, not_metni, rehbere_yonlendirildi");
+      if (e && sutunYokHatasiMi(e)) ({ data: d, error: e } = await oku("bildirim_id, durum, not_metni"));
       if (e) return { bildirimler: [], hazir: false };
-      for (const x of (d ?? []) as { bildirim_id: string; durum: "goruldu" | "ele_alindi"; not_metni: string | null }[]) {
-        kisiDurumlari.set(x.bildirim_id, { durum: x.durum, notMetni: x.not_metni });
+      for (const x of (d ?? []) as unknown as { bildirim_id: string; durum: "goruldu" | "ele_alindi"; not_metni: string | null; rehbere_yonlendirildi?: boolean }[]) {
+        kisiDurumlari.set(x.bildirim_id, { durum: x.durum, notMetni: x.not_metni, rehbereYonlendirildi: x.rehbere_yonlendirildi === true });
       }
     }
   }
@@ -257,15 +263,17 @@ export async function takipBildirimleriniGetir(admin: Istemci, k: TakipKapsami):
 // olarak eklenir. Tablo yoksa ya da okunamazsa liste bilgisiz döner.
 async function sinifOgretmeniDegerlendirmeleriniEkle(admin: Istemci, bildirimler: TakipBildirimi[]): Promise<TakipBildirimi[]> {
   const harita = new Map<string, SinifOgretmeniDegerlendirmesi[]>();
+  const temel = "bildirim_id, not_metni, guncellenme_at, ogretmen:profiles!takip_ogretmen_durumlari_teacher_id_fkey(ad)";
   for (const parca of parcalara(bildirimler.map((b) => b.id))) {
-    const { data, error } = await admin.from("takip_ogretmen_durumlari")
-      .select("bildirim_id, not_metni, guncellenme_at, ogretmen:profiles!takip_ogretmen_durumlari_teacher_id_fkey(ad)")
-      .eq("durum", "ele_alindi").in("bildirim_id", parca);
+    // 0177 (yönlendirme) sütunu yoksa onsuz okunur.
+    const oku = (sutunlar: string) => admin.from("takip_ogretmen_durumlari").select(sutunlar).eq("durum", "ele_alindi").in("bildirim_id", parca);
+    let { data, error } = await oku(`${temel}, rehbere_yonlendirildi`);
+    if (error && sutunYokHatasiMi(error)) ({ data, error } = await oku(temel));
     if (error) return bildirimler;
-    type Row = { bildirim_id: string; not_metni: string | null; guncellenme_at: string; ogretmen: { ad: string } | { ad: string }[] | null };
+    type Row = { bildirim_id: string; not_metni: string | null; guncellenme_at: string; ogretmen: { ad: string } | { ad: string }[] | null; rehbere_yonlendirildi?: boolean };
     for (const r of (data ?? []) as unknown as Row[]) {
       const liste = harita.get(r.bildirim_id) ?? [];
-      liste.push({ ogretmenAdi: tekil(r.ogretmen)?.ad ?? "Sınıf öğretmeni", notMetni: r.not_metni, tarih: r.guncellenme_at });
+      liste.push({ ogretmenAdi: tekil(r.ogretmen)?.ad ?? "Sınıf öğretmeni", notMetni: r.not_metni, tarih: r.guncellenme_at, yonlendirme: r.rehbere_yonlendirildi === true });
       harita.set(r.bildirim_id, liste);
     }
   }

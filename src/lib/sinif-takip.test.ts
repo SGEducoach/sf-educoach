@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { kisiDurumunuUygula, kisiyeYeniSayisi, sinifTakipKapsamiVarMi, sinifTakipNotunuTemizle, sinifTakipTuruMu, sinifTaramaAnahtari } from "./sinif-takip";
+import { kisiDurumunuUygula, kisiyeYeniSayisi, sinifTakipKapsamiVarMi, sinifTakipNotunuTemizle, sinifTakipTuruMu, sinifTaramaAnahtari, sutunYokHatasiMi, yonlendirmeHatasi } from "./sinif-takip";
 
 describe("sinifTakipKapsamiVarMi", () => {
   test("lise ve ortaokul sınıf öğretmeninde kapsam vardır", () => {
@@ -52,5 +52,26 @@ describe("sinifTakipNotunuTemizle", () => {
     expect(sinifTakipNotunuTemizle("   ")).toBeNull();
     expect(sinifTakipNotunuTemizle(undefined)).toBeNull();
     expect(sinifTakipNotunuTemizle("x".repeat(900))).toHaveLength(500);
+  });
+});
+
+describe("rehberliğe yönlendirme (0177)", () => {
+  test("gerekçe en az 10 karakter", () => {
+    expect(yonlendirmeHatasi(null)).not.toBeNull();
+    expect(yonlendirmeHatasi("kısa")).not.toBeNull();
+    expect(yonlendirmeHatasi("Öğrenciyle görüştüm, destek gerekiyor.")).toBeNull();
+  });
+  test("sütun yok hatası tanınır; başka hata tanınmaz", () => {
+    expect(sutunYokHatasiMi({ code: "42703", message: "column does not exist" })).toBe(true);
+    expect(sutunYokHatasiMi({ code: "PGRST204", message: "Could not find the 'rehbere_yonlendirildi' column" })).toBe(true);
+    expect(sutunYokHatasiMi({ code: "23505", message: "duplicate key" })).toBe(false);
+    expect(sutunYokHatasiMi(null)).toBe(false);
+  });
+  test("öğretmenin yönlendirme işareti kendi görünümüne taşınır", () => {
+    const kayit: { id: string; durum: "yeni"; notMetni: string | null; kapatanAdi: string | null; kapatilmaAt: string | null; rehbereYonlendirildi?: boolean } = { id: "b1", durum: "yeni", notMetni: null, kapatanAdi: null, kapatilmaAt: null };
+    const [y] = kisiDurumunuUygula([kayit], new Map([["b1", { durum: "ele_alindi" as const, notMetni: "Gerekçe metni", rehbereYonlendirildi: true }]]));
+    expect(y).toMatchObject({ durum: "ele_alindi", rehbereYonlendirildi: true });
+    const [n] = kisiDurumunuUygula([kayit], new Map());
+    expect(n.rehbereYonlendirildi).toBe(false);
   });
 });
