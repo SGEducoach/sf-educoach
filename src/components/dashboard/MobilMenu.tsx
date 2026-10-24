@@ -10,6 +10,7 @@ import { signOut } from "@/app/dashboard/actions";
 import { BildirimAyarlari } from "@/components/dashboard/BildirimAyarlari";
 import { MesajlarimIkonu } from "@/components/dashboard/MesajlarimIkonu";
 import { HataBildirButonu } from "@/components/dashboard/HataBildirButonu";
+import { MufredatBasvuruButonu } from "@/components/dashboard/MufredatBasvuruButonu";
 import { TemaButonu } from "@/components/TemaSecici";
 import { YoneticiIletisimButonu } from "@/components/dashboard/YoneticiIletisimButonu";
 import type { KurumTuru, UserRole } from "@/lib/types";
@@ -175,6 +176,7 @@ export function MobilMenu({ ad, role, kurumTuru, brans, grupMu = false, kademe, 
             )}
 
             <HataBildirButonu boyut="satir" />
+            {role === "ogretmen" && <MufredatBasvuruButonu satir />}
             {role !== "admin" && (role === "mudur" || moderatorMu) && <YoneticiIletisimButonu satir />}
 
             <div style={{ color: TEXT }}><TemaButonu satir /></div>

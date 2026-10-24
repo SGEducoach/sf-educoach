@@ -13,6 +13,7 @@ import {
   adminKurumLogosuKaldir, adminKurumLogosuYukle, adminKurumWhatsappVerisi, sablonAyariKaydet, sablonFotografiSil, sablonFotografiYukle, yerlesikFotoGizle,
 } from "@/app/yonetici/whatsapp-actions";
 import { CinsiyetBilgileri, type YurtVerisi } from "@/components/dashboard/YurtListeStudyosu";
+import { AdminWhatsappDuyurusu } from "@/components/yonetici/AdminWhatsappDuyurusu";
 
 const girdi = { background: BG0, color: TEXT, border: `2px solid ${BORDER_STRONG}` };
 const kucuk = "text-[10px] font-semibold uppercase tracking-wide";
@@ -24,6 +25,7 @@ export function WhatsappYonetimi({ sablonlar, ayarlar, okullar, hazir }: {
   const ayarHaritasi = new Map(ayarlar.map((a) => [a.anahtar, a]));
   return (
     <div className="flex flex-col gap-6">
+      <AdminWhatsappDuyurusu ayarlar={ayarlar} />
       <section className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <div className="flex items-center gap-2">
           <MessageSquareShare size={16} color={MINT} aria-hidden="true" />

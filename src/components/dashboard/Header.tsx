@@ -6,6 +6,7 @@ import { signOut } from "@/app/dashboard/actions";
 import { MesajlarimIkonu } from "@/components/dashboard/MesajlarimIkonu";
 import { BildirimAyarlari } from "@/components/dashboard/BildirimAyarlari";
 import { HataBildirButonu } from "@/components/dashboard/HataBildirButonu";
+import { MufredatBasvuruButonu } from "@/components/dashboard/MufredatBasvuruButonu";
 import { TemaButonu } from "@/components/TemaSecici";
 import { YoneticiIletisimButonu } from "@/components/dashboard/YoneticiIletisimButonu";
 import type { KurumTuru, UserRole } from "@/lib/types";
@@ -98,6 +99,7 @@ export async function Header({ ad, role, kurumTuru, brans, grupMu = false, okunm
               )}
               <TemaButonu />
               <HataBildirButonu />
+              {role === "ogretmen" && <MufredatBasvuruButonu />}
               {role !== "admin" && (role === "mudur" || moderatorMu) && <YoneticiIletisimButonu />}
               <BildirimAyarlari role={role} />
               {/* Kullanıcı isteği (26.08.2026, Bildirimler yeniden tasarımı — devam):

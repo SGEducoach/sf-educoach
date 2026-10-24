@@ -9,6 +9,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { MUFREDAT_BASVURU_ONEKI } from "@/lib/mufredat-basvurusu";
 
 const MESAJ_MAKS_UZUNLUK = 2000;
 
@@ -21,6 +22,10 @@ export async function hataBildir(mesaj: string, sayfa?: string): Promise<{ error
   if (!profile) return { error: "Profiliniz bulunamadı." };
 
   const mesajTemiz = mesaj.trim();
+  // Yapılandırılmış başvurunun kurum bağlamı yalnız özel action'da üretilir;
+  // genel metin alanından sahte bir müfredat zarfı kaydedilemez.
+  if (mesajTemiz.startsWith(MUFREDAT_BASVURU_ONEKI.trimEnd()))
+    return { error: "Müfredat başvurusu için Müfredat düzeltme başvurusu formunu kullanın." };
   if (!mesajTemiz) return { error: "Lütfen yaşadığınız sorunu kısaca açıklayın." };
   if (mesajTemiz.length > MESAJ_MAKS_UZUNLUK) return { error: `En fazla ${MESAJ_MAKS_UZUNLUK} karakter yazabilirsiniz.` };
 

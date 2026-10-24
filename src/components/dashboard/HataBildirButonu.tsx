@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Bug } from "lucide-react";
 import { acikHataBildirimlerimGetir, hataBildir, hataBildirimineEkBilgiGonder, type AcikHataBildirimi } from "@/app/dashboard/hata-actions";
 import { BG0, BG1, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
+import { mufredatBasvuruOzeti, mufredatBasvurusunuOku } from "@/lib/mufredat-basvurusu";
 
 // Faz G — tüm rollerde erişilebilir "Hata Bildir" tetikleyicisi. `boyut`
 // masaüstü (ikon-only, Header'daki diğer ikon butonlarla aynı boyut) ile
@@ -112,7 +113,7 @@ export function HataBildirButonu({ boyut = "ikon" }: { boyut?: "ikon" | "satir" 
               {acikBildirimler === null ? <p style={{ color: TEXT_MUTED }} className="mt-2 text-xs">Yükleniyor...</p>
                 : acikBildirimler.length === 0 ? <p style={{ color: TEXT_MUTED }} className="mt-2 text-xs">Açık bildiriminiz yok.</p>
                 : <div className="mt-2 space-y-3">{acikBildirimler.map((b) => <div key={b.id} className="rounded-xl p-3" style={{ background: BG0, border: `1px solid ${BORDER_STRONG}` }}>
-                    <p style={{ color: TEXT }} className="text-xs whitespace-pre-wrap">{b.mesaj}</p>
+                    <p style={{ color: TEXT }} className="text-xs whitespace-pre-wrap">{basvuruMetni(b.mesaj)}</p>
                     {b.yanitlar.map((y) => <div key={y.id} className="mt-2 rounded-lg px-2 py-1.5" style={{ background: BG1 }}>
                       <span style={{ color: MINT }} className="text-[11px] font-bold">{y.gonderenRol === "admin" ? "Yönetici" : "Siz"}</span>
                       <p style={{ color: TEXT }} className="text-xs whitespace-pre-wrap">{y.mesaj}</p>
@@ -131,4 +132,9 @@ export function HataBildirButonu({ boyut = "ikon" }: { boyut?: "ikon" | "satir" 
       )}
     </>
   );
+}
+
+function basvuruMetni(mesaj: string): string {
+  const basvuru = mufredatBasvurusunuOku(mesaj);
+  return basvuru ? mufredatBasvuruOzeti(basvuru) : mesaj;
 }
