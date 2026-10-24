@@ -114,7 +114,7 @@ export function RehberTakipBildirimleri({ bildirimler, hazir, ogrenciBaglantisi,
           <h1 className="text-lg font-extrabold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Takip Bildirimleri</h1>
           <p className="text-xs" style={{ color: TEXT_MUTED }}>
             {sinifOgretmeni
-              ? "Sınıfınızdaki öğrenciler için ani net düşüşü ve yükselişi, ders bazında düşüş, 14 gün ve üzeri sessizlik ve biriken görevler burada toplanır. \"Görüldü\" ve notlarınız yalnız size aittir; rehberlik servisinin kayıtlarını ve notlarını etkilemez, görmezsiniz. Her sabah otomatik taranır."
+              ? "Sınıfınızdaki öğrenciler için ani net düşüşü ve yükselişi, ders bazında düşüş, 14 gün ve üzeri sessizlik ve biriken görevler burada toplanır. \"Görüldü\" işaretiniz yalnız size aittir. \"Ele Alındı\" değerlendirmeniz rehberlik servisinin ekranında bilgi olarak görünür ama onların kaydını kapatmaz. Rehberlik servisinin notlarını görmezsiniz. Her sabah otomatik taranır."
               : "Ani net düşüşü ve yükselişi, ders bazında düşüş, 14 gün ve üzeri sessizlik ve biriken görevler burada toplanır. Bu bildirimler mesaj kutusuna gitmez; her sabah otomatik taranır."}
           </p>
           {hazir && !duzeySiz && (
@@ -207,6 +207,14 @@ export function RehberTakipBildirimleri({ bildirimler, hazir, ogrenciBaglantisi,
                     <p className="mt-0.5 text-[13px]" style={{ color: TEXT }}>{b.baslik}</p>
                     <DersCipleri dersler={dersler} />
                     {b.notMetni && <p className="mt-1.5 rounded-xl px-3 py-2 text-xs" style={{ background: BG1_ALT, color: TEXT }}>Not: {b.notMetni}</p>}
+                    {/* Rehber görünümü: sınıf öğretmeninin değerlendirmesi bilgi olarak; rehberin durumunu değiştirmez (24.10.2026). */}
+                    {!sinifOgretmeni && b.sinifOgretmeniDegerlendirmeleri?.map((d) => (
+                      <p key={`${d.ogretmenAdi}-${d.tarih}`} className="mt-1.5 rounded-xl px-3 py-2 text-xs" style={{ background: MINT_BG, color: TEXT, border: `1px solid ${MINT}` }}>
+                        <span className="font-bold">Sınıf öğretmeni ele aldı</span>
+                        <span style={{ color: TEXT_MUTED }}> · {d.ogretmenAdi} · {new Date(d.tarih).toLocaleDateString("tr-TR", { day: "numeric", month: "long" })}</span>
+                        {d.notMetni && <span className="mt-0.5 block whitespace-pre-wrap">{d.notMetni}</span>}
+                      </p>
+                    ))}
                     {notAcik === b.id && (
                       <div className="mt-2 flex flex-col gap-2">
                         <textarea value={notMetni} onChange={(e) => setNotMetni(e.target.value)} rows={2} maxLength={1000} autoFocus

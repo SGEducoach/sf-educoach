@@ -50,7 +50,13 @@ export interface TakipBildirimi {
   notMetni: string | null;
   kapatanAdi: string | null;
   kapatilmaAt: string | null;
+  // Yalnız REHBER görünümünde: sınıf öğretmeninin "ele alındı" işareti ve
+  // değerlendirmesi (kullanıcı kararı 24.10.2026). Rehberin durumunu
+  // değiştirmez; kayıt rehber kapatana kadar listede kalır.
+  sinifOgretmeniDegerlendirmeleri?: SinifOgretmeniDegerlendirmesi[];
 }
+
+export interface SinifOgretmeniDegerlendirmesi { ogretmenAdi: string; notMetni: string | null; tarih: string }
 
 const PARCA = 150;
 function parcalara<T>(liste: T[]): T[][] {
@@ -243,5 +249,25 @@ export async function takipBildirimleriniGetir(admin: Istemci, k: TakipKapsami):
         notMetni: r.not_metni, kapatanAdi: tekil(r.kapatan)?.ad ?? null, kapatilmaAt: r.kapatilma_at,
       };
   });
-  return { hazir: true, bildirimler: kisiDurumlari ? kisiDurumunuUygula(sonuc, kisiDurumlari) : sonuc };
+  if (kisiDurumlari) return { hazir: true, bildirimler: kisiDurumunuUygula(sonuc, kisiDurumlari) };
+  return { hazir: true, bildirimler: await sinifOgretmeniDegerlendirmeleriniEkle(admin, sonuc) };
+}
+
+// Rehber görünümü: sınıf öğretmenlerinin "ele alındı" kayıtları (0176) bilgi
+// olarak eklenir. Tablo yoksa ya da okunamazsa liste bilgisiz döner.
+async function sinifOgretmeniDegerlendirmeleriniEkle(admin: Istemci, bildirimler: TakipBildirimi[]): Promise<TakipBildirimi[]> {
+  const harita = new Map<string, SinifOgretmeniDegerlendirmesi[]>();
+  for (const parca of parcalara(bildirimler.map((b) => b.id))) {
+    const { data, error } = await admin.from("takip_ogretmen_durumlari")
+      .select("bildirim_id, not_metni, guncellenme_at, ogretmen:profiles!takip_ogretmen_durumlari_teacher_id_fkey(ad)")
+      .eq("durum", "ele_alindi").in("bildirim_id", parca);
+    if (error) return bildirimler;
+    type Row = { bildirim_id: string; not_metni: string | null; guncellenme_at: string; ogretmen: { ad: string } | { ad: string }[] | null };
+    for (const r of (data ?? []) as unknown as Row[]) {
+      const liste = harita.get(r.bildirim_id) ?? [];
+      liste.push({ ogretmenAdi: tekil(r.ogretmen)?.ad ?? "Sınıf öğretmeni", notMetni: r.not_metni, tarih: r.guncellenme_at });
+      harita.set(r.bildirim_id, liste);
+    }
+  }
+  return bildirimler.map((b) => (harita.has(b.id) ? { ...b, sinifOgretmeniDegerlendirmeleri: harita.get(b.id) } : b));
 }

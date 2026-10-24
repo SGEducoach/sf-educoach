@@ -9,6 +9,9 @@
 //    rehberde bırakılmıştı; kullanıcı kararı 24.10.2026 ile eklendi.)
 //  * Durum ve not KİŞİYE özel (takip_ogretmen_durumlari); rehberin ortak
 //    durumu ve NOTU sınıf öğretmenine hiç taşınmaz.
+//  * Ters yön (kullanıcı kararı 24.10.2026): sınıf öğretmeninin "ele alındı"
+//    işareti ve değerlendirmesi rehberin ekranında BİLGİ olarak görünür;
+//    rehberin kaydını kapatmaz (bkz. sinifOgretmeniDegerlendirmeleriniEkle).
 import { kademeBul } from "@/lib/kademe";
 import type { TakipDurumu, TakipTuru } from "@/lib/rehber-takip";
 
