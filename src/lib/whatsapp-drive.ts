@@ -17,6 +17,28 @@ export function driveDosyasiDogrula(girdi: { ad: unknown; boyut: unknown }) {
   if (typeof girdi.boyut !== "number" || !Number.isSafeInteger(girdi.boyut) || girdi.boyut < 1 || girdi.boyut > DRIVE_EK_BOYUTU) throw new Error("Dosya 0–25 MB arasında olmalı.");
   return { ad: girdi.ad.trim(), boyut: girdi.boyut, tur };
 }
+// Uzantı tek başına güvenilmez: yetkili bir kullanıcı "föy.pdf" adıyla başka içerik
+// yükleyebilir ve dosya herkese açık klasörde durur. Tamamlama adımında dosyanın
+// ilk baytları uzantıyla karşılaştırılır (25.10.2026 incelemesi).
+const DRIVE_IMZA_BAYT = 16;
+const zipMi = (b: Uint8Array) => b[0] === 0x50 && b[1] === 0x4b && b[2] === 0x03 && b[3] === 0x04;
+const imzalar: Record<string, (b: Uint8Array) => boolean> = {
+  pdf: (b) => b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46 && b[4] === 0x2d,
+  png: (b) => [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a].every((v, i) => b[i] === v),
+  jpg: (b) => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff,
+  webp: (b) => b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50,
+  docx: zipMi, xlsx: zipMi, pptx: zipMi,
+  // Eski Office biçimleri (OLE2 bileşik belge).
+  doc: (b) => [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1].every((v, i) => b[i] === v),
+  // Düz metin: ilk baytlarda NUL / kontrol karakteri olmamalı.
+  txt: (b) => b.length > 0 && Array.from(b).every((v) => v === 0x09 || v === 0x0a || v === 0x0d || v >= 0x20),
+};
+imzalar.jpeg = imzalar.jpg; imzalar.xls = imzalar.doc; imzalar.ppt = imzalar.doc;
+export const DRIVE_IMZA_OKUMA_BAYTI = DRIVE_IMZA_BAYT;
+export function driveIcerikUygunMu(dosyaAdi: string, ilkBaytlar: Uint8Array): boolean {
+  const kontrol = imzalar[dosyaAdi.split(".").pop()?.toLowerCase() ?? ""];
+  return !!kontrol && kontrol(ilkBaytlar);
+}
 export function driveKimligi(id: unknown): id is string { return typeof id === "string" && /^[A-Za-z0-9_-]{10,200}$/.test(id); }
 export function driveDosyaAdresi(id: string) {
   if (!driveKimligi(id)) throw new Error("Geçersiz Drive dosyası.");

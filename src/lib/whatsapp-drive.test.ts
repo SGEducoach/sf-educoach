@@ -1,5 +1,27 @@
 import { describe, expect, it } from "vitest";
-import { DRIVE_EK_BOYUTU, driveDosyasiDogrula, driveDosyaAdresi, drivePaylasimMetni, driveYuklemeAdresi } from "./whatsapp-drive";
+import { DRIVE_EK_BOYUTU, driveDosyasiDogrula, driveDosyaAdresi, driveIcerikUygunMu, drivePaylasimMetni, driveYuklemeAdresi } from "./whatsapp-drive";
+
+const bayt = (...v: number[]) => Uint8Array.from(v);
+const yazi = (metin: string) => Uint8Array.from(Buffer.from(metin, "utf8"));
+describe("Drive içerik imzası (uzantı yalan söylemesin)", () => {
+  it("doğru imzalı dosyaları kabul eder", () => {
+    expect(driveIcerikUygunMu("föy.PDF", yazi("%PDF-1.7"))).toBe(true);
+    expect(driveIcerikUygunMu("a.png", bayt(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0))).toBe(true);
+    expect(driveIcerikUygunMu("a.jpeg", bayt(0xff, 0xd8, 0xff, 0xe0))).toBe(true);
+    expect(driveIcerikUygunMu("a.webp", bayt(0x52, 0x49, 0x46, 0x46, 1, 2, 3, 4, 0x57, 0x45, 0x42, 0x50, 0x56))).toBe(true);
+    expect(driveIcerikUygunMu("a.docx", bayt(0x50, 0x4b, 0x03, 0x04, 0x14))).toBe(true);
+    expect(driveIcerikUygunMu("a.xls", bayt(0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1))).toBe(true);
+    expect(driveIcerikUygunMu("not.txt", yazi("Merhaba Dünya"))).toBe(true);
+  });
+  it("uzantıyla uyuşmayan içeriği reddeder", () => {
+    expect(driveIcerikUygunMu("x.pdf", bayt(0x4d, 0x5a, 0x90, 0x00))).toBe(false);
+    expect(driveIcerikUygunMu("x.png", yazi("%PDF-1.7"))).toBe(false);
+    expect(driveIcerikUygunMu("x.docx", yazi("<html>"))).toBe(false);
+    expect(driveIcerikUygunMu("x.txt", bayt(0x4d, 0x5a, 0x00, 0x03))).toBe(false);
+    expect(driveIcerikUygunMu("x.pdf", new Uint8Array())).toBe(false);
+    expect(driveIcerikUygunMu("x.exe", bayt(0x4d, 0x5a))).toBe(false);
+  });
+});
 
 describe("WhatsApp Drive ek sınırları", () => {
   it("Türkçe PDF adı ve 25 MB üst sınırını kabul eder", () => {

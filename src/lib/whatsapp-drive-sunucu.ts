@@ -8,7 +8,7 @@ import { rehberlikUyeligiGetir } from "@/lib/rehberlik-servisi";
 import { mudurYardimcisiUyeligiGetir } from "@/lib/mudur-yardimcisi";
 import { rehberlikBirimiMi } from "@/lib/dashboard-navigation";
 import { driveBiletImzala, driveBiletOku, driveSirCoz } from "@/lib/whatsapp-drive-crypto";
-import { driveDosyasiDogrula, driveDosyaAdresi, driveKimligi, driveYuklemeAdresi } from "@/lib/whatsapp-drive";
+import { DRIVE_IMZA_OKUMA_BAYTI, driveDosyasiDogrula, driveDosyaAdresi, driveIcerikUygunMu, driveKimligi, driveYuklemeAdresi } from "@/lib/whatsapp-drive";
 
 export class DriveHatasi extends Error { constructor(mesaj: string, public status = 400) { super(mesaj); } }
 export const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.file";
@@ -107,6 +107,17 @@ export async function driveYuklemeBaslat(k: DriveKullanicisi, b: DriveBaglantisi
   // URI yalnız bu dosyanın yükleme yetkisidir; OAuth token'ı öğretmene verilmez.
   return { adres, bilet, tur: dosya.tur };
 }
+// Dosyanın yalnız ilk baytları okunur (Range + akış iptali): 25 MB indirilmez.
+async function driveIcerigiUyuyorMu(token: string, id: string, ad: string): Promise<boolean> {
+  const r = await driveIstegi(token, `https://www.googleapis.com/drive/v3/files/${id}?alt=media`, { headers: { Range: `bytes=0-${DRIVE_IMZA_OKUMA_BAYTI - 1}` } });
+  if (!r.ok || !r.body) throw new DriveHatasi("Yüklenen dosyanın içeriği doğrulanamadı. Yeniden deneyin.", 502);
+  const okuyucu = r.body.getReader();
+  const parcalar: Uint8Array[] = []; let toplam = 0;
+  try {
+    while (toplam < DRIVE_IMZA_OKUMA_BAYTI) { const s = await okuyucu.read(); if (s.done) break; parcalar.push(s.value); toplam += s.value.byteLength; }
+  } finally { await okuyucu.cancel().catch(() => undefined); }
+  return driveIcerikUygunMu(ad, Buffer.concat(parcalar).subarray(0, DRIVE_IMZA_OKUMA_BAYTI));
+}
 export async function driveYuklemeTamamla(k: DriveKullanicisi, b: DriveBaglantisi, bilet: string) {
   const v = driveBiletOku("yukleme", bilet);
   if (v.aktor !== k.id || v.okul !== k.okulId || v.klasor !== b.klasor_id || v.surum !== baglantiSurumu(b) || !driveKimligi(v.id)) throw new DriveHatasi("Bu dosya yüklemesi hesabınıza veya güncel klasöre ait değil.", 403);
@@ -116,6 +127,12 @@ export async function driveYuklemeTamamla(k: DriveKullanicisi, b: DriveBaglantis
   const dosya = await r.json();
   if (dosya.trashed || dosya.id !== v.id || dosya.name !== v.ad || Number(dosya.size) !== v.boyut || dosya.mimeType !== v.tur || !dosya.parents?.includes(v.klasor) || dosya.appProperties?.sf_duyuru !== v.nonce || dosya.appProperties?.sf_aktor !== k.id) throw new DriveHatasi("Yüklenen dosya seçilen dosyayla eşleşmiyor.");
   if (dosya.capabilities?.canDownload === false || !dosya.permissions?.some((p: { type: string; role: string }) => p.type === "anyone" && p.role === "reader")) throw new DriveHatasi("Dosya öğrenciye açık değil. Drive paylaşımını kontrol edin.");
+  // İçerik uzantıyla uyuşmuyorsa dosya herkese açık klasörde kalmasın: silinir ve reddedilir.
+  if (!(await driveIcerigiUyuyorMu(token, v.id as string, dosya.name as string))) {
+    try { await driveIstegi(token, `https://www.googleapis.com/drive/v3/files/${v.id}`, { method: "DELETE" }); } catch { /* Silinemezse yönetici klasörden kaldırır; kayıt aşağıda düşülür. */ }
+    await driveKayit(k, "whatsapp_drive_icerik_reddedildi", { dosya_id: v.id, okul_id: k.okulId });
+    throw new DriveHatasi("Dosyanın içeriği uzantısıyla uyuşmuyor; dosya kaldırıldı. Gerçek bir PDF/Office/görsel dosyası seçin.");
+  }
   await driveKayit(k, "whatsapp_drive_tamamla", { dosya_id: v.id, okul_id: k.okulId, boyut: v.boyut });
   return { id: dosya.id as string, ad: dosya.name as string, adres: driveDosyaAdresi(dosya.id) };
 }
