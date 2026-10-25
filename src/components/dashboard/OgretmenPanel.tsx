@@ -35,7 +35,7 @@ import type { DersProgramiSatiri, OkulNobeti, YurtNobetGorevi } from "@/lib/ders
 import { Takvim } from "@/components/dashboard/Takvim";
 import { SosyalEtkinlikler } from "@/components/dashboard/SosyalEtkinlikler";
 import { YaziliAnaliziSekmesi } from "@/components/dashboard/YaziliAnaliziSekmesi";
-import { ON_KAYIT_BEKLEME_GUNU, ON_KAYIT_ETIKETI, davetMetni, type KayitsizOgrenciSatiri } from "@/lib/on-kayitli";
+import { ON_KAYIT_BEKLEME_GUNU, ON_KAYIT_ETIKETI, bekleyenKalanGun, davetMetni, type KayitsizOgrenciSatiri } from "@/lib/on-kayitli";
 
 export interface OgrenciSatiri {
   id: string;
@@ -76,6 +76,10 @@ interface VerdigimGorevSatiri {
   tarih: string;
   sonTarih: string;
   atamalar: { id: string; durum: GorevDurumu; ogrenciAd: string }[];
+  /** Ödevin verildiği zaman (10 günlük saklama süresi buradan sayılır). */
+  verilmeTarihi?: string;
+  /** Sisteme üye olmamış, ödevi bekleyen öğrencilerin adları (migration 0179). */
+  bekleyenler?: string[];
 }
 interface OgrenciProgramSatiri {
   id: string; ogrenci_tarih: string | null; ogrenci_baslangic_saat: string | null; ogrenci_bitis_saat: string | null;
@@ -699,6 +703,12 @@ function VerdigimGorevlerBolumu({ gorevler }: { gorevler: VerdigimGorevSatiri[] 
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: MINT_BG, color: MINT }}>
                       {tamamlanan}/{g.atamalar.length}
                     </span>
+                    {(g.bekleyenler?.length ?? 0) > 0 && g.verilmeTarihi && bekleyenKalanGun(g.verilmeTarihi) > 0 && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: BLUSH_BG, color: BLUSH }}
+                        title={`${ON_KAYIT_ETIKETI}: üye olurlarsa ödev eklenir`}>
+                        +{g.bekleyenler!.length} kayıtsız · {bekleyenKalanGun(g.verilmeTarihi)} gün
+                      </span>
+                    )}
                     {acik ? <ChevronUp size={14} color={TEXT_MUTED} /> : <ChevronDown size={14} color={TEXT_MUTED} />}
                   </div>
                 </button>
@@ -711,6 +721,12 @@ function VerdigimGorevlerBolumu({ gorevler }: { gorevler: VerdigimGorevSatiri[] 
                 </div>
                 {acik && (
                   <div className="flex flex-wrap gap-1.5 border-t px-3.5 py-3" style={{ borderColor: BORDER }}>
+                    {g.verilmeTarihi && bekleyenKalanGun(g.verilmeTarihi) > 0 && (g.bekleyenler ?? []).map((ad, i) => (
+                      <span key={`kayitsiz-${i}`} className="text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ border: `1px dashed ${BORDER_STRONG}`, color: TEXT_MUTED }}
+                        title={`${ON_KAYIT_ETIKETI} — ${bekleyenKalanGun(g.verilmeTarihi!)} gün içinde üye olursa ödev eklenir`}>
+                        {ad} · {ON_KAYIT_ETIKETI.toLowerCase()}
+                      </span>
+                    ))}
                     {g.atamalar.map((a) => {
                       const renk = DURUM_RENK[a.durum];
                       return (

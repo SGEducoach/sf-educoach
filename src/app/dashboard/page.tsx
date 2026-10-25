@@ -1582,13 +1582,15 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   // aksine) — branş öğretmeni de kendi sınıfı olmadan görev verebiliyor
   // (bkz. gorevVerilebilirMi), o yüzden burada da kendiSinifId'ye bağlı değil.
   type VerdigimGorevRow = {
-    id: string; tur: string; ders: string; konu: string | null; tarih: string; son_tarih: string;
+    id: string; tur: string; ders: string; konu: string | null; tarih: string; son_tarih: string; created_at: string;
     gorev_atamalari: { id: string; student_id: string; durum: "bekliyor" | "tamamlandi" | "tamamlanmadi"; students: { profiles: { ad: string } | null } | null }[];
+    // Sisteme üye olmamış öğrenciler: ödev 10 gün bekler (migration 0179).
+    bekleyen_gorev_atamalari: { okul_ogrenci_listesi: { ad_soyad: string } | { ad_soyad: string }[] | null }[];
   };
   const { data: verdigimGorevlerHam } = aktifBolum === "onaylar"
     ? await supabase
         .from("gorevler")
-        .select("id, tur, ders, konu, tarih, son_tarih, gorev_atamalari(id, student_id, durum, students(profiles!students_id_fkey(ad)))")
+        .select("id, tur, ders, konu, tarih, son_tarih, created_at, gorev_atamalari(id, student_id, durum, students(profiles!students_id_fkey(ad))), bekleyen_gorev_atamalari(okul_ogrenci_listesi(ad_soyad))")
         .eq("olusturan_ogretmen_id", userId)
         .order("tarih", { ascending: false })
         .limit(1000)
@@ -1596,6 +1598,8 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   const verdigimGorevler = ((verdigimGorevlerHam as unknown as VerdigimGorevRow[]) ?? []).map((g) => ({
     id: g.id, tur: g.tur as "konu" | "soru" | "deneme", ders: g.ders, konu: g.konu, tarih: g.tarih, sonTarih: g.son_tarih,
     atamalar: (g.gorev_atamalari ?? []).map((a) => ({ id: a.id, durum: a.durum, ogrenciAd: a.students?.profiles?.ad ?? "İsimsiz" })),
+    verilmeTarihi: g.created_at,
+    bekleyenler: (g.bekleyen_gorev_atamalari ?? []).map((b) => (Array.isArray(b.okul_ogrenci_listesi) ? b.okul_ogrenci_listesi[0] : b.okul_ogrenci_listesi)?.ad_soyad ?? "İsimsiz"),
   }));
 
   // Mesaj kartı (kullanıcı isteği 18.10.2026): Ödev ver bölümünde öğretmenin
