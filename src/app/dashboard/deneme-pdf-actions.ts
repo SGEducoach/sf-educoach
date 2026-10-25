@@ -255,29 +255,45 @@ async function sonuclariEslestirVeKaydet(params: {
   let listeAdaylariOnbellek: ListeAdayi[] | null = null;
   const listeAdaylari = async () => (listeAdaylariOnbellek ??= await listeAdaylariniGetir(admin, schoolId));
 
+  const kuyrukAnahtariOlustur = (ad: string, no: number | null | undefined) => `${ad}|${no ? String(no) : ""}`;
+  let kuyrukOnbellek: Map<string, string> | null | undefined;
+  async function kuyrukSatirlari(): Promise<Map<string, string> | null> {
+    if (kuyrukOnbellek !== undefined) return kuyrukOnbellek;
+    const harita = new Map<string, string>();
+    for (let bas = 0; ; bas += 1000) {
+      const { data, error } = await admin
+        .from("pdf_deneme_eslesme_bekleyenler")
+        .select("id, ad_soyad_ham, ogrenci_no")
+        .eq("school_id", schoolId).eq("yayinevi", yayinevi).eq("tarih", tarih).eq("tur", tur)
+        .order("created_at", { ascending: false })
+        .range(bas, bas + 999);
+      if (error) { kuyrukOnbellek = null; return null; }
+      for (const k of (data ?? []) as { id: string; ad_soyad_ham: string; ogrenci_no: number | null }[]) {
+        // En yeni satır kazanır (eski sorgu da created_at azalan, limit 1 idi).
+        const anahtar = kuyrukAnahtariOlustur(k.ad_soyad_ham, k.ogrenci_no);
+        if (!harita.has(anahtar)) harita.set(anahtar, k.id);
+      }
+      if ((data ?? []).length < 1000) break;
+    }
+    kuyrukOnbellek = harita;
+    return harita;
+  }
+
   async function eslesmeKuyrugunaYaz(satir: PdfOgrenciSonucu): Promise<boolean> {
     // "Aynı satır mı" kararı ada DEĞİL ad + PDF öğrenci numarasına bakıyor
     // (migration 0130). Yalnız ada bakılırsa aynı denemede iki ayrı adaşın
     // satırı tek satıra çöker ve birinin sonucu kaybolur — canlı veride
     // olan tam olarak buydu.
-    let arama = admin
-      .from("pdf_deneme_eslesme_bekleyenler")
-      .select("id, durum")
-      .eq("school_id", schoolId)
-      .eq("ad_soyad_ham", satir.ad_soyad)
-      .eq("yayinevi", yayinevi)
-      .eq("tarih", tarih)
-      .eq("tur", tur);
-    arama = satir.ogrenci_no ? arama.eq("ogrenci_no", satir.ogrenci_no) : arama.is("ogrenci_no", null);
-
-    const { data: mevcut, error: aramaHatasi } = await arama
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (aramaHatasi) {
-      console.error("Deneme sonucu eşleştirme kuyruğu aranamadı:", aramaHatasi);
+    // Bu denemenin kuyruk satırları yükleme başında TEK sorguyla alınır (eskiden
+    // her PDF satırı için ayrı sorgu: 119 öğrencilik PDF'te 119 gidiş-dönüş, 25.10.2026).
+    const kuyruk = await kuyrukSatirlari();
+    if (kuyruk === null) {
+      console.error("Deneme sonucu eşleştirme kuyruğu aranamadı.");
       return false;
     }
+    const kuyrukAnahtari = kuyrukAnahtariOlustur(satir.ad_soyad, satir.ogrenci_no);
+    const mevcutId = kuyruk.get(kuyrukAnahtari);
+    const mevcut = mevcutId ? { id: mevcutId } : null;
 
     if (mevcut) {
       const guncelle = () => admin.from("pdf_deneme_eslesme_bekleyenler")
@@ -307,10 +323,12 @@ async function sonuclariEslestirVeKaydet(params: {
       olusturan_mudur_id: userId,
       liste_ogrenci_id: listeBaglantisi.karar === "guvenli" ? listeBaglantisi.liste.id : null,
       ...seviyeAlani(),
-    });
-    let { error } = await ekle();
-    if (sutunYokHatasi(error) && seviyeSutunuVar) { seviyeSutunuVar = false; ({ error } = await ekle()); }
+    }).select("id").maybeSingle();
+    let { data: eklenen, error } = await ekle();
+    if (sutunYokHatasi(error) && seviyeSutunuVar) { seviyeSutunuVar = false; ({ data: eklenen, error } = await ekle()); }
     if (error) console.error("Deneme sonucu eşleştirme kuyruğuna yazılamadı:", error);
+    // Aynı PDF'te aynı satır tekrar gelirse eklenen kayıt güncellenir (eski davranış).
+    else if (eklenen?.id) kuyruk.set(kuyrukAnahtari, eklenen.id as string);
     return !error;
   }
 
