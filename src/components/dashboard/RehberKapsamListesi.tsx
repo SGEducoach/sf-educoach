@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowDown, ArrowRight, ArrowUp, Search } from "lucide-react";
 import type { KapsamSatiri } from "@/lib/rehber-kapsam-listesi";
+import { ON_KAYIT_BEKLEME_GUNU, ON_KAYIT_ETIKETI, type KayitsizOgrenciOzeti } from "@/lib/on-kayitli";
 import { BAYRAK_SINIRI, NET_DUSUS_ESIGI, SESSIZ_GUN, ozetHesapla, satirAgirligi, type Bayrak } from "@/lib/rehber-bayrak";
 import { BG1, BG1_ALT, BORDER, BLUSH, BLUSH_BG, BUTTER, MINT, TEXT, TEXT_MUTED } from "@/lib/theme";
 
@@ -60,7 +61,7 @@ function hareketRengi(satir: KapsamSatiri): string {
   return TEXT;
 }
 
-export function RehberKapsamListesi({ satirlar, seviyeler }: { satirlar: KapsamSatiri[]; seviyeler: string[] }) {
+export function RehberKapsamListesi({ satirlar, seviyeler, kayitsizlar = [] }: { satirlar: KapsamSatiri[]; seviyeler: string[]; kayitsizlar?: KayitsizOgrenciOzeti[] }) {
   const [arama, setArama] = useState("");
   const [sinifSuzgeci, setSinifSuzgeci] = useState("");
   const [yalnizSessiz, setYalnizSessiz] = useState(false);
@@ -209,6 +210,44 @@ export function RehberKapsamListesi({ satirlar, seviyeler }: { satirlar: KapsamS
             </tbody>
           </table>
         </div>
+      )}
+
+      {kayitsizlar.length > 0 && (
+        <details className="mt-4 rounded-2xl p-3" style={{ border: `2px dashed ${BORDER}` }}>
+          <summary className="cursor-pointer text-xs font-semibold" style={{ color: TEXT }}>
+            {ON_KAYIT_ETIKETI} ({kayitsizlar.length} öğrenci) · {kayitsizlar.filter((k) => k.denemeSayisi > 0).length} kişinin yüklü denemesi var
+          </summary>
+          <p className="mt-2 text-[11px]" style={{ color: TEXT_MUTED }}>
+            Okul listesinde olup henüz üye olmamış öğrenciler. Bayrak, aktiflik ve görev hesabı yapılmaz (veri girişleri yok); yalnız yüklenen denemeleri görünür.
+            Onlara verilen ödev ve duyurular {ON_KAYIT_BEKLEME_GUNU} gün saklanır, üye olurlarsa eklenir.
+          </p>
+          <div className="mt-2 overflow-x-auto">
+            <table className="w-full min-w-[420px] border-collapse text-left">
+              <thead>
+                <tr style={{ color: TEXT_MUTED }} className="text-[11px] uppercase tracking-wider">
+                  <th className="pb-1.5 pr-3 font-semibold">Öğrenci</th>
+                  <th className="pb-1.5 pr-3 font-semibold">Sınıf</th>
+                  <th className="pb-1.5 font-semibold">Yüklü deneme</th>
+                </tr>
+              </thead>
+              <tbody>
+                {kayitsizlar.map((k) => (
+                  <tr key={k.listeId} style={{ borderTop: `1px solid ${BORDER}` }}>
+                    <td className="py-1.5 pr-3 text-sm font-semibold" style={{ color: TEXT }}>
+                      {k.ad}{k.okulNo && <span className="ml-1.5 text-[11px] font-normal" style={{ color: TEXT_MUTED }}>#{k.okulNo}</span>}
+                    </td>
+                    <td className="py-1.5 pr-3 text-xs" style={{ color: TEXT_MUTED }}>{k.sinifAdi}</td>
+                    <td className="py-1.5 text-xs" style={{ color: TEXT }}>
+                      {k.denemeSayisi > 0
+                        ? <>{k.sonNet} net <span style={{ color: TEXT_MUTED }}>· {k.denemeSayisi} deneme · son {k.sonDenemeTarihi}</span></>
+                        : <span style={{ color: TEXT_MUTED }}>—</span>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </details>
       )}
 
       <p className="mt-3 text-[11px]" style={{ color: TEXT_MUTED }}>

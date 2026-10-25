@@ -62,7 +62,7 @@ import { OrtaokulYeterlilik } from "@/components/dashboard/OrtaokulYeterlilik";
 import { OrtaokulCalismaOnaylari } from "@/components/dashboard/OrtaokulCalismaOnaylari";
 import { ortaokulBekleyenCalismalarGetir } from "@/lib/ortaokul-calisma-onay-sorgu";
 import { ORTAOKUL_SEVIYELERI, ilkokulMu, kademeBul } from "@/lib/kademe";
-import { onKayitliDenemeleriniAktar } from "@/lib/on-kayitli-veri";
+import { kayitsizOgrenciOzetleriGetir, onKayitliDenemeleriniAktar } from "@/lib/on-kayitli-veri";
 import { yardimMesaji } from "@/lib/ortaokul-yardim";
 import { OrtaokulYardim } from "@/components/dashboard/OrtaokulYardim";
 import type { DashboardBolumu } from "@/lib/dashboard-navigation";
@@ -1117,8 +1117,12 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
         </div>
       );
     }
-    const satirlar = await rehberKapsamListesiGetir(createAdminClient(), teacher.school_id, rehberSeviyeleri);
-    return <RehberKapsamListesi satirlar={satirlar} seviyeler={rehberSeviyeleri} />;
+    const kapsamAdmin = createAdminClient();
+    const [satirlar, kayitsizlar] = await Promise.all([
+      rehberKapsamListesiGetir(kapsamAdmin, teacher.school_id, rehberSeviyeleri),
+      kayitsizOgrenciOzetleriGetir(kapsamAdmin, teacher.school_id, rehberSeviyeleri),
+    ]);
+    return <RehberKapsamListesi satirlar={satirlar} seviyeler={rehberSeviyeleri} kayitsizlar={kayitsizlar} />;
   }
 
   // Program desteği (migration 0146) — rehber, kapsamındaki öğrenciyle

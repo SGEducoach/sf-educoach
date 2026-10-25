@@ -11,6 +11,18 @@ import { adNormalize } from "@/lib/validators";
 export const ON_KAYIT_BEKLEME_GUNU = 10;
 export const ON_KAYIT_ETIKETI = "Sisteme kayıtlı değil";
 
+/** Rehber ekranı: hesapsız öğrenci + yüklü denemelerinin özeti. */
+export interface KayitsizOgrenciOzeti {
+  listeId: string;
+  ad: string;
+  okulNo: string | null;
+  sinifAdi: string;
+  denemeSayisi: number;
+  /** En yeni yüklü denemenin toplam neti; deneme yoksa null. */
+  sonNet: number | null;
+  sonDenemeTarihi: string | null;
+}
+
 export interface KayitsizOgrenciSatiri {
   id: string; // okul_ogrenci_listesi.id
   ad: string;

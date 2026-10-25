@@ -2,7 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { kademeBul } from "@/lib/kademe";
 import { ogretmenDenemeSonucuKaydet, type DenemeDersSonucu } from "@/lib/deneme-sonucu-kaydet";
 import type { DenemeTuru } from "@/lib/types";
-import type { ListeAdayi } from "@/lib/on-kayitli";
+import { denemeToplamNeti } from "@/lib/sinif-analizi";
+import type { KayitsizOgrenciOzeti, ListeAdayi } from "@/lib/on-kayitli";
 
 // Ön kayıtlı (hesapsız) okul öğrencileri — sunucu yardımcıları. Plan:
 // docs/ON_KAYITLI_OGRENCI_UYGULAMA_PLANI.md, migration 0179. Yazmalar service
@@ -49,6 +50,42 @@ export async function listeAdaylariniGetir(istemci: Istemci, schoolId: string): 
     seviye: (Array.isArray(s.classes) ? s.classes[0] : s.classes)?.seviye ?? null,
     studentId: s.student_id,
   }));
+}
+
+/**
+ * Rehber ekranı için: kapsamdaki hesapsız (ön kayıtlı) öğrenciler ve yüklü
+ * denemelerinin özeti. Aktiflik/risk hesabı YOK — veri girişi olmayan öğrenciye
+ * yanlış alarm üretir; yalnız "kayıtlı değil" ve deneme bilgisi gösterilir.
+ */
+export async function kayitsizOgrenciOzetleriGetir(istemci: Istemci, schoolId: string, seviyeler: string[]): Promise<KayitsizOgrenciOzeti[]> {
+  if (seviyeler.length === 0) return [];
+  const { data } = await istemci
+    .from("okul_ogrenci_listesi")
+    .select("id, ad_soyad, okul_no, classes!inner(seviye, sube)")
+    .eq("school_id", schoolId).is("student_id", null).in("classes.seviye", seviyeler);
+  type Satir = { id: string; ad_soyad: string; okul_no: string | null; classes: { seviye: string; sube: string } | { seviye: string; sube: string }[] | null };
+  const ogrenciler = ((data ?? []) as unknown as Satir[])
+    .map((s) => ({ ...s, sinif: Array.isArray(s.classes) ? s.classes[0] : s.classes }))
+    .filter((s) => s.sinif && kademeBul(s.sinif.seviye) !== "ilkokul");
+  if (ogrenciler.length === 0) return [];
+  const { data: bekleyenler } = await istemci
+    .from("pdf_deneme_eslesme_bekleyenler")
+    .select("liste_ogrenci_id, tarih, ders_sonuclari")
+    .eq("durum", "bekliyor").in("liste_ogrenci_id", ogrenciler.map((o) => o.id));
+  const denemeler = new Map<string, { tarih: string; net: number }[]>();
+  for (const b of (bekleyenler ?? []) as { liste_ogrenci_id: string; tarih: string; ders_sonuclari: unknown }[]) {
+    const sinif = ogrenciler.find((o) => o.id === b.liste_ogrenci_id)?.sinif;
+    const kademe = kademeBul(sinif?.seviye) === "ortaokul" ? "ortaokul" as const : "lise" as const;
+    const net = denemeToplamNeti(Array.isArray(b.ders_sonuclari) ? b.ders_sonuclari as { dogru: number; yanlis: number }[] : [], kademe);
+    denemeler.set(b.liste_ogrenci_id, [...(denemeler.get(b.liste_ogrenci_id) ?? []), { tarih: b.tarih, net }]);
+  }
+  return ogrenciler.map((o) => {
+    const liste = (denemeler.get(o.id) ?? []).sort((a, b) => b.tarih.localeCompare(a.tarih));
+    return {
+      listeId: o.id, ad: o.ad_soyad, okulNo: o.okul_no, sinifAdi: `${o.sinif!.seviye}-${o.sinif!.sube}`,
+      denemeSayisi: liste.length, sonNet: liste[0]?.net ?? null, sonDenemeTarihi: liste[0]?.tarih ?? null,
+    };
+  }).sort((a, b) => a.sinifAdi.localeCompare(b.sinifAdi, "tr", { numeric: true }) || a.ad.localeCompare(b.ad, "tr"));
 }
 
 async function parcaParca(satirlar: Record<string, string>[], yaz: (parca: Record<string, string>[]) => PromiseLike<{ error: { message: string } | null }>): Promise<number> {
