@@ -17,6 +17,9 @@ import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT,
 type DenemeTuruSecimi = "TYT" | "AYT" | "BRANS" | "LGS";
 const TUR_ADI: Record<DenemeTuruSecimi, string> = { TYT: "TYT", AYT: "AYT", BRANS: "Branş Denemesi (9-10. sınıf)", LGS: "LGS (ortaokul)" };
 
+// Vercel fonksiyonu istek gövdesi sınırı 4,5 MB; form alanları için küçük pay bırakılır.
+const YUKLEME_SINIRI_BAYT = Math.floor(4.4 * 1024 * 1024);
+
 export function DershaneDenemePdfFormu({ schoolId, yalnizcaExcel = false, kademe = null }: {
   schoolId?: string; yalnizcaExcel?: boolean; kademe?: "ortaokul" | "lise" | "ikisi" | null;
 }) {
@@ -63,8 +66,24 @@ export function DershaneDenemePdfFormu({ schoolId, yalnizcaExcel = false, kademe
     if (mod === "pdf" && karne) formData.set("karne", karne);
     if (schoolId) formData.set("schoolId", schoolId);
 
+    // Vercel fonksiyonlarına giden istek gövdesi en fazla ~4,5 MB olabilir. Daha
+    // büyük dosya sunucu koduna HİÇ ulaşmadan reddediliyor ve (eskiden) ekran
+    // sonsuza kadar "yükleniyor"da kalıyordu: 11,4 MB "Gelişim İzleme" PDF'i
+    // (liste + 80 karne sayfası) 5 dakika sonra bile yüklenmedi, 25.10.2026.
+    const toplamBoyut = dosya.size + (mod === "pdf" && karne ? karne.size : 0);
+    if (toplamBoyut > YUKLEME_SINIRI_BAYT) {
+      return setHata(`Dosya çok büyük (${(toplamBoyut / 1048576).toFixed(1).replace(".", ",")} MB); yükleme sınırı yaklaşık 4,5 MB. PDF'in yalnızca öğrenci listesi sayfalarını (örneğin 1-5. sayfalar) tarayıcıda Yazdır → "PDF olarak kaydet" ile ayrı bir PDF yapıp yükleyin; kişisel karne sayfaları liste okumak için gerekmez.`);
+    }
+
     setYukleniyor(true);
-    const yanit = mod === "pdf" ? await denemePdfIceriAktar(formData) : await denemeExcelIceriAktar(formData);
+    let yanit: Awaited<ReturnType<typeof denemePdfIceriAktar>>;
+    try {
+      yanit = mod === "pdf" ? await denemePdfIceriAktar(formData) : await denemeExcelIceriAktar(formData);
+    } catch {
+      // Sunucu yanıt vermedi / bağlantı koptu: ekran takılı kalmasın.
+      setYukleniyor(false);
+      return setHata("Yükleme tamamlanamadı: sunucu yanıt vermedi ya da dosya çok büyük. Dosya boyutunu (en fazla ~4,5 MB) kontrol edip tekrar deneyin; sonuç yazıldı mı diye PDF Deneme Eşleştirme ekranına da bakabilirsiniz.");
+    }
     setYukleniyor(false);
     if (yanit.error) return setHata(yanit.error);
     setSonuc({
@@ -132,7 +151,7 @@ export function DershaneDenemePdfFormu({ schoolId, yalnizcaExcel = false, kademe
         {mod === "pdf" && tur !== "LGS" && kademe !== "ortaokul" && (bicim === "tg" || bicim === "otomatik") && (
           <label className="flex flex-col gap-1">
             <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">
-              Karne PDF'i (isteğe bağlı — yalnız TG Fen Lisesi listesi için)
+              Karne PDF&apos;i (isteğe bağlı — yalnız TG Fen Lisesi listesi için)
             </span>
             <input ref={karneRef} type="file" accept="application/pdf"
               className="text-sm file:mr-3 file:rounded-lg file:border-0 file:px-3 file:py-2 file:text-xs file:font-bold"

@@ -332,7 +332,10 @@ async function sonuclariEslestirVeKaydet(params: {
     return !error;
   }
 
-  for (const satir of ayristirilan) {
+  // Satırlar sınırlı eşzamanlılıkla işlenir (25.10.2026): 119 öğrencilik PDF'te her satır
+  // birkaç sorgu yaptığı için sıralı işleme dakikalar sürüyordu. Adaş koruması
+  // buYuklemedeYazilanlar kümesine yazmadan ÖNCE rezervasyon yaparak korunur.
+  await sinirliEszamanli(ayristirilan, ESZAMANLI_SATIR, async (satir) => {
     // Her PDF satırı denetim ekranında iz bırakır. Otomatik eşleşen satır
     // biraz aşağıda `atandi`, ön kayıt/belirsiz satır ise `bekliyor` olur.
     // Böylece yükleme sonrası yalnızca sorunlar değil PDF'teki bütün adlar
@@ -376,7 +379,7 @@ async function sonuclariEslestirVeKaydet(params: {
         satir.ad_soyad, "öğrenci:", eslesenler[0].id,
       );
       if (kuyrugaYazildi) incelemeBekleyen++;
-      continue;
+      return;
     }
 
     // Ad tek bir ogrenciye oturdu ama PDF'teki numara DA sinif DA tutmuyorsa
@@ -392,10 +395,12 @@ async function sonuclariEslestirVeKaydet(params: {
         "| hesap no:", eslesenler[0].okulNo, "sınıf:", eslesenler[0].sinif,
       );
       if (kuyrugaYazildi) incelemeBekleyen++;
-      continue;
+      return;
     }
 
     if (eslesenler.length === 1 && eslesenOnKayitlar.length === 0) {
+      // Eşzamanlı satırlar aynı öğrenciye iki kez yazmasın: yazmadan önce rezerve et.
+      buYuklemedeYazilanlar.add(eslesenler[0].id);
       const granulerDersSonuclari = granulerKarneMap.get(adNorm);
       const sonuc = await ogretmenDenemeSonucuKaydet(admin, {
         studentId: eslesenler[0].id,
@@ -422,6 +427,7 @@ async function sonuclariEslestirVeKaydet(params: {
         const { error: kuyrukHatasi } = await kapat;
         if (kuyrukHatasi) console.warn("Eski kuyruk satırı kapatılamadı:", kuyrukHatasi.message);
       } else {
+        buYuklemedeYazilanlar.delete(eslesenler[0].id); // başarısız: rezervasyonu bırak
         console.error("Deneme sonucu aktif öğrenciye kaydedilemedi:", sonuc.error);
         if (kuyrugaYazildi) incelemeBekleyen++;
       }
@@ -430,7 +436,7 @@ async function sonuclariEslestirVeKaydet(params: {
     } else {
       if (kuyrugaYazildi) incelemeBekleyen++;
     }
-  }
+  });
 
   // Adı görülen fakat ders dağılımı çözülemeyen satırlar da boş sonuçla
   // kuyruğa yazılır. Yönetici ekranı bunları "İsmi/sonucu anlaşılmadı"
@@ -441,6 +447,16 @@ async function sonuclariEslestirVeKaydet(params: {
   }
 
   return { otomatikEslesen, kayitBekleyen, incelemeBekleyen };
+}
+
+// Aynı anda işlenen PDF satırı sayısı (Supabase bağlantılarını boğmayacak kadar küçük).
+const ESZAMANLI_SATIR = 6;
+
+async function sinirliEszamanli<T>(liste: T[], sinir: number, is: (oge: T) => Promise<void>): Promise<void> {
+  let sira = 0;
+  await Promise.all(Array.from({ length: Math.min(sinir, liste.length) }, async () => {
+    while (sira < liste.length) await is(liste[sira++]);
+  }));
 }
 
 // Formdaki "Denemeye giren sınıf seviyesi" (boş = karışık). Geçersizse undefined.
