@@ -393,16 +393,37 @@ function kombinasyonlar(dizi: number[], k: number): number[][] {
 // Sınıf bazlı net listeleri (okul listesi olmayan yayınevleri, 18.09.2026) —
 // çözümleme saf modülde (deneme-sinif-listesi.ts); burada yalnızca PDF'ten
 // konum + genişlik bilgisiyle metin çıkarılıyor.
+// Sınıf listesi sayfaları PDF'in başında ve ardışık. Sayfa okumak pahalı (binlerce
+// metin öğesi): Elbistan "Gelişim İzleme" PDF'i liste (5 sayfa) + 80'i aşkın kişisel
+// karne sayfası içeriyor ve bu okuyucu sonuç bulamayacağı hâlde 80 sayfanın hepsini
+// okuyup yüklemeyi ~9 sn uzatıyordu (25.10.2026). İlk SINIF_ILK_TOLERANS sayfada hiç
+// "… SINIFI … NET LİSTESİ" başlığı yoksa ya da listeden sonra SINIF_ARA_TOLERANS
+// ardışık sayfa başlıksızsa okuma durur.
+const SINIF_SAYFASI_DESENI = /SINIFIs+.*NETs+L[İI]STES[İI]/i;
+const SINIF_ILK_TOLERANS = 6;
+const SINIF_ARA_TOLERANS = 3;
+
 export async function sinifListeleriniAyristir(pdfBuffer: Buffer, maxSayfa = 80): Promise<SinifListesiSonucu> {
   try {
     const dogruBoyut = Uint8Array.from(pdfBuffer);
     const dogument = await (await pdfjsGetDocument())({ data: dogruBoyut, standardFontDataUrl: undefined, disableFontFace: true }).promise;
     const sayfalar: GenisMetin[][] = [];
+    let listeGoruldu = false;
+    let basliksizArdisik = 0;
     for (let sayfaNo = 1; sayfaNo <= Math.min(maxSayfa, dogument.numPages); sayfaNo++) {
       const icerik = await (await dogument.getPage(sayfaNo)).getTextContent();
-      sayfalar.push(icerik.items.filter(metinItemMi).map((it) => ({
+      const sayfa = icerik.items.filter(metinItemMi).map((it) => ({
         str: it.str, x: it.transform[4] as number, y: it.transform[5] as number, w: it.width,
-      })));
+      }));
+      sayfalar.push(sayfa);
+      const metin = sayfa.map((o) => o.str).join(" ");
+      if (SINIF_SAYFASI_DESENI.test(metin) || SINIF_SAYFASI_DESENI.test(sayfa.map((o) => o.str).join(""))) {
+        listeGoruldu = true;
+        basliksizArdisik = 0;
+      } else {
+        basliksizArdisik++;
+        if (listeGoruldu ? basliksizArdisik > SINIF_ARA_TOLERANS : sayfaNo >= SINIF_ILK_TOLERANS) break;
+      }
     }
     return sinifListesiSayfalariniCoz(sayfalar);
   } catch (e) {
