@@ -22,6 +22,9 @@ import {
 import { CinsiyetBilgileri, GelenYoklamalar, YurtListeDuzenleyici, type YoklamaBaslangici, type YurtVerisi } from "@/components/dashboard/YurtListeStudyosu";
 import { YURT_SABLONLARI } from "@/lib/yurt-listesi";
 import { etkinSablonlar, type EtkinSablon, type EtkinSablonlar } from "@/lib/whatsapp-sablon-ayarlari";
+import { drivePaylasimMetni, type DriveEki } from "@/lib/whatsapp-drive";
+import { WhatsappDriveEkleri } from "@/components/dashboard/WhatsappDriveEkleri";
+import { driveEkleriniKartaEkle } from "@/components/dashboard/whatsapp-drive-istemci";
 
 // Genel duyuruya eklenebilen dosyalar (kartla birlikte paylaşılır).
 const EK_EN_FAZLA = 5;
@@ -186,8 +189,12 @@ function DuyuruDuzenleyici({ sablon, etkin, kurumAdi, logo, telefon, paylasilabi
   const foto = useFotoSecimi(etkin.fotolar);
   const [onizleme, setOnizleme] = useState<string | null>(null);
   const [durum, setDurum] = useState<string | null>(null);
-  // Genel duyurunun ekli dosyaları: yalnız bu sayfada tutulur, yüklenmez.
+  // Yerel WhatsApp ekleri cihazda kalır; Drive ekleri ayrı ve açıkça yüklenir.
   const [ekler, setEkler] = useState<File[]>([]);
+  const [driveEkleri, setDriveEkleri] = useState<DriveEki[]>([]);
+  const [driveYukleniyor, setDriveYukleniyor] = useState(false);
+  const [driveEksik, setDriveEksik] = useState(false);
+  const [driveSifirla, setDriveSifirla] = useState(0);
   const [ekHatasi, setEkHatasi] = useState<string | null>(null);
   const ekAdlari = useMemo(() => ekler.map((f) => f.name), [ekler]);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -197,23 +204,28 @@ function DuyuruDuzenleyici({ sablon, etkin, kurumAdi, logo, telefon, paylasilabi
     return etkin.baslik ? { ...i, baslik: etkin.baslik } : i;
   }, [sablon, degerler, etkin.baslik]);
   const fotoKaynak = foto.kaynak;
+  const baglantiMetni = useMemo(() => drivePaylasimMetni(icerik.baslik, driveEkleri), [icerik.baslik, driveEkleri]);
 
   useEffect(() => {
     let iptal = false;
     const z = window.setTimeout(async () => {
+      setOnizleme(null);
+      try {
       const [aile, fotoImg, logoImg, sefu] = await Promise.all([yaziTipi(), gorselYukle(fotoKaynak), gorselYukle(logo), gorselYukle(icerik.girisGerekli ? "/icon-192.png" : null)]);
-      const canvas = canvasRef.current ?? document.createElement("canvas");
-      canvasRef.current = canvas;
+      const canvas = document.createElement("canvas");
       duyuruKartiCiz(canvas, { icerik, sablonAdi: etkin.ad, renk, foto: fotoImg, logo: logoImg, sefuSimgesi: sefu, kurumAdi, telefon, aile, metinOdakli: sablon.metinOdakli, ekler: ekAdlari });
-      if (!iptal) setOnizleme(canvas.toDataURL("image/png"));
+      if (driveEkleri.length) await driveEkleriniKartaEkle(canvas, driveEkleri, aile);
+      if (!iptal) { canvasRef.current = canvas; setOnizleme(canvas.toDataURL("image/png")); }
+      } catch { if (!iptal) setDurum("Kart önizlemesi hazırlanamadı. Bir alanı değiştirip yeniden deneyin."); }
     }, 150);
     return () => { iptal = true; window.clearTimeout(z); };
-  }, [icerik, etkin.ad, renk, fotoKaynak, logo, kurumAdi, telefon, sablon.metinOdakli, ekAdlari]);
+  }, [icerik, etkin.ad, renk, fotoKaynak, logo, kurumAdi, telefon, sablon.metinOdakli, ekAdlari, driveEkleri]);
 
   async function cikti(paylas: boolean) {
-    if (!canvasRef.current) return;
-    const sonuc = await indirVeyaPaylas(canvasRef.current, `duyuru-${sablon.anahtar}-${bugununTarihiTR()}.png`, paylas, ekler);
-    setDurum(!sonuc ? null
+    if (!canvasRef.current || driveYukleniyor || driveEksik || !onizleme) return;
+    const sonuc = await indirVeyaPaylas(canvasRef.current, `duyuru-${sablon.anahtar}-${bugununTarihiTR()}.png`, paylas, ekler, baglantiMetni);
+    setDurum(!sonuc ? (driveEkleri.length ? "Paylaşım tamamlanmadı. Kartı indirip dosya bağlantılarını kopyalayabilirsiniz." : null)
+      : driveEkleri.length ? (paylas ? "Kart için paylaşım ekranı açıldı. Dosya bağlantıları metne eklendi; WhatsApp mesajında görünmüyorsa aşağıdan kopyalayıp ekleyin." : "Kart QR kodlarıyla indirildi. WhatsApp mesajına dosya bağlantılarını da kopyalayabilirsiniz.")
       : sonuc === "yalnizKart" ? "Kart paylaşıldı; bu cihaz ekli dosyaları birlikte gönderemedi, WhatsApp'ta ayrıca ekleyin."
       : paylas ? (ekler.length ? "Kart ve ekli dosyalar paylaşıldı. Sistemde saklanmadı." : "Kart paylaşıldı. Sistemde saklanmadı.")
       : ekler.length ? "Kart indirildi. Ekli dosyaları WhatsApp'ta kartla birlikte seçin." : "Kart indirildi. Sistemde saklanmadı.");
@@ -265,7 +277,7 @@ function DuyuruDuzenleyici({ sablon, etkin, kurumAdi, logo, telefon, paylasilabi
             <legend className="px-1 text-[10px] font-semibold uppercase tracking-wide" style={{ color: TEXT_MUTED }}>Dosya Ekle (isteğe bağlı)</legend>
             <div className="flex flex-wrap items-center gap-2">
               <label className="sfec-btn inline-flex cursor-pointer items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold" style={{ background: BG0, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
-                <Paperclip size={13} aria-hidden="true" /> Dosya seç
+                <Paperclip size={13} aria-hidden="true" /> Dosya seç (WhatsApp eki)
                 <input type="file" multiple accept={EK_TURLERI} className="sr-only"
                   onChange={(e) => { ekSec(e.target.files); e.target.value = ""; }} />
               </label>
@@ -288,8 +300,19 @@ function DuyuruDuzenleyici({ sablon, etkin, kurumAdi, logo, telefon, paylasilabi
             )}
             {ekHatasi && <p className="text-[11px] font-semibold" style={{ color: BLUSH }}>{ekHatasi}</p>}
             <p className="text-[11px]" style={{ color: TEXT_MUTED }}>
-              Dosyalar sisteme yüklenmez. Telefonda &quot;Paylaş&quot; ile kartla birlikte WhatsApp&apos;a gider; bilgisayarda kartı indirip dosyaları WhatsApp&apos;ta ayrıca ekleyin. Kartın altında ek dosyaların adı yazar.
+              WhatsApp eki seçilen dosyalar cihazınızda kalır; telefonda kartla birlikte paylaşılır. Dosyayı bağlantı ve QR kodla paylaşmak için aşağıdaki Drive seçeneğini kullanın.
             </p>
+            <WhatsappDriveEkleri key={driveSifirla} onDegis={(ekler) => { setDriveEkleri(ekler); setOnizleme(null); }} onBekle={setDriveYukleniyor} onEksik={setDriveEksik} />
+            {driveEksik && <p className="text-[11px]" style={{ color: TEXT_MUTED }}>Kartı paylaşmadan önce seçtiğiniz Drive dosyalarını yükleyin veya bekleyenleri kaldırın.</p>}
+            {baglantiMetni && <div className="flex flex-col gap-2">
+              <label className="text-[11px]" style={{ color: TEXT_MUTED }}>WhatsApp mesajına eklenecek dosya bağlantıları
+                <textarea readOnly value={baglantiMetni} rows={Math.min(10, 3 + driveEkleri.length * 2)} className="mt-1 w-full rounded-xl p-2 text-xs" style={girdiStili} onFocus={(e) => e.target.select()} />
+              </label>
+              <button type="button" className="sfec-btn rounded-xl px-3 py-2 text-xs font-bold" style={{ background: BG0, color: TEXT }} onClick={async () => {
+                try { await navigator.clipboard.writeText(baglantiMetni); setDurum("Dosya bağlantıları kopyalandı. WhatsApp mesajına yapıştırabilirsiniz."); }
+                catch { setDurum("Bağlantı metnini seçip cihazınızın Kopyala komutunu kullanın."); }
+              }}>Dosya bağlantılarını kopyala</button>
+            </div>}
           </fieldset>
         )}
         <div className="flex flex-wrap items-end gap-4">
@@ -299,17 +322,17 @@ function DuyuruDuzenleyici({ sablon, etkin, kurumAdi, logo, telefon, paylasilabi
           </Alan>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={() => cikti(false)} disabled={!onizleme}
+          <button type="button" onClick={() => cikti(false)} disabled={!onizleme || driveYukleniyor || driveEksik}
             className="sfec-btn inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold disabled:opacity-50" style={{ background: MINT, color: MINT_ON }}>
             <Download size={13} aria-hidden="true" /> İndir (PNG)
           </button>
           {paylasilabilir && (
-            <button type="button" onClick={() => cikti(true)} disabled={!onizleme}
+            <button type="button" onClick={() => cikti(true)} disabled={!onizleme || driveYukleniyor || driveEksik}
               className="sfec-btn inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold disabled:opacity-50" style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
               <Share2 size={13} aria-hidden="true" /> Paylaş (WhatsApp)
             </button>
           )}
-          <button type="button" onClick={() => { setDegerler(varsayilanDegerler(sablon)); setRenk(sablon.renk); foto.sifirla(); setEkler([]); setEkHatasi(null); }}
+          <button type="button" disabled={driveYukleniyor} onClick={() => { setDegerler(varsayilanDegerler(sablon)); setRenk(sablon.renk); foto.sifirla(); setEkler([]); setEkHatasi(null); setDriveEkleri([]); setDriveEksik(false); setDriveSifirla((v) => v + 1); setOnizleme(null); }}
             className="sfec-btn rounded-xl px-3 py-2 text-xs font-bold" style={{ color: TEXT_MUTED }}>
             Sıfırla
           </button>
