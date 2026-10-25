@@ -624,13 +624,16 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
   // yazılmış adlar ("Ü EMRE AKEL", "KADİR IŞIK") kurumdaki kimseye benzemese
   // de atlanmaz; eşleşmeyenler yerleştirme kuyruğuna düşer, yetkili kendisi
   // bulur. Adı hiç yazılmamış satır da sıra numarasıyla kuyruğa gider.
+  let siraliSonuc: Awaited<ReturnType<typeof siraliListeyiAyristir>> | null = null;
   if (ayristirilan === null && (tur === "TYT" || tur === "BRANS") && bicimDenensin("sirali")) {
     const sirali = await siraliListeyiAyristir(Buffer.from(await dosya.arrayBuffer()));
     if (sirali.basarili) {
       const okunanlar: PdfOgrenciSonucu[] = sirali.ogrenciler.map((o) => ({
         ad_soyad: o.isimHam || `İSİMSİZ (LİSTE SIRASI ${o.sira})`,
         ders_sonuclari: o.dersSonuclari,
+        sinif: o.sinif,
       }));
+      siraliSonuc = sirali;
       okunamayanAdlar.push(...sirali.okunamayanSatirlar.map((o) => o.isimHam || `İSİMSİZ (LİSTE SIRASI ${o.sira})`));
       ayristirilan = okunanlar;
       console.info(
@@ -855,6 +858,10 @@ export async function denemePdfIceriAktar(formData: FormData): Promise<{
   }
   if (tgHazirlik?.basarili) {
     for (const o of tgHazirlik.ogrenciler) if (o.sinif) pdfSinifMap.set(adNormalize(o.ad_soyad), o.sinif);
+  }
+  // Sıralı liste ŞB sütunu: aynı ada sahip iki öğrenciyi sınıfla ayırır (adaş koruması).
+  if (siraliSonuc?.basarili) {
+    for (const o of siraliSonuc.ogrenciler) if (o.sinif && o.isimHam) pdfSinifMap.set(adNormalize(o.isimHam), o.sinif);
   }
 
   // Faz P2 entegrasyonu (Deneme Net Dağıtımı raporu) — SADECE TYT/BRANŞ

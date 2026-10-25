@@ -19,6 +19,30 @@ const SAYFA = [
   "TYT PUANI",
 ];
 
+// Elbistan Fen Lisesi "GELİŞİM İZLEME SINAVLARI" (25.10.2026): ŞB harfi isme yapışıyor.
+const GELISIM = [
+  "ELBİSTAN İMKB FEN LİSESİ TYT SIRALI TYT LİSTESİ",
+  "GELİŞİM İZLEME SINAVLARI 11. SINIF TYT-1 (L1126)",
+  "SIRA TÜRKÇE TAR-1 COĞ-1 FEL-1 DİN-1 T. MAT GEO-1 FİZ-1 KİM-1 BİY-1 TOPLAM TYT ŞB KRM İLÇE İL GENEL",
+  ...Array.from({ length: 12 }, (_, i) => `${i + 1} ${["C", "A", "B"][i % 3]} ${i === 3 ? "M ENES" : `ÖĞRENCİ${i + 1} SOYAD`}${i === 1 ? " FB*" : ""} 36 4 35,00 5 0 5,00 4 1 3,75 5 0 5,00 5 0 5,00 27 3 26,25 9 1 8,75 6 1 5,75 7 0 7,00 5 1 4,75 109 11 106,25 458,562 1 1 1 1 46`),
+];
+
+describe("siraliListeCoz — ŞB sütunu", () => {
+  const s = siraliListeCoz([GELISIM]);
+  test("şube harfi isimden ayrılır, sınıf başlıktaki seviyeyle birleşir", () => {
+    expect(s.basarili).toBe(true);
+    expect(s.ogrenciler[0]).toMatchObject({ isimHam: "ÖĞRENCİ1 SOYAD", sube: "C", sinif: "11-C" });
+    expect(s.ogrenciler[3]).toMatchObject({ isimHam: "M ENES", sube: "C" });
+  });
+  test("addaki * işaretli parça atılır", () => {
+    expect(s.ogrenciler[1].isimHam).toBe("ÖĞRENCİ2 SOYAD");
+  });
+  test("şubesiz liste (Kariyerim) olduğu gibi kalır", () => {
+    const k = siraliListeCoz([SAYFA]);
+    expect(k.ogrenciler.find((o) => o.isimHam === "AYŞE YILMAZ")?.sube).toBeUndefined();
+  });
+});
+
 describe("siraliListeCoz", () => {
   const s = siraliListeCoz([SAYFA]);
 

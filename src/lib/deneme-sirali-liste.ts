@@ -24,6 +24,10 @@ const DERS_KARSILIGI: Record<string, string> = {
 export interface SiraliListeOgrencisi {
   sira: number;
   isimHam: string;
+  /** Başlıktaki "ŞB" sütunundan şube harfi ("C"); sütun yoksa tanımsız. */
+  sube?: string;
+  /** Sınıf ("11-C"): başlıktaki "11. SINIF" + şube harfi; biri yoksa tanımsız. */
+  sinif?: string;
   dersSonuclari: { ders: string; dogru: number; yanlis: number }[];
   toplam: { dogru: number; yanlis: number; net: number };
 }
@@ -52,6 +56,39 @@ function basligiCoz(satir: string): { dersler: string[]; siraSutunu: number } | 
   }
   const siraSutunu = m[2].split(/\s+/).filter(Boolean).length;
   return dersler.length >= 2 ? { dersler, siraSutunu } : null;
+}
+
+// Bazı listelerde (Elbistan Fen Lisesi "GELİŞİM İZLEME SINAVLARI") ŞB sütununun
+// şube harfi, ad sütunundan ayrı bir sütunda duruyor ama satır metninde isme
+// yapışıyor ("C İKRA TURAÇ"): 119 öğrencinin hiçbiri hesap adıyla birebir
+// eşleşmiyordu (25.10.2026 ölçümü). Satırların neredeyse tamamı tek harfle
+// başlıyorsa (Kariyerim listesinde olduğu gibi şube hiç yazılmamışsa değil) o
+// harf şube kabul edilip isimden ayrılır ve başlıktaki "N. SINIF" ile sınıfa
+// ("11-C") çevrilir. Adın sonundaki "*" işaretli parça ("FB*") da addan atılır.
+const SUBE_ORANI = 0.9;
+const SUBE_EN_AZ_SATIR = 10;
+
+function subeSutunuAyir(
+  ogrenciler: SiraliListeOgrencisi[],
+  okunamayan: { sira: number; isimHam: string }[],
+  sayfalar: string[][],
+): void {
+  const tumu = [...ogrenciler, ...okunamayan].filter((o) => o.isimHam);
+  const harfliler = tumu.filter((o) => /^\p{Lu}\s/u.test(o.isimHam));
+  if (tumu.length < SUBE_EN_AZ_SATIR || harfliler.length / tumu.length < SUBE_ORANI) return;
+  const seviye = sayfalar.flat().map((s) => /(\d{1,2})\.\s*SINIF/iu.exec(s)?.[1]).find(Boolean);
+  const temizle = (isim: string) => isim.split(" ").filter((p) => !p.endsWith("*")).join(" ");
+  for (const o of ogrenciler) {
+    const m = /^(\p{Lu})\s+(.+)$/u.exec(o.isimHam);
+    if (!m) continue;
+    o.sube = m[1];
+    o.isimHam = temizle(m[2]);
+    if (seviye) o.sinif = `${seviye}-${m[1]}`;
+  }
+  for (const o of okunamayan) {
+    const m = /^(\p{Lu})\s+(.+)$/u.exec(o.isimHam);
+    if (m) o.isimHam = temizle(m[2]);
+  }
 }
 
 export function siraliListeCoz(sayfalar: string[][]): SiraliListeSonucu {
@@ -105,6 +142,8 @@ export function siraliListeCoz(sayfalar: string[][]): SiraliListeSonucu {
       ogrenciler.push({ sira, isimHam, dersSonuclari: [...birlesen.entries()].map(([ders, v]) => ({ ders, ...v })), toplam });
     }
   }
+
+  subeSutunuAyir(ogrenciler, okunamayanSatirlar, sayfalar);
 
   if (!baslik) return bos("Sıralı liste başlığı (SIRA … TOPLAM) bulunamadı.");
   const bilinmeyen = baslik.dersler.filter((d) => !DERS_KARSILIGI[d.toLocaleUpperCase("tr-TR")]);
