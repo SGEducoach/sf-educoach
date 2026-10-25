@@ -1,6 +1,6 @@
 # SEFUKOC.COM — GÜNLÜK DURUM KAYDI
 
-Son güncelleme: 24 Ekim 2026 · Türkiye saati (M10: adminin SeFu Koç logolu genel WhatsApp kartı)
+Son güncelleme: 25 Ekim 2026 · Türkiye saati (M11: duyuru fotoğraflarının Türkiye uyarlaması)
 Depo: https://github.com/SGEducoach/sf-educoach (dal: main)
 Bağlı ana dosya: SEFUKOC_MERKEZ_PROJE.md (depoda `docs/SEFUKOC_MERKEZ_PROJE.md`)
 
@@ -33,7 +33,7 @@ Her oturumun ilk adımı, kod ya da analiz işine geçmeden önce:
 
 | Alan | Değer |
 | --- | --- |
-| Depodaki son commit (bu kayıt anı) | `main` = Faz 1 Adım 5 birleşimi (23 Ekim 2026; önceki: `d9c008cd` Adım 4). Hash için `git log -1` |
+| Depodaki son commit (bu kayıt anı) | 25.10.2026'da `origin/main` = `4354f7bc` (ön kayıtlı öğrenciler Faz 2); M11 bu temelden ayrı dalda hazırlandı. Son durum için `git log -1` |
 | Önceki işlevsel commit | 21 Ekim 2026 — Ana sayfa rol kartları giriş ekranlarına bağlandı (1eb2488) |
 | Teknoloji | Next.js 16, TypeScript, Tailwind v4, Supabase, Claude API, Resend, Web Push/PWA |
 | Canlı yayın doğrulaması | Vercel production Adım 5 birleşimi için kontrol edildi (aşağıdaki oturum günlüğü); ekranda (rehber/müdür hesabıyla) deneme **yapılmadı** |
@@ -169,10 +169,19 @@ Alan açıklamaları: **Çalışan AI** = modülde son işi yapan araç/oturum �
 - **Sonraki adım:** Onaylı yayını main'e gönder; Vercel production READY ve alan adı eşleşmesini doğrula. Ardından gerçek admin hesabında logo/önizleme, PNG indirme ve mobil paylaşımı kontrol et.
 - **Denetim (Claude Code, 24.10.2026 gece):** `d13aaa4b` main'de ve Vercel production **READY**; "yayın yapılmadı / gönderilecek" ifadeleri eskidir. Migration yok — doğru. Temiz `origin/main` kopyasında **85 dosya / 901 test geçti** (kartta 918 yazıyor; fark main'e girmemiş yerel testlerden). Gerçek admin hesabında logo/önizleme/PNG indirme/mobil paylaşım **denenmedi**.
 
+### M11 — Duyuru fotoğrafları: Türkiye uyarlaması (25.10.2026)
+
+- **Durum:** Kullanıcı 25.10.2026'da canlıya alma onayı verdi. Yayın sırasında gelen `80e0f99b` ve `6fc91398` güncellemeleri korunarak güncel main üzerine taşındı. Dal: `codex/duyuru-fotograflari-turkiye`, ilk temel: `4354f7bc`. Son commit: bu M11 değişikliğini içeren commit (`git log -1`). Production sonucu ilgili main commit'inin Vercel kontrolünden doğrulanmalı. Yerel klasör: `E:\SG_EDUCOACH\.claude\worktrees\codex-yurt-kart-nobetciler`.
+- **Bu oturumda yapılan:** Deneme, veli toplantısı, ödeme, genel duyuru, etüt, rehberlik/seminer, tebrik ve üç yurt kartının 10 yerleşik fotoğrafı Türkiye'deki okul ve pansiyon ortamlarına uygun kurmaca görsellerle yenilendi. Uygun/nötr 6 görsel korundu. Genel ve akşam yoklamasının kadrajı dar kart alanına göre ayrıca düzeltildi.
+- **Kapsam / maliyet:** Yalnız `public/duyuru-fotograflari/` altındaki 10 JPG ve belgeler. Kart metinleri, logolar, kullanıcı fotoğrafları ve uygulama kodu değişmedi; veritabanı/migration yok. Toplam 1.460.184 → 998.778 bayt (%31,6 azalma); dosya adları aynı.
+- **Kontrol:** İlgili 5 dosyada 30 test geçti; JPEG biçimi, boyut ve dosya üst sınırı kontrol edildi. Tüm görseller ve kart oranındaki orta kırpılmaları incelendi. Gerçek hesapla kart üretme/paylaşma ve canlı yayın doğrulanmadı. Tam istemler ve kaynak kaydı: `docs/DUYURU_FOTOGRAFLARI_TURKIYE.md`.
+- **Sonraki adım:** Onaylı yayını main üzerinden gönder; commit'e bağlı Vercel production READY ve 10 görselin canlı içeriğini doğrula. Gerçek hesapla yeniden oluşturulan kartı ayrıca kontrol et. Önceden indirilmiş/paylaşılmış PNG'ler değişmez.
+
 ## 3. OTURUM GÜNLÜĞÜ
 
 | Tarih | Araç / Oturum | Modül | Yapılan | Kontrol sonucu | Son commit |
 | --- | --- | --- | --- | --- | --- |
+| 25 Ekim 2026 (Europe/Istanbul) | Codex, bu bilgisayar | M11 | 10 duyuru/yurt fotoğrafı Türkiye'ye uyarlandı; iki kadraj iyileştirildi; toplam boyut %31,6 azaldı | İlgili 30 test ve görsel/dosya kontrolleri geçti; kod/migration/yayın yok | `codex/duyuru-fotograflari-turkiye`, temel `4354f7bc` |
 | 24 Ekim 2026, 23:22 (Europe/Istanbul) | Codex, bu bilgisayar | M10 | Admin için SeFu Koç logosuyla genel WhatsApp kartı; kurum seçimi olmadan hazırlama/indirme/paylaşma, mevcut kurum ayarlarını koruma | 918 test, tsc, eslint temiz; migration/yayın yok | `codex/admin-whatsapp-genel-duyuru`, temel `29fbbcfd` |
 | 24 Ekim 2026, 23:02 (Europe/Istanbul) | Codex, bu bilgisayar | M9 | Öğretmen için tespit → öneri başvurusu; admin için ayrı liste ve kopyalanabilir düzeltme istemi; mevcut hata bildirimi altyapısı kullanıldı | 912 test, tsc ve eslint temiz; migration/yayın yok; gerçek hesapla denenmedi | `codex/mufredat-degisiklik-basvurusu` (başlangıç `555e8c86`) |
 | 23 Ekim 2026 | ChatLLM (Abacus AI Agent) | Genel | Analiz modülü için verimlilik raporu ve 4 fazlı plan; bu durum dosyası ve oturum protokolü oluşturuldu | Depo commit geçmişi okundu; kod okunmadı, test yapılmadı | 23 Eki — merkez proje dosyası eklendi |
@@ -196,6 +205,10 @@ Alan açıklamaları: **Çalışan AI** = modülde son işi yapan araç/oturum �
 ---
 
 ## 4. DEVİR NOTU
+
+### Duyuru fotoğrafları — Codex, 25 Ekim 2026
+
+M11 için kullanıcı 25.10.2026'da canlıya alma onayı verdi: `codex/duyuru-fotograflari-turkiye` (ilk temel `4354f7bc`, yayın öncesi `80e0f99b` üzerine taşındı), klasör `E:\SG_EDUCOACH\.claude\worktrees\codex-yurt-kart-nobetciler`. Son commit için bu dalda `git log -1`. Yalnız 10 yerleşik JPG ve belgeler değişti. Üretim istemleri/ölçümler `DUYURU_FOTOGRAFLARI_TURKIYE.md` içinde. Yayını ilgili main commit'inin Vercel production kontrolünden, canlı görselleri dosya içeriklerinden doğrulayın. Supabase işlemi gerekmiyor. Diğer klasörlerdeki kaydedilmemiş çalışmalara dokunulmadı.
 
 ### Maarif doğrulama + Maarif Edebiyat tasnifi — Claude Code, 24 Ekim 2026 (Türkiye saati)
 
