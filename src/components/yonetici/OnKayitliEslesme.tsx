@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { onKayitliHesaplilaraAktar, onKayitliOnerileriOnayla, type OnKayitliOzeti } from "@/app/yonetici/on-kayitli-eslesme-actions";
 import { ON_KAYIT_ETIKETI } from "@/lib/on-kayitli";
-import { BG1_ALT, BLUSH, BORDER, BORDER_STRONG, MINT, MINT_BG, TEXT, TEXT_MUTED } from "@/lib/theme";
+import { BG1_ALT, BLUSH, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
 
 // Ön kayıtlı (hesapsız) öğrenciler: yüklü denemeler okul listesindeki öğrenciye
 // bağlanır, üye olunca hesabına aktarılır (migration 0179/0180). Burada
@@ -90,7 +90,7 @@ export function OnKayitliEslesme({ ozet }: { ozet: OnKayitliOzeti }) {
             ))}
           </div>
           <button type="button" disabled={pending || secili.size === 0} onClick={onayla}
-            className="sfec-btn mt-3 rounded-full px-4 py-2 text-xs font-bold disabled:opacity-50" style={{ background: MINT, color: "#fff" }}>
+            className="sfec-btn mt-3 rounded-full px-4 py-2 text-xs font-bold disabled:opacity-50" style={{ background: MINT, color: MINT_ON }}>
             Seçilenleri listedeki öğrenciye bağla ({secili.size})
           </button>
         </div>
