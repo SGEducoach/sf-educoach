@@ -207,6 +207,7 @@ Alan açıklamaları: **Çalışan AI** = modülde son işi yapan araç/oturum �
 
 | Tarih | Araç / Oturum | Modül | Yapılan | Kontrol sonucu | Son commit |
 | --- | --- | --- | --- | --- | --- |
+| 28 Ekim 2026 (Europe/Istanbul) | Claude Code (SeFu Koç Müstakil PC, `C:\Users\sedat\Documents\Codex\sf-educoach-local-2`) | M14/M12/Ön kayıtlı | **Canlı doğrulama:** M14 — 16 yerleşik fotoğrafın 16'sı canlıda `?v=` sürüm özetiyle SHA-256 eşleşti (`1f8c6d00` production başarılı); `/gizlilik` ve `/kullanim-sartlari` canlıda 200 (Google bağlantıları artık 404 değil); M12 için 5 `GOOGLE_DRIVE_*` değeri Vercel production'da tanımlı (değerlere bakılmadı). **Düzeltme:** PDF eşleştirme / ön kayıtlı onay ekranındaki "Seçilenleri listedeki öğrenciye bağla" düğmesi nane zemin üstünde sabit beyaz yazıydı, gece modunda okunmuyordu → `MINT_ON` (gece kontrastı ~1,2 → 9,3; gündüz 11,3). **Güvenlik bulgusu:** Vercel'de adı `re_8Bdb…` ile başlayan bir ortam değişkeni var — Resend API anahtarı ad alanına yapıştırılmış görünüyor (adlar gizlenmez); anahtar iptal edilip yenisi `RESEND_API_KEY`'e yazılmalı, bu değişken silinmeli (kullanıcıya bildirildi, işlem yapılmadı) | 1021 test, `tsc --noEmit` temiz (yerel `node_modules`'a eksik `qrcode`/`@types/google.picker` kilit dosyasına göre kuruldu, `package-lock.json` değiştirilmedi), eslint temiz; düğme yerel önizlemede uydurma veriyle gece/gündüz ölçüldü. M12 gerçek Google hesabıyla bağlama/yükleme hâlâ **denenmedi** (kullanıcının yapması gerekiyor) | dal `claude/onkayitli-dugme-gece` (temel `1f8c6d00`) |
 | 26 Ekim 2026, 21:23 (Europe/Istanbul) | Codex, bu bilgisayar | M14 | Admin ve kart ekranlarında yerleşik fotoğraf URL'leri içerik hash'iyle sürümlendirildi; bir yıllık eski tarayıcı kopyası sorunu giderildi | 49 test, eslint, diff temiz; 10/10 mevcut canlı JPG eşleşti; yeni yayın ayrıca doğrulanmalı | `codex/duyuru-foto-onbellek`, temel `7a4eb76b` |
 | 26 Ekim 2026 (Europe/Istanbul) | Claude, bu bilgisayar | Ön kayıtlı | Admin (Kullanıcı Yönetimi) ve moderatör (Öğrenciler) panellerine KISITSIZ "Sisteme kayıtlı değil" listesi eklendi: tüm sınıf seviyeleri (ilkokul dahil), admin tüm kurumlar, moderatör kendi kurumu; yetkisiz moderatörde liste boş kalır, sayfa yönlenmez. Ayrıca Drive bağlantısı kopma uyarısı (`11ef6341`) | tsc/eslint temiz; tarayıcıda gerçek oturumla denenmedi, push bekliyor | bu satırı içeren commit |
 | 26 Ekim 2026 (Europe/Istanbul) | Claude, bu bilgisayar | M12 | Google Cloud `sefukoc-drive`: drive.file kapsamı eklendi, Branding (ana sayfa + /gizlilik + /kullanim-sartlari) kaydedildi, uygulama **"In production"** yapıldı. Sitede herkese açık `/gizlilik` ve `/kullanim-sartlari` sayfaları yazıldı (Google'ın istediği bağlantılar). 0181 canlı, 5 Vercel değeri yazılı | Branding yenilenince kalıcı; Audience "In production". Sayfalar henüz **canlıda değil** (push bekliyor) — Google bağlantıları o zamana kadar 404 verir. Gerçek Drive bağlama/yükleme testi yapılmadı | `43e9da97` (`claude/whatsapp-drive-devam`, push bekliyor) |
@@ -236,6 +237,13 @@ Alan açıklamaları: **Çalışan AI** = modülde son işi yapan araç/oturum �
 ---
 
 ## 4. DEVİR NOTU
+
+### Ön kayıtlı onay düğmesi gece modu — Claude Code (SeFu Koç Müstakil PC), 28 Ekim 2026
+
+- Dal `claude/onkayitli-dugme-gece`, temel `1f8c6d00`. Değişen: `src/components/yonetici/OnKayitliEslesme.tsx` (düğme yazı rengi `MINT_ON`), bu dosya. Migration yok.
+- M14 ve gizlilik sayfaları canlıda doğrulandı (yukarıdaki oturum satırı). M12'de kalan tek iş: admin Google hesabını bağlayıp klasör seçmeli, bir öğretmen hesabıyla Genel Duyuru'ya PDF yüklenip bağlantı/QR denenmeli.
+- Açık güvenlik işi: Vercel'deki `re_8Bdb…` adlı değişken (Resend anahtarı) — iptal + yeni anahtar + değişkeni silme, kullanıcı kararı bekliyor.
+- Not: Diğer bilgisayardaki "SeFuKoç" Remote Control oturumu o makine kapalıyken çevrimdışı; bu bilgisayar ("SeFu Koç Müstakil PC") bağımsız çalışıyor, ortak nokta GitHub.
 
 ### Duyuru fotoğrafı önbelleği — M14, 26 Ekim 2026
 
