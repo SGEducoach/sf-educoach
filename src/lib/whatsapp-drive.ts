@@ -49,9 +49,12 @@ export function driveIcerikUygunMu(dosyaAdi: string, ilkBaytlar: Uint8Array): bo
   return !!kontrol && kontrol(ilkBaytlar);
 }
 export function driveKimligi(id: unknown): id is string { return typeof id === "string" && /^[A-Za-z0-9_-]{10,200}$/.test(id); }
+// Bağlantıya tıklayınca dosya iner (kullanıcı isteği 27.10.2026): Drive'ın
+// görüntüleme sayfası yerine doğrudan indirme adresi. Ekler en çok 25 MB;
+// Google'ın "virüs taranamadı" ara sayfası ~100 MB üstünde çıktığı için iner.
 export function driveDosyaAdresi(id: string) {
   if (!driveKimligi(id)) throw new Error("Geçersiz Drive dosyası.");
-  return `https://drive.google.com/file/d/${id}/view`;
+  return `https://drive.google.com/uc?export=download&id=${id}`;
 }
 export function driveYuklemeAdresi(adres: string): boolean {
   try { const u = new URL(adres); return u.protocol === "https:" && u.hostname === "www.googleapis.com" && !u.username && !u.password && !u.port && u.pathname === "/upload/drive/v3/files" && !!u.searchParams.get("upload_id"); } catch { return false; }
