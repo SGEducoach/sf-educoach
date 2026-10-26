@@ -5,8 +5,9 @@
 // (WhatsappDuyuruStudyosu, YurtListeStudyosu) birlikte kullanır.
 import { useState } from "react";
 import { BG0, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
+import { yerlesikFotoAdresi } from "@/lib/duyuru-foto-adresi";
 
-export const FOTO_KOKU = "/duyuru-fotograflari/";
+export { FOTO_KOKU } from "@/lib/duyuru-foto-adresi";
 export type FotoSecimi = "hazir" | "kendi" | "yok";
 
 const gorselOnbellegi = new Map<string, Promise<HTMLImageElement | null>>();
@@ -67,7 +68,7 @@ export function SablonDugmesi({ ad, foto, renk, secili, sec }: { ad: string; fot
       className="sfec-btn flex shrink-0 items-center gap-2.5 rounded-2xl py-1.5 pl-1.5 pr-3 text-left lg:w-full lg:pr-2"
       style={secili ? { background: MINT_BG, outline: `2px solid ${MINT}`, outlineOffset: -2 } : { background: BG1_ALT }}>
       <span aria-hidden="true" className="relative h-9 w-11 shrink-0 overflow-hidden rounded-xl" style={{ background: renk }}>
-        {foto && <span className="absolute inset-0 bg-cover bg-center opacity-80" style={{ backgroundImage: `url(${foto.startsWith("/") ? foto : FOTO_KOKU + foto})` }} />}
+        {foto && <span className="absolute inset-0 bg-cover bg-center opacity-80" style={{ backgroundImage: `url(${foto.startsWith("/") ? foto : yerlesikFotoAdresi(foto)})` }} />}
         <span className="absolute inset-x-0 bottom-0 h-1.5" style={{ background: renk }} />
       </span>
       <span className="whitespace-nowrap text-xs font-bold leading-tight lg:whitespace-normal" style={{ color: secili ? TEXT : TEXT_MUTED }}>{ad}</span>

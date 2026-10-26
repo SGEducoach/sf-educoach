@@ -8,7 +8,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { EyeOff, Eye, ImagePlus, MessageSquareShare, Trash2 } from "lucide-react";
 import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, BLUSH, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
-import { FOTO_KOKU, type SablonAyari, type SablonGrubu, type SablonTanimi } from "@/lib/whatsapp-sablon-ayarlari";
+import { type SablonAyari, type SablonGrubu, type SablonTanimi } from "@/lib/whatsapp-sablon-ayarlari";
+import { yerlesikFotoAdresi } from "@/lib/duyuru-foto-adresi";
 import {
   adminKurumLogosuKaldir, adminKurumLogosuYukle, adminKurumWhatsappVerisi, sablonAyariKaydet, sablonFotografiSil, sablonFotografiYukle, yerlesikFotoGizle,
 } from "@/app/yonetici/whatsapp-actions";
@@ -104,7 +105,7 @@ function SablonKarti({ tanim, ayar, hazir }: { tanim: SablonTanimi; ayar: Sablon
         <span className={kucuk} style={{ color: TEXT_MUTED }}>Fotoğraflar ({(yerlesikGizli ? 0 : 1) + fotograflar.length})</span>
         <div className="flex flex-wrap gap-2">
           <div className="relative h-20 w-28 overflow-hidden rounded-xl bg-cover bg-center"
-            style={{ backgroundImage: `url(${FOTO_KOKU}${tanim.yerlesikFoto})`, border: `1px solid ${BORDER_STRONG}`, opacity: yerlesikGizli ? 0.35 : 1 }}>
+            style={{ backgroundImage: `url(${yerlesikFotoAdresi(tanim.yerlesikFoto)})`, border: `1px solid ${BORDER_STRONG}`, opacity: yerlesikGizli ? 0.35 : 1 }}>
             <span className="absolute left-1 top-1 rounded-full px-1.5 text-[9px] font-bold" style={{ background: "rgba(255,255,255,0.9)", color: "#14213d" }}>Yerleşik</span>
             <button type="button" disabled={pending || !hazir} onClick={() => calistir(() => yerlesikFotoGizle(tanim.anahtar, !yerlesikGizli), yerlesikGizli ? "Yerleşik fotoğraf geri getirildi." : "Yerleşik fotoğraf gizlendi.")}
               aria-label={yerlesikGizli ? "Yerleşik fotoğrafı geri getir" : "Yerleşik fotoğrafı gizle"}

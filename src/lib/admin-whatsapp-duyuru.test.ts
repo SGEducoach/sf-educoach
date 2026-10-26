@@ -31,7 +31,7 @@ describe("admin genel WhatsApp kartı", () => {
   it("başlığı admin yazar; mevcut fotoğraf seçenekleri korunur", () => {
     const p = adminWhatsappStudyoAyarlari([genel]);
     expect(p.sablonlar.genel.baslik).toBeNull();
-    expect(p.sablonlar.genel.fotolar).toContain("/duyuru-fotograflari/genel.jpg");
+    expect(p.sablonlar.genel.fotolar).toContainEqual(expect.stringMatching(/^\/duyuru-fotograflari\/genel\.jpg\?v=[a-f0-9]{12}$/));
     expect(p.sablonlar.genel.fotolar).toContain("/api/duyuru-fotografi?id=foto-1");
   });
 });

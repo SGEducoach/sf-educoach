@@ -1,6 +1,6 @@
 # SEFUKOC.COM — GÜNLÜK DURUM KAYDI
 
-Son güncelleme: 25 Ekim 2026, 23:43 · Türkiye saati (M12: Drive ek dosyaları; kullanıcının isteğiyle durduruldu)
+Son güncelleme: 26 Ekim 2026, 21:23 · Türkiye saati (M14: duyuru görsellerinin admin panelinde eski kalması)
 Depo: https://github.com/SGEducoach/sf-educoach (dal: main)
 Bağlı ana dosya: SEFUKOC_MERKEZ_PROJE.md (depoda `docs/SEFUKOC_MERKEZ_PROJE.md`)
 
@@ -192,10 +192,20 @@ Alan açıklamaları: **Çalışan AI** = modülde son işi yapan araç/oturum �
 - **Kontrol sınırı / kalanlar:** Yalnız yeni 28 test geçti (dosya sınırları/URL doğrulaması, AES-GCM/HMAC, HTTP CSRF/admin yetki ayrımı). `tsc`, eslint, tüm testler, production build **henüz çalıştırılmadı**. Sunucu yükleme/tamamlama ve OAuth callback için kapsamlı entegrasyon testleri henüz eklenmedi. Google OAuth ve Picker tür/akış doğrulaması, doğrudan Google upload CORS/yarıda kalan upload, QR boyut/okunabilirlik, mobil WhatsApp metin+görsel paylaşımı ve eski akışın regresyon kontrolü gerekiyor. Audit log tabanlı saatlik 30 başlatma sınırı uygulama düzeyinde; çoklu eşzamanlı isteklerde atomik bir kota değil. Gerçek Google anahtarlarıyla uçtan uca kontrol yapılmadan tamamlandı denmemeli.
 - **Sonraki adım:** Önce bu M12 kaydını oku, `git status`/`git fetch` ile diğer PC değişikliklerini kontrol et. Ardından mevcut kodu `tsc` + eslint ile doğrula/düzelt, sunucu/OAuth testlerini ve kurulum belgesini tamamla. Google kurulumunu kullanıcıyla yap; migration/canlı yayın için mevcut kullanıcı yetkilendirmesinin kapsamını ayrıca değerlendir. Kullanıcı şimdi **dur** dedi; kendiliğinden devam etme.
 
+### M14 — Duyuru fotoğrafları tarayıcı önbelleği (26.10.2026)
+
+- **Sorun / kanıt:** Kullanıcı admin panelinde eski fotoğrafları gördü. Yenilenen 10 görselin canlı dosyaları yerel dosyalarla tekrar SHA-256 karşılaştırıldı: 10/10 aynı. `next.config.ts` ve canlı HTTP yanıtında `Cache-Control: public, max-age=31536000, immutable` var. İlk fotoğraf yayınında adlar/URL'ler değişmediği için tarayıcı eski JPG'yi saklıyordu. Service worker yalnız çevrimdışı sayfa gezintilerini tutuyor, resimleri tutmuyor.
+- **Düzeltme:** Tüm 16 yerleşik fotoğraf için içerik özeti sürümü ve ortak `yerlesikFotoAdresi` eklendi. Admin galeri önizlemesi, kart şablonları ve seçim düğmesi aynı `?v=<sha256-ilk12>` URL'sini kullanır; canvas belleği yeni URL için yeni görsel yükler. Özel fotoğraf adresleri, yerleşik fotoğrafı gizleme tercihleri ve logolar korunur. Genel bir yıllık cache ayarı değiştirilmedi; sürüm yalnız dosya içeriği değişince yenilenir.
+- **Dosyalar:** `src/lib/duyuru-foto-adresi.ts`, `duyuru-foto-surumleri.json`, `scripts/guncelle-duyuru-foto-surumleri.mjs`, `whatsapp-sablon-ayarlari.ts`, `whatsapp-ortak.tsx`, `WhatsappYonetimi.tsx`; ilgili 4 test dosyası ve belgeler. Gelecekte fotoğraf değiştiren oturum, sürüm scriptini çalıştırmalı; testler gerçek JPG'nin hash'iyle karşılaştırır.
+- **Kontrol:** 7 test dosyasında **49 test geçti**. Admin HTML'inde tüm yerleşik URL'lerin sürümlü olduğu, seçim düğmesinin aynı URL'yi kullandığı ve özel fotoğraf adresinin değişmediği denetlendi. `tsc --noEmit --incremental false`, değişen dosyalarda eslint ve `git diff --check` temiz. Gerçek oturumla admin ekranı görsel olarak denenmedi; üretimde commit/yeni dosya URL'leri ayrıca doğrulanmalı.
+- **Yayın / kapsam:** Kullanıcının daha önce canlıya aldırdığı fotoğraf değişiminin görünürlük düzeltmesi; yalnız bu görevin kodu güncel main üzerine hazırlanıyor. Yeni dependency, migration, Supabase yazması ve görsel içerik değişikliği yok. Dal `codex/duyuru-foto-onbellek`, temel `7a4eb76b`; çalışma klasörü `E:\SG_EDUCOACH\.claude\worktrees\codex-yurt-kart-nobetciler`. Yayın sonucu bu görevin main commit'ine bağlı Vercel production kontrolünden doğrulanmalı.
+- **Diğer işler:** Metinsiz GİS PDF teşhisi yerel `codex/fen-gis-pdf-okuma` / `1ab3cdc2` dalında korunuyor; bu yayına dahil edilmedi. Bu dalın ignore edilen `output/fen-gis.local.test.ts` tanı dosyası, başka dalların tsc kontrolüne karışmaması için `.ts.paused` uzantısıyla korundu. Drive işine ve başka PC'nin güncel main değişikliklerine dokunulmadı.
+
 ## 3. OTURUM GÜNLÜĞÜ
 
 | Tarih | Araç / Oturum | Modül | Yapılan | Kontrol sonucu | Son commit |
 | --- | --- | --- | --- | --- | --- |
+| 26 Ekim 2026, 21:23 (Europe/Istanbul) | Codex, bu bilgisayar | M14 | Admin ve kart ekranlarında yerleşik fotoğraf URL'leri içerik hash'iyle sürümlendirildi; bir yıllık eski tarayıcı kopyası sorunu giderildi | 49 test, eslint, diff temiz; 10/10 mevcut canlı JPG eşleşti; yeni yayın ayrıca doğrulanmalı | `codex/duyuru-foto-onbellek`, temel `7a4eb76b` |
 | 26 Ekim 2026 (Europe/Istanbul) | Claude, bu bilgisayar | Ön kayıtlı | Admin (Kullanıcı Yönetimi) ve moderatör (Öğrenciler) panellerine KISITSIZ "Sisteme kayıtlı değil" listesi eklendi: tüm sınıf seviyeleri (ilkokul dahil), admin tüm kurumlar, moderatör kendi kurumu; yetkisiz moderatörde liste boş kalır, sayfa yönlenmez. Ayrıca Drive bağlantısı kopma uyarısı (`11ef6341`) | tsc/eslint temiz; tarayıcıda gerçek oturumla denenmedi, push bekliyor | bu satırı içeren commit |
 | 26 Ekim 2026 (Europe/Istanbul) | Claude, bu bilgisayar | M12 | Google Cloud `sefukoc-drive`: drive.file kapsamı eklendi, Branding (ana sayfa + /gizlilik + /kullanim-sartlari) kaydedildi, uygulama **"In production"** yapıldı. Sitede herkese açık `/gizlilik` ve `/kullanim-sartlari` sayfaları yazıldı (Google'ın istediği bağlantılar). 0181 canlı, 5 Vercel değeri yazılı | Branding yenilenince kalıcı; Audience "In production". Sayfalar henüz **canlıda değil** (push bekliyor) — Google bağlantıları o zamana kadar 404 verir. Gerçek Drive bağlama/yükleme testi yapılmadı | `43e9da97` (`claude/whatsapp-drive-devam`, push bekliyor) |
 | 25 Ekim 2026, 23:43 (Europe/Istanbul) | Codex, bu bilgisayar | M12 | Drive ekleri için OAuth/admin seçici/doğrudan yükleme/QR kod akışı yerelde hazırlandı; kullanıcı limit nedeniyle durdurdu | Yeni 28 test geçti, npm kurulumu tamamlandı; tsc/eslint/build/gerçek Google akışı doğrulanmadı; canlı/migration/push yok | `codex/whatsapp-drive-ekler`, temel `51049cb5`; yerel WIP |
@@ -224,6 +234,10 @@ Alan açıklamaları: **Çalışan AI** = modülde son işi yapan araç/oturum �
 ---
 
 ## 4. DEVİR NOTU
+
+### Duyuru fotoğrafı önbelleği — M14, 26 Ekim 2026
+
+`codex/duyuru-foto-onbellek` dalı, temel `7a4eb76b`; üstte M14 ayrıntıları. İlk 10 fotoğraf canlıda doğru; eski aynı-URL görselleri bir yıl immutable önbellekte tutulduğu için admin eskiyi görüyordu. Düzeltmede admin/şablon/canvas/önizlemeler ortak içerik sürümlü URL kullanır. Özel fotoğraf ayarlarını veya cache'i genel olarak silmeyin. Yayını ilgili main commit'inin Vercel kontrolünden doğrulayın. PDF teşhisi `1ab3cdc2` yerel dalda kalır, bu yayına alınmaz. Google Drive'ın güncel main üzerindeki diğer PC çalışması korunur.
 
 ### DURDURULDU — Drive ek dosyaları (M12), 25 Ekim 2026 23:43
 
