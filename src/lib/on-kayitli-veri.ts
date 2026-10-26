@@ -56,17 +56,20 @@ export async function listeAdaylariniGetir(istemci: Istemci, schoolId: string): 
  * Rehber ekranı için: kapsamdaki hesapsız (ön kayıtlı) öğrenciler ve yüklü
  * denemelerinin özeti. Aktiflik/risk hesabı YOK — veri girişi olmayan öğrenciye
  * yanlış alarm üretir; yalnız "kayıtlı değil" ve deneme bilgisi gösterilir.
+ * `seviyeler` verilmezse kısıtsız döner (admin/moderatör: tüm sınıf seviyeleri, ilkokul dahil).
  */
-export async function kayitsizOgrenciOzetleriGetir(istemci: Istemci, schoolId: string, seviyeler: string[]): Promise<KayitsizOgrenciOzeti[]> {
-  if (seviyeler.length === 0) return [];
-  const { data } = await istemci
+export async function kayitsizOgrenciOzetleriGetir(istemci: Istemci, schoolId: string, seviyeler?: string[]): Promise<KayitsizOgrenciOzeti[]> {
+  if (seviyeler?.length === 0) return [];
+  let sorgu = istemci
     .from("okul_ogrenci_listesi")
     .select("id, ad_soyad, okul_no, classes!inner(seviye, sube)")
-    .eq("school_id", schoolId).is("student_id", null).in("classes.seviye", seviyeler);
+    .eq("school_id", schoolId).is("student_id", null);
+  if (seviyeler) sorgu = sorgu.in("classes.seviye", seviyeler);
+  const { data } = await sorgu;
   type Satir = { id: string; ad_soyad: string; okul_no: string | null; classes: { seviye: string; sube: string } | { seviye: string; sube: string }[] | null };
   const ogrenciler = ((data ?? []) as unknown as Satir[])
     .map((s) => ({ ...s, sinif: Array.isArray(s.classes) ? s.classes[0] : s.classes }))
-    .filter((s) => s.sinif && kademeBul(s.sinif.seviye) !== "ilkokul");
+    .filter((s) => s.sinif && (!seviyeler || kademeBul(s.sinif.seviye) !== "ilkokul"));
   if (ogrenciler.length === 0) return [];
   const { data: bekleyenler } = await istemci
     .from("pdf_deneme_eslesme_bekleyenler")

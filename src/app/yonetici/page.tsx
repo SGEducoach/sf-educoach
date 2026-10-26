@@ -6,6 +6,7 @@ import { AdminPanel } from "@/components/dashboard/AdminPanel";
 import { KullaniciArama } from "@/components/yonetici/KullaniciArama";
 import { VeliTalepleri } from "@/components/yonetici/VeliTalepleri";
 import { PdfEslesmeYonetimi } from "@/components/yonetici/PdfEslesmeYonetimi";
+import { KayitsizOgrencilerKarti } from "@/components/yonetici/KayitsizOgrencilerKarti";
 import { KazanimEslesmeYonetimi } from "@/components/yonetici/KazanimEslesmeYonetimi";
 import { ModeratorlerListesi } from "@/components/yonetici/ModeratorlerListesi";
 import { PlatformIstatistikleri } from "@/components/yonetici/PlatformIstatistikleri";
@@ -197,6 +198,7 @@ export default async function YoneticiPage({
               siniflar={((siniflar ?? []) as { id: string; seviye: string; sube: string }[]).sort(sinifSiraKarsilastir)}
               ogretmenListesi={ogretmenListesi}
             />
+            <KayitsizOgrencilerKarti />
           </section>}
           {aktifBolum === "ogrenci-aktivitesi" && (
             <section className="sfec-section">

@@ -8,6 +8,7 @@ import type { UserRole } from "@/lib/types";
 import { TgDenemeYonetimi } from "@/components/yonetici/TgDenemeYonetimi";
 import { DershaneDenemePdfFormu } from "@/components/dashboard/DershaneDenemePdfFormu";
 import { PdfEslesmeYonetimi } from "@/components/yonetici/PdfEslesmeYonetimi";
+import { KayitsizOgrencilerKarti } from "@/components/yonetici/KayitsizOgrencilerKarti";
 import { TEXT, TEXT_MUTED } from "@/lib/theme";
 import { kullaniciKurumuGetir } from "@/lib/deneme-suresi";
 import { kurumErisimiKapaliMi, kurumModuluAcikMi, moderatorBolumuAcikMi, type KurumModulYetkileri } from "@/lib/kurum-yetkileri";
@@ -61,6 +62,8 @@ export default async function ModeratorPage({ searchParams }: { searchParams: Pr
         {(bolum === "ogrenciler" || bolum === "ogretmenler" || bolum === "siniflar" || bolum === "kurum") && (
           <ModeratorPanel {...veri} bolum={bolum} schoolId={adminOkulId} />
         )}
+
+        {bolum === "ogrenciler" && <KayitsizOgrencilerKarti kurumId={adminOkulId} />}
 
         {/* Kurum moderatörü KENDİ kurumunun panosunu yönetir (kullanıcı kararı
             02.10.2026, migration 0134). `okullar` geçilmiyor: kurum sunucuda

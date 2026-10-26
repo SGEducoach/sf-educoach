@@ -15,8 +15,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { denemeModeratorKurumu } from "@/lib/dershane-auth";
-import { adaGoreBenzerAday, adaGoreListeOnerisi, numarayaGoreListeBaglantisi, type ListeAdayi } from "@/lib/on-kayitli";
-import { listeAdaylariniGetir, onKayitliDenemeleriniAktar } from "@/lib/on-kayitli-veri";
+import { adaGoreBenzerAday, adaGoreListeOnerisi, numarayaGoreListeBaglantisi, type KayitsizOgrenciOzeti, type ListeAdayi } from "@/lib/on-kayitli";
+import { kayitsizOgrenciOzetleriGetir, listeAdaylariniGetir, onKayitliDenemeleriniAktar } from "@/lib/on-kayitli-veri";
 
 const SAYFA = 1000;
 
@@ -149,6 +149,39 @@ export async function onKayitliEslesmeOzetiGetir(kurumId?: string): Promise<{ er
     ozetler.push(ozet);
   });
   return { error: null, ozetler };
+}
+
+export interface KayitsizOkulOgrencileri {
+  schoolId: string;
+  okulAdi: string;
+  ogrenciler: KayitsizOgrenciOzeti[];
+}
+
+// Admin: tüm kurumların, moderatör: kendi kurumunun hesapsız öğrencileri — sınıf seviyesi
+// ya da kademe kısıtı OLMADAN (rehber/öğretmen ekranlarındaki kapsam daraltması burada yok).
+export async function kayitsizOgrencileriGetir(kurumId?: string): Promise<{ error: string | null; okullar: KayitsizOkulOgrencileri[] }> {
+  // requireEslesmeYetkisi gibi YÖNLENDİRMEZ: bu liste moderatör "Öğrenciler" sayfasının içinde
+  // çiziliyor; yetkisi olmayan (ör. grup koçluğu) moderatörün sayfası bozulmasın, liste boş kalsın.
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: null, okullar: [] };
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  let admin: ReturnType<typeof createAdminClient>;
+  let kurum: string | null;
+  if (profile?.role === "admin") { admin = createAdminClient(); kurum = kurumId ?? null; }
+  else {
+    const moderator = await denemeModeratorKurumu();
+    if (!moderator) return { error: null, okullar: [] };
+    admin = moderator.admin; kurum = moderator.schoolId;
+  }
+  let okulSorgusu = admin.from("schools").select("id, ad").order("ad");
+  if (kurum) okulSorgusu = okulSorgusu.eq("id", kurum);
+  const { data: okullar, error } = await okulSorgusu;
+  if (error) return { error: error.message, okullar: [] };
+  const sonuc = await Promise.all(((okullar ?? []) as { id: string; ad: string }[]).map(async (o) => ({
+    schoolId: o.id, okulAdi: o.ad, ogrenciler: await kayitsizOgrenciOzetleriGetir(admin, o.id),
+  })));
+  return { error: null, okullar: sonuc.filter((o) => o.ogrenciler.length > 0) };
 }
 
 // Hesabı olan öğrencilere bağlı (güvenli eşleşmiş) bekleyen sonuçları şimdi aktarır.
