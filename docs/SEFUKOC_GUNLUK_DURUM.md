@@ -200,6 +200,8 @@ Alan açıklamaları: **Çalışan AI** = modülde son işi yapan araç/oturum �
 - **Kontrol:** 7 test dosyasında **49 test geçti**. Admin HTML'inde tüm yerleşik URL'lerin sürümlü olduğu, seçim düğmesinin aynı URL'yi kullandığı ve özel fotoğraf adresinin değişmediği denetlendi. `tsc --noEmit --incremental false`, değişen dosyalarda eslint ve `git diff --check` temiz. Gerçek oturumla admin ekranı görsel olarak denenmedi; üretimde commit/yeni dosya URL'leri ayrıca doğrulanmalı.
 - **Yayın / kapsam:** Kullanıcının daha önce canlıya aldırdığı fotoğraf değişiminin görünürlük düzeltmesi; yalnız bu görevin kodu güncel main üzerine hazırlanıyor. Yeni dependency, migration, Supabase yazması ve görsel içerik değişikliği yok. Dal `codex/duyuru-foto-onbellek`, temel `7a4eb76b`; çalışma klasörü `E:\SG_EDUCOACH\.claude\worktrees\codex-yurt-kart-nobetciler`. Yayın sonucu bu görevin main commit'ine bağlı Vercel production kontrolünden doğrulanmalı.
 - **Diğer işler:** Metinsiz GİS PDF teşhisi yerel `codex/fen-gis-pdf-okuma` / `1ab3cdc2` dalında korunuyor; bu yayına dahil edilmedi. Bu dalın ignore edilen `output/fen-gis.local.test.ts` tanı dosyası, başka dalların tsc kontrolüne karışmaması için `.ts.paused` uzantısıyla korundu. Drive işine ve başka PC'nin güncel main değişikliklerine dokunulmadı.
+- **Yayın engeli (26.10.2026, 21:27):** Main'e yayın denemesi **otomatik onay denetimince reddedildi**; komut çalıştırılmadı. Gerekçe: doğrudan uzak main'e push üretim dağıtımını tetikler ve kullanıcının son fotoğraf görünürlük bildirimi bu özel yayın yan etkisini açıkça onaylamıyor. Başka yol/hesapla gönderim denenmedi. Kullanıcıdan “bu önbellek düzeltmesini main'e gönderip canlıya al” onayı gerekiyor. Yerel özellik commit'i `6e268198` (güncel `591a5c05` üstüne taşındı); yalnız günlükte çakışan iki oturum satırı birlikte korundu. Birleşik durumda ilgili 49 test tekrar geçti. Bu M14 kodu henüz canlıda değil.
+- **Yayın onayı (26.10.2026):** Kullanıcı önceki engel açıklandıktan sonra **“canlıya al”** diyerek bu fotoğraf önbelleği düzeltmesinin main'e gönderilmesini ve production yayınını açıkça onayladı. Main tekrar alındı; yeni commit yok (`591a5c05`). Önceki onay engeli bu kullanıcı mesajıyla giderildi. Yayının sonucu bu M14 değişikliğini içeren main commit'inin Vercel production kontrolünden ve 16 sürümlü görselin içerik doğrulamasından takip edilmeli.
 
 ## 3. OTURUM GÜNLÜĞÜ
 
@@ -238,6 +240,8 @@ Alan açıklamaları: **Çalışan AI** = modülde son işi yapan araç/oturum �
 ### Duyuru fotoğrafı önbelleği — M14, 26 Ekim 2026
 
 `codex/duyuru-foto-onbellek` dalı, temel `7a4eb76b`; üstte M14 ayrıntıları. İlk 10 fotoğraf canlıda doğru; eski aynı-URL görselleri bir yıl immutable önbellekte tutulduğu için admin eskiyi görüyordu. Düzeltmede admin/şablon/canvas/önizlemeler ortak içerik sürümlü URL kullanır. Özel fotoğraf ayarlarını veya cache'i genel olarak silmeyin. Yayını ilgili main commit'inin Vercel kontrolünden doğrulayın. PDF teşhisi `1ab3cdc2` yerel dalda kalır, bu yayına alınmaz. Google Drive'ın güncel main üzerindeki diğer PC çalışması korunur.
+
+**Durum:** İlk M14 main push'u otomatik onay denetiminde reddedilmişti. Kullanıcı 26.10.2026'da **“canlıya al”** diyerek açık yayın onayı verdi; güncel main tekrar kontrol edildi. Yerel özellik commit'i `6e268198`; son yerel günlük kaydı için `git log -1`. Yalnız bu fotoğraf düzeltmesini gönderin; yeni Vercel production/yeni görsel URL'lerini doğrulayın. Yayın başarısı ilgili main commit'inin Vercel durumundan esas alınmalı.
 
 ### DURDURULDU — Drive ek dosyaları (M12), 25 Ekim 2026 23:43
 
