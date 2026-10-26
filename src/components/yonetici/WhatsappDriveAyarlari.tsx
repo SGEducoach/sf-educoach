@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BG0, BG1, BORDER, BLUSH, MINT, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
 import { driveApi, driveDurumuOku } from "@/components/dashboard/whatsapp-drive-istemci";
 import type { DriveDurumu } from "@/lib/whatsapp-drive";
@@ -21,6 +21,8 @@ export function WhatsappDriveAyarlari() {
   const [bekle, setBekle] = useState(false), [mesaj, setMesaj] = useState<string | null>(null);
   const buton = "sfec-btn rounded-xl px-3 py-2 text-xs font-bold disabled:opacity-50";
   async function guncelle() { setDurum(await driveDurumuOku<DriveDurumu>()); }
+  // Kopma uyarısı panel kapalıyken de görünsün: sayfa açılınca bir kez durum okunur.
+  useEffect(() => { driveDurumuOku<DriveDurumu>().then(setDurum).catch(() => {}); }, []);
   async function calistir(is: () => Promise<void>) {
     setBekle(true); setMesaj(null);
     try { await is(); } catch (e) { setMesaj(e instanceof Error ? e.message : "İşlem tamamlanamadı."); } finally { setBekle(false); }
@@ -41,6 +43,7 @@ export function WhatsappDriveAyarlari() {
   return <section className="rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
     <h2 className="text-sm font-bold" style={{ color: TEXT }}>Duyuru ekleri · Google Drive</h2>
     <p className="mt-1 text-xs" style={{ color: TEXT_MUTED }}>Google hesabını admin bağlar. Duyuru yetkisi olan kullanıcılar dosyayı bu klasöre yükler; öğrenci dosya bağlantısından açar.</p>
+    {durum?.koptu && <p role="alert" className="mt-3 rounded-xl px-3 py-2 text-xs font-bold" style={{ background: BG0, color: BLUSH, border: `1px solid ${BLUSH}` }}>Google Drive bağlantısı koptu; duyuruya dosya eklenemiyor. Aşağıdan “Google hesabını yeniden bağla”ya basın.</p>}
     <button type="button" aria-expanded={acik} disabled={bekle} className={`${buton} mt-3`} style={{ background: BG0, color: TEXT }} onClick={() => { setAcik(!acik); if (!acik) void calistir(async () => {
       await guncelle();
       const sonuc = new URLSearchParams(window.location.search).get("drive");
@@ -49,7 +52,7 @@ export function WhatsappDriveAyarlari() {
     }); }}>Drive bağlantısını {acik ? "gizle" : "yönet"}</button>
     {acik && <div className="mt-3 flex flex-col gap-3 text-xs" style={{ color: TEXT }}>
       {durum && <>
-        <p>{durum.hazir ? `Hazır · ${durum.klasorAdi}` : durum.bagli ? "Google bağlı · Hedef klasör seçilmesi gerekiyor." : "Google hesabı henüz bağlanmadı."}</p>
+        <p>{durum.koptu ? "Google bağlantısı koptu · Yeniden bağlanması gerekiyor." : durum.hazir ? `Hazır · ${durum.klasorAdi}` : durum.bagli ? "Google bağlı · Hedef klasör seçilmesi gerekiyor." : "Google hesabı henüz bağlanmadı."}</p>
         {!durum.tabloHazir && <p style={{ color: BLUSH }}>Veritabanı güncellemesi 0181 uygulanmalı.</p>}
         {!!durum.eksikler?.length && <p style={{ color: BLUSH }}>Sunucu ayarları eksik: {durum.eksikler.join(", ")}. Kurulum yönergesi: docs/WHATSAPP_DRIVE_KURULUM.md</p>}
         <div className="flex flex-wrap gap-2">

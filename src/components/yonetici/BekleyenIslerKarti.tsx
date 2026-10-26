@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bug, ClipboardList, FileSearch, MessagesSquare, UserCheck } from "lucide-react";
+import { Bug, ClipboardList, CloudOff, FileSearch, MessagesSquare, UserCheck } from "lucide-react";
 import { BG1, BG1_ALT, BORDER, MINT, TEXT, TEXT_MUTED } from "@/lib/theme";
 import type { BekleyenIsler } from "@/lib/yonetici-bekleyen-isler";
 
@@ -12,6 +12,7 @@ export function BekleyenIslerKarti({ isler }: { isler: BekleyenIsler }) {
     { sayi: isler.hataBildirimi, etiket: "Hata bildirimi", href: "/yonetici/hata-bildirimleri", Ikon: Bug },
     { sayi: isler.pdfEslesme, etiket: "Eşleşme bekleyen deneme satırı", href: "/yonetici/pdf-eslesme", Ikon: FileSearch },
   ];
+  if (isler.driveKoptu) kalemler.push({ sayi: 1, etiket: "Drive bağlantısı koptu — yeniden bağlayın", href: "/yonetici/iletisim?sekme=whatsapp", Ikon: CloudOff });
   const toplam = kalemler.reduce((t, k) => t + k.sayi, 0);
   return (
     <section className="sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>

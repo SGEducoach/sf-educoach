@@ -8,7 +8,7 @@ import { rehberlikUyeligiGetir } from "@/lib/rehberlik-servisi";
 import { mudurYardimcisiUyeligiGetir } from "@/lib/mudur-yardimcisi";
 import { rehberlikBirimiMi } from "@/lib/dashboard-navigation";
 import { driveBiletImzala, driveBiletOku, driveSirCoz } from "@/lib/whatsapp-drive-crypto";
-import { DRIVE_IMZA_OKUMA_BAYTI, driveDosyasiDogrula, driveDosyaAdresi, driveIcerikUygunMu, driveKimligi, driveYuklemeAdresi } from "@/lib/whatsapp-drive";
+import { DRIVE_IMZA_OKUMA_BAYTI, driveBaglantiKopmaMi, driveDosyasiDogrula, driveDosyaAdresi, driveIcerikUygunMu, driveKimligi, driveYuklemeAdresi } from "@/lib/whatsapp-drive";
 
 export class DriveHatasi extends Error { constructor(mesaj: string, public status = 400) { super(mesaj); } }
 export const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.file";
@@ -53,18 +53,36 @@ export async function driveBaglantisiOku(): Promise<DriveBaglantisi | null> {
 }
 let tokenOnbellek: { sifreli: string; token: Promise<string>; son: number } | null = null;
 export function driveTokenOnbelleginiSil() { tokenOnbellek = null; }
+export class DriveBaglantiKoptu extends DriveHatasi { constructor() { super("Google bağlantısı koptu. Admin Drive hesabını yeniden bağlamalı.", 503); } }
 export async function driveErisimAnahtari(b: DriveBaglantisi): Promise<string> {
   if (tokenOnbellek?.sifreli === b.refresh_token_sifreli && tokenOnbellek.son > Date.now()) return tokenOnbellek.token;
   const token = (async () => {
+    // Anahtar çözülemezse (GOOGLE_DRIVE_TOKEN_KEY değişmiş) bağlantı kalıcı olarak kopmuştur.
+    let refreshToken: string;
+    try { refreshToken = driveSirCoz(b.refresh_token_sifreli); } catch { tokenOnbellek = null; throw new DriveBaglantiKoptu(); }
     try {
-      const oauth = driveOAuth(); oauth.setCredentials({ refresh_token: driveSirCoz(b.refresh_token_sifreli) });
+      const oauth = driveOAuth(); oauth.setCredentials({ refresh_token: refreshToken });
       const r = await oauth.getAccessToken();
       if (!r.token) throw new Error("Token yok");
       return r.token;
-    } catch { tokenOnbellek = null; throw new DriveHatasi("Google bağlantısı yenilenemedi. Admin Drive hesabını yeniden bağlamalı.", 503); }
+    } catch (e) {
+      tokenOnbellek = null;
+      if (driveBaglantiKopmaMi(e)) throw new DriveBaglantiKoptu();
+      throw new DriveHatasi("Google bağlantısı yenilenemedi. Biraz sonra yeniden deneyin.", 503);
+    }
   })();
   tokenOnbellek = { sifreli: b.refresh_token_sifreli, token, son: Date.now() + 50 * 60_000 };
   return token;
+}
+/** Kayıtlı bağlantı Google tarafından reddedildi mi? Geçici hatalarda false (yanlış alarm vermez). Erişim anahtarı önbellekli olduğundan sık çağrılabilir. */
+export async function driveBaglantiKoptuMu(): Promise<boolean> {
+  if (driveEksikAyarlar().length) return false;
+  try {
+    const b = await driveBaglantisiOku();
+    if (!b) return false;
+    await driveErisimAnahtari(b);
+    return false;
+  } catch (e) { return e instanceof DriveBaglantiKoptu; }
 }
 export async function driveIstegi(token: string, adres: string, init: RequestInit = {}) {
   return fetch(adres, { ...init, headers: { ...init.headers, Authorization: `Bearer ${token}` }, cache: "no-store", signal: AbortSignal.timeout(20_000), redirect: "error" });

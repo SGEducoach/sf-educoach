@@ -8,6 +8,8 @@ export interface BekleyenIsler {
   belletmenBasvurusu: number;
   hataBildirimi: number;
   pdfEslesme: number;
+  /** Google Drive bağlantısı Google tarafından reddedildi; admin yeniden bağlamalı. */
+  driveKoptu: boolean;
 }
 
 // Son mesajı kurum yetkilisinden gelen konuşma yanıt bekliyor sayılır
@@ -20,12 +22,14 @@ export function yanitBekleyenKonusmaSayisi(mesajlar: { kurum_yetkilisi_id: strin
 
 export async function bekleyenIsleriGetir(admin: SupabaseClient): Promise<BekleyenIsler> {
   const sayi = (tablo: string) => admin.from(tablo).select("*", { count: "exact", head: true }).eq("durum", "bekliyor");
-  const [mesajlar, veli, belletmen, hata, pdf] = await Promise.all([
+  const [mesajlar, veli, belletmen, hata, pdf, driveKoptu] = await Promise.all([
     admin.from("yonetici_mesajlari").select("kurum_yetkilisi_id, gonderen_id").order("created_at", { ascending: false }).limit(1000),
     sayi("veli_link_requests"),
     sayi("kurum_disi_belletmenler"),
     sayi("hata_bildirimleri"),
     sayi("pdf_deneme_eslesme_bekleyenler"),
+    // Sunucu modülü tembel yüklenir: saf yardımcılar (yanitBekleyenKonusmaSayisi) testlerde Next sunucu bağımlılığı çekmesin.
+    import("@/lib/whatsapp-drive-sunucu").then((m) => m.driveBaglantiKoptuMu()).catch(() => false),
   ]);
   return {
     yanitBekleyenYazisma: yanitBekleyenKonusmaSayisi((mesajlar.data ?? []) as { kurum_yetkilisi_id: string; gonderen_id: string }[]),
@@ -33,5 +37,6 @@ export async function bekleyenIsleriGetir(admin: SupabaseClient): Promise<Bekley
     belletmenBasvurusu: belletmen.count ?? 0,
     hataBildirimi: hata.count ?? 0,
     pdfEslesme: pdf.count ?? 0,
+    driveKoptu,
   };
 }

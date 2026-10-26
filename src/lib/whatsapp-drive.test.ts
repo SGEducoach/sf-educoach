@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DRIVE_EK_BOYUTU, driveDosyasiDogrula, driveDosyaAdresi, driveIcerikUygunMu, drivePaylasimMetni, driveYuklemeAdresi } from "./whatsapp-drive";
+import { DRIVE_EK_BOYUTU, driveBaglantiKopmaMi, driveDosyasiDogrula, driveDosyaAdresi, driveIcerikUygunMu, drivePaylasimMetni, driveYuklemeAdresi } from "./whatsapp-drive";
 
 const bayt = (...v: number[]) => Uint8Array.from(v);
 const yazi = (metin: string) => Uint8Array.from(Buffer.from(metin, "utf8"));
@@ -42,5 +42,19 @@ describe("WhatsApp Drive ek sınırları", () => {
     expect(drivePaylasimMetni("Duyuru", [{ id, ad: "föy.pdf", adres: "https://evil.example" }])).toContain(driveDosyaAdresi(id));
     expect(drivePaylasimMetni("Duyuru", [])).toBe("");
     expect(() => driveDosyaAdresi("../x")).toThrow();
+  });
+});
+
+describe("Drive bağlantı kopması", () => {
+  it("Google'ın reddettiği yenileme anahtarını kopma sayar", () => {
+    expect(driveBaglantiKopmaMi({ response: { data: { error: "invalid_grant" } }, message: "x" })).toBe(true);
+    expect(driveBaglantiKopmaMi(new Error("invalid_grant"))).toBe(true);
+    expect(driveBaglantiKopmaMi({ response: { data: { error: "deleted_client" } } })).toBe(true);
+  });
+  it("ağ ve geçici hatalarda yanlış alarm vermez", () => {
+    expect(driveBaglantiKopmaMi(new Error("getaddrinfo ENOTFOUND oauth2.googleapis.com"))).toBe(false);
+    expect(driveBaglantiKopmaMi({ response: { data: { error: "temporarily_unavailable" } } })).toBe(false);
+    expect(driveBaglantiKopmaMi(null)).toBe(false);
+    expect(driveBaglantiKopmaMi(undefined)).toBe(false);
   });
 });

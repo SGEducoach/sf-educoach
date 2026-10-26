@@ -3,7 +3,16 @@ export const DRIVE_EK_SAYISI = 5;
 export const DRIVE_EK_BOYUTU = 25 * 1024 * 1024;
 export const DRIVE_EK_KABUL = ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.png,.jpg,.jpeg,.webp";
 export interface DriveEki { id: string; ad: string; adres: string; qr?: string }
-export interface DriveDurumu { hazir: boolean; bagli: boolean; klasorAdi: string | null; kurulumHazir?: boolean; eksikler?: string[]; tabloHazir?: boolean }
+export interface DriveDurumu { hazir: boolean; bagli: boolean; klasorAdi: string | null; kurulumHazir?: boolean; eksikler?: string[]; tabloHazir?: boolean; koptu?: boolean }
+
+// Google yenileme anahtarını reddettiğinde (izin geri alındı, anahtar süresi doldu, istemci silindi) bağlantı
+// kalıcı olarak kopmuştur ve admin yeniden bağlamalıdır. Ağ/geçici hatalar kopma sayılmaz.
+const KOPMA_KODLARI = /invalid_grant|unauthorized_client|invalid_client|deleted_client/;
+export function driveBaglantiKopmaMi(hata: unknown): boolean {
+  const e = hata as { response?: { data?: { error?: unknown } }; message?: unknown } | null;
+  const kod = typeof e?.response?.data?.error === "string" ? e.response.data.error : typeof e?.message === "string" ? e.message : "";
+  return KOPMA_KODLARI.test(kod);
+}
 const TUR: Record<string, string> = {
   pdf: "application/pdf", doc: "application/msword", docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   xls: "application/vnd.ms-excel", xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

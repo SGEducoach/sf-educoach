@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { driveBiletImzala, driveSirCoz, driveSirSifrele } from "@/lib/whatsapp-drive-crypto";
 import {
-  DRIVE_COOKIE, DRIVE_SCOPE, DriveHatasi, driveBaglantisiOku, driveEksikAyarlar, driveErisimAnahtari, driveKayit,
+  DRIVE_COOKIE, DRIVE_SCOPE, DriveHatasi, driveBaglantiKoptuMu, driveBaglantisiOku, driveEksikAyarlar, driveErisimAnahtari, driveKayit,
   driveKlasoruDogrula, driveKullanicisi, driveOAuth, driveSiteAdresi, driveTokenOnbelleginiSil, driveYuklemeBaslat, driveYuklemeTamamla,
 } from "@/lib/whatsapp-drive-sunucu";
 
@@ -30,8 +30,10 @@ export async function GET() {
     const k = await driveKullanicisi(); const eksikler = driveEksikAyarlar();
     let b = null, tabloHazir = true;
     try { b = await driveBaglantisiOku(); } catch { tabloHazir = false; }
-    return json({ hazir: tabloHazir && !eksikler.length && !!b?.klasor_id, bagli: !!b, klasorAdi: b?.klasor_adi ?? null,
-      ...(k.adminMi ? { kurulumHazir: !eksikler.length, eksikler, tabloHazir } : {}) });
+    // Yalnız admin: kopma kontrolü Google'a gider (erişim anahtarı önbellekli); duyuru hazırlayanlar için ek yük yok.
+    const koptu = k.adminMi && !!b ? await driveBaglantiKoptuMu() : false;
+    return json({ hazir: tabloHazir && !eksikler.length && !!b?.klasor_id && !koptu, bagli: !!b, klasorAdi: b?.klasor_adi ?? null,
+      ...(k.adminMi ? { kurulumHazir: !eksikler.length, eksikler, tabloHazir, koptu } : {}) });
   } catch (e) { return hata(e); }
 }
 export async function POST(request: NextRequest) {
