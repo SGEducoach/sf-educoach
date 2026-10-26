@@ -18,6 +18,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${TABAN}/ogrenci-takip-ve-kocluk`, changeFrequency: "monthly", priority: 0.9 },
     { url: `${TABAN}/blog`, changeFrequency: "daily", priority: 0.9 },
     { url: `${TABAN}/iletisim`, changeFrequency: "yearly", priority: 0.5 },
+    { url: `${TABAN}/gizlilik`, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${TABAN}/kullanim-sartlari`, changeFrequency: "yearly", priority: 0.3 },
   ];
 
   try {
