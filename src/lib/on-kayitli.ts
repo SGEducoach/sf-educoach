@@ -5,7 +5,7 @@
 // ve duyuru 10 gün bekler; süre VERİLME tarihinden sayılır (kullanıcı kararı
 // 24.10.2026). Aynı süre veritabanında da sabit (0179, interval '10 days').
 
-import { adlarBenzerMi } from "@/lib/ad-benzerligi";
+import { adlarBenzerMi, sozcukleriAddaGeciyorMu } from "@/lib/ad-benzerligi";
 import { adNormalize } from "@/lib/validators";
 
 export const ON_KAYIT_BEKLEME_GUNU = 10;
@@ -122,4 +122,62 @@ export function davetMetni(ogretmenAdi?: string | null): string {
 export function adaGoreBenzerAday(satir: BekleyenSatiri, liste: ListeAdayi[]): ListeAdayi | null {
   const adaylar = liste.filter((l) => adlarBenzerMi(satir.adSoyad, l.adSoyad) && !seviyeCelisirMi(satir, l));
   return adaylar.length === 1 ? adaylar[0] : null;
+}
+
+/** PDF numarasından en çok bu kadar uzak numaralar "yakın" sayılır (optikte hatalı kodlanmış hane). */
+const YAKIN_NUMARA_FARKI = 3;
+
+/**
+ * Numarası başka birine ait çıkan ve adı o kişiye benzemeyen satır için
+ * (kullanıcı isteği 28.10.2026): numarası PDF'tekine yakın (±3), sınıf seviyesi
+ * çelişmeyen ve PDF'teki her sözcük adında geçen TEK kişi önerilir. Numara
+ * yakınlığı adayları zaten daralttığı için tek sözcüklü ad ("SENA") da yeter.
+ * Otomatik yazılmaz, yönetici onaylar.
+ */
+export function yakinNumaradaAday(satir: BekleyenSatiri, liste: ListeAdayi[]): ListeAdayi | null {
+  if (satir.ogrenciNo === null || satir.ogrenciNo === "") return null;
+  const no = Number(satir.ogrenciNo);
+  if (!Number.isInteger(no)) return null;
+  const adaylar = liste.filter((l) => {
+    if (!l.okulNo || !/^\d+$/.test(l.okulNo)) return false;
+    const fark = Math.abs(Number(l.okulNo) - no);
+    return fark > 0 && fark <= YAKIN_NUMARA_FARKI && !seviyeCelisirMi(satir, l) && sozcukleriAddaGeciyorMu(satir.adSoyad, l.adSoyad);
+  });
+  return adaylar.length === 1 ? adaylar[0] : null;
+}
+
+/**
+ * "numara": numara eşleşiyor ama ad/sınıf uyuşmuyor (ada benzeyen başka kişi yok);
+ * "numara-hatali": ad listedeki TEK bir öğrenciye uyuyor ama PDF'teki numara başka birine ait;
+ * "yakin-numara": ad, PDF numarasına yakın numaralı TEK öğrencinin adında geçiyor;
+ * "ad": numara yok, ad tam aynı ve tek kişi.
+ */
+export type OneriTuru = "numara" | "numara-hatali" | "yakin-numara" | "ad";
+
+/** Listeye bağlanmamış bekleyen satır için yöneticiye sunulacak öneri; uygun kimse yoksa null. */
+export function bekleyenSatirOnerisi(satir: BekleyenSatiri, liste: ListeAdayi[]): { liste: ListeAdayi; tur: OneriTuru } | null {
+  const numara = numarayaGoreListeBaglantisi(satir, liste);
+  if (numara.karar !== "yok") {
+    // Numara eşleşse bile ad listedeki BAŞKA tek bir öğrenciye uyuyorsa asıl sahibi odur
+    // (PDF'te numara hatalı kodlanmış): numaradaki kişi değil o önerilir.
+    const adAdayi = adaGoreBenzerAday(satir, liste);
+    if (adAdayi && adAdayi.id !== numara.liste.id) return { liste: adAdayi, tur: "numara-hatali" };
+    // Ad numaradaki kişiye uyuyorsa (yalnız sınıf çelişiyor olabilir) öneri odur.
+    if (adlarBenzerMi(satir.adSoyad, numara.liste.adSoyad)) return { liste: numara.liste, tur: "numara" };
+    const yakin = yakinNumaradaAday(satir, liste);
+    if (yakin) return { liste: yakin, tur: "yakin-numara" };
+    // Ad da sınıf düzeyi de tutmuyorsa numaradaki kişi apayrı biridir (ör. 9. sınıf
+    // satırı → 12. sınıf öğrencisi): yanlış bağlamaya davet etmesin, öneri yok.
+    if (seviyeCelisirMi(satir, numara.liste)) return null;
+    return { liste: numara.liste, tur: "numara" };
+  }
+  if (satir.ogrenciNo === null || satir.ogrenciNo === "") {
+    const adayi = adaGoreListeOnerisi(satir, liste);
+    return adayi ? { liste: adayi, tur: "ad" } : null;
+  }
+  // Numara listede hiç yok: ad tek kişiye benziyorsa ya da yakın numaralı kişinin adında geçiyorsa öneri.
+  const adAdayi = adaGoreBenzerAday(satir, liste);
+  if (adAdayi) return { liste: adAdayi, tur: "numara-hatali" };
+  const yakin = yakinNumaradaAday(satir, liste);
+  return yakin ? { liste: yakin, tur: "yakin-numara" } : null;
 }
