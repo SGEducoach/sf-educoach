@@ -35,9 +35,9 @@ const boyutYaz = (b: number) => b >= 1024 * 1024 ? `${(b / 1024 / 1024).toLocale
 // Logonun yanındaki hedef yazısı seçenekleri (kullanıcı isteği 28.10.2026).
 type KartHedefi = "kurum" | "ogrenci" | "ogretmen";
 const KART_HEDEFLERI: Record<KartHedefi, string> = {
-  kurum: "Tüm Kuruma Duyuru",
-  ogrenci: "Öğrencilere Duyuru",
-  ogretmen: "Öğretmenlere Duyuru",
+  kurum: "Tüm Kuruma",
+  ogrenci: "Öğrencilere",
+  ogretmen: "Öğretmenlere",
 };
 
 const DEVAMSIZLIK = "devamsizlik";
@@ -51,7 +51,8 @@ export interface StudyoOgrencisi { id: string; ad: string; sinif: string | null;
 // sablonlar: admin ayarları uygulanmış şablonlar (ad, başlık, gizli, fotoğraflar).
 // hedefSecimi (kullanıcı isteği 28.10.2026): admin, müdür, rehberlik ve müdür
 // yardımcısı logonun yanındaki yazıyı seçer ("Tüm Kuruma / Öğrencilere /
-// Öğretmenlere Duyuru"); öğretmenin kartında bu alan boş kalır.
+// Öğretmenlere"; kart zaten duyuru olduğu için "Duyuru" eklenmez); öğretmenin
+// kartında bu alan boş kalır.
 export function WhatsappDuyuruStudyosu({ kurumAdi, logoAdresi, logoDegistirebilir, ogrenciler, genelDuyurular = true, yurt = null, sablonlar: sablonlarGirdi, hedefSecimi = false }: {
   kurumAdi: string; logoAdresi: string | null; logoDegistirebilir: boolean; ogrenciler: StudyoOgrencisi[];
   genelDuyurular?: boolean; yurt?: YurtVerisi | null; sablonlar?: EtkinSablonlar; hedefSecimi?: boolean;

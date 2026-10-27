@@ -129,8 +129,8 @@ export interface DuyuruCizimi {
   metinOdakli?: boolean;
   // Kartla birlikte gönderilen dosyaların adları; kartın altında listelenir.
   ekler?: string[];
-  // Logonun yanındaki hedef yazısı (kullanıcı isteği 28.10.2026): "Tüm Kuruma
-  // Duyuru", "Öğrencilere Duyuru"… Verilmezse "Duyuru"; boş dizgede hiç yazılmaz
+  // Logonun yanındaki hedef yazısı (kullanıcı isteği 28.10.2026): "Tüm Kuruma",
+  // "Öğrencilere"… Verilmezse "Duyuru"; boş dizgede hiç yazılmaz
   // (öğretmenin kartı).
   hedefEtiketi?: string;
 }
