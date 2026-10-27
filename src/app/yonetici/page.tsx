@@ -198,7 +198,7 @@ export default async function YoneticiPage({
               siniflar={((siniflar ?? []) as { id: string; seviye: string; sube: string }[]).sort(sinifSiraKarsilastir)}
               ogretmenListesi={ogretmenListesi}
             />
-            <KayitsizOgrencilerKarti />
+            <KayitsizOgrencilerKarti yurtDuzenle />
           </section>}
           {aktifBolum === "ogrenci-aktivitesi" && (
             <section className="sfec-section">

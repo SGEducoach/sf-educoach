@@ -1,11 +1,14 @@
 import { kayitsizOgrencileriGetir } from "@/app/yonetici/on-kayitli-eslesme-actions";
 import { BG1, BORDER, TEXT, TEXT_MUTED } from "@/lib/theme";
 import { ON_KAYIT_BEKLEME_GUNU, ON_KAYIT_ETIKETI } from "@/lib/on-kayitli";
+import { KayitsizYurtDugmesi } from "@/components/yonetici/KayitsizYurtDugmesi";
 
 // Admin ve moderatör için: okul listesinde olup henüz üye olmamış TÜM öğrenciler.
 // Rehber/öğretmen ekranlarındaki sınıf-seviye kapsamı burada uygulanmaz (kullanıcı
 // isteği 26.10.2026). Admin her kurumu, moderatör kendi kurumunu görür.
-export async function KayitsizOgrencilerKarti({ kurumId }: { kurumId?: string }) {
+// yurtDuzenle (yalnız admin, kullanıcı isteği 28.10.2026): yurtlu kurumda
+// hesapsız öğrencinin yurt öğrencisi kararını verir; moderatör yalnız görür.
+export async function KayitsizOgrencilerKarti({ kurumId, yurtDuzenle = false }: { kurumId?: string; yurtDuzenle?: boolean }) {
   const { error, okullar } = await kayitsizOgrencileriGetir(kurumId);
   if (error) return <p className="text-xs" style={{ color: TEXT_MUTED }}>{ON_KAYIT_ETIKETI} listesi okunamadı.</p>;
   if (okullar.length === 0) return null;
@@ -21,6 +24,7 @@ export async function KayitsizOgrencilerKarti({ kurumId }: { kurumId?: string })
         <details key={okul.schoolId} className="mt-3 rounded-2xl p-3" style={{ border: `2px dashed ${BORDER}` }} open={okullar.length === 1}>
           <summary className="cursor-pointer text-xs font-semibold" style={{ color: TEXT }}>
             {okul.okulAdi} ({okul.ogrenciler.length} öğrenci) · {okul.ogrenciler.filter((k) => k.denemeSayisi > 0).length} kişinin yüklü denemesi var
+            {okul.yurtlu && ` · ${okul.yurtListeIdleri.length} yurt öğrencisi`}
           </summary>
           <div className="mt-2 overflow-x-auto">
             <table className="w-full min-w-[420px] border-collapse text-left">
@@ -28,7 +32,8 @@ export async function KayitsizOgrencilerKarti({ kurumId }: { kurumId?: string })
                 <tr style={{ color: TEXT_MUTED }} className="text-[11px] uppercase tracking-wider">
                   <th className="pb-1.5 pr-3 font-semibold">Öğrenci</th>
                   <th className="pb-1.5 pr-3 font-semibold">Sınıf</th>
-                  <th className="pb-1.5 font-semibold">Yüklü deneme</th>
+                  <th className="pb-1.5 pr-3 font-semibold">Yüklü deneme</th>
+                  {okul.yurtlu && <th className="pb-1.5 font-semibold">Yurt</th>}
                 </tr>
               </thead>
               <tbody>
@@ -38,11 +43,18 @@ export async function KayitsizOgrencilerKarti({ kurumId }: { kurumId?: string })
                       {k.ad}{k.okulNo && <span className="ml-1.5 text-[11px] font-normal" style={{ color: TEXT_MUTED }}>#{k.okulNo}</span>}
                     </td>
                     <td className="py-1.5 pr-3 text-xs" style={{ color: TEXT_MUTED }}>{k.sinifAdi}</td>
-                    <td className="py-1.5 text-xs" style={{ color: TEXT }}>
+                    <td className="py-1.5 pr-3 text-xs" style={{ color: TEXT }}>
                       {k.denemeSayisi > 0
                         ? <>{k.sonNet} net <span style={{ color: TEXT_MUTED }}>· {k.denemeSayisi} deneme · son {k.sonDenemeTarihi}</span></>
                         : <span style={{ color: TEXT_MUTED }}>—</span>}
                     </td>
+                    {okul.yurtlu && (
+                      <td className="py-1.5 text-xs" style={{ color: TEXT_MUTED }}>
+                        {yurtDuzenle
+                          ? <KayitsizYurtDugmesi schoolId={okul.schoolId} listeId={k.listeId} yurtta={okul.yurtListeIdleri.includes(k.listeId)} numarasiVar={!!k.okulNo && /^[0-9]{1,5}$/.test(k.okulNo)} />
+                          : okul.yurtListeIdleri.includes(k.listeId) ? <span style={{ color: TEXT }}>Yurt öğrencisi</span> : "—"}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

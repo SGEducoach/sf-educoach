@@ -155,6 +155,10 @@ export interface KayitsizOkulOgrencileri {
   schoolId: string;
   okulAdi: string;
   ogrenciler: KayitsizOgrenciOzeti[];
+  // Yurtlu kurumda hesapsız öğrencinin yurt işareti resmî listeden okunur
+  // (resmi_ogrenci_listesi, okul_no ile); üye olunca hesabına geçer.
+  yurtlu: boolean;
+  yurtListeIdleri: string[];
 }
 
 // Admin: tüm kurumların, moderatör: kendi kurumunun hesapsız öğrencileri — sınıf seviyesi
@@ -174,14 +178,62 @@ export async function kayitsizOgrencileriGetir(kurumId?: string): Promise<{ erro
     if (!moderator) return { error: null, okullar: [] };
     admin = moderator.admin; kurum = moderator.schoolId;
   }
-  let okulSorgusu = admin.from("schools").select("id, ad").order("ad");
+  let okulSorgusu = admin.from("schools").select("id, ad, yurtlu").order("ad");
   if (kurum) okulSorgusu = okulSorgusu.eq("id", kurum);
   const { data: okullar, error } = await okulSorgusu;
   if (error) return { error: error.message, okullar: [] };
-  const sonuc = await Promise.all(((okullar ?? []) as { id: string; ad: string }[]).map(async (o) => ({
-    schoolId: o.id, okulAdi: o.ad, ogrenciler: await kayitsizOgrenciOzetleriGetir(admin, o.id),
-  })));
+  const sonuc = await Promise.all(((okullar ?? []) as { id: string; ad: string; yurtlu: boolean | null }[]).map(async (o) => {
+    const ogrenciler = await kayitsizOgrenciOzetleriGetir(admin, o.id);
+    const yurtlu = o.yurtlu === true;
+    let yurtListeIdleri: string[] = [];
+    if (yurtlu && ogrenciler.length > 0) {
+      const { data: yurtSatirlari } = await admin.from("resmi_ogrenci_listesi").select("okul_no").eq("school_id", o.id).eq("yurt_ogrencisi", true);
+      const yurtNumaralari = new Set(((yurtSatirlari ?? []) as { okul_no: string }[]).map((r) => r.okul_no));
+      yurtListeIdleri = ogrenciler.filter((k) => k.okulNo && yurtNumaralari.has(k.okulNo)).map((k) => k.listeId);
+    }
+    return { schoolId: o.id, okulAdi: o.ad, ogrenciler, yurtlu, yurtListeIdleri };
+  }));
   return { error: null, okullar: sonuc.filter((o) => o.ogrenciler.length > 0) };
+}
+
+// Admin: hesapsız (sisteme kayıtlı değil) öğrencinin yurt öğrencisi kararı
+// (kullanıcı isteği 28.10.2026). İşaret resmî listeye (okul_no ile) yazılır;
+// öğrenci üye olunca hesabına oradan geçer (ogrenci_resmi_bilgilerini_uygula).
+// Resmî listede satırı yoksa ad ve numarayla eklenir. Okul numarası olmayan
+// öğrenci işaretlenemez (resmî liste numarasız satır kabul etmez).
+export async function kayitsizYurtDurumuKaydet(schoolId: string, listeIdleri: string[], yurt: boolean): Promise<{ error: string | null; guncellenen: number; atlanan: number }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  if (profile?.role !== "admin") return { error: "Bu işlem yalnız admin içindir.", guncellenen: 0, atlanan: 0 };
+  const tekil = [...new Set(listeIdleri)];
+  if (typeof yurt !== "boolean" || tekil.length === 0 || tekil.length > 600) return { error: "Seçim geçersiz.", guncellenen: 0, atlanan: 0 };
+  const admin = createAdminClient();
+  const { data: okul } = await admin.from("schools").select("yurtlu").eq("id", schoolId).maybeSingle();
+  if (okul?.yurtlu !== true) return { error: "Bu kurumda yurt tanımlı değil.", guncellenen: 0, atlanan: 0 };
+  const { data: satirlar, error: okumaHatasi } = await admin.from("okul_ogrenci_listesi").select("id, ad_soyad, okul_no")
+    .eq("school_id", schoolId).is("student_id", null).in("id", tekil);
+  if (okumaHatasi) return { error: okumaHatasi.message, guncellenen: 0, atlanan: 0 };
+  const numarali = ((satirlar ?? []) as { id: string; ad_soyad: string; okul_no: string | null }[])
+    .filter((s): s is { id: string; ad_soyad: string; okul_no: string } => !!s.okul_no && /^[0-9]{1,5}$/.test(s.okul_no));
+  const atlanan = tekil.length - numarali.length;
+  if (numarali.length === 0) return { error: "Seçilen öğrencilerin geçerli okul numarası yok; yurt işareti için okul numarası gerekir.", guncellenen: 0, atlanan };
+  const numaralar = numarali.map((s) => s.okul_no);
+  const { data: mevcut, error: e1 } = await admin.from("resmi_ogrenci_listesi").update({ yurt_ogrencisi: yurt })
+    .eq("school_id", schoolId).in("okul_no", numaralar).select("okul_no");
+  if (e1) return { error: e1.message, guncellenen: 0, atlanan };
+  const guncel = new Set(((mevcut ?? []) as { okul_no: string }[]).map((r) => r.okul_no));
+  const eksik = yurt ? numarali.filter((s) => !guncel.has(s.okul_no)) : [];
+  if (eksik.length) {
+    const { error: e2 } = await admin.from("resmi_ogrenci_listesi")
+      .insert(eksik.map((s) => ({ school_id: schoolId, ad_soyad: s.ad_soyad, okul_no: s.okul_no, yurt_ogrencisi: true })));
+    if (e2) return { error: e2.message, guncellenen: guncel.size, atlanan };
+  }
+  await admin.from("admin_audit_log").insert({ actor_id: user.id, eylem: yurt ? "yurt_ogrencisi_isaretle" : "yurt_ogrencisi_kaldir", detay: { school_id: schoolId, sayi: numarali.length, kayitsiz: true } });
+  yollariYenile();
+  revalidatePath("/dashboard", "layout");
+  return { error: null, guncellenen: numarali.length, atlanan };
 }
 
 // Hesabı olan öğrencilere bağlı (güvenli eşleşmiş) bekleyen sonuçları şimdi aktarır.
