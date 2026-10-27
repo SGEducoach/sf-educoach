@@ -89,7 +89,8 @@ export default function LoginForm() {
   }
 
   useEffect(() => {
-    supabase.from("schools").select("*").eq("tur", kurumTuru).then(({ data }) => setSchools((data as School[]) ?? []));
+    // Pasif (arşivlenmiş) kurumlar giriş listesinde görünmez (kullanıcı isteği 28.10.2026).
+    supabase.from("schools").select("*").eq("tur", kurumTuru).neq("aktif", false).then(({ data }) => setSchools((data as School[]) ?? []));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kurumTuru]);
 
