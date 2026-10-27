@@ -13,6 +13,7 @@ import {
 } from "@/lib/theme";
 import { gorevVer } from "@/app/dashboard/gorev-actions";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
+import { LiseOgrenmeGelisimiPaneli } from "./LiseOgrenmeGelisimiPaneli";
 import {
   ZORLANMA_ESIGI, oncelikliKonular, tabanDers,
   type KdHucre, type KdKarsilastirma, type KdKonu, type KdKonuSorusu, type KdOgrenciSkoru, type KonuDurumuVerisi,
@@ -174,7 +175,8 @@ function DenemeSorulari({ sorular }: { sorular: KdKonuSorusu[] }) {
 // ve konu dolu çağrılır. Yalnız öğretmenin görev verebildiği sınıflardaki
 // öğrenciler listelenir (sınıf öğretmenliği ya da ders ataması; veritabanı
 // kuralı gorev_atamalari_insert_own ile aynı).
-function GorevKisayolu({ konu, ogrenciler }: { konu: KdKonu; ogrenciler: KdOgrenciSkoru[] }) {
+function GorevKisayolu({ konu, ogrenciler }: { konu: Pick<KdKonu, "ders" | "konu">; ogrenciler: Pick<KdOgrenciSkoru, "id" | "ad">[] }) {
+  const router = useRouter();
   const [acik, setAcik] = useState(false);
   const [tur, setTur] = useState<"soru" | "konu">("soru");
   const [hedef, setHedef] = useState("20");
@@ -207,7 +209,7 @@ function GorevKisayolu({ konu, ogrenciler }: { konu: KdKonu; ogrenciler: KdOgren
         tarih: bugun, sonTarih: sonTarih >= bugun ? sonTarih : bugun,
       });
       if (r.error) setMesaj({ hata: true, metin: r.error });
-      else { setMesaj({ hata: false, metin: `${r.ogrenciSayisi} öğrenciye görev verildi.` }); setAcik(false); }
+      else { setMesaj({ hata: false, metin: `${r.ogrenciSayisi} öğrenciye görev verildi.` }); setAcik(false); router.refresh(); }
     });
   }
 
@@ -309,10 +311,13 @@ function KonuDurumuIcerik({ veri, hata, kapsamlar, seciliAnahtar, ogrenciLinki =
   const searchParams = useSearchParams();
   const [pending, startTransition] = useTransition();
   const [ders, setDers] = useState(TUMU);
+  const [gorunum, setGorunum] = useState<"konular" | "gelisim">("konular");
+  const gorevSiniflari = useContext(GorevSiniflari);
 
   const dersler = veri?.dersler ?? [];
   // Süzgeç taban derse göre: "Matematik" seçilince "Matematik (Branş)" da gelir.
-  const dersSecenekleri = [...new Set(dersler.map((d) => tabanDers(d.ders)))];
+  const dersSecenekleri = [...new Set([...dersler.map((d) => tabanDers(d.ders)),
+    ...(veri?.ogrenmeGelisimi?.takipler.map((g) => tabanDers(g.ders)) ?? [])])];
   const gecerliDers = dersSecenekleri.includes(ders) ? ders : TUMU;
   const dersUyar = (d: string) => gecerliDers === TUMU || tabanDers(d) === gecerliDers;
   const konular = useMemo(
@@ -374,10 +379,22 @@ function KonuDurumuIcerik({ veri, hata, kapsamlar, seciliAnahtar, ogrenciLinki =
         </div>
       </div>
 
+      {veri?.ogrenmeGelisimi && <div className="flex flex-wrap gap-2 print:hidden" role="group" aria-label="Konu raporu görünümü">
+        {([["konular", "Konu Özeti"], ["gelisim", "Öğrenme Gelişimi"]] as const).map(([id, etiket]) => (
+          <button key={id} type="button" aria-pressed={gorunum === id} onClick={() => setGorunum(id)}
+            className="sfec-btn min-h-11 rounded-full px-4 py-2 text-xs font-bold"
+            style={{ background: gorunum === id ? MINT_BG : BG1_ALT, color: TEXT, border: `1px solid ${BORDER_STRONG}` }}>{etiket}</button>
+        ))}
+      </div>}
+
       {pending && <p style={{ color: TEXT_MUTED }} className="text-xs font-semibold">Yükleniyor…</p>}
 
       {hata ? (
         <p style={{ color: BLUSH }} className="text-sm font-semibold">Konu verisi alınamadı: {hata}</p>
+      ) : gorunum === "gelisim" && veri?.ogrenmeGelisimi ? (
+        <LiseOgrenmeGelisimiPaneli key={gecerliDers} veri={veri.ogrenmeGelisimi} ders={gecerliDers}
+          calismaVer={(ogrenci, konu) => ogrenci.classId && gorevSiniflari.has(ogrenci.classId)
+            ? <GorevKisayolu key={`${ogrenci.id}|${konu.ders}|${konu.konu}`} konu={konu} ogrenciler={[ogrenci]} /> : null} />
       ) : !veri ? (
         <p style={{ color: TEXT_MUTED }} className="py-6 text-center text-sm">{bosMesaj ?? "Bu görünüm için öğrenci kapsamı yok."}</p>
       ) : veri.konular.length === 0 ? (

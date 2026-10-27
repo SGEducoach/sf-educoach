@@ -1337,6 +1337,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       : [];
     return (
       <KonuDurumuBolumu schoolId={teacher.school_id} kapsamlar={kapsamlar} seciliAnahtar={secilenKapsam} gorevSiniflari={gorevSiniflari}
+        gelisimOgretmenId={role === "ogretmen" && kurumTuru !== "dershane" && kademe !== "ortaokul" ? userId : undefined}
         bosMesaj={okulRehberi
           ? "Rehberlik servisinde size henüz bir sınıf seviyesi atanmamış."
           : "Bu görünüm sınıf öğretmenleri ve YKS derslerinden birine giren öğretmenler içindir; size atanmış bir sınıf ya da ders bulunamadı."} />

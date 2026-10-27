@@ -16,6 +16,7 @@ import { dersGosterimAdi, konuGosterimAdi } from "@/lib/deneme-konu-analizi";
 import { MAARIF_EDEBIYAT, bransGosterimDersi } from "@/lib/maarif-edebiyat";
 import { konuAdAnahtari, type KonuAdEslesmesi, type KonuHedefi } from "@/lib/konu-ad-eslesmesi";
 import type { HedefeYakinlik } from "@/lib/types";
+import type { LiseOgrenmeGelisimi } from "./lise-ogrenme-gelisimi";
 
 // Bu puanın altı "zorlanıyor" sayılır (0-100).
 export const ZORLANMA_ESIGI = 50;
@@ -33,6 +34,7 @@ export interface KdOgrenci {
 
 export interface KdDenemeSatiri {
   studentId: string;
+  denemeId?: string; // Tek öğrencinin gerçek deneme kaydı (gelişim takibi).
   denemeAnahtari: string; // tarih + tür + yayınevi
   denemeEtiketi: string;
   tarih: string;
@@ -105,6 +107,7 @@ export interface KdKarsilastirma {
 }
 
 export interface KonuDurumuVerisi {
+  ogrenmeGelisimi?: LiseOgrenmeGelisimi;
   konular: KdKonu[];
   oncelikliler: KdKonu[];
   dersler: KdDers[];
@@ -131,7 +134,7 @@ export function tabanDers(ders: string): string {
   return taban === MAARIF_EDEBIYAT ? "Edebiyat" : taban;
 }
 
-function denemeKonusu(ders: string, metin: string, ad: KdAdlandirma): { ders: string; konu: string; mufredat: boolean } {
+export function denemeKonusu(ders: string, metin: string, ad: KdAdlandirma): { ders: string; konu: string; mufredat: boolean } {
   if (bransKazanimBasligiMi(ders)) {
     const taban = ders.trim().slice(0, -BRANS_KAZANIM_EKI.length);
     return { ders: `${bransGosterimDersi(taban, metin)} (Branş)`, konu: konuGosterimAdi(metin), mufredat: false };
@@ -145,7 +148,7 @@ function denemeKonusu(ders: string, metin: string, ad: KdAdlandirma): { ders: st
 // konuHedefiniBul ile aynı kural (önce doğrudan ad, sonra yönetici ad
 // eşleştirmesi), ama sözlükle: okul genelinde binlerce satır × yüzlerce
 // müfredat yaprağını her satırda yeniden taramak saniyeler sürüyordu.
-function serbestKonuCozucu(ad: KdAdlandirma) {
+export function serbestKonuCozucu(ad: KdAdlandirma) {
   const hedefMap = new Map<string, KonuHedefi>();
   for (const h of ad.hedefler) {
     const anahtar = konuAdAnahtari(h.ders, h.konu);
