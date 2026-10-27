@@ -75,7 +75,8 @@ yerel `output/` altındadır; depoya girmez.
 Gerçek öğretmen oturumu, Supabase üzerinden uçtan uca görev okuma/yazma ve
 production build/yayın bu yerel önizlemeyle doğrulanmış sayılmaz. Son
 otomatik kontrol sayıları ve commit için `SEFUKOC_GUNLUK_DURUM.md` kaydı
-esas alınır. Canlıya alınmadı.
+esas alınır. Kullanıcı 27 Ekim 2026'da canlı yayın onayı verdi; gerçek yayın
+sonucu ve commit günlükte ayrıca doğrulanır.
 
 ## Sonraki içerik adımı ve pilot
 
