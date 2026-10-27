@@ -30,6 +30,7 @@ const BOLUMLER: { kod: Gorunum; baslik: string; aciklama: string; renk: string; 
 ];
 
 const TUM_SINIFLAR = "tumu";
+const SEVIYE_ON_EKI = "seviye:";
 // Tek bir denemeye değil, öğrencinin TÜM denemelerinin ortalamasına göre
 // sıralama (kullanıcı isteği 09.10.2026). Deneme anahtarları
 // "yayinevi|tarih|tur" biçiminde olduğu için bu sabitle çakışmaz.
@@ -63,24 +64,29 @@ export function SinifAnaliziPanel({
     const m = new Map(siniflar.map((s) => [s.id, `${s.seviye}-${s.sube}`]));
     return (id: string) => m.get(id) ?? null;
   }, [siniflar]);
+  // Sınıf düzeyi süzgeci (kullanıcı isteği 28.10.2026): şubelerden önce
+  // "9. Sınıflar", "10. Sınıflar"… seçenekleri; değer "seviye:<düzey>".
+  const seviyeOf = useMemo(() => new Map(siniflar.map((s) => [s.id, s.seviye])), [siniflar]);
+  const seviyeler = useMemo(() => [...new Set(siniflar.map((s) => s.seviye))].sort((a, b) => Number(a) - Number(b) || a.localeCompare(b, "tr")), [siniflar]);
+  const secilenSeviye = sinifId.startsWith(SEVIYE_ON_EKI) ? sinifId.slice(SEVIYE_ON_EKI.length) : null;
 
-  const secilenSinifAdi = sinifId === TUM_SINIFLAR ? null : sinifAdiOf(sinifId);
+  const secilenSinifAdi = sinifId === TUM_SINIFLAR || secilenSeviye ? null : sinifAdiOf(sinifId);
 
   // Seçilen denemenin neti burada bağlanıyor: saf modül tek net bekliyor,
   // veri katmanı tüm denemelerin haritasını gönderiyor.
   const kapsam: AnalizOgrencisi[] = useMemo(() => ogrenciler
-    .filter((o) => sinifId === TUM_SINIFLAR || o.sinifId === sinifId)
+    .filter((o) => sinifId === TUM_SINIFLAR || (secilenSeviye ? !!o.sinifId && seviyeOf.get(o.sinifId) === secilenSeviye : o.sinifId === sinifId))
     .map(({ denemeNetleri, ...o }) => ({
       ...o,
       // Ortalama YALNIZ seçili türün denemeleri üzerinden; deneme sayısı da o türe ait.
       secilenDenemeNeti: !tur ? null : deneme === ORTALAMA ? netOrtalamasi(turNetleri(denemeNetleri, tur)) : denemeNetleri[deneme] ?? null,
       denemeSayisi: tur ? Object.keys(turNetleri(denemeNetleri, tur)).length : 0,
     })),
-  [ogrenciler, sinifId, deneme, tur]);
+  [ogrenciler, sinifId, secilenSeviye, seviyeOf, deneme, tur]);
 
   const kayipKapsam = useMemo(
-    () => kayipNesil.filter((k) => secilenSinifAdi === null || k.sinifAdi === secilenSinifAdi),
-    [kayipNesil, secilenSinifAdi],
+    () => kayipNesil.filter((k) => secilenSeviye ? k.sinifAdi.startsWith(`${secilenSeviye}-`) : secilenSinifAdi === null || k.sinifAdi === secilenSinifAdi),
+    [kayipNesil, secilenSinifAdi, secilenSeviye],
   );
 
   // Hesapsız (ön kayıtlı) öğrencilerin yüklü denemeleri yalnız deneme
@@ -100,7 +106,7 @@ export function SinifAnaliziPanel({
 
   // Sınıf seçiliyken liste zaten tek sayfa (sınıf başına ~13 kişi);
   // sayfalama yalnızca kurum geneli görünümünde anlamlı.
-  const sayfalaniyorMu = sinifId === TUM_SINIFLAR;
+  const sayfalaniyorMu = secilenSinifAdi === null;
   // Ana ekrana dönünce sınıf süzgeci sıfırlanır: ölçüm panelleri (En Aktif Sınıf,
   // Katılım, Görev Akıbeti) o ekranda görünmeyen bir süzgeçle daralıyordu —
   // 11-A seçilip dönülünce "en aktif sınıf" yalnız 11-A oluyordu (25.10.2026).
@@ -164,7 +170,14 @@ export function SinifAnaliziPanel({
               className="rounded-xl px-3 py-2 text-xs outline-none"
               style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
               <option value={TUM_SINIFLAR}>Tüm sınıflar ({kapsamEtiketi})</option>
-              {siniflar.map((s) => <option key={s.id} value={s.id}>{s.seviye}-{s.sube}</option>)}
+              {seviyeler.length > 1 && (
+                <optgroup label="Sınıf düzeyi">
+                  {seviyeler.map((s) => <option key={s} value={`${SEVIYE_ON_EKI}${s}`}>{s}. Sınıflar</option>)}
+                </optgroup>
+              )}
+              <optgroup label="Şube">
+                {siniflar.map((s) => <option key={s.id} value={s.id}>{s.seviye}-{s.sube}</option>)}
+              </optgroup>
             </select>
           )}
           {gorunum === "net" && turler.length > 0 && (
