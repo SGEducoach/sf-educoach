@@ -32,6 +32,14 @@ const EK_EN_BUYUK_MB = 25;
 const EK_TURLERI = ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,image/*";
 const boyutYaz = (b: number) => b >= 1024 * 1024 ? `${(b / 1024 / 1024).toLocaleString("tr-TR", { maximumFractionDigits: 1 })} MB` : `${Math.max(1, Math.round(b / 1024))} KB`;
 
+// Logonun yanındaki hedef yazısı seçenekleri (kullanıcı isteği 28.10.2026).
+type KartHedefi = "kurum" | "ogrenci" | "ogretmen";
+const KART_HEDEFLERI: Record<KartHedefi, string> = {
+  kurum: "Tüm Kuruma Duyuru",
+  ogrenci: "Öğrencilere Duyuru",
+  ogretmen: "Öğretmenlere Duyuru",
+};
+
 const DEVAMSIZLIK = "devamsizlik";
 const CINSIYET = "cinsiyet-bilgileri";
 const GELEN = "gelen-yoklamalar";
@@ -41,9 +49,12 @@ export interface StudyoOgrencisi { id: string; ad: string; sinif: string | null;
 // genelDuyurular: müdür ve rehber (duyuru şablonları + devamsızlık).
 // yurt: yurtlu kurumda her öğretmen ve müdür (yurt listesi kartları).
 // sablonlar: admin ayarları uygulanmış şablonlar (ad, başlık, gizli, fotoğraflar).
-export function WhatsappDuyuruStudyosu({ kurumAdi, logoAdresi, logoDegistirebilir, ogrenciler, genelDuyurular = true, yurt = null, sablonlar: sablonlarGirdi }: {
+// hedefSecimi (kullanıcı isteği 28.10.2026): admin, müdür, rehberlik ve müdür
+// yardımcısı logonun yanındaki yazıyı seçer ("Tüm Kuruma / Öğrencilere /
+// Öğretmenlere Duyuru"); öğretmenin kartında bu alan boş kalır.
+export function WhatsappDuyuruStudyosu({ kurumAdi, logoAdresi, logoDegistirebilir, ogrenciler, genelDuyurular = true, yurt = null, sablonlar: sablonlarGirdi, hedefSecimi = false }: {
   kurumAdi: string; logoAdresi: string | null; logoDegistirebilir: boolean; ogrenciler: StudyoOgrencisi[];
-  genelDuyurular?: boolean; yurt?: YurtVerisi | null; sablonlar?: EtkinSablonlar;
+  genelDuyurular?: boolean; yurt?: YurtVerisi | null; sablonlar?: EtkinSablonlar; hedefSecimi?: boolean;
 }) {
   const sablonlar = useMemo(() => sablonlarGirdi ?? etkinSablonlar([]), [sablonlarGirdi]);
   const gorunur = (anahtar: string) => !sablonlar[anahtar]?.gizli;
@@ -173,7 +184,7 @@ export function WhatsappDuyuruStudyosu({ kurumAdi, logoAdresi, logoDegistirebili
                 setYoklama({ id: y.id, baslangic: { grup: y.grup, degerler: y.alanlar, hazirlayanAdi: y.hazirlayanAdi, secili: Object.fromEntries(y.ogrenciler.map((o) => [o.anahtar, o.not])) } });
               }} />
             : sablon
-            ? <DuyuruDuzenleyici key={sablon.anahtar} sablon={sablon} etkin={sablonlar[sablon.anahtar]} kurumAdi={kurumAdi} logo={logo} telefon={telefon} paylasilabilir={paylasilabilir} />
+            ? <DuyuruDuzenleyici key={sablon.anahtar} sablon={sablon} etkin={sablonlar[sablon.anahtar]} kurumAdi={kurumAdi} logo={logo} telefon={telefon} paylasilabilir={paylasilabilir} hedefSecimi={hedefSecimi} />
             : <DevamsizlikDuzenleyici etkin={sablonlar[DEVAMSIZLIK]} kurumAdi={kurumAdi} logo={logo} telefon={telefon} paylasilabilir={paylasilabilir} ogrenciler={ogrenciler} />}
         </div>
       </div>
@@ -181,10 +192,12 @@ export function WhatsappDuyuruStudyosu({ kurumAdi, logoAdresi, logoDegistirebili
   );
 }
 
-function DuyuruDuzenleyici({ sablon, etkin, kurumAdi, logo, telefon, paylasilabilir }: {
-  sablon: DuyuruSablonu; etkin: EtkinSablon; kurumAdi: string; logo: string | null; telefon: string; paylasilabilir: boolean;
+function DuyuruDuzenleyici({ sablon, etkin, kurumAdi, logo, telefon, paylasilabilir, hedefSecimi }: {
+  sablon: DuyuruSablonu; etkin: EtkinSablon; kurumAdi: string; logo: string | null; telefon: string; paylasilabilir: boolean; hedefSecimi: boolean;
 }) {
   const [degerler, setDegerler] = useState<Record<string, string>>(() => varsayilanDegerler(sablon));
+  const [hedef, setHedef] = useState<KartHedefi>("kurum");
+  const hedefEtiketi = hedefSecimi ? KART_HEDEFLERI[hedef] : "";
   const [renk, setRenk] = useState(sablon.renk);
   const foto = useFotoSecimi(etkin.fotolar);
   const [onizleme, setOnizleme] = useState<string | null>(null);
@@ -213,19 +226,19 @@ function DuyuruDuzenleyici({ sablon, etkin, kurumAdi, logo, telefon, paylasilabi
       try {
       const [aile, fotoImg, logoImg, sefu] = await Promise.all([yaziTipi(), gorselYukle(fotoKaynak), gorselYukle(logo), gorselYukle(icerik.girisGerekli ? "/icon-192.png" : null)]);
       const canvas = document.createElement("canvas");
-      duyuruKartiCiz(canvas, { icerik, sablonAdi: etkin.ad, renk, foto: fotoImg, logo: logoImg, sefuSimgesi: sefu, kurumAdi, telefon, aile, metinOdakli: sablon.metinOdakli, ekler: ekAdlari });
+      duyuruKartiCiz(canvas, { icerik, sablonAdi: etkin.ad, renk, foto: fotoImg, logo: logoImg, sefuSimgesi: sefu, kurumAdi, telefon, aile, metinOdakli: sablon.metinOdakli, ekler: ekAdlari, hedefEtiketi });
       if (driveEkleri.length) await driveEkleriniKartaEkle(canvas, driveEkleri, aile);
       if (!iptal) { canvasRef.current = canvas; setOnizleme(canvas.toDataURL("image/png")); }
       } catch { if (!iptal) setDurum("Kart önizlemesi hazırlanamadı. Bir alanı değiştirip yeniden deneyin."); }
     }, 150);
     return () => { iptal = true; window.clearTimeout(z); };
-  }, [icerik, etkin.ad, renk, fotoKaynak, logo, kurumAdi, telefon, sablon.metinOdakli, ekAdlari, driveEkleri]);
+  }, [icerik, etkin.ad, renk, fotoKaynak, logo, kurumAdi, telefon, sablon.metinOdakli, ekAdlari, driveEkleri, hedefEtiketi]);
 
   async function cikti(paylas: boolean) {
     if (!canvasRef.current || driveYukleniyor || driveEksik || !onizleme) return;
     const sonuc = await indirVeyaPaylas(canvasRef.current, `duyuru-${sablon.anahtar}-${bugununTarihiTR()}.png`, paylas, ekler, baglantiMetni);
     setDurum(!sonuc ? (driveEkleri.length ? "Paylaşım tamamlanmadı. Kartı indirip dosya bağlantılarını kopyalayabilirsiniz." : null)
-      : driveEkleri.length ? (paylas ? "Kart için paylaşım ekranı açıldı. Dosya bağlantıları metne eklendi; WhatsApp mesajında görünmüyorsa aşağıdan kopyalayıp ekleyin." : "Kart QR kodlarıyla indirildi. WhatsApp mesajına dosya bağlantılarını da kopyalayabilirsiniz.")
+      : driveEkleri.length ? (paylas ? "Kart paylaşıldı. Dosya bağlantısının tıklanabilmesi için \"Bağlantıyı WhatsApp'ta Gönder\" ile aynı kişiye/gruba ayrı mesaj gönderin." : "Kart QR kodlarıyla indirildi. Tıklanabilir bağlantı için \"Bağlantıyı WhatsApp'ta Gönder\" düğmesini kullanın.")
       : sonuc === "yalnizKart" ? "Kart paylaşıldı; bu cihaz ekli dosyaları birlikte gönderemedi, WhatsApp'ta ayrıca ekleyin."
       : paylas ? (ekler.length ? "Kart ve ekli dosyalar paylaşıldı. Sistemde saklanmadı." : "Kart paylaşıldı. Sistemde saklanmadı.")
       : ekler.length ? "Kart indirildi. Ekli dosyaları WhatsApp'ta kartla birlikte seçin." : "Kart indirildi. Sistemde saklanmadı.");
@@ -308,6 +321,14 @@ function DuyuruDuzenleyici({ sablon, etkin, kurumAdi, logo, telefon, paylasilabi
               <label className="text-[11px]" style={{ color: TEXT_MUTED }}>WhatsApp mesajına eklenecek dosya bağlantıları
                 <textarea readOnly value={baglantiMetni} rows={Math.min(10, 3 + driveEkleri.length * 2)} className="mt-1 w-full rounded-xl p-2 text-xs" style={girdiStili} onFocus={(e) => e.target.select()} />
               </label>
+              {/* Kart bir resim: WhatsApp resmin içindeki yazıya/QR'a tıklatmaz, resimle
+                  giden metni de (özellikle iPhone'da) düşürebilir. Bağlantı ayrı bir
+                  mesaj olarak gidince tıklanır (kullanıcı bildirimi 28.10.2026). */}
+              <a href={`https://wa.me/?text=${encodeURIComponent(baglantiMetni)}`} target="_blank" rel="noopener noreferrer"
+                className="sfec-btn inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold" style={{ background: MINT, color: MINT_ON }}>
+                <MessageSquareShare size={13} aria-hidden="true" /> Bağlantıyı WhatsApp&apos;ta Gönder
+              </a>
+              <p className="text-[11px]" style={{ color: TEXT_MUTED }}>Kartı paylaştıktan sonra bu düğmeyle aynı kişiye ya da gruba bağlantıyı ayrı mesaj olarak gönderin; alıcı mesajdaki bağlantıya dokunarak dosyayı indirir.</p>
               <button type="button" className="sfec-btn rounded-xl px-3 py-2 text-xs font-bold" style={{ background: BG0, color: TEXT }} onClick={async () => {
                 try { await navigator.clipboard.writeText(baglantiMetni); setDurum("Dosya bağlantıları kopyalandı. WhatsApp mesajına yapıştırabilirsiniz."); }
                 catch { setDurum("Bağlantı metnini seçip cihazınızın Kopyala komutunu kullanın."); }
@@ -317,6 +338,14 @@ function DuyuruDuzenleyici({ sablon, etkin, kurumAdi, logo, telefon, paylasilabi
         )}
         <div className="flex flex-wrap items-end gap-4">
           <FotoSecici durum={foto} />
+          {hedefSecimi && (
+            <Alan id={`wa-hedef-${sablon.anahtar}`} etiket="Logonun yanında">
+              <select id={`wa-hedef-${sablon.anahtar}`} value={hedef} onChange={(e) => setHedef(e.target.value as KartHedefi)}
+                className="rounded-xl px-3 py-2 text-xs font-semibold outline-none" style={girdiStili}>
+                {(Object.keys(KART_HEDEFLERI) as KartHedefi[]).map((h) => <option key={h} value={h}>{KART_HEDEFLERI[h]}</option>)}
+              </select>
+            </Alan>
+          )}
           <Alan id={`wa-renk-${sablon.anahtar}`} etiket="Renk">
             <input id={`wa-renk-${sablon.anahtar}`} type="color" value={renk} onChange={(e) => setRenk(e.target.value)} className="h-9 w-14 cursor-pointer rounded-lg" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0 }} />
           </Alan>

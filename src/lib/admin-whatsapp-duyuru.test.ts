@@ -13,6 +13,7 @@ describe("admin genel WhatsApp kartı", () => {
     expect(p.logoAdresi).toBe("/logo.png");
     expect(p.logoDegistirebilir).toBe(false);
     expect(p.ogrenciler).toEqual([]);
+    expect(p.hedefSecimi).toBe(true);
     expect(existsSync(new URL("../../public/logo.png", import.meta.url))).toBe(true);
   });
   it("yalnız genel duyuruyu açar; veli/yurt/devamsızlık kartlarını sunmaz", () => {

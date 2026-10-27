@@ -1261,7 +1261,8 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       <section className="sfec-section">
         <DuyuruTuruSekmeleri tur="whatsapp" alan={alan} secenekler={duyuruBolumleri} />
         <WhatsappDuyuruStudyosu key={alan} kurumAdi={kurum?.ad ?? "Kurumumuz"} logoAdresi={kurum?.logo_url ?? null}
-          logoDegistirebilir={role === "mudur"} ogrenciler={ogrenciListesi} genelDuyurular={genelWhatsapp} yurt={yurtVerisi} sablonlar={sablonlar} />
+          logoDegistirebilir={role === "mudur"} ogrenciler={ogrenciListesi} genelDuyurular={genelWhatsapp} yurt={yurtVerisi} sablonlar={sablonlar}
+          hedefSecimi={!yalnizGenelKart} />
       </section>
     );
   }

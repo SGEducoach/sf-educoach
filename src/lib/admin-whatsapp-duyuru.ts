@@ -10,6 +10,8 @@ export function adminWhatsappStudyoAyarlari(ayarlar: SablonAyari[]) {
     logoDegistirebilir: false,
     ogrenciler: [],
     genelDuyurular: true,
+    // Logonun yanındaki hedef yazısını admin seçer (kullanıcı isteği 28.10.2026).
+    hedefSecimi: true,
     // Şablonları kopyalayarak süzeriz. Admin kurumlar için Genel'i gizlese
     // bile kendi marka kartını hazırlayabilir; diğer stüdyolar etkilenmez.
     sablonlar: Object.fromEntries(Object.entries(sablonlar).map(([anahtar, s]) =>
