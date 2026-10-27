@@ -247,6 +247,12 @@ Alan açıklamaları: **Çalışan AI** = modülde son işi yapan araç/oturum �
 
 ## 4. DEVİR NOTU
 
+### BAŞLANMADI — Konu Yeterliliği'ne öğrenme çıktıları paneli, 28 Ekim 2026
+
+- Kullanıcı kararı: Konu Yeterliliği **öğrenci görünümüne panel** ("Yazılı Öğrenme Çıktıları"): seçili öğrenci + derste senaryodaki çıktılar ve düzeyleri. Veri Gelişim Raporu'yla AYNI tablo (`ortaokul_cikti_degerlendirmeleri`, 0182); yetkili öğretmen buradan öğrenci bazında da işaretler, öğrenci/veli salt okunur. Temaların altına dağıtma SEÇİLMEDİ (senaryo kodları müfredat temalarıyla her zaman eşleşmiyor).
+- Dikkat: Konu Yeterliliği dersleri `ortaokul_mufredat_dersleri` (ders_kodu T/MAT/FB/SB/İTA/İNG/DKAB) → `CiktiDersi` eşlemesi gerekir. Kapsam `ogretmen_dersleri` atamasına bakıyor (canlıda ortaokulda 0 atama); Gelişim Raporu yazma yetkisi branşa göre (`ortaokulCiktiSiniflariGetir`) — kayıt işlemi o yetkiyle sınanmalı.
+- Kod yazılmadı; güncel main'den yeni dal açın.
+
 ### 5-8. Sınıf Öğrenme Çıktıları — Claude Code (SeFu Koç Müstakil PC), 28 Ekim 2026
 
 - Dal `claude/ortaokul-ogrenme-ciktilari`. Yeni: `src/lib/ortaokul-cikti.ts` (+test), `ortaokul-cikti-sorgu.ts`, `ortaokul-senaryo-ciktilari.json` (MEB KSDT'den üretildi; kaynak dosyalar depoda yok), `app/dashboard/ortaokul-cikti-actions.ts`, `components/dashboard/OrtaokulCiktiGirisi.tsx`, `supabase/migrations/0182_ortaokul_cikti_degerlendirmeleri.sql`; değişen `app/dashboard/page.tsx` (ilkokul-gelisim dalı). Sıradaki migration **0183**.
