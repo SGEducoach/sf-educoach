@@ -221,7 +221,7 @@ Alan açıklamaları: **Çalışan AI** = modülde son işi yapan araç/oturum �
 - **Yapılan:** migration `0183` (kurum_sms_ayarlari, sms_sablonlari, sms_gonderimleri; RLS açık, yalnız service_role); `kurum-yetkileri.ts` yeni `sms` modülü (eksik = kapalı); `sms-*.ts` kütüphanesi (şifreleme, telefon, mesaj, sağlayıcılar Verimor/Netgsm/İleti Merkezi, erişim, veri, gönderim); `dashboard/sms-actions.ts`; `SmsBolumu/SmsModulu/SmsAyarlari` ekranları; müdür/yardımcı/rehber menülerine "SMS"; moderatör paneline "SMS ayarları"; Kurum Yetkileri anahtarı.
 - **Kontrol:** 102 dosya / **1134 test geçti** (SMS için yeni testler: sağlayıcılar sahte ağla, gönderim yolu bellek içi sahte Supabase ile, erişim/kapsam, şifreleme, telefon, mesaj, menü). `tsc` yalnız önceden var olan `layout.tsx LayoutProps` hatasını veriyor; yeni dosyalarda eslint temiz.
 - **Doğrulanmadı:** Hiçbir sağlayıcıyla gerçek hesapta deneme yapılmadı. Verimor alanları resmi kılavuzdan, **Netgsm ve İleti Merkezi belgeye erişilemediği için hafızadan/kitaplıklardan** yazıldı. Ekranda (müdür/rehber/moderatör hesabıyla) denenmedi.
-- **Sonraki adım:** (1) `SMS_KIMLIK_ANAHTARI` Vercel'e; (2) ~~0183 uygulanır~~ TAMAM; (3) bir test kurumunda modül açılıp gerçek bir sağlayıcı hesabıyla başlık çekme + tek numaraya gönderim denenir; (4) Netgsm/İleti Merkezi alanları belgeyle karşılaştırılır; (5) mezun öğrenciler modülü gelince alıcı türü eklenir.
+- **Sonraki adım:** (1) ~~`SMS_KIMLIK_ANAHTARI` Vercel'e~~ TAMAM (28.10.2026, sensitive, production+preview; değer bu oturumun kaydında görünür, gerçek kurum verisi girilmeden önce istenirse yenilenebilir); PR https://github.com/SGEducoach/sf-educoach/pull/1 birleştirilecek; (2) ~~0183 uygulanır~~ TAMAM; (3) bir test kurumunda modül açılıp gerçek bir sağlayıcı hesabıyla başlık çekme + tek numaraya gönderim denenir; (4) Netgsm/İleti Merkezi alanları belgeyle karşılaştırılır; (5) mezun öğrenciler modülü gelince alıcı türü eklenir.
 
 ## 3. OTURUM GÜNLÜĞÜ
 
@@ -272,7 +272,7 @@ Alan açıklamaları: **Çalışan AI** = modülde son işi yapan araç/oturum �
 
 ### SMS Modülü — Claude Code (bulut oturumu), 28 Ekim 2026
 
-- Dal `claude/sms-modulu` (temel `origin/main` `7f9ef27e`); GitHub'a gönderildi, canlıya alınmadı. Migration **0183 canlı DB'de uygulandı**. Kodu canlıya almadan önce `SMS_KIMLIK_ANAHTARI` Vercel'e eklenmeli. M16 ve `docs/SMS_MODULU.md` kurulum, yetki ve sınırları anlatır. Netgsm ve İleti Merkezi uç noktaları gerçek hesapla doğrulanmadı.
+- Dal `claude/sms-modulu` (temel `origin/main` `7f9ef27e`); GitHub'a gönderildi, canlıya alınmadı. Migration **0183 canlı DB'de uygulandı**. `SMS_KIMLIK_ANAHTARI` Vercel'e eklendi (production+preview). PR #1 açık, birleştirilmedi. M16 ve `docs/SMS_MODULU.md` kurulum, yetki ve sınırları anlatır. Netgsm ve İleti Merkezi uç noktaları gerçek hesapla doğrulanmadı.
 
 ### Lise Öğrenme Gelişimi — Codex, 27 Ekim 2026
 
