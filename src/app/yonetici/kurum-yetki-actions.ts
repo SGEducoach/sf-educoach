@@ -23,8 +23,13 @@ export async function kurumPaketiUygula(schoolId: string, paketId: string): Prom
   const { data: paket, error: paketHatasi } = await baglam.admin.from("kurum_paketleri")
     .select("ad, modul_yetkileri").eq("id", paketId).eq("aktif", true).maybeSingle();
   if (paketHatasi || !paket) return { error: "Paket bulunamadı." };
+  // SMS paket dışı, kurum bazlı bir ek modüldür (kurumun kendi sağlayıcı paketi):
+  // hazır paket uygulamak kurumun SMS açık/kapalı durumunu sıfırlamamalı.
+  const { data: mevcut } = await baglam.admin.from("schools").select("modul_yetkileri").eq("id", schoolId).is("grup_kapasitesi", null).maybeSingle();
+  const smsDurumu = (mevcut?.modul_yetkileri as KurumModulYetkileri | null)?.sms;
+  const yetkiler = { ...(paket.modul_yetkileri as KurumModulYetkileri), ...(smsDurumu === undefined ? {} : { sms: smsDurumu }) };
   const { error } = await baglam.admin.from("schools").update({
-    paket_adi: paket.ad, modul_yetkileri: paket.modul_yetkileri,
+    paket_adi: paket.ad, modul_yetkileri: yetkiler,
   }).eq("id", schoolId).is("grup_kapasitesi", null);
   if (error) return { error: error.message };
   await baglam.admin.from("admin_audit_log").insert({ actor_id: baglam.actorId, eylem: "kurum_paketi_uygula", detay: { school_id: schoolId, paket_id: paketId } });

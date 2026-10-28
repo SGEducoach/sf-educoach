@@ -81,6 +81,7 @@ import { IDARE_CEREZI, IDARE_UNVANI, mudurYardimcisiUyeligiGetir, type MudurYard
 import { cookies } from "next/headers";
 import { rehberKapsamListesiGetir } from "@/lib/rehber-kapsam-listesi";
 import { AltSekmeCubugu } from "@/components/dashboard/AltSekmeCubugu";
+import { SmsBolumu } from "@/components/dashboard/SmsBolumu";
 import { kurumBolumuAcikMi, kurumErisimiKapaliMi, KURUM_BAGLANTI_HATASI } from "@/lib/kurum-yetkileri";
 import { SinifAnaliziPanel } from "@/components/dashboard/SinifAnaliziPanel";
 import { sinifAnaliziGetir } from "@/lib/sinif-analizi-verisi";
@@ -385,6 +386,8 @@ export default async function DashboardPage({
             <OgrenciProfilim userId={user.id} ad={profile.ad} kademe={ogrenciKademesi} />
           ) : aktifBolum === "tg-denemeleri" ? (
             <TgDenemeleri bugun={bugununTarihiTR()} dbIlanlar={await tgDenemeIlanlariGetir(supabase, kurum?.id)} ortaokulMu={panoOrtaokulMu} />
+          ) : aktifBolum === "sms" && (role === "ogretmen" || role === "mudur") ? (
+            <SmsBolumu userId={user.id} />
           ) : grupKocu && aktifBolum === "ozet" ? (
             <GrupKocIcerik />
           ) : grupKocu && aktifBolum === "denemeler" ? (
