@@ -36,6 +36,8 @@ export type DashboardBolumu =
   | "takvim"
   | "yarismalar"
   | "ogrenci-takibi"
+  // Kurumun kendi SMS paketiyle velilere SMS (28.10.2026, migration 0183).
+  | "sms"
   // Rehber Takip Bildirimleri (20.10.2026, migration 0171).
   | "takip-bildirimleri"
   // YÖNETİCİ (admin) paneline özel — bkz. ADMIN_MENUSU
@@ -82,7 +84,7 @@ export type DashboardIkonu =
   | "ana-sayfa" | "gorev" | "plan" | "veri" | "hakimiyet" | "analiz" | "ai" | "takvim" | "duyuru" | "talep" | "onay" | "ders"
   | "ogretmen" | "ogrenci" | "deneme"
   | "kullanici" | "eslestir" | "okul" | "moderator" | "icerik" | "blog" | "kural" | "profil" | "hata"
-  | "ayarlar" | "admin" | "gecmis" | "rehberlik" | "grup" | "bildirim";
+  | "ayarlar" | "admin" | "gecmis" | "rehberlik" | "grup" | "bildirim" | "sms";
 
 export interface DashboardMenuOgesi {
   bolum: DashboardBolumu;
@@ -185,6 +187,11 @@ const OGRETMEN_MENUSU: DashboardMenuOgesi[] = [
 // Kullanıcı kararı (20.10.2026): menüde "Ajandam" yerine "Okul İşlemleri".
 const TAKVIM_MENU_OGESI: DashboardMenuOgesi = { bolum: "takvim", href: "/dashboard/takvim", etiket: "Okul İşlemleri", ikon: "takvim" };
 
+// SMS modülü (kullanıcı kararı 28.10.2026): müdür, müdür yardımcısı ve rehberlik
+// servisi kullanır; kurum modülü yönetici tarafından açılmadıkça menüde görünmez
+// (bkz. kurum-yetkileri.ts, sms varsayılan kapalı).
+const SMS_MENU_OGESI: DashboardMenuOgesi = { bolum: "sms", href: "/dashboard/sms", etiket: "SMS", ikon: "sms" };
+
 const MUDUR_MENUSU: DashboardMenuOgesi[] = [
   // 2026-08-25 kullanıcı isteği: "dershane müdürünün ana sayfası okul
   // müdürlerinde de olsun" — dershaneAnaSayfaVerisiGetir/DershaneAnaSayfa
@@ -213,6 +220,7 @@ const MUDUR_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "ogretmenler", href: "/dashboard/ogretmenler", etiket: "Öğretmenler", ikon: "ogretmen" },
   { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Konu Durumu", ikon: "ai" },
   { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Duyurular", ikon: "duyuru" },
+  SMS_MENU_OGESI,
   { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Pano", ikon: "takvim" },
 ];
 
@@ -233,6 +241,7 @@ const DERSHANE_MUDUR_MENUSU: DashboardMenuOgesi[] = [
   SINIF_ANALIZI_MENU_OGESI,
   { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Konu Durumu", ikon: "ai" },
   { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Duyurular", ikon: "duyuru" },
+  SMS_MENU_OGESI,
   { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Pano", ikon: "takvim" },
 ];
 
@@ -315,6 +324,7 @@ const REHBER_OGRETMEN_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "ogretmenler", href: "/dashboard/ogretmenler", etiket: "Öğretmenler ve Programlar", ikon: "ogretmen" },
   { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Rehber Öğretmen Duyurusu", ikon: "duyuru" },
   { bolum: "rehberlik", href: "/dashboard/rehberlik", etiket: "Bireysel Mesaj", ikon: "rehberlik" },
+  SMS_MENU_OGESI,
   { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Pano", ikon: "takvim" },
   TAKVIM_MENU_OGESI,
 ];
@@ -401,6 +411,7 @@ const MUDUR_YARDIMCISI_MENUSU: DashboardMenuOgesi[] = [
   SINIF_ANALIZI_MENU_OGESI,
   { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Konu Durumu", ikon: "ai" },
   { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Duyurular", ikon: "duyuru" },
+  SMS_MENU_OGESI,
   { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Pano", ikon: "takvim" },
 ];
 // Kurum dışı belletmen (Faz 4, migration 0165): yalnız yoklama ve kendi
@@ -515,7 +526,7 @@ export function dashboardMenuYapisi(
 export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
   "yurt-ogrencileri", "yoklama", "nobetlerim", "yurt-nobet-listesi", "yurt-takas-talepleri", "belletmen-basvurulari",
   "sinif-analizi", "gorevler", "planlar", "veri-girisi", "konu-hakimiyeti", "analiz", "yapay-zeka", "tg-denemeleri",
-  "duyurular", "talepler", "onaylar", "dersler", "ortaokul-dersler", "ortaokul-yardim", "ortaokul-calisma", "ortaokul-onaylar", "ortaokul-yeterlilik", "ilkokul-gelisim", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler", "rehberlik", "profil", "takvim", "yarismalar", "ogrenci-takibi", "takip-bildirimleri",
+  "duyurular", "talepler", "onaylar", "dersler", "ortaokul-dersler", "ortaokul-yardim", "ortaokul-calisma", "ortaokul-onaylar", "ortaokul-yeterlilik", "ilkokul-gelisim", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler", "rehberlik", "profil", "takvim", "yarismalar", "ogrenci-takibi", "takip-bildirimleri", "sms",
 ]);
 // Yazılı analizinin ayrı sayfası yok (kullanıcı kararı 11.09.2026: yalnızca
 // öğretmene özel) — öğretmen Ajandam > Yazılı Analizi sekmesinden girer.

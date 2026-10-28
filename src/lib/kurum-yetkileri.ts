@@ -15,10 +15,16 @@ export const KURUM_MODULLERI = [
   { key: "yurt", ad: "Yurt" },
   { key: "gelisim", ad: "Gelişim raporu" },
   { key: "yonetim", ad: "Kurum yönetimi" },
+  { key: "sms", ad: "SMS modülü" },
 ] as const;
 
 export type KurumModulu = (typeof KURUM_MODULLERI)[number]["key"];
 export type KurumModulYetkileri = Partial<Record<KurumModulu, boolean>>;
+
+// Eksik anahtar normalde "açık" sayılır (geçiş uyumluluğu). SMS bunun dışında:
+// kurumun kendi SMS paketi bağlanmadan işe yaramaz ve yönetici açıkça açana
+// kadar kapalı kalır (kullanıcı kararı 28.10.2026).
+const VARSAYILAN_KAPALI_MODULLER: readonly KurumModulu[] = ["sms"];
 
 const BOLUM_MODULU: Partial<Record<DashboardBolumu, KurumModulu>> = {
   gorevler: "gorevler", onaylar: "gorevler", "ortaokul-onaylar": "gorevler",
@@ -33,10 +39,12 @@ const BOLUM_MODULU: Partial<Record<DashboardBolumu, KurumModulu>> = {
   yoklama: "yurt", nobetlerim: "yurt", "yurt-ogrencileri": "yurt",
   "yurt-nobet-listesi": "yurt", "yurt-takas-talepleri": "yurt", "belletmen-basvurulari": "yurt",
   "ilkokul-gelisim": "gelisim", ogretmenler: "yonetim", ogrenciler: "yonetim",
+  sms: "sms",
 };
 
 export function kurumModuluAcikMi(yetkiler: KurumModulYetkileri | null | undefined, modul: KurumModulu): boolean {
-  return yetkiler?.[modul] !== false;
+  const deger = yetkiler?.[modul];
+  return VARSAYILAN_KAPALI_MODULLER.includes(modul) ? deger === true : deger !== false;
 }
 
 export function kurumBolumuAcikMi(yetkiler: KurumModulYetkileri | null | undefined, bolum: DashboardBolumu): boolean {
@@ -48,6 +56,7 @@ export function moderatorBolumuAcikMi(yetkiler: KurumModulYetkileri | null | und
   if (bolum === "profil") return true;
   if (bolum === "deneme-yukle" || bolum === "pdf-eslesme") return kurumModuluAcikMi(yetkiler, "denemeler");
   if (bolum === "konu-haritasi" || bolum === "kurum-konulari") return kurumModuluAcikMi(yetkiler, "konular");
+  if (bolum === "sms") return kurumModuluAcikMi(yetkiler, "sms");
   return kurumModuluAcikMi(yetkiler, "yonetim");
 }
 

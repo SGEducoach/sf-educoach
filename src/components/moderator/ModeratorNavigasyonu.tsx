@@ -1,6 +1,6 @@
 import Link from "next/link";
 import {
-  BarChart2, Building2, CircleUserRound, FileUp, GitCompareArrows, GraduationCap, Layers, ListTree, Users,
+  BarChart2, Building2, CircleUserRound, FileUp, GitCompareArrows, GraduationCap, Layers, ListTree, MessageSquareText, Users,
   type LucideIcon,
 } from "lucide-react";
 import { BG1, BORDER, MINT, MINT_BG, TEXT, TEXT_MUTED } from "@/lib/theme";
@@ -51,6 +51,12 @@ export function ModeratorNavigasyonu({ aktif, denemeAcik, adminOkulId, modulYetk
       ogeler: [
         { id: "deneme-yukle" as const, href: panel("deneme-yukle"), etiket: "Deneme yükle", Icon: FileUp },
         { id: "pdf-eslesme" as const, href: panel("pdf-eslesme"), etiket: "PDF eşleştirme", Icon: GitCompareArrows },
+      ],
+    }] : []),
+    ...(moderatorBolumuAcikMi(modulYetkileri, "sms") ? [{
+      baslik: "İletişim",
+      ogeler: [
+        { id: "sms" as const, href: panel("sms"), etiket: "SMS ayarları", Icon: MessageSquareText },
       ],
     }] : []),
     ...(!adminOkulId ? [{
