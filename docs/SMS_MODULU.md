@@ -33,7 +33,7 @@ Dikkat: Verimor/Netgsm panelinde **izinli IP** tanımlıysa Vercel çıkış adr
 ## Kurulum
 
 1. `SMS_KIMLIK_ANAHTARI` (64 hex, `.env.local.example`) Vercel'e **gizli** olarak eklenir. Kaybolursa kurumlar bilgilerini yeniden girer.
-2. Migration `0183_sms_modulu.sql` uygulanır (3 tablo, hepsi RLS açık, yalnız `service_role`).
+2. Migration `0183_sms_modulu.sql` (3 tablo, hepsi RLS açık, yalnız `service_role`) — **28.10.2026'da canlı veritabanına uygulandı**; RLS, yetkiler ve indeksler sorguyla doğrulandı.
 3. Admin → Kurumları Yönet → kurum → Kurum Yetkileri → **SMS modülü** açılır.
 
 ## Güvenlik ve veri
