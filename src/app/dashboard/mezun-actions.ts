@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { pdfOgeleriniCikar } from "@/lib/pdf-oge";
 import { mezunPdfiniCoz } from "@/lib/mezun-pdf";
-import { mezunBilgisiDogrula, mezunGuncellemesi, mezunPdfEslestir, type MezunHamBilgisi, type MezunPdfOnizlemesi } from "@/lib/mezun";
+import { mezunBilgisiDogrula, mezunGuncellemesi, mezunPdfEslestir, type MezunHamBilgisi, type MezunKaydi, type MezunPdfOnizlemesi } from "@/lib/mezun";
 import { mezunErisimi, mezunlariGetir } from "@/lib/mezun-veri";
 import { smsMezunlaraGonder } from "@/lib/sms-gonderim";
 import type { SmsGonderimSonucu } from "@/lib/sms-gonderim";
@@ -37,12 +37,15 @@ function bilgiSatiri(b: NonNullable<ReturnType<typeof mezunBilgisiDogrula>["bilg
   };
 }
 
-function yenile() {
+// Yazmadan sonra güncel liste döner: ekran sayfa yenilemesini beklemeden
+// gösterir (kullanıcı bildirimi 30.10.2026: eklenen mezun listede görünmedi).
+async function yenile(b: { admin: ReturnType<typeof createAdminClient>; erisim: { schoolId: string } }): Promise<MezunKaydi[]> {
   revalidatePath("/dashboard/mezun-takip");
+  return mezunlariGetir(b.admin, b.erisim.schoolId);
 }
 
 // Tek mezun ekleme (id yok) ya da düzenleme.
-export async function mezunKaydet(girdi: { id: string | null; bilgi: MezunHamBilgisi }): Promise<{ error: string | null; uyarilar: string[] }> {
+export async function mezunKaydet(girdi: { id: string | null; bilgi: MezunHamBilgisi }): Promise<{ error: string | null; uyarilar: string[]; mezunlar?: MezunKaydi[] }> {
   const b = await baglam();
   if (b.error !== null) return { error: b.error, uyarilar: [] };
   const { bilgi, hatalar, uyarilar } = mezunBilgisiDogrula(girdi?.bilgi ?? {}, buYil());
@@ -57,18 +60,16 @@ export async function mezunKaydet(girdi: { id: string | null; bilgi: MezunHamBil
     const { error } = await b.admin.from("mezunlar").insert({ ...satir, school_id: b.erisim.schoolId, kaynak: "elle", ekleyen_id: b.erisim.userId });
     if (error) return { error: error.message, uyarilar };
   }
-  yenile();
-  return { error: null, uyarilar };
+  return { error: null, uyarilar, mezunlar: await yenile(b) };
 }
 
-export async function mezunSil(id: string): Promise<{ error: string | null }> {
+export async function mezunSil(id: string): Promise<{ error: string | null; mezunlar?: MezunKaydi[] }> {
   const b = await baglam();
   if (b.error !== null) return { error: b.error };
   if (typeof id !== "string" || !UUID.test(id)) return { error: "Geçersiz kayıt." };
   const { error } = await b.admin.from("mezunlar").delete().eq("id", id).eq("school_id", b.erisim.schoolId);
   if (error) return { error: error.message };
-  yenile();
-  return { error: null };
+  return { error: null, mezunlar: await yenile(b) };
 }
 
 export interface MezunPdfOnizlemeSonucu {
@@ -114,7 +115,7 @@ export async function mezunPdfOnizle(formData: FormData): Promise<MezunPdfOnizle
 
 // Önizlemesi onaylanan satırları yazar. Eşleştirme sunucuda, güncel kayıtlarla
 // yeniden yapılır (önizlemeden sonra eklenen/silinen kayıtlar hesaba katılır).
-export async function mezunPdfAktar(ham: MezunHamBilgisi[]): Promise<{ error: string | null; eklenen: number; guncellenen: number; atlanan: number }> {
+export async function mezunPdfAktar(ham: MezunHamBilgisi[]): Promise<{ error: string | null; eklenen: number; guncellenen: number; atlanan: number; mezunlar?: MezunKaydi[] }> {
   const b = await baglam();
   if (b.error !== null) return { error: b.error, eklenen: 0, guncellenen: 0, atlanan: 0 };
   if (!Array.isArray(ham) || ham.length === 0 || ham.length > EN_COK_PDF_SATIRI) return { error: "Geçersiz satırlar.", eklenen: 0, guncellenen: 0, atlanan: 0 };
@@ -143,8 +144,7 @@ export async function mezunPdfAktar(ham: MezunHamBilgisi[]): Promise<{ error: st
     actor_id: b.erisim.userId, eylem: "mezun_pdf_aktar",
     detay: { school_id: b.erisim.schoolId, eklenen: yeniler.length, guncellenen, atlanan: satirlar.filter((s) => s.durum === "hatali").length },
   });
-  yenile();
-  return { error: null, eklenen: yeniler.length, guncellenen, atlanan: satirlar.filter((s) => s.durum === "hatali").length };
+  return { error: null, eklenen: yeniler.length, guncellenen, atlanan: satirlar.filter((s) => s.durum === "hatali").length, mezunlar: await yenile(b) };
 }
 
 export async function mezunSmsGonder(girdi: { mezunIdleri: string[]; icerik: string; zamanIso: string | null }): Promise<{ error: string | null; sonuc?: SmsGonderimSonucu }> {

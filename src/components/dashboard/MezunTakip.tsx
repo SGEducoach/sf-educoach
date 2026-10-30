@@ -41,8 +41,16 @@ function sablonIndir() {
   URL.revokeObjectURL(url);
 }
 
-export function MezunTakip({ mezunlar, smsDurumu, buYil }: { mezunlar: MezunKaydi[]; smsDurumu: SmsDurumu; buYil: number }) {
+export function MezunTakip({ mezunlar: sunucudan, smsDurumu, buYil }: { mezunlar: MezunKaydi[]; smsDurumu: SmsDurumu; buYil: number }) {
   const router = useRouter();
+  // Liste her işlemin yanıtındaki güncel listeyle hemen yenilenir; sayfa
+  // yenilenince sunucudan gelen liste yine esas alınır.
+  const [mezunlar, setMezunlar] = useState(sunucudan);
+  const [oncekiSunucu, setOncekiSunucu] = useState(sunucudan);
+  if (sunucudan !== oncekiSunucu) {
+    setOncekiSunucu(sunucudan);
+    setMezunlar(sunucudan);
+  }
   const [pending, startTransition] = useTransition();
   const [mesaj, setMesaj] = useState<{ tur: "ok" | "hata"; metin: string } | null>(null);
   const [arama, setArama] = useState("");
@@ -62,9 +70,10 @@ export function MezunTakip({ mezunlar, smsDurumu, buYil }: { mezunlar: MezunKayd
   const seciliTelefonlu = mezunlar.filter((m) => secili.has(m.id) && m.telefon).length;
   const uzunluk = smsUzunlugu(sms);
 
-  const sonuc = (r: { error: string | null }, ok: string) => {
+  const sonuc = (r: { error: string | null; mezunlar?: MezunKaydi[] }, ok: string) => {
     if (r.error) { setMesaj({ tur: "hata", metin: r.error }); return false; }
     setMesaj({ tur: "ok", metin: ok });
+    if (r.mezunlar) setMezunlar(r.mezunlar);
     router.refresh();
     return true;
   };
