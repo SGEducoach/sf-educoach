@@ -9,7 +9,7 @@ import {
 import type { NobetGorunumu, ProgramYuklemeOzeti, YurtNobetiYuklemeOzeti } from "@/lib/nobet-yukleme";
 import { GUN_ETIKET, programGunleri } from "@/lib/ders-programi";
 import type { DersProgramiGunu } from "@/lib/ders-programi";
-import { BG0, BG1, BG1_ALT, BLUSH, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
+import { BG0, BG1, BG1_ALT, BLUSH, BLUSH_BG, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
 
 // Ders programı ve nöbet listesi yükleme (kullanıcı isteği 17.09.2026) —
 // okulun MEB ders programı PDF'i ve yurt (belletmen) nöbet listesi site
@@ -39,6 +39,9 @@ function Uyarilar({ uyarilar }: { uyarilar: string[] }) {
 }
 
 const girdiStili = { background: BG0, color: TEXT, border: `2px solid ${BORDER_STRONG}` };
+// Tarayıcının yerli "Dosya Seç" düğmesi temaya uymuyordu (gece temasında açık gri, gündüzde
+// soluk); zemin ve yazı tema çiftinden (nane / nane üstü yazı) alınır, iki temada da okunur.
+const DOSYA_DUGMESI = "file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:px-3 file:py-1.5 file:text-xs file:font-bold file:bg-[var(--sfec-mint)] file:text-[var(--sfec-mint-on)]";
 
 // Kullanıcı bildirimi (29.09.2026): "ders programı ve yurt nöbeti pdfsi
 // seçiliyor ama yükle butonu yok". Dosya seçilir seçilmez yükleniyordu:
@@ -57,7 +60,7 @@ function DosyaSecimi({ ref: girdiRef, dosya, onSec, onYukle, onTemizle, pending,
     <>
       <input ref={girdiRef} type="file" accept="application/pdf" disabled={pending}
         onChange={(e) => onSec(e.target.files?.[0] ?? null)}
-        className="w-full rounded-xl px-3 py-2 text-xs" style={girdiStili} />
+        className={`w-full rounded-xl px-3 py-2 text-xs ${DOSYA_DUGMESI}`} style={girdiStili} />
       {dosya && (
         <div className="mt-2 flex flex-wrap items-center gap-2 rounded-xl p-2" style={{ background: BG1_ALT }}>
           <span className="flex-1 truncate text-[11px] font-semibold" style={{ color: TEXT }} title={dosya.name}>{dosya.name}</span>
@@ -160,7 +163,7 @@ function DuzenlemeSatiri({ ogretmenler, adSoyad, onAdDegis, disabled, onKaydet, 
         Kaydet
       </button>
       <button type="button" onClick={onSil} disabled={disabled}
-        className="sfec-btn flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold" style={{ background: BLUSH, color: TEXT }}>
+        className="sfec-btn flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold" style={{ background: BLUSH_BG, color: TEXT, border: `1px solid ${BLUSH}` }}>
         <Trash2 size={12} /> Sil
       </button>
       <button type="button" onClick={onVazgec} disabled={disabled}
@@ -332,12 +335,12 @@ export function NobetProgramYukleme({ okulId, okulAdi, yurtlu = false }: { okulI
       </p>
 
       {hata && (
-        <div className="flex items-start gap-2 rounded-xl p-3 text-xs font-semibold" style={{ background: BLUSH, color: TEXT }}>
+        <div className="flex items-start gap-2 rounded-xl p-3 text-xs font-semibold" style={{ background: BLUSH_BG, color: TEXT, border: `1px solid ${BLUSH}` }}>
           <ShieldAlert size={14} /> {hata}
         </div>
       )}
       {bilgi && (
-        <div className="rounded-xl p-3 text-xs font-semibold" style={{ background: MINT_BG, color: MINT_ON }}>{bilgi}</div>
+        <div className="rounded-xl p-3 text-xs font-semibold" style={{ background: MINT_BG, color: TEXT, border: `1px solid ${MINT}` }}>{bilgi}</div>
       )}
 
       {nobetler && nobetler.bekleyenProgramlar.length > 0 && (
@@ -368,7 +371,7 @@ export function NobetProgramYukleme({ okulId, okulAdi, yurtlu = false }: { okulI
           Hesabı olmayan öğretmenlerin programı bekletilir, üye oldukları anda yansır.
         </p>
         {programOzeti && (
-          <div className="mt-3 rounded-xl p-3 text-xs font-semibold" style={{ background: MINT_BG, color: MINT_ON }}>
+          <div className="mt-3 rounded-xl p-3 text-xs font-semibold" style={{ background: MINT_BG, color: TEXT, border: `1px solid ${MINT}` }}>
             {programOzeti.ogretmen} öğretmen okundu · {programOzeti.eslesen} hesaba yazıldı · {programOzeti.bekleyen} bekliyor ·
             {" "}{programOzeti.hucre} ders saati · {programOzeti.nobet} okul nöbeti
             <Uyarilar uyarilar={programOzeti.uyarilar} />
@@ -387,7 +390,7 @@ export function NobetProgramYukleme({ okulId, okulAdi, yurtlu = false }: { okulI
           Yalnızca listedeki tarih aralığı yenilenir; diğer dönemlerin nöbetleri korunur.
         </p>
         {yurtOzeti && (
-          <div className="mt-3 rounded-xl p-3 text-xs font-semibold" style={{ background: MINT_BG, color: MINT_ON }}>
+          <div className="mt-3 rounded-xl p-3 text-xs font-semibold" style={{ background: MINT_BG, color: TEXT, border: `1px solid ${MINT}` }}>
             {yurtOzeti.ilkTarih} – {yurtOzeti.sonTarih} · {yurtOzeti.gorev} görev · {yurtOzeti.ogretmen} öğretmen ·
             {" "}{yurtOzeti.eslesen} hesap eşleşti · {yurtOzeti.bildirilen} bildirim
             <Uyarilar uyarilar={yurtOzeti.uyarilar} />
