@@ -6,7 +6,7 @@ import {
   bekleyenProgramiHesabaUygula, dersProgramiPdfYukle, nobetleriGetir,
   nobetleriAdaGoreBagla, okulNobetiKaydet, okulNobetiSil, yurtNobetiKaydet, yurtNobetiPdfYukle, yurtNobetiSil,
 } from "@/app/dashboard/nobet-program-actions";
-import type { NobetGorunumu, ProgramYuklemeOzeti, YurtNobetiYuklemeOzeti } from "@/lib/nobet-yukleme";
+import { YURT_NOBETI_TEMIZLIK_GUNU, type NobetGorunumu, type ProgramYuklemeOzeti, type YurtNobetiYuklemeOzeti } from "@/lib/nobet-yukleme";
 import { GUN_ETIKET, programGunleri } from "@/lib/ders-programi";
 import type { DersProgramiGunu } from "@/lib/ders-programi";
 import { BG0, BG1, BG1_ALT, BLUSH, BLUSH_BG, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
@@ -388,6 +388,7 @@ export function NobetProgramYukleme({ okulId, okulAdi, yurtlu = false }: { okulI
         </label>
         <p className="mt-1 text-[11px]" style={{ color: TEXT_MUTED }}>
           Yalnızca listedeki tarih aralığı yenilenir; diğer dönemlerin nöbetleri korunur.
+          Hesapla eşleşmeyen nöbetler her ayın {YURT_NOBETI_TEMIZLIK_GUNU}&apos;inden itibaren o ay için kendiliğinden silinir.
         </p>
         {yurtOzeti && (
           <div className="mt-3 rounded-xl p-3 text-xs font-semibold" style={{ background: MINT_BG, color: TEXT, border: `1px solid ${MINT}` }}>
