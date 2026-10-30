@@ -38,6 +38,8 @@ export type DashboardBolumu =
   | "ogrenci-takibi"
   // Kurumun kendi SMS paketiyle velilere SMS (28.10.2026, migration 0183).
   | "sms"
+  // Rehberlik servisi ve müdür: mezunların bilgisi ve SMS (30.10.2026, migration 0184).
+  | "mezun-takip"
   // Rehber Takip Bildirimleri (20.10.2026, migration 0171).
   | "takip-bildirimleri"
   // YÖNETİCİ (admin) paneline özel — bkz. ADMIN_MENUSU
@@ -191,6 +193,10 @@ const TAKVIM_MENU_OGESI: DashboardMenuOgesi = { bolum: "takvim", href: "/dashboa
 // servisi kullanır; kurum modülü yönetici tarafından açılmadıkça menüde görünmez
 // (bkz. kurum-yetkileri.ts, sms varsayılan kapalı).
 const SMS_MENU_OGESI: DashboardMenuOgesi = { bolum: "sms", href: "/dashboard/sms", etiket: "SMS", ikon: "sms" };
+
+// Mezun Takip (kullanıcı kararı 30.10.2026): okulun rehberlik servisi ve müdürü;
+// ortaokulda mezun olmadığı için yalnız lise öğrencisi olan okullarda.
+const MEZUN_TAKIP_MENU_OGESI: DashboardMenuOgesi = { bolum: "mezun-takip", href: "/dashboard/mezun-takip", etiket: "Mezun Takip", ikon: "ogrenci" };
 
 const MUDUR_MENUSU: DashboardMenuOgesi[] = [
   // 2026-08-25 kullanıcı isteği: "dershane müdürünün ana sayfası okul
@@ -490,13 +496,14 @@ function dashboardMenusuTemel(
       ? [REHBER_OGRETMEN_MENUSU[0], KAPSAMIM_MENU_OGESI, TAKIP_BILDIRIMLERI_MENU_OGESI, PROGRAM_DESTEGI_MENU_OGESI, ...REHBER_OGRETMEN_MENUSU.slice(1)]
       : REHBER_OGRETMEN_MENUSU;
     // İlkokulun "Rehberlik" kalemini rehberlik servisi işaretler.
-    return okulRehberi && kademe === "ortaokul" ? [...rehberMenusu, ILKOKUL_GELISIM_MENU_OGESI] : rehberMenusu;
+    if (okulRehberi && kademe === "ortaokul") return [...rehberMenusu, ILKOKUL_GELISIM_MENU_OGESI];
+    return okulRehberi ? [...rehberMenusu, MEZUN_TAKIP_MENU_OGESI] : rehberMenusu;
   }
   if (role === "ogretmen") return kurumTuru === "okul" ? [...OGRETMEN_MENUSU, TAKVIM_MENU_OGESI] : OGRETMEN_MENUSU;
   if (role === "mudur") {
     if (kurumTuru === "dershane") return DERSHANE_MUDUR_MENUSU;
     const taban = [...MUDUR_MENUSU, TAKVIM_MENU_OGESI];
-    return kademe === "ortaokul" ? [...ortaokulaUyarla(taban), ILKOKUL_GELISIM_MENU_OGESI] : taban;
+    return kademe === "ortaokul" ? [...ortaokulaUyarla(taban), ILKOKUL_GELISIM_MENU_OGESI] : [...taban, MEZUN_TAKIP_MENU_OGESI];
   }
   if (role === "admin") return ADMIN_MENUSU;
   return [];
@@ -526,7 +533,7 @@ export function dashboardMenuYapisi(
 export const DASHBOARD_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
   "yurt-ogrencileri", "yoklama", "nobetlerim", "yurt-nobet-listesi", "yurt-takas-talepleri", "belletmen-basvurulari",
   "sinif-analizi", "gorevler", "planlar", "veri-girisi", "konu-hakimiyeti", "analiz", "yapay-zeka", "tg-denemeleri",
-  "duyurular", "talepler", "onaylar", "dersler", "ortaokul-dersler", "ortaokul-yardim", "ortaokul-calisma", "ortaokul-onaylar", "ortaokul-yeterlilik", "ilkokul-gelisim", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler", "rehberlik", "profil", "takvim", "yarismalar", "ogrenci-takibi", "takip-bildirimleri", "sms",
+  "duyurular", "talepler", "onaylar", "dersler", "ortaokul-dersler", "ortaokul-yardim", "ortaokul-calisma", "ortaokul-onaylar", "ortaokul-yeterlilik", "ilkokul-gelisim", "kurum-performansi", "ogretmenler", "ogrenciler", "denemeler", "rehberlik", "profil", "takvim", "yarismalar", "ogrenci-takibi", "takip-bildirimleri", "sms", "mezun-takip",
 ]);
 // Yazılı analizinin ayrı sayfası yok (kullanıcı kararı 11.09.2026: yalnızca
 // öğretmene özel) — öğretmen Ajandam > Yazılı Analizi sekmesinden girer.

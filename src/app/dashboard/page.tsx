@@ -82,6 +82,7 @@ import { cookies } from "next/headers";
 import { rehberKapsamListesiGetir } from "@/lib/rehber-kapsam-listesi";
 import { AltSekmeCubugu } from "@/components/dashboard/AltSekmeCubugu";
 import { SmsBolumu } from "@/components/dashboard/SmsBolumu";
+import { MezunTakipBolumu } from "@/components/dashboard/MezunTakipBolumu";
 import { kurumBolumuAcikMi, kurumErisimiKapaliMi, KURUM_BAGLANTI_HATASI } from "@/lib/kurum-yetkileri";
 import { SinifAnaliziPanel } from "@/components/dashboard/SinifAnaliziPanel";
 import { sinifAnaliziGetir } from "@/lib/sinif-analizi-verisi";
@@ -388,6 +389,8 @@ export default async function DashboardPage({
             <TgDenemeleri bugun={bugununTarihiTR()} dbIlanlar={await tgDenemeIlanlariGetir(supabase, kurum?.id)} ortaokulMu={panoOrtaokulMu} />
           ) : aktifBolum === "sms" && (role === "ogretmen" || role === "mudur") ? (
             <SmsBolumu userId={user.id} />
+          ) : aktifBolum === "mezun-takip" && (role === "ogretmen" || role === "mudur") ? (
+            <MezunTakipBolumu userId={user.id} />
           ) : grupKocu && aktifBolum === "ozet" ? (
             <GrupKocIcerik />
           ) : grupKocu && aktifBolum === "denemeler" ? (

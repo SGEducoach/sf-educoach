@@ -17,6 +17,10 @@
       "schedule": "40 21 * * *"
     },
     {
+      "path": "/api/cron/mezun-aktar",
+      "schedule": "20 3 * * *"
+    },
+    {
       "path": "/api/cron/yurt-nobeti-bildirim?sira=1",
       "schedule": "0 6 * * *"
     },

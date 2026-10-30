@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { smsKimlikSifrele } from "@/lib/sms-kimlik-sifre";
 import { sahteAdmin, type Satir } from "@/lib/sms-sahte-supabase";
-import { smsGonder, SMS_ENCOK_ALICI, SMS_SAATLIK_GONDERIM, type SmsGonderimGirdisi } from "@/lib/sms-gonderim";
+import { smsGonder, smsMezunlaraGonder, SMS_ENCOK_ALICI, SMS_SAATLIK_GONDERIM, type SmsGonderimGirdisi } from "@/lib/sms-gonderim";
 
 const OKUL = "11111111-1111-4111-8111-111111111111";
 const SINIF_9 = "22222222-2222-4222-8222-222222222221";
@@ -145,6 +145,26 @@ describe("smsGonder", () => {
     }));
     const sonuc = await sms(sahteAdmin(t), girdi());
     expect(sonuc.error).toMatch(/en çok 1000/);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("smsMezunlaraGonder (Mezun Takip, migration 0184)", () => {
+  const mezunGirdisi = (telefonlar: (string | null)[]) => ({
+    schoolId: OKUL, userId: KULLANICI, icerik: "Sevgili mezunumuz, buluşmaya davetlisiniz.", telefonlar, hedefOzeti: "Mezunlar: 3 kişi", zaman: null,
+  });
+  it("geçerli ve tekrarsız numaralara gönderir, geçmişe mezun türüyle numarasız yazar", async () => {
+    const admin = sahteAdmin(tablolar());
+    const sonuc = await smsMezunlaraGonder(admin as never, mezunGirdisi(["905321234567", null, "905321234567", "905331112233"]));
+    expect(sonuc).toMatchObject({ error: null, sonuc: { aliciSayisi: 2, gecersizSayisi: 1, tekrarSayisi: 1 } });
+    expect(admin.eklenen.sms_gonderimleri[0]).toMatchObject({ alici_turu: "mezun", hedef_ozeti: "Mezunlar: 3 kişi", alici_sayisi: 2 });
+    expect(JSON.stringify(admin.eklenen.sms_gonderimleri[0])).not.toMatch(/90532|90533/);
+  });
+  it("seçim boşsa, telefon yoksa ya da modül kapalıysa göndermez", async () => {
+    expect((await smsMezunlaraGonder(sahteAdmin(tablolar()) as never, mezunGirdisi([]))).error).toMatch(/En az bir mezun/);
+    expect((await smsMezunlaraGonder(sahteAdmin(tablolar()) as never, mezunGirdisi([null, null]))).error).toMatch(/geçerli bir telefon/);
+    const kapali = tablolar({ schools: [{ ...tablolar().schools[0], modul_yetkileri: { sms: false } }] });
+    expect((await smsMezunlaraGonder(sahteAdmin(kapali) as never, mezunGirdisi(["905321234567"]))).error).toMatch(/kapalı/);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });

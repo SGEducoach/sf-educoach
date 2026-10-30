@@ -34,7 +34,7 @@ const BOLUM_MODULU: Partial<Record<DashboardBolumu, KurumModulu>> = {
   analiz: "analiz", "sinif-analizi": "analiz", "kurum-performansi": "analiz", kapsamim: "analiz", "ogrenci-takibi": "analiz", "takip-bildirimleri": "analiz",
   denemeler: "denemeler", "tg-denemeleri": "pano",
   duyurular: "duyurular", talepler: "duyurular",
-  rehberlik: "rehberlik", "ortaokul-yardim": "rehberlik",
+  rehberlik: "rehberlik", "ortaokul-yardim": "rehberlik", "mezun-takip": "rehberlik",
   dersler: "dersler", "ortaokul-dersler": "dersler", takvim: "dersler", yarismalar: "dersler",
   yoklama: "yurt", nobetlerim: "yurt", "yurt-ogrencileri": "yurt",
   "yurt-nobet-listesi": "yurt", "yurt-takas-talepleri": "yurt", "belletmen-basvurulari": "yurt",
