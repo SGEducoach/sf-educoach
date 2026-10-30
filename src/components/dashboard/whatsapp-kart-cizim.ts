@@ -129,6 +129,10 @@ export interface DuyuruCizimi {
   metinOdakli?: boolean;
   // Kartla birlikte gönderilen dosyaların adları; kartın altında listelenir.
   ekler?: string[];
+  // Logonun yanındaki hedef yazısı (kullanıcı isteği 28.10.2026): "Tüm Kuruma",
+  // "Öğrencilere"… Verilmezse "Duyuru"; boş dizgede hiç yazılmaz
+  // (öğretmenin kartı).
+  hedefEtiketi?: string;
 }
 
 const OLCEKLER = [1, 0.9, 0.8, 0.72, 0.64];
@@ -183,24 +187,30 @@ export function duyuruKartiCiz(canvas: HTMLCanvasElement, c: DuyuruCizimi) {
 
   // Logo ve kurum adı
   const LR = 104;
+  const hedef = c.hedefEtiketi ?? "Duyuru";
   if (genisLogoMu(c.logo)) {
-    // Logo kurumun adını zaten taşır; yanına yalnız "Duyuru" yazılır.
-    genisLogoCiz(ctx, c.logo, KENAR, FOTO_Y + 28, 104, KART_G - 2 * KENAR - 200);
-    ctx.fillStyle = c.renk;
-    ctx.font = font(800, 26);
-    ctx.textAlign = "right";
-    ctx.fillText("Duyuru", KART_G - KENAR, FOTO_Y + 88);
-    ctx.textAlign = "left";
+    // Logo kurumun adını zaten taşır; yanına yalnız hedef yazısı yazılır.
+    genisLogoCiz(ctx, c.logo, KENAR, FOTO_Y + 28, 104, KART_G - 2 * KENAR - 280);
+    if (hedef) {
+      ctx.fillStyle = c.renk;
+      ctx.font = font(800, 26);
+      ctx.textAlign = "right";
+      ctx.fillText(hedef, KART_G - KENAR, FOTO_Y + 88);
+      ctx.textAlign = "left";
+    }
   } else {
     kurumLogosu(ctx, c.logo, c.kurumAdi, KENAR + LR, FOTO_Y, LR, c.renk);
     const adX = KENAR + LR * 2 + 40;
     ctx.fillStyle = KOYU;
     ctx.font = font(900, 38);
     const adSatir = satirla(ctx, c.kurumAdi, KART_G - KENAR - adX, 1)[0] ?? "";
-    ctx.fillText(adSatir, adX, FOTO_Y + 64);
-    ctx.fillStyle = c.renk;
-    ctx.font = font(700, 24);
-    ctx.fillText("Duyuru", adX, FOTO_Y + 100);
+    // Hedef yazısı yoksa kurum adı logonun ortasına hizalanır.
+    ctx.fillText(adSatir, adX, hedef ? FOTO_Y + 64 : FOTO_Y + 80);
+    if (hedef) {
+      ctx.fillStyle = c.renk;
+      ctx.font = font(700, 24);
+      ctx.fillText(hedef, adX, FOTO_Y + 100);
+    }
   }
 
   // Alt bilgi

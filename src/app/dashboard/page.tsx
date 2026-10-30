@@ -81,6 +81,8 @@ import { IDARE_CEREZI, IDARE_UNVANI, mudurYardimcisiUyeligiGetir, type MudurYard
 import { cookies } from "next/headers";
 import { rehberKapsamListesiGetir } from "@/lib/rehber-kapsam-listesi";
 import { AltSekmeCubugu } from "@/components/dashboard/AltSekmeCubugu";
+import { SmsBolumu } from "@/components/dashboard/SmsBolumu";
+import { MezunTakipBolumu } from "@/components/dashboard/MezunTakipBolumu";
 import { kurumBolumuAcikMi, kurumErisimiKapaliMi, KURUM_BAGLANTI_HATASI } from "@/lib/kurum-yetkileri";
 import { SinifAnaliziPanel } from "@/components/dashboard/SinifAnaliziPanel";
 import { sinifAnaliziGetir } from "@/lib/sinif-analizi-verisi";
@@ -120,6 +122,9 @@ import { belletmenMi } from "@/lib/belletmen";
 import { sablonAyarlariGetir } from "@/lib/whatsapp-sablon-ayarlari-verisi";
 import { etkinSablonlar, kurumaUygunSablonlar, ucretliKurumMu } from "@/lib/whatsapp-sablon-ayarlari";
 import { IlkokulGelisimGirisi, IlkokulGelisimSekmeleri } from "@/components/dashboard/IlkokulGelisimGirisi";
+import { OrtaokulCiktiGirisi } from "@/components/dashboard/OrtaokulCiktiGirisi";
+import { ortaokulCiktiRaporuGetir, ortaokulCiktiSiniflariGetir, senaryoCiktilariGetir, SENARYO_DONEMI, SENARYO_KAYNAGI } from "@/lib/ortaokul-cikti-sorgu";
+import { ciktiDersAdi, ciktiDersiMi, sinifCiktiDersleri } from "@/lib/ortaokul-cikti";
 import { IlkokulSosyalDuygusalGirisi } from "@/components/dashboard/IlkokulSosyalDuygusalGirisi";
 import { IlkokulGelisimRaporu } from "@/components/dashboard/IlkokulGelisimRaporu";
 import { bekleyenOgretmenBildirimleriniGonder } from "@/lib/ogretmen-bildirim";
@@ -382,6 +387,10 @@ export default async function DashboardPage({
             <OgrenciProfilim userId={user.id} ad={profile.ad} kademe={ogrenciKademesi} />
           ) : aktifBolum === "tg-denemeleri" ? (
             <TgDenemeleri bugun={bugununTarihiTR()} dbIlanlar={await tgDenemeIlanlariGetir(supabase, kurum?.id)} ortaokulMu={panoOrtaokulMu} />
+          ) : aktifBolum === "sms" && (role === "ogretmen" || role === "mudur") ? (
+            <SmsBolumu userId={user.id} />
+          ) : aktifBolum === "mezun-takip" && (role === "ogretmen" || role === "mudur") ? (
+            <MezunTakipBolumu userId={user.id} />
           ) : grupKocu && aktifBolum === "ozet" ? (
             <GrupKocIcerik />
           ) : grupKocu && aktifBolum === "denemeler" ? (
@@ -904,21 +913,42 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
   // İlkokul Gelişim Raporu (16.10.2026, migration 0157). Kişinin erişebildiği
   // ilkokul sınıfları ve her birinde hangi kalemleri yazabildiği sunucuda
   // çözülür; veri service-role ile, yetki kontrolünden sonra okunur.
+  // 5-8. sınıflar (27.10.2026, migration 0182) aynı bölümde: o sınıf seçilince
+  // MEB ortak yazılı senaryolarındaki öğrenme çıktılarının değerlendirmesi açılır.
   if (aktifBolum === "ilkokul-gelisim") {
     const yonetici = createAdminClient();
-    const siniflar = await ilkokulSiniflariGetir(yonetici, userId);
-    if (siniflar.length === 0) {
+    const [siniflar, ortaSiniflar] = await Promise.all([
+      ilkokulSiniflariGetir(yonetici, userId),
+      ortaokulCiktiSiniflariGetir(yonetici, userId),
+    ]);
+    if (siniflar.length === 0 && ortaSiniflar.length === 0) {
       return (
         <div className="sfec-fade rounded-3xl p-6 text-center" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
           <p style={{ color: TEXT_MUTED }} className="text-sm">
-            Gelişim raporu 1-4. sınıflar içindir. Sınıf öğretmeni olduğunuz ya da rehberlik kapsamınızda olan bir ilkokul sınıfı yok.
+            Gelişim raporu 1-8. sınıflar içindir. Öğretmeni olduğunuz ya da rehberlik kapsamınızda olan bir sınıf yok.
           </p>
         </div>
       );
     }
+    const sinifSecenekleri = [...siniflar, ...ortaSiniflar].sort(sinifSiraKarsilastir)
+      .map((s) => ({ id: s.id, ad: `${s.seviye}-${s.sube}`, seviye: s.seviye }));
+    const ortaSecili = ortaSiniflar.find((s) => s.id === secilenSinifId)
+      ?? (siniflar.length === 0 ? ortaSiniflar[0] : null);
+    if (ortaSecili) {
+      const dersler = sinifCiktiDersleri(ortaSecili.seviye)
+        .map((d) => ({ anahtar: d, ad: ciktiDersAdi(d), yazabilir: ortaSecili.yazabilecegiDersler.includes(d) }));
+      const ders = ciktiDersiMi(seciliDersId) && dersler.some((d) => d.anahtar === seciliDersId)
+        ? seciliDersId : (ortaSecili.yazabilecegiDersler[0] ?? dersler[0].anahtar);
+      const rapor = await ortaokulCiktiRaporuGetir(yonetici, ortaSecili.id, ders);
+      return (
+        <OrtaokulCiktiGirisi key={`${ortaSecili.id}-${ders}`} siniflar={sinifSecenekleri} seciliSinifId={ortaSecili.id}
+          dersler={dersler} seciliDers={ders} ciktilar={senaryoCiktilariGetir(ders, ortaSecili.seviye)}
+          ogrenciler={rapor.ogrenciler} kayitlar={rapor.kayitlar}
+          donemEtiketi={`${SENARYO_DONEMI.egitimYili} Eğitim Öğretim Yılı ${SENARYO_DONEMI.donem}. Dönem`} kaynak={SENARYO_KAYNAGI} />
+      );
+    }
     const secili = siniflar.find((s) => s.id === secilenSinifId) ?? siniflar[0];
     const ay = ayAnahtari(secilenAy ?? "") ?? ayAnahtari(bugununTarihiTR())!;
-    const sinifSecenekleri = siniflar.map((s) => ({ id: s.id, ad: `${s.seviye}-${s.sube}`, seviye: s.seviye }));
     // Sosyal duygusal beceriler (MEB, dönemlik; migration 0167).
     if (seciliBolum === "sosyal") {
       const donem = donemBilgisi(ay);
@@ -1261,7 +1291,8 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       <section className="sfec-section">
         <DuyuruTuruSekmeleri tur="whatsapp" alan={alan} secenekler={duyuruBolumleri} />
         <WhatsappDuyuruStudyosu key={alan} kurumAdi={kurum?.ad ?? "Kurumumuz"} logoAdresi={kurum?.logo_url ?? null}
-          logoDegistirebilir={role === "mudur"} ogrenciler={ogrenciListesi} genelDuyurular={genelWhatsapp} yurt={yurtVerisi} sablonlar={sablonlar} />
+          logoDegistirebilir={role === "mudur"} ogrenciler={ogrenciListesi} genelDuyurular={genelWhatsapp} yurt={yurtVerisi} sablonlar={sablonlar}
+          hedefSecimi={!yalnizGenelKart} />
       </section>
     );
   }
@@ -1312,6 +1343,7 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
       : [];
     return (
       <KonuDurumuBolumu schoolId={teacher.school_id} kapsamlar={kapsamlar} seciliAnahtar={secilenKapsam} gorevSiniflari={gorevSiniflari}
+        gelisimOgretmenId={role === "ogretmen" && kurumTuru !== "dershane" && kademe !== "ortaokul" ? userId : undefined}
         bosMesaj={okulRehberi
           ? "Rehberlik servisinde size henüz bir sınıf seviyesi atanmamış."
           : "Bu görünüm sınıf öğretmenleri ve YKS derslerinden birine giren öğretmenler içindir; size atanmış bir sınıf ya da ders bulunamadı."} />

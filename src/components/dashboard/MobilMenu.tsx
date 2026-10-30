@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { BellRing,
+import { BellRing, MessageSquareText,
   BarChart3, BookOpen, BookOpenCheck, Bot, Bug, CalendarDays, CalendarPlus2, ChevronDown, CircleUserRound, ClipboardCheck, ClipboardList, Crown, FileCheck2, FileSpreadsheet, GraduationCap, HeartHandshake, History, Home,
   LayoutDashboard, ListChecks, LogOut, Megaphone, Menu, PenLine, School, ScrollText, Settings2, ShieldCheck, UserPlus, Users, UsersRound, X, Rss } from "lucide-react";
 import { BG1, BORDER, BORDER_STRONG, MINT, MINT_BG, SEAFOAM, TEXT, TEXT_MUTED, BLUSH } from "@/lib/theme";
@@ -56,6 +56,7 @@ const IKONLAR: Record<DashboardIkonu, typeof Home> = {
   grup: UsersRound,
   rehberlik: HeartHandshake,
   bildirim: BellRing,
+  sms: MessageSquareText,
 };
 
 // Telefon genişliğinde header'daki ikon sırası (moderatör/tema/bildirim/

@@ -30,7 +30,7 @@ import { KurumDenemeSuresiAyari } from "@/components/yonetici/KurumDenemeSuresiA
 import { VeliDavetKodlari } from "@/components/dashboard/IlkokulGelisimGirisi";
 import { adminKurumLogosuYukle, adminKurumLogosuKaldir } from "@/app/yonetici/whatsapp-actions";
 import { kurumModuluDegistir, kurumPaketiUygula } from "@/app/yonetici/kurum-yetki-actions";
-import { KURUM_MODULLERI, kurumErisimiKapaliMi, type KurumModulYetkileri } from "@/lib/kurum-yetkileri";
+import { KURUM_MODULLERI, kurumErisimiKapaliMi, kurumModuluAcikMi, type KurumModulYetkileri } from "@/lib/kurum-yetkileri";
 import { suresiDolduMu } from "@/lib/deneme-suresi";
 
 interface OkulSatiri {
@@ -343,7 +343,7 @@ function KurumYetkileriPaneli({ okul, paketler }: { okul: OkulSatiri; paketler: 
     </div>
     <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
       {KURUM_MODULLERI.map((modul) => {
-        const acik = yetkiler[modul.key] !== false;
+        const acik = kurumModuluAcikMi(yetkiler, modul.key);
         return <label key={modul.key} className={`flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-xs ${pending ? "cursor-wait" : "cursor-pointer"}`} style={{ background: BG0, color: TEXT }}>
           <span>{modul.ad}</span>
           <input type="checkbox" role="switch" checked={acik} disabled={pending} onChange={(e) => modulDegistir(modul.key, e.target.checked)} className="peer sr-only" />

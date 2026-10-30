@@ -42,6 +42,8 @@ describe("WhatsApp Drive ek sınırları", () => {
     expect(drivePaylasimMetni("Duyuru", [{ id, ad: "föy.pdf", adres: "https://evil.example" }])).toContain(driveDosyaAdresi(id));
     expect(drivePaylasimMetni("Duyuru", [])).toBe("");
     expect(() => driveDosyaAdresi("../x")).toThrow();
+    // Bağlantıya tıklayınca dosya iner (görüntüleme sayfası açılmaz).
+    expect(driveDosyaAdresi(id)).toBe(`https://drive.google.com/uc?export=download&id=${id}`);
   });
 });
 

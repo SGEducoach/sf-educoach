@@ -10,6 +10,9 @@ import { DershaneDenemePdfFormu } from "@/components/dashboard/DershaneDenemePdf
 import { PdfEslesmeYonetimi } from "@/components/yonetici/PdfEslesmeYonetimi";
 import { KayitsizOgrencilerKarti } from "@/components/yonetici/KayitsizOgrencilerKarti";
 import { TEXT, TEXT_MUTED } from "@/lib/theme";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { smsAyarOzetiGetir } from "@/lib/sms-veri";
+import { SmsAyarlari } from "@/components/dashboard/SmsAyarlari";
 import { kullaniciKurumuGetir } from "@/lib/deneme-suresi";
 import { kurumErisimiKapaliMi, kurumModuluAcikMi, moderatorBolumuAcikMi, type KurumModulYetkileri } from "@/lib/kurum-yetkileri";
 
@@ -46,7 +49,8 @@ export default async function ModeratorPage({ searchParams }: { searchParams: Pr
   const modulYetkileri = (kurumAyarlari?.modul_yetkileri as KurumModulYetkileri | null) ?? {};
   // Deneme yükleme ve eşleştirme dershane ve okul moderatöründe (okul 16.10.2026).
   const denemeAcik = (veri.kurumTuru === "dershane" || veri.kurumTuru === "okul") && kurumModuluAcikMi(modulYetkileri, "denemeler");
-  const bolum = moderatorBolumuCoz(params.bolum, denemeAcik);
+  const smsAcik = kurumModuluAcikMi(modulYetkileri, "sms");
+  const bolum = moderatorBolumuCoz(params.bolum, denemeAcik, smsAcik);
   if (!moderatorBolumuAcikMi(modulYetkileri, bolum)) redirect("/moderator/profil");
   const adminOkulId = adminGoruntuluyor ? params.okul : undefined;
 
@@ -64,6 +68,18 @@ export default async function ModeratorPage({ searchParams }: { searchParams: Pr
         )}
 
         {bolum === "ogrenciler" && <KayitsizOgrencilerKarti kurumId={adminOkulId} />}
+
+        {/* SMS bağlantısı (kullanıcı kararı 28.10.2026): kurum kendi sağlayıcısını
+            seçip hesap bilgilerini girer; modülü admin Kurum Yetkileri'nden açar. */}
+        {bolum === "sms" && (
+          <section className="flex flex-col gap-3">
+            <div>
+              <h1 className="text-base font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>SMS Ayarları</h1>
+              <p className="text-xs" style={{ color: TEXT_MUTED }}>Müdür, müdür yardımcısı ve rehber öğretmen bu bağlantıyla velilere SMS gönderir.</p>
+            </div>
+            <SmsAyarlari ozet={await smsAyarOzetiGetir(createAdminClient(), moderatorOkulId!)} okulId={adminOkulId} />
+          </section>
+        )}
 
         {/* Kurum moderatörü KENDİ kurumunun panosunu yönetir (kullanıcı kararı
             02.10.2026, migration 0134). `okullar` geçilmiyor: kurum sunucuda

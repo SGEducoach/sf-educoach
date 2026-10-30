@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   ON_KAYIT_BEKLEME_GUNU, adaGoreBenzerAday, adaGoreListeOnerisi, bekleyenKalanGun, bekleyenSuresiDolduMu, davetMetni,
-  hesapsizDenemeNeti, numarayaGoreListeBaglantisi, type ListeAdayi,
+  bekleyenSatirOnerisi, hesapsizDenemeNeti, numarayaGoreListeBaglantisi, yakinNumaradaAday, type ListeAdayi,
 } from "./on-kayitli";
 
 const GUN = 24 * 60 * 60 * 1000;
@@ -82,27 +82,72 @@ describe("davetMetni", () => {
 });
 
 describe("adaGoreBenzerAday (PDF numarası hatalı kodlanmışsa asıl sahibi ada göre bul)", () => {
+  // Uydurma adlar (kişisel veri depoya girmez).
   const sinif: ListeAdayi[] = [
-    { id: "a", okulNo: "80", adSoyad: "ÇAĞAN AKPINAR", seviye: "11", studentId: "s-a" },
-    { id: "b", okulNo: "81", adSoyad: "BETÜL ERVA MEŞE", seviye: "9", studentId: null },
-    { id: "c", okulNo: "91", adSoyad: "MEHMET EMRE KARACA", seviye: "9", studentId: null },
-    { id: "d", okulNo: "3660", adSoyad: "HÜSEYİN EFE ERDOĞAN", seviye: "9", studentId: null },
-    { id: "e", okulNo: "442", adSoyad: "EBRAR SENA HURMAN", seviye: "10", studentId: "s-e" },
-    { id: "f", okulNo: "223", adSoyad: "MERVE SENA KUYUCU", seviye: "10", studentId: "s-f" },
+    { id: "a", okulNo: "80", adSoyad: "CAN AKDAĞ", seviye: "11", studentId: "s-a" },
+    { id: "b", okulNo: "81", adSoyad: "BUSE ERVA METE", seviye: "9", studentId: null },
+    { id: "c", okulNo: "91", adSoyad: "MEHMET EMRE KOÇAK", seviye: "9", studentId: null },
+    { id: "d", okulNo: "3660", adSoyad: "HÜSEYİN EFE ERDEM", seviye: "9", studentId: null },
+    { id: "e", okulNo: "442", adSoyad: "EBRU SENA KARA", seviye: "10", studentId: "s-e" },
+    { id: "f", okulNo: "223", adSoyad: "AYŞE SENA DURU", seviye: "10", studentId: "s-f" },
   ];
   const aday = (adSoyad: string, no: number, seviye: string | null = null) =>
     adaGoreBenzerAday({ adSoyad, ogrenciNo: no, sinifSeviyesi: seviye }, sinif)?.id ?? null;
 
   it("kısaltılmış ad ya da eksik ikinci ad tek kişiye uyuyorsa o kişi", () => {
-    expect(aday("B ERVA MEŞE", 80)).toBe("b");
-    expect(aday("EMRE KARACA", 90)).toBe("c");
-    expect(aday("HÜSEYİN ERDOĞAN", 260)).toBe("d");
+    expect(aday("B ERVA METE", 80)).toBe("b");
+    expect(aday("EMRE KOÇAK", 90)).toBe("c");
+    expect(aday("HÜSEYİN ERDEM", 260)).toBe("d");
   });
   it("tek sözcük, birden çok kişiye uyan ya da listede olmayan ad öneri almaz", () => {
     expect(aday("SENA", 443)).toBeNull();
-    expect(aday("Y ENES ZEDELİ", 165)).toBeNull();
+    expect(aday("Y ENES TOPRAK", 165)).toBeNull();
   });
   it("sınıf seviyesi çelişen kişi önerilmez", () => {
-    expect(aday("B ERVA MEŞE", 80, "12")).toBeNull();
+    expect(aday("B ERVA METE", 80, "12")).toBeNull();
+  });
+});
+
+describe("bekleyenSatirOnerisi (yönetici onay ekranındaki öneri)", () => {
+  // Uydurma adlar. 443 numara adı PDF'tekine hiç benzemeyen bir 10. sınıf
+  // öğrencisinin; 165 numara 12. sınıftan biri.
+  const okul: ListeAdayi[] = [
+    { id: "e", okulNo: "442", adSoyad: "EBRU SENA KARA", seviye: "10", studentId: "s-e" },
+    { id: "m", okulNo: "443", adSoyad: "MURAT SEZER", seviye: "10", studentId: null },
+    { id: "f", okulNo: "223", adSoyad: "AYŞE SENA DURU", seviye: "10", studentId: "s-f" },
+    { id: "h", okulNo: "165", adSoyad: "AHMET ALİ YAVUZ", seviye: "12", studentId: null },
+    { id: "k", okulNo: "300", adSoyad: "ZEYNEP KAYA", seviye: "11", studentId: null },
+    { id: "n", okulNo: "302", adSoyad: "ZEYNEP NUR ATA", seviye: "11", studentId: null },
+  ];
+  const oneri = (adSoyad: string, ogrenciNo: number | null, sinifSeviyesi: string | null) => {
+    const r = bekleyenSatirOnerisi({ adSoyad, ogrenciNo, sinifSeviyesi }, okul);
+    return r ? `${r.liste.id}:${r.tur}` : null;
+  };
+
+  it("numara başkasının, ad yakın numaralı tek kişinin adında geçiyorsa o kişi önerilir", () => {
+    expect(oneri("SENA", 443, "10")).toBe("e:yakin-numara");
+    expect(yakinNumaradaAday({ adSoyad: "SENA", ogrenciNo: 443, sinifSeviyesi: "10" }, okul)?.id).toBe("e");
+  });
+  it("numara listede yoksa da yakın numaradaki ada bakılır", () => {
+    expect(oneri("SENA", 444, null)).toBe("e:yakin-numara");
+  });
+  it("yakın numara penceresi dışı, sınıfı çelişen ya da birden çok kişiye uyan ad yakın öneri almaz", () => {
+    expect(yakinNumaradaAday({ adSoyad: "SENA", ogrenciNo: 446, sinifSeviyesi: null }, okul)).toBeNull();
+    expect(yakinNumaradaAday({ adSoyad: "SENA", ogrenciNo: 443, sinifSeviyesi: "9" }, okul)).toBeNull();
+    expect(yakinNumaradaAday({ adSoyad: "ZEYNEP", ogrenciNo: 301, sinifSeviyesi: "11" }, okul)).toBeNull();
+  });
+  it("ad da sınıf düzeyi de tutmuyorsa numaradaki kişi önerilmez", () => {
+    expect(oneri("YUSUF ENES TOPRAK", 165, "9")).toBeNull();
+  });
+  it("sınıf düzeyi aynıysa ya da bilinmiyorsa numaradaki kişi eskisi gibi şüpheli öneri olur", () => {
+    expect(oneri("YUSUF ENES TOPRAK", 165, null)).toBe("h:numara");
+    expect(oneri("OSMAN KILIÇ", 443, "10")).toBe("m:numara");
+  });
+  it("ad numaradaki kişiye uyuyorsa sınıf çelişse de öneri o kişi (liste sınıfı eski olabilir)", () => {
+    expect(oneri("AHMET YAVUZ", 165, "11")).toBe("h:numara");
+  });
+  it("numara hatalı + ad başka tek kişiye benziyor → numara-hatali; numarasız tam ad → ad", () => {
+    expect(oneri("AYŞE DURU", 443, "10")).toBe("f:numara-hatali");
+    expect(oneri("ZEYNEP KAYA", null, null)).toBe("k:ad");
   });
 });

@@ -13,6 +13,7 @@ describe("admin genel WhatsApp kartı", () => {
     expect(p.logoAdresi).toBe("/logo.png");
     expect(p.logoDegistirebilir).toBe(false);
     expect(p.ogrenciler).toEqual([]);
+    expect(p.hedefSecimi).toBe(true);
     expect(existsSync(new URL("../../public/logo.png", import.meta.url))).toBe(true);
   });
   it("yalnız genel duyuruyu açar; veli/yurt/devamsızlık kartlarını sunmaz", () => {
@@ -31,7 +32,7 @@ describe("admin genel WhatsApp kartı", () => {
   it("başlığı admin yazar; mevcut fotoğraf seçenekleri korunur", () => {
     const p = adminWhatsappStudyoAyarlari([genel]);
     expect(p.sablonlar.genel.baslik).toBeNull();
-    expect(p.sablonlar.genel.fotolar).toContain("/duyuru-fotograflari/genel.jpg");
+    expect(p.sablonlar.genel.fotolar).toContainEqual(expect.stringMatching(/^\/duyuru-fotograflari\/genel\.jpg\?v=[a-f0-9]{12}$/));
     expect(p.sablonlar.genel.fotolar).toContain("/api/duyuru-fotografi?id=foto-1");
   });
 });

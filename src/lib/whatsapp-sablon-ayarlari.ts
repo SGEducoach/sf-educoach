@@ -3,8 +3,9 @@
 // Bu dosya saf: hangi şablonlar var, ayar uygulanınca ne görünür.
 import { DEVAMSIZLIK_FOTO, DUYURU_SABLONLARI, varsayilanDegerler } from "@/lib/whatsapp-duyuru";
 import { YURT_SABLONLARI } from "@/lib/yurt-listesi";
+import { yerlesikFotoAdresi } from "@/lib/duyuru-foto-adresi";
 
-export const FOTO_KOKU = "/duyuru-fotograflari/";
+export { FOTO_KOKU } from "@/lib/duyuru-foto-adresi";
 export const DEVAMSIZLIK_ANAHTARI = "devamsizlik";
 export const DEVAMSIZLIK_BASLIGI = "Devamsızlık Bilgilendirmesi";
 
@@ -50,7 +51,7 @@ export const yuklenenFotoAdresi = (id: string) => `/api/duyuru-fotografi?id=${id
 
 export function etkinSablon(anahtar: string, ayar: SablonAyari | undefined): EtkinSablon {
   const t = sablonTanimi(anahtar);
-  const yerlesik = t ? `${FOTO_KOKU}${t.yerlesikFoto}` : null;
+  const yerlesik = t ? yerlesikFotoAdresi(t.yerlesikFoto) : null;
   const fotolar = [...(yerlesik && !ayar?.yerlesikFotoGizli ? [yerlesik] : []), ...(ayar?.fotograflar ?? []).map((f) => f.adres)];
   return {
     anahtar,

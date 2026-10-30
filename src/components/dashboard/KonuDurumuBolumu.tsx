@@ -7,20 +7,21 @@ import { KonuDurumuEkrani } from "@/components/dashboard/KonuDurumuEkrani";
 // Kapsam listesi çağıranın yetkisinden kurulduğu için service-role güvenli.
 // gorevSiniflari: öğretmenin görev verebildiği sınıflar (Faz 2 kısayolu);
 // görev yine öğretmenin kendi oturumuyla ve RLS altında yazılır.
-export async function KonuDurumuBolumu({ schoolId, kapsamlar, seciliAnahtar, ogrenciLinki = true, bosMesaj, gorevSiniflari }: {
+export async function KonuDurumuBolumu({ schoolId, kapsamlar, seciliAnahtar, ogrenciLinki = true, bosMesaj, gorevSiniflari, gelisimOgretmenId }: {
   schoolId: string;
   kapsamlar: KonuDurumuKapsami[];
   seciliAnahtar?: string | null;
   ogrenciLinki?: boolean;
   bosMesaj?: string;
   gorevSiniflari?: string[];
+  gelisimOgretmenId?: string;
 }) {
   const secili = kapsamlar.find((k) => k.anahtar === seciliAnahtar) ?? kapsamlar[0];
   const secenekler = kapsamlar.map(({ anahtar, etiket }) => ({ anahtar, etiket }));
   if (!secili) {
     return <KonuDurumuEkrani veri={null} kapsamlar={[]} seciliAnahtar="" ogrenciLinki={ogrenciLinki} bosMesaj={bosMesaj} />;
   }
-  const { veri, error } = await konuDurumuGetir(createAdminClient(), schoolId, secili);
+  const { veri, error } = await konuDurumuGetir(createAdminClient(), schoolId, secili, gelisimOgretmenId);
   return (
     <KonuDurumuEkrani key={secili.anahtar} veri={veri} hata={error} kapsamlar={secenekler} seciliAnahtar={secili.anahtar}
       ogrenciLinki={ogrenciLinki} bosMesaj={bosMesaj} gorevSiniflari={gorevSiniflari} />

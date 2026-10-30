@@ -25,6 +25,8 @@ Korunan yerleşik fotoğraflar: `ozel-gun.jpg` (Türk bayrağı), `ders-iptali.j
 
 ## Kontrol
 
+26 Ekim 2026 önbellek düzeltmesi: yeni 10 JPG'nin canlı dosyaları SHA-256 ile yeniden doğrulandı; dosyalar güncel. Tarayıcılar aynı URL'yi bir yıl `immutable` sakladığı için eski görseli gösterebiliyordu. Admin galerisinde, kart seçimlerinde ve canvas kaynaklarında ortak `yerlesikFotoAdresi` kullanılır; her yerleşik görsel URL'sine gerçek içeriğin 12 haneli SHA-256 sürümü eklenir. Örnek: `/duyuru-fotograflari/genel.jpg?v=f53cc12595b4`. Gelecekte JPG değiştirildikten sonra `node scripts/guncelle-duyuru-foto-surumleri.mjs` çalıştırılmalı; testler dosya ve sürüm eşleşmesini denetler. Özel yüklenen fotoğraflara, gizleme ayarlarına, logolara ve diğer statik dosyaların önbellek politikasına dokunulmadı. Yayın sonucu bu düzeltmenin main commit'ine bağlı Vercel production kontrolünden doğrulanır.
+
 - 10 yeni dosyanın JPEG biçimi, 1200 piksel genişlik ve kaynak oranına uygun yükseklik ve 170.000 bayt üst sınırı kontrol edildi.
 - Üretilen 10 fotoğraf ve kart oranlarına göre ortadan kırpılmış önizlemeleri görsel olarak incelendi. Genel duyuru ve akşam yoklamasında başların kesilmesini azaltmak için kadraj yeniden üretildi. Uygulamada fotoğraf alanı normal kartta 1080×580, metin odaklı kartta 1080×400, yurt kartında 1080×360; ortadan kaplama kullanılıyor.
 - İlgili mevcut 5 test dosyasında 30 test geçti (duyuru şablonları, şablon ayarları, yurt listeleri ve admin genel duyurusu). Uygulama kodunda değişiklik yok; veritabanı/migration yok.

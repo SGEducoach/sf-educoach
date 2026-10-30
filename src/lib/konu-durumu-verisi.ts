@@ -18,6 +18,8 @@ import type { KonuAdEslesmesi, KonuHedefi } from "@/lib/konu-ad-eslesmesi";
 import { bransKazanimBasligi, bransKazanimBasligiMi } from "@/lib/kazanim-konu-oneri";
 import { kazanimSorulariniCikar, type OgrenciKarneVerisi } from "@/lib/kazanim-soru-cikarimi";
 import type { KarneDersOrtalamasi, KarneTestCevaplari } from "@/lib/karne-birinci-sayfa";
+import { GELISIM_TAKIP_GUNU, liseOgrenmeGelisimiHesapla, type GelisimGorevi } from "./lise-ogrenme-gelisimi";
+import { bugununTarihiTR, tarihEkle } from "./tarih";
 
 export interface KonuDurumuKapsami {
   anahtar: string;
@@ -204,6 +206,8 @@ export async function konuDurumuGetir(
   admin: SupabaseClient,
   schoolId: string,
   kapsam: KonuDurumuKapsami,
+  // Yalnız sunucudaki aktif lise öğretmeninin kimliği; URL/formdan alınmaz.
+  gelisimOgretmenId?: string,
 ): Promise<{ error: string | null; veri: KonuDurumuVerisi | null }> {
   try {
     type OgrRow = { id: string; class_id: string | null; profiles: { ad: string } | null; classes: { seviye: string; sube: string } | null };
@@ -226,7 +230,8 @@ export async function konuDurumuGetir(
     type BeyanRow = { student_id: string; ders: string; konu: string; hakimiyet_seviyesi: HedefeYakinlik; guncellenme_tarihi: string | null };
     type OturumRow = { student_id: string; ders: string; konu: string; hedefe_yakinlik: HedefeYakinlik };
 
-    const [denemeSatirlari, soruSatirlari, beyanSatirlari, oturumSatirlari, kazanimEslesmeleri, adEslesmeleri, altKonular, kurumAltKonulari] = await Promise.all([
+    const bugun = bugununTarihiTR();
+    const [denemeSatirlari, soruSatirlari, beyanSatirlari, oturumSatirlari, kazanimEslesmeleri, adEslesmeleri, altKonular, kurumAltKonulari, gelisimGorevleri] = await Promise.all([
       parcaParcaCek<DenemeRow>(idler, (p, bas, son) => admin.from("denemeler").select("id, student_id, tarih, tur, yayinevi").in("student_id", p).order("id").range(bas, son)),
       parcaParcaCek<SoruRow>(idler, (p, bas, son) => admin.from("soru_cozumleri").select("student_id, ders, konu, dogru, yanlis").in("student_id", p).not("konu", "is", null).order("id").range(bas, son)),
       parcaParcaCek<BeyanRow>(idler, (p, bas, son) => admin.from("ogrenci_konu_hakimiyeti").select("student_id, ders, konu, hakimiyet_seviyesi, guncellenme_tarihi").in("student_id", p).order("id").range(bas, son)),
@@ -235,6 +240,9 @@ export async function konuDurumuGetir(
       hepsiniCek<KonuAdEslesmesi>((bas, son) => admin.from("konu_ad_eslesmeleri").select("ders, kaynak_konu, hedef_konu").order("id").range(bas, son)),
       hepsiniCek<{ ders: string; ust_konu: string; alt_baslik: string }>((bas, son) => admin.from("mufredat_alt_konular").select("ders, ust_konu, alt_baslik").order("sira").order("id").range(bas, son)),
       hepsiniCek<{ ders: string; ust_konu: string; alt_baslik: string }>((bas, son) => admin.from("kurum_mufredat_alt_konulari").select("ders, ust_konu, alt_baslik").eq("school_id", schoolId).order("id").range(bas, son)),
+      gelisimOgretmenId ? liseGelisimiGorevleriniGetir(admin,
+        ogrenciler.filter((o) => /^(9|10|11|12)-/.test(o.sinif ?? "")).map((o) => o.id), gelisimOgretmenId, bugun)
+        : Promise.resolve({ gorevler: [] as GelisimGorevi[], hata: false }),
     ]);
 
     const denemeBilgisi = new Map(denemeSatirlari.map((d) => [d.id, d]));
@@ -247,7 +255,7 @@ export async function konuDurumuGetir(
       if (!d) continue;
       const yayinevi = (d.yayinevi ?? "").trim();
       denemeler.push({
-        studentId: d.student_id, tarih: d.tarih,
+        studentId: d.student_id, tarih: d.tarih, denemeId: d.id,
         denemeAnahtari: `${d.tarih}|${d.tur}|${yayinevi.toLocaleUpperCase("tr-TR")}`,
         denemeEtiketi: `${tarihGoster(d.tarih)} · ${d.tur === "BRANS" ? "Branş" : d.tur} · ${yayinevi}`,
         ders: k.ders, kazanimMetni: k.kazanim_metni, soru: k.soru, dogru: k.dogru, yanlis: k.yanlis,
@@ -259,10 +267,9 @@ export async function konuDurumuGetir(
 
     const soruBilgileri = await sonDenemelerinSorulari(admin, denemeSatirlari, kazanimSatirlari);
 
-    const veri = konuDurumuHesapla({
+    const ortakVeri = {
       ogrenciler,
       denemeler,
-      soruBilgileri,
       sorular: soruSatirlari.map((r): KdSoruSatiri => ({ studentId: r.student_id, ders: r.ders, konu: r.konu, dogru: r.dogru, yanlis: r.yanlis })),
       beyanlar: beyanSatirlari.map((r): KdBeyanSatiri => ({ studentId: r.student_id, ders: r.ders, konu: r.konu, seviye: r.hakimiyet_seviyesi, guncellenme: r.guncellenme_tarihi })),
       oturumlar: oturumSatirlari.map((r): KdOturumSatiri => ({ studentId: r.student_id, ders: r.ders, konu: r.konu, seviye: r.hedefe_yakinlik })),
@@ -271,9 +278,47 @@ export async function konuDurumuGetir(
         hedefler,
         adEslesmeleri,
       },
-    });
+    };
+    const veri = konuDurumuHesapla({ ...ortakVeri, soruBilgileri });
+    if (gelisimOgretmenId) {
+      veri.ogrenmeGelisimi = liseOgrenmeGelisimiHesapla({
+        ...ortakVeri,
+        gorevler: gelisimGorevleri.gorevler, bugun, takipHatasi: gelisimGorevleri.hata,
+      });
+    }
     return { error: null, veri };
   } catch (e) {
     return { error: e instanceof Error ? e.message : String(e), veri: null };
+  }
+}
+
+// Ek sorgu yalnız lise öğretmeninde. Öğrenci/kurum kapsamı yukarıda
+// doğrulanmış idler, sahiplik ise öğretmenin sunucudaki kimliği ile sınırlı.
+// Hata sıfır ödevmiş gibi gösterilmez; mevcut Konu Durumu çalışmaya devam eder.
+export async function liseGelisimiGorevleriniGetir(admin: SupabaseClient, idler: string[], ogretmenId: string, bugun: string) {
+  type GorevRow = { id: string; student_id: string; durum: GelisimGorevi["durum"]; created_at: string;
+    gorevler: { ders: string; konu: string | null; tur: "konu" | "soru"; tarih: string; son_tarih: string;
+      hedef_soru_sayisi: number | null; hedef_dakika: number | null } };
+  try {
+    const baslangic = `${tarihEkle(bugun, -(GELISIM_TAKIP_GUNU - 1))}T00:00:00+03:00`;
+    const bitis = `${tarihEkle(bugun, 1)}T00:00:00+03:00`;
+    const satirlar = await parcaParcaCek<GorevRow>(idler, (p, bas, son) => admin.from("gorev_atamalari")
+      .select("id, student_id, durum, created_at, gorevler!inner(ders, konu, tur, tarih, son_tarih, hedef_soru_sayisi, hedef_dakika)")
+      .in("student_id", p).eq("gorevler.olusturan_ogretmen_id", ogretmenId)
+      .in("gorevler.tur", ["konu", "soru"]).gte("created_at", baslangic).lt("created_at", bitis)
+      .order("id").range(bas, son));
+    const gunFormati = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul", year: "numeric", month: "2-digit", day: "2-digit" });
+    const gorevler: GelisimGorevi[] = satirlar.map((s) => {
+      const g = s.gorevler;
+      // UTC tarihini kesmek gece 00–03 arası bir önceki günü verirdi.
+      const parcalar = gunFormati.formatToParts(new Date(s.created_at));
+      const parca = (tur: string) => parcalar.find((p) => p.type === tur)?.value ?? "";
+      return { id: s.id, studentId: s.student_id, ders: g.ders, konu: g.konu, tur: g.tur, durum: s.durum,
+        tarih: g.tarih, sonTarih: g.son_tarih, atamaTarihi: `${parca("year")}-${parca("month")}-${parca("day")}`,
+        hedefSoru: g.hedef_soru_sayisi, hedefDakika: g.hedef_dakika };
+    });
+    return { gorevler, hata: false };
+  } catch {
+    return { gorevler: [] as GelisimGorevi[], hata: true };
   }
 }

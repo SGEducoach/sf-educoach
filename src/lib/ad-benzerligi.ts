@@ -131,6 +131,20 @@ export function adlarOlasiBenzer(pdfAdi: string, kayitliAd: string): boolean {
     a === b || (a.length >= 4 && b.length >= 4 && (tekHarfFarkliMi(a, b) || a.startsWith(b) || b.startsWith(a) || a.endsWith(b) || b.endsWith(a)))));
 }
 
+// PDF'teki her sözcük (3+ harf) kayıtlı adda birebir geçiyor mu ("SENA" →
+// "Ebru Sena Kara"). Tek başına zayıf bir işaret; yalnız numara yakınlığıyla
+// birlikte öneri için kullanılır (on-kayitli.ts, yakinNumaradaAday).
+export function sozcukleriAddaGeciyorMu(pdfAdi: string, kayitliAd: string): boolean {
+  const p = kelimeler(pdfAdi).filter((k) => k.length >= 3);
+  const kalan = kelimeler(kayitliAd);
+  return p.length > 0 && p.every((k) => {
+    const idx = kalan.indexOf(k);
+    if (idx === -1) return false;
+    kalan.splice(idx, 1);
+    return true;
+  });
+}
+
 export function adlarBenzerMi(pdfAdi: string, kayitliAd: string): boolean {
   const p = kelimeler(pdfAdi);
   const k = kelimeler(kayitliAd);

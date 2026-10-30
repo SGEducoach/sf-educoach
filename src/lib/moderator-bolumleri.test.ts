@@ -16,4 +16,9 @@ describe("moderatorBolumuCoz", () => {
     expect(moderatorBolumuCoz("deneme-yukle", false)).toBe("ogrenciler");
     expect(moderatorBolumuCoz("pdf-eslesme", false)).toBe("ogrenciler");
   });
+  test("SMS ayarları yalnız modül açıkken açılır", () => {
+    expect(moderatorBolumuCoz("sms", true, true)).toBe("sms");
+    expect(moderatorBolumuCoz("sms", true)).toBe("ogrenciler");
+    expect(moderatorBolumuCoz("sms", true, false)).toBe("ogrenciler");
+  });
 });

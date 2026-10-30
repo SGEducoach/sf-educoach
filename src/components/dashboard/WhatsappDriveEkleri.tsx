@@ -58,7 +58,7 @@ export function WhatsappDriveEkleri({ onDegis, onBekle, onEksik }: { onDegis: (e
           {satirlar.map((s) => <li key={s.key} className="rounded-lg p-2" style={{ background: BG0 }}>
             <div className="flex items-center gap-2"><span className="min-w-0 flex-1 break-all font-semibold">{s.dosya.name}</span>
               <button type="button" disabled={bekle} className="shrink-0 p-1 disabled:opacity-50" aria-label={`${s.dosya.name} Drive ekini karttan kaldır`} onClick={() => guncelle(ref.current.filter((v) => v.key !== s.key))}>Kaldır</button></div>
-            {s.ek ? <a href={s.ek.adres} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block underline" style={{ color: MINT }}>Drive&apos;da aç · Yüklendi</a> : <p className="mt-1 text-[11px]" style={{ color: s.hata ? BLUSH : TEXT_MUTED }}>{s.hata ?? "Yüklenmeyi bekliyor"}</p>}
+            {s.ek ? <a href={s.ek.adres} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block underline" style={{ color: MINT }}>İndir · Yüklendi</a> : <p className="mt-1 text-[11px]" style={{ color: s.hata ? BLUSH : TEXT_MUTED }}>{s.hata ?? "Yüklenmeyi bekliyor"}</p>}
           </li>)}
         </ul>
         {satirlar.some((s) => !s.ek) && <button type="button" disabled={bekle} className={buton} style={{ background: MINT, color: MINT_ON }} onClick={() => void yukle()}>{bekle ? "Drive'a yükleniyor…" : "Seçilenleri Drive'a yükle"}</button>}

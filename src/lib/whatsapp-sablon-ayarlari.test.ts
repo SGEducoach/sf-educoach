@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { TUM_SABLONLAR, UCRETLI_KURUM_SABLONLARI, etkinSablon, etkinSablonlar, kurumaUygunSablonlar, ucretliKurumMu } from "./whatsapp-sablon-ayarlari";
+import { yerlesikFotoAdresi } from "./duyuru-foto-adresi";
 
 describe("whatsapp şablon ayarları", () => {
   test("bütün şablonlar tanımlı ve anahtarlar tekil", () => {
@@ -10,7 +11,7 @@ describe("whatsapp şablon ayarları", () => {
 
   test("ayar yoksa varsayılan ad ve yerleşik fotoğraf", () => {
     const e = etkinSablon("veli-toplantisi", undefined);
-    expect(e).toEqual({ anahtar: "veli-toplantisi", ad: "Veli Toplantısı", baslik: null, gizli: false, fotolar: ["/duyuru-fotograflari/veli-toplantisi.jpg"] });
+    expect(e).toEqual({ anahtar: "veli-toplantisi", ad: "Veli Toplantısı", baslik: null, gizli: false, fotolar: [yerlesikFotoAdresi("veli-toplantisi.jpg")] });
   });
 
   test("admin adı, başlığı ve fotoğrafları uygulanır; yerleşik foto gizlenebilir", () => {
