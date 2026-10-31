@@ -16,6 +16,13 @@
 .kontroller button { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; border: 1px solid #0f254020; cursor: pointer; background: #f5f8fa; }
 .kontroller button:hover { background: #dff6f3; }
 .sayac { min-width: 44px; text-align: center; font-size: 12px; font-variant-numeric: tabular-nums; }
+/* İlerleme şeridi: görsel başına bir parça; etkin parça geçiş süresi boyunca dolar. */
+.serit { display: flex; gap: 6px; width: min(240px, 40vw); }
+.parca { position: relative; flex: 1 1 0; height: 4px; border-radius: 4px; overflow: hidden; background: #0f25401f; }
+.parca i { position: absolute; inset: 0; background: #14b8b0; transform: scaleX(0); transform-origin: left; }
+.parca i.dolu { transform: scaleX(1); }
+.parca i.akan { animation-name: dol; animation-timing-function: linear; animation-fill-mode: forwards; }
+@keyframes dol { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 .bos { width: min(94%, 1000px); height: 240px; margin: 14px auto; border-radius: 20px; background: linear-gradient(120deg, #0f2540, #14b8b0); }
 @media (max-width: 640px) {
   .slider { padding: 10px 16px 0; }
@@ -25,4 +32,7 @@
   .kart[data-konum="sol"] { transform: translateX(-50%) translateZ(-160px) rotateY(30deg); }
   .kart[data-konum="sag"] { transform: translateX(50%) translateZ(-160px) rotateY(-30deg); }
 }
-@media (prefers-reduced-motion: reduce) { .kart { transition: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .kart { transition: none; }
+  .parca i.akan { animation: none; transform: scaleX(1); }
+}

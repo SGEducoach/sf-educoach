@@ -20,17 +20,37 @@ export function AnaSayfaSlider({ gorseller, gecisSaniye }: { gorseller: AnaSayfa
   const [duraklatildi, setDuraklatildi] = useState(false);
   const [uzerinde, setUzerinde] = useState(false);
   const [odakta, setOdakta] = useState(false);
+  const [hareketAzalt, setHareketAzalt] = useState(false);
+  const [gizli, setGizli] = useState(false);
   const dokunma = useRef<number | null>(null);
   const aktif = gorseller.length ? secili % gorseller.length : 0;
 
   useEffect(() => {
-    if (gorseller.length < 2 || duraklatildi || uzerinde || odakta) return;
     const tercih = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const timer = window.setInterval(() => {
-      if (!tercih.matches && !document.hidden) setSecili(i => (i + 1) % gorseller.length);
-    }, Math.max(3, gecisSaniye) * 1000);
-    return () => window.clearInterval(timer);
-  }, [gorseller.length, gecisSaniye, duraklatildi, uzerinde, odakta]);
+    const guncelle = () => { setHareketAzalt(tercih.matches); setGizli(document.hidden); };
+    guncelle();
+    tercih.addEventListener("change", guncelle);
+    document.addEventListener("visibilitychange", guncelle);
+    return () => { tercih.removeEventListener("change", guncelle); document.removeEventListener("visibilitychange", guncelle); };
+  }, []);
+
+  // İlerleme şeridi (kullanıcı isteği 01.11.2026): duraklatınca hem zamanlayıcı hem şerit
+  // animasyonu durur, devam edince ikisi de KALDIĞI YERDEN sürer — eskisi gibi her
+  // duraklatmada süre baştan başlasaydı şerit ile görsel birbirinden kayardı.
+  const oynuyor = gorseller.length > 1 && !duraklatildi && !uzerinde && !odakta && !hareketAzalt && !gizli;
+  const sureMs = Math.max(3, gecisSaniye) * 1000;
+  const kalan = useRef(sureMs);
+  const adet = gorseller.length;
+
+  // Görsel değişince süre baştan (bu etki aşağıdakinden önce çalışmalı: önce eski koşunun
+  // temizliği kalan süreyi düşer, sonra burada sıfırlanır, sonra yeni koşu başlar).
+  useEffect(() => { kalan.current = sureMs; }, [aktif, sureMs]);
+  useEffect(() => {
+    if (!oynuyor) return;
+    const baslangic = performance.now();
+    const zamanlayici = window.setTimeout(() => setSecili((aktif + 1) % adet), kalan.current);
+    return () => { window.clearTimeout(zamanlayici); kalan.current = Math.max(0, kalan.current - (performance.now() - baslangic)); };
+  }, [oynuyor, aktif, adet]);
 
   function git(i: number) { if (gorseller.length) setSecili((i + gorseller.length) % gorseller.length); }
   if (!gorseller.length) return <div className={styles.bos} aria-label="Tanıtım görselleri henüz eklenmedi" />;
@@ -64,6 +84,14 @@ export function AnaSayfaSlider({ gorseller, gecisSaniye }: { gorseller: AnaSayfa
     </div>
     {gorseller.length > 1 && <div className={styles.kontroller}>
       <button type="button" onClick={() => git(aktif - 1)} aria-label="Önceki görsel"><ChevronLeft size={17} /></button>
+      <div className={styles.serit} aria-hidden="true">
+        {gorseller.map((g, index) => (
+          <span key={g.id} className={styles.parca}>
+            <i className={index < aktif ? styles.dolu : index === aktif ? styles.akan : undefined}
+              style={index === aktif ? { animationDuration: `${sureMs}ms`, animationPlayState: oynuyor ? "running" : "paused" } : undefined} />
+          </span>
+        ))}
+      </div>
       <span className={styles.sayac} aria-live={duraklatildi || odakta ? "polite" : "off"}>{aktif + 1} / {gorseller.length}</span>
       <button type="button" onClick={() => git(aktif + 1)} aria-label="Sonraki görsel"><ChevronRight size={17} /></button>
       <button type="button" onClick={() => setDuraklatildi(v => !v)} aria-label={duraklatildi ? "Otomatik geçişi başlat" : "Otomatik geçişi duraklat"}>
