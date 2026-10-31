@@ -1,8 +1,16 @@
 .slider { width: min(100%, 1056px); margin: 0 auto; padding: 14px 28px 4px; }
-.kartlar { display: flex; gap: 14px; height: clamp(220px, 27vw, 340px); touch-action: pan-y; }
-.kart { position: relative; min-width: 0; flex: 1 1 0; overflow: hidden; border-radius: 20px; border: 1px solid #0f254026; padding: 0; background: #0f2540; cursor: pointer; transition: flex-grow 650ms ease, box-shadow 650ms ease; }
-.kart[data-active="true"] { flex-grow: 2.35; box-shadow: 0 16px 30px #0f254026; }
+/* 3B kart destesi (kullanıcı seçimi 01.11.2026, 5 öneriden 4. seçenek): ortadaki görsel
+   önde, komşuları iki yanda açılı durur. Sahne oranı, ortadaki kartı 16:9 tutacak şekilde
+   kart genişliğinden hesaplanır (kart %62 → yükseklik genişliğin %34,9'u). */
+.sahne { position: relative; aspect-ratio: 2.866; perspective: 1100px; overflow: hidden; touch-action: pan-y; border-radius: 20px; }
+.kart { position: absolute; top: 0; bottom: 0; left: 19%; right: 19%; overflow: hidden; border-radius: 18px;
+  border: 1px solid #0f254026; padding: 0; background: #0f2540; cursor: pointer;
+  transition: transform 850ms cubic-bezier(0.22, 1, 0.36, 1), opacity 850ms ease, filter 850ms ease, box-shadow 850ms ease; }
 .kart img { width: 100%; height: 100%; object-fit: cover; }
+.kart[data-konum="orta"] { transform: translateX(0) translateZ(0) rotateY(0); z-index: 3; box-shadow: 0 16px 30px #0f254033; cursor: default; }
+.kart[data-konum="sol"] { transform: translateX(-58%) translateZ(-180px) rotateY(32deg); z-index: 1; opacity: 0.75; filter: brightness(0.75); }
+.kart[data-konum="sag"] { transform: translateX(58%) translateZ(-180px) rotateY(-32deg); z-index: 1; opacity: 0.75; filter: brightness(0.75); }
+.kart[data-konum="gizli"] { transform: translateZ(-420px) scale(0.7); z-index: 0; opacity: 0; pointer-events: none; }
 .kart:focus-visible, .kontroller button:focus-visible { outline: 3px solid #14b8b0; outline-offset: 4px; }
 .kontroller { display: flex; align-items: center; justify-content: center; gap: 10px; padding-top: 20px; color: #0f2540; }
 .kontroller button { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; border: 1px solid #0f254020; cursor: pointer; background: #f5f8fa; }
@@ -11,8 +19,10 @@
 .bos { width: min(94%, 1000px); height: 240px; margin: 14px auto; border-radius: 20px; background: linear-gradient(120deg, #0f2540, #14b8b0); }
 @media (max-width: 640px) {
   .slider { padding: 10px 16px 0; }
-  .kartlar { gap: 8px; height: 220px; }
-  .kart { border-radius: 14px; }
-  .kart[data-active="true"] { flex-grow: 3.5; }
+  /* Telefonda ortadaki kart %80: görseldeki yazılar okunur kalsın, komşular kenardan görünsün. */
+  .sahne { aspect-ratio: 2.222; border-radius: 14px; }
+  .kart { left: 10%; right: 10%; border-radius: 12px; }
+  .kart[data-konum="sol"] { transform: translateX(-50%) translateZ(-160px) rotateY(30deg); }
+  .kart[data-konum="sag"] { transform: translateX(50%) translateZ(-160px) rotateY(-30deg); }
 }
 @media (prefers-reduced-motion: reduce) { .kart { transition: none; } }
