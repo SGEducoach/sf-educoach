@@ -290,8 +290,11 @@ export async function GET(request: Request) {
         const baslik = "Yaklaşan ödev hatırlatması";
         const govde = sayi > 1 ? `Yarın son tarihli ${sayi} ödevin/programın var. www.sefukoc.com'dan kontrol et.` : "Yarın son tarihli bir ödevin/programın var. www.sefukoc.com'dan kontrol et.";
         await pushGonder(studentId, baslik, govde);
-        const { data: duyuru } = await admin.from("duyurular").insert({ gonderen_id: null, baslik, mesaj: govde }).select("id").single();
-        if (duyuru) await admin.from("duyuru_aliciler").insert({ duyuru_id: duyuru.id, profile_id: studentId });
+        // Kullanıcı bildirimi (02.11.2026): hatırlatma duyurular/duyuru_aliciler'a
+        // yazılıyordu; her öğrenci için ayrı "duyuru" olarak admin Duyuru
+        // Geçmişi'ni dolduruyordu. Sistem hatırlatması bildirim akışına gider
+        // (yanlış giriş uyarısıyla aynı yol, bkz. bildirim-gonder.ts).
+        await bildirimGonder(admin, studentId, "sistem", baslik, govde);
       }
       if (yaklasanOgrenciIdleri.length - kapatanlar.size > 0) {
         detaylar.push(`${yaklasanOgrenciIdleri.length - kapatanlar.size} öğrenciye yaklaşan görev/plan hatırlatması gönderildi.`);
