@@ -60,6 +60,11 @@ describe("smsGonder", () => {
     const kayit = admin.eklenen.sms_gonderimleri[0];
     expect(kayit).toMatchObject({ durum: "gonderildi", alici_sayisi: 2, baslik: "KURUM", alici_turu: "veli", gonderen_id: KULLANICI });
     expect(JSON.stringify(kayit)).not.toMatch(/90532|90533|0532|gizli/);
+    // Kurum SMS Geçmişi (0185): kardeşlerin ortak veli numarası tek alıcı, adlar birleşik.
+    expect(admin.eklenen.sms_gonderim_alicilari).toEqual([
+      expect.objectContaining({ gonderim_id: kayit.id, telefon: "905321234567", alici: "Öğrenci 1 velisi (9-A), Öğrenci 2 velisi (9-A)" }),
+      expect.objectContaining({ gonderim_id: kayit.id, telefon: "905331112233", alici: "Öğrenci 4 velisi (9-A)" }),
+    ]);
   });
 
   it("yalnız işaretli öğrencilere gönderir", async () => {
@@ -151,14 +156,20 @@ describe("smsGonder", () => {
 
 describe("smsMezunlaraGonder (Mezun Takip, migration 0184)", () => {
   const mezunGirdisi = (telefonlar: (string | null)[]) => ({
-    schoolId: OKUL, userId: KULLANICI, icerik: "Sevgili mezunumuz, buluşmaya davetlisiniz.", telefonlar, hedefOzeti: "Mezunlar: 3 kişi", zaman: null,
+    schoolId: OKUL, userId: KULLANICI, icerik: "Sevgili mezunumuz, buluşmaya davetlisiniz.", hedefOzeti: "Mezunlar: 3 kişi", zaman: null,
+    mezunlar: telefonlar.map((telefon, i) => ({ telefon, ad: `Mezun ${i + 1}` })),
   });
-  it("geçerli ve tekrarsız numaralara gönderir, geçmişe mezun türüyle numarasız yazar", async () => {
+  it("geçerli ve tekrarsız numaralara gönderir; geçmişe numarasız, alıcı tablosuna numara ve adla yazar", async () => {
     const admin = sahteAdmin(tablolar());
     const sonuc = await smsMezunlaraGonder(admin as never, mezunGirdisi(["905321234567", null, "905321234567", "905331112233"]));
     expect(sonuc).toMatchObject({ error: null, sonuc: { aliciSayisi: 2, gecersizSayisi: 1, tekrarSayisi: 1 } });
-    expect(admin.eklenen.sms_gonderimleri[0]).toMatchObject({ alici_turu: "mezun", hedef_ozeti: "Mezunlar: 3 kişi", alici_sayisi: 2 });
-    expect(JSON.stringify(admin.eklenen.sms_gonderimleri[0])).not.toMatch(/90532|90533/);
+    const kayit = admin.eklenen.sms_gonderimleri[0];
+    expect(kayit).toMatchObject({ alici_turu: "mezun", hedef_ozeti: "Mezunlar: 3 kişi", alici_sayisi: 2 });
+    expect(JSON.stringify(kayit)).not.toMatch(/90532|90533/);
+    expect(admin.eklenen.sms_gonderim_alicilari).toEqual([
+      expect.objectContaining({ gonderim_id: kayit.id, telefon: "905321234567", alici: "Mezun 1, Mezun 3" }),
+      expect.objectContaining({ gonderim_id: kayit.id, telefon: "905331112233", alici: "Mezun 4" }),
+    ]);
   });
   it("seçim boşsa, telefon yoksa ya da modül kapalıysa göndermez", async () => {
     expect((await smsMezunlaraGonder(sahteAdmin(tablolar()) as never, mezunGirdisi([]))).error).toMatch(/En az bir mezun/);

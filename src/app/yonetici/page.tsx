@@ -17,6 +17,7 @@ import { konuAdIncelemeVerisiGetir } from "@/app/yonetici/konu-ad-eslesme-action
 import { NobetProgramYukleme } from "@/components/yonetici/NobetProgramYukleme";
 import { DenemeYuklemeSayfasi } from "@/components/yonetici/DenemeYuklemeSayfasi";
 import { GrupKoclukYonetimi } from "@/components/yonetici/GrupKoclukYonetimi";
+import { KurumSmsGecmisi } from "@/components/yonetici/KurumSmsGecmisi";
 import { BlogYonetimi } from "@/components/yonetici/BlogYonetimi";
 import { KurallarYonetimi } from "@/components/yonetici/KurallarYonetimi";
 import { HataBildirimleriYonetimi } from "@/components/yonetici/HataBildirimleriYonetimi";
@@ -251,6 +252,11 @@ export default async function YoneticiPage({
             </section>
           )}
           {aktifBolum === "grup-kocluk" && <section className="sfec-section"><GrupKoclukYonetimi /></section>}
+          {aktifBolum === "kurum-sms-gecmisi" && (
+            <section className="sfec-section">
+              <KurumSmsGecmisi okullar={okulListesi.map((o) => ({ id: o.id, ad: o.ad }))} seciliOkulId={params.okul ?? null} />
+            </section>
+          )}
           {aktifBolum === "moderatorler" && <section className="sfec-section"><ModeratorlerListesi /></section>}
           {aktifBolum === "icerik" && (
             <section className="sfec-section flex flex-col gap-5">

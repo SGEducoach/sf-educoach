@@ -153,3 +153,67 @@ export async function smsAlicilariCoz(admin: Istemci, schoolId: string, sinifIdl
 export function smsOgrencisiyeIndir(a: SmsAliciSatiri): SmsOgrencisi {
   return { id: a.id, ad: a.ad, okulNo: a.okulNo, sinifId: a.sinifId, gecerli: a.gecerli };
 }
+
+// ---- Admin: Kurum SMS Geçmişi (kullanıcı isteği 02.11.2026, migration 0185) ----
+
+export interface KurumSmsKaydi {
+  id: string;
+  tarih: string;
+  gonderen: string | null;
+  gonderenRolu: string;
+  baslik: string;
+  icerik: string;
+  aliciTuru: "veli" | "mezun";
+  hedef: string | null;
+  aliciSayisi: number;
+  gecersizSayisi: number;
+  durum: SmsGecmisKaydi["durum"];
+  zamanlanmis: string | null;
+  hata: string | null;
+  /** Sağlayıcıya giden alıcılar; 0185'ten önceki gönderimlerde null (kayıt tutulmuyordu). */
+  alicilar: { telefon: string; alici: string | null }[] | null;
+}
+
+// Yalnız admin ekranı çağırır (yetki sayfada doğrulanır). Kurumun son
+// gönderimleri, gönderenin adı ve kurumdaki görevi, numaralarıyla alıcılar.
+export async function kurumSmsGecmisiGetir(admin: Istemci, schoolId: string, sinir = 200): Promise<KurumSmsKaydi[]> {
+  const { data } = await admin.from("sms_gonderimleri")
+    .select("id, created_at, gonderen_id, baslik, icerik, alici_turu, hedef_ozeti, alici_sayisi, gecersiz_sayisi, durum, zamanlanmis_at, hata")
+    .eq("school_id", schoolId).order("created_at", { ascending: false }).limit(sinir);
+  const satirlar = (data ?? []) as {
+    id: string; created_at: string; gonderen_id: string | null; baslik: string; icerik: string; alici_turu: "veli" | "mezun";
+    hedef_ozeti: string | null; alici_sayisi: number; gecersiz_sayisi: number; durum: SmsGecmisKaydi["durum"];
+    zamanlanmis_at: string | null; hata: string | null;
+  }[];
+  if (satirlar.length === 0) return [];
+
+  const gonderenler = [...new Set(satirlar.map((s) => s.gonderen_id).filter((x): x is string => !!x))];
+  const [{ data: profiller }, { data: rehberler }, { data: yardimcilar }, alicilar] = await Promise.all([
+    gonderenler.length ? admin.from("profiles").select("id, ad, role").in("id", gonderenler) : Promise.resolve({ data: [] }),
+    gonderenler.length ? admin.from("rehberlik_servisi").select("profile_id").in("profile_id", gonderenler) : Promise.resolve({ data: [] }),
+    gonderenler.length ? admin.from("mudur_yardimcilari").select("profile_id").in("profile_id", gonderenler) : Promise.resolve({ data: [] }),
+    // Alıcı tablosu (0185) yoksa ya da okunamazsa ekran yine açılır; alıcılar "kaydedilmemiş" görünür.
+    tumSatirlar<{ gonderim_id: string; telefon: string; alici: string | null }>((bas, son) =>
+      admin.from("sms_gonderim_alicilari").select("gonderim_id, telefon, alici")
+        .in("gonderim_id", satirlar.map((s) => s.id)).order("gonderim_id").order("alici").range(bas, son)).catch(() => []),
+  ]);
+  const rehberSet = new Set(((rehberler ?? []) as { profile_id: string }[]).map((r) => r.profile_id));
+  const yardimciSet = new Set(((yardimcilar ?? []) as { profile_id: string }[]).map((r) => r.profile_id));
+  const profil = new Map(((profiller ?? []) as { id: string; ad: string; role: string }[]).map((p) => [p.id, p]));
+  const rolu = (id: string | null) => {
+    if (!id) return "—";
+    if (profil.get(id)?.role === "mudur") return "Müdür";
+    if (rehberSet.has(id)) return "Rehber Öğretmen";
+    if (yardimciSet.has(id)) return "Müdür Yardımcısı";
+    return profil.get(id)?.role === "admin" ? "Admin" : "Öğretmen";
+  };
+  const aliciHaritasi = new Map<string, { telefon: string; alici: string | null }[]>();
+  for (const a of alicilar) (aliciHaritasi.get(a.gonderim_id) ?? aliciHaritasi.set(a.gonderim_id, []).get(a.gonderim_id)!).push({ telefon: a.telefon, alici: a.alici });
+
+  return satirlar.map((s) => ({
+    id: s.id, tarih: s.created_at, gonderen: s.gonderen_id ? profil.get(s.gonderen_id)?.ad ?? null : null, gonderenRolu: rolu(s.gonderen_id),
+    baslik: s.baslik, icerik: s.icerik, aliciTuru: s.alici_turu, hedef: s.hedef_ozeti, aliciSayisi: s.alici_sayisi,
+    gecersizSayisi: s.gecersiz_sayisi, durum: s.durum, zamanlanmis: s.zamanlanmis_at, hata: s.hata,
+    alicilar: aliciHaritasi.get(s.id) ?? (s.alici_sayisi > 0 ? null : []),
+  }));
+}

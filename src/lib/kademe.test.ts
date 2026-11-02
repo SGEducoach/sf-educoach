@@ -557,3 +557,12 @@ describe("müdür yardımcısı (İdare paneli)", () => {
     expect(dashboardMenusu("ogretmen", "okul", "Matematik", false, "lise").map((o) => o.bolum)).toContain("gorevler");
   });
 });
+
+// Rehber öğretmen geri bildirimi (02.11.2026): Pano ve Okul İşlemleri rehber
+// menüsünde yok; Mezun Takip, Bireysel Mesaj'ın hemen üstünde.
+test("rehber menüsü: Pano/Okul İşlemleri yok, Mezun Takip Bireysel Mesaj'ın üstünde", () => {
+  const menu = dashboardMenusu("ogretmen", "okul", "Matematik", false, "lise", true).map((o) => o.bolum);
+  expect(menu).not.toContain("tg-denemeleri");
+  expect(menu).not.toContain("takvim");
+  expect(menu.indexOf("mezun-takip")).toBe(menu.indexOf("rehberlik") - 1);
+});

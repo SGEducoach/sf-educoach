@@ -7,6 +7,29 @@ import type { DuyuruAliciTuru } from "@/lib/push-send";
 import { BG0, BG1, BG1_ALT, BLUSH, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
 
 const MIN_UZUNLUK = 10;
+
+// Kullanıcı geri bildirimi (02.11.2026): üstte öğrenci seçip altta "Kimlere
+// gönderilsin" sorusu karışıktı. Önce kime yazıldığı seçilir, sonra öğrenciler.
+const ALICI_SECENEKLERI: { deger: DuyuruAliciTuru; ad: string; aciklama: string }[] = [
+  { deger: "hepsi", ad: "Öğrenci ve velisi", aciklama: "Mesaj seçtiğiniz öğrencilere ve velilerine gider." },
+  { deger: "ogrenci", ad: "Yalnız öğrenci", aciklama: "Mesaj yalnız seçtiğiniz öğrencilere gider." },
+  { deger: "veli", ad: "Yalnız veli", aciklama: "Mesaj yalnız seçtiğiniz öğrencilerin velilerine gider." },
+];
+
+// "10-A" ile "9-B" metin olarak sıralanınca 10 öne geçiyordu: sınıf düzeyi
+// sayısal, şube alfabetik (sınıf sırası kuralı).
+function sinifAdiKarsilastir(a: string, b: string): number {
+  const [sa, ...ra] = a.split("-");
+  const [sb, ...rb] = b.split("-");
+  const fark = (Number(sa) || 99) - (Number(sb) || 99);
+  return fark !== 0 ? fark : ra.join("-").localeCompare(rb.join("-"), "tr");
+}
+
+const adim = (no: number, baslik: string) => (
+  <span className="flex items-center gap-2 text-sm font-bold" style={{ color: TEXT }}>
+    <span className="grid h-6 w-6 place-items-center rounded-full text-xs" style={{ background: MINT, color: MINT_ON }}>{no}</span>{baslik}
+  </span>
+);
 const MAKS_UZUNLUK = 500;
 
 export interface RehberlikOgrencisi {
@@ -33,7 +56,7 @@ export function RehberlikPaneli({ ogrenciler }: { ogrenciler: RehberlikOgrencisi
   const [onayAcik, setOnayAcik] = useState(false);
   const [pending, startTransition] = useTransition();
 
-  const siniflar = useMemo(() => [...new Set(ogrenciler.map((o) => o.sinifAdi))].sort((a, b) => a.localeCompare(b, "tr")), [ogrenciler]);
+  const siniflar = useMemo(() => [...new Set(ogrenciler.map((o) => o.sinifAdi))].sort(sinifAdiKarsilastir), [ogrenciler]);
 
   const gosterilenler = useMemo(() => {
     const terim = arama.trim().toLocaleLowerCase("tr-TR");
@@ -107,8 +130,24 @@ export function RehberlikPaneli({ ogrenciler }: { ogrenciler: RehberlikOgrencisi
           <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Rehberlik — Mesaj Gönder</span>
         </div>
         <p style={{ color: TEXT_MUTED }} className="text-xs mb-4">
-          Okulunuzdaki tüm öğrencilerden istediğinizi seçip (tek tek veya toplu) mesaj gönderebilirsiniz. Alıcılar mesajı &quot;Rehberlik Servisinden Mesajınız Var&quot; başlığıyla görür.
+          Alıcılar mesajı &quot;Rehberlik Servisinden Mesajınız Var&quot; başlığıyla mesaj kutularında görür.
         </p>
+
+        <div className="mb-5 flex flex-col gap-2">
+          {adim(1, "Kime yazıyorsunuz?")}
+          <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Kime yazıyorsunuz">
+            {ALICI_SECENEKLERI.map((s) => (
+              <button key={s.deger} type="button" role="radio" aria-checked={aliciTuru === s.deger} onClick={() => setAliciTuru(s.deger)}
+                className="sfec-btn rounded-full px-4 py-2 text-xs font-bold"
+                style={aliciTuru === s.deger ? { background: MINT, color: MINT_ON, border: `2px solid ${MINT}` } : { background: BG0, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
+                {s.ad}
+              </button>
+            ))}
+          </div>
+          <p style={{ color: TEXT_MUTED }} className="text-[11px]">{ALICI_SECENEKLERI.find((s) => s.deger === aliciTuru)?.aciklama}</p>
+        </div>
+
+        <div className="mb-3">{adim(2, aliciTuru === "veli" ? "Hangi öğrencilerin velilerine?" : "Hangi öğrencilere?")}</div>
 
         <div className="flex items-center gap-2 mb-3 flex-wrap">
           <div className="relative flex-1 min-w-[180px]">
@@ -154,14 +193,10 @@ export function RehberlikPaneli({ ogrenciler }: { ogrenciler: RehberlikOgrencisi
       </div>
 
       <form onSubmit={gonderTikla} className="sfec-fade rounded-3xl p-5 flex flex-col gap-2" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
-        <label className="flex flex-col gap-1">
-          <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Kimlere gönderilsin</span>
-          <select value={aliciTuru} onChange={(e) => setAliciTuru(e.target.value as DuyuruAliciTuru)} className="text-sm px-3 py-1.5 rounded-xl outline-none w-full sm:w-64" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
-            <option value="hepsi">Hepsi - öğrenci ve veliler</option>
-            <option value="ogrenci">Sadece öğrenciler</option>
-            <option value="veli">Sadece veliler</option>
-          </select>
-        </label>
+        {adim(3, "Mesajınız")}
+        <p style={{ color: TEXT_MUTED }} className="text-[11px]">
+          {secili.size === 0 ? "Henüz öğrenci seçmediniz." : `${secili.size} öğrenci seçili · ${ALICI_SECENEKLERI.find((s) => s.deger === aliciTuru)?.ad.toLocaleLowerCase("tr-TR")}`}
+        </p>
         <textarea value={mesaj} onChange={(e) => setMesaj(e.target.value.slice(0, MAKS_UZUNLUK))} rows={3}
           placeholder="Örn. Merhaba, seninle görüşmek istiyorum. Uygun olduğunda beni ziyaret edebilir misin?"
           className="text-sm px-3 py-2 rounded-xl outline-none resize-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />

@@ -40,6 +40,8 @@ export type DashboardBolumu =
   | "sms"
   // Rehberlik servisi ve müdür: mezunların bilgisi ve SMS (30.10.2026, migration 0184).
   | "mezun-takip"
+  // Admin: kurumların SMS gönderimleri ve alıcıları (02.11.2026, migration 0185).
+  | "kurum-sms-gecmisi"
   // Rehber Takip Bildirimleri (20.10.2026, migration 0171).
   | "takip-bildirimleri"
   // YÖNETİCİ (admin) paneline özel — bkz. ADMIN_MENUSU
@@ -279,6 +281,8 @@ const ADMIN_MENU_YAPISI: DashboardMenuKalemi[] = [
     baslik: "Kurumlar", ikon: "okul", ogeler: [
       { bolum: "okullar", href: "/yonetici/okullar", etiket: "Kurumları Yönet", ikon: "okul" },
       { bolum: "grup-kocluk", href: "/yonetici/grup-kocluk", etiket: "Grup Koçluk", ikon: "grup" },
+      // Kullanıcı isteği (02.11.2026): kurumların SMS gönderimleri, alıcı numaralarıyla.
+      { bolum: "kurum-sms-gecmisi", href: "/yonetici/kurum-sms-gecmisi", etiket: "Kurum SMS Geçmişi", ikon: "sms" },
     ],
   },
   {
@@ -331,8 +335,9 @@ const REHBER_OGRETMEN_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "duyurular", href: "/dashboard/duyurular", etiket: "Rehber Öğretmen Duyurusu", ikon: "duyuru" },
   { bolum: "rehberlik", href: "/dashboard/rehberlik", etiket: "Bireysel Mesaj", ikon: "rehberlik" },
   SMS_MENU_OGESI,
-  { bolum: "tg-denemeleri", href: "/dashboard/tg-denemeleri", etiket: "Pano", ikon: "takvim" },
-  TAKVIM_MENU_OGESI,
+  // Kullanıcı kararı (02.11.2026, rehber öğretmen geri bildirimi): Pano ve
+  // Okul İşlemleri (ders programı, nöbet, yazılı analizi) rehberlik
+  // servisinin işi değil; rehber menüsünden kaldırıldı.
 ];
 
 // Rehber Radarı Adım 2 (kullanıcı onayı 07.10.2026) — sorumlu olunan TÜM
@@ -497,7 +502,10 @@ function dashboardMenusuTemel(
       : REHBER_OGRETMEN_MENUSU;
     // İlkokulun "Rehberlik" kalemini rehberlik servisi işaretler.
     if (okulRehberi && kademe === "ortaokul") return [...rehberMenusu, ILKOKUL_GELISIM_MENU_OGESI];
-    return okulRehberi ? [...rehberMenusu, MEZUN_TAKIP_MENU_OGESI] : rehberMenusu;
+    if (!okulRehberi) return rehberMenusu;
+    // Mezun Takip, Bireysel Mesaj'ın hemen üstünde (kullanıcı isteği 02.11.2026).
+    const mesajSirasi = rehberMenusu.findIndex((o) => o.bolum === "rehberlik");
+    return [...rehberMenusu.slice(0, mesajSirasi), MEZUN_TAKIP_MENU_OGESI, ...rehberMenusu.slice(mesajSirasi)];
   }
   if (role === "ogretmen") return kurumTuru === "okul" ? [...OGRETMEN_MENUSU, TAKVIM_MENU_OGESI] : OGRETMEN_MENUSU;
   if (role === "mudur") {
@@ -544,4 +552,5 @@ export const YONETICI_ROUTE_BOLUMLERI = new Set<DashboardBolumu>([
   "iletisim", "mesajlar",
   "kullanicilar", "kullanici-yonetimi", "talepler", "deneme-yukle", "pdf-eslesme", "okullar", "grup-kocluk", "moderatorler", "icerik", "blog", "kurallar", "profil", "hata-bildirimleri",
   "duyuru-gecmisi", "islem-gecmisi", "ogrenci-aktivitesi", "site-ayarlari", "adminler", "whatsapp-yonetimi", "belletmen-basvurulari",
+  "kurum-sms-gecmisi",
 ]);

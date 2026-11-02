@@ -22,7 +22,13 @@ export function sahteAdmin(tablolar: Record<string, Satir[]>) {
         limit: (n: number) => { sinir = n; return b; },
         range: (a: number, z: number) => { bas = a; son = z; return b; },
         maybeSingle: () => Promise.resolve({ data: satirlar()[0] ?? null, error: null }),
-        insert: (satir: Satir) => { (eklenen[tablo] ??= []).push(satir); return Promise.resolve({ error: null }); },
+        insert: (girdi: Satir | Satir[]) => {
+          const yeni = (Array.isArray(girdi) ? girdi : [girdi]).map((s, i) => ({ id: `${tablo}-${(eklenen[tablo]?.length ?? 0) + i + 1}`, ...s }));
+          (eklenen[tablo] ??= []).push(...yeni);
+          return Object.assign(Promise.resolve({ error: null }), {
+            select: () => ({ single: () => Promise.resolve({ data: yeni[0], error: null }) }),
+          });
+        },
         then: (coz: (v: unknown) => unknown) => coz({ data: satirlar(), count: satirlar().length, error: null }),
       };
       return b;

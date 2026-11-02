@@ -159,14 +159,15 @@ export async function mezunSmsGonder(girdi: { mezunIdleri: string[]; icerik: str
     zaman = new Date(girdi.zamanIso);
     if (typeof girdi.zamanIso !== "string" || Number.isNaN(zaman.getTime())) return { error: "Geçerli bir gönderim zamanı girin." };
   }
-  const telefonlar: (string | null)[] = [];
+  const mezunlar: { telefon: string | null; ad: string }[] = [];
   for (let i = 0; i < idler.length; i += 500) {
-    const { data } = await b.admin.from("mezunlar").select("telefon").eq("school_id", b.erisim.schoolId).in("id", idler.slice(i, i + 500));
-    telefonlar.push(...((data ?? []) as { telefon: string | null }[]).map((m) => m.telefon));
+    const { data } = await b.admin.from("mezunlar").select("ad, soyad, mezuniyet_yili, telefon").eq("school_id", b.erisim.schoolId).in("id", idler.slice(i, i + 500));
+    mezunlar.push(...((data ?? []) as { ad: string; soyad: string; mezuniyet_yili: number; telefon: string | null }[])
+      .map((m) => ({ telefon: m.telefon, ad: `${[m.ad, m.soyad].filter(Boolean).join(" ")} (${m.mezuniyet_yili} mezunu)` })));
   }
   const sonuc = await smsMezunlaraGonder(b.admin, {
-    schoolId: b.erisim.schoolId, userId: b.erisim.userId, icerik: girdi.icerik, telefonlar, zaman,
-    hedefOzeti: `Mezunlar: ${telefonlar.length} kişi`,
+    schoolId: b.erisim.schoolId, userId: b.erisim.userId, icerik: girdi.icerik, mezunlar, zaman,
+    hedefOzeti: `Mezunlar: ${mezunlar.length} kişi`,
   });
   revalidatePath("/dashboard/sms");
   return sonuc.error !== null ? { error: sonuc.error } : { error: null, sonuc: sonuc.sonuc };

@@ -9,7 +9,7 @@ import { smsSaglayiciBilgisi } from "@/lib/sms-saglayici-bilgi";
 import { smsKurumunuGetir, smsSeviyeKapsamdaMi, type SmsErisimi } from "@/lib/sms-erisim";
 import { SMS_ICERIK_SINIRI, smsIcerigiTemizle } from "@/lib/sms-mesaj";
 import { smsAlicilariCoz } from "@/lib/sms-veri";
-import { telefonlariHazirla } from "@/lib/sms-telefon";
+import { telefonuNormallestir } from "@/lib/sms-telefon";
 import { sinifSiraKarsilastir } from "@/lib/types";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -87,11 +87,37 @@ async function smsHazirla(
   return { error: null, h: { schoolId, icerik, baslik, ayar: ayar as SmsAyarSatiri, bilgi, zaman } };
 }
 
-// Hazırlanmış mesajı numaralara gönderir: hız sınırı, yinelenen gönderim,
-// alıcı sınırı, sağlayıcıya parça parça gönderim ve geçmiş kaydı (numarasız).
+export interface SmsAlicisi {
+  /** 905XXXXXXXXX */
+  telefon: string;
+  /** Kimin numarası: "Ayşe Yılmaz velisi (9-A)", mezunun adı. */
+  ad: string;
+}
+
+// Ham (telefon, ad) çiftlerini sağlayıcıya gidecek tekil alıcılara indirir:
+// geçersiz numaralar sayılır, aynı numara (kardeşlerin velisi) bir kez
+// gönderilir ve adları birleştirilir.
+export function smsAlicilariHazirla(hamlar: { telefon: string | null | undefined; ad: string }[]): { alicilar: SmsAlicisi[]; gecersiz: number; tekrar: number } {
+  const harita = new Map<string, string[]>();
+  let gecersiz = 0;
+  let tekrar = 0;
+  for (const h of hamlar) {
+    const n = telefonuNormallestir(h.telefon);
+    if (!n) { gecersiz++; continue; }
+    const adlar = harita.get(n);
+    if (adlar) { tekrar++; adlar.push(h.ad); } else harita.set(n, [h.ad]);
+  }
+  return { alicilar: [...harita].map(([telefon, adlar]) => ({ telefon, ad: adlar.join(", ").slice(0, 200) })), gecersiz, tekrar };
+}
+
+// Hazırlanmış mesajı alıcılara gönderir: hız sınırı, yinelenen gönderim,
+// alıcı sınırı, sağlayıcıya parça parça gönderim ve geçmiş kaydı. Numaralar
+// geçmiş satırına değil, yalnız admin'in gördüğü alıcı tablosuna yazılır
+// (migration 0185, Kurum SMS Geçmişi).
 async function smsNumaralaraGonder(admin: Istemci, h: SmsHazirligi, g: {
-  userId: string; numaralar: string[]; gecersiz: number; tekrar: number; aliciTuru: "veli" | "mezun"; hedefOzeti: string;
+  userId: string; alicilar: SmsAlicisi[]; gecersiz: number; tekrar: number; aliciTuru: "veli" | "mezun"; hedefOzeti: string;
 }): Promise<{ error: string } | { error: null; sonuc: SmsGonderimSonucu }> {
+  const numaralar = g.alicilar.map((a) => a.telefon);
   const saatOnce = new Date(Date.now() - 3600_000).toISOString();
   const [{ count: saatlik }, { data: sonGonderim }] = await Promise.all([
     admin.from("sms_gonderimleri").select("id", { count: "exact", head: true }).eq("gonderen_id", g.userId).gte("created_at", saatOnce),
@@ -103,7 +129,7 @@ async function smsNumaralaraGonder(admin: Istemci, h: SmsHazirligi, g: {
     && Date.now() - new Date(sonGonderim.created_at as string).getTime() < 60_000) {
     return { error: "Bu mesaj az önce zaten gönderildi." };
   }
-  if (g.numaralar.length > SMS_ENCOK_ALICI) return { error: `Tek seferde en çok ${SMS_ENCOK_ALICI} alıcıya gönderilebilir (şu an ${g.numaralar.length}). Seçimi daraltın.` };
+  if (numaralar.length > SMS_ENCOK_ALICI) return { error: `Tek seferde en çok ${SMS_ENCOK_ALICI} alıcıya gönderilebilir (şu an ${numaralar.length}). Seçimi daraltın.` };
 
   let kimlik: Record<string, string>;
   try { kimlik = smsKimlikCoz(h.ayar.kimlik_sifreli); } catch {
@@ -114,8 +140,8 @@ async function smsNumaralaraGonder(admin: Istemci, h: SmsHazirligi, g: {
   const isIdleri: string[] = [];
   let hata: string | null = null;
   let gonderilen = 0;
-  for (let i = 0; i < g.numaralar.length; i += SMS_PARCA_BOYUTU) {
-    const parca = g.numaralar.slice(i, i + SMS_PARCA_BOYUTU);
+  for (let i = 0; i < numaralar.length; i += SMS_PARCA_BOYUTU) {
+    const parca = numaralar.slice(i, i + SMS_PARCA_BOYUTU);
     try {
       const s = await saglayici.gonder(kimlik, { baslik: h.baslik, mesaj: h.icerik, numaralar: parca, zaman: h.zaman });
       if (s.isId) isIdleri.push(s.isId);
@@ -127,14 +153,21 @@ async function smsNumaralaraGonder(admin: Istemci, h: SmsHazirligi, g: {
   }
 
   const durum = hata === null ? (h.zaman ? "zamanlandi" : "gonderildi") : gonderilen > 0 ? "kismen" : "hata";
-  const { error: kayitHatasi } = await admin.from("sms_gonderimleri").insert({
+  const { data: kayit, error: kayitHatasi } = await admin.from("sms_gonderimleri").insert({
     school_id: h.schoolId, gonderen_id: g.userId, saglayici: h.bilgi.kod, baslik: h.baslik, icerik: h.icerik,
     alici_turu: g.aliciTuru, hedef_ozeti: g.hedefOzeti, alici_sayisi: gonderilen, gecersiz_sayisi: g.gecersiz,
     durum, zamanlanmis_at: h.zaman ? h.zaman.toISOString() : null,
     saglayici_is_id: isIdleri.join(",").slice(0, 200) || null, hata,
-  });
+  }).select("id").single();
   // Gönderim sağlayıcıda yapılmış olabilir; geçmiş yazılamadıysa sessiz geçmeyiz.
   if (kayitHatasi) console.error("SMS geçmişi yazılamadı:", kayitHatasi.message);
+  // Sağlayıcıya gerçekten giden alıcılar (parçalar sırayla gider).
+  const gidenler = g.alicilar.slice(0, gonderilen);
+  if (kayit && gidenler.length > 0) {
+    const { error } = await admin.from("sms_gonderim_alicilari")
+      .insert(gidenler.map((a) => ({ gonderim_id: (kayit as { id: string }).id, telefon: a.telefon, alici: a.ad })));
+    if (error) console.error("SMS alıcıları yazılamadı:", error.message);
+  }
 
   if (hata !== null) {
     return { error: gonderilen > 0 ? `${gonderilen} alıcıya gönderildi, kalanı gönderilemedi: ${hata}` : hata };
@@ -164,19 +197,14 @@ export async function smsGonder(admin: Istemci, g: SmsGonderimGirdisi): Promise<
   }
   if (ogrenciler.length === 0) return { error: "Seçimde öğrenci yok." };
 
-  const goruldu = new Set<string>();
-  let gecersiz = 0;
-  let tekrar = 0;
-  for (const o of ogrenciler) {
-    if (!o.telefon) { gecersiz++; continue; }
-    if (goruldu.has(o.telefon)) { tekrar++; continue; }
-    goruldu.add(o.telefon);
-  }
-  const numaralar = [...goruldu];
-  if (numaralar.length === 0) return { error: "Seçilen öğrencilerin hiçbirinde geçerli bir veli telefonu yok." };
+  const sinifAdi = new Map(izinli.map((s) => [s.id, `${s.seviye}-${s.sube}`]));
+  const { alicilar, gecersiz, tekrar } = smsAlicilariHazirla(ogrenciler.map((o) => ({
+    telefon: o.telefon, ad: `${o.ad} velisi (${sinifAdi.get(o.sinifId) ?? "—"})`,
+  })));
+  if (alicilar.length === 0) return { error: "Seçilen öğrencilerin hiçbirinde geçerli bir veli telefonu yok." };
 
   return smsNumaralaraGonder(admin, hazirlik.h, {
-    userId: g.erisim.userId, numaralar, gecersiz, tekrar, aliciTuru: "veli", hedefOzeti: hedefOzeti(izinli, g.ogrenciIdleri !== null),
+    userId: g.erisim.userId, alicilar, gecersiz, tekrar, aliciTuru: "veli", hedefOzeti: hedefOzeti(izinli, g.ogrenciIdleri !== null),
   });
 }
 
@@ -184,8 +212,8 @@ export interface SmsMezunGirdisi {
   schoolId: string;
   userId: string;
   icerik: string;
-  /** Seçilen mezunların kayıtlı telefonları (905XXXXXXXXX ya da null). */
-  telefonlar: (string | null)[];
+  /** Seçilen mezunlar: kayıtlı telefon (905XXXXXXXXX ya da null) ve ad. */
+  mezunlar: { telefon: string | null; ad: string }[];
   hedefOzeti: string;
   zaman: Date | null;
 }
@@ -193,11 +221,11 @@ export interface SmsMezunGirdisi {
 // Mezun Takip modülünden gönderim (migration 0184): alıcılar sınıf değil,
 // çağıranın yetkisiyle süzülmüş mezun kayıtları.
 export async function smsMezunlaraGonder(admin: Istemci, g: SmsMezunGirdisi): Promise<{ error: string } | { error: null; sonuc: SmsGonderimSonucu }> {
-  const hazirlik = await smsHazirla(admin, g.schoolId, g.icerik, g.zaman, () => (g.telefonlar.length === 0 ? "En az bir mezun seçin." : null));
+  const hazirlik = await smsHazirla(admin, g.schoolId, g.icerik, g.zaman, () => (g.mezunlar.length === 0 ? "En az bir mezun seçin." : null));
   if (hazirlik.error !== null) return hazirlik;
-  const { numaralar, gecersiz, tekrar } = telefonlariHazirla(g.telefonlar);
-  if (numaralar.length === 0) return { error: "Seçilen mezunların hiçbirinde geçerli bir telefon yok." };
+  const { alicilar, gecersiz, tekrar } = smsAlicilariHazirla(g.mezunlar);
+  if (alicilar.length === 0) return { error: "Seçilen mezunların hiçbirinde geçerli bir telefon yok." };
   return smsNumaralaraGonder(admin, hazirlik.h, {
-    userId: g.userId, numaralar, gecersiz, tekrar, aliciTuru: "mezun", hedefOzeti: g.hedefOzeti.slice(0, 300),
+    userId: g.userId, alicilar, gecersiz, tekrar, aliciTuru: "mezun", hedefOzeti: g.hedefOzeti.slice(0, 300),
   });
 }

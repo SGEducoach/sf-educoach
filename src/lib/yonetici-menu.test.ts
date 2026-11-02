@@ -21,7 +21,7 @@ describe("admin menüsü (20.10.2026 düzeni)", () => {
 
   it("onay bekleyen işler ve yetkiler Kullanıcılar grubunda; site içeriği Site grubunda", () => {
     expect(grup("Kullanıcılar")).toEqual(["kullanici-yonetimi", "talepler", "belletmen-basvurulari", "moderatorler", "adminler"]);
-    expect(grup("Kurumlar")).toEqual(["okullar", "grup-kocluk"]);
+    expect(grup("Kurumlar")).toEqual(["okullar", "grup-kocluk", "kurum-sms-gecmisi"]);
     expect(grup("Site")).toEqual(["site-ayarlari", "blog", "kurallar"]);
     expect(grup("Deneme ve İçerik")).not.toContain("blog");
   });
