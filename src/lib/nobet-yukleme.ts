@@ -30,3 +30,17 @@ export interface NobetGorunumu {
   ogretmenler: { id: string; ad: string; brans: string; rol: string }[];
   bekleyenProgramlar: { adAnahtari: string; adSoyad: string; satir: number }[];
 }
+
+// Hesapla eşleşmeyen yurt nöbetleri ay bitiminde kaldırılır (kullanıcı isteği 30.10.2026:
+// "ay bitiminde (ayın 25'i itibariyle) eşleşmeyince kaldırılsın"). Ayın 25'inden itibaren o
+// ayın ve önceki ayların eşleşmeyen nöbetleri silinir; sonraki ayın erken yüklenen listesi
+// korunur. Dönen tarih silme sınırıdır (bu tarihten ÖNCEKİLER silinir), "YYYY-AA-GG".
+export const YURT_NOBETI_TEMIZLIK_GUNU = 25;
+
+export function eslesmeyenYurtNobetiSiniri(bugun: string): string {
+  const [yil, ay, gun] = bugun.split("-").map(Number);
+  const sonrakiAy = gun >= YURT_NOBETI_TEMIZLIK_GUNU;
+  const hedefYil = sonrakiAy && ay === 12 ? yil + 1 : yil;
+  const hedefAy = sonrakiAy ? (ay === 12 ? 1 : ay + 1) : ay;
+  return `${hedefYil}-${String(hedefAy).padStart(2, "0")}-01`;
+}

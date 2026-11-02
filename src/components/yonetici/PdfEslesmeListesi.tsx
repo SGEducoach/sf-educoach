@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Check, Undo2, X } from "lucide-react";
 import {
-  pdfEslesmeAta, pdfEslesmeAtamayiGeriAl, pdfEslesmeOgrencileriGetir, pdfEslesmeReddet,
+  pdfEslesmeAta, pdfEslesmeAtamayiGeriAl, pdfEslesmeListeBaginiKaldir, pdfEslesmeListeyeBagla, pdfEslesmeOgrencileriGetir, pdfEslesmeReddet,
   type PdfEslesmeBekleyeni, type PdfEslesmeDenemesi, type PdfEslesmeOgrencisi,
 } from "@/app/yonetici/pdf-eslesme-actions";
 import { adlarBenzerMi, adlarOlasiBenzer } from "@/lib/ad-benzerligi";
@@ -14,7 +14,8 @@ const TUM_SINIFLAR = "";
 const SINIFSIZ = "__sinifsiz__";
 
 function ogrenciEtiketi(o: PdfEslesmeOgrencisi) {
-  return o.sinif ? `${o.ad} · ${o.sinif}` : o.ad;
+  const temel = o.sinif ? `${o.ad} · ${o.sinif}` : o.ad;
+  return o.listeId ? `${temel} · kayıtsız` : temel;
 }
 
 // Aynı denemenin satırlarını birbirine bağlayan anahtar — bir satırda
@@ -174,6 +175,9 @@ function PdfEslesmeSatiri({ bekleyen, buOturumdaYerlesen, yerlesti }: {
   // bir kelimesi tutanlar ayrı grupta — yetkili kendisi seçer.
   const olasilar = filtrelenmis.filter((o) => !onerilenler.includes(o) && adlarOlasiBenzer(bekleyen.adSoyadHam, o.ad));
   const digerleri = filtrelenmis.filter((o) => !onerilenler.includes(o) && !olasilar.includes(o));
+  // Hesabı olmayan liste öğrencileri ayrı grupta: seçilince sonuç listeye bağlanır, üye olunca aktarılır.
+  const kayitsizlar = digerleri.filter((o) => o.listeId);
+  const hesaplilar = digerleri.filter((o) => !o.listeId);
 
   return (
     <div className="rounded-2xl p-4" style={{ background: BG1_ALT, border: `2px solid ${BORDER}` }}>
@@ -200,6 +204,16 @@ function PdfEslesmeSatiri({ bekleyen, buOturumdaYerlesen, yerlesti }: {
           <div style={{ color: TEXT_MUTED }} className="text-xs">
             {bekleyen.okulAdi} · {bekleyen.yayinevi} · {bekleyen.tarih} · {bekleyen.tur}
           </div>
+          {bekleyen.listeBagliAd && (
+            <div style={{ color: MINT }} className="mt-1 flex flex-wrap items-center gap-2 text-[11px] font-semibold">
+              Listedeki öğrenciye bağlı: {bekleyen.listeBagliAd} — hesabı açılınca sonuç aktarılır.
+              <button type="button" disabled={pending} onClick={() => startTransition(async () => {
+                const r = await pdfEslesmeListeBaginiKaldir(bekleyen.id);
+                setMesaj(r.error ? `Hata: ${r.error}` : "Bağ kaldırıldı.");
+                if (!r.error) router.refresh();
+              })} className="sfec-btn rounded-lg px-2 py-0.5 text-[10px] font-bold" style={{ color: TEXT_MUTED, border: `1px solid ${BORDER_STRONG}` }}>Bağı kaldır</button>
+            </div>
+          )}
           {bekleyen.atananOgrenciAdi && (
             <div style={{ color: MINT }} className="mt-1 text-[11px] font-semibold">Atanan öğrenci: {bekleyen.atananOgrenciAdi}</div>
           )}
@@ -271,13 +285,19 @@ function PdfEslesmeSatiri({ bekleyen, buOturumdaYerlesen, yerlesti }: {
           )}
           {onerilenler.length > 0 || olasilar.length > 0
             ? <optgroup label="Diğer öğrenciler">
-                {digerleri.map((o) => <option key={o.id} value={o.id}>{ogrenciEtiketi(o)}</option>)}
+                {hesaplilar.map((o) => <option key={o.id} value={o.id}>{ogrenciEtiketi(o)}</option>)}
               </optgroup>
-            : digerleri.map((o) => <option key={o.id} value={o.id}>{ogrenciEtiketi(o)}</option>)}
+            : hesaplilar.map((o) => <option key={o.id} value={o.id}>{ogrenciEtiketi(o)}</option>)}
+          {kayitsizlar.length > 0 && (
+            <optgroup label="Sisteme kayıtlı değil (listeden)">
+              {kayitsizlar.map((o) => <option key={o.id} value={o.id}>{ogrenciEtiketi(o)}</option>)}
+            </optgroup>
+          )}
         </select>
         <button type="button" disabled={pending || !secilenId} onClick={() => startTransition(async () => {
-          const r = await pdfEslesmeAta(bekleyen.id, secilenId);
-          setMesaj(r.error ? `Hata: ${r.error}` : "Eşleştirildi.");
+          const listeOgrencisi = (ogrenciler ?? []).find((o) => o.id === secilenId)?.listeId;
+          const r = listeOgrencisi ? await pdfEslesmeListeyeBagla(bekleyen.id, listeOgrencisi) : await pdfEslesmeAta(bekleyen.id, secilenId);
+          setMesaj(r.error ? `Hata: ${r.error}` : listeOgrencisi ? "Listedeki öğrenciye bağlandı; üye olunca sonuç hesabına aktarılır." : "Eşleştirildi.");
           if (!r.error) { yerlesti(secilenId); router.refresh(); }
         })} className="sfec-btn flex items-center gap-1 rounded-lg px-3 py-2 text-[11px] font-bold disabled:opacity-50" style={{ background: MINT, color: MINT_ON }}>
           <Check size={12} /> Ata

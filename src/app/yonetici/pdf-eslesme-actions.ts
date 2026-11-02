@@ -55,6 +55,8 @@ export interface PdfEslesmeBekleyeni {
   // ayırt etmenin TEK yolu — ad ve netler yan yana aynı görünebiliyor.
   ogrenciNo: number | null;
   eslestirilebilir: boolean;
+  // Okul listesindeki hesapsız öğrenciye bağlıysa adı ve sınıfı (üye olunca sonuç hesabına aktarılır).
+  listeBagliAd: string | null;
   // Öğrenci arama listesinin açıldığı seviye (yükleyenin belirttiği ya da
   // denemede eşleşenlerden tahmin); null = bütün kurum.
   sinifSeviyesi: string | null;
@@ -119,7 +121,7 @@ export async function pdfEslesmeBekleyenleriGetir(secim: PdfEslesmeSecimi): Prom
   const { admin, kurumFiltresi } = await requireEslesmeYetkisi();
   if (kurumFiltresi && kurumFiltresi !== secim.schoolId) return { error: "Bu kurumun satırlarını görme yetkiniz yok.", bekleyenler: [] };
   const tumSatirlar: unknown[] = [];
-  const temelSutunlar = "id, ad_soyad_ham, ders_sonuclari, ogrenci_no, yayinevi, tarih, tur, school_id, durum, atanan_student_id, created_at, schools(ad)";
+  const temelSutunlar = "id, ad_soyad_ham, ders_sonuclari, ogrenci_no, yayinevi, tarih, tur, school_id, durum, atanan_student_id, liste_ogrenci_id, created_at, schools(ad)";
   // sinif_seviyesi migration 0158'le geldi; uygulanmadıysa sütunsuz okunur.
   let sutunlar = `${temelSutunlar}, sinif_seviyesi`;
   for (let bas = 0; ; bas += SAYFA) {
@@ -143,14 +145,15 @@ export async function pdfEslesmeBekleyenleriGetir(secim: PdfEslesmeSecimi): Prom
     id: string; ad_soyad_ham: string; ders_sonuclari: { ders: string; dogru: number; yanlis: number }[];
     ogrenci_no: number | null;
     yayinevi: string; tarih: string; tur: string; school_id: string; created_at: string;
-    durum: PdfEslesmeDurumu; atanan_student_id: string | null;
+    durum: PdfEslesmeDurumu; atanan_student_id: string | null; liste_ogrenci_id: string | null;
     schools: { ad: string } | null;
     sinif_seviyesi?: string | null;
   };
   const satirlar = tumSatirlar as Row[];
   const schoolIds = [...new Set(satirlar.map((r) => r.school_id))];
   const atananIds = [...new Set(satirlar.map((r) => r.atanan_student_id).filter((id): id is string => !!id))];
-  const [{ data: onKayitlar }, { data: okulOgrencileri }, { data: atananlar }] = await Promise.all([
+  const listeIds = [...new Set(satirlar.map((r) => r.liste_ogrenci_id).filter((id): id is string => !!id))];
+  const [{ data: onKayitlar }, { data: okulOgrencileri }, { data: atananlar }, { data: listeSatirlari }] = await Promise.all([
     schoolIds.length > 0
       ? admin.from("pending_dershane_ogrenciler").select("school_id, ad").in("school_id", schoolIds).is("kullanildi_at", null)
       : Promise.resolve({ data: [] }),
@@ -160,7 +163,15 @@ export async function pdfEslesmeBekleyenleriGetir(secim: PdfEslesmeSecimi): Prom
     atananIds.length > 0
       ? admin.from("students").select("id, profiles!students_id_fkey(ad), classes(seviye)").in("id", atananIds)
       : Promise.resolve({ data: [] }),
+    listeIds.length > 0
+      ? admin.from("okul_ogrenci_listesi").select("id, ad_soyad, student_id, classes(seviye, sube)").in("id", listeIds)
+      : Promise.resolve({ data: [] }),
   ]);
+  type ListeAdRow = { id: string; ad_soyad: string; student_id: string | null; classes: { seviye: string; sube: string } | { seviye: string; sube: string }[] | null };
+  const listeAdlari = new Map(((listeSatirlari ?? []) as unknown as ListeAdRow[]).map((l) => {
+    const sinif = Array.isArray(l.classes) ? l.classes[0] : l.classes;
+    return [l.id, `${l.ad_soyad}${sinif ? ` · ${sinif.seviye}-${sinif.sube}` : ""}${l.student_id ? "" : " · kayıtsız"}`] as const;
+  }));
   // Yükleyen seviye belirtmediyse (eski satırlar, karışık): bu denemede zaten
   // eşleşmiş öğrencilerin en az %70'i aynı seviyedeyse o seviye kullanılır.
   const seviyeSayaci = new Map<string, number>();
@@ -190,6 +201,7 @@ export async function pdfEslesmeBekleyenleriGetir(secim: PdfEslesmeSecimi): Prom
       onKayittaVarMi: onKayitAnahtarlari.has(`${r.school_id}|${adNormalize(r.ad_soyad_ham)}`),
       benzeyenOgrenciSayisi: (okulAdlari.get(r.school_id) ?? []).filter((ad) => adlarBenzerMi(r.ad_soyad_ham, ad)).length,
     };
+    const listeBagliAd = r.durum === "bekliyor" && r.liste_ogrenci_id ? (listeAdlari.get(r.liste_ogrenci_id) ?? "Listedeki öğrenci") : null;
     return {
       id: r.id, adSoyadHam: r.ad_soyad_ham, dersSonuclari: r.ders_sonuclari, yayinevi: r.yayinevi,
       tarih: r.tarih, tur: r.tur, schoolId: r.school_id, okulAdi: r.schools?.ad ?? "Bilinmiyor", createdAt: r.created_at,
@@ -197,14 +209,16 @@ export async function pdfEslesmeBekleyenleriGetir(secim: PdfEslesmeSecimi): Prom
       ogrenciNo: r.ogrenci_no,
       atananOgrenciAdi: r.atanan_student_id ? (atananAdlari.get(r.atanan_student_id) ?? "Bilinmiyor") : null,
       durumEtiketi: pdfEslesmeDurumEtiketi(girdi),
-      eslestirilebilir: eslestirilebilirMi(girdi),
+      eslestirilebilir: !listeBagliAd && eslestirilebilirMi(girdi),
+      listeBagliAd,
       sinifSeviyesi: r.sinif_seviyesi ?? tahminiSeviye,
     };
   });
   return { error: null, bekleyenler };
 }
 
-export interface PdfEslesmeOgrencisi { id: string; ad: string; sinif: string | null; yerlestirildi: boolean }
+// listeId dolu ise bu bir hesap değil, okul listesindeki henüz üye olmamış öğrencidir (id = "liste:<listeId>").
+export interface PdfEslesmeOgrencisi { id: string; ad: string; sinif: string | null; yerlestirildi: boolean; listeId?: string }
 
 // Bekleyen satırın kurumundaki öğrencileri (isim ara-seç için) getirir. Sınıf
 // da dönüyor — kullanıcı isteği (25.09.2026): tüm okul tek listede
@@ -238,12 +252,22 @@ export async function pdfEslesmeOgrencileriGetir(
     }
   }
 
-  const ogrenciler = satirlar
-    .map((o) => ({
+  // Okul listesinde olup henüz üye olmamış öğrenciler de seçilebilir: sonuç listeye bağlanır, üye olunca aktarılır.
+  const { data: kayitsizlar } = await admin.from("okul_ogrenci_listesi")
+    .select("id, ad_soyad, classes(seviye, sube)").eq("school_id", schoolId).is("student_id", null);
+  type KayitsizRow = { id: string; ad_soyad: string; classes: { seviye: string; sube: string } | { seviye: string; sube: string }[] | null };
+  const kayitsizOgrenciler: PdfEslesmeOgrencisi[] = ((kayitsizlar ?? []) as unknown as KayitsizRow[])
+    .map((l) => ({ l, sinif: Array.isArray(l.classes) ? l.classes[0] : l.classes }))
+    .filter(({ sinif }) => !sinifSeviyesi || sinif?.seviye === sinifSeviyesi)
+    .map(({ l, sinif }) => ({ id: `liste:${l.id}`, listeId: l.id, ad: l.ad_soyad, sinif: sinif ? `${sinif.seviye}-${sinif.sube}` : null, yerlestirildi: false }));
+
+  const ogrenciler: PdfEslesmeOgrencisi[] = [
+    ...satirlar.map((o) => ({
       id: o.id, ad: o.profiles!.ad, sinif: o.classes ? `${o.classes.seviye}-${o.classes.sube}` : null,
       yerlestirildi: yerlesenler.has(o.id),
-    }))
-    .sort((a, b) => a.ad.localeCompare(b.ad, "tr"));
+    })),
+    ...kayitsizOgrenciler,
+  ].sort((a, b) => a.ad.localeCompare(b.ad, "tr"));
   return { error: null, ogrenciler };
 }
 
@@ -303,6 +327,53 @@ export async function pdfEslesmeAta(id: string, studentId: string): Promise<{ er
     .update({ durum: "atandi", atanan_student_id: studentId }).eq("id", id);
   if (guncellemeHatasi) return { error: guncellemeHatasi.message };
   await admin.from("admin_audit_log").insert({ actor_id: user.id, eylem: "pdf_deneme_eslesme_ata", detay: { bekleyen_id: id, student_id: studentId } });
+  eslesmeYollariniYenile();
+  return { error: null };
+}
+
+// Okul listesindeki henüz üye olmamış öğrenciye bağlama (27.10.2026): 11-B'deki iki öğrencinin PDF
+// satırı yalnızca hesabı olanlar listelendiği için eşleştirilemiyordu. Sonuç bu aşamada yazılmaz;
+// satır "bekliyor" kalır ve öğrenci üye olunca ilk panel açılışında hesabına aktarılır
+// (on-kayitli-veri.ts onKayitliDenemeleriniAktar). Adaş koruması: aynı denemede bu liste
+// öğrencisine başka bir satır zaten bağlıysa durur.
+export async function pdfEslesmeListeyeBagla(id: string, listeId: string): Promise<{ error: string | null }> {
+  const { user, admin, kurumFiltresi } = await requireEslesmeYetkisi();
+  const { data: bekleyen, error: bulmaHatasi } = await admin.from("pdf_deneme_eslesme_bekleyenler")
+    .select("id, school_id, yayinevi, tarih, tur, liste_ogrenci_id").eq("id", id).eq("durum", "bekliyor").maybeSingle();
+  if (bulmaHatasi) return { error: bulmaHatasi.message };
+  if (!bekleyen) return { error: "Kayıt bulunamadı veya zaten işlenmiş." };
+  if (kurumFiltresi && bekleyen.school_id !== kurumFiltresi) return { error: "Bu kayıt kurumunuza ait değil." };
+  if (bekleyen.liste_ogrenci_id) return { error: "Bu satır zaten bir liste öğrencisine bağlı." };
+
+  const { data: liste, error: listeHatasi } = await admin.from("okul_ogrenci_listesi")
+    .select("id, school_id, student_id").eq("id", listeId).maybeSingle();
+  if (listeHatasi) return { error: listeHatasi.message };
+  if (!liste || liste.school_id !== bekleyen.school_id) return { error: "Seçilen öğrenci bu kurumun listesinde değil." };
+  if (liste.student_id) return { error: "Bu öğrencinin hesabı var; hesap olarak seçip atayın." };
+
+  const { data: ayniDenemede } = await admin.from("pdf_deneme_eslesme_bekleyenler").select("id, ad_soyad_ham")
+    .eq("school_id", bekleyen.school_id).eq("yayinevi", bekleyen.yayinevi).eq("tarih", bekleyen.tarih).eq("tur", bekleyen.tur)
+    .eq("durum", "bekliyor").eq("liste_ogrenci_id", listeId).limit(1).maybeSingle();
+  if (ayniDenemede) {
+    return { error: `Bu öğrenciye aynı denemeden "${ayniDenemede.ad_soyad_ham}" satırı zaten bağlı. İki satır aynı kişiye bağlanırsa biri diğerinin sonucunu bastırır.` };
+  }
+
+  const { error } = await admin.from("pdf_deneme_eslesme_bekleyenler").update({ liste_ogrenci_id: listeId })
+    .eq("id", id).eq("durum", "bekliyor").is("liste_ogrenci_id", null);
+  if (error) return { error: error.message };
+  await admin.from("admin_audit_log").insert({ actor_id: user.id, eylem: "pdf_deneme_eslesme_listeye_bagla", detay: { bekleyen_id: id, liste_ogrenci_id: listeId } });
+  eslesmeYollariniYenile();
+  return { error: null };
+}
+
+// Yanlış bağlanan satır serbest bırakılır (satır tekrar eşleştirme kuyruğunda seçilebilir olur).
+export async function pdfEslesmeListeBaginiKaldir(id: string): Promise<{ error: string | null }> {
+  const { user, admin, kurumFiltresi } = await requireEslesmeYetkisi();
+  let guncelleme = admin.from("pdf_deneme_eslesme_bekleyenler").update({ liste_ogrenci_id: null }).eq("id", id).eq("durum", "bekliyor");
+  if (kurumFiltresi) guncelleme = guncelleme.eq("school_id", kurumFiltresi);
+  const { error } = await guncelleme;
+  if (error) return { error: error.message };
+  await admin.from("admin_audit_log").insert({ actor_id: user.id, eylem: "pdf_deneme_eslesme_liste_bagini_kaldir", detay: { bekleyen_id: id } });
   eslesmeYollariniYenile();
   return { error: null };
 }
