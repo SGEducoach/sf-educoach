@@ -174,7 +174,7 @@ const SINIF_ANALIZI_MENU_OGESI: DashboardMenuOgesi = {
 const OGRETMEN_MENUSU: DashboardMenuOgesi[] = [
   { bolum: "ozet", href: "/dashboard", etiket: "Sınıflarım", ikon: "ana-sayfa" },
   { bolum: "sinif-analizi", href: "/dashboard?bolum=sinif-analizi", etiket: "Sınıf Analizi", ikon: "ogrenci" },
-  { bolum: "gorevler", href: "/dashboard/gorevler", etiket: "Ödev Ver", ikon: "gorev" },
+  { bolum: "gorevler", href: "/dashboard/odev-ver", etiket: "Ödev Ver", ikon: "gorev" },
   { bolum: "onaylar", href: "/dashboard/onaylar", etiket: "Bekleyen Onaylar", ikon: "onay" },
   { bolum: "yapay-zeka", href: "/dashboard/yapay-zeka", etiket: "Konu Durumu", ikon: "ai" },
   // Sınıf öğretmeni kendi sınıfının takip bildirimlerini görür (migration 0176);

@@ -13,6 +13,13 @@ const nextConfig: NextConfig = {
   }),
   // public/ altındaki değişmeyen statik görseller için tarayıcıya 1 yıllık
   // önbellek — tekrar ziyaretlerde ağdan tekrar indirilmezler.
+  // Öğretmen geri bildirimi (04.11.2026): "Ödev Ver" adresi /dashboard/gorevler
+  // görünüyordu. Bölüm anahtarı (gorevler) öğrencinin "Ödevlerim"iyle ortak ve
+  // kodun birçok yerinde geçtiği için değişmedi; öğretmen için okunur bir adres
+  // eklendi. Eski adres de çalışır.
+  async rewrites() {
+    return [{ source: "/dashboard/odev-ver", destination: "/dashboard/gorevler" }];
+  },
   async headers() {
     return [
       {

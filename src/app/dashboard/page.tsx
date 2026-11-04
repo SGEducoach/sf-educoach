@@ -18,6 +18,8 @@ import { denemeKarneleriGetir } from "@/lib/deneme-karnesi-verisi";
 // Deneme konu analizinde gösterilecek en fazla son deneme sayısı (tarih +
 // tür + yayınevi). Sınıf/okul geneli artık Konu Durumu'nda (konu-durumu.ts).
 const OGRENCI_DENEME_SAYISI = 12;
+// Sınıf Analizi'ndeki sınıf deneme konu analizi: son 3 deneme (grup kapsamı, satır sayısı sınıf × deneme).
+const SINIF_DENEME_SAYISI = 3;
 import { HosgeldinPopuplari } from "@/components/dashboard/HosgeldinPopuplari";
 import { OgretmenEpostaUyarisi } from "@/components/dashboard/OgretmenEpostaUyarisi";
 import { ZorunluSifreDegisikligiKapisi } from "@/components/dashboard/ZorunluSifreDegisikligiKapisi";
@@ -35,7 +37,7 @@ import { AYT_ALAN_ETIKET, sinifSiraKarsilastir, dokuzOnSinifMi, TYT_DERSLERI, AY
 import { MUFREDAT_KONULARI, konuOgrenciyeUygunMu, konuSeviyesi } from "@/lib/mufredat-konulari";
 import { kurumAltKonulariGetir, kurumHiyerarsiKonulari, kurumKonuOnerileri } from "@/lib/kurum-alt-konulari";
 import type { AytAlan, KurumTuru, UserRole } from "@/lib/types";
-import { BG1, BG1_ALT, BORDER, BORDER_STRONG, TEXT, TEXT_MUTED, MINT, MINT_BG, BUTTER, BUTTER_BG } from "@/lib/theme";
+import { BG1, BG1_ALT, BORDER, BORDER_STRONG, TEXT, TEXT_MUTED, MINT, MINT_BG, MINT_ON, BUTTER, BUTTER_BG } from "@/lib/theme";
 import { Gorevlerim } from "@/components/dashboard/Gorevlerim";
 import type { GorevSatiri } from "@/components/dashboard/Gorevlerim";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
@@ -1512,17 +1514,47 @@ async function OgretmenIcerik({ userId, role, kurumTuru, brans, secilenSinifId, 
     const kapsamEtiketi = role === "mudur" || rehberOgretmenMi
       ? okulRehberi ? `Sorumlu olduğunuz düzeyler: ${rehberSeviyeleri.join(", ")}` : "Tüm kurum"
       : analizSiniflari.length === 1 ? "Sınıfınız" : "Girdiğiniz sınıflar";
+    // Sınıfın deneme konu analizi (öğretmen geri bildirimi 04.11.2026:
+    // "öğretmen rolünde deneme analizi yok"): seçili sınıfın son karneli
+    // denemelerinde en çok net kaybedilen konular. Kapsam yukarıdaki
+    // sinifListesi'yle sınırlı; okul genelinde yüzlerce öğrencinin satırını
+    // çekmemek için bir seferde tek sınıf.
+    const yonetici = createAdminClient();
+    const denemeSinifi = analizSiniflari.find((s) => s.id === secilenSinifErisilebilir)
+      ?? analizSiniflari.find((s) => s.id === teacher.class_id) ?? analizSiniflari[0] ?? null;
+    const { data: denemeOgrencileri } = denemeSinifi
+      ? await yonetici.from("students").select("id").eq("class_id", denemeSinifi.id)
+      : { data: [] };
+    const sinifDenemeKonu = await denemeKonuAnaliziGetir(yonetici, ((denemeOgrencileri ?? []) as { id: string }[]).map((o) => o.id), SINIF_DENEME_SAYISI);
     return (
-      <SinifAnaliziPanel
-        ogrenciler={analiz.ogrenciler}
-        denemeSecenekleri={analiz.denemeSecenekleri}
-        kayipNesil={analiz.kayipNesil}
-        siniflar={analizSiniflari}
-        // Tek sınıfı olanda filtre anlamsız; birden çok sınıfa giren branş
-        // öğretmeni de artık süzebiliyor.
-        sinifSecilebilir={analizSiniflari.length > 1}
-        kapsamEtiketi={kapsamEtiketi}
-      />
+      <div className="flex flex-col gap-5">
+        <SinifAnaliziPanel
+          ogrenciler={analiz.ogrenciler}
+          denemeSecenekleri={analiz.denemeSecenekleri}
+          kayipNesil={analiz.kayipNesil}
+          siniflar={analizSiniflari}
+          // Tek sınıfı olanda filtre anlamsız; birden çok sınıfa giren branş
+          // öğretmeni de artık süzebiliyor.
+          sinifSecilebilir={analizSiniflari.length > 1}
+          kapsamEtiketi={kapsamEtiketi}
+        />
+        {denemeSinifi && (
+          <section id="deneme-analizi" className="flex flex-col gap-2 scroll-mt-24">
+            {analizSiniflari.length > 1 && (
+              <nav className="flex flex-wrap gap-2" aria-label="Deneme analizi sınıfı">
+                {analizSiniflari.map((s) => (
+                  <Link key={s.id} href={`/dashboard?bolum=sinif-analizi&sinif=${s.id}#deneme-analizi`}
+                    className="sfec-btn rounded-full px-3 py-1.5 text-xs font-bold"
+                    style={s.id === denemeSinifi.id ? { background: MINT, color: MINT_ON, border: `2px solid ${MINT}` } : { background: BG1, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
+                    {s.seviye}-{s.sube}
+                  </Link>
+                ))}
+              </nav>
+            )}
+            <DenemeKonuAnalizi ozet={sinifDenemeKonu.ozet} kapsam="grup" kapsamEtiketi={`${denemeSinifi.seviye}-${denemeSinifi.sube}`} hata={sinifDenemeKonu.error} />
+          </section>
+        )}
+      </div>
     );
   }
 

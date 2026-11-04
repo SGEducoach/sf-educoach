@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { kademeBul, kurumSeviyeleri, panelBransListesi, seviyeEtiketi } from "@/lib/kademe";
-import { konuSinifi, ogretmenOdevKonuAdayi } from "@/lib/mufredat-konulari";
+import { ogretmenOdevKonuAdayi } from "@/lib/mufredat-konulari";
+import { odevKonuGruplari } from "@/lib/odev-konu-secimi";
 import { ortaokulDersKarsilastir } from "@/lib/ortaokul-ders-sirasi";
 import type { KurumKademesi } from "@/lib/types";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -135,7 +136,7 @@ export function OgretmenPanel({
   // Mesaj kartı için son 3 haftanın ödevleri ve öğretmenin adı (yalnız Ödev ver bölümünde).
   mesajKartiGorevleri?: MesajKartiGorevi[];
   ogretmenAdi?: string | null;
-  konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
+  konuOnerileri: { ders: string; konu: string; seviye?: string | null; ustKonu?: string }[];
   // Kurumun kademesi: ortaokulda ödev formunun ders/konu havuzu ortaokul
   // müfredatından gelir (kullanıcı bildirimi 02.10.2026).
   kademe?: "ortaokul" | "lise" | "ikisi" | null;
@@ -364,7 +365,7 @@ export function OgretmenPanel({
             <div className="text-sm font-bold" style={{ color: TEXT }}>Tek öğrenci seçimi için sınıf</div>
             <div className="text-[11px]" style={{ color: TEXT_MUTED }}>Aşağıdaki formdan seçili derse girdiğiniz tüm sınıflara da doğrudan gönderebilirsiniz.</div>
           </div>
-          <select value={gorunecekSinifId ?? ""} onChange={(e) => router.push(`/dashboard/gorevler?sinif=${e.target.value}`)}
+          <select value={gorunecekSinifId ?? ""} onChange={(e) => router.push(`/dashboard/odev-ver?sinif=${e.target.value}`)}
             className="text-xs font-bold px-3 py-2 rounded-xl outline-none"
             style={{ background: BG1_ALT, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
             {siniflar.map((s) => <option key={s.id} value={s.id}>{s.seviye}-{s.sube}{s.id === kendiSinifId ? " (sınıfınız)" : ""}</option>)}
@@ -1225,7 +1226,7 @@ export function SinifEkleFormu({ schoolId, kademe }: { schoolId: string; kademe?
 // hepsine birden atanıyor. Öğrenci tarafında bu görev, ilgili mevcut veri
 // giriş formundan (Konu/Soru/Deneme) tamamlanıyor (bkz. Gorevlerim.tsx).
 export function GorevVerBolumu({ ogrenciler, kayitsizOgrenciler = [], konuOnerileri, topluSiniflar = [], sinifSeviyesi, kademe, gorevVerEylemi = gorevVer }: {
-  ogrenciler: OgrenciSatiri[]; konuOnerileri: { ders: string; konu: string; seviye?: string | null }[];
+  ogrenciler: OgrenciSatiri[]; konuOnerileri: { ders: string; konu: string; seviye?: string | null; ustKonu?: string }[];
   // Sisteme üye olmamış öğrenciler: ödev 10 gün saklanır, üye olurlarsa eklenir (migration 0179).
   kayitsizOgrenciler?: KayitsizOgrenciSatiri[];
   // Ortaokulda ders listesi LISE brans listesinden gelmez; konu havuzunun
@@ -1244,7 +1245,14 @@ export function GorevVerBolumu({ ogrenciler, kayitsizOgrenciler = [], konuOneril
   // açılır; yüzlerce öğrenciyi listelemek yerine yalnız sınıflar özetlenir.
   // İsterse kutunun işaretini kaldırıp mevcut sınıftan öğrenci seçebilir.
   const [tumSiniflaraGonder, setTumSiniflaraGonder] = useState(true);
+  // Sınıf sınıf gönderim (öğretmen geri bildirimi 04.11.2026: "sınıf sınıf ayrı
+  // ödev verilemiyor"): derse girilen sınıflardan istenenler seçilir;
+  // işaretsiz kalanlara ödev gitmez. null = hepsi seçili.
+  const [haricSiniflar, setHaricSiniflar] = useState<Set<string>>(new Set());
   const [konu, setKonu] = useState("");
+  // İki adımlı konu: ana konu, sonra (varsa) alt başlık. Ödeve yazılan
+  // konu: alt başlık seçildiyse alt başlık, değilse ana konu.
+  const [anaKonu, setAnaKonu] = useState("");
   const [hedefSoru, setHedefSoru] = useState("");
   const [hedefDakika, setHedefDakika] = useState("");
   const [tarih, setTarih] = useState(bugununTarihiTR);
@@ -1278,9 +1286,10 @@ export function GorevVerBolumu({ ogrenciler, kayitsizOgrenciler = [], konuOneril
     if (dersAnahtari(sinif.ders) === dersAnahtari(ders)) uygunSinifMap.set(sinif.classId, sinif);
   }
   const uygunTopluSiniflar = Array.from(uygunSinifMap.values());
-  const topluGonderimMumkun = uygunTopluSiniflar.length > 1 && ders !== "Genel";
+  const topluGonderimMumkun = uygunTopluSiniflar.length >= 1 && ders !== "Genel";
   const topluGonderimAktif = tumSiniflaraGonder && topluGonderimMumkun;
-  const hedefSeviyeler = new Set((topluGonderimAktif ? uygunTopluSiniflar.map((sinif) => sinif.sinifAdi.match(/^\d+/)?.[0]) : [sinifSeviyesi]).filter((seviye): seviye is string => !!seviye));
+  const seciliTopluSiniflar = uygunTopluSiniflar.filter((sinif) => !haricSiniflar.has(sinif.classId));
+  const hedefSeviyeler = new Set((topluGonderimAktif ? seciliTopluSiniflar.map((sinif) => sinif.sinifAdi.match(/^\d+/)?.[0]) : [sinifSeviyesi]).filter((seviye): seviye is string => !!seviye));
   // Öğretmen branşı lisede tek adla tutuluyor; konu havuzu TYT Türkçe ve
   // AYT Edebiyat başlıklarından oluşuyor.
   const turkDiliDersiMi = !ortaokulMu && (ders === "Türk Dili ve Edebiyatı" || ders === "Türkçe" || ders === "Edebiyat");
@@ -1292,11 +1301,8 @@ export function GorevVerBolumu({ ogrenciler, kayitsizOgrenciler = [], konuOneril
   // konusu) alt başlığını göremiyordu (öğretmen bildirimi 24.10.2026).
   const enUstHedefSinifi = Math.max(0, ...[...hedefSeviyeler].map(Number).filter(Number.isFinite));
   const dersKonulari = konuOnerileri.filter((k) => dersAdlari.has(k.ders) && ogretmenOdevKonuAdayi(k.seviye, [...hedefSeviyeler], ortaokulMu));
-  // Alt sınıftan gelen konuda sınıf yazılır ("… — 9. Sınıf"); hedef sınıfınki yalın kalır.
-  const konuEtiketi = (k: { konu: string; seviye?: string | null }) => {
-    const sinif = k.seviye ? konuSinifi(k.seviye) : null;
-    return !ortaokulMu && sinif !== null && sinif < enUstHedefSinifi ? `${k.konu} — ${k.seviye}` : k.konu;
-  };
+  const konuGruplari = odevKonuGruplari(dersKonulari, enUstHedefSinifi);
+  const seciliAnaKonu = konuGruplari.flatMap((g) => g.konular).find((k) => k.konu === anaKonu) ?? null;
 
   // Deneme görevinde "Ders" alanı anlamsız — TYT/AYT birden çok dersi birden
   // kapsıyor, tek bir ders seçmek yanıltıcı. Sadece Branş Denemesi (9-10.
@@ -1309,6 +1315,7 @@ export function GorevVerBolumu({ ogrenciler, kayitsizOgrenciler = [], konuOneril
   function turDegistir(yeni: GorevTuru) {
     setTur(yeni);
     setKonu("");
+    setAnaKonu("");
     if (yeni === "deneme") setDers("Genel");
     else if (ders === "Genel") setDers(dersSecenekleri[0] ?? BRANS_LISTESI[0]);
   }
@@ -1321,6 +1328,16 @@ export function GorevVerBolumu({ ogrenciler, kayitsizOgrenciler = [], konuOneril
   function dersDegistir(yeni: string) {
     setDers(yeni);
     setKonu("");
+    setAnaKonu("");
+    setHaricSiniflar(new Set());
+  }
+
+  function sinifToggle(classId: string) {
+    setHaricSiniflar((s) => {
+      const yeni = new Set(s);
+      if (yeni.has(classId)) yeni.delete(classId); else yeni.add(classId);
+      return yeni;
+    });
   }
 
   function ogrenciToggle(id: string) {
@@ -1349,12 +1366,13 @@ export function GorevVerBolumu({ ogrenciler, kayitsizOgrenciler = [], konuOneril
     e.preventDefault();
     setHata(null);
     setBasari(null);
+    if (topluGonderimAktif && seciliTopluSiniflar.length === 0) return setHata("En az bir sınıf seçin.");
     if (!topluGonderimAktif && secili.size === 0 && seciliKayitsiz.size === 0) return setHata("En az bir öğrenci seçin.");
     if (!ders.trim()) return setHata("Ders seçin.");
     startTransition(async () => {
       const res = await gorevVerEylemi({
         studentIds: topluGonderimAktif ? [] : Array.from(secili),
-        classIds: topluGonderimAktif ? uygunTopluSiniflar.map((sinif) => sinif.classId) : undefined,
+        classIds: topluGonderimAktif ? seciliTopluSiniflar.map((sinif) => sinif.classId) : undefined,
         listeOgrenciIds: topluGonderimAktif || seciliKayitsiz.size === 0 ? undefined : Array.from(seciliKayitsiz),
         tur, ders, konu: konu || undefined,
         hedefSoruSayisi: hedefSoru ? Number(hedefSoru) : undefined,
@@ -1369,7 +1387,7 @@ export function GorevVerBolumu({ ogrenciler, kayitsizOgrenciler = [], konuOneril
         const bekleyenNotu = res.bekleyenSayisi ? ` ${res.bekleyenSayisi} öğrenci sisteme kayıtlı değil: ödev ${ON_KAYIT_BEKLEME_GUNU} gün saklanır, bu sürede üye olurlarsa ödevlerine eklenir.` : "";
         setBasari(`Görev ${ogrenciSayisi} öğrenciye verildi.${bekleyenNotu}`);
         setSeciliKayitsiz(new Set());
-        setKonu(""); setHedefSoru(""); setHedefDakika(""); setSonTarih(""); setBaslangicSaat(""); setBitisSaat(""); setAciklama("");
+        setKonu(""); setAnaKonu(""); setHedefSoru(""); setHedefDakika(""); setSonTarih(""); setBaslangicSaat(""); setBitisSaat(""); setAciklama("");
       }
     });
   }
@@ -1384,14 +1402,44 @@ export function GorevVerBolumu({ ogrenciler, kayitsizOgrenciler = [], konuOneril
       </div>
 
       <form onSubmit={gonder} className="flex flex-col gap-3">
-        {topluGonderimMumkun && (
-          <label className="flex cursor-pointer items-start gap-3 rounded-2xl p-3" style={{ background: tumSiniflaraGonder ? MINT_BG : BG1_ALT, border: `2px solid ${tumSiniflaraGonder ? MINT : BORDER}` }}>
-            <input type="checkbox" checked={tumSiniflaraGonder} onChange={(e) => setTumSiniflaraGonder(e.target.checked)} className="mt-0.5 h-4 w-4 accent-current" />
-            <span className="min-w-0">
-              <strong className="block text-sm" style={{ color: TEXT }}>Bu derse girdiğim tüm sınıflara gönder</strong>
-              <span className="mt-0.5 block text-[11px]" style={{ color: TEXT_MUTED }}>{uygunTopluSiniflar.map((sinif) => sinif.sinifAdi).join(", ")} · Öğrenci listesi açılmadan toplu atanır; sisteme kayıtlı olmayanlar için ödev {ON_KAYIT_BEKLEME_GUNU} gün saklanır.</span>
-            </span>
-          </label>
+        {topluGonderimMumkun ? (
+          <div className="flex flex-col gap-2 rounded-2xl p-3" style={{ background: tumSiniflaraGonder ? MINT_BG : BG1_ALT, border: `2px solid ${tumSiniflaraGonder ? MINT : BORDER}` }}>
+            <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Kime verilecek">
+              {([[true, "Sınıf sınıf ver"], [false, "Öğrenci seçerek ver"]] as const).map(([deger, ad]) => (
+                <button key={ad} type="button" role="radio" aria-checked={tumSiniflaraGonder === deger} onClick={() => setTumSiniflaraGonder(deger)}
+                  className="sfec-btn rounded-full px-3 py-1.5 text-xs font-bold"
+                  style={tumSiniflaraGonder === deger ? { background: MINT, color: MINT_ON, border: `2px solid ${MINT}` } : { background: BG1, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
+                  {ad}
+                </button>
+              ))}
+            </div>
+            {tumSiniflaraGonder ? (
+              <>
+                <div className="flex flex-wrap gap-2" aria-label="Sınıflar">
+                  {uygunTopluSiniflar.map((sinif) => {
+                    const sinifSecili = !haricSiniflar.has(sinif.classId);
+                    return (
+                      <button key={sinif.classId} type="button" aria-pressed={sinifSecili} onClick={() => sinifToggle(sinif.classId)}
+                        className="sfec-btn inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-bold"
+                        style={sinifSecili ? { background: MINT, color: MINT_ON, border: `2px solid ${MINT}` } : { background: BG1, color: TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
+                        {sinifSecili && <Check size={11} />} {sinif.sinifAdi}
+                      </button>
+                    );
+                  })}
+                </div>
+                <span className="text-[11px]" style={{ color: TEXT_MUTED }}>
+                  Seçili {seciliTopluSiniflar.length} sınıfın bütün öğrencilerine verilir; işaretini kaldırdığınız sınıfa gitmez. Sisteme kayıtlı olmayanlar için ödev {ON_KAYIT_BEKLEME_GUNU} gün saklanır.
+                </span>
+              </>
+            ) : (
+              <span className="text-[11px]" style={{ color: TEXT_MUTED }}>Öğrencileri, en üstte seçtiğiniz sınıfın listesinden işaretleyin.</span>
+            )}
+          </div>
+        ) : ders !== "Genel" && (
+          <p className="rounded-2xl p-3 text-[11px]" style={{ background: BG1_ALT, color: TEXT_MUTED, border: `2px solid ${BORDER}` }}>
+            Bu derse girdiğiniz sınıflar tanımlı değil; şu an yalnız en üstte seçili sınıftan öğrenci seçebilirsiniz. Sınıf sınıf ödev vermek için girdiğiniz sınıfları{" "}
+            <Link href="/dashboard/takvim?sekme=ders" className="font-bold underline" style={{ color: TEXT }}>Okul İşlemleri → Derslerim</Link>{" "}bölümünden ekleyin.
+          </p>
         )}
 
         {!topluGonderimAktif && <div className="flex flex-col gap-1.5">
@@ -1490,14 +1538,30 @@ export function GorevVerBolumu({ ogrenciler, kayitsizOgrenciler = [], konuOneril
               </select>
             </label>
           ) : (
-            <label className="flex flex-col gap-1">
-              <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Konu (opsiyonel)</span>
-              <select value={konu} onChange={(e) => setKonu(e.target.value)}
-                className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
-                <option value="">Seçiniz (opsiyonel)</option>
-                {dersKonulari.map((k) => <option key={`${k.ders}-${k.seviye ?? ""}-${k.konu}`} value={k.konu}>{konuEtiketi(k)}</option>)}
-              </select>
-            </label>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="flex flex-col gap-1">
+                <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Konu (opsiyonel)</span>
+                <select value={anaKonu} onChange={(e) => { setAnaKonu(e.target.value); setKonu(e.target.value); }}
+                  className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
+                  <option value="">Seçiniz (opsiyonel)</option>
+                  {konuGruplari.map((g) => (
+                    <optgroup key={g.baslik} label={g.baslik}>
+                      {g.konular.map((k) => <option key={`${g.baslik}-${k.konu}`} value={k.konu}>{k.konu}</option>)}
+                    </optgroup>
+                  ))}
+                </select>
+              </label>
+              {seciliAnaKonu && seciliAnaKonu.altBasliklar.length > 0 && (
+                <label className="flex flex-col gap-1">
+                  <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Alt başlık (opsiyonel)</span>
+                  <select value={konu === anaKonu ? "" : konu} onChange={(e) => setKonu(e.target.value || anaKonu)}
+                    className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }}>
+                    <option value="">Konunun tamamı</option>
+                    {seciliAnaKonu.altBasliklar.map((a) => <option key={a} value={a}>{a}</option>)}
+                  </select>
+                </label>
+              )}
+            </div>
           )}
 
           {/* Kullanıcı isteği (02.10.2026): konunun ALTINDA, konuyu daraltan
@@ -1507,7 +1571,7 @@ export function GorevVerBolumu({ ogrenciler, kayitsizOgrenciler = [], konuOneril
               bu iş için vardı, yalnızca formun en altında, konudan kopuk
               duruyordu. Öğrenci bunu görev kartında okuyor. */}
           <label className="flex flex-col gap-1 sm:col-span-2">
-            <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Alt başlık / öğretmen notu (opsiyonel)</span>
+            <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Öğretmen notu (opsiyonel)</span>
             <input value={aciklama} onChange={(e) => setAciklama(e.target.value)} maxLength={200}
               placeholder="örn. sayfa 42-48 · yalnız çift sayılar · defterden tekrar"
               className="text-sm px-2.5 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT, color: TEXT }} />
@@ -1566,7 +1630,7 @@ export function GorevVerBolumu({ ogrenciler, kayitsizOgrenciler = [], konuOneril
         {basari && <div style={{ color: MINT }} className="text-xs font-semibold">{basari}</div>}
         <button type="submit" disabled={pending}
           className="sfec-btn text-sm font-bold py-2.5 rounded-xl disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>
-          {pending ? "Gönderiliyor..." : topluGonderimAktif ? `Tüm sınıflara ödev ver (${uygunTopluSiniflar.length} sınıf)` : `Ödev ver${secili.size > 1 ? ` (${secili.size} öğrenci)` : ""}`}
+          {pending ? "Gönderiliyor..." : topluGonderimAktif ? `Seçili sınıflara ödev ver (${seciliTopluSiniflar.length} sınıf)` : `Ödev ver${secili.size > 1 ? ` (${secili.size} öğrenci)` : ""}`}
         </button>
       </form>
     </div>

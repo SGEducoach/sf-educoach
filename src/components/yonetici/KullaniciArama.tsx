@@ -77,6 +77,8 @@ export function KullaniciArama() {
   const [pending, startTransition] = useTransition();
   const [sayfaBoyutu, setSayfaBoyutu] = useState<number>(kayitli?.sayfaBoyutu ?? VARSAYILAN_SAYFA_BOYUTU);
   const [sayfa, setSayfa] = useState(1);
+  // Öğretmen branşı süzgeci (kullanıcı isteği 04.11.2026); sonuçların içinde süzülür.
+  const [brans, setBrans] = useState("");
 
   useEffect(() => {
     // Bu Next.js sürümünde server action'lar useEffect içinden çağrılırken
@@ -106,12 +108,16 @@ export function KullaniciArama() {
 
   const seciliOkul = okullar.find((o) => o.id === schoolId) ?? null;
 
-  const sayfaSayisi = Math.max(1, Math.ceil(sonuclar.length / sayfaBoyutu));
+  // Sınıf süzgeci "seviye:11" (düzey) ya da şube kimliği taşır.
+  const seviyeler = [...new Set((seciliOkul?.siniflar ?? []).map((s) => s.ad.split("-")[0]))];
+  const bransSecenekleri = [...new Set(sonuclar.map((k) => k.brans).filter((b): b is string => !!b))].sort((a, b) => a.localeCompare(b, "tr"));
+  const gorunenSonuclar = rol === "ogretmen" && brans ? sonuclar.filter((k) => k.brans === brans) : sonuclar;
+  const sayfaSayisi = Math.max(1, Math.ceil(gorunenSonuclar.length / sayfaBoyutu));
   // Liste kısaldığında (arama daraltıldı, kullanıcı silindi) son sayfada
   // kalıp boş ekran görmemek için sayfa numarası her render'da sınırlanıyor.
   const aktifSayfa = Math.min(sayfa, sayfaSayisi);
   const ilkSira = (aktifSayfa - 1) * sayfaBoyutu;
-  const sayfadakiler = sonuclar.slice(ilkSira, ilkSira + sayfaBoyutu);
+  const sayfadakiler = gorunenSonuclar.slice(ilkSira, ilkSira + sayfaBoyutu);
 
   function ara(q: string, r: UserRole | "hepsi", sinif: string) {
     if (!schoolId) return;
@@ -122,7 +128,9 @@ export function KullaniciArama() {
     const aranacakMetin = q.trim().length >= 2 ? q : "";
 
     startTransition(async () => {
-      const res = await kullaniciAra(aranacakMetin, r, schoolId, (r === "ogrenci" || r === "veli") && sinif ? sinif : undefined);
+      const seviye = sinif.startsWith("seviye:") ? sinif.slice(7) : undefined;
+      const sube = !seviye && sinif && (r === "ogrenci" || r === "veli") ? sinif : undefined;
+      const res = await kullaniciAra(aranacakMetin, r, schoolId, sube, r === "mudur" ? undefined : seviye);
       if (res.error) return setHata(res.error);
 
       setSonuclar(res.sonuclar);
@@ -206,11 +214,26 @@ export function KullaniciArama() {
                     style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}
                   />
                 </div>
-                {(rol === "ogrenci" || rol === "veli") && (
+                {(rol === "ogrenci" || rol === "veli" || rol === "ogretmen") && (
                   <select value={sinifId} onChange={(e) => { setSinifId(e.target.value); ara(sorgu, rol, e.target.value); }}
+                    aria-label={rol === "ogretmen" ? "Girdiği sınıf düzeyi" : "Sınıf"}
                     className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
-                    <option value="">Tüm sınıflar</option>
-                    {seciliOkul?.siniflar.map((s) => <option key={s.id} value={s.id}>{s.ad}</option>)}
+                    <option value="">{rol === "ogretmen" ? "Tüm düzeyler" : "Tüm sınıflar"}</option>
+                    <optgroup label={rol === "ogretmen" ? "Girdiği sınıf düzeyi" : "Sınıf düzeyi"}>
+                      {seviyeler.map((s) => <option key={s} value={`seviye:${s}`}>{/^\d+$/.test(s) ? `${s}. sınıf` : s}</option>)}
+                    </optgroup>
+                    {rol !== "ogretmen" && (
+                      <optgroup label="Şube">
+                        {seciliOkul?.siniflar.map((s) => <option key={s.id} value={s.id}>{s.ad}</option>)}
+                      </optgroup>
+                    )}
+                  </select>
+                )}
+                {rol === "ogretmen" && bransSecenekleri.length > 0 && (
+                  <select value={brans} onChange={(e) => { setBrans(e.target.value); setSayfa(1); }} aria-label="Branş"
+                    className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
+                    <option value="">Tüm branşlar</option>
+                    {bransSecenekleri.map((b) => <option key={b} value={b}>{b}</option>)}
                   </select>
                 )}
               </div>
@@ -220,7 +243,7 @@ export function KullaniciArama() {
                   const aktif = rol === r.id;
                   return (
                     <button key={r.id} type="button"
-                      onClick={() => { setRol(r.id); setSinifId(""); ara(sorgu, r.id, ""); }}
+                      onClick={() => { setRol(r.id); setSinifId(""); setBrans(""); ara(sorgu, r.id, ""); }}
                       className="sfec-btn text-[11px] font-bold px-3 py-1.5 rounded-full"
                       style={{ background: aktif ? MINT : "rgba(255,255,255,0.06)", color: aktif ? MINT_ON : TEXT_MUTED, border: `2px solid ${BORDER_STRONG}` }}>
                       {r.ad}
@@ -233,13 +256,13 @@ export function KullaniciArama() {
 
               {pending ? (
                 <p style={{ color: TEXT_MUTED }} className="text-sm py-3 text-center">Aranıyor...</p>
-              ) : aramaYapildi && sonuclar.length === 0 ? (
+              ) : aramaYapildi && gorunenSonuclar.length === 0 ? (
                 <p style={{ color: TEXT_MUTED }} className="text-sm py-3 text-center">Sonuç bulunamadı.</p>
-              ) : sonuclar.length > 0 ? (
+              ) : gorunenSonuclar.length > 0 ? (
                 <>
                   <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
                     <span style={{ color: TEXT_MUTED }} className="text-[11px] font-semibold">
-                      {sonuclar.length} kullanıcı · {ilkSira + 1}-{ilkSira + sayfadakiler.length} arası gösteriliyor
+                      {gorunenSonuclar.length} kullanıcı · {ilkSira + 1}-{ilkSira + sayfadakiler.length} arası gösteriliyor
                     </span>
                     <div className="flex items-center gap-1.5">
                       <span style={{ color: TEXT_MUTED }} className="text-[10px] font-semibold uppercase tracking-wide">Sayfa başına</span>

@@ -85,17 +85,39 @@ export interface KullaniciSonuc {
 // başlat" — kurum artık ZORUNLU ilk filtre (bkz. KullaniciArama.tsx'teki
 // yeni kurum seçim ekranı); classId ise sadece öğrenci listesini sınıf
 // bazlı daraltmak için opsiyonel.
-export async function kullaniciAra(sorgu: string, rolFiltre: UserRole | "hepsi", schoolId: string, classId?: string): Promise<{ error: string | null; sonuclar: KullaniciSonuc[] }> {
+export async function kullaniciAra(sorgu: string, rolFiltre: UserRole | "hepsi", schoolId: string, classId?: string, seviye?: string): Promise<{ error: string | null; sonuclar: KullaniciSonuc[] }> {
   const { supabase, admin } = await requireAdmin();
   const q = sorgu.trim();
+
+  // Sınıf düzeyi süzgeci (kullanıcı isteği 04.11.2026: "11. sınıf
+  // öğrencileri", "10. sınıf öğretmenleri"): o düzeyin şubeleri. Öğrenci ve
+  // velide çocuğun sınıfı, öğretmende sınıf öğretmeni olduğu ya da ders
+  // verdiği sınıflar; müdürde süzgeç yok.
+  let sinifKapsami: string[] | null = classId ? [classId] : null;
+  if (!classId && seviye) {
+    const { data } = await admin.from("classes").select("id").eq("school_id", schoolId).eq("seviye", seviye);
+    sinifKapsami = ((data ?? []) as { id: string }[]).map((s) => s.id);
+    if (sinifKapsami.length === 0) return { error: null, sonuclar: [] };
+  }
+  let ogretmenKapsami: Set<string> | null = null;
+  if (sinifKapsami && (rolFiltre === "ogretmen" || rolFiltre === "hepsi")) {
+    const [{ data: sinifOgretmenleri }, { data: dersVerenler }] = await Promise.all([
+      admin.from("teachers").select("id").eq("school_id", schoolId).in("class_id", sinifKapsami),
+      admin.from("ogretmen_dersleri").select("teacher_id").in("class_id", sinifKapsami),
+    ]);
+    ogretmenKapsami = new Set([
+      ...((sinifOgretmenleri ?? []) as { id: string }[]).map((t) => t.id),
+      ...((dersVerenler ?? []) as { teacher_id: string }[]).map((t) => t.teacher_id),
+    ]);
+  }
 
   // Kurum (ve varsa sınıf) kapsamındaki profil id'lerini önce belirle —
   // profiles tablosunun kendisinde school_id yok, students/teachers/
   // parent_students üzerinden dolaylı olarak bulunuyor.
-  const [{ data: ogrenciler }, { data: ogretmenler }, { data: veliBaglantilari }] = await Promise.all([
+  const [{ data: ogrenciler }, { data: ogretmenlerHam }, { data: veliBaglantilari }] = await Promise.all([
     (rolFiltre === "hepsi" || rolFiltre === "ogrenci")
-      ? (classId
-          ? supabase.from("students").select("id").eq("school_id", schoolId).eq("class_id", classId)
+      ? (sinifKapsami
+          ? supabase.from("students").select("id").eq("school_id", schoolId).in("class_id", sinifKapsami)
           : supabase.from("students").select("id").eq("school_id", schoolId))
       : Promise.resolve({ data: [] as { id: string }[] }),
     (rolFiltre === "hepsi" || rolFiltre === "ogretmen" || rolFiltre === "mudur")
@@ -109,11 +131,12 @@ export async function kullaniciAra(sorgu: string, rolFiltre: UserRole | "hepsi",
     // geçirildi (bu dosyada veli_link_requests için zaten kullanılan aynı
     // desen, bkz. veliTalepleriGetir).
     (rolFiltre === "hepsi" || rolFiltre === "veli")
-      ? (classId
-          ? admin.from("parent_students").select("parent_id, students!inner(school_id, class_id)").eq("students.school_id", schoolId).eq("students.class_id", classId)
+      ? (sinifKapsami
+          ? admin.from("parent_students").select("parent_id, students!inner(school_id, class_id)").eq("students.school_id", schoolId).in("students.class_id", sinifKapsami)
           : admin.from("parent_students").select("parent_id, students!inner(school_id)").eq("students.school_id", schoolId))
       : Promise.resolve({ data: [] as { parent_id: string }[] }),
   ]);
+  const ogretmenler = ((ogretmenlerHam ?? []) as { id: string }[]).filter((t) => !ogretmenKapsami || ogretmenKapsami.has(t.id));
 
   const kurumKapsamindakiIdler = [
     ...(ogrenciler ?? []).map((o) => o.id),
