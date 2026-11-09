@@ -3,7 +3,7 @@ import { netHesapla } from "@/lib/types";
 import type { DenemeTuru, HedefeYakinlik, VerimlilikDuzeyi } from "@/lib/types";
 import { TYT_DERSLERI, BRANS_DENEMESI_DERSLERI, dersSoruSayisi, dokuzOnSinifMi } from "@/lib/types";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
-import { trendHesapla, hizDogrulukKategorisiBelirle, hedefProjeksiyonuHesapla, makasTeshisiBelirle } from "@/lib/analiz-motoru";
+import { trendHesapla, turTrendleriniBirlestir, hizDogrulukKategorisiBelirle, hedefProjeksiyonuHesapla, makasTeshisiBelirle } from "@/lib/analiz-motoru";
 import type { TrendSonucu, HizDogrulukKategorisi, RegresyonNoktasi, HedefProjeksiyonuSonucu, MakasTeshisi } from "@/lib/analiz-motoru";
 import {
   CALISMA_KATSAYISI, DOGRULUK_ESIGI_CALISMA, dersTempoButcesi, olcumGecerliMi, sinavProjeksiyonu,
@@ -215,7 +215,9 @@ export async function analizVerisiGetir(
     gunOffset: tarihGunFarki(d.tarih, denemeTrend[0]?.tarih ?? d.tarih),
     deger: d.net,
   }));
-  const denemeTrendYonu = trendHesapla(denemeTrendNoktalari);
+  // 9-10'da tek tür (Branş) var; 11-12'de TYT/AYT karışmasın diye genel yön
+  // aşağıda türlerin kendi trendlerinden kurulur (turTrendleriniBirlestir).
+  const bransGenelTrend = trendHesapla(denemeTrendNoktalari);
 
   // Ders bazlı net trendi — dersGunlukNet zaten tarih'e göre artan sıralı.
   const dersTrendYonu: Record<string, TrendSonucu> = {};
@@ -243,6 +245,9 @@ export async function analizVerisiGetir(
     }));
     denemeTrendYonuTur[tur] = trendHesapla(noktalar);
   }
+  const denemeTrendYonu = denemeKapsami === "brans"
+    ? bransGenelTrend
+    : turTrendleriniBirlestir([denemeTrendYonuTur.TYT, denemeTrendYonuTur.AYT]);
 
   const hedefProjeksiyonlari: AnalizVerisi["hedefProjeksiyonlari"] = [];
   if (hedefNetTyt !== null) {

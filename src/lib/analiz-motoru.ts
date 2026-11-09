@@ -178,6 +178,21 @@ export function trendHesapla(noktalar: RegresyonNoktasi[]): TrendSonucu {
   };
 }
 
+// Kullanıcı bulgusu (09.11.2026): TYT (120 soru) ve AYT (80 soru) netleri tek
+// seride regresyona girince TYT'si yükselen öğrenci, araya giren düşük AYT
+// netleri yüzünden "Düşüyor" görünüyordu. Genel yön artık her türün KENDİ
+// trendinden türetilir: hepsi aynı yöndeyse o yön; biri durgunsa hareket
+// eden; biri yükselip öteki düşüyorsa tek bir yön söylenemez (null).
+export function turTrendleriniBirlestir(trendler: TrendSonucu[]): TrendSonucu {
+  const belirli = trendler.filter((t) => t.yon !== null);
+  if (belirli.length === 0) return { yon: null, haftalikDegisim: null };
+  if (belirli.length === 1) return belirli[0];
+  const yonler = new Set(belirli.map((t) => t.yon));
+  if (yonler.size === 1) return { yon: belirli[0].yon, haftalikDegisim: null };
+  if (yonler.has("yukselen") && yonler.has("dusen")) return { yon: null, haftalikDegisim: null };
+  return belirli.find((t) => t.yon !== "durgun") ?? { yon: null, haftalikDegisim: null };
+}
+
 // ============ Katman 4: hız / verimlilik analizi ============
 //
 // soru_cozumleri'nden ders bazlı "soru başı ortalama süre" ve doğruluk
@@ -366,6 +381,8 @@ function oncelikIcgorusu(oncelikSiralamasi: OncelikSatiri[]): string | null {
 
 export interface IcgoruGirdisi {
   denemeTrend: TrendSonucu;
+  /** 11-12 (TYT/AYT) öğrencisinde verilir: trend cümlesi her tür için ayrı kurulur, genel trend kullanılmaz. */
+  denemeTrendTur?: Partial<Record<"TYT" | "AYT", TrendSonucu>>;
   dersTrendleri: Record<string, TrendSonucu>;
   hizDogruluk: { ders: string; kategori: HizDogrulukKategorisi }[];
   oncelikSiralamasi: OncelikSatiri[];
@@ -389,8 +406,16 @@ export function icgoruMetinleriOlustur(girdi: IcgoruGirdisi): string[] {
   const oncelik = oncelikIcgorusu(girdi.oncelikSiralamasi);
   if (oncelik) metinler.push(oncelik);
 
-  const genelTrend = trendIcgorusu("Genel deneme netin", girdi.denemeTrend);
-  if (genelTrend) metinler.push(genelTrend);
+  if (girdi.denemeTrendTur) {
+    for (const tur of ["TYT", "AYT"] as const) {
+      const t = girdi.denemeTrendTur[tur];
+      const metin = t ? trendIcgorusu(`${tur} netin`, t) : null;
+      if (metin) metinler.push(metin);
+    }
+  } else {
+    const genelTrend = trendIcgorusu("Genel deneme netin", girdi.denemeTrend);
+    if (genelTrend) metinler.push(genelTrend);
+  }
 
   // En belirgin (mutlak değeri en büyük) TEK ders trendi — hepsini
   // eklemek gürültü olur.

@@ -86,11 +86,12 @@ export function AnalizPaneli({
   const hicVeriYok = oncelikSiralamasi.length > 0 && oncelikSiralamasi.every((s) => s.masterySkoru === null);
   const icgoruler = useMemo(() => icgoruMetinleriOlustur({
     denemeTrend: veri.denemeTrendYonu,
+    denemeTrendTur: veri.denemeKapsami === "brans" ? undefined : veri.denemeTrendYonuTur,
     dersTrendleri: veri.dersTrendYonu,
     hizDogruluk: veri.dersHizDogruluk,
     oncelikSiralamasi,
     hedefProjeksiyonlari: veri.hedefProjeksiyonlari,
-  }), [veri.denemeTrendYonu, veri.dersTrendYonu, veri.dersHizDogruluk, oncelikSiralamasi, veri.hedefProjeksiyonlari]);
+  }), [veri.denemeTrendYonu, veri.denemeKapsami, veri.denemeTrendYonuTur, veri.dersTrendYonu, veri.dersHizDogruluk, oncelikSiralamasi, veri.hedefProjeksiyonlari]);
 
   // Analiz Motoru Faz A5 — Katman 7 (risk skoru) girdisi: Konu Hakimiyeti'nde
   // BEYAN EDİLMİŞ konular arasında bayatlamış (90+ gün) olanların oranı.
@@ -211,7 +212,12 @@ export function AnalizPaneli({
         <div className="sfec-grafik-karti sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
           <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
             <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Deneme net trendi{veri.donem !== "tum" ? ` — ${RAPOR_DONEMI_ETIKET[veri.donem]}` : ""}</span>
-            <TrendRozeti trend={veri.denemeTrendYonu} />
+            {bransKapsami ? <TrendRozeti trend={veri.denemeTrendYonu} /> : (
+              <span className="flex items-center gap-1.5 flex-wrap">
+                <TrendRozeti trend={veri.denemeTrendYonuTur.TYT} onEk="TYT" />
+                <TrendRozeti trend={veri.denemeTrendYonuTur.AYT} onEk="AYT" />
+              </span>
+            )}
           </div>
           {denemeChartData.length === 0 ? (
             <BosDurum />
@@ -316,8 +322,18 @@ function DonemOzeti({ veri, onGenel }: { veri: AnalizVerisi; onGenel: () => void
   const konuDakika = veri.konuCalismaGunluk.reduce((toplam, kayit) => toplam + kayit.dakika, 0);
   const soruSayisi = veri.soruCozumuGunluk.reduce((toplam, kayit) => toplam + kayit.soru, 0);
   const denemeSayisi = veri.denemeTrend.length;
+  // TYT ve AYT netleri farklı ölçekte: ortalama her tür için ayrı verilir.
+  const turEtiketi: Record<string, string> = { TYT: "TYT", AYT: "AYT", BRANS: "Branş" };
   const denemeOrtalamasi = denemeSayisi > 0
-    ? Math.round((veri.denemeTrend.reduce((toplam, kayit) => toplam + kayit.net, 0) / denemeSayisi) * 100) / 100
+    ? (["TYT", "AYT", "BRANS"] as const)
+      .map((tur) => {
+        const liste = veri.denemeTrend.filter((d) => d.tur === tur);
+        if (liste.length === 0) return null;
+        const ort = Math.round((liste.reduce((t, d) => t + d.net, 0) / liste.length) * 100) / 100;
+        return `${turEtiketi[tur]} ${ort.toLocaleString("tr-TR")}`;
+      })
+      .filter(Boolean)
+      .join(" · ")
     : null;
   const donemEtiketi = RAPOR_DONEMI_ETIKET[veri.donem];
 
@@ -519,7 +535,7 @@ function HedefDuzenleyici({ hedefNetTyt, hedefNetAyt }: { hedefNetTyt: number | 
 // Analiz Motoru Faz A2, Katman 3 — doğrusal regresyonla çıkarılan net
 // trendi (genel veya tek ders) için küçük bir yön rozeti. Trend hesaplanamıyorsa
 // (2'den az veri noktası) hiçbir şey göstermez.
-function TrendRozeti({ trend }: { trend: TrendSonucu }) {
+function TrendRozeti({ trend, onEk }: { trend: TrendSonucu; onEk?: string }) {
   if (trend.yon === null) return null;
   const Icon = trend.yon === "yukselen" ? TrendingUp : trend.yon === "dusen" ? TrendingDown : Minus;
   const renk = trend.yon === "yukselen" ? MINT : trend.yon === "dusen" ? BLUSH : TEXT_MUTED;
@@ -528,7 +544,7 @@ function TrendRozeti({ trend }: { trend: TrendSonucu }) {
   return (
     <span className="text-[11px] font-bold px-2.5 py-1 rounded-full inline-flex items-center gap-1 shrink-0" style={{ background: bg, color: renk }}>
       <Icon size={12} />
-      {etiket}
+      {onEk ? `${onEk} ${etiket.toLocaleLowerCase("tr-TR")}` : etiket}
     </span>
   );
 }
