@@ -26,13 +26,13 @@ interface ListeSatiri {
 }
 const net = (d: number, y: number) => (d - y / 4).toFixed(2);
 
-function listeSayfasi(satirlar: ListeSatiri[], baslik = "ÖĞRENCİ LİSTESİ - KURUM - 9-10.SINIF SIRALI"): GenisMetin[] {
+function listeSayfasi(satirlar: ListeSatiri[], baslik = "ÖĞRENCİ LİSTESİ - KURUM - 9-10.SINIF SIRALI", turkceBasligi = "TÜRK DİLİ"): GenisMetin[] {
   const o: GenisMetin[] = [
     oge(baslik, 294, 564),
     oge("SINAV ADI", 583, 531), oge("İL", 64, 531),
     oge("GENEL", 731, 522),
     oge("9.SINIF TG DENEME-1", 570, 500), oge("517", 735, 500), oge("119", 761, 500),
-    oge("TÜRK DİLİ", 179, 477), oge("SOSYAL BİLİMLER", 271, 477), oge("MATEMATİK", 383, 477), oge("FEN BİLİMLERİ", 483, 477), oge("Toplam", 597, 477),
+    oge(turkceBasligi, 179, 477), oge("SOSYAL BİLİMLER", 271, 477), oge("MATEMATİK", 383, 477), oge("FEN BİLİMLERİ", 483, 477), oge("Toplam", 597, 477),
     oge("Ögr.Bilgileri", 53, 469),
   ];
   HARF_X.forEach((x, i) => o.push(oge("DYN"[i % 3], x, 460, 6)));
@@ -62,6 +62,13 @@ const S2: ListeSatiri = { sira: 10, birlesikSira: true, no: 40, ad: "ÖĞRENCİ 
 const S3: ListeSatiri = { sira: 11, no: 33, ad: "ÖĞRENCİ ÜÇ", sinif: "0 / 0", dersler: [[10, 10], [12, 8], [9, 11], [14, 6]], puan: 150.25 };
 
 describe("kurumListesiniCoz", () => {
+  test("12. sınıf TYT listesi: Türkçe başlığı \"TÜRKÇE\" yazsa da okunur", () => {
+    const s12: ListeSatiri = { ...S1, sinif: "12 / C" };
+    const r = kurumListesiniCoz([listeSayfasi([s12], "ÖĞRENCİ LİSTESİ - KURUM - TYT SIRALI", "TÜRKÇE")]);
+    expect(r.basarili).toBe(true);
+    expect(r.ogrenciler.map((o) => o.sinif)).toEqual(["12-C"]);
+    expect(r.ogrenciler[0].dersSonuclari[0]).toEqual({ ders: "TYT Türkçe", dogru: 26, yanlis: 4, net: 25 });
+  });
   test("başlığı tanır; sınav adı, kapsam, birleşik sıra+numara ve boş sınıf doğru okunur", () => {
     const sayfa = listeSayfasi([S1, S2, S3]);
     expect(kurumListesiBasligiVarMi([sayfa])).toBe(true);
@@ -182,6 +189,29 @@ describe("sonucBelgeleriniCoz", () => {
       ["Matematik", 27, 3], ["Fizik", 10, 0], ["Kimya", 10, 0], ["Biyoloji", 10, 0],
     ]);
     expect(r.belgeler[1].ogrenciNo).toBe(40);
+  });
+
+  test("seçmeli FELSEFE-2 boşsa atılır; Din yerine çözülmüşse Din Kültürü sayılır", () => {
+    const secmeliBos = { ...KARNE_S1, sag: [{ ad: "FELSEFE-2", soru: 5, d: 0, y: 0, b: 5 }, ...KARNE_S1.sag] };
+    const b1 = sonucBelgeleriniCoz([karneSayfasi(secmeliBos)]).belgeler[0];
+    expect(b1.dersHatasi).toBeNull();
+    expect(b1.dersler.map((d) => d.ders)).toEqual(["Türkçe", "Tarih", "Coğrafya", "Felsefe", "Din Kültürü", "Matematik", "Fizik", "Kimya", "Biyoloji"]);
+
+    const dinYerine = {
+      ...KARNE_S1,
+      sol: KARNE_S1.sol.map((d) => (d.ad === "DİN KÜLTÜR" ? { ...d, d: 0, y: 0, b: 5 } : d)),
+      sag: [{ ad: "FELSEFE-2", soru: 5, d: 4, y: 1, b: 0 }, ...KARNE_S1.sag],
+      toplam: { soru: 120, d: 110, y: 10, b: 0 },
+    };
+    const b2 = sonucBelgeleriniCoz([karneSayfasi(dinYerine)]).belgeler[0];
+    expect(b2.dersHatasi).toBeNull();
+    expect(b2.dersler.find((d) => d.ders === "Din Kültürü")).toMatchObject({ soru: 5, dogru: 4, yanlis: 1 });
+    expect(b2.dersler).toHaveLength(9);
+
+    const ikisiDe = { ...KARNE_S1, sag: [{ ad: "FELSEFE-2", soru: 5, d: 2, y: 0, b: 3 }, ...KARNE_S1.sag] };
+    const b3 = sonucBelgeleriniCoz([karneSayfasi(ikisiDe)]).belgeler[0];
+    expect(b3.dersler).toEqual([]);
+    expect(b3.dersHatasi).toMatch(/seçmeli/);
   });
 
   test("ders toplamları karne toplamıyla tutmuyorsa granüler veri KULLANILMAZ", () => {

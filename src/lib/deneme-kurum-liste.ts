@@ -7,7 +7,7 @@
 // net listesi başlığı ve "SIRA ... TOPLAM" başlığı yok): PDF Claude'a düşüyor,
 // 100+ öğrenci yanıt sınırını aşıyordu. Satır yapısı:
 //   Sıra | "No - AD SOYAD" | "9 / B" | 4 ders × (D Y N) | Toplam (D Y N) | Puan | sıralamalar
-// 4 ders BİRLEŞİK: TÜRK DİLİ, SOSYAL BİLİMLER, MATEMATİK, FEN BİLİMLERİ
+// 4 ders BİRLEŞİK: TÜRK DİLİ (bazı listelerde "TÜRKÇE"), SOSYAL BİLİMLER, MATEMATİK, FEN BİLİMLERİ
 // (mevcut "TYT Türkçe/Sosyal/Matematik/Fen" birleşik adlarıyla aynı).
 // Granüler (9 ders) sonuç ayrı dosyadaki karneden gelir (deneme-sonuc-belgesi.ts).
 //
@@ -25,7 +25,8 @@ export type ListeKapsami = "kurum" | "sube";
 export const BIRLESIK_DERS_ADLARI = ["TYT Türkçe", "TYT Sosyal", "TYT Matematik", "TYT Fen"] as const;
 
 const BASLIK_KARSILIGI: { desen: RegExp; ders: (typeof BIRLESIK_DERS_ADLARI)[number] }[] = [
-  { desen: /^T[ÜU]RK\s*D[İI]L[İI]$/i, ders: "TYT Türkçe" },
+  // 12. sınıf TYT listesinde başlık "TÜRKÇE" yazıyor (Fen Lisesi TYT TG Deneme-1, 09.11.2026).
+  { desen: /^T[ÜU]RK(?:\s*D[İI]L[İI]|[ÇC]E)$/i, ders: "TYT Türkçe" },
   { desen: /^SOSYAL\s*B[İI]L[İI]MLER$/i, ders: "TYT Sosyal" },
   { desen: /^MATEMAT[İI]K$/i, ders: "TYT Matematik" },
   { desen: /^FEN\s*B[İI]L[İI]MLER[İI]$/i, ders: "TYT Fen" },
@@ -228,7 +229,7 @@ export function kurumListesiniCoz(sayfalar: GenisMetin[][]): KurumListesiSonucu 
   }
 
   if (kapsam === null) return bos("\"ÖĞRENCİ LİSTESİ - KURUM|ŞUBE - … SIRALI\" başlığı bulunamadı — bilinmeyen format.");
-  if (!sutunlar) return bos("Ders başlıkları (TÜRK DİLİ … FEN BİLİMLERİ) ve D/Y/N satırı bulunamadı.", kapsam);
+  if (!sutunlar) return bos("Ders başlıkları (TÜRK DİLİ/TÜRKÇE … FEN BİLİMLERİ) ve D/Y/N satırı bulunamadı.", kapsam);
   if (ogrenciler.length === 0) return bos("Başlık tanındı ama hiçbir öğrenci satırı okunamadı.", kapsam);
   return { basarili: true, kapsam, sinavAdi, genelKatilim, ogrenciler, okunamayanSatirlar: okunamayan };
 }

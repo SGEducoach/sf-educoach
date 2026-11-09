@@ -40,7 +40,16 @@ export interface SonucBelgesiSonucu {
   okunamayanSayfalar: { sayfa: number; neden: string }[];
 }
 
+// 12. sınıf TYT karnesinde (Fen Lisesi TYT TG Deneme-1, 09.11.2026) Sosyal
+// bölümünde "FELSEFE-1" ve "DİN KÜLTÜR" yanında "FELSEFE-2" bloğu da var:
+// din dersinden muaf öğrencinin Din Kültürü YERİNE çözdüğü seçmeli test
+// (TYT'deki "ilave Felsefe"). Karnenin 120 soruluk toplamı ikisinden yalnız
+// birini sayar; ikisi birden derse yazılınca soru toplamı 125 çıkıyordu.
+// Bkz. seciliTestiAyikla.
+const SECMELI_FELSEFE = "Felsefe (Seçmeli)";
+
 const KARNE_DERSLERI: { desen: RegExp; ders: string }[] = [
+  { desen: /^FELSEFE\s*-?\s*2$/i, ders: SECMELI_FELSEFE },
   { desen: /^T[ÜU]RK\s*D[İI]L[İI]/i, ders: "Türkçe" },
   { desen: /^T[ÜU]RK[ÇC]E$/i, ders: "Türkçe" },
   { desen: /^MATEMAT[İI]K/i, ders: "Matematik" },
@@ -80,6 +89,24 @@ function enYakin(sayilar: { m: number; v: number }[], hedef: number): number | n
     if (fark <= SUTUN_TOLERANSI && (en === null || fark < Math.abs(en.m - hedef))) en = s;
   }
   return en ? en.v : null;
+}
+
+/**
+ * Din Kültürü / seçmeli Felsefe çiftinden öğrencinin çözdüğü tek testi bırakır.
+ * Seçmeli boşsa (D=Y=0) atılır. Din boş, seçmeli çözülmüşse seçmeli o 5
+ * sorunun yerine "Din Kültürü" olarak yazılır (TYT puanında aynı yeri tutar).
+ * İkisi de çözülmüşse hangisinin sayıldığı bilinemez: hata (birleşik kalır).
+ */
+function seciliTestiAyikla(dersler: SonucBelgesiDersi[]): { dersler: SonucBelgesiDersi[]; hata: string | null } {
+  const secmeli = dersler.find((d) => d.ders === SECMELI_FELSEFE);
+  if (!secmeli) return { dersler, hata: null };
+  const kalan = dersler.filter((d) => d !== secmeli);
+  const cozulduMu = (d: SonucBelgesiDersi) => d.dogru + d.yanlis > 0;
+  if (!cozulduMu(secmeli)) return { dersler: kalan, hata: null };
+  const din = kalan.find((d) => d.ders === "Din Kültürü");
+  if (din && cozulduMu(din)) return { dersler: [], hata: "hem Din Kültürü hem seçmeli Felsefe çözülmüş" };
+  if (!din) return { dersler: [...kalan, { ...secmeli, ders: "Din Kültürü" }], hata: null };
+  return { dersler: kalan.map((d) => (d === din ? { ...secmeli, ders: "Din Kültürü" } : d)), hata: null };
 }
 
 /** Karnenin ilk sayfası mı: "SORU SAYISI / DOĞRU / YANLIŞ / BOŞ / NET" başlığı + "SONUÇ BELGESİ". */
@@ -176,7 +203,8 @@ function belgeCoz(sayfaNo: number, satirlar: Satir[]): SonucBelgesi | string {
   // (üstündeki ŞUBE/KURUM/ORTALAMA tablosu bloklara karışmasın).
   const blokBasligi = satirlar.find((s) => s.ogeler.some((o) => /^Soru Sayısı$/.test(o.str.trim())));
   const altSinirY = blokBasligi ? blokBasligi.y + 2 : (puanBaslik ?? baslik).y - 100;
-  const { dersler, hata } = blokluDersleriOku(satirlar, altSinirY);
+  const okunan = blokluDersleriOku(satirlar, altSinirY);
+  const { dersler, hata } = okunan.hata ? okunan : seciliTestiAyikla(okunan.dersler);
 
   let dersHatasi = hata;
   if (!dersHatasi) {
