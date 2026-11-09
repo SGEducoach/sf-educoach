@@ -66,6 +66,9 @@ export function AnalizPaneli({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const denemeChartData = veri.denemeTrend.map((d) => ({ tarih: tarihFormat(d.tarih), [d.tur]: d.net }));
+  // Y ekseni: en yüksek netin ~%8 üstüne kadar, 4 eşit aralık, adım 5'in katı
+  // (99,5 → 0-120, 111,5 → 0-140). Eskiden 99,5 eksenin 100 tepesine yapışıyordu.
+  const denemeEksenAdimi = Math.max(5, Math.ceil((Math.max(0, ...veri.denemeTrend.map((d) => d.net)) * 1.08) / 4 / 5) * 5);
   // 9-10. sınıf: tek Branş çizgisi, TYT/AYT hedef girişi yok (bkz. analiz.ts).
   const bransKapsami = veri.denemeKapsami === "brans";
   const toplamKonuDakika = veri.konuCalismaGunluk.reduce((toplam, kayit) => toplam + kayit.dakika, 0);
@@ -223,10 +226,12 @@ export function AnalizPaneli({
             <BosDurum />
           ) : (
             <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={denemeChartData} margin={{ left: -20, right: 10 }}>
+              <LineChart data={denemeChartData} margin={{ left: -20, right: 10, top: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={BORDER} vertical={false} />
                 <XAxis dataKey="tarih" tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={{ stroke: BORDER }} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={false} tickLine={false} />
+                {/* Kullanıcı bulgusu (09.11.2026): 99,5 netlik nokta eksenin tam 100 tepesine
+                    yapışıp "net 100'de duruyor" gibi görünüyordu. Üstte ~%10 pay bırakılır. */}
+                <YAxis domain={[0, denemeEksenAdimi * 4]} ticks={[0, 1, 2, 3, 4].map((i) => i * denemeEksenAdimi)} tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={false} tickLine={false} />
                 <RTooltip cursor={false} contentStyle={{ fontSize: 12, borderRadius: 12, border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT }} labelStyle={{ color: TEXT_MUTED }} itemStyle={{ color: TEXT }} />
                 <Legend wrapperStyle={{ fontSize: 11, color: TEXT_MUTED }} />
                 {bransKapsami ? (
