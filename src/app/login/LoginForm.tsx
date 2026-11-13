@@ -384,7 +384,7 @@ export default function LoginForm() {
               <label className="flex items-start gap-2 cursor-pointer">
                 <input type="checkbox" checked={veliKvkkOnay} onChange={(e) => setVeliKvkkOnay(e.target.checked)} className="mt-0.5" />
                 <span style={{ color: TEXT }} className="text-xs leading-snug">
-                  Yukarıdaki metni okudum, velisi/vasisi olduğum öğrencinin kişisel verilerinin işlenmesine <strong>açık rızam ile onay veriyorum.</strong>
+                  <strong>KVKK aydınlatma metnini okudum ve anladım.</strong>
                 </span>
               </label>
 

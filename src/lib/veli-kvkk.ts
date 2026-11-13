@@ -1,16 +1,27 @@
-// Veli hesabı tamamlama (kod → şifre) sırasında gösterilen KVKK aydınlatma
-// metni — hem /signup (eski konum) hem /login (29.08.2026 sadeleştirmesi
-// sonrası "şifreni belirle" adımı buraya taşındı) tarafından kullanılıyor.
-export const VELI_KVKK_METNI = `SeFu Koç (www.sefukoc.com) olarak, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, velisi/vasisi olduğunuz öğrencinin kişisel verilerinin işlenmesi hakkında sizi bilgilendirmek isteriz.
+// Veli KVKK aydınlatma metni — /login ("şifreni belirle"), /signup ve
+// /veli-davet (öğrencinin davet bağlantısı) tarafından gösterilir.
+// v2 (13.11.2026, kullanıcı kararı): veri sorumlusu okul, SeFu Koç veri
+// işleyen; dayanak sözleşme + meşru menfaat (açık rıza değil); velinin kendi
+// adı/telefonu, davet bağlantısı ve moderatör erişimi eklendi. Sürüm
+// /api/veli/davet ve /api/veli/tamamla'daki KVKK_ONAY_VERSIYON'da.
+export const VELI_KVKK_METNI = `Bu aydınlatma metni, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca sizin ve velisi/vasisi olduğunuz öğrencinin kişisel verilerinin işlenmesi hakkında sizi bilgilendirmek için hazırlanmıştır.
 
-İşlenen veriler: öğrencinin adı-soyadı, okul/sınıf bilgisi, iletişim bilgileri, akademik performans verileri (deneme sonuçları, çalışma kayıtları, soru çözüm istatistikleri, motivasyon durumu).
+Veri sorumlusu: öğrencinin kayıtlı olduğu okul/dershane veri sorumlusudur. SeFu Koç (www.sefukoc.com), okul adına ve onun talimatıyla veriyi işleyen hizmet sağlayıcıdır (veri işleyen).
 
-İşleme amacı: öğrencinin akademik gelişiminin takip edilmesi, öğretmen tarafından değerlendirilmesi, size ve öğrenciye bu veriler hakkında bildirim ve rapor sunulması.
+Sizinle ilgili işlenen veriler: adınız-soyadınız, cep telefonu numaranız, hesabınızın güvenliği için gereken oturum bilgileri ve hangi öğrenciye bağlı olduğunuz.
 
-Veri aktarımı: veriler, Platform'un altyapı sağlayıcıları (barındırma ve e-posta hizmetleri) dışında üçüncü kişilerle paylaşılmaz.
+Öğrenciyle ilgili işlenen veriler: öğrencinin adı-soyadı, okul/sınıf bilgisi, iletişim bilgileri ve akademik performans verileri (deneme sonuçları, çalışma kayıtları, soru çözüm istatistikleri, ödevler, motivasyon durumu).
 
-Saklama süresi: hesap aktif olduğu sürece saklanır; hesap kapatma talebinde makul süre içinde silinir.
+Hesabınız nasıl açılır: hesabınız ya öğrencinin size gönderdiği tek kullanımlık davet bağlantısıyla ya da sınıf öğretmeninin onayladığı kod talebiyle açılır. Davet bağlantısında öğrencinin yalnız ilk adı ve soyadının baş harfi gösterilir.
 
-Haklarınız: KVKK madde 11 kapsamında verilerin düzeltilmesi, silinmesi, işlenme amacını öğrenme gibi haklara sahipsiniz.
+İşleme amacı: öğrencinin akademik gelişimini size raporlamak; okul duyurularını, ödev ve deneme bilgilendirmelerini size iletmek; hesabınızın güvenliğini sağlamak.
 
-Onay: Yukarıdaki bilgilendirmeyi okudum; velisi/vasisi olduğum öğrencinin belirtilen kapsamda kişisel verilerinin işlenmesine açık rızamla onay veriyorum.`;
+Hukuki sebep: KVKK madde 5/2-c (bir sözleşmenin kurulması/ifasıyla doğrudan ilgili olması) ve madde 5/2-f (veri sorumlusunun meşru menfaati).
+
+Kimler görür: adınız ve telefonunuz; öğrencinin okul/dershane yönetimi, sınıf öğretmeni, rehberlik servisi ve kurumun yetkilendirdiği moderatör tarafından iletişim amacıyla görülebilir. Moderatör ekranında telefon numaranız gizlenmiş gösterilir; tam numara yalnız gerektiğinde açılır ve her açılış kayıt altına alınır. Veriler, Platform'un altyapı sağlayıcıları (barındırma, veritabanı, e-posta ve SMS hizmetleri) dışında üçüncü kişilerle paylaşılmaz, satılmaz ve reklam için kullanılmaz.
+
+Saklama süresi: hesabınız aktif olduğu sürece saklanır. Hesabın kapatılmasını istediğinizde ya da öğrencinin okulla ilişiği kesildiğinde makul süre içinde silinir.
+
+Haklarınız: KVKK madde 11 kapsamında verilerinizin işlenip işlenmediğini öğrenme, düzeltilmesini veya silinmesini isteme, işlenme amacını öğrenme gibi haklara sahipsiniz. Talepleriniz için öğrencinin okuluna ya da sg.educoach@gmail.com adresine başvurabilirsiniz.
+
+Okudum: Yukarıdaki aydınlatma metnini okudum ve anladım.`;

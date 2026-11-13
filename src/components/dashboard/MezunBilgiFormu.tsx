@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { BG0, BG1, BLUSH, BORDER, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED } from "@/lib/theme";
 import { mezunKendiBilgileriniGuncelle, type MezunKendiBilgisi } from "@/app/dashboard/mezun-hesap-actions";
 
-const ALANLAR: { anahtar: keyof MezunKendiBilgisi; etiket: string; tip?: string; ipucu?: string }[] = [
+const ALANLAR: { anahtar: Exclude<keyof MezunKendiBilgisi, "iletisimOnayi">; etiket: string; tip?: string; ipucu?: string }[] = [
   { anahtar: "telefon", etiket: "Cep telefonu", tip: "tel", ipucu: "05321234567" },
   { anahtar: "eposta", etiket: "E-posta", tip: "email" },
   { anahtar: "il", etiket: "İl" },
@@ -45,8 +45,12 @@ export function MezunBilgiFormu({ baslangic, kayitVar }: { baslangic: MezunKendi
             </label>
           ))}
         </div>
-        <p className="mt-3 text-[11px] leading-relaxed" style={{ color: TEXT_MUTED }}>
-          Bu bilgileri yalnız okulunun rehberlik servisi ve müdürü görür; mezunlara duyuru ve SMS göndermek için kullanılır.
+        <label className="mt-3 flex items-start gap-2 text-xs leading-relaxed" style={{ color: TEXT }}>
+          <input type="checkbox" checked={deger.iletisimOnayi} onChange={(e) => setDeger((d) => ({ ...d, iletisimOnayi: e.target.checked }))} className="mt-0.5" />
+          <span>Okulumun bana mezun duyurularıyla ilgili <strong>SMS ve e-posta</strong> göndermesine onay veriyorum. <span style={{ color: TEXT_MUTED }}>(İsteğe bağlı; işaretlemezsen sana SMS gönderilmez, onayını istediğin zaman geri alabilirsin.)</span></span>
+        </label>
+        <p className="mt-2 text-[11px] leading-relaxed" style={{ color: TEXT_MUTED }}>
+          Bu bilgileri yalnız okulunun rehberlik servisi ve müdürü görür.
         </p>
         {hata && <p role="alert" className="mt-2 text-xs font-semibold" style={{ color: BLUSH }}>{hata}</p>}
         {mesaj && <p role="status" className="mt-2 text-xs font-semibold" style={{ color: MINT }}>{mesaj}</p>}

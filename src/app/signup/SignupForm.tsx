@@ -178,8 +178,12 @@ export default function SignupForm({ kurallarMetni, kurallarVersiyon }: { kurall
 // ve kullanım kuralları" metninin kısa bir bölümünde değiniliyordu. Onay
 // kalıcı olarak profiles.kvkk_onay_at/kvkk_onay_versiyon'a yazılıyor (bkz.
 // migration 0080 — handle_new_user() artık bu metadata'yı da okuyor).
-const OGRENCI_KVKK_VERSIYON = "v1-2026-08-26";
-const OGRENCI_KVKK_METNI = `SeFu Koç (www.sefukoc.com) olarak, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, kişisel verilerinizin işlenmesi hakkında sizi bilgilendirmek isteriz.
+// v2 (13.11.2026): veri sorumlusu okul, SeFu Koç veri işleyen; moderatör
+// erişimi, veli daveti ve mezun hesabı eklendi (docs/KVKK_TASLAK_MEZUN_VELI_DAVET.md).
+const OGRENCI_KVKK_VERSIYON = "v2-2026-11-13";
+const OGRENCI_KVKK_METNI = `Bu aydınlatma metni, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca kişisel verilerinizin işlenmesi hakkında sizi bilgilendirmek için hazırlanmıştır.
+
+Veri sorumlusu: kayıtlı olduğunuz okul/dershane veri sorumlusudur. SeFu Koç (www.sefukoc.com), okulunuz adına ve onun talimatıyla veriyi işleyen hizmet sağlayıcıdır (veri işleyen).
 
 İşlenen veriler: adınız-soyadınız, okul/sınıf bilginiz, iletişim bilgileriniz (e-posta, telefon), akademik performans verileriniz (deneme sonuçları, çalışma kayıtları, soru çözüm istatistikleri, motivasyon durumu).
 
@@ -187,13 +191,19 @@ const OGRENCI_KVKK_METNI = `SeFu Koç (www.sefukoc.com) olarak, 6698 sayılı Ki
 
 Hukuki sebep: KVKK madde 5/2-c (bir sözleşmenin kurulması/ifasıyla doğrudan ilgili olması) ve madde 5/2-f (veri sorumlusunun meşru menfaati).
 
-Veri aktarımı: verileriniz; okul/dershane yönetiminiz, sınıf öğretmeniniz ve (bağlıysa) veliniz dışında, Platform'un altyapı sağlayıcıları (barındırma ve e-posta hizmetleri) hariç üçüncü kişilerle paylaşılmaz.
+Veri aktarımı: verileriniz; okul/dershane yönetiminiz, öğretmenleriniz, rehberlik servisiniz ve (bağlıysa) veliniz dışında, Platform'un altyapı sağlayıcıları (barındırma, veritabanı, e-posta ve SMS hizmetleri) hariç üçüncü kişilerle paylaşılmaz, satılmaz ve reklam için kullanılmaz.
 
-Saklama süresi: hesabınız aktif olduğu sürece saklanır; hesap kapatma talebinizde makul süre içinde silinir.
+Kurum yetkililerinin erişimi: okulunuzun yetkilendirdiği kurum moderatörü, hesap işlemleri (giriş sorunları, sınıf değişikliği, hesap açma-kapama) için adınızı, okul numaranızı, sınıfınızı, e-posta adresinizi, hesap durumunuzu ve bağlı velinizin adını görebilir. Telefon numaraları bu ekranda gizlenmiş gösterilir; tam numara yalnız gerektiğinde açılır ve her açılış kayıt altına alınır. Moderatör akademik ve rehberlik verilerinizi bu ekranda görmez.
 
-Haklarınız: KVKK madde 11 kapsamında verilerinizin düzeltilmesini, silinmesini, işlenme amacını öğrenmeyi talep etme gibi haklara sahipsiniz. Talepleriniz için sg.educoach@gmail.com adresinden bize ulaşabilirsiniz.
+Velinizi davet etmeniz: panelinizdeki "Velimi Davet Et" bölümünden velinize tek kullanımlık, 7 gün geçerli bir bağlantı gönderebilirsiniz. Veliniz bu bağlantıyla hesap açtığında hesabınıza bağlanır ve akademik verilerinizi (deneme sonuçları, çalışma kayıtları, ödevler, raporlar) görebilir. Bağlantıyı yalnız kendi velinizle paylaşın; başkasının eline geçtiğini düşünüyorsanız aynı bölümden iptal edin.
 
-Onay: Yukarıdaki bilgilendirmeyi okudum, kişisel verilerimin belirtilen kapsamda işlenmesini kabul ediyorum.`;
+Mezun olduğunuzda: 12. sınıfı bitirdiğinizde okulunuz hesabınızı mezun hesabına çevirebilir. Hesabınız silinmez: aynı okul numarası ve şifreyle giriş yapmaya, eski deneme sonuçlarınızı görmeye devam edersiniz. Adınız, okul numaranız, mezuniyet yılınız ve (varsa) e-posta ve telefonunuz okulunuzun mezun kayıtlarına aktarılır.
+
+Saklama süresi: hesabınız aktif olduğu sürece saklanır; hesap kapatma talebinizde makul süre içinde silinir. Mezun hesabı ve mezun kaydı mezuniyetten itibaren 5 yıl saklanır; silinmesini istediğinizde makul süre içinde silinir.
+
+Haklarınız: KVKK madde 11 kapsamında verilerinizin düzeltilmesini, silinmesini, işlenme amacını öğrenmeyi talep etme gibi haklara sahipsiniz. Talepleriniz için okulunuza ya da sg.educoach@gmail.com adresine başvurabilirsiniz.
+
+Okudum: Yukarıdaki aydınlatma metnini okudum ve anladım.`;
 
 function OgrenciKayit({ kurumTuru, schools, classes, router, supabase }: {
   kurumTuru: KurumTuru; schools: School[]; classes: SchoolClass[]; router: ReturnType<typeof useRouter>;
@@ -305,7 +315,7 @@ function OgrenciKayit({ kurumTuru, schools, classes, router, supabase }: {
           </p>
 
           <div className="flex flex-col gap-1.5">
-            <Etiket>KVKK Aydınlatma Metni ve Rıza Beyanı</Etiket>
+            <Etiket>KVKK Aydınlatma Metni</Etiket>
             <div className="text-[11px] leading-relaxed whitespace-pre-line rounded-xl p-3 max-h-40 overflow-y-auto"
               style={{ background: BG0, border: `2px solid ${BORDER_STRONG}`, color: TEXT_MUTED }}>
               {OGRENCI_KVKK_METNI}
@@ -314,7 +324,7 @@ function OgrenciKayit({ kurumTuru, schools, classes, router, supabase }: {
           <label className="flex items-start gap-2 cursor-pointer">
             <input type="checkbox" checked={kvkkOnay} onChange={(e) => setKvkkOnay(e.target.checked)} className="mt-0.5" />
             <span style={{ color: TEXT }} className="text-xs leading-snug">
-              Yukarıdaki metni okudum, kişisel verilerimin işlenmesine <strong>açık rızam ile onay veriyorum.</strong>
+              <strong>KVKK aydınlatma metnini okudum ve anladım.</strong>
             </span>
           </label>
 
@@ -390,8 +400,11 @@ function DershaneOgrenciBilgisi() {
 // ============ ÖĞRETMEN ============
 // Kullanıcı isteği (26.08.2026): öğrenci akışıyla aynı gerekçe — bkz.
 // OGRENCI_KVKK_METNI üstündeki not.
-const OGRETMEN_KVKK_VERSIYON = "v1-2026-08-26";
-const OGRETMEN_KVKK_METNI = `SeFu Koç (www.sefukoc.com) olarak, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, kişisel verilerinizin işlenmesi hakkında sizi bilgilendirmek isteriz.
+// v2 (13.11.2026): veri sorumlusu kurum, SeFu Koç veri işleyen.
+const OGRETMEN_KVKK_VERSIYON = "v2-2026-11-13";
+const OGRETMEN_KVKK_METNI = `Bu aydınlatma metni, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca kişisel verilerinizin işlenmesi hakkında sizi bilgilendirmek için hazırlanmıştır.
+
+Veri sorumlusu: bağlı olduğunuz okul/dershane veri sorumlusudur. SeFu Koç (www.sefukoc.com), okulunuz adına ve onun talimatıyla veriyi işleyen hizmet sağlayıcıdır (veri işleyen).
 
 İşlenen veriler: adınız-soyadınız, branş bilginiz, iletişim bilgileriniz (e-posta, telefon), bağlı olduğunuz okul/kurum bilgisi, platform üzerindeki işlem kayıtlarınız (görev/duyuru gönderimi, öğrenci değerlendirmeleri).
 
@@ -399,13 +412,13 @@ const OGRETMEN_KVKK_METNI = `SeFu Koç (www.sefukoc.com) olarak, 6698 sayılı K
 
 Hukuki sebep: KVKK madde 5/2-c (bir sözleşmenin kurulması/ifasıyla doğrudan ilgili olması) ve madde 5/2-f (veri sorumlusunun meşru menfaati).
 
-Veri aktarımı: verileriniz; bağlı olduğunuz okul/dershane yönetimi dışında, Platform'un altyapı sağlayıcıları (barındırma ve e-posta hizmetleri) hariç üçüncü kişilerle paylaşılmaz.
+Veri aktarımı: verileriniz; bağlı olduğunuz okul/dershane yönetimi dışında, Platform'un altyapı sağlayıcıları (barındırma, veritabanı, e-posta ve SMS hizmetleri) hariç üçüncü kişilerle paylaşılmaz.
 
 Saklama süresi: hesabınız aktif olduğu sürece saklanır; hesap kapatma talebinizde makul süre içinde silinir.
 
-Haklarınız: KVKK madde 11 kapsamında verilerinizin düzeltilmesini, silinmesini, işlenme amacını öğrenmeyi talep etme gibi haklara sahipsiniz. Talepleriniz için sg.educoach@gmail.com adresinden bize ulaşabilirsiniz.
+Haklarınız: KVKK madde 11 kapsamında verilerinizin düzeltilmesini, silinmesini, işlenme amacını öğrenmeyi talep etme gibi haklara sahipsiniz. Talepleriniz için kurumunuza ya da sg.educoach@gmail.com adresine başvurabilirsiniz.
 
-Onay: Yukarıdaki bilgilendirmeyi okudum, kişisel verilerimin belirtilen kapsamda işlenmesini kabul ediyorum.`;
+Okudum: Yukarıdaki aydınlatma metnini okudum ve anladım.`;
 
 function OgretmenKayit({ kurumTuru, schools, router, supabase }: {
   kurumTuru: KurumTuru; schools: School[]; classes: SchoolClass[]; router: ReturnType<typeof useRouter>;
@@ -489,7 +502,7 @@ function OgretmenKayit({ kurumTuru, schools, router, supabase }: {
           </label>
 
           <div className="flex flex-col gap-1.5">
-            <Etiket>KVKK Aydınlatma Metni ve Rıza Beyanı</Etiket>
+            <Etiket>KVKK Aydınlatma Metni</Etiket>
             <div className="text-[11px] leading-relaxed whitespace-pre-line rounded-xl p-3 max-h-40 overflow-y-auto"
               style={{ background: BG0, border: `2px solid ${BORDER_STRONG}`, color: TEXT_MUTED }}>
               {OGRETMEN_KVKK_METNI}
@@ -498,7 +511,7 @@ function OgretmenKayit({ kurumTuru, schools, router, supabase }: {
           <label className="flex items-start gap-2 cursor-pointer">
             <input type="checkbox" checked={kvkkOnay} onChange={(e) => setKvkkOnay(e.target.checked)} className="mt-0.5" />
             <span style={{ color: TEXT }} className="text-xs leading-snug">
-              Yukarıdaki metni okudum, kişisel verilerimin işlenmesine <strong>açık rızam ile onay veriyorum.</strong>
+              <strong>KVKK aydınlatma metnini okudum ve anladım.</strong>
             </span>
           </label>
 

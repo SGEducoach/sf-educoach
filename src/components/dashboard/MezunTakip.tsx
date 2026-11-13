@@ -126,7 +126,7 @@ export function MezunTakip({ mezunlar: sunucudan, smsDurumu, buYil }: { mezunlar
     startTransition(async () => {
       const r = await mezunSmsGonder({ mezunIdleri: [...secili], icerik: sms, zamanIso: null });
       if (r.error) return setMesaj({ tur: "hata", metin: r.error });
-      setMesaj({ tur: "ok", metin: `SMS ${r.sonuc?.aliciSayisi ?? 0} mezuna gönderildi${r.sonuc?.gecersizSayisi ? `, ${r.sonuc.gecersizSayisi} kişinin telefonu yok ya da geçersiz` : ""}.` });
+      setMesaj({ tur: "ok", metin: `SMS ${r.sonuc?.aliciSayisi ?? 0} mezuna gönderildi${r.sonuc?.gecersizSayisi ? `, ${r.sonuc.gecersizSayisi} kişinin telefonu yok ya da geçersiz` : ""}${r.onaysizAtlanan ? `, ${r.onaysizAtlanan} mezun hesabı SMS onayı vermediği için gönderilmedi` : ""}.` });
       setSms("");
       setSecili(new Set());
     });

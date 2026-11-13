@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SifreDegistir } from "@/components/SifreDegistir";
 import { MezunBilgiFormu } from "@/components/dashboard/MezunBilgiFormu";
+import { MEZUN_KVKK_METNI } from "@/lib/mezun-kvkk";
 import { netHesapla } from "@/lib/types";
 import { BG0, BG1, BORDER, BORDER_STRONG, TEXT, TEXT_MUTED } from "@/lib/theme";
 
@@ -16,7 +17,7 @@ export async function MezunPaneli({ userId, ad }: { userId: string; ad: string }
   const okul = ogrenci?.schools as unknown as { ad: string } | null;
   // Mezun Takip tablosu yalnız sunucuda okunur; kişi yalnız KENDİ kaydını görür.
   const { data: kayit } = ogrenci
-    ? await createAdminClient().from("mezunlar").select("mezuniyet_yili, telefon, eposta, il, ilce, universite, meslek")
+    ? await createAdminClient().from("mezunlar").select("mezuniyet_yili, telefon, eposta, il, ilce, universite, meslek, iletisim_onayi")
       .eq("school_id", ogrenci.school_id).eq("student_id", userId).maybeSingle()
     : { data: null };
   const { data: denemeler } = await supabase.from("denemeler")
@@ -53,7 +54,13 @@ export async function MezunPaneli({ userId, ad }: { userId: string; ad: string }
       <MezunBilgiFormu kayitVar={!!kayit} baslangic={{
         telefon: telefonGoster, eposta: kayit?.eposta ?? "", il: kayit?.il ?? "", ilce: kayit?.ilce ?? "",
         universite: kayit?.universite ?? "", meslek: kayit?.meslek ?? "",
+        iletisimOnayi: kayit?.iletisim_onayi === true,
       }} />
+
+      <details className="rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+        <summary className="cursor-pointer text-[15px] font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>KVKK Aydınlatma Metni</summary>
+        <div className="mt-3 whitespace-pre-line text-xs leading-relaxed" style={{ color: TEXT_MUTED }}>{MEZUN_KVKK_METNI}</div>
+      </details>
 
       <div className="rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
         <h2 className="text-[15px] font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>Deneme Geçmişim</h2>

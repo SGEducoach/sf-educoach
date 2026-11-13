@@ -147,7 +147,7 @@ export async function mezunPdfAktar(ham: MezunHamBilgisi[]): Promise<{ error: st
   return { error: null, eklenen: yeniler.length, guncellenen, atlanan: satirlar.filter((s) => s.durum === "hatali").length, mezunlar: await yenile(b) };
 }
 
-export async function mezunSmsGonder(girdi: { mezunIdleri: string[]; icerik: string; zamanIso: string | null }): Promise<{ error: string | null; sonuc?: SmsGonderimSonucu }> {
+export async function mezunSmsGonder(girdi: { mezunIdleri: string[]; icerik: string; zamanIso: string | null }): Promise<{ error: string | null; sonuc?: SmsGonderimSonucu; onaysizAtlanan?: number }> {
   const b = await baglam();
   if (b.error !== null) return { error: b.error };
   const idler = girdi?.mezunIdleri;
@@ -160,9 +160,16 @@ export async function mezunSmsGonder(girdi: { mezunIdleri: string[]; icerik: str
     if (typeof girdi.zamanIso !== "string" || Number.isNaN(zaman.getTime())) return { error: "Geçerli bir gönderim zamanı girin." };
   }
   const mezunlar: { telefon: string | null; ad: string }[] = [];
+  // KVKK (13.11.2026, migration 0189): HESABI OLAN mezuna yalnız Mezun
+  // Profilim'den SMS onayı verdiyse gönderilir. Hesapsız (PDF/otomatik
+  // aktarım) mezunun bilgilendirilmesi okulun sorumluluğunda.
+  let onaysizAtlanan = 0;
   for (let i = 0; i < idler.length; i += 500) {
-    const { data } = await b.admin.from("mezunlar").select("ad, soyad, mezuniyet_yili, telefon").eq("school_id", b.erisim.schoolId).in("id", idler.slice(i, i + 500));
-    mezunlar.push(...((data ?? []) as { ad: string; soyad: string; mezuniyet_yili: number; telefon: string | null }[])
+    const { data } = await b.admin.from("mezunlar").select("ad, soyad, mezuniyet_yili, telefon, student_id, iletisim_onayi").eq("school_id", b.erisim.schoolId).in("id", idler.slice(i, i + 500));
+    const satirlar = (data ?? []) as { ad: string; soyad: string; mezuniyet_yili: number; telefon: string | null; student_id: string | null; iletisim_onayi: boolean | null }[];
+    const izinli = satirlar.filter((m) => m.student_id === null || m.iletisim_onayi === true);
+    onaysizAtlanan += satirlar.length - izinli.length;
+    mezunlar.push(...izinli
       .map((m) => ({ telefon: m.telefon, ad: `${[m.ad, m.soyad].filter(Boolean).join(" ")} (${m.mezuniyet_yili} mezunu)` })));
   }
   const sonuc = await smsMezunlaraGonder(b.admin, {
@@ -170,5 +177,5 @@ export async function mezunSmsGonder(girdi: { mezunIdleri: string[]; icerik: str
     hedefOzeti: `Mezunlar: ${mezunlar.length} kişi`,
   });
   revalidatePath("/dashboard/sms");
-  return sonuc.error !== null ? { error: sonuc.error } : { error: null, sonuc: sonuc.sonuc };
+  return sonuc.error !== null ? { error: sonuc.error } : { error: null, sonuc: sonuc.sonuc, onaysizAtlanan };
 }

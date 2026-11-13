@@ -19,7 +19,8 @@ import { kurumErisimiKapaliMi } from "@/lib/kurum-yetkileri";
 //   değişmez.
 // - Bağlantının 256 bitlik anahtarı tahmin edilemez; yanıtlar davetin neden
 //   geçersiz olduğunu ayırt etmez.
-const KVKK_ONAY_VERSIYON = "v1-2026-08-05";
+// v2 (13.11.2026): src/lib/veli-kvkk.ts yeni metin.
+const KVKK_ONAY_VERSIYON = "v2-2026-11-13";
 const GECERSIZ = "Davet bağlantısı geçersiz, süresi dolmuş ya da daha önce kullanılmış. Öğrencinizden yeni bir bağlantı isteyin.";
 
 export async function POST(request: Request) {

@@ -13,7 +13,8 @@ import { grupKodundanKurumId } from "@/lib/grup-kodu";
 // öğretmenin gördüğü değerler) kullanılıyor. bkz. /api/veli/dogrula (form,
 // şifre belirlemeden önce bu ismi kullanıcıya gösterip "bu ben değilim"
 // fark edilmesini sağlıyor).
-const KVKK_ONAY_VERSIYON = "v1-2026-08-05";
+// v2 (13.11.2026): src/lib/veli-kvkk.ts yeni metin.
+const KVKK_ONAY_VERSIYON = "v2-2026-11-13";
 
 export async function POST(request: Request) {
   const govde = await request.json();

@@ -22,6 +22,7 @@ const BOLUMLER: { baslik: string; paragraflar: string[] }[] = [
     baslik: "Kim olduğumuz",
     paragraflar: [
       "SeFu Koç (www.sefukoc.com), okul ve dershanelerde öğrenci takibi ve koçluk için kullanılan bir web uygulamasıdır. Bu metin, uygulamanın kişisel verileri nasıl işlediğini açıklar. Sorularınız için " + EPOSTA + " adresine yazabilirsiniz.",
+      "Veri sorumlusu, öğrencinin ya da kullanıcının kayıtlı olduğu okul/dershanedir. SeFu Koç, okul adına ve onun talimatıyla veriyi işleyen hizmet sağlayıcıdır (veri işleyen). KVKK kapsamındaki talepler okula ya da doğrudan bize iletilebilir.",
     ],
   },
   {
@@ -39,7 +40,25 @@ const BOLUMLER: { baslik: string; paragraflar: string[] }[] = [
   {
     baslik: "Kimlerle paylaşıyoruz",
     paragraflar: [
-      "Veriler; öğrencinin okul/dershane yönetimi, öğretmenleri ve (bağlıysa) velisi dışında, uygulamanın altyapı sağlayıcıları (barındırma, veritabanı ve e-posta hizmetleri) hariç üçüncü kişilerle paylaşılmaz. Verileriniz satılmaz ve reklam amacıyla kullanılmaz.",
+      "Veriler; öğrencinin okul/dershane yönetimi, öğretmenleri ve (bağlıysa) velisi dışında, uygulamanın altyapı sağlayıcıları (barındırma, veritabanı, e-posta ve SMS hizmetleri) hariç üçüncü kişilerle paylaşılmaz. Verileriniz satılmaz ve reklam amacıyla kullanılmaz.",
+    ],
+  },
+  {
+    baslik: "Kurum yetkilileri (moderatör)",
+    paragraflar: [
+      "Kurumun yetkilendirdiği moderatör, hesap işlemleri için öğrencinin adını, okul numarasını, sınıfını, e-posta adresini, hesap durumunu ve bağlı velilerin adını görebilir. Telefon numaraları gizlenmiş gösterilir; tam numara yalnız gerektiğinde açılır ve her açılış kayıt altına alınır. Moderatör, akademik ve rehberlik verilerini bu ekranda görmez.",
+    ],
+  },
+  {
+    baslik: "Veli davet bağlantısı",
+    paragraflar: [
+      "Öğrenci, velisine tek kullanımlık ve 7 gün geçerli bir davet bağlantısı gönderebilir. Bağlantı tahmin edilemeyecek şekilde üretilir ve sistemde yalnız şifrelenmiş özeti saklanır. Bağlantıyla hesap açan velinin adı ve telefonu işlenir, veli öğrenciye bağlanır. Davet sayfasında öğrencinin yalnız ilk adı ve soyadının baş harfi gösterilir.",
+    ],
+  },
+  {
+    baslik: "Mezunlar",
+    paragraflar: [
+      "12. sınıfı bitiren öğrencinin hesabı okul tarafından mezun hesabına çevrilebilir; hesap silinmez. Mezun, kendi iletişim, il/ilçe, üniversite ve meslek bilgisini güncelleyebilir ve eski deneme sonuçlarını görebilir. Mezun bilgilerini yalnız okulun rehberlik servisi ve müdürü görür. Hesabı olan mezuna SMS ile mezun duyurusu yalnız Mezun Profilim'den onay verdiyse gönderilir; onay istenildiği zaman geri alınabilir.",
     ],
   },
   {
@@ -54,7 +73,7 @@ const BOLUMLER: { baslik: string; paragraflar: string[] }[] = [
   {
     baslik: "Saklama süresi",
     paragraflar: [
-      "Veriler hesabınız aktif olduğu sürece saklanır; hesabın kapatılmasını talep ettiğinizde makul süre içinde silinir. Okul öğrenci listesine önceden kaydedilmiş ama hesabı olmayan öğrencilerin bekleyen kayıtları, belirli bir süre sonunda otomatik olarak temizlenir.",
+      "Veriler hesabınız aktif olduğu sürece saklanır; hesabın kapatılmasını talep ettiğinizde makul süre içinde silinir. Mezun hesapları ve mezun kayıtları mezuniyetten itibaren 5 yıl ya da kişi silinmesini isteyene kadar saklanır. Okul öğrenci listesine önceden kaydedilmiş ama hesabı olmayan öğrencilerin bekleyen kayıtları, belirli bir süre sonunda otomatik olarak temizlenir.",
     ],
   },
   {
@@ -66,7 +85,7 @@ const BOLUMLER: { baslik: string; paragraflar: string[] }[] = [
   {
     baslik: "Değişiklikler",
     paragraflar: [
-      "Bu metin güncellenebilir; güncel hali her zaman bu sayfada yayımlanır. Son güncelleme: 26.10.2026.",
+      "Bu metin güncellenebilir; güncel hali her zaman bu sayfada yayımlanır. Son güncelleme: 13.11.2026.",
     ],
   },
 ];

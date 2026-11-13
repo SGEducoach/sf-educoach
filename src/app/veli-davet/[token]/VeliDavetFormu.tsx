@@ -99,7 +99,7 @@ export function VeliDavetFormu({ token, davet, kvkkMetni, baskaOturumAcik }: {
             <div className="flex items-start gap-2 text-xs" style={{ color: TEXT }}>
               <input id="kvkk" type="checkbox" checked={kvkk} onChange={(e) => setKvkk(e.target.checked)} className="mt-0.5" />
               <label htmlFor="kvkk" className="leading-relaxed">
-                <button type="button" onClick={() => setKvkkAcik((v) => !v)} className="font-bold underline" style={{ color: MINT }}>KVKK aydınlatma metnini</button> okudum, onaylıyorum.
+                <button type="button" onClick={() => setKvkkAcik((v) => !v)} className="font-bold underline" style={{ color: MINT }}>KVKK aydınlatma metnini</button> okudum ve anladım.
               </label>
             </div>
             {kvkkAcik && (
