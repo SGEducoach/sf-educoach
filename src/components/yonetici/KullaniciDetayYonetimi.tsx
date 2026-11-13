@@ -25,7 +25,7 @@ import { BG0, BG1, BORDER_STRONG, MINT, MINT_ON, TEXT, TEXT_MUTED, BLUSH } from 
 import { KULLANICI_ADI_IPUCU } from "@/lib/validators";
 
 const ROL_ETIKET: Record<UserRole, string> = {
-  ogrenci: "Öğrenci", ogretmen: "Öğretmen", veli: "Veli", mudur: "Müdür", admin: "Admin",
+  ogrenci: "Öğrenci", ogretmen: "Öğretmen", veli: "Veli", mudur: "Müdür", admin: "Admin", mezun: "Mezun",
 };
 
 export function KullaniciDetayYonetimi({ kullanici }: { kullanici: KullaniciSonuc }) {
@@ -136,7 +136,8 @@ export function KullaniciDetayYonetimi({ kullanici }: { kullanici: KullaniciSonu
         <button type="button" onClick={kurumKaydet} disabled={pending || !schoolId} className="rounded-full px-3 py-2 text-[11px] font-bold" style={{ background: MINT, color: MINT_ON }}>Okulu güncelle</button>
       </div>}
       {mesaj && <p className="text-xs font-semibold" style={{ color: mesaj.includes("güncellendi") ? MINT : BLUSH }}>{mesaj}</p>}
-      {kullanici.role !== "ogrenci" && <RolDegistirBolumu userId={kullanici.id} mevcutRol={kullanici.role} />}
+      {/* Mezun (migration 0188) rolü buradan değiştirilmez: geri alma moderatör panelinde, sınıf seçilerek. */}
+      {kullanici.role !== "ogrenci" && kullanici.role !== "mezun" && <RolDegistirBolumu userId={kullanici.id} mevcutRol={kullanici.role} />}
       {kullanici.role === "ogrenci" && <OgrenciEkYonetim studentId={kullanici.id} />}
     </div>
   );

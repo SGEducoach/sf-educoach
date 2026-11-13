@@ -34,6 +34,7 @@ const ROL_TERCIHLERI: Record<UserRole, { alan: keyof BildirimTercihleri; etiket:
   ogretmen: [{ alan: "yanlisGiris", etiket: "Şüpheli / yanlış giriş uyarıları" }],
   mudur: [{ alan: "yanlisGiris", etiket: "Şüpheli / yanlış giriş uyarıları" }],
   admin: [{ alan: "yanlisGiris", etiket: "Şüpheli / yanlış giriş uyarıları" }],
+  mezun: [{ alan: "yanlisGiris", etiket: "Şüpheli / yanlış giriş uyarıları" }],
 };
 
 const TUR_IKON: Record<string, typeof Bell> = { yanlis_giris: ShieldAlert, sistem: Sparkles };

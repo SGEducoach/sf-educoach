@@ -232,7 +232,8 @@ export async function bekleyenPdfSonuclariniOgrenciyeAktar(
 ): Promise<{ aktarilan: number; atlanan: number; error: string | null }> {
   const [{ data: onKayitlar, error: onKayitHatasi }, { data: aktifler, error: aktifHatasi }, { data: bekleyenler, error: bekleyenHatasi }] = await Promise.all([
     admin.from("pending_dershane_ogrenciler").select("id, ad").eq("school_id", input.schoolId).is("kullanildi_at", null),
-    admin.from("students").select("id, profiles!students_id_fkey(ad)").eq("school_id", input.schoolId),
+    // Mezunlar (class_id boş, migration 0188) yeni denemeyle eşleşmez.
+    admin.from("students").select("id, profiles!students_id_fkey(ad)").eq("school_id", input.schoolId).not("class_id", "is", null),
     admin.from("pdf_deneme_eslesme_bekleyenler").select("id, ad_soyad_ham, ders_sonuclari, yayinevi, tarih, tur, olusturan_mudur_id")
       .eq("school_id", input.schoolId).eq("durum", "bekliyor"),
   ]);

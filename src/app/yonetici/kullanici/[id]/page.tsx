@@ -25,7 +25,7 @@ import { ogretmenProgramiGetir } from "@/lib/ders-programi";
 import { BG1, BG1_ALT, BORDER, MINT, TEXT, TEXT_MUTED } from "@/lib/theme";
 import type { UserRole, KurumTuru, KurumKademesi } from "@/lib/types";
 
-const ROL_ETIKET: Record<UserRole, string> = { ogrenci: "Öğrenci", ogretmen: "Öğretmen", veli: "Veli", mudur: "Müdür", admin: "Yönetici" };
+const ROL_ETIKET: Record<UserRole, string> = { ogrenci: "Öğrenci", ogretmen: "Öğretmen", veli: "Veli", mudur: "Müdür", admin: "Yönetici", mezun: "Mezun" };
 
 // "Profili Yönet" (kullanıcı isteği, 26.08.2026): bu sayfa şimdiye kadar
 // salt-okunur bir görünümdü — KullaniciDetayYonetimi'nin (düzenleme formu)
@@ -45,7 +45,7 @@ async function kullaniciSonucInsa(
     yurtOgrencisi: null, kurumYurtlu: false, aytAlan: null, hedefBolum: null, hedefNetTyt: null, hedefNetAyt: null,
     moderatorMu: !!moderatorKaydi,
   };
-  if (role === "ogrenci") {
+  if (role === "ogrenci" || role === "mezun") {
     const { data } = await admin.from("students")
       .select("okul_no, school_id, class_id, yurt_ogrencisi, ayt_alan, hedef_bolum, hedef_net_tyt, hedef_net_ayt, schools(ad, tur, yurtlu), classes(seviye, sube)")
       .eq("id", profil.id).maybeSingle();
@@ -105,7 +105,7 @@ export default async function KullaniciGoruntulemeSayfasi({ params, searchParams
               <ProfiliYonetToggle kullanici={kullaniciSonuc} />
             </div>
           </section>
-          {role === "ogrenci" && <OgrenciSayfasi admin={admin} userId={id} ad={profil.ad} donem={donem} />}
+          {(role === "ogrenci" || role === "mezun") && <OgrenciSayfasi admin={admin} userId={id} ad={profil.ad} donem={donem} />}
           {(role === "ogretmen" || role === "mudur") && <OgretmenSayfasi admin={admin} userId={id} />}
           {role === "veli" && <VeliSayfasi admin={admin} userId={id} />}
         </main>

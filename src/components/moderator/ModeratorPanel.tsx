@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
-import { ArrowRightLeft, BedDouble, ChevronDown, Eye, IdCard, KeyRound, MailWarning, Plus, Save, Search, Settings, ShieldCheck, Trash2, UserCheck, UserPlus, UserX, X } from "lucide-react";
+import { ArrowRightLeft, BedDouble, ChevronDown, Eye, GraduationCap, IdCard, KeyRound, MailWarning, Plus, Save, Search, Settings, ShieldCheck, Trash2, UserCheck, UserPlus, UserX, X } from "lucide-react";
 import {
   moderatorAktiflikDegistir, moderatorHesapSil, moderatorKurumBilgisiGetir, moderatorKurumGuncelle,
   moderatorOgrenciEkle, moderatorOgrenciSinifTasi, moderatorOgretmenBransDegistir, moderatorOgretmenEkle,
@@ -9,6 +9,7 @@ import {
   moderatorSinifOgretmenleriGetir, moderatorSinifOgretmeniAta, moderatorSinifSil, moderatorYurtDurumuDegistir,
   moderatorOgrenciKayitlari, moderatorOgrenciKaydiGuncelle, moderatorOgrenciKaydiSil,
   moderatorOgrenciBilgisi, moderatorTelefonGoster, type ModeratorOgrenciBilgisi,
+  moderatorMezunEt, moderatorMezunGeriAl, moderatorMezunSiniflari, type ModeratorMezunSinifi,
   type ModeratorKullanici, type ModeratorOgretmenSecenegi, type ModeratorSinifOzeti,
 } from "@/app/moderator/actions";
 import { AYT_ALAN_ETIKET } from "@/lib/types";
@@ -49,7 +50,7 @@ export function ModeratorPanel({ okulAdi, kullanicilar, schoolId, kurumTuru, kad
     {mesaj && <div role="status" className="rounded-xl p-3 text-xs font-bold" style={{ color: mesaj.startsWith("Hata") ? BLUSH : MINT, background: BG1_ALT, border: `2px solid ${BORDER_STRONG}` }}>{mesaj}</div>}
 
     {bolum === "ogrenciler" && (
-      <KullaniciBolumu baslik="Öğrenciler" kullanicilar={kullanicilar} sekmeler={["ogrenci", "veli"]}
+      <KullaniciBolumu baslik="Öğrenciler" kullanicilar={kullanicilar} sekmeler={kademe === "ortaokul" ? ["ogrenci", "veli"] : ["ogrenci", "veli", "mezun"]}
         ekleEtiketi="Öğrenci ekle"
         ekleFormu={(kapat) => <OgrenciEkleFormu schoolId={schoolId} dershane={dershane} onDone={(msg) => { setMesaj(msg); if (!msg.startsWith("Hata")) kapat(); }} />}
         aciklama="Öğrenci eklemek için önce Sınıflar bölümünden sınıfları oluşturun. Hatalı çalışma, soru veya deneme girişlerini öğrencinin adına tıklayıp Kayıtlar bölümünden düzeltin."
@@ -97,7 +98,7 @@ function KullaniciBolumu({ baslik, kullanicilar, sekmeler, ekleEtiketi, ekleForm
   const [durum, setDurum] = useState<"tumu" | "aktif" | "pasif">("tumu");
   const [sayfa, setSayfa] = useState(1);
   const [ekleAcik, setEkleAcik] = useState(false);
-  const SEKME_ADI: Record<ModeratorKullanici["kategori"], string> = { ogrenci: "Öğrenciler", ogretmen: "Öğretmenler", veli: "Veliler" };
+  const SEKME_ADI: Record<ModeratorKullanici["kategori"], string> = { ogrenci: "Öğrenciler", ogretmen: "Öğretmenler", veli: "Veliler", mezun: "Mezunlar" };
 
   const kapsam = useMemo(() => kullanicilar.filter((k) => sekmeler.includes(k.kategori)), [kullanicilar, sekmeler]);
   const siniflar = useMemo(() => [...new Set(kapsam.filter((k) => k.kategori === sekme).map((k) => k.sinif).filter((x): x is string => !!x))].sort(), [kapsam, sekme]);
@@ -131,7 +132,7 @@ function KullaniciBolumu({ baslik, kullanicilar, sekmeler, ekleEtiketi, ekleForm
       {ekleAcik && ekleFormu(() => setEkleAcik(false))}
 
       {sekmeler.length > 1 && (
-        <div className="mt-4 grid grid-cols-2 gap-2 sm:max-w-sm">
+        <div className={`mt-4 grid gap-2 ${sekmeler.length > 2 ? "grid-cols-3 sm:max-w-md" : "grid-cols-2 sm:max-w-sm"}`}>
           {sekmeler.map((id) => {
             const adet = kapsam.filter((k) => k.kategori === id).length;
             return <button key={id} type="button" onClick={() => { setSekme(id); setSayfa(1); setSinif("tumu"); }}
@@ -151,6 +152,7 @@ function KullaniciBolumu({ baslik, kullanicilar, sekmeler, ekleEtiketi, ekleForm
           <option value="pasif">Sadece pasif</option>
         </select>
       </div>
+      {sekme === "mezun" && <MezunEtKarti schoolId={schoolId} onMesaj={onMesaj} />}
       <p style={{ color: TEXT_MUTED }} className="mt-3 text-xs font-semibold">Listelenen kişi: <strong style={{ color: TEXT }}>{gosterilenler.length}</strong></p>
     </div>
     <div className="sfec-liste">
@@ -163,6 +165,67 @@ function KullaniciBolumu({ baslik, kullanicilar, sekmeler, ekleEtiketi, ekleForm
       <button type="button" disabled={etkinSayfa === toplamSayfa} onClick={() => setSayfa(Math.min(toplamSayfa, etkinSayfa + 1))} className="sfec-btn rounded-xl px-3 py-2 text-xs font-bold disabled:opacity-40" style={{ color: TEXT, background: BG1, border: `2px solid ${BORDER_STRONG}` }}>Sonraki</button>
     </nav>}
   </>;
+}
+
+// Mezunlar sekmesinin üstü (migration 0188): 12. sınıfları toplu mezun etme.
+// Mezun olan öğrencinin hesabı silinmez; girişi ve geçmişi korunur, sınıftan
+// çıkar ve Mezun Takip'e eklenir. Yanlışlık kartındaki "Öğrenciye geri al" ile düzeltilir.
+function MezunEtKarti({ schoolId, onMesaj }: { schoolId?: string; onMesaj: (m: string) => void }) {
+  const [siniflar, setSiniflar] = useState<ModeratorMezunSinifi[] | null>(null);
+  const [secili, setSecili] = useState<Set<string>>(new Set());
+  const [pending, start] = useTransition();
+  useEffect(() => { moderatorMezunSiniflari(schoolId).then((r) => setSiniflar(r.siniflar)); }, [schoolId]);
+  const secilenOgrenci = (siniflar ?? []).filter((c) => secili.has(c.id)).reduce((t, c) => t + c.ogrenciSayisi, 0);
+  function mezunEt() {
+    if (!window.confirm(`${secilenOgrenci} öğrenci mezun edilsin mi? Hesapları silinmez; sınıftan çıkar, Mezunlar listesine geçer ve Mezun Takip'e eklenir.`)) return;
+    start(async () => {
+      const r = await moderatorMezunEt({ classIds: [...secili] }, schoolId);
+      onMesaj(r.error ? `Hata: ${r.error}` : `${r.mezunEdilen} öğrenci mezun edildi. Sayfayı yenileyince Mezunlar listesinde görünür.`);
+      if (!r.error) { setSecili(new Set()); setSiniflar((await moderatorMezunSiniflari(schoolId)).siniflar); }
+    });
+  }
+  if (siniflar === null) return null;
+  return <div className="mt-3 rounded-xl p-3" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
+    <p className="text-xs font-bold" style={{ color: TEXT }}>12. Sınıfları Mezun Et</p>
+    <p className="mt-1 text-[11px] leading-relaxed" style={{ color: TEXT_MUTED }}>
+      Ders yılı bitince 12. sınıfları seçip mezun edin. Hesaplar silinmez: öğrenci aynı okul numarası ve şifresiyle girip yalnız kendi iletişim, üniversite ve meslek bilgisini günceller, eski denemelerini görür. Sınıfı tekrar eden öğrenciyi önce başka sınıfa taşıyın ya da mezun ettikten sonra kartından geri alın.
+    </p>
+    {siniflar.length === 0 ? <p className="mt-2 text-[11px]" style={{ color: TEXT_MUTED }}>Kurumda 12. sınıf yok.</p> : <>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {siniflar.map((c) => {
+          const acik = secili.has(c.id);
+          return <button key={c.id} type="button" disabled={c.ogrenciSayisi === 0} aria-pressed={acik}
+            onClick={() => setSecili((s) => { const y = new Set(s); if (y.has(c.id)) y.delete(c.id); else y.add(c.id); return y; })}
+            className="sfec-btn rounded-full px-3 py-1 text-[11px] font-bold disabled:opacity-40"
+            style={{ background: acik ? MINT : "transparent", color: acik ? MINT_ON : TEXT, border: `2px solid ${acik ? MINT : BORDER_STRONG}` }}>
+            {c.ad} · {c.ogrenciSayisi}
+          </button>;
+        })}
+      </div>
+      <button type="button" disabled={pending || secilenOgrenci === 0} onClick={mezunEt}
+        className="sfec-btn mt-2 inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold disabled:opacity-50" style={{ background: MINT, color: MINT_ON }}>
+        <GraduationCap size={13}/> {pending ? "Mezun ediliyor..." : `Seçili sınıfları mezun et (${secilenOgrenci} öğrenci)`}
+      </button>
+    </>}
+  </div>;
+}
+
+function MezunGeriAlFormu({ studentId, schoolId, onDone }: { studentId: string; schoolId?: string; onDone: (msg: string) => void }) {
+  const [siniflar, setSiniflar] = useState<{ id: string; seviye: string; sube: string }[]>([]);
+  const [sinifId, setSinifId] = useState("");
+  const [pending, start] = useTransition();
+  useEffect(() => { moderatorOkulSiniflari(schoolId).then((r) => setSiniflar(r.siniflar)); }, [schoolId]);
+  return <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg p-2" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
+    <select value={sinifId} onChange={(e) => setSinifId(e.target.value)} aria-label="Geri alınacak sınıf"
+      className="rounded-lg px-2 py-1.5 text-xs outline-none" style={{ background: BG1, color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>
+      <option value="">Sınıf seçin</option>
+      {siniflar.map((c) => <option key={c.id} value={c.id}>{c.seviye}-{c.sube}</option>)}
+    </select>
+    <button type="button" disabled={pending || !sinifId} onClick={() => start(async () => {
+      const r = await moderatorMezunGeriAl(studentId, sinifId, schoolId);
+      onDone(r.error ? `Hata: ${r.error}` : "Hesap öğrenci olarak sınıfa geri alındı. Sayfayı yenileyince Öğrenciler listesinde görünür.");
+    })} className="sfec-btn rounded-lg px-2.5 py-1.5 text-[10px] font-bold disabled:opacity-60" style={{ background: MINT, color: MINT_ON }}>Öğrenciye geri al</button>
+  </div>;
 }
 
 // Sınıflar bölümü (kullanıcı isteği 03.10.2026): sınıf ekleme/silme ve her
@@ -596,6 +659,8 @@ function KullaniciKarti({ kullanici: k, schoolId, onMesaj, kurumTuru, kademe, yu
   const [sifreAcik, setSifreAcik] = useState(false);
   const [kayitlarAcik, setKayitlarAcik] = useState(false);
   const [bilgiAcik, setBilgiAcik] = useState(false);
+  const [geriAlAcik, setGeriAlAcik] = useState(false);
+  const ogrenciKaydi = k.kategori === "ogrenci" || k.kategori === "mezun";
   const [yeniSifre, setYeniSifre] = useState("");
   // Kullanıcı isteği (26.08.2026): Pasifleştir/Sil artık doğrudan görünmüyor
   // — "Diğer ayarlar" tıklanınca açılıyor.
@@ -640,8 +705,8 @@ function KullaniciKarti({ kullanici: k, schoolId, onMesaj, kurumTuru, kademe, yu
           küçültülecek" — kart başına buton sayısı fazla olduğundan (özellikle
           öğrenci kartlarında) daha kompakt bir dolgu/yazı boyutuna geçildi. */}
       <div className="mt-3 flex flex-wrap gap-1.5">
-        {k.kategori === "ogrenci" && <button type="button" onClick={() => setBilgiAcik((v) => !v)} aria-expanded={bilgiAcik} className="sfec-btn flex-1 rounded-lg px-2 py-1.5 text-[10px] font-bold" style={{ background: bilgiAcik ? MINT : "transparent", color: bilgiAcik ? MINT_ON : TEXT, border: `2px solid ${BORDER_STRONG}` }}><IdCard className="mr-1 inline" size={11}/>Öğrenci bilgileri</button>}
-        {k.kategori === "ogrenci" && <button type="button" onClick={() => setKayitlarAcik((v) => !v)} className="sfec-btn flex-1 rounded-lg px-2 py-1.5 text-[10px] font-bold" style={{ color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>Çalışma kayıtları</button>}
+        {ogrenciKaydi && <button type="button" onClick={() => setBilgiAcik((v) => !v)} aria-expanded={bilgiAcik} className="sfec-btn flex-1 rounded-lg px-2 py-1.5 text-[10px] font-bold" style={{ background: bilgiAcik ? MINT : "transparent", color: bilgiAcik ? MINT_ON : TEXT, border: `2px solid ${BORDER_STRONG}` }}><IdCard className="mr-1 inline" size={11}/>Öğrenci bilgileri</button>}
+        {ogrenciKaydi && <button type="button" onClick={() => setKayitlarAcik((v) => !v)} className="sfec-btn flex-1 rounded-lg px-2 py-1.5 text-[10px] font-bold" style={{ color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>Çalışma kayıtları</button>}
         <button disabled={pending || !epostaKayitli} title={epostaKayitli ? undefined : "Önce e-posta kaydedin"} onClick={() => startTransition(async () => { const r = await moderatorSifreSifirla(k.id, schoolId); onMesaj(r.error ? `Hata: ${r.error}` : `Geçici şifre (${k.ad}): ${r.sifre}`); })} className="sfec-btn flex-1 rounded-lg px-2 py-1.5 text-[10px] font-bold disabled:opacity-50" style={{ color: TEXT, border: `2px solid ${BORDER_STRONG}` }}><KeyRound className="mr-1 inline" size={11}/>Rastgele şifre</button>
         <button disabled={pending || !epostaKayitli} title={epostaKayitli ? undefined : "Önce e-posta kaydedin"} onClick={() => setSifreAcik((v) => !v)} className="sfec-btn flex-1 rounded-lg px-2 py-1.5 text-[10px] font-bold disabled:opacity-50" style={{ background: sifreAcik ? MINT : "transparent", color: sifreAcik ? MINT_ON : TEXT, border: `2px solid ${BORDER_STRONG}` }}><KeyRound className="mr-1 inline" size={11}/>Şifre belirle</button>
         {(k.kategori === "ogrenci" || k.kategori === "ogretmen") && (
@@ -659,9 +724,13 @@ function KullaniciKarti({ kullanici: k, schoolId, onMesaj, kurumTuru, kademe, yu
       {digerAcik && (
         <div className="mt-2 flex flex-wrap gap-1.5 rounded-lg p-2" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
           <button disabled={pending} onClick={() => startTransition(async () => { const r = await moderatorAktiflikDegistir(k.id, !k.aktif, schoolId); onMesaj(r.error ? `Hata: ${r.error}` : "İşlem tamamlandı."); })} className="sfec-btn flex-1 rounded-lg px-2 py-1.5 text-[10px] font-bold" style={{ color: k.aktif ? BLUSH : MINT, border: `2px solid ${BORDER_STRONG}` }}>{k.aktif ? <UserX className="mr-1 inline" size={11}/> : <UserCheck className="mr-1 inline" size={11}/>} {k.aktif ? "Pasifleştir" : "Aktifleştir"}</button>
+          {k.kategori === "ogrenci" && k.sinif?.startsWith("12-") && <button disabled={pending} onClick={() => { if (!window.confirm(`${k.ad} mezun edilsin mi? Hesabı silinmez; sınıftan çıkar ve Mezunlar listesine geçer.`)) return; startTransition(async () => { const r = await moderatorMezunEt({ studentIds: [k.id] }, schoolId); onMesaj(r.error ? `Hata: ${r.error}` : `${k.ad} mezun edildi. Sayfayı yenileyince Mezunlar listesinde görünür.`); }); }} className="sfec-btn rounded-lg px-2.5 py-1.5 text-[10px] font-bold" style={{ color: TEXT, border: `2px solid ${BORDER_STRONG}` }}><GraduationCap className="mr-1 inline" size={11}/>Mezun et</button>}
+          {k.kategori === "mezun" && <button disabled={pending} onClick={() => setGeriAlAcik((v) => !v)} className="sfec-btn rounded-lg px-2.5 py-1.5 text-[10px] font-bold" style={{ background: geriAlAcik ? MINT : "transparent", color: geriAlAcik ? MINT_ON : TEXT, border: `2px solid ${BORDER_STRONG}` }}><ArrowRightLeft className="mr-1 inline" size={11}/>Öğrenciye geri al</button>}
           <button disabled={pending} onClick={() => { if (!window.confirm(`${k.ad} hesabı kalıcı olarak silinsin mi?`)) return; startTransition(async () => { const r = await moderatorHesapSil(k.id, schoolId); onMesaj(r.error ? `Hata: ${r.error}` : "Hesap silindi."); }); }} className="sfec-btn rounded-lg px-2.5 py-1.5 text-[10px] font-bold" style={{ color: BLUSH, border: `2px solid ${BORDER_STRONG}` }}><Trash2 className="mr-1 inline" size={11}/>Sil</button>
         </div>
       )}
+
+      {digerAcik && geriAlAcik && k.kategori === "mezun" && <MezunGeriAlFormu studentId={k.id} schoolId={schoolId} onDone={(msg) => { onMesaj(msg); setGeriAlAcik(false); }} />}
 
       {sifreAcik && (
         <div className="mt-2 flex items-center gap-2 rounded-lg p-2" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
@@ -675,8 +744,8 @@ function KullaniciKarti({ kullanici: k, schoolId, onMesaj, kurumTuru, kademe, yu
         </div>
       )}
 
-      {bilgiAcik && k.kategori === "ogrenci" && <ModeratorOgrenciBilgileri studentId={k.id} schoolId={schoolId} />}
-      {kayitlarAcik && k.kategori === "ogrenci" && <ModeratorOgrenciKayitlari studentId={k.id} schoolId={schoolId} />}
+      {bilgiAcik && ogrenciKaydi && <ModeratorOgrenciBilgileri studentId={k.id} schoolId={schoolId} />}
+      {kayitlarAcik && ogrenciKaydi && <ModeratorOgrenciKayitlari studentId={k.id} schoolId={schoolId} />}
       {duzenleAcik && k.kategori === "ogrenci" && (
         <ModeratorOgrenciSinifTasiFormu studentId={k.id} schoolId={schoolId} onDone={(msg) => { onMesaj(msg); setDuzenleAcik(false); }} />
       )}

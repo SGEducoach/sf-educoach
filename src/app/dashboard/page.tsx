@@ -85,6 +85,7 @@ import { rehberKapsamListesiGetir } from "@/lib/rehber-kapsam-listesi";
 import { AltSekmeCubugu } from "@/components/dashboard/AltSekmeCubugu";
 import { SmsBolumu } from "@/components/dashboard/SmsBolumu";
 import { MezunTakipBolumu } from "@/components/dashboard/MezunTakipBolumu";
+import { MezunPaneli } from "@/components/dashboard/MezunPaneli";
 import { kurumBolumuAcikMi, kurumErisimiKapaliMi, KURUM_BAGLANTI_HATASI } from "@/lib/kurum-yetkileri";
 import { SinifAnaliziPanel } from "@/components/dashboard/SinifAnaliziPanel";
 import { sinifAnaliziGetir } from "@/lib/sinif-analizi-verisi";
@@ -165,6 +166,18 @@ export default async function DashboardPage({
   const role = profile.role as UserRole;
   // Admin artık normal akışta hiç görünmez — tek kontrol noktası /yonetici'dir.
   if (role === "admin") redirect("/yonetici");
+  // Mezun (migration 0188): tek sayfalık panel — kendi bilgileri, deneme geçmişi, şifre.
+  if (role === "mezun") {
+    return (
+      <div className="sfec-dashboard-shell min-h-dvh w-full flex-1 flex flex-col">
+        <Header ad={profile.ad} role={role} aktifBolum="ozet" />
+        <ZorunluSifreDegisikligiKapisi gecici={profile.gecici_sifre} />
+        <main id="ana-icerik" className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6">
+          <MezunPaneli userId={user.id} ad={profile.ad} />
+        </main>
+      </div>
+    );
+  }
   const teyitliOgretmenEpostasi = typeof user.user_metadata?.sifre_eposta_teyit_email === "string"
     ? user.user_metadata.sifre_eposta_teyit_email.toLowerCase()
     : null;

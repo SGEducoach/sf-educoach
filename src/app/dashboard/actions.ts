@@ -760,7 +760,7 @@ export async function ogretmenDuyuruGonder(mesaj: string, kapsam?: string, alici
   let kayitsizListe: string[] = [];
 
   if (yurtKapsami) {
-    const { data: ogrenciler } = await admin.from("students").select("id").eq("school_id", teacher.school_id).eq("yurt_ogrencisi", true);
+    const { data: ogrenciler } = await admin.from("students").select("id").eq("school_id", teacher.school_id).eq("yurt_ogrencisi", true).not("class_id", "is", null);
     ogrenciIdleri = (ogrenciler ?? []).map((o) => o.id);
     baslik = "Yurt yönetiminden duyuru";
     hedefEtiketi = "Yurt öğrencileri";
@@ -790,7 +790,8 @@ export async function ogretmenDuyuruGonder(mesaj: string, kapsam?: string, alici
     } else {
       const { data: ogrenciler } = okulRehberi
         ? await admin.from("students").select("id, classes!inner(seviye)").eq("school_id", teacher.school_id).in("classes.seviye", rehberSeviyeleri)
-        : await admin.from("students").select("id").eq("school_id", teacher.school_id);
+        // Mezunlar (class_id boş, migration 0188) okul duyurusu almaz.
+        : await admin.from("students").select("id").eq("school_id", teacher.school_id).not("class_id", "is", null);
       ogrenciIdleri = (ogrenciler ?? []).map((o) => o.id);
       kayitsizListe = await kayitsizListeIdleri(admin, { schoolId: teacher.school_id, seviyeler: okulRehberi ? rehberSeviyeleri : undefined });
       baslik = rehberMi ? "Rehber Öğretmen duyurusu" : "Okul yönetiminden duyuru";

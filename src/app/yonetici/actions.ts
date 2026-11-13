@@ -115,7 +115,7 @@ export async function kullaniciAra(sorgu: string, rolFiltre: UserRole | "hepsi",
   // profiles tablosunun kendisinde school_id yok, students/teachers/
   // parent_students üzerinden dolaylı olarak bulunuyor.
   const [{ data: ogrenciler }, { data: ogretmenlerHam }, { data: veliBaglantilari }] = await Promise.all([
-    (rolFiltre === "hepsi" || rolFiltre === "ogrenci")
+    (rolFiltre === "hepsi" || rolFiltre === "ogrenci" || rolFiltre === "mezun")
       ? (sinifKapsami
           ? supabase.from("students").select("id").eq("school_id", schoolId).in("class_id", sinifKapsami)
           : supabase.from("students").select("id").eq("school_id", schoolId))
@@ -164,7 +164,7 @@ export async function kullaniciAra(sorgu: string, rolFiltre: UserRole | "hepsi",
   if (error) return { error: error.message, sonuclar: [] };
 
   const satirlar = (profiller ?? []) as { id: string; kullanici_kodu: string; ad: string; email: string | null; telefon: string | null; role: UserRole; aktif: boolean }[];
-  const ogrenciIdleri = satirlar.filter((s) => s.role === "ogrenci").map((s) => s.id);
+  const ogrenciIdleri = satirlar.filter((s) => s.role === "ogrenci" || s.role === "mezun").map((s) => s.id);
   const ogretmenIdleri = satirlar.filter((s) => s.role === "ogretmen" || s.role === "mudur").map((s) => s.id);
 
   const [ogrenciDetay, ogretmenDetay, moderatorler] = await Promise.all([

@@ -16,10 +16,12 @@ const ROL_SEKME: { id: UserRole | "hepsi"; ad: string }[] = [
   { id: "ogretmen", ad: "Öğretmen" },
   { id: "veli", ad: "Veli" },
   { id: "mudur", ad: "Müdür" },
+  // Mezun (migration 0188): öğrenci kaydını koruyan ayrı tür.
+  { id: "mezun", ad: "Mezun" },
 ];
 
 const ROL_ETIKET: Record<UserRole, string> = {
-  ogrenci: "Öğrenci", ogretmen: "Öğretmen", veli: "Veli", mudur: "Müdür", admin: "Admin",
+  ogrenci: "Öğrenci", ogretmen: "Öğretmen", veli: "Veli", mudur: "Müdür", admin: "Admin", mezun: "Mezun",
 };
 
 // Kullanıcı bulgusu (26.08.2026, İKİNCİ kez bildirildi — "hâlâ çalışmıyor"):
@@ -191,7 +193,7 @@ export function KullaniciArama() {
           </div>
 
           {rol === null ? (
-            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-5">
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-6">
               {ROL_SEKME.map((r) => (
                 <button key={r.id} type="button"
                   onClick={() => { setRol(r.id); ara(sorgu, r.id, sinifId); }}

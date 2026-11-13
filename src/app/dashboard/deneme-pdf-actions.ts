@@ -190,7 +190,8 @@ async function hedefOgrencileriGetir(admin: ReturnType<typeof createAdminClient>
   { error: string | null; ogrenciler: HedefOgrenci[]; onKayitlar: HedefOnKayit[] }
 > {
   const [{ data: ogrencilerHam, error: ogrenciHatasi }, { data: onKayitlarHam, error: onKayitHatasi }] = await Promise.all([
-    admin.from("students").select("id, okul_no, profiles!students_id_fkey(ad), classes(seviye, sube)").eq("school_id", schoolId),
+    // Mezunlar (class_id boş, migration 0188) yeni denemeyle eşleşmez.
+    admin.from("students").select("id, okul_no, profiles!students_id_fkey(ad), classes(seviye, sube)").eq("school_id", schoolId).not("class_id", "is", null),
     admin.from("pending_dershane_ogrenciler").select("id, ad").eq("school_id", schoolId).is("kullanildi_at", null),
   ]);
   if (ogrenciHatasi || onKayitHatasi) {

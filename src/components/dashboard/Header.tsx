@@ -25,6 +25,7 @@ const rolEtiket: Record<UserRole, string> = {
   ogretmen: "Öğretmen",
   mudur: "Müdür",
   admin: "Yönetici",
+  mezun: "Mezun",
 };
 
 export async function Header({ ad, role, kurumTuru, brans, grupMu = false, okunmamisMesajSayisi = 0, mobilNavigasyon = true, moderatorMu = false, rolEtiketi, aktifBolum = "ozet", geriDonusHref, geriDonusEtiketi, rozetler, kademe }: { ad: string; role: UserRole; kurumTuru?: KurumTuru; brans?: string; grupMu?: boolean; okunmamisMesajSayisi?: number; mobilNavigasyon?: boolean; moderatorMu?: boolean; rolEtiketi?: string; aktifBolum?: DashboardBolumu;
