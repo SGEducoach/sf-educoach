@@ -5,6 +5,7 @@ import { ortaokulSonHareketleriGetir, sonHareketiBirlestir } from "@/lib/ortaoku
 import { bugununTarihiTR } from "@/lib/tarih";
 import { bayraklariBelirle, type Bayrak } from "@/lib/rehber-bayrak";
 import { ogrenciAktiviteOzetleriGetir } from "@/lib/ogrenci-aktivite";
+import { kimlikParcaliCek } from "@/lib/sayfali-sorgu";
 
 // Rehber Radarı Adım 2 (kullanıcı onayı 07.10.2026) — "tek kapsam listesi".
 //
@@ -139,7 +140,9 @@ export async function rehberKapsamListesiGetir(
     ogrenciAktiviteOzetleriGetir(admin, ogrenciIdleri, bugun),
     // RPC ortaokul_calismalar'ı saymıyor (migration 0132): ortaokul öğrencisi "sessiz" görünmesin.
     ortaokulSonHareketleriGetir(admin, [...ortaokulOgrencileri]),
-    admin.from("denemeler").select("student_id, tarih, deneme_ders_sonuclari(dogru, yanlis)").in("student_id", ogrenciIdleri),
+    // max_rows = 1000: okul geneli deneme satırları sayfalı okunur (bkz. sayfali-sorgu.ts).
+    kimlikParcaliCek(ogrenciIdleri, (p, bas, son) => admin.from("denemeler").select("id, student_id, tarih, deneme_ders_sonuclari(dogru, yanlis)").in("student_id", p).order("id").range(bas, son))
+      .then((data) => ({ data }), (e) => { console.error("rehber kapsam denemeleri okunamadı", e); return { data: [] }; }),
     // Tek bir satır bile varsa öğrenci sisteme en az bir kez girmiş demektir.
     admin.from("kullanici_aktif_gunler").select("user_id").in("user_id", ogrenciIdleri),
   ]);

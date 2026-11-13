@@ -4,6 +4,7 @@ import { kademeBul } from "@/lib/kademe";
 import { denemeToplamNeti, yayineviAnahtari, TREND_PENCERESI, AKTIFLIK_PENCERESI, type AnalizOgrencisi } from "@/lib/sinif-analizi";
 import { ortaokulHareketiniEkle } from "@/lib/ortaokul-aktivite-ekle";
 import { sinifAnalizOzetleriGetir } from "@/lib/sinif-analiz-ozeti";
+import { kimlikParcaliCek } from "@/lib/sayfali-sorgu";
 
 // Sınıf Analizi veri katmanı — rehber-kapsam-listesi.ts ile AYNI desen:
 // öğrenci başına sorgu YOK, birkaç toplu in() sorgusu + JS'de eşleştirme.
@@ -113,7 +114,9 @@ export async function sinifAnaliziGetir(
   // penceresinden bağımsızdır (RPC içinde tüm satırlara bakılır).
   const [ozetler, denemeler, girisler, resmiListe] = await Promise.all([
     sinifAnalizOzetleriGetir(admin, idler, bugununTarihiTR(), AKTIFLIK_PENCERESI, TREND_PENCERESI),
-    admin.from("denemeler").select("student_id, tarih, tur, yayinevi, deneme_ders_sonuclari(dogru, yanlis)").in("student_id", idler),
+    // max_rows = 1000: okul geneli deneme satırları sayfalı okunur (bkz. sayfali-sorgu.ts).
+    kimlikParcaliCek(idler, (p, bas, son) => admin.from("denemeler").select("id, student_id, tarih, tur, yayinevi, deneme_ders_sonuclari(dogru, yanlis)").in("student_id", p).order("id").range(bas, son))
+      .then((data) => ({ data }), (e) => { console.error("sınıf analizi denemeleri okunamadı", e); return { data: [] }; }),
     admin.from("kullanici_aktif_gunler").select("user_id").in("user_id", idler),
     admin.from("okul_ogrenci_listesi").select("id, ad_soyad, okul_no, student_id, classes(seviye, sube)").eq("school_id", params.schoolId),
   ]);
