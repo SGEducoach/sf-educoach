@@ -31,4 +31,4 @@ Başkası adına veya başkasının bilgileriyle kayıt olmak, başka bir kullan
 7. DEĞİŞİKLİKLER
 Bu kurallar ve platformun işleyişi zaman içinde güncellenebilir; önemli değişikliklerde kayıt sırasında tekrar onayınız istenir.
 
-Sorularınız için: sg.educoach@gmail.com`;
+Sorularınız için: sefukoc@gmail.com`;

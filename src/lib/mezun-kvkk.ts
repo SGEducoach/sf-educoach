@@ -19,4 +19,4 @@ Kimler görür: mezun bilgilerinizi yalnız okulunuzun rehberlik servisi ve müd
 
 Saklama süresi: mezun hesabınız ve mezun kaydınız mezuniyetinizden itibaren 5 yıl ya da siz silinmesini isteyene kadar saklanır. Silme talebinizde makul süre içinde silinir.
 
-Haklarınız: KVKK madde 11 kapsamında verilerinizin işlenip işlenmediğini öğrenme, düzeltilmesini veya silinmesini isteme, işlenme amacını öğrenme gibi haklara sahipsiniz. İletişim, il/ilçe, üniversite ve meslek bilginizi Mezun Profilim'den kendiniz güncelleyebilirsiniz. Diğer talepleriniz için okulunuza ya da sg.educoach@gmail.com adresine başvurabilirsiniz.`;
+Haklarınız: KVKK madde 11 kapsamında verilerinizin işlenip işlenmediğini öğrenme, düzeltilmesini veya silinmesini isteme, işlenme amacını öğrenme gibi haklara sahipsiniz. İletişim, il/ilçe, üniversite ve meslek bilginizi Mezun Profilim'den kendiniz güncelleyebilirsiniz. Diğer talepleriniz için okulunuza ya da sefukoc@gmail.com adresine başvurabilirsiniz.`;

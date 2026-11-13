@@ -16,4 +16,4 @@ Veri aktarımı: verileriniz yalnızca koçunuz ve (bağlanırsa) veliniz ile pa
 
 Saklama süresi: hesabınız aktif olduğu sürece saklanır; hesap kapatma talebinizde makul süre içinde silinir.
 
-Haklarınız: KVKK madde 11 kapsamında verilerinizin düzeltilmesini, silinmesini, işlenme amacını öğrenmeyi talep etme gibi haklara sahipsiniz. Talepleriniz için sg.educoach@gmail.com adresinden bize ulaşabilirsiniz.`;
+Haklarınız: KVKK madde 11 kapsamında verilerinizin düzeltilmesini, silinmesini, işlenme amacını öğrenmeyi talep etme gibi haklara sahipsiniz. Talepleriniz için sefukoc@gmail.com adresinden bize ulaşabilirsiniz.`;

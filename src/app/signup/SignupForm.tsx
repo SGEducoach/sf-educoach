@@ -201,7 +201,7 @@ Mezun olduğunuzda: 12. sınıfı bitirdiğinizde okulunuz hesabınızı mezun h
 
 Saklama süresi: hesabınız aktif olduğu sürece saklanır; hesap kapatma talebinizde makul süre içinde silinir. Mezun hesabı ve mezun kaydı mezuniyetten itibaren 5 yıl saklanır; silinmesini istediğinizde makul süre içinde silinir.
 
-Haklarınız: KVKK madde 11 kapsamında verilerinizin düzeltilmesini, silinmesini, işlenme amacını öğrenmeyi talep etme gibi haklara sahipsiniz. Talepleriniz için okulunuza ya da sg.educoach@gmail.com adresine başvurabilirsiniz.
+Haklarınız: KVKK madde 11 kapsamında verilerinizin düzeltilmesini, silinmesini, işlenme amacını öğrenmeyi talep etme gibi haklara sahipsiniz. Talepleriniz için okulunuza ya da sefukoc@gmail.com adresine başvurabilirsiniz.
 
 Okudum: Yukarıdaki aydınlatma metnini okudum ve anladım.`;
 
@@ -416,7 +416,7 @@ Veri aktarımı: verileriniz; bağlı olduğunuz okul/dershane yönetimi dışı
 
 Saklama süresi: hesabınız aktif olduğu sürece saklanır; hesap kapatma talebinizde makul süre içinde silinir.
 
-Haklarınız: KVKK madde 11 kapsamında verilerinizin düzeltilmesini, silinmesini, işlenme amacını öğrenmeyi talep etme gibi haklara sahipsiniz. Talepleriniz için kurumunuza ya da sg.educoach@gmail.com adresine başvurabilirsiniz.
+Haklarınız: KVKK madde 11 kapsamında verilerinizin düzeltilmesini, silinmesini, işlenme amacını öğrenmeyi talep etme gibi haklara sahipsiniz. Talepleriniz için kurumunuza ya da sefukoc@gmail.com adresine başvurabilirsiniz.
 
 Okudum: Yukarıdaki aydınlatma metnini okudum ve anladım.`;
 

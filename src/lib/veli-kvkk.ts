@@ -22,6 +22,6 @@ Kimler görür: adınız ve telefonunuz; öğrencinin okul/dershane yönetimi, s
 
 Saklama süresi: hesabınız aktif olduğu sürece saklanır. Hesabın kapatılmasını istediğinizde ya da öğrencinin okulla ilişiği kesildiğinde makul süre içinde silinir.
 
-Haklarınız: KVKK madde 11 kapsamında verilerinizin işlenip işlenmediğini öğrenme, düzeltilmesini veya silinmesini isteme, işlenme amacını öğrenme gibi haklara sahipsiniz. Talepleriniz için öğrencinin okuluna ya da sg.educoach@gmail.com adresine başvurabilirsiniz.
+Haklarınız: KVKK madde 11 kapsamında verilerinizin işlenip işlenmediğini öğrenme, düzeltilmesini veya silinmesini isteme, işlenme amacını öğrenme gibi haklara sahipsiniz. Talepleriniz için öğrencinin okuluna ya da sefukoc@gmail.com adresine başvurabilirsiniz.
 
 Okudum: Yukarıdaki aydınlatma metnini okudum ve anladım.`;
