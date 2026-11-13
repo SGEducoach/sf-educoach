@@ -51,7 +51,9 @@ export async function kohortKarsilastirmasiGetir(
   const classId = ogrenci?.class_id ?? null;
   if (!classId) return [];
   // 9-10. sınıf yalnız Branş denemesiyle karşılaştırılır (bkz. analiz.ts denemeKapsami).
-  const turler = dokuzOnSinifMi(ogrenci?.classes?.seviye) ? (["BRANS"] as const) : (["TYT", "AYT"] as const);
+  // 11. sınıf TYT + Branş (+ AYT varsa) — grafikTurleriBelirle ile aynı kural (13.11.2026).
+  const seviye = ogrenci?.classes?.seviye;
+  const turler = dokuzOnSinifMi(seviye) ? (["BRANS"] as const) : seviye === "11" ? (["TYT", "BRANS", "AYT"] as const) : (["TYT", "AYT"] as const);
 
   const { data: sinifOgrencileri } = await supabase.from("students").select("id").eq("class_id", classId);
   const sinifIdleri = ((sinifOgrencileri ?? []) as { id: string }[]).map((s) => s.id);
