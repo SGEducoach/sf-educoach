@@ -214,7 +214,7 @@ export function AnalizPaneli({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="sfec-grafik-karti sfec-fade rounded-3xl p-5" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
           <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
-            <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Deneme net trendi{veri.donem !== "tum" ? ` — ${RAPOR_DONEMI_ETIKET[veri.donem]}` : ""}</span>
+            <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Deneme net trendi{veri.donem !== "tum" ? " — tüm denemeler" : ""}</span>
             {bransKapsami ? <TrendRozeti trend={veri.denemeTrendYonu} /> : (
               <span className="flex items-center gap-1.5 flex-wrap">
                 <TrendRozeti trend={veri.denemeTrendYonuTur.TYT} onEk="TYT" />
@@ -326,13 +326,15 @@ export function AnalizPaneli({
 function DonemOzeti({ veri, onGenel }: { veri: AnalizVerisi; onGenel: () => void }) {
   const konuDakika = veri.konuCalismaGunluk.reduce((toplam, kayit) => toplam + kayit.dakika, 0);
   const soruSayisi = veri.soruCozumuGunluk.reduce((toplam, kayit) => toplam + kayit.soru, 0);
-  const denemeSayisi = veri.denemeTrend.length;
+  // Deneme listesi dönemden bağımsız gelir (bkz. analiz.ts); özet yalnız dönem içindekileri sayar.
+  const donemDenemeleri = veri.donemBaslangic ? veri.denemeTrend.filter((d) => d.tarih >= veri.donemBaslangic!) : veri.denemeTrend;
+  const denemeSayisi = donemDenemeleri.length;
   // TYT ve AYT netleri farklı ölçekte: ortalama her tür için ayrı verilir.
   const turEtiketi: Record<string, string> = { TYT: "TYT", AYT: "AYT", BRANS: "Branş" };
   const denemeOrtalamasi = denemeSayisi > 0
     ? (["TYT", "AYT", "BRANS"] as const)
       .map((tur) => {
-        const liste = veri.denemeTrend.filter((d) => d.tur === tur);
+        const liste = donemDenemeleri.filter((d) => d.tur === tur);
         if (liste.length === 0) return null;
         const ort = Math.round((liste.reduce((t, d) => t + d.net, 0) / liste.length) * 100) / 100;
         return `${turEtiketi[tur]} ${ort.toLocaleString("tr-TR")}`;
@@ -346,7 +348,7 @@ function DonemOzeti({ veri, onGenel }: { veri: AnalizVerisi; onGenel: () => void
     <section className="flex flex-col gap-4" aria-label={`${donemEtiketi} istatistikleri`}>
       <div>
         <h3 className="text-lg font-bold" style={{ color: TEXT, fontFamily: "var(--font-baloo)" }}>{donemEtiketi} özeti</h3>
-        <p className="mt-1 text-xs" style={{ color: TEXT_MUTED }}>Bu dönemde girilen soru, konu çalışma ve deneme verileri. Aşağıdaki iki grafik de yalnız bu dönemi gösterir.</p>
+        <p className="mt-1 text-xs" style={{ color: TEXT_MUTED }}>Bu dönemde girilen soru, konu çalışma ve deneme verileri. Deneme net trendi tüm denemeleri, ders bazlı grafik yalnız bu dönemi gösterir.</p>
         <p className="mt-1 text-xs print:hidden" style={{ color: TEXT_MUTED }}>
           Hedef, içgörü, hız ve sınav saati kartları sabit zaman pencereleriyle hesaplandığı için yalnız{" "}
           <button type="button" onClick={onGenel} className="sfec-btn font-bold underline" style={{ color: TEXT }}>Genel görünümde</button> yer alır.

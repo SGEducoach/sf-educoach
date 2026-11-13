@@ -98,7 +98,7 @@ export async function analizVerisiGetir(
 ): Promise<AnalizVerisi> {
   const baslangic = donemBaslangicHesapla(donem);
 
-  let denemeQuery = supabase.from("denemeler").select("id, tarih, tur, hedefe_yakinlik, deneme_ders_sonuclari(ders, dogru, yanlis)").eq("student_id", studentId).order("tarih");
+  const denemeQuery = supabase.from("denemeler").select("id, tarih, tur, hedefe_yakinlik, deneme_ders_sonuclari(ders, dogru, yanlis)").eq("student_id", studentId).order("tarih");
   let konuQuery = supabase.from("konu_calismalar").select("tarih, sure_dakika, hedefe_yakinlik").eq("student_id", studentId);
   let soruQuery = supabase.from("soru_cozumleri").select("tarih, sure_dakika, ders, dogru, yanlis, bos").eq("student_id", studentId);
   let verimlilikQuery = supabase.from("haftalik_verimlilikler").select("created_at, duzey").eq("student_id", studentId).order("created_at");
@@ -119,8 +119,13 @@ export async function analizVerisiGetir(
   // tablo, dönem filtresinden bağımsız.
   const hizReferansQuery = supabase.from("ders_hiz_referanslari").select("ders, medyan_dk_soru");
 
+  // Denemeler dönem süzgecine GİRMEZ (kullanıcı bulgusu 13.11.2026): varsayılan
+  // "Aylık" ayın 1'inden başladığı için ayın ilk haftalarında öğrenci, yöneticinin
+  // gördüğü 7 denemenin yalnız bu aydaki 2'sini görüyordu. Denemeler seyrek
+  // (haftada 1-2) olduğundan net trendi her dönemde tüm denemelerle çizilir;
+  // dönem özetindeki deneme sayısı/ortalaması ve hedefe yakınlık dağılımı
+  // aşağıda dönem içindekilerle sınırlanır.
   if (baslangic) {
-    denemeQuery = denemeQuery.gte("tarih", baslangic);
     konuQuery = konuQuery.gte("tarih", baslangic);
     soruQuery = soruQuery.gte("tarih", baslangic);
     verimlilikQuery = verimlilikQuery.gte("created_at", baslangic);
@@ -202,7 +207,7 @@ export async function analizVerisiGetir(
   // Hedefe yakınlık dağılımı — sadece konu çalışma ve deneme'den (soru
   // çözümünde "Az/Orta/Çok" self-rating kaldırıldı, migration 0044).
   const hedefeYakinlikDagilimi: Record<HedefeYakinlik, number> = { yakin: 0, belirsiz: 0, uzak: 0 };
-  for (const d of denemeListesi) hedefeYakinlikDagilimi[d.hedefe_yakinlik]++;
+  for (const d of denemeListesi) if (!baslangic || d.tarih >= baslangic) hedefeYakinlikDagilimi[d.hedefe_yakinlik]++;
   for (const k of konuListesi) hedefeYakinlikDagilimi[k.hedefe_yakinlik]++;
 
   const haftalikVerimlilik = verimlilikListesi.map((v) => ({
