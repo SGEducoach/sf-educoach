@@ -72,7 +72,8 @@ export async function kullaniciKurumuGetir(
     const { data: t } = await supabase.from("teachers").select("school_id").eq("id", userId).maybeSingle();
     return okulBilgisi(supabase, t?.school_id);
   }
-  if (role === "ogrenci") {
+  // Mezun (13.11.2026) öğrenci kaydını korur; kurumu aynı yerden bulunur.
+  if (role === "ogrenci" || role === "mezun") {
     const { data: st } = await supabase.from("students").select("school_id").eq("id", userId).maybeSingle();
     return okulBilgisi(supabase, st?.school_id);
   }

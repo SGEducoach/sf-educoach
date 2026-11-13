@@ -23,6 +23,7 @@ const rolEtiket: Record<UserRole, string> = {
   ogretmen: "Öğretmen",
   mudur: "Müdür",
   admin: "Yönetici",
+  mezun: "Mezun",
 };
 
 const IKONLAR: Record<DashboardIkonu, typeof Home> = {

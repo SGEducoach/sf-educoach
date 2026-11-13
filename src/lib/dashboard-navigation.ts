@@ -514,6 +514,8 @@ function dashboardMenusuTemel(
     return kademe === "ortaokul" ? [...ortaokulaUyarla(taban), ILKOKUL_GELISIM_MENU_OGESI] : [...taban, MEZUN_TAKIP_MENU_OGESI];
   }
   if (role === "admin") return ADMIN_MENUSU;
+  // Mezun (migration 0188): tek sayfa — kendi bilgileri ve deneme geçmişi.
+  if (role === "mezun") return [{ bolum: "ozet", href: "/dashboard", etiket: "Mezun Profilim", ikon: "profil" }];
   return [];
 }
 

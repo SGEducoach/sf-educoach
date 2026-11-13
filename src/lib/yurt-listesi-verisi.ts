@@ -24,7 +24,8 @@ const ogretmenCinsiyeti = (c: unknown): OgretmenCinsiyeti | null => (c === "kadi
 async function ogrenciKaynaklari(admin: SupabaseClient, schoolId: string) {
   const resmiSorgu = (sutunlar: string) => hepsi<ResmiYurtSatiri>((b, s) => admin.from("resmi_ogrenci_listesi").select(sutunlar).eq("school_id", schoolId).order("okul_no").range(b, s));
   const kayitSorgu = (sutunlar: string) => hepsi<{ id: string; okul_no: string | null; yurt_ogrencisi: boolean; cinsiyet?: string | null; profiles: { ad: string } | null; classes: { seviye: string; sube: string } | null }>(
-    (b, s) => admin.from("students").select(sutunlar).eq("school_id", schoolId).order("id").range(b, s));
+    // Mezunlar (class_id boş, migration 0188) yurt listesinde yer almaz.
+    (b, s) => admin.from("students").select(sutunlar).eq("school_id", schoolId).not("class_id", "is", null).order("id").range(b, s));
 
   let cinsiyetHazir = true;
   let resmi = await resmiSorgu("id, ad_soyad, okul_no, yurt_ogrencisi, cinsiyet");

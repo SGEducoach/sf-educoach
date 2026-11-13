@@ -474,6 +474,8 @@ export default function LoginForm() {
                   onChange={(e) => (role === "veli" ? setKod(e.target.value) : setPassword(e.target.value))}
                   className="text-sm px-3 py-2 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }} />
               </label>
+              {/* Mezun (migration 0188) okul numarası ve şifresiyle bu girişi kullanır. */}
+              {!grupModu && role === "ogrenci" && <p className="text-[10px]" style={{ color: TEXT_MUTED }}>Mezunlar da okul numarası ve şifresiyle buradan girer.</p>}
             </>
           )}
 

@@ -12,6 +12,9 @@ import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
 import type { OgrenciYonetimKaydi, OgrenciKayitTuru } from "@/app/yonetici/actions";
 import { baslikBicimi } from "@/lib/baslik-bicimi";
 import { telefonMaskele } from "@/lib/kvkk-maske";
+import { ogrencileriMezunEt, mezunuOgrenciyeGeriAl } from "@/lib/mezun-hesap";
+import { MEZUN_EDILEBILIR_SEVIYE } from "@/lib/mezun-hesap-kurallari";
+import { bugununTarihiTR } from "@/lib/tarih";
 
 export interface ModeratorKullanici {
   id: string;
@@ -21,7 +24,7 @@ export interface ModeratorKullanici {
   aktif: boolean;
   email: string | null;
   detay: string;
-  kategori: "ogrenci" | "ogretmen" | "veli";
+  kategori: "ogrenci" | "ogretmen" | "veli" | "mezun";
   sinif: string | null;
   yurtOgrencisi: boolean;
   // Kullanıcı bulgusu (26.08.2026): "diğer moderatör öğretmenler
@@ -305,8 +308,9 @@ export async function moderatorKullanicilariGetir(targetSchoolId?: string): Prom
       const sinif = s?.classes ? `${s.classes.seviye}-${s.classes.sube}` : t?.classes ? `${t.classes.seviye}-${t.classes.sube}` : null;
       return {
         id: p.id, kullaniciKodu: p.kullanici_kodu, ad: p.ad, email: p.email, role: p.role, aktif: p.aktif, sinif,
-        kategori: s ? "ogrenci" as const : t ? "ogretmen" as const : "veli" as const,
-        detay: s ? `Öğrenci · #${s.okul_no}${sinif ? ` · ${sinif}` : ""}` : t ? `${p.role === "mudur" ? "Müdür" : "Öğretmen"} · ${t.brans}${sinif ? ` · ${sinif}` : ""}` : "Veli",
+        // Mezun (migration 0188) öğrenci kaydını korur ama ayrı listelenir.
+        kategori: s && p.role === "mezun" ? "mezun" as const : s ? "ogrenci" as const : t ? "ogretmen" as const : "veli" as const,
+        detay: s && p.role === "mezun" ? `Mezun · #${s.okul_no}` : s ? `Öğrenci · #${s.okul_no}${sinif ? ` · ${sinif}` : ""}` : t ? `${p.role === "mudur" ? "Müdür" : "Öğretmen"} · ${t.brans}${sinif ? ` · ${sinif}` : ""}` : "Veli",
         yurtOgrencisi: s?.yurt_ogrencisi ?? false,
         moderatorMu: moderatorIdSeti.has(p.id),
       };
@@ -460,6 +464,47 @@ export async function moderatorSinifSil(classId: string, targetSchoolId?: string
   await admin.from("admin_audit_log").insert({ actor_id: user.id, eylem: "moderator_sinif_sil", detay: { school_id: schoolId, class_id: classId } });
   revalidatePath("/moderator");
   return { error: null };
+}
+
+// ——— Mezun hesabı (migration 0188, kullanıcı kararı 13.11.2026) ———
+
+export interface ModeratorMezunSinifi { id: string; ad: string; ogrenciSayisi: number }
+
+/** Kurumun 12. sınıfları ve her birindeki öğrenci hesabı sayısı (toplu mezun etme için). */
+export async function moderatorMezunSiniflari(targetSchoolId?: string): Promise<{ error: string | null; siniflar: ModeratorMezunSinifi[] }> {
+  const { admin, schoolId } = await requireModerator(targetSchoolId);
+  const { data: siniflar } = await admin.from("classes").select("id, seviye, sube").eq("school_id", schoolId).eq("seviye", MEZUN_EDILEBILIR_SEVIYE).order("sube");
+  const liste = (siniflar ?? []) as { id: string; seviye: string; sube: string }[];
+  if (liste.length === 0) return { error: null, siniflar: [] };
+  const { data: ogrenciler } = await admin.from("students").select("class_id").in("class_id", liste.map((c) => c.id));
+  const sayac = new Map<string, number>();
+  for (const o of (ogrenciler ?? []) as { class_id: string }[]) sayac.set(o.class_id, (sayac.get(o.class_id) ?? 0) + 1);
+  return { error: null, siniflar: liste.map((c) => ({ id: c.id, ad: `${c.seviye}-${c.sube}`, ogrenciSayisi: sayac.get(c.id) ?? 0 })) };
+}
+
+/** Seçilen öğrencileri (ya da 12. sınıfların tamamını) mezun eder. */
+export async function moderatorMezunEt(girdi: { studentIds?: string[]; classIds?: string[] }, targetSchoolId?: string): Promise<{ error: string | null; mezunEdilen: number; atlanan: number }> {
+  const { user, admin, schoolId } = await requireModerator(targetSchoolId);
+  let idler = [...(girdi.studentIds ?? [])];
+  if (girdi.classIds?.length) {
+    const { data: siniflar } = await admin.from("classes").select("id").eq("school_id", schoolId).eq("seviye", MEZUN_EDILEBILIR_SEVIYE).in("id", girdi.classIds);
+    const sinifIdleri = ((siniflar ?? []) as { id: string }[]).map((c) => c.id);
+    if (sinifIdleri.length > 0) {
+      const { data: ogrenciler } = await admin.from("students").select("id").in("class_id", sinifIdleri);
+      idler = idler.concat(((ogrenciler ?? []) as { id: string }[]).map((o) => o.id));
+    }
+  }
+  if (idler.length === 0) return { error: "Mezun edilecek öğrenci seçilmedi.", mezunEdilen: 0, atlanan: 0 };
+  const r = await ogrencileriMezunEt(admin, { schoolId, studentIds: idler, yapanId: user.id, bugun: bugununTarihiTR() });
+  revalidatePath("/moderator");
+  return r;
+}
+
+export async function moderatorMezunGeriAl(studentId: string, classId: string, targetSchoolId?: string): Promise<{ error: string | null }> {
+  const { user, admin, schoolId } = await requireModerator(targetSchoolId);
+  const r = await mezunuOgrenciyeGeriAl(admin, { schoolId, studentId, classId, yapanId: user.id });
+  revalidatePath("/moderator");
+  return r;
 }
 
 export async function moderatorOgrenciSinifTasi(studentId: string, classId: string, targetSchoolId?: string) {

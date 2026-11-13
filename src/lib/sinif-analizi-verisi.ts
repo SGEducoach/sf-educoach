@@ -118,7 +118,8 @@ export async function sinifAnaliziGetir(
     kimlikParcaliCek(idler, (p, bas, son) => admin.from("denemeler").select("id, student_id, tarih, tur, yayinevi, deneme_ders_sonuclari(dogru, yanlis)").in("student_id", p).order("id").range(bas, son))
       .then((data) => ({ data }), (e) => { console.error("sınıf analizi denemeleri okunamadı", e); return { data: [] }; }),
     admin.from("kullanici_aktif_gunler").select("user_id").in("user_id", idler),
-    admin.from("okul_ogrenci_listesi").select("id, ad_soyad, okul_no, student_id, classes(seviye, sube)").eq("school_id", params.schoolId),
+    // Mezunların liste satırı sınıfsız kalır (migration 0188); sınıf analizine girmez.
+    admin.from("okul_ogrenci_listesi").select("id, ad_soyad, okul_no, student_id, classes(seviye, sube)").eq("school_id", params.schoolId).not("class_id", "is", null),
   ]);
 
   // Denemeler: hem seçenek listesi hem seçili denemenin netleri.

@@ -9,7 +9,7 @@ import type { UserRole } from "@/lib/types";
 import { mufredatBasvuruOzeti, mufredatBasvurusunuOku, mufredatDuzeltmeIstemi } from "@/lib/mufredat-basvurusu";
 
 const ROL_ETIKET: Record<UserRole, string> = {
-  ogrenci: "Öğrenci", veli: "Veli", ogretmen: "Öğretmen", mudur: "Müdür", admin: "Admin (Claude notu)",
+  ogrenci: "Öğrenci", veli: "Veli", ogretmen: "Öğretmen", mudur: "Müdür", admin: "Admin (Claude notu)", mezun: "Mezun",
 };
 
 function tarihFormat(iso: string) {
