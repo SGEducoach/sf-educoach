@@ -1009,9 +1009,11 @@ function DenemeTopluGirisFormu({ siniflar }: { siniflar: SinifSatiri[] }) {
   // aynı mantık öğrenci tarafında da uygulanıyor).
   const seciliSinif = siniflar.find((s) => s.id === classId);
   const dokuzOnMu = dokuzOnSinifMi(seciliSinif?.seviye);
-  const efektifTur: DenemeTuru = dokuzOnMu ? "BRANS" : tur;
+  // 11. sınıf geçiş sınıfı: TYT/AYT yanında Branş Denemesi de girilebilir (DenemeForm ile aynı kural).
+  const onBirMi = seciliSinif?.seviye === "11";
+  const efektifTur: DenemeTuru = dokuzOnMu ? "BRANS" : tur === "BRANS" && !onBirMi ? "TYT" : tur;
 
-  const dersListesi = dokuzOnMu ? [...BRANS_DENEMESI_DERSLERI] : (tur === "TYT" ? TYT_DERSLERI : AYT_DERSLERI[aytAlan]);
+  const dersListesi = dokuzOnMu || efektifTur === "BRANS" ? [...BRANS_DENEMESI_DERSLERI] : (tur === "TYT" ? TYT_DERSLERI : AYT_DERSLERI[aytAlan]);
   const [ders, setDers] = useState<string>(dersListesi[0]);
   const dersListesiKey = dersListesi.join("|");
 
@@ -1023,6 +1025,7 @@ function DenemeTopluGirisFormu({ siniflar }: { siniflar: SinifSatiri[] }) {
     setEslestirmeRaporu(null);
     const yeniSinif = siniflar.find((s) => s.id === id);
     setDers(dokuzOnSinifMi(yeniSinif?.seviye) ? BRANS_DENEMESI_DERSLERI[0] : TYT_DERSLERI[0]);
+    if (tur === "BRANS" && yeniSinif?.seviye !== "11") setTur("TYT");
     if (!id) return;
     sinifOgrencileriGetir(id).then((res) => {
       if (res.error) return setHata(res.error);
@@ -1032,7 +1035,7 @@ function DenemeTopluGirisFormu({ siniflar }: { siniflar: SinifSatiri[] }) {
 
   function turDegistir(yeniTur: DenemeTuru) {
     setTur(yeniTur);
-    const yeniListe = yeniTur === "TYT" ? TYT_DERSLERI : AYT_DERSLERI[aytAlan];
+    const yeniListe = yeniTur === "BRANS" ? BRANS_DENEMESI_DERSLERI : yeniTur === "TYT" ? TYT_DERSLERI : AYT_DERSLERI[aytAlan];
     setDers(yeniListe[0]);
   }
 
@@ -1041,7 +1044,7 @@ function DenemeTopluGirisFormu({ siniflar }: { siniflar: SinifSatiri[] }) {
     if (tur === "AYT") setDers(AYT_DERSLERI[yeniAlan][0]);
   }
 
-  const filtrelenmisOgrenciler = (ogrenciler ?? []).filter((o) => dokuzOnMu || tur === "TYT" || o.aytAlan === aytAlan);
+  const filtrelenmisOgrenciler = (ogrenciler ?? []).filter((o) => dokuzOnMu || efektifTur !== "AYT" || o.aytAlan === aytAlan);
   const maxSoru = dersSoruSayisi(efektifTur, ders);
 
   function alanGuncelle(studentId: string, alan: "dogru" | "yanlis", deger: string) {
@@ -1104,7 +1107,7 @@ function DenemeTopluGirisFormu({ siniflar }: { siniflar: SinifSatiri[] }) {
     if (!classId) return setBildirimHata("Sınıf seçin.");
     setBildirimHata(null);
     startBildirimTransition(async () => {
-      const res = await denemeBildirimGonder({ classId, tarih, tur: efektifTur, aytAlan: !dokuzOnMu && tur === "AYT" ? aytAlan : undefined });
+      const res = await denemeBildirimGonder({ classId, tarih, tur: efektifTur, aytAlan: !dokuzOnMu && efektifTur === "AYT" ? aytAlan : undefined });
       if (res.error) return setBildirimHata(res.error);
       setBildirimSonuclari(res.sonuclar);
     });
@@ -1142,12 +1145,13 @@ function DenemeTopluGirisFormu({ siniflar }: { siniflar: SinifSatiri[] }) {
           </span>
         ) : (
           <>
-            <select value={tur} onChange={(e) => turDegistir(e.target.value as DenemeTuru)}
+            <select value={efektifTur} onChange={(e) => turDegistir(e.target.value as DenemeTuru)}
               className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
               <option value="TYT">TYT</option>
               <option value="AYT">AYT</option>
+              {onBirMi && <option value="BRANS">Branş Denemesi</option>}
             </select>
-            {tur === "AYT" && (
+            {efektifTur === "AYT" && (
               <select value={aytAlan} onChange={(e) => alanDegistir(e.target.value as AytAlan)}
                 className="text-sm px-3 py-1.5 rounded-xl outline-none" style={{ border: `2px solid ${BORDER_STRONG}`, background: BG0, color: TEXT }}>
                 {(Object.keys(AYT_ALAN_ETIKET) as AytAlan[]).map((a) => <option key={a} value={a}>{AYT_ALAN_ETIKET[a]}</option>)}

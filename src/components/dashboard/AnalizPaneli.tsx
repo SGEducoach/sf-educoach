@@ -12,8 +12,8 @@ import { RAPOR_DONEMI_ETIKET } from "@/lib/analiz";
 import { HEDEFE_YAKINLIK_ETIKET } from "@/lib/types";
 import type { AytAlan, HedefeYakinlik } from "@/lib/types";
 import type { KonuHakimiyetiSatiri } from "@/lib/konu-hakimiyeti";
-import { oncelikSiralamasiOlustur, icgoruMetinleriOlustur, riskSkoruHesapla } from "@/lib/analiz-motoru";
-import type { TrendSonucu, HizDogrulukKategorisi, MakasTeshisi, OncelikSatiri, RiskDuzeyi, RiskSonucu } from "@/lib/analiz-motoru";
+import { oncelikSiralamasiOlustur, icgoruMetinleriOlustur, riskSkoruHesapla, GRAFIK_TURU_ETIKET } from "@/lib/analiz-motoru";
+import type { GrafikTuru, TrendSonucu, HizDogrulukKategorisi, MakasTeshisi, OncelikSatiri, RiskDuzeyi, RiskSonucu } from "@/lib/analiz-motoru";
 import type { KohortKarsilastirmaSatiri } from "@/lib/analiz-kohort";
 import { hedefNetGuncelle } from "@/app/dashboard/veri-actions";
 import {
@@ -71,6 +71,7 @@ export function AnalizPaneli({
   const denemeEksenAdimi = Math.max(5, Math.ceil((Math.max(0, ...veri.denemeTrend.map((d) => d.net)) * 1.08) / 4 / 5) * 5);
   // 9-10. sınıf: tek Branş çizgisi, TYT/AYT hedef girişi yok (bkz. analiz.ts).
   const bransKapsami = veri.denemeKapsami === "brans";
+  const turTrendi = (tur: GrafikTuru): TrendSonucu => (tur === "BRANS" ? veri.bransTrendYonu : veri.denemeTrendYonuTur[tur]);
   const toplamKonuDakika = veri.konuCalismaGunluk.reduce((toplam, kayit) => toplam + kayit.dakika, 0);
   const toplamSoruSayisi = veri.soruCozumuGunluk.reduce((toplam, kayit) => toplam + kayit.soru, 0);
 
@@ -89,12 +90,13 @@ export function AnalizPaneli({
   const hicVeriYok = oncelikSiralamasi.length > 0 && oncelikSiralamasi.every((s) => s.masterySkoru === null);
   const icgoruler = useMemo(() => icgoruMetinleriOlustur({
     denemeTrend: veri.denemeTrendYonu,
-    denemeTrendTur: veri.denemeKapsami === "brans" ? undefined : veri.denemeTrendYonuTur,
+    denemeTrendTur: veri.denemeKapsami === "brans" ? undefined
+      : Object.fromEntries(veri.grafikTurleri.map((t) => [t, t === "BRANS" ? veri.bransTrendYonu : veri.denemeTrendYonuTur[t]])),
     dersTrendleri: veri.dersTrendYonu,
     hizDogruluk: veri.dersHizDogruluk,
     oncelikSiralamasi,
     hedefProjeksiyonlari: veri.hedefProjeksiyonlari,
-  }), [veri.denemeTrendYonu, veri.denemeKapsami, veri.denemeTrendYonuTur, veri.dersTrendYonu, veri.dersHizDogruluk, oncelikSiralamasi, veri.hedefProjeksiyonlari]);
+  }), [veri.denemeTrendYonu, veri.denemeKapsami, veri.grafikTurleri, veri.bransTrendYonu, veri.denemeTrendYonuTur, veri.dersTrendYonu, veri.dersHizDogruluk, oncelikSiralamasi, veri.hedefProjeksiyonlari]);
 
   // Analiz Motoru Faz A5 — Katman 7 (risk skoru) girdisi: Konu Hakimiyeti'nde
   // BEYAN EDİLMİŞ konular arasında bayatlamış (90+ gün) olanların oranı.
@@ -217,8 +219,7 @@ export function AnalizPaneli({
             <span style={{ color: TEXT, fontFamily: "var(--font-baloo)" }} className="text-[15px] font-bold">Deneme net trendi{veri.donem !== "tum" ? " — tüm denemeler" : ""}</span>
             {bransKapsami ? <TrendRozeti trend={veri.denemeTrendYonu} /> : (
               <span className="flex items-center gap-1.5 flex-wrap">
-                <TrendRozeti trend={veri.denemeTrendYonuTur.TYT} onEk="TYT" />
-                <TrendRozeti trend={veri.denemeTrendYonuTur.AYT} onEk="AYT" />
+                {veri.grafikTurleri.map((tur) => <TrendRozeti key={tur} trend={turTrendi(tur)} onEk={GRAFIK_TURU_ETIKET[tur]} />)}
               </span>
             )}
           </div>
@@ -234,12 +235,11 @@ export function AnalizPaneli({
                 <YAxis domain={[0, denemeEksenAdimi * 4]} ticks={[0, 1, 2, 3, 4].map((i) => i * denemeEksenAdimi)} tick={{ fontSize: 11, fill: TEXT_MUTED }} axisLine={false} tickLine={false} />
                 <RTooltip cursor={false} contentStyle={{ fontSize: 12, borderRadius: 12, border: `2px solid ${BORDER_STRONG}`, background: BG1_ALT }} labelStyle={{ color: TEXT_MUTED }} itemStyle={{ color: TEXT }} />
                 <Legend wrapperStyle={{ fontSize: 11, color: TEXT_MUTED }} />
-                {bransKapsami ? (
-                  <Line type="monotone" dataKey="BRANS" name="Branş" stroke={SKY} strokeWidth={2.25} dot={{ r: 3.5, fill: SKY, strokeWidth: 2, stroke: BG1 }} connectNulls />
-                ) : <>
-                  <Line type="monotone" dataKey="TYT" stroke={SKY} strokeWidth={2.25} dot={{ r: 3.5, fill: SKY, strokeWidth: 2, stroke: BG1 }} connectNulls />
-                  <Line type="monotone" dataKey="AYT" stroke={MINT} strokeWidth={2.25} dot={{ r: 3.5, fill: MINT, strokeWidth: 2, stroke: BG1 }} connectNulls />
-                </>}
+                {veri.grafikTurleri.map((tur) => {
+                  // 9-10'da tek çizgi (Branş) eskisi gibi mavi; 11'de Branş TYT'den ayrışsın diye sarı.
+                  const renk = tur === "TYT" ? SKY : tur === "AYT" ? MINT : bransKapsami ? SKY : BUTTER;
+                  return <Line key={tur} type="monotone" dataKey={tur} name={GRAFIK_TURU_ETIKET[tur]} stroke={renk} strokeWidth={2.25} dot={{ r: 3.5, fill: renk, strokeWidth: 2, stroke: BG1 }} connectNulls />;
+                })}
               </LineChart>
             </ResponsiveContainer>
           )}

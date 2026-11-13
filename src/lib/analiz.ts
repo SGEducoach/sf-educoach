@@ -3,8 +3,8 @@ import { netHesapla } from "@/lib/types";
 import type { DenemeTuru, HedefeYakinlik, VerimlilikDuzeyi } from "@/lib/types";
 import { TYT_DERSLERI, BRANS_DENEMESI_DERSLERI, dersSoruSayisi, dokuzOnSinifMi } from "@/lib/types";
 import { bugununTarihiTR, tarihEkle } from "@/lib/tarih";
-import { trendHesapla, turTrendleriniBirlestir, hizDogrulukKategorisiBelirle, hedefProjeksiyonuHesapla, makasTeshisiBelirle } from "@/lib/analiz-motoru";
-import type { TrendSonucu, HizDogrulukKategorisi, RegresyonNoktasi, HedefProjeksiyonuSonucu, MakasTeshisi } from "@/lib/analiz-motoru";
+import { trendHesapla, turTrendleriniBirlestir, grafikTurleriBelirle, hizDogrulukKategorisiBelirle, hedefProjeksiyonuHesapla, makasTeshisiBelirle } from "@/lib/analiz-motoru";
+import type { GrafikTuru, TrendSonucu, HizDogrulukKategorisi, RegresyonNoktasi, HedefProjeksiyonuSonucu, MakasTeshisi } from "@/lib/analiz-motoru";
 import {
   CALISMA_KATSAYISI, DOGRULUK_ESIGI_CALISMA, dersTempoButcesi, olcumGecerliMi, sinavProjeksiyonu,
 } from "@/lib/sinav-tempo";
@@ -30,6 +30,10 @@ export interface AnalizVerisi {
   // analizi yalnızca Branş denemesine dayanır; TYT/AYT ve onların hedef
   // netleri bu öğrencilerde hiç kullanılmaz. 11-12 ("yks") eskisi gibi.
   denemeKapsami: "brans" | "yks";
+  // Deneme net trendi grafiğinde çizilen türler (kullanıcı kararı 13.11.2026):
+  // 9-10 → Branş; 11 → TYT + Branş (öğrencinin AYT denemesi varsa AYT de);
+  // 12 → TYT + AYT. Rozetler ve trend cümleleri de bu türlerle kurulur.
+  grafikTurleri: GrafikTuru[];
   denemeTrend: { tarih: string; net: number; tur: DenemeTuru }[];
   konuCalismaGunluk: { tarih: string; dakika: number }[];
   soruCozumuGunluk: { tarih: string; soru: number }[];
@@ -64,6 +68,8 @@ export interface AnalizVerisi {
   // olarak, sadece o türün kendi denemeleri) + öğrencinin (varsa) kendi
   // belirlediği hedef net'ten türetilen projeksiyon.
   denemeTrendYonuTur: Record<"TYT" | "AYT", TrendSonucu>;
+  /** Yalnız Branş denemelerinin trendi (11. sınıf grafiğindeki Branş rozeti). */
+  bransTrendYonu: TrendSonucu;
   hedefNetTyt: number | null;
   hedefNetAyt: number | null;
   hedefProjeksiyonlari: { tur: "TYT" | "AYT"; sonuc: HedefProjeksiyonuSonucu }[];
@@ -250,9 +256,13 @@ export async function analizVerisiGetir(
     }));
     denemeTrendYonuTur[tur] = trendHesapla(noktalar);
   }
+  const bransListesi = denemeTrend.filter((d) => d.tur === "BRANS");
+  const bransTrendYonu = trendHesapla(bransListesi.map((d) => ({ gunOffset: tarihGunFarki(d.tarih, bransListesi[0].tarih), deger: d.net })));
+  const grafikTurleri = grafikTurleriBelirle(hedefRow?.classes?.seviye, denemeTrend.map((d) => d.tur));
+  const turTrendi = (tur: GrafikTuru) => (tur === "BRANS" ? bransTrendYonu : denemeTrendYonuTur[tur]);
   const denemeTrendYonu = denemeKapsami === "brans"
     ? bransGenelTrend
-    : turTrendleriniBirlestir([denemeTrendYonuTur.TYT, denemeTrendYonuTur.AYT]);
+    : turTrendleriniBirlestir(grafikTurleri.map(turTrendi));
 
   const hedefProjeksiyonlari: AnalizVerisi["hedefProjeksiyonlari"] = [];
   if (hedefNetTyt !== null) {
@@ -394,6 +404,7 @@ export async function analizVerisiGetir(
 
   return {
     denemeKapsami,
+    grafikTurleri,
     denemeTrend,
     konuCalismaGunluk,
     soruCozumuGunluk,
@@ -412,6 +423,7 @@ export async function analizVerisiGetir(
     dersYetisme,
     sinavProjeksiyonu: projeksiyon,
     denemeTrendYonuTur,
+    bransTrendYonu,
     hedefNetTyt,
     hedefNetAyt,
     hedefProjeksiyonlari,

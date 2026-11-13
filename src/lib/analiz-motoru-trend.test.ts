@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { icgoruMetinleriOlustur, trendHesapla, turTrendleriniBirlestir, type TrendSonucu } from "./analiz-motoru";
+import { grafikTurleriBelirle, icgoruMetinleriOlustur, trendHesapla, turTrendleriniBirlestir, type TrendSonucu } from "./analiz-motoru";
 
 const yukselen: TrendSonucu = { yon: "yukselen", haftalikDegisim: 2 };
 const dusen: TrendSonucu = { yon: "dusen", haftalikDegisim: -1.5 };
@@ -42,5 +42,24 @@ describe("icgoruMetinleriOlustur — deneme trendi", () => {
   test("tür trendi verilmezse (Branş) genel cümle kullanılır", () => {
     const m = icgoruMetinleriOlustur({ ...ortak, denemeTrend: yukselen });
     expect(m.some((x) => x.startsWith("Genel deneme netin"))).toBe(true);
+  });
+});
+
+describe("grafikTurleriBelirle", () => {
+  test("9-10 yalnız Branş; eski TYT kayıtları grafiğe girmez", () => {
+    expect(grafikTurleriBelirle("9", ["BRANS", "TYT"])).toEqual(["BRANS"]);
+    expect(grafikTurleriBelirle("10", [])).toEqual(["BRANS"]);
+  });
+  test("11. sınıf TYT + Branş; AYT denemesi varsa AYT de eklenir", () => {
+    expect(grafikTurleriBelirle("11", ["TYT"])).toEqual(["TYT", "BRANS"]);
+    expect(grafikTurleriBelirle("11", ["TYT", "AYT", "BRANS"])).toEqual(["TYT", "BRANS", "AYT"]);
+  });
+  test("12. sınıf ve sınıfsız TYT + AYT; Branş denemesi varsa o da kaybolmaz", () => {
+    expect(grafikTurleriBelirle("12", ["TYT"])).toEqual(["TYT", "AYT"]);
+    expect(grafikTurleriBelirle(null, ["BRANS"])).toEqual(["TYT", "AYT", "BRANS"]);
+  });
+  test("11. sınıf içgörüsü Branş cümlesini \"Branş netin\" diye kurar", () => {
+    const m = icgoruMetinleriOlustur({ denemeTrend: yok, denemeTrendTur: { TYT: durgun, BRANS: yukselen }, dersTrendleri: {}, hizDogruluk: [], oncelikSiralamasi: [] });
+    expect(m.some((x) => x.startsWith("Branş netin") && x.includes("artıyor"))).toBe(true);
   });
 });

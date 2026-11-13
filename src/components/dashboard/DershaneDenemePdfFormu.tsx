@@ -15,7 +15,7 @@ import { BG0, BG1, BG1_ALT, BORDER, BORDER_STRONG, MINT, MINT_BG, MINT_ON, TEXT,
 // kademe: kurumun kademesi (kullanıcı isteği 19.10.2026) — ortaokulda yalnız
 // LGS ve 1-8. sınıflar, lisede yalnız TYT/AYT/Branş; "ikisi" ya da bilinmiyorsa hepsi.
 type DenemeTuruSecimi = "TYT" | "AYT" | "BRANS" | "LGS";
-const TUR_ADI: Record<DenemeTuruSecimi, string> = { TYT: "TYT", AYT: "AYT", BRANS: "Branş Denemesi (9-10. sınıf)", LGS: "LGS (ortaokul)" };
+const TUR_ADI: Record<DenemeTuruSecimi, string> = { TYT: "TYT", AYT: "AYT", BRANS: "Branş Denemesi (9-11. sınıf)", LGS: "LGS (ortaokul)" };
 
 // Vercel fonksiyonu istek gövdesi sınırı 4,5 MB; form alanları için küçük pay bırakılır.
 const YUKLEME_SINIRI_BAYT = Math.floor(4.4 * 1024 * 1024);
@@ -34,7 +34,7 @@ export function DershaneDenemePdfFormu({ schoolId, yalnizcaExcel = false, kademe
   // Kullanıcı isteği (17.10.2026): denemeye giren sınıf seviyesi sorulur;
   // eşleştirme ekranında öğrenci arama listesi bu seviyeyle açılır.
   const [seviye, setSeviye] = useState("");
-  const seviyeSecenekleri = tur === "LGS" ? ["1", "2", "3", "4", "5", "6", "7", "8"] : tur === "BRANS" ? ["9", "10"] : ["9", "10", "11", "12"];
+  const seviyeSecenekleri = tur === "LGS" ? ["1", "2", "3", "4", "5", "6", "7", "8"] : tur === "BRANS" ? ["9", "10", "11"] : ["9", "10", "11", "12"];
   const [hata, setHata] = useState<string | null>(null);
   const [sonuc, setSonuc] = useState<{
     toplam: number;

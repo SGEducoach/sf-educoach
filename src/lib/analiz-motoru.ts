@@ -193,6 +193,21 @@ export function turTrendleriniBirlestir(trendler: TrendSonucu[]): TrendSonucu {
   return belirli.find((t) => t.yon !== "durgun") ?? { yon: null, haftalikDegisim: null };
 }
 
+export type GrafikTuru = "TYT" | "AYT" | "BRANS";
+export const GRAFIK_TURU_ETIKET: Record<GrafikTuru, string> = { TYT: "TYT", AYT: "AYT", BRANS: "Branş" };
+
+// Deneme net trendi grafiğinde hangi türlerin çizileceği (kullanıcı kararı
+// 13.11.2026): 9-10 yalnız Branş; 11 TYT + Branş (11. sınıf geçiş sınıfı:
+// Branş 9-10-11, TYT/AYT 11-12 — bkz. DenemeForm); 12 TYT + AYT. Öğrencinin
+// listede olmayan türden denemesi varsa (11'de AYT, 12'de Branş) o tür de
+// eklenir: hiçbir girilmiş deneme grafikten sessizce düşmez.
+export function grafikTurleriBelirle(seviye: string | null | undefined, mevcutTurler: readonly string[]): GrafikTuru[] {
+  const temel: GrafikTuru[] = seviye === "9" || seviye === "10" ? ["BRANS"] : seviye === "11" ? ["TYT", "BRANS"] : ["TYT", "AYT"];
+  if (temel.length === 1) return temel; // 9-10: TYT/AYT kayıtları bilerek görünmez (17.10.2026 kararı)
+  const ek = (["TYT", "AYT", "BRANS"] as const).filter((t) => !temel.includes(t) && mevcutTurler.includes(t));
+  return [...temel, ...ek];
+}
+
 // ============ Katman 4: hız / verimlilik analizi ============
 //
 // soru_cozumleri'nden ders bazlı "soru başı ortalama süre" ve doğruluk
@@ -381,8 +396,8 @@ function oncelikIcgorusu(oncelikSiralamasi: OncelikSatiri[]): string | null {
 
 export interface IcgoruGirdisi {
   denemeTrend: TrendSonucu;
-  /** 11-12 (TYT/AYT) öğrencisinde verilir: trend cümlesi her tür için ayrı kurulur, genel trend kullanılmaz. */
-  denemeTrendTur?: Partial<Record<"TYT" | "AYT", TrendSonucu>>;
+  /** 11-12 öğrencisinde verilir (grafikteki türler): trend cümlesi her tür için ayrı kurulur, genel trend kullanılmaz. */
+  denemeTrendTur?: Partial<Record<GrafikTuru, TrendSonucu>>;
   dersTrendleri: Record<string, TrendSonucu>;
   hizDogruluk: { ders: string; kategori: HizDogrulukKategorisi }[];
   oncelikSiralamasi: OncelikSatiri[];
@@ -407,9 +422,9 @@ export function icgoruMetinleriOlustur(girdi: IcgoruGirdisi): string[] {
   if (oncelik) metinler.push(oncelik);
 
   if (girdi.denemeTrendTur) {
-    for (const tur of ["TYT", "AYT"] as const) {
+    for (const tur of ["TYT", "AYT", "BRANS"] as const) {
       const t = girdi.denemeTrendTur[tur];
-      const metin = t ? trendIcgorusu(`${tur} netin`, t) : null;
+      const metin = t ? trendIcgorusu(`${GRAFIK_TURU_ETIKET[tur]} netin`, t) : null;
       if (metin) metinler.push(metin);
     }
   } else {
