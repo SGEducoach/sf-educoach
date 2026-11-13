@@ -1,13 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
-import { ArrowRightLeft, BedDouble, ChevronDown, KeyRound, MailWarning, Plus, Save, Search, Settings, ShieldCheck, Trash2, UserCheck, UserPlus, UserX, X } from "lucide-react";
+import { ArrowRightLeft, BedDouble, ChevronDown, Eye, IdCard, KeyRound, MailWarning, Plus, Save, Search, Settings, ShieldCheck, Trash2, UserCheck, UserPlus, UserX, X } from "lucide-react";
 import {
   moderatorAktiflikDegistir, moderatorHesapSil, moderatorKurumBilgisiGetir, moderatorKurumGuncelle,
   moderatorOgrenciEkle, moderatorOgrenciSinifTasi, moderatorOgretmenBransDegistir, moderatorOgretmenEkle,
   moderatorEpostaKaydet, moderatorOkulSiniflari, moderatorSifreBelirle, moderatorSifreSifirla, moderatorSinifEkle,
   moderatorSinifOgretmenleriGetir, moderatorSinifOgretmeniAta, moderatorSinifSil, moderatorYurtDurumuDegistir,
   moderatorOgrenciKayitlari, moderatorOgrenciKaydiGuncelle, moderatorOgrenciKaydiSil,
+  moderatorOgrenciBilgisi, moderatorTelefonGoster, type ModeratorOgrenciBilgisi,
   type ModeratorKullanici, type ModeratorOgretmenSecenegi, type ModeratorSinifOzeti,
 } from "@/app/moderator/actions";
 import { AYT_ALAN_ETIKET } from "@/lib/types";
@@ -469,6 +470,67 @@ function Alan({ etiket, value, onChange, type = "text" }: { etiket: string; valu
   return <label className="flex flex-col gap-1"><span className="text-[10px] font-semibold" style={{ color: TEXT_MUTED }}>{etiket}</span><input type={type} value={value} onChange={(e) => onChange(e.target.value)} className="rounded-lg px-2.5 py-2 text-xs outline-none" style={{ background: BG1, color: TEXT, border: `2px solid ${BORDER_STRONG}` }} /></label>;
 }
 
+function Satir({ etiket, children }: { etiket: string; children: React.ReactNode }) {
+  return <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 py-1 text-xs" style={{ borderBottom: `1px solid ${BORDER}` }}>
+    <span style={{ color: TEXT_MUTED }}>{etiket}</span><span style={{ color: TEXT }} className="text-right">{children}</span>
+  </div>;
+}
+
+function BilgiTelefonu({ maskeli, acik, disabled, onGoster }: { maskeli: string | null; acik?: string; disabled: boolean; onGoster: () => void }) {
+  if (maskeli === null) return <span style={{ color: TEXT_MUTED }}>Kayıtlı değil</span>;
+  return <span className="inline-flex items-center gap-1.5">
+    <span className="font-semibold tabular-nums">{acik ?? maskeli}</span>
+    {!acik && <button type="button" disabled={disabled} onClick={onGoster}
+      className="sfec-btn inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[10px] font-bold disabled:opacity-50"
+      style={{ color: TEXT, border: `1px solid ${BORDER_STRONG}` }}><Eye size={10}/> Göster</button>}
+  </span>;
+}
+
+// KVKK sınırında öğrenci bilgileri (bkz. moderatorOgrenciBilgisi): yalnız
+// açılınca sunucudan çekilir; telefonlar maskeli, tam numara "Göster" ile ve
+// kayıt altına alınarak açılır. Akademik veri burada yok.
+function ModeratorOgrenciBilgileri({ studentId, schoolId }: { studentId: string; schoolId?: string }) {
+  const [bilgi, setBilgi] = useState<ModeratorOgrenciBilgisi | null>(null);
+  const [hata, setHata] = useState<string | null>(null);
+  const [acikTelefonlar, setAcikTelefonlar] = useState<Record<string, string>>({});
+  const [pending, startTransition] = useTransition();
+  useEffect(() => {
+    startTransition(async () => {
+      const r = await moderatorOgrenciBilgisi(studentId, schoolId);
+      setHata(r.error);
+      setBilgi(r.bilgi);
+    });
+  }, [studentId, schoolId]);
+  function goster(kisiId: string) {
+    startTransition(async () => {
+      const r = await moderatorTelefonGoster(studentId, kisiId, schoolId);
+      if (r.error || !r.telefon) return setHata(r.error ?? "Telefon açılamadı.");
+      setAcikTelefonlar((t) => ({ ...t, [kisiId]: r.telefon! }));
+    });
+  }
+  const tel = (kisiId: string, maskeli: string | null) =>
+    <BilgiTelefonu maskeli={maskeli} acik={acikTelefonlar[kisiId]} disabled={pending} onGoster={() => goster(kisiId)} />;
+  return <div className="mt-3 rounded-xl p-3" style={{ background: BG0, border: `2px solid ${BORDER_STRONG}` }}>
+    <p className="mb-1 text-xs font-bold" style={{ color: TEXT }}>Öğrenci Bilgileri</p>
+    {pending && !bilgi && <p className="text-xs" style={{ color: TEXT_MUTED }}>Yükleniyor…</p>}
+    {bilgi && <>
+      <Satir etiket="Ad soyad">{bilgi.ad}</Satir>
+      <Satir etiket="Kullanıcı kodu">{bilgi.kullaniciKodu}</Satir>
+      <Satir etiket="Okul no / sınıf">{bilgi.okulNo ?? "—"} · {bilgi.sinif ?? "Sınıfsız"}</Satir>
+      <Satir etiket="Hesap">{bilgi.aktif ? "Aktif" : "Pasif"}{bilgi.sonGiris ? ` · son giriş ${bilgi.sonGiris.split("-").reverse().join(".")}` : " · hiç giriş yapmadı"}</Satir>
+      <Satir etiket="E-posta">{bilgi.eposta ?? <span style={{ color: TEXT_MUTED }}>Kayıtlı değil</span>}</Satir>
+      <Satir etiket="Telefon">{tel(studentId, bilgi.telefonMaskeli)}</Satir>
+      {bilgi.veliler.length === 0
+        ? <Satir etiket="Veli">Bağlı veli hesabı yok</Satir>
+        : bilgi.veliler.map((v) => <Satir key={v.id} etiket={`Veli · ${v.ad}`}>{tel(v.id, v.telefonMaskeli)}</Satir>)}
+      <p className="mt-2 text-[10px] leading-relaxed" style={{ color: TEXT_MUTED }}>
+        KVKK gereği yalnız hesap ve iletişim işleri için gereken bilgiler gösterilir; akademik ve rehberlik verileri bu ekranda yer almaz. Tam telefon numarasını her açışınız kayıt altına alınır.
+      </p>
+    </>}
+    {hata && <p role="alert" className="mt-2 text-xs font-semibold" style={{ color: BLUSH }}>{hata}</p>}
+  </div>;
+}
+
 function ModeratorOgrenciKayitlari({ studentId, schoolId }: { studentId: string; schoolId?: string }) {
   const [kayitlar, setKayitlar] = useState<OgrenciYonetimKaydi[]>([]);
   const [hata, setHata] = useState<string | null>(null);
@@ -533,6 +595,7 @@ function KullaniciKarti({ kullanici: k, schoolId, onMesaj, kurumTuru, kademe, yu
   const [duzenleAcik, setDuzenleAcik] = useState(false);
   const [sifreAcik, setSifreAcik] = useState(false);
   const [kayitlarAcik, setKayitlarAcik] = useState(false);
+  const [bilgiAcik, setBilgiAcik] = useState(false);
   const [yeniSifre, setYeniSifre] = useState("");
   // Kullanıcı isteği (26.08.2026): Pasifleştir/Sil artık doğrudan görünmüyor
   // — "Diğer ayarlar" tıklanınca açılıyor.
@@ -577,6 +640,7 @@ function KullaniciKarti({ kullanici: k, schoolId, onMesaj, kurumTuru, kademe, yu
           küçültülecek" — kart başına buton sayısı fazla olduğundan (özellikle
           öğrenci kartlarında) daha kompakt bir dolgu/yazı boyutuna geçildi. */}
       <div className="mt-3 flex flex-wrap gap-1.5">
+        {k.kategori === "ogrenci" && <button type="button" onClick={() => setBilgiAcik((v) => !v)} aria-expanded={bilgiAcik} className="sfec-btn flex-1 rounded-lg px-2 py-1.5 text-[10px] font-bold" style={{ background: bilgiAcik ? MINT : "transparent", color: bilgiAcik ? MINT_ON : TEXT, border: `2px solid ${BORDER_STRONG}` }}><IdCard className="mr-1 inline" size={11}/>Öğrenci bilgileri</button>}
         {k.kategori === "ogrenci" && <button type="button" onClick={() => setKayitlarAcik((v) => !v)} className="sfec-btn flex-1 rounded-lg px-2 py-1.5 text-[10px] font-bold" style={{ color: TEXT, border: `2px solid ${BORDER_STRONG}` }}>Çalışma kayıtları</button>}
         <button disabled={pending || !epostaKayitli} title={epostaKayitli ? undefined : "Önce e-posta kaydedin"} onClick={() => startTransition(async () => { const r = await moderatorSifreSifirla(k.id, schoolId); onMesaj(r.error ? `Hata: ${r.error}` : `Geçici şifre (${k.ad}): ${r.sifre}`); })} className="sfec-btn flex-1 rounded-lg px-2 py-1.5 text-[10px] font-bold disabled:opacity-50" style={{ color: TEXT, border: `2px solid ${BORDER_STRONG}` }}><KeyRound className="mr-1 inline" size={11}/>Rastgele şifre</button>
         <button disabled={pending || !epostaKayitli} title={epostaKayitli ? undefined : "Önce e-posta kaydedin"} onClick={() => setSifreAcik((v) => !v)} className="sfec-btn flex-1 rounded-lg px-2 py-1.5 text-[10px] font-bold disabled:opacity-50" style={{ background: sifreAcik ? MINT : "transparent", color: sifreAcik ? MINT_ON : TEXT, border: `2px solid ${BORDER_STRONG}` }}><KeyRound className="mr-1 inline" size={11}/>Şifre belirle</button>
@@ -611,6 +675,7 @@ function KullaniciKarti({ kullanici: k, schoolId, onMesaj, kurumTuru, kademe, yu
         </div>
       )}
 
+      {bilgiAcik && k.kategori === "ogrenci" && <ModeratorOgrenciBilgileri studentId={k.id} schoolId={schoolId} />}
       {kayitlarAcik && k.kategori === "ogrenci" && <ModeratorOgrenciKayitlari studentId={k.id} schoolId={schoolId} />}
       {duzenleAcik && k.kategori === "ogrenci" && (
         <ModeratorOgrenciSinifTasiFormu studentId={k.id} schoolId={schoolId} onDone={(msg) => { onMesaj(msg); setDuzenleAcik(false); }} />

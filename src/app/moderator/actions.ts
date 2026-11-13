@@ -11,6 +11,7 @@ import { kurumSeviyeleri } from "@/lib/kademe";
 import { MUFREDAT_KONULARI } from "@/lib/mufredat-konulari";
 import type { OgrenciYonetimKaydi, OgrenciKayitTuru } from "@/app/yonetici/actions";
 import { baslikBicimi } from "@/lib/baslik-bicimi";
+import { telefonMaskele } from "@/lib/kvkk-maske";
 
 export interface ModeratorKullanici {
   id: string;
@@ -95,6 +96,75 @@ export async function moderatorOgrenciKayitlari(studentId: string, targetSchoolI
     ...(denemeler.data ?? []).map((r) => ({ id: r.id, tur: "deneme" as const, tarih: r.tarih, ders: r.tur, aciklama: `${r.tur} denemesi` })),
   ].sort((a, b) => b.tarih.localeCompare(a.tarih));
   return { error: null, kayitlar };
+}
+
+// ——— Öğrenci bilgileri (KVKK sınırında) — kullanıcı kararı 13.11.2026 ———
+// Moderatör kurum yetkilisi olarak hesap ve iletişim işlerini yürütür; bunun
+// için GEREKEN bilgiler gösterilir: kimlik/hesap (ad, kullanıcı kodu, okul no,
+// sınıf, hesap durumu, son giriş günü), e-posta, maskeli telefon ve bağlı
+// velilerin adı + maskeli telefonu. Akademik/rehberlik verisi (hedef bölüm,
+// hedef netler, analiz) BİLEREK yok — moderatörlük görevi için gerekli değil
+// (KVKK m.4 ölçülülük). Tam telefon yalnız "Göster" ile açılır ve her açılış
+// admin_audit_log'a "moderator_telefon_goruntuleme" olarak yazılır.
+
+export interface ModeratorOgrenciBilgisi {
+  ad: string;
+  kullaniciKodu: string;
+  okulNo: string | null;
+  sinif: string | null;
+  aktif: boolean;
+  eposta: string | null;
+  telefonMaskeli: string | null;
+  sonGiris: string | null;
+  veliler: { id: string; ad: string; telefonMaskeli: string | null }[];
+}
+
+export async function moderatorOgrenciBilgisi(studentId: string, targetSchoolId?: string): Promise<{ error: string | null; bilgi: ModeratorOgrenciBilgisi | null }> {
+  const { admin, schoolId } = await requireModerator(targetSchoolId);
+  const { data: ogrenci } = await admin.from("students").select("okul_no, classes(seviye, sube)").eq("id", studentId).eq("school_id", schoolId).maybeSingle();
+  if (!ogrenci) return { error: "Öğrenci bu kuruma ait değil.", bilgi: null };
+  const [{ data: profil }, { data: veliBaglari }, { data: sonGun }] = await Promise.all([
+    admin.from("profiles").select("ad, kullanici_kodu, email, telefon, aktif").eq("id", studentId).maybeSingle(),
+    admin.from("parent_students").select("parent_id").eq("student_id", studentId),
+    admin.from("kullanici_aktif_gunler").select("gun").eq("user_id", studentId).order("gun", { ascending: false }).limit(1).maybeSingle(),
+  ]);
+  if (!profil) return { error: "Öğrenci profili bulunamadı.", bilgi: null };
+  const veliIdleri = ((veliBaglari ?? []) as { parent_id: string }[]).map((v) => v.parent_id);
+  const { data: veliProfilleri } = veliIdleri.length > 0
+    ? await admin.from("profiles").select("id, ad, telefon").in("id", veliIdleri)
+    : { data: [] };
+  const sinif = ogrenci.classes as unknown as { seviye: string; sube: string } | null;
+  return {
+    error: null,
+    bilgi: {
+      ad: profil.ad, kullaniciKodu: profil.kullanici_kodu, okulNo: ogrenci.okul_no ?? null,
+      sinif: sinif ? `${sinif.seviye}-${sinif.sube}` : null, aktif: profil.aktif !== false,
+      eposta: teslimEdilebilirEpostaMi(profil.email) ? profil.email : null,
+      telefonMaskeli: telefonMaskele(profil.telefon),
+      sonGiris: (sonGun as { gun: string } | null)?.gun ?? null,
+      veliler: ((veliProfilleri ?? []) as { id: string; ad: string; telefon: string | null }[])
+        .map((v) => ({ id: v.id, ad: v.ad, telefonMaskeli: telefonMaskele(v.telefon) })),
+    },
+  };
+}
+
+/** Tam telefonu açar: kişi öğrencinin kendisi ya da ona bağlı bir veli olmalı; her açılış kayda geçer. */
+export async function moderatorTelefonGoster(studentId: string, kisiId: string, targetSchoolId?: string): Promise<{ error: string | null; telefon: string | null }> {
+  const { admin, schoolId, user } = await requireModerator(targetSchoolId);
+  if (!(await kurumOgrencisiMi(admin, schoolId, studentId))) return { error: "Öğrenci bu kuruma ait değil.", telefon: null };
+  if (kisiId !== studentId) {
+    const { data: bag } = await admin.from("parent_students").select("parent_id").eq("student_id", studentId).eq("parent_id", kisiId).maybeSingle();
+    if (!bag) return { error: "Bu kişi öğrenciye bağlı değil.", telefon: null };
+  }
+  const { data: profil } = await admin.from("profiles").select("telefon").eq("id", kisiId).maybeSingle();
+  if (!profil?.telefon) return { error: "Kayıtlı telefon yok.", telefon: null };
+  const { error: kayitHatasi } = await admin.from("admin_audit_log").insert({
+    actor_id: user.id, eylem: "moderator_telefon_goruntuleme",
+    detay: { school_id: schoolId, student_id: studentId, kisi_id: kisiId, kisi: kisiId === studentId ? "ogrenci" : "veli" },
+  });
+  // Kayıt tutulamıyorsa numara da açılmaz (izlenebilirlik koşulu).
+  if (kayitHatasi) return { error: "Görüntüleme kaydı tutulamadı; numara gösterilmedi.", telefon: null };
+  return { error: null, telefon: profil.telefon };
 }
 
 export async function moderatorOgrenciKaydiGuncelle(input: { studentId: string; id: string; tur: OgrenciKayitTuru; tarih: string; sureDakika?: number; ders: string; konu?: string; dogru?: number; yanlis?: number }, targetSchoolId?: string) {
