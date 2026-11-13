@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { SifreDegistir } from "@/components/SifreDegistir";
 import { HesapBaglama } from "@/components/dashboard/HesapBaglama";
+import { VeliDavetKarti } from "@/components/dashboard/VeliDavetKarti";
 import { OgrenciHedefDuzenleyici } from "@/components/dashboard/OgrenciHedefDuzenleyici";
 import { AYT_ALAN_ETIKET } from "@/lib/types";
 import type { AytAlan } from "@/lib/types";
@@ -64,6 +65,8 @@ export async function OgrenciProfilim({ userId, ad, kademe }: { userId: string; 
         </dl>
         <OgrenciHedefDuzenleyici ilkHedef={ogrenci?.hedef_bolum ?? ""} etiket={hedefEtiketi(kademe)} />
       </div>
+
+      <VeliDavetKarti />
 
       <HesapBaglama baglanti={{
         esKurum: baglantiSatiri?.es_kurum ?? null,

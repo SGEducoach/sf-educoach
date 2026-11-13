@@ -581,6 +581,11 @@ function VeliTalepForm({ kurumTuru, schools }: { kurumTuru: KurumTuru; schools: 
 
   return (
     <div className="rounded-3xl p-6 flex flex-col gap-4" style={{ background: BG1, border: `2px solid ${BORDER}` }}>
+      {/* Kullanıcı isteği (13.11.2026): en kolay yol öğrencinin davet bağlantısı (migration 0187). */}
+      <div className="rounded-xl p-3 text-xs leading-relaxed" style={{ background: BG0, border: `2px solid ${MINT}`, color: TEXT }}>
+        <strong>En kolay yol:</strong> Öğrencinizden panelindeki <strong>Profilim → Velimi Davet Et</strong> bölümünden size bir davet bağlantısı göndermesini isteyin. Bağlantıyı açıp adınız, telefonunuz ve şifrenizle hesabınızı hemen oluşturursunuz; öğretmen onayı beklemezsiniz.
+      </div>
+      <p className="text-[11px] font-semibold" style={{ color: TEXT_MUTED }}>Öğrenciniz bağlantı gönderemiyorsa aşağıdan kod talep edebilirsiniz (sınıf öğretmeni onayı gerekir):</p>
       <form onSubmit={gonder} className="flex flex-col gap-3">
         <label className="flex flex-col gap-1"><Etiket>Veli Adı-Soyadı</Etiket><Girdi required value={ad} onChange={(e) => setAd(e.target.value)} /></label>
         <label className="flex flex-col gap-1"><Etiket>{KURUM_ETIKET[kurumTuru].ogrenciSecim}</Etiket>
